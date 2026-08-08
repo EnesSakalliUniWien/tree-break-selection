@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_selected_null_simulation_pilot.py
-  - tests/validation/calibration/root/tie_rank/157_test_root_tie_rank_selected_null_simulation_pilot.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_selected_null_simulation_pilot_overlap_case_family
 tags:
   - source

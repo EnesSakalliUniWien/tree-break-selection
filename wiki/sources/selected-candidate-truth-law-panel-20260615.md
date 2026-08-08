@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/selected/family/selected_candidate_truth_law_panel.py
-  - tests/validation/calibration/selected/family/141_test_selected_candidate_truth_law_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_candidate_truth_law_stress
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_candidate_truth_law_generated_support
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_candidate_truth_law_overlap_expanded

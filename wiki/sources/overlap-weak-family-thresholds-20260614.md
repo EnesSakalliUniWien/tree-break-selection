@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_weak_family_thresholds.py
-  - tests/validation/calibration/overlap/109_test_overlap_weak_family_thresholds.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/weak_family_thresholds/overlap_weak_family_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/weak_family_thresholds/overlap_weak_family_metric_separability.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/weak_family_thresholds/overlap_weak_family_threshold_scan.csv

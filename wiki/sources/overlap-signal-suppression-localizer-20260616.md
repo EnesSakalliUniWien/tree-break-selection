@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_signal_suppression_localizer.py
-  - tests/validation/calibration/overlap/143_test_overlap_signal_suppression_localizer.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_signal_suppression_localization
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_signal_suppression_localization_binary_suite
 tags:

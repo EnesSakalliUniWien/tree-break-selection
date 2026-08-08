@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py
-  - tests/validation/calibration/selected/neighborhood/137_test_selected_neighborhood_distribution_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_distribution
 tags:
   - source

@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_external_calibration_contract.py
-  - tests/validation/calibration/selected/hierarchy/52_test_selected_hierarchy_external_calibration_contract.py
   - raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/manifest.json
   - raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/case_summary.csv
   - raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/external_calibration_contract.csv

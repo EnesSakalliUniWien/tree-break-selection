@@ -47,7 +47,7 @@ STAGES: tuple[Stage, ...] = (
     ),
     Stage(
         4,
-        "Validation, calibration + diagnostic studies",
+        "Validation artifact contracts",
         (
             "tests/validation",
         ),

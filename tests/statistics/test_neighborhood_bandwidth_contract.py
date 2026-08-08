@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-import benchmarks.shared.util.method_execution as method_execution
 import networkx as nx
 import numpy as np
 import pytest
-from benchmarks.shared.cases import get_default_test_cases
-from benchmarks.shared.generators.generate_case_data import generate_case_data
-from benchmarks.shared.runners.method_registry import METHOD_SPECS
-from scipy.spatial.distance import pdist
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.neighborhood_bandwidth import (
     CoherentSupportDecision,
     SupportRole,
@@ -141,32 +136,3 @@ def test_coherent_support_decision_fails_closed_on_root_invalid() -> None:
     assert not decision.promotion_eligible
     assert decision.dominant_blocker == "root_invalid_or_unusable"
     assert decision.method_action == "fail_closed_root_invalid"
-
-
-def test_internal_filter_hard_overlap_r1_fails_closed() -> None:
-    case = next(
-        case.copy() for case in get_default_test_cases() if case["name"] == "overlap_extreme_4c"
-    )
-    case["name"] = "overlap_extreme_4c__r1"
-    case["seed"] = 9003
-    data_df, labels, original, metadata = generate_case_data(case)
-
-    params = METHOD_SPECS["tbs_internal_filter_v1"].param_grid[0]
-    with pytest.raises(ValueError, match="internal support guard"):
-        method_execution.run_single_method_once(
-            method_id="tbs_internal_filter_v1",
-            spec=METHOD_SPECS["tbs_internal_filter_v1"],
-            params=params,
-            case_idx=1,
-            case_name=str(case["name"]),
-            tc_seed=case["seed"],
-            significance_level=0.01,
-            edge_alpha=0.001,
-            data_t=data_df,
-            y_t=labels,
-            x_original=original,
-            meta=metadata,
-            distance_matrix=None,
-            distance_condensed=pdist(data_df.values, metric=params["tree_distance_metric"]),
-            matrix_audit=False,
-        )

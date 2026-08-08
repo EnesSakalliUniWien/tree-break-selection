@@ -10,7 +10,6 @@ sources:
   - benchmarks/shared/runners/method_registry.py
   - tests/pipeline/51_test_dispatch_contract.py
   - tests/pipeline/52_test_method_execution_index_alignment.py
-  - tests/validation/191_test_neighborhood_support_contract.py
 tags:
   - source
   - benchmarks

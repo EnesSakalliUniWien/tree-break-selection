@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_income_outcome_junction_law.py
-  - tests/validation/calibration/overlap/126_test_overlap_income_outcome_junction_law.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/income_outcome_junction_law/overlap_income_outcome_junction_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/income_outcome_junction_law/overlap_income_outcome_junction_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/income_outcome_junction_law/manifest.json

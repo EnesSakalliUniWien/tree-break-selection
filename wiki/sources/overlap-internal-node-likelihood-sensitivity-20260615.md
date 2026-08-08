@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_internal_node_likelihood_sensitivity.py
-  - tests/validation/calibration/overlap/123_test_overlap_internal_node_likelihood_sensitivity.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/internal_node_likelihood_sensitivity/overlap_internal_node_likelihood_sensitivity.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/internal_node_likelihood_sensitivity/overlap_internal_node_likelihood_sensitivity_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/internal_node_likelihood_sensitivity/manifest.json

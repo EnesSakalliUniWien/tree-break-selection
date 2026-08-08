@@ -10,8 +10,6 @@ sources:
   - benchmarks/diagnostics/calibration/statistics/internal_support_threshold_validation.py
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
   - wiki/sources/mixed-internal-calibration-sweeps-20260605.md
-  - tests/validation/calibration/statistics/76_test_internal_support_threshold_validation.py
-  - tests/validation/calibration/sibling/nulls/69_test_sibling_null_weight_rule_validation.py
 tags:
   - source
   - diagnostics

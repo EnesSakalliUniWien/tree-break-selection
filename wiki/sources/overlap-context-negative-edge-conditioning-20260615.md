@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_context_negative_edge_conditioning.py
-  - tests/validation/calibration/overlap/129_test_overlap_context_negative_edge_conditioning.py
   - benchmarks/diagnostics/calibration/overlap/overlap_branch_incidence_junction_panel.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_edge_conditioning/overlap_context_negative_edge_conditioning_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_edge_conditioning/overlap_context_negative_edge_conditioning_metric_summary.csv

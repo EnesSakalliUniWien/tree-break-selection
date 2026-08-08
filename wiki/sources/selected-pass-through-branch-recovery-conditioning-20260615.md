@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/selected/family/selected_pass_through_branch_recovery_conditioning.py
-  - tests/validation/calibration/selected/family/140_test_selected_pass_through_branch_recovery_conditioning.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_pass_through_branch_recovery_focused
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_pass_through_branch_recovery_real_overlap
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_pass_through_branch_recovery_focused_feature_geometry

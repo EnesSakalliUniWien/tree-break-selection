@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_weak_zone_separability.py
-  - tests/validation/calibration/overlap/108_test_overlap_weak_zone_separability.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/weak_zone_separability/overlap_weak_zone_metric_separability.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/weak_zone_separability/overlap_weak_zone_threshold_scan.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/weak_zone_separability/manifest.json

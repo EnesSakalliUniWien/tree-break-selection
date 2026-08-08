@@ -12,9 +12,6 @@ sources:
   - benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_conditioned_coherent_topology_join.py
   - benchmarks/diagnostics/calibration/root/selected/root_selected_h_u_observability_panel.py
-  - tests/validation/calibration/root/selected/55_test_root_selected_region_margins.py
-  - tests/validation/calibration/root/tie_rank/168_test_root_tie_rank_conditioned_coherent_topology_join.py
-  - tests/validation/calibration/root/selected/175_test_root_selected_h_u_observability_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_selected_region_margins_overlap_case_family
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_importance_external_null_topology_join_mild_accumulated
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_selected_h_u_observability_mild_accumulated

@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py
-  - tests/validation/calibration/overlap/134_test_overlap_conditional_topology_law_panel.py
   - raw/inbox/c2ef-cosine-subspace-method-notes-20260615.md
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py

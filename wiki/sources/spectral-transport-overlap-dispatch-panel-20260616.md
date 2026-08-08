@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_overlap_dispatch_panel.py
-  - tests/validation/calibration/spectral_transport/147_test_spectral_transport_overlap_dispatch_panel.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/util/method_sets.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/spectral_transport.py

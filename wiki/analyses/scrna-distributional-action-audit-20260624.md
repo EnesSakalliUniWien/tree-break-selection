@@ -7,7 +7,6 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/distributional_action.py
   - benchmarks/diagnostics/analysis/distributional_action.py
   - tests/statistics/47_test_distributional_action_contract.py
-  - tests/validation/diagnostics/analysis/198_test_distributional_action_annotation.py
   - tests/pipeline/51_test_dispatch_contract.py
   - tests/pipeline/65_test_scrna_benchmark_branch_time_config.py
   - tests/pipeline/66_test_scrna_benchmark_distributional_action.py

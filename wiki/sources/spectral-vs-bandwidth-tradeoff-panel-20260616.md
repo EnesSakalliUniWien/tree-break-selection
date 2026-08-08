@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/statistics/spectral_vs_bandwidth_tradeoff_panel.py
-  - tests/validation/calibration/statistics/150_test_spectral_vs_bandwidth_tradeoff_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/spectral_vs_bandwidth_tradeoff_panel
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_family_traversal_spectral_transport_promoted_replicates
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_pvalue_interpolation_comparison_overlap_expanded_candidates

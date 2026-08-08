@@ -6286,6 +6286,26 @@ test. All-missing summary medians now return `NaN` without NumPy warning noise,
 while GraphTools duplicate-sample and disconnected spectral-graph warnings are
 asserted narrowly at their intentional smoke-test call sites.
 
+#### Production-boundary test pruning
+
+Audited the 741 tests previously grouped as research calibration and scientific
+validation against the installed `tree_break_selection` package boundary,
+supported artifact contracts, direct assertion subjects, and exact branch
+coverage. The full suite exercised 104 production lines and 49 branches beyond
+the non-research suite, but that increment was concentrated in ten cases with
+independent production assertions: eight neighborhood-bandwidth unit tests and
+two end-to-end gate/decomposition tests. Moved those cases to
+`tests/statistics/test_neighborhood_bandwidth_contract.py` and
+`tests/integration/test_cluster_validation_pipeline.py`, respectively.
+
+Removed the remaining 731 cases because they asserted research-only diagnostic
+helpers, simulations, calibration panels, sweeps, report generators, or
+benchmark adapters rather than a shipped product contract. Removed their
+orphaned test fixtures and package scaffolding, narrowed stage 4 to the eleven
+supported validation artifact-contract cases, and removed obsolete deleted-test
+paths from wiki source frontmatter while preserving the underlying diagnostic
+implementations and research evidence. The project gate now collects 635 cases.
+
 ## Evidence
 
 - `raw/inbox/wiki-construction-brief.md` records the requested scaffold.

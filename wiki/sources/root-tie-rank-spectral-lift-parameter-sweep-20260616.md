@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_spectral_lift_parameter_sweep.py
-  - tests/validation/calibration/root/tie_rank/167_test_root_tie_rank_spectral_lift_parameter_sweep.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_spectral_lift_parameter_sweep_overlap_mod6_highlift_smoke
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_spectral_lift_parameter_sweep_overlap_mod6_moderate_smoke
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_spectral_lift_parameter_sweep_overlap_mod6_coherent_grid_smoke

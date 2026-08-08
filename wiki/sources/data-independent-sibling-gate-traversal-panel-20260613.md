@@ -6,7 +6,6 @@ updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
-  - tests/validation/calibration/sibling/gates/100_test_data_independent_sibling_gate_traversal_panel.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
   - tests/statistics/31_test_registry_config_wiring.py

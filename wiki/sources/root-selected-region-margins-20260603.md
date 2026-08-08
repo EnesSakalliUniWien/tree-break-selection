@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py
-  - tests/validation/calibration/root/selected/55_test_root_selected_region_margins.py
   - raw/assets/benchmark-results/root_selected_region_margins_20260603/manifest.json
   - raw/assets/benchmark-results/root_selected_region_margins_20260603/root_selected_region_summary.csv
   - raw/assets/benchmark-results/root_selected_region_margins_20260603/root_selected_region_merge_margins.csv

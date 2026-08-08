@@ -1,1 +1,0 @@
-"""Selected-neighborhood calibration tests."""

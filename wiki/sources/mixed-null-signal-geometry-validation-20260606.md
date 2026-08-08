@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-06-06
 sources:
   - benchmarks/diagnostics/path_b/mixed_null_signal_geometry_validation.py
-  - tests/validation/81_test_mixed_null_signal_geometry_validation.py
   - benchmarks/results/diagnostics/mixed_null_signal_geometry_full_20260606/mixed_null_signal_labeled_nodes.csv
   - benchmarks/results/diagnostics/mixed_null_signal_geometry_full_20260606/mixed_null_signal_edges.csv
   - benchmarks/results/diagnostics/mixed_null_signal_geometry_full_20260606/mixed_null_signal_model_validation.csv

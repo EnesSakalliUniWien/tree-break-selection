@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py
-  - tests/validation/calibration/selected/hierarchy/53_test_selected_hierarchy_geometry_covariates.py
   - raw/assets/benchmark-results/selected_hierarchy_geometry_covariates_20260602_100/manifest.json
   - raw/assets/benchmark-results/selected_hierarchy_geometry_covariates_20260602_100/case_summary.csv
   - raw/assets/benchmark-results/selected_hierarchy_geometry_covariates_20260602_100/geometry_summary_by_case.csv

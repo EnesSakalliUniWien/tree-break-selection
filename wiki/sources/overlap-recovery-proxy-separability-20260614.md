@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_recovery_proxy_separability.py
-  - tests/validation/calibration/overlap/111_test_overlap_recovery_proxy_separability.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/recovery_proxy_separability/overlap_recovery_proxy_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/recovery_proxy_separability/overlap_recovery_proxy_metric_separability.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/recovery_proxy_separability/overlap_recovery_proxy_threshold_scan.csv

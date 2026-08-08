@@ -1,5 +1,5 @@
 """
-Integration tests for cluster validation using complex synthetic data.
+Production integration tests for cluster validation using complex synthetic data.
 
 Tests the full pipeline with:
 - Balanced binary feature matrices with low entropy

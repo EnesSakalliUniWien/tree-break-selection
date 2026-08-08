@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_bayesian_neighborhood_component_audit.py
-  - tests/validation/calibration/overlap/121_test_overlap_bayesian_neighborhood_component_audit.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/bayesian_neighborhood_component_audit/overlap_bayesian_neighborhood_component_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/bayesian_neighborhood_component_audit/overlap_bayesian_neighborhood_component_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/bayesian_neighborhood_component_audit/manifest.json

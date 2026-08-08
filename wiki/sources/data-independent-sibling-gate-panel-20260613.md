@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_panel.py
-  - tests/validation/calibration/sibling/gates/99_test_data_independent_sibling_gate_panel.py
   - raw/inbox/data-independent-sibling-gate-smoke-20260613.md
   - raw/inbox/data-independent-sibling-gate-transfer-20260613.md
 tags:

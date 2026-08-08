@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_threshold_stability_contract.py
-  - tests/validation/calibration/overlap/118_test_overlap_threshold_stability_contract.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/threshold_stability_contract/overlap_threshold_stability_contract_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/threshold_stability_contract/overlap_threshold_stability_contract_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/threshold_stability_contract/manifest.json

@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_selected_pass_through_fixture_miner.py
-  - tests/validation/calibration/overlap/139_test_overlap_selected_pass_through_fixture_miner.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_selected_pass_through_fixture_miner
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_selected_pass_through_expanded_traversal
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_selected_pass_through_expanded_distribution

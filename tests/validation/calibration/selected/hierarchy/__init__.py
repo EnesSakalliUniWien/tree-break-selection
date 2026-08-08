@@ -1,1 +1,0 @@
-"""Selected-hierarchy calibration tests."""

@@ -52,7 +52,6 @@ sources:
   - .gitmodules
   - pyproject.toml
   - benchmarks/validation/tree/brancharchitect_tree_comparison.py
-  - tests/validation/tree/194_test_brancharchitect_tree_comparison.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/runners/tbs_diffusion_runner.py
   - benchmarks/shared/runners/tbs_runner.py

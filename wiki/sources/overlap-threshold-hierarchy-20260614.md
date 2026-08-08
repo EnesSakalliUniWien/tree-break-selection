@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_threshold_hierarchy.py
-  - tests/validation/calibration/overlap/116_test_overlap_threshold_hierarchy.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/threshold_hierarchy/overlap_threshold_hierarchy.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/threshold_hierarchy/manifest.json
 tags:

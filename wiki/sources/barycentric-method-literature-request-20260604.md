@@ -10,7 +10,6 @@ sources:
   - manuscript/sections/method/assumptions_validation.tex
   - manuscript/references.bib
   - benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py
-  - tests/validation/calibration/selected/tail/68_test_selected_tail_law_q5_validation.py
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_summary.csv
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_validation.csv
 tags:

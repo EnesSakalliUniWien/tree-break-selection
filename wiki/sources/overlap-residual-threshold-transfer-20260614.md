@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_residual_threshold_transfer.py
-  - tests/validation/calibration/overlap/117_test_overlap_residual_threshold_transfer.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/residual_threshold_transfer/overlap_residual_threshold_transfer_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/residual_threshold_transfer/overlap_residual_threshold_transfer_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/residual_threshold_transfer/manifest.json

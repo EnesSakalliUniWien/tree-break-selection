@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-09
 sources:
   - benchmarks/validation/sweeps/family_metric_nnls_grid.py
-  - tests/validation/sweeps/197_test_family_metric_nnls_grid.py
   - reports/family_metric_nnls_grid_20260709/family_metric_nnls_report.md
   - reports/family_metric_nnls_grid_20260709/family_metric_nnls_cells.csv
   - reports/family_metric_nnls_grid_20260709/family_metric_nnls_selection.csv

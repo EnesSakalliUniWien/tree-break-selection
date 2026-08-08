@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_fragment_risk_guard.py
-  - tests/validation/calibration/overlap/112_test_overlap_fragment_risk_guard.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/fragment_risk_guard/overlap_fragment_risk_guard_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/fragment_risk_guard/overlap_fragment_risk_guard_scan.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/fragment_risk_guard/manifest.json

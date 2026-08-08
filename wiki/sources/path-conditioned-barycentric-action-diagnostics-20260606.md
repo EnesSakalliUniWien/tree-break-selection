@@ -6,7 +6,6 @@ updated: 2026-06-06
 sources:
   - benchmarks/diagnostics/math_trace/barycentric_action.py
   - benchmarks/diagnostics/math_trace/path_conditioned_barycentric_action.py
-  - tests/validation/78_test_barycentric_action_diagnostics.py
   - benchmarks/results/diagnostics/path_conditioned_barycentric_action_20260606/path_conditioned_barycentric_action_summary.json
   - benchmarks/results/diagnostics/path_conditioned_barycentric_action_20260606/missing_equation_candidate_panel.csv
   - benchmarks/results/diagnostics/path_conditioned_barycentric_action_20260606_fresh_full/path_conditioned_barycentric_action_summary.json

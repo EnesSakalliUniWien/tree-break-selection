@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_calibration_panel.py
-  - tests/validation/calibration/sibling/nulls/89_test_sibling_null_calibration_panel.py
   - wiki/analyses/null-edge-sibling-calibration-enhancement-plan.md
 tags:
   - source

@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_measurability_law.py
-  - tests/validation/calibration/selected/neighborhood/144_test_selected_neighborhood_measurability_law.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_measurability_law_overlap_expanded
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_measurability_law_overlap_expanded_candidates
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_refined_candidate_audit_smoke/measurability_law

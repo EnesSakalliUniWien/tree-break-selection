@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_context_negative_bayesian_topology_sensitivity.py
-  - tests/validation/calibration/overlap/133_test_overlap_context_negative_bayesian_topology_sensitivity.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_bayesian_topology_sensitivity/overlap_context_negative_bayesian_topology_sensitivity_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_bayesian_topology_sensitivity/overlap_context_negative_bayesian_topology_sensitivity_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_bayesian_topology_sensitivity/manifest.json

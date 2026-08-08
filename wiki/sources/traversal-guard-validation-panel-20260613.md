@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/traversal/traversal_guard_validation_panel.py
-  - tests/validation/calibration/traversal/90_test_traversal_guard_validation_panel.py
   - benchmarks/diagnostics/math_trace/path_conditioned_barycentric_action.py
   - wiki/analyses/null-edge-sibling-calibration-enhancement-plan.md
 tags:

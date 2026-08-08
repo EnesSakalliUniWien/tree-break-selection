@@ -1,1 +1,0 @@
-"""Spectral-transport calibration tests."""

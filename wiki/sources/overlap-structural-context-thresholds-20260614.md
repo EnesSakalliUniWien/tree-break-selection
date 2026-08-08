@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_structural_context_thresholds.py
-  - tests/validation/calibration/overlap/105_test_overlap_structural_context_thresholds.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_thresholds/overlap_structural_context_threshold_sensitivity.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_thresholds/overlap_structural_context_threshold_summary.csv
 tags:

@@ -8,7 +8,6 @@ sources:
   - benchmarks/shared/runners/tbs_runner.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
-  - tests/validation/calibration/sibling/gates/101_test_fixed_sibling_gate_profile_validation.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
   - raw/inbox/fixed-sibling-gate-profile-validation-20260613.md
 tags:

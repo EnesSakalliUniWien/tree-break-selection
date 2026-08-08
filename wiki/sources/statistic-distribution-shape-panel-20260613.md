@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
-  - tests/validation/calibration/statistics/93_test_statistic_distribution_shape_panel.py
   - benchmarks/validation/statistics/selected_edge_type1_geometry.py
   - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
   - tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py

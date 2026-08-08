@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/sibling/nulls/selected_sibling_lrt_diagnostic.py
-  - tests/validation/calibration/sibling/nulls/87_test_selected_sibling_lrt_diagnostic.py
   - benchmarks/results/00_current_20260427_blob_analysis/20260427_blob_analysis/29_selected_sibling_lrt_diagnostic_20260612/selected_sibling_lrt_node_panel.csv
   - benchmarks/results/00_current_20260427_blob_analysis/20260427_blob_analysis/29_selected_sibling_lrt_diagnostic_20260612/selected_sibling_lrt_summary.csv
   - benchmarks/results/00_current_20260427_blob_analysis/20260427_blob_analysis/29_selected_sibling_lrt_diagnostic_20260612/selected_sibling_lrt_run_summary.png

@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
-  - tests/validation/calibration/statistics/98_test_null_law_decomposition_panel.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
 tags:
   - source

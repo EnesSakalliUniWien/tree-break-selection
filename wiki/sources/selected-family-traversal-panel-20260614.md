@@ -7,7 +7,6 @@ sources:
   - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
   - benchmarks/diagnostics/calibration/selected/family/multiscale_umap.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
-  - tests/validation/calibration/selected/family/102_test_selected_family_traversal_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
 tags:
   - source

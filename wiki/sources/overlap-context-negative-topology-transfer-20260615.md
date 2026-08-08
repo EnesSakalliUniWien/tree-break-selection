@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_context_negative_topology_transfer.py
-  - tests/validation/calibration/overlap/131_test_overlap_context_negative_topology_transfer.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_topology_transfer/overlap_context_negative_topology_transfer_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_topology_transfer/overlap_context_negative_topology_transfer_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_topology_transfer/manifest.json

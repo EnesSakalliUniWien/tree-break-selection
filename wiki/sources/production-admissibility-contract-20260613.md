@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
-  - tests/validation/calibration/traversal/91_test_production_admissibility_contract.py
   - benchmarks/diagnostics/calibration/edge/selected_edge_sibling_null_equation.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py

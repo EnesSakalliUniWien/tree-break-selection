@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/traversal/retained_pass_through_topology_likelihood_panel.py
-  - tests/validation/calibration/traversal/138_test_retained_pass_through_topology_likelihood_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/retained_pass_through_topology_likelihood
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_distribution
 tags:

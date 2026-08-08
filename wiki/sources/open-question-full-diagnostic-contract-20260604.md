@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-06-04
 sources:
   - benchmarks/diagnostics/open_questions/full_diagnostic_contract.py
-  - tests/validation/71_test_open_question_full_diagnostic_contract.py
   - raw/assets/benchmark-results/open_question_full_diagnostic_contract_20260604/open_question_full_diagnostic_contract.csv
   - raw/assets/benchmark-results/open_question_full_diagnostic_contract_20260604/open_question_full_diagnostic_summary.csv
   - raw/assets/benchmark-results/open_question_full_diagnostic_contract_20260604/manifest.json

@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_residual_recovery_eligibility.py
-  - tests/validation/calibration/overlap/115_test_overlap_residual_recovery_eligibility.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/residual_recovery_eligibility/overlap_residual_recovery_eligibility_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/residual_recovery_eligibility/overlap_residual_recovery_eligibility_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/residual_recovery_eligibility/overlap_residual_recovery_thresholds.csv

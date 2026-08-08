@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_method_clustering_comparison.py
-  - tests/validation/calibration/overlap/142_test_overlap_method_clustering_comparison.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_method_clustering_comparison
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_method_clustering_comparison_binary_suite
 tags:

@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
-  - tests/validation/calibration/statistics/97_test_regularized_wald_statistic_panel.py
   - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
 tags:

@@ -5,7 +5,6 @@ status: draft
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/root/center/root_tree_geometry_hard_negative_replay_panel.py
-  - tests/validation/calibration/root/center/186_test_root_tree_geometry_hard_negative_replay_panel.py
   - tests/pipeline/51_test_dispatch_contract.py
   - benchmarks/shared/runners/tbs_runner.py
   - benchmarks/shared/runners/dispatch.py

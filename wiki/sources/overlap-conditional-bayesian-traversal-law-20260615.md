@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_conditional_bayesian_traversal_law.py
-  - tests/validation/calibration/overlap/120_test_overlap_conditional_bayesian_traversal_law.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_bayesian_traversal_law/overlap_conditional_bayesian_traversal_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_bayesian_traversal_law/overlap_conditional_bayesian_traversal_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_bayesian_traversal_law/manifest.json

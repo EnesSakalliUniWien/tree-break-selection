@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_pvalue_interpolation_comparison.py
-  - tests/validation/calibration/selected/neighborhood/145_test_selected_neighborhood_pvalue_interpolation_comparison.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_pvalue_interpolation_comparison_overlap_expanded_candidates
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_selected_pass_through_expanded_distribution_with_topology_bandwidths
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_pvalue_interpolation_comparison_overlap_expanded_joined_topology_bandwidths

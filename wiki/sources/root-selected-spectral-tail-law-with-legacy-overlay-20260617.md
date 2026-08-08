@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/root/selected/root_selected_spectral_tail_law_panel.py
-  - tests/validation/calibration/root/selected/169_test_root_selected_spectral_tail_law_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_selected_spectral_tail_law_with_legacy_overlay
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/legacy_c2ef9a69_method_comparison_panel
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/legacy_internal_spectral_comparison_panel

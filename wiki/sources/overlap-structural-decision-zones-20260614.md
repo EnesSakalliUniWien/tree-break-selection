@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_structural_decision_zones.py
-  - tests/validation/calibration/overlap/107_test_overlap_structural_decision_zones.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/decision_zones/overlap_structural_decision_zone_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/decision_zones/overlap_structural_decision_zone_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/decision_zones/manifest.json

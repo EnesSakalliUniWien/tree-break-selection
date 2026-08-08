@@ -1,7 +1,7 @@
 # Tests Overview
 
-The suite is organized by pipeline layer so you can validate fast structural behavior first, then
-statistics, traversal, pipeline contracts, integration, and visualization.
+The suite is organized by supported product and artifact contracts so you can validate fast
+structural behavior first, then statistics, traversal, pipelines, integration, and visualization.
 
 ## Directory Structure
 
@@ -14,12 +14,7 @@ tests/
 ├── localization/
 ├── validation/
 │   ├── calibration/
-│   ├── contracts/
-│   ├── diagnostics/
-│   ├── spectral/
-│   ├── statistics/
-│   ├── sweeps/
-│   └── tree/
+│   └── contracts/
 ├── pipeline/
 ├── applications/
 ├── integration/
@@ -29,28 +24,28 @@ tests/
 
 ## Current Suite Map
 
-The ordered gate currently collects 1,366 test cases:
+The ordered gate currently collects 635 test cases:
 
 | Stage | Responsibility | Tests |
 | --- | --- | ---: |
 | 1 | Core structure and decomposition (`core/`, `tree/`) | 140 |
-| 2 | Statistical engines and calibration (`statistics/`) | 229 |
+| 2 | Statistical engines and calibration (`statistics/`) | 237 |
 | 3 | Localization and post-hoc merge behavior (`localization/`) | 33 |
-| 4 | Validation, calibration, and diagnostic studies (`validation/`) | 752 |
+| 4 | Validation artifact contracts (`validation/`) | 11 |
 | 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 171 |
-| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 37 |
+| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 39 |
 | 7 | Wiki memory contracts (`wiki/`) | 4 |
 
-Stage 4 is large because it includes 568 collected calibration cases. Its
-remaining cases cover validation contracts (3), diagnostic annotations (2),
-spectral behavior (26), statistical validation (35), sweeps (9), tree
-validation (18), and 91 direct validation tests at the stage root.
+Stage 4 is intentionally narrow: eight cases protect the diagnostic reporting
+and CLI contracts, while three protect the method-constant manifest. Research
+simulations, calibration panels, sweeps, and one-off diagnostic studies are
+evidence-generating tools rather than production contracts and are not part of
+the project test gate.
 
 `conftest.py` is the only shared root test module. Tests otherwise belong to
-the directory matching the production or research responsibility they protect.
-For example, distributional-action formulas live in `statistics/`, while the
-optional benchmark annotation contract lives in
-`validation/diagnostics/analysis/`.
+the directory matching the supported production or artifact responsibility
+they protect. Direct tests of production statistical behavior live in
+`statistics/`; end-to-end method behavior lives in `integration/`.
 
 ## Recommended Test Execution Order
 
@@ -88,7 +83,7 @@ uv run pytest tests/statistics/
 # 3) Traversal and gate behavior
 uv run pytest tests/localization/
 
-# 4) Validation, calibration + diagnostic studies
+# 4) Validation artifact contracts
 uv run pytest tests/validation/
 
 # 5) Pipeline + application contracts and reporting artifacts
@@ -109,5 +104,6 @@ uv run pytest
 - Grouping is by intent, not by a strict import dependency graph.
 - If you touched decomposition logic, start with `tests/core/`, `tests/statistics/`, and `tests/localization/`.
 - For benchmark or artifact-generation changes, prioritize `tests/pipeline/` and `tests/integration/`.
-- Research diagnostics belong in `benchmarks/diagnostics/` with focused
-  validation tests under `tests/validation/` or `tests/pipeline/`.
+- Research diagnostics belong in `benchmarks/diagnostics/`. Promote a test into
+  the project gate only when it protects a supported production or artifact
+  contract independent of the diagnostic implementation.

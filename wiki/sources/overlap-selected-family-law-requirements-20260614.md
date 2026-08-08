@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_selected_family_law_requirements.py
-  - tests/validation/calibration/overlap/119_test_overlap_selected_family_law_requirements.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/selected_family_law_requirements/overlap_selected_family_conditioning_envelope.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/selected_family_law_requirements/overlap_selected_family_law_requirements.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/selected_family_law_requirements/manifest.json

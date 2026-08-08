@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
-  - tests/validation/calibration/statistics/96_test_differential_statistic_validity_panel.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
   - benchmarks/validation/statistics/selected_edge_type1_geometry.py
 tags:

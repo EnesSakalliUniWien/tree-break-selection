@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-06-06
 sources:
   - benchmarks/diagnostics/path_b/phase1_path_b_foundation.py
-  - tests/validation/79_test_phase1_path_b_foundation.py
   - benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/phase1_path_b_benchmark_comparison.csv
   - benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/phase1_path_b_summary.csv
   - benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/phase1_cluster_count_distribution.csv

@@ -30,7 +30,6 @@ sources:
   - benchmarks/diagnostics/calibration/sibling/nulls/runner_support.py
   - benchmarks/validation/statistics/feature_covariance_calibration.py
   - benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py
-  - tests/validation/calibration/sibling/nulls/49_test_sibling_null_runner_support.py
   - tests/visualization/73_test_report_export_layout.py
 tags:
   - code-audit

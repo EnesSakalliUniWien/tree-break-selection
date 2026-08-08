@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/edge/selected_edge_sibling_null_equation.py
-  - tests/validation/calibration/edge/92_test_selected_edge_sibling_null_equation.py
   - benchmarks/validation/statistics/selected_edge_type1_geometry.py
   - benchmarks/diagnostics/math_trace/barycentric_action.py
   - raw/assets/benchmark-results/selected-edge-type1-binary-categorical-pilot-20260604/merged/selected_edge_geometry_siblings.csv

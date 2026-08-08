@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_bayesian_incidence_mode_law.py
-  - tests/validation/calibration/overlap/128_test_overlap_bayesian_incidence_mode_law.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/bayesian_incidence_mode_law/overlap_bayesian_incidence_mode_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/bayesian_incidence_mode_law/overlap_bayesian_incidence_mode_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/bayesian_incidence_mode_law/manifest.json

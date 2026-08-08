@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-06-03
 sources:
   - benchmarks/diagnostics/spectral/mp/local_mp_identity_law_diagnostic.py
-  - tests/validation/spectral/mp/54_test_local_mp_identity_law_diagnostic.py
   - raw/assets/benchmark-results/local_mp_identity_law_20260602_representative/manifest.json
   - raw/assets/benchmark-results/local_mp_identity_law_20260602_representative/case_summary.csv
   - raw/assets/benchmark-results/local_mp_identity_law_20260602_representative/node_spectrum.csv

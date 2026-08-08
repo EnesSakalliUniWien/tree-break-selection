@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_structural_sibling_panel.py
-  - tests/validation/calibration/overlap/103_test_overlap_structural_sibling_panel.py
   - raw/assets/benchmark-results/overlap_structural_sibling_20260614/overlap_structural_sibling_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_20260614/overlap_structural_sibling_summary.csv
 tags:

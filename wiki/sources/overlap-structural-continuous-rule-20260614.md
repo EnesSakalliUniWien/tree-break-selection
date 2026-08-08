@@ -5,7 +5,6 @@ status: reviewed
 updated: 2026-07-28
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_structural_continuous_rule.py
-  - tests/validation/calibration/overlap/106_test_overlap_structural_continuous_rule.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/continuous_rules/overlap_structural_continuous_rule_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/continuous_rules/manifest.json
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/continuous_rules_fine/overlap_structural_continuous_rule_summary.csv
