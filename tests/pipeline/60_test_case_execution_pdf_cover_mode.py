@@ -4,23 +4,27 @@ import benchmarks.shared.util.case_execution as case_execution
 import pandas as pd
 
 
+def _successful_benchmark():
+    return pd.DataFrame([{"method": "tbs", "ari": 1.0}]), None
+
+
+class _Queue:
+    def __init__(self):
+        self.payloads: list[dict[str, object]] = []
+
+    def put(self, payload):
+        self.payloads.append(payload)
+
+
 def test_run_case_worker_defaults_to_file_safe_matplotlib_backend(monkeypatch):
     captured: dict[str, object] = {}
 
     def _fake_benchmark_fn(**kwargs):
         captured.update(kwargs)
-        df = pd.DataFrame([{"method": "tbs", "ari": 1.0}])
-        return df, None
+        return _successful_benchmark()
 
     monkeypatch.delenv("MPLBACKEND", raising=False)
     monkeypatch.setattr(case_execution, "_get_benchmark_fn", lambda: _fake_benchmark_fn)
-
-    class _Queue:
-        def __init__(self):
-            self.payloads: list[dict[str, object]] = []
-
-        def put(self, payload):
-            self.payloads.append(payload)
 
     q = _Queue()
     case_execution._run_case_worker(
@@ -69,17 +73,9 @@ def test_run_case_worker_disables_cover_pages(monkeypatch):
 
     def _fake_benchmark_fn(**kwargs):
         captured.update(kwargs)
-        df = pd.DataFrame([{"method": "tbs", "ari": 1.0}])
-        return df, None
+        return _successful_benchmark()
 
     monkeypatch.setattr(case_execution, "_get_benchmark_fn", lambda: _fake_benchmark_fn)
-
-    class _Queue:
-        def __init__(self):
-            self.payloads: list[dict[str, object]] = []
-
-        def put(self, payload):
-            self.payloads.append(payload)
 
     q = _Queue()
     case_execution._run_case_worker(

@@ -1,27 +1,6 @@
 from pathlib import Path
 
-import pytest
 from benchmarks.shared import pipeline
-
-
-def test_removed_plot_kwargs_raise_type_error():
-    with pytest.raises(TypeError):
-        pipeline.benchmark_cluster_algorithm(
-            test_cases=[],
-            verbose=True,
-            concat_plots_pdf=True,
-            concat_pattern="tree_case_*.png",
-            methods=[],
-        )
-
-    with pytest.raises(TypeError):
-        pipeline.benchmark_cluster_algorithm(
-            test_cases=[],
-            verbose=True,
-            concat_plots_pdf=True,
-            save_individual_plots=True,
-            methods=[],
-        )
 
 
 def test_concat_pdf_streams_and_no_pngs(monkeypatch, tmp_path: Path):

@@ -32,6 +32,35 @@ def _toy_dataframe() -> pd.DataFrame:
     )
 
 
+def _successful_method_result() -> MethodRunResult:
+    return MethodRunResult(
+        labels=np.array([0, 0, 1, 1], dtype=int),
+        found_clusters=2,
+        report_df=None,
+        status="ok",
+        skip_reason=None,
+        extra={},
+    )
+
+
+def _capturing_runner(captured: dict[str, object], *, include_args: bool = True):
+    def runner(*args, **kwargs):
+        if include_args:
+            captured["args"] = args
+        captured["kwargs"] = kwargs
+        return _successful_method_result()
+
+    return runner
+
+
+def _appending_runner(captured_calls: list[dict[str, object]]):
+    def runner(*args, **kwargs):
+        captured_calls.append({"args": args, "kwargs": kwargs})
+        return _successful_method_result()
+
+    return runner
+
+
 def test_dispatch_result_rejects_invalid_runner_params():
     df = _toy_dataframe()
     with pytest.raises(ValueError):
@@ -102,25 +131,14 @@ def test_run_clustering_result_uses_provided_tbs_distance_condensed():
 
 def test_run_clustering_result_builds_continuous_mahalanobis_time_distance(monkeypatch):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs",
         MethodSpec(
             name="TBS Divergence",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "mahalanobis_time",
@@ -150,25 +168,14 @@ def test_run_clustering_result_builds_continuous_standardized_euclidean_distance
     monkeypatch,
 ):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs",
         MethodSpec(
             name="TBS Divergence",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "standardized_euclidean",
@@ -199,25 +206,14 @@ def test_run_clustering_result_builds_continuous_standardized_euclidean_distance
 
 def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs",
         MethodSpec(
             name="TBS Divergence",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "hamming",
@@ -310,24 +306,14 @@ def test_run_clustering_result_uses_continuous_sibling_gate_only_for_continuous_
     monkeypatch,
 ):
     captured_calls = []
-
-    def _capture_runner(*args, **kwargs):
-        captured_calls.append({"args": args, "kwargs": kwargs})
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _appending_runner(captured_calls)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs",
         MethodSpec(
             name="TBS Adaptive Gate Test",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "euclidean",
@@ -593,24 +579,14 @@ def test_branch_length_optimization_apply_nonconverged_param_is_strict_bool():
 
 def test_tbs_dispatch_bool_params_do_not_treat_false_strings_as_true(monkeypatch):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured, include_args=False)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs",
         MethodSpec(
             name="TBS",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[{}],
         ),
     )
@@ -646,25 +622,14 @@ def test_tbs_dispatch_bool_params_do_not_treat_false_strings_as_true(monkeypatch
 def test_run_clustering_result_forwards_adaptive_nnls_branch_time_params(monkeypatch):
     captured = {}
     original_spec = METHOD_SPECS["tbs_diffusion_adaptive_nnls"]
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_diffusion_adaptive_nnls",
         MethodSpec(
             name=original_spec.name,
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=original_spec.param_grid,
         ),
     )
@@ -751,25 +716,14 @@ def test_adaptive_pydiffmap_dispatch_skips_zero_bandwidth_duplicate_blocks() -> 
 def test_run_clustering_result_forwards_graphtools_adaptive_k_params(monkeypatch):
     captured = {}
     original_spec = METHOD_SPECS["tbs_diffusion_graphtools_adaptive_nnls"]
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_diffusion_graphtools_adaptive_nnls",
         MethodSpec(
             name=original_spec.name,
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=original_spec.param_grid,
         ),
     )
@@ -801,25 +755,14 @@ def test_run_clustering_result_forwards_graphtools_neighbor_joining_tree_params(
         for params in original_spec.param_grid
         if params["tree_builder"] == "neighbor_joining"
     )
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_diffusion_graphtools_adaptive_nnls",
         MethodSpec(
             name=original_spec.name,
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=original_spec.param_grid,
         ),
     )
@@ -862,25 +805,14 @@ def test_method_registry_exposes_current_support_profiles():
 
 def test_run_clustering_result_dispatches_conditional_topology_as_kl(monkeypatch):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_conditional_topology_diagnostic",
         MethodSpec(
             name="TBS (Conditional Topology Diagnostic)",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "hamming",
@@ -911,25 +843,14 @@ def test_run_clustering_result_dispatches_conditional_topology_as_kl(monkeypatch
 
 def test_run_clustering_result_dispatches_global_passthrough_refined_as_kl(monkeypatch):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_global_passthrough_refined_diagnostic",
         MethodSpec(
             name="TBS (Global Passthrough Refined Diagnostic)",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "hamming",
@@ -960,25 +881,14 @@ def test_run_clustering_result_dispatches_global_passthrough_refined_as_kl(monke
 
 def test_run_clustering_result_dispatches_spectral_transport_as_kl(monkeypatch):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_spectral_transport_passthrough",
         MethodSpec(
             name="TBS (Spectral Transport Passthrough)",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "hamming",
@@ -1009,25 +919,14 @@ def test_run_clustering_result_dispatches_spectral_transport_as_kl(monkeypatch):
 
 def test_run_clustering_result_dispatches_iqtree_without_condensed_distance(monkeypatch):
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_iqtree3",
         MethodSpec(
             name="TBS (IQ-TREE 3, MAD Root)",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[
                 {
                     "tree_distance_metric": "hamming",
@@ -1088,24 +987,14 @@ def test_run_clustering_result_gives_distance_tree_nnls_methods_their_own_geomet
     rather than falling through the generic TBS_RUNNER_METHODS dispatch branch
     that never wires branch_length_data_df through."""
     captured = {}
-
-    def _capture_runner(*args, **kwargs):
-        captured["kwargs"] = kwargs
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={},
-        )
+    capture_runner = _capturing_runner(captured, include_args=False)
 
     monkeypatch.setitem(
         METHOD_SPECS,
         "tbs_nnls",
         MethodSpec(
             name="TBS Divergence (NNLS branch lengths)",
-            runner=_capture_runner,
+            runner=capture_runner,
             param_grid=[{}],
         ),
     )

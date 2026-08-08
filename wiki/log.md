@@ -2,7 +2,7 @@
 title: Wiki Log
 type: control
 status: reviewed
-updated: 2026-08-07
+updated: 2026-08-08
 sources:
   - AGENTS.md
   - raw/inbox/wiki-construction-brief.md
@@ -6167,6 +6167,113 @@ converts dropped draws into `nan` through its `min_success` check, and the other
 two scan arbitrary local result directories where a malformed CSV must not abort
 an inventory. Narrowing those exception types is worth doing but changes
 behaviour, so it is not part of this pass.
+
+### 2026-08-08
+
+#### Dispatch test-fixture consolidation
+
+Replaced 13 repeated `_capture_runner` definitions in
+`tests/pipeline/51_test_dispatch_contract.py` with three small module-level test
+helpers: one constructs the common successful `MethodRunResult`, one captures a
+single runner call, and one appends repeated calls. The three observed capture
+behaviours remain distinct. This removes 111 net lines while retaining all 30
+dispatch-contract tests. This corrects the 2026-08-07 inventory note, which
+counted only 10 of the 13 local definitions.
+
+#### Test-suite dead-gate and fixture cleanup
+
+Removed two migration-only tests whose subjects no longer exist:
+`test_runtime_config_modules_are_removed` guarded two deleted configuration
+modules, and `test_removed_plot_kwargs_raise_type_error` guarded two deleted
+benchmark keyword arguments. Exact search found no live implementation or
+consumer for those modules or arguments, and history identifies both tests as
+post-removal gates rather than behavioural requirements. Removed four related
+absence assertions for retired benchmark dimensions and case identifiers while
+retaining the surrounding positive generator and replacement-case contracts.
+
+Consolidated repeated local test doubles without deleting their callers or
+assertions: five stable-root stubs and ten selected-root stubs in
+`31_test_registry_config_wiring.py`, four successful method-result runners in
+`52_test_method_execution_index_alignment.py`, and two queue classes plus their
+common successful result construction in
+`60_test_case_execution_pdf_cover_mode.py`. Together with the dispatch cleanup,
+the test tree loses 218 net lines and only the two dead-gate tests; the live
+suite moves from 1,368 to 1,366 collected tests.
+
+Retained the one runtime R skip because it covers a supported optional runtime.
+Also retained the two syntactically identical repository-root tests: they read
+different module constants, so either relocated command can regress
+independently. Negative tests for live statistical parameters, fail-closed
+outcomes, and method-registration policy remain live boundary contracts rather
+than deletion-history gates.
+
+#### Completed agent-plan cleanup
+
+Deleted four unreferenced execution plans under `docs/superpowers/plans/`,
+removing 3,458 lines of completed agent scaffolding. The plans still contained
+31, 32, 59, and 41 unchecked task boxes and stale execution instructions even
+though their declared outputs are now represented by production or diagnostic
+code, focused tests, raw evidence, wiki source pages, and the open-question
+ledger. No repository page, command, test, or publishing surface linked to any
+of the four plan paths. Git history remains the recovery path for their
+task-by-task instructions.
+
+Retained both `docs/superpowers/specs/` design records: the path-conditioned
+barycentric design is cited by a wiki analysis, and the unsupported-outcome
+design records the rationale behind a live public benchmark status contract.
+Retained the `.mex/` router because root `AGENTS.md` explicitly requires that
+compatibility bridge. Retained `tools/repository_audit/`, which has a documented
+public command, repeated project usage, and a maintained wiki tool page, and
+retained `scripts/rest_request.py`, which remains part of the documented GO
+annotation pipeline.
+
+Removed the undocumented `--skip-static-manifest-validation` alias from
+`verify_recent_benchmark_provenance.py`. It was introduced in the same commit as
+the canonical `--skip-manifest-validation` spelling, has no repository caller or
+current documentation, and therefore has no migration history or independent
+consumer evidence. The canonical flag and its behaviour remain unchanged.
+
+Retained the other reviewed candidates:
+
+- The five AWS shard validators and two replicate-coverage validators have
+  similar shapes but enforce different grid, manifest, and error-reporting
+  contracts, with dedicated tests and documented commands. Consolidating them
+  would couple independent studies without removing duplicated semantics.
+- Exact duplicate files under `raw/assets/benchmark-results/` remain primary
+  evidence and are cited by source pages and experiment contracts; they are not
+  cleanup targets.
+- `[tool.deptry]` remains because the documented repository-hygiene audit invokes
+  it. Whether to make the tool reproducibly available through a project extra
+  or an ephemeral runner is a separate dependency-policy decision.
+- BranchArchitect's `biopython` and `orjson` packages remain live optional-extra
+  dependencies. Whether that extra belongs in the aggregate `all` extra is an
+  owner-facing packaging decision.
+- `selected_quadratic_law_audit.py` remains a tested analysis surface. Its
+  missing dedicated wiki record is a documentation gap, not evidence that the
+  implementation is dead.
+
+#### Development dependency pruning
+
+Removed `radon`, `lizard`, `xenon`, and `wily` from the `dev` and aggregate
+`all` extras. They had been added together as optional complexity tools, but no
+repository command, audit adapter, documentation page, CI surface, or source
+module invokes them; the maintained `tbs-audit` workflow uses Ruff, Vulture,
+jscpd, pytest-deadfixtures, LibCST, Grimp, and coverage instead. Deptry also
+reported all four as unused. Regenerating `uv.lock` removed those four packages
+and seven packages used only by them, reducing the lock from 213 to 202
+packages without changing runtime dependencies.
+
+#### Repository storage pruning
+
+Removed the tracked `manuscript/tools/vale` executable and added it to
+`manuscript/.gitignore`. The 37.2 MiB file was a macOS ARM binary generated by
+the maintained `manuscript/install_vale.sh` installer, so it was not portable
+to other supported development platforms and duplicated the documented install
+path. `manuscript/Makefile` still accepts either the installer-provided local
+binary or a `vale` executable on `PATH`; `manuscript/README.md` already directs
+contributors to run the installer before prose linting. This reduces checkout
+size only; the historical blob remains in Git until an explicitly authorized
+history migration is performed.
 
 ## Evidence
 

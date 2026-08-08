@@ -630,7 +630,6 @@ def main() -> int:
     parser.add_argument("--date-pattern", default=DEFAULT_DATE_PATTERN)
     parser.add_argument(
         "--skip-manifest-validation",
-        "--skip-static-manifest-validation",
         dest="skip_manifest_validation",
         action="store_true",
         help="Only check coverage signals; do not validate manifest contents.",

@@ -117,6 +117,39 @@ def _build_passthrough_tree_with_leaf_data() -> tuple[
     return tree, annotations_df, leaf_data
 
 
+def _stable_root(*_args, **_kwargs):
+    return {
+        "root_stability_subsample_mean_ari": 1.0,
+        "root_stability_subsample_median_ari": 1.0,
+        "root_stability_subsample_q10_ari": 1.0,
+    }
+
+
+def _selected_root(selected_p_value: float):
+    def runner(*_args, **_kwargs):
+        return {
+            "root_observed_p_value": 0.001,
+            "root_selective_p_value": selected_p_value,
+            "root_selective_null_min_p_value": 0.01,
+            "root_selective_null_q05_p_value": 0.05,
+        }
+
+    return runner
+
+
+def _recording_selected_root(calls: list[tuple[object, ...]], selected_p_value: float):
+    def runner(data, *_args, **_kwargs):
+        calls.append(tuple(data.index))
+        return {
+            "root_observed_p_value": 0.001,
+            "root_selective_p_value": selected_p_value,
+            "root_selective_null_min_p_value": 0.01,
+            "root_selective_null_q05_p_value": 0.05,
+        }
+
+    return runner
+
+
 def test_pipeline_supports_current_gate_annotation_contract() -> None:
     tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
 
@@ -526,12 +559,7 @@ def test_pipeline_profile_avoids_adaptive_sibling_pca(monkeypatch) -> None:
     def fail_if_called(*_args, **_kwargs):
         raise AssertionError("fixed profile must not resolve parent PCA inputs")
 
-    def stable_root(*_args, **_kwargs):
-        return {
-            "root_stability_subsample_mean_ari": 1.0,
-            "root_stability_subsample_median_ari": 1.0,
-            "root_stability_subsample_q10_ari": 1.0,
-        }
+    stable_root = _stable_root
 
     monkeypatch.setattr(orchestrator, "_resolve_sibling_gate_inputs", fail_if_called)
     monkeypatch.setattr(
@@ -667,13 +695,7 @@ def test_root_selective_permutation_guard_closes_unselected_open_root(
     annotated.loc[root, "Sibling_BH_Same"] = False
     annotated.loc["A", "Sibling_BH_Different"] = True
 
-    def fake_selected_root(*_args, **_kwargs):
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.50,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _selected_root(0.50)
 
     monkeypatch.setattr(
         guard_module,
@@ -720,13 +742,7 @@ def test_selective_permutation_guard_closes_open_internal_context(
     annotated.loc["cal", "Sibling_BH_Different"] = True
     annotated.loc["cal", "Sibling_BH_Same"] = False
 
-    def fake_selected_root(*_args, **_kwargs):
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.50,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _selected_root(0.50)
 
     monkeypatch.setattr(
         guard_module,
@@ -771,14 +787,7 @@ def test_selective_permutation_guard_closes_only_passthrough_descendant(
 
     calls: list[tuple[object, ...]] = []
 
-    def fake_selected_root(data, *_args, **_kwargs):
-        calls.append(tuple(data.index))
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.50,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _recording_selected_root(calls, 0.50)
 
     monkeypatch.setattr(
         guard_module,
@@ -1083,14 +1092,7 @@ def test_selective_permutation_passthrough_scope_keeps_descendant_after_open_roo
 
     calls: list[tuple[object, ...]] = []
 
-    def fake_selected_root(data, *_args, **_kwargs):
-        calls.append(tuple(data.index))
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.01,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _recording_selected_root(calls, 0.01)
 
     monkeypatch.setattr(
         guard_module,
@@ -1136,14 +1138,7 @@ def test_selective_permutation_passthrough_scope_skips_guard_blocked_ancestor(
 
     calls: list[tuple[object, ...]] = []
 
-    def fake_selected_root(data, *_args, **_kwargs):
-        calls.append(tuple(data.index))
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.50,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _recording_selected_root(calls, 0.50)
 
     monkeypatch.setattr(
         guard_module,
@@ -1216,13 +1211,7 @@ def test_pipeline_runs_opt_in_root_selective_permutation_guard(monkeypatch) -> N
     tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
 
-    def fake_selected_root(*_args, **_kwargs):
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.50,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _selected_root(0.50)
 
     monkeypatch.setattr(
         guard_module,
@@ -1255,20 +1244,9 @@ def test_pipeline_selective_root_profile_runs_packaged_guard(monkeypatch) -> Non
     tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
 
-    def stable_root(*_args, **_kwargs):
-        return {
-            "root_stability_subsample_mean_ari": 1.0,
-            "root_stability_subsample_median_ari": 1.0,
-            "root_stability_subsample_q10_ari": 1.0,
-        }
+    stable_root = _stable_root
 
-    def fake_selected_root(*_args, **_kwargs):
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.50,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _selected_root(0.50)
 
     monkeypatch.setattr(
         orchestrator,
@@ -1308,20 +1286,9 @@ def test_pipeline_selective_traversal_profile_sets_open_internal_scope(
     tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
 
-    def stable_root(*_args, **_kwargs):
-        return {
-            "root_stability_subsample_mean_ari": 1.0,
-            "root_stability_subsample_median_ari": 1.0,
-            "root_stability_subsample_q10_ari": 1.0,
-        }
+    stable_root = _stable_root
 
-    def fake_selected_root(*_args, **_kwargs):
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.01,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _selected_root(0.01)
 
     monkeypatch.setattr(
         orchestrator,
@@ -1360,20 +1327,9 @@ def test_pipeline_selective_passthrough_profile_sets_passthrough_scope(
     tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
 
-    def stable_root(*_args, **_kwargs):
-        return {
-            "root_stability_subsample_mean_ari": 1.0,
-            "root_stability_subsample_median_ari": 1.0,
-            "root_stability_subsample_q10_ari": 1.0,
-        }
+    stable_root = _stable_root
 
-    def fake_selected_root(*_args, **_kwargs):
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.01,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _selected_root(0.01)
 
     monkeypatch.setattr(
         orchestrator,
@@ -1414,20 +1370,9 @@ def test_pipeline_global_passthrough_profile_sets_global_scope(
     tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
 
-    def stable_root(*_args, **_kwargs):
-        return {
-            "root_stability_subsample_mean_ari": 1.0,
-            "root_stability_subsample_median_ari": 1.0,
-            "root_stability_subsample_q10_ari": 1.0,
-        }
+    stable_root = _stable_root
 
-    def fake_selected_root(*_args, **_kwargs):
-        return {
-            "root_observed_p_value": 0.001,
-            "root_selective_p_value": 0.01,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
+    fake_selected_root = _selected_root(0.01)
 
     def fake_selected_family(*_args, **kwargs):
         return {

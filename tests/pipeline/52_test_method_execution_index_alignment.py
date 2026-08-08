@@ -66,6 +66,21 @@ def _benchmark_meta(**overrides):
     return metadata
 
 
+def _capturing_successful_tbs_result(captured_kwargs: dict[str, object]):
+    def runner(**kwargs):
+        captured_kwargs.update(kwargs)
+        return MethodRunResult(
+            labels=np.array([0, 0, 1, 1], dtype=int),
+            found_clusters=2,
+            report_df=None,
+            status="ok",
+            skip_reason=None,
+            extra={"stage_timings": _stage_timings()},
+        )
+
+    return runner
+
+
 def test_run_single_method_once_aligns_report_rows_by_sample_id(monkeypatch):
     data_t = pd.DataFrame(
         [[0, 1], [1, 0], [0, 0], [1, 1], [0, 1], [1, 0]],
@@ -181,19 +196,12 @@ def test_run_single_method_once_reuses_prepared_hamming_distance(monkeypatch):
     def _forbidden_pdist(*_args, **_kwargs):
         raise AssertionError("Prepared Hamming TBS distance should be reused.")
 
-    def _fake_run_clustering_result(**kwargs):
-        captured_kwargs.update(kwargs)
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={"stage_timings": _stage_timings()},
-        )
-
     monkeypatch.setattr(method_execution, "pdist", _forbidden_pdist)
-    monkeypatch.setattr(method_execution, "run_clustering_result", _fake_run_clustering_result)
+    monkeypatch.setattr(
+        method_execution,
+        "run_clustering_result",
+        _capturing_successful_tbs_result(captured_kwargs),
+    )
 
     spec = MethodSpec(name="TBS", runner=lambda **_kwargs: None, param_grid=[{}])
     result_row, computed_result, method_audit = method_execution.run_single_method_once(
@@ -234,18 +242,11 @@ def test_run_single_method_once_records_precomputed_tbs_distance_contract(monkey
     precomputed_distance = np.array([0.1, 1.4, 1.3, 1.3, 1.2, 0.1], dtype=float)
     captured_kwargs = {}
 
-    def _fake_run_clustering_result(**kwargs):
-        captured_kwargs.update(kwargs)
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={"stage_timings": _stage_timings()},
-        )
-
-    monkeypatch.setattr(method_execution, "run_clustering_result", _fake_run_clustering_result)
+    monkeypatch.setattr(
+        method_execution,
+        "run_clustering_result",
+        _capturing_successful_tbs_result(captured_kwargs),
+    )
 
     spec = MethodSpec(name="TBS", runner=lambda **_kwargs: None, param_grid=[{}])
     result_row, computed_result, _method_audit = method_execution.run_single_method_once(
@@ -300,18 +301,11 @@ def test_run_single_method_once_records_conditional_topology_precomputed_distanc
     precomputed_distance = np.array([0.1, 1.4, 1.3, 1.3, 1.2, 0.1], dtype=float)
     captured_kwargs = {}
 
-    def _fake_run_clustering_result(**kwargs):
-        captured_kwargs.update(kwargs)
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={"stage_timings": _stage_timings()},
-        )
-
-    monkeypatch.setattr(method_execution, "run_clustering_result", _fake_run_clustering_result)
+    monkeypatch.setattr(
+        method_execution,
+        "run_clustering_result",
+        _capturing_successful_tbs_result(captured_kwargs),
+    )
 
     spec = MethodSpec(
         name="TBS (Conditional Topology Diagnostic)",
@@ -363,18 +357,11 @@ def test_run_single_method_once_records_neighbor_joining_tree_contract(monkeypat
     y_t = np.array([0, 0, 1, 1], dtype=int)
     captured_kwargs = {}
 
-    def _fake_run_clustering_result(**kwargs):
-        captured_kwargs.update(kwargs)
-        return MethodRunResult(
-            labels=np.array([0, 0, 1, 1], dtype=int),
-            found_clusters=2,
-            report_df=None,
-            status="ok",
-            skip_reason=None,
-            extra={"stage_timings": _stage_timings()},
-        )
-
-    monkeypatch.setattr(method_execution, "run_clustering_result", _fake_run_clustering_result)
+    monkeypatch.setattr(
+        method_execution,
+        "run_clustering_result",
+        _capturing_successful_tbs_result(captured_kwargs),
+    )
 
     spec = MethodSpec(name="TBS (Neighbor Joining)", runner=lambda **_kwargs: None, param_grid=[{}])
     result_row, computed_result, _method_audit = method_execution.run_single_method_once(

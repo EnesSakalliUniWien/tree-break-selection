@@ -8,11 +8,9 @@ from benchmarks.shared.generators.generate_case_data import generate_case_data
 from tree_break_selection.tree.feature_space import FeatureSpace
 
 
-def test_default_benchmark_cases_declare_generator_and_canonical_geometry() -> None:
+def test_default_benchmark_cases_declare_generator() -> None:
     for case in get_default_test_cases():
         assert "generator" in case
-        assert "n_rows" not in case
-        assert "n_cols" not in case
 
 
 def test_generated_case_metadata_names_source_family_and_representation() -> None:
@@ -83,9 +81,6 @@ def test_benchmark_case_suites_separate_input_contracts() -> None:
 
 def test_high_dimensional_gaussian_cases_have_explicit_signal_semantics() -> None:
     cases_by_name = {case["name"]: case for case in get_default_test_cases()}
-
-    assert "gauss_extreme_noise_highd" not in cases_by_name
-    assert "gauss_extreme_noise_highd_continuous" not in cases_by_name
 
     dense = cases_by_name["gauss_dense_signal_highd"]
     assert {
