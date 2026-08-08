@@ -2,16 +2,14 @@
 title: Selected Neighborhood Bottleneck Law
 type: analysis
 status: draft
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/sources/selected-neighborhood-signal-flow-literature-20260617.md
   - wiki/sources/graph-neural-geometry-spectral-artifact-literature-20260617.md
-  - wiki/sources/selected-neighborhood-conditional-support-panel-20260617.md
   - wiki/sources/selected-neighborhood-internal-spectral-flow-panel-20260617.md
   - wiki/sources/old-vs-current-method-stack-comparison-20260615.md
   - wiki/sources/sibling-null-prior-interpolation-audit-20260604.md
-  - wiki/sources/specific-small-method-benchmark-20260615.md
   - wiki/sources/selected-neighborhood-distribution-panel-20260615.md
   - wiki/sources/overlap-conditional-topology-law-panel-20260615.md
   - wiki/sources/retained-pass-through-topology-likelihood-panel-20260615.md
@@ -262,13 +260,6 @@ pass-through signal once the missing topology likelihood is identifiable.
   `25%` signal, `5%` null-leak target. On `overlap_extreme_4c`, branch-length
   interpolation catches `426` signal positives but also opens `939`
   selected-null positives.
-- [[selected-neighborhood-conditional-support-panel-20260617]] records the
-  first root-conditioned support join over the expanded overlap candidates.
-  With strict root validity, topology, local support, and spectral-flow checks,
-  the run reports `0` conditional neighborhood support passes, `0`
-  selected-null neighborhood leaks, and `0` hard-negative leaks. This keeps
-  `overlap_extreme_4c` blocked and localizes the current gap to topology/root
-  context rather than raw bandwidth availability.
 - [[selected-neighborhood-internal-spectral-flow-panel-20260617]] records that
   internal barycenters do recover many MP-supported spectral-flow edges, but
   the gain is mirrored on selected-null rows: `710` selected-null support
@@ -282,23 +273,12 @@ pass-through signal once the missing topology likelihood is identifiable.
   of three overlap cases and degrades in two, while internal-only support
   remains large and mirrored on selected-null rows. This makes angle/radius
   energy a bottleneck localizer and coherence diagnostic, not a split rescue.
-- [[selected-neighborhood-internal-spectral-flow-conditional-energy-20260617]]
-  records the larger seven-case overlap run and the root-conditioned
-  postprocess. Internal MP support reacts strongly, but `0/7` signal rows are
-  admissible rescue candidates after root validity, root-tail support, strict
-  shared energy improvement, hard-negative blocking, and paired selected-null
-  checks. This does not contradict the empirical fact that older bandwidth and
-  internal-node mechanisms helped some clustering rows; it says those
-  mechanisms are not yet valid unconditional rescue evidence.
 - [[old-vs-current-method-stack-comparison-20260615]] records the old
   `tau_b`, `tau_t`, `tau_s`, and `h_k` bandwidth layer and why it cannot be
   restored as a permissive prior update.
 - [[sibling-null-prior-interpolation-audit-20260604]] records that the old
   interpolated sibling-null priors borrowed selected non-null rows and were
   descriptive, not strict production calibration.
-- [[specific-small-method-benchmark-20260615]] records that the bandwidth
-  component is useful local context but not a standalone separator; coherent
-  outgoing topology and `balance_product` carry the recovery signal.
 - [[selected-neighborhood-distribution-panel-20260615]] records that signal
   pass-through rows lack joined old/current neighborhood evidence, turning the
   issue into an explicit coverage and selected-neighborhood law problem.
@@ -321,10 +301,8 @@ pass-through signal once the missing topology likelihood is identifiable.
 - [[traversal-neighborhood-method-comparison]]
 - [[selected-neighborhood-signal-flow-literature-20260617]]
 - [[graph-neural-geometry-spectral-artifact-literature-20260617]]
-- [[selected-neighborhood-conditional-support-panel-20260617]]
 - [[selected-neighborhood-internal-spectral-flow-panel-20260617]]
 - [[old-vs-current-method-stack-comparison-20260615]]
-- [[specific-small-method-benchmark-20260615]]
 - [[selected-neighborhood-distribution-panel-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
 - [[retained-pass-through-topology-likelihood-panel-20260615]]

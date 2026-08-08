@@ -2,7 +2,7 @@
 title: Selected Tail Promotion Gate Debug 2026-06-05
 type: source
 status: reviewed
-updated: 2026-06-05
+updated: 2026-08-08
 sources:
   - benchmarks/results/diagnostics/selected_tail_promotion_gate_debug_20260605/promotion_gate_sensitivity_summary.csv
   - benchmarks/results/diagnostics/selected_tail_promotion_gate_debug_20260605/predicate_blocker_counts.csv
@@ -60,6 +60,5 @@ precision, both, or neither.
 
 ## Links
 
-- [[selected-tail-promotion-gate-20260604]]
 - [[selected-tail-parent-size-balance-stability-20260604]]
 - [[open-mathematical-questions]]

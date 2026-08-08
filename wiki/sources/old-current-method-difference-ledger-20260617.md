@@ -2,7 +2,7 @@
 title: Old Current Method Difference Ledger 2026-06-17
 type: source
 status: reviewed
-updated: 2026-06-17
+updated: 2026-08-08
 sources:
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/old_current_method_difference_ledger_20260617
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_selected_kernel_spectral_tail_law_20260617
@@ -78,5 +78,3 @@ records only the retained generated output.
 - [[old-vs-current-method-stack-comparison-20260615]]
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]]
 - [[root-conditional-kernel-spectral-law]]
-- [[root-selected-kernel-spectral-tail-law-20260617]]
-- [[spectral-vs-bandwidth-tradeoff-panel-20260616]]

@@ -2,14 +2,12 @@
 title: Selected Neighborhood Measurability Law
 type: analysis
 status: draft
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/analyses/selected-neighborhood-bottleneck-law.md
   - wiki/sources/sibling-null-prior-interpolation-audit-20260604.md
   - wiki/sources/old-vs-current-method-stack-comparison-20260615.md
-  - wiki/sources/overlap-method-clustering-comparison-20260616.md
-  - wiki/sources/overlap-signal-suppression-localizer-20260616.md
   - wiki/sources/selected-neighborhood-spectral-flow-diagnostic-20260616.md
   - wiki/sources/selected-neighborhood-topology-frontier-diagnostic-20260616.md
   - wiki/sources/root-selected-region-overlap-case-family-20260616.md
@@ -18,13 +16,7 @@ sources:
   - wiki/sources/root-tie-rank-calibration-feasibility-20260616.md
   - wiki/sources/root-tie-rank-selected-null-simulation-pilot-20260616.md
   - wiki/sources/root-tie-rank-null-proposal-frontier-20260616.md
-  - wiki/sources/root-tie-rank-proposal-gap-panel-20260616.md
-  - wiki/sources/root-tie-rank-spectral-action-dominance-panel-20260616.md
-  - wiki/sources/root-tie-rank-coupling-equation-panel-20260616.md
-  - wiki/sources/root-tie-rank-neighborhood-join-audit-20260616.md
   - wiki/sources/root-tie-rank-generated-neighborhood-replay-20260616.md
-  - wiki/sources/root-tie-rank-measured-coupling-residual-panel-20260616.md
-  - wiki/sources/root-tie-rank-selected-spectral-excess-panel-20260616.md
   - wiki/sources/root-tie-rank-selected-spectral-generator-targets-20260616.md
   - wiki/sources/root-tie-rank-spectral-lift-parameter-sweep-20260616.md
   - wiki/sources/root-tie-rank-conditioned-coherent-topology-join-20260617.md
@@ -33,14 +25,10 @@ sources:
   - wiki/sources/root-tie-rank-target-conditioned-importance-frontier-20260617.md
   - wiki/sources/spectral-transport-passthrough-guard-20260616.md
   - wiki/sources/spectral-transport-threshold-calibration-panel-20260616.md
-  - wiki/sources/spectral-transport-promotion-gate-20260616.md
   - wiki/sources/spectral-transport-promoted-replicate-panel-20260616.md
-  - wiki/sources/spectral-vs-bandwidth-tradeoff-panel-20260616.md
   - wiki/sources/legacy-internal-spectral-comparison-panel-20260616.md
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py
-  - benchmarks/diagnostics/calibration/overlap/overlap_signal_suppression_localizer.py
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_spectral_flow.py
-  - benchmarks/diagnostics/calibration/statistics/spectral_vs_bandwidth_tradeoff_panel.py
 tags:
   - analysis
   - traversal
@@ -423,9 +411,6 @@ should otherwise stop and report the mathematical reason.
   fragmentation is an audit outcome, not a production penalty.
 - [[sibling-null-prior-interpolation-audit-20260604]] records why interpolated
   priors are diagnostic unless support excludes selected non-null borrowing.
-- [[overlap-signal-suppression-localizer-20260616]] localizes the few useful
-  guarded-signal suppressions to heavy-overlap cases, while unbalanced and
-  partial overlap extra movement mostly overfragments.
 - [[selected-neighborhood-spectral-flow-diagnostic-20260616]] records that
   MP eigenvalue/eigenvector flow has weak but directionally useful
   signal-vs-selected-null separation on three overlap cases, so it is a
@@ -435,23 +420,14 @@ should otherwise stop and report the mathematical reason.
   residuals; the current overlap run has almost only singleton blocks, so
   multiplicity and polynomial terms are implemented but not active separators.
 - [[spectral-transport-passthrough-guard-20260616]],
-  [[spectral-transport-threshold-calibration-panel-20260616]],
-  [[spectral-transport-overlap-dispatch-panel-20260616]], and
-  [[spectral-transport-promotion-gate-20260616]] record the current traversal
+  [[spectral-transport-threshold-calibration-panel-20260616]], and
+  [[spectral-transport-overlap-dispatch-panel-20260616]] record the current traversal
   integration: strict MP-required support preserves the three standard signal
   overlap rows, fixes the selected-null `overlap_mod_4c_small` oversplit, and
   passes the one-replicate targeted traversal-promotion gate. The later
   [[spectral-transport-promoted-replicate-panel-20260616]] shows why it should
   stay opt-in rather than default: selected-null false splits are greatly
   reduced, but four signal rows regress under the strict support rule.
-- [[spectral-vs-bandwidth-tradeoff-panel-20260616]] records the direct
-  comparison against the older bandwidth interpolation diagnostic. Strict MP
-  spectral support reduces selected-null false splits from `117/150` to
-  `3/150` but regresses `4/150` signal rows; default bandwidth interpolation
-  suppresses selected-null direct positives but catches no direct signal
-  positives, and at `tau_s = 20` reopens `0.808659` of selected-null positives
-  while recovering only `0.450639` of signal positives. This supports a hybrid
-  diagnostic path rather than promotion of either component alone.
 - [[selected-neighborhood-topology-frontier-diagnostic-20260616]] records the
   root/non-root threshold version of the same problem. At `tau_s = 20`,
   direct-positive bandwidth reopen counts are `579` selected-null versus `388`
@@ -521,38 +497,6 @@ should otherwise stop and report the mathematical reason.
   high-action, high-edge-margin, high-spectral-ratio, or additive
   action-plus-spike generator; it must jointly condition selected tie rank,
   edge margin, spectral ratio, and measured bandwidth-reopen behavior.
-- [[root-tie-rank-proposal-gap-panel-20260616]] quantifies that failure mode
-  across all seven observed targets and five proposal families. Dense
-  two-block and coupled edge-spectral proposals exceed every target selected
-  ratio and match edge-margin bands for `4/7` targets, but fail spectrally.
-  Iid, column-beta, and sparse-spike proposals match spectral bands for
-  `4/7`, `4/7`, and `5/7` targets respectively, but lack high edge/action.
-  Every best generated row also has unmeasured bandwidth. This turns the next
-  root-law target into a selected spectral-action coupling rather than another
-  independent coordinate threshold.
-- [[root-tie-rank-spectral-action-dominance-panel-20260616]] strengthens the
-  same conclusion on continuous coordinates. No generated proposal row has
-  full continuous dominance or spectral-action dominance over any observed
-  target. Dense and coupled proposals dominate selected-ratio action and edge
-  margin for `7/7` targets but never dominate spectral ratio; iid,
-  column-beta, and sparse-spike proposals sometimes dominate spectral ratio but
-  never action or edge. The coupling is therefore not only a binning artifact.
-- [[root-tie-rank-coupling-equation-panel-20260616]] makes the coupling
-  explicit as \(C_{\min}=T\min(A,E)S\), with \(A\) the log selected-ratio
-  action, \(E\) the log edge action, \(S\) the MP spectral excess, and \(T\)
-  the selected tie-rank fraction. Pure coupling reaches only some easier
-  observed roots, while measured-neighborhood coupling reaches `0/7` targets
-  for every proposal family because all generated proposal roots have missing
-  bandwidth evidence. Thus the coupling scalar is a useful diagnostic
-  coordinate, but the selected-neighborhood measurability factor remains
-  ungenerated and uncalibrated.
-- [[root-tie-rank-neighborhood-join-audit-20260616]] localizes that missing
-  measurability factor. In the two-case smoke, all `10` generated proposal
-  matrices exist, but no generated proposal root has selected-neighborhood
-  topology-frontier rows. The observed roots do have topology-frontier rows.
-  Thus the immediate next diagnostic is not a new proposal distribution; it is
-  a generated-matrix replay through selected-neighborhood measurability and
-  topology-frontier annotation before root feasibility is recomputed.
 - [[root-tie-rank-generated-neighborhood-replay-20260616]] performs that
   generated-matrix replay. All `10` generated proposal matrices replay
   successfully and every generated proposal root now has measured
@@ -564,23 +508,6 @@ should otherwise stop and report the mathematical reason.
   and not the hard overlap roots. The remaining blocker is therefore no longer
   generated bandwidth coverage; it is the selected spectral-action/tie-rank
   law and external support for the discrete root stratum.
-- [[root-tie-rank-measured-coupling-residual-panel-20260616]] localizes that
-  remaining blocker at the target level. The coupled edge-spectral proposal is
-  the best measured proposal for all seven observed targets. For the five
-  unresolved hard or partial targets, the action-edge bottleneck has zero
-  relative deficit, and the dominant residual axis is spectral excess. Thus
-  the next mathematical object is not another action, edge, or bandwidth
-  threshold. It is the selected spectral-excess law conditional on high
-  action-edge and selected tie-rank geometry.
-- [[root-tie-rank-selected-spectral-excess-panel-20260616]] tests that
-  conditional spectral object directly. Even where the measured coupling
-  product reaches easier targets, the target spectral excess itself is not
-  reached. Every target has diagnostic high-action-edge/tie measured proposal
-  support, but zero selected-null calibration support. The best spectral row is
-  the same coupled proposal for all targets; hard roots still require median
-  spectral-excess multiplier about `2.63`. Thus product coupling is not enough
-  for a calibrated law. The remaining root object is a selected spectral-excess
-  tail under high action-edge/tie conditioning.
 - [[root-tie-rank-selected-spectral-generator-targets-20260616]] turns that
   residual into proposal-family generator requirements. Only the coupled
   edge-spectral and two-block tilt diagnostic families cover `7/7` observed
@@ -661,44 +588,6 @@ should otherwise stop and report the mathematical reason.
   sharper selected-root analytic tail or a higher-dimensional proposal that
   directly conditions the selected tie-cell/tie-rank event, not only block
   imbalance, residual factor energy, or post-hoc rejection.
-- [[root-selected-spectral-tail-nearest-support-20260617]] localizes that
-  remaining gap without changing the fail-closed rule. The nearest-support
-  panel keeps exact same-stratum support as the only p-value source, but
-  reports the closest selected-null/external-null row in \(T,A,E,B,H_u\)
-  coordinates for each target. Exact support remains `2/7`, nearest support is
-  available for all seven targets, and the five unsupported targets remain
-  `fail_closed_nearest_support_only`. For the hard roots, bandwidth/topology
-  usually already matches; the dominant nearest-support blocker is selected-
-  ratio action. This moves the next object from "run topology replay" or
-  "add residual spectral energy" to an analytic or generated law for the
-  selected root tie-cell/tie-rank construction coupled to selected-ratio
-  action.
-- [[root-selected-action-conditioning-ladder-20260617]] quantifies that
-  blocker as a nested conditioning ladder. Exact \(T,A,E,B,H_u\) support
-  remains `2/7`. Relaxing only \(A\) while keeping \(T,E,B,H_u\) restores
-  diagnostic support for `overlap_mod_4c_small`, `overlap_mod_6c_med`, and
-  `overlap_part_4c_small`, so selected-ratio action is the minimal missing
-  coordinate for those roots. `overlap_heavy_4c_small_feat` and
-  `overlap_unbal_4c_small` remain unsupported until \(E\) is relaxed too.
-  Thus the next root law should split into an action-conditioned selected-tail
-  law for three roots and an action-plus-edge selected-tail law for the two
-  remaining roots, with relaxed rows still barred from production p-values.
-- [[root-selected-action-dominance-tail-20260617]] tests the one-sided version
-  of the action law. For the three action-only roots, support exists with the
-  same \(T,E,B,H_u\) and \(A_{\mathrm{support}}\ge A_{\mathrm{target}}\), but
-  none of those support rows exceed the target \(S_{\mathrm{root}}\). This
-  blocks a simple empirical one-sided rescue. The remaining mathematical
-  obligation is a real selected-root monotonicity or domination theorem; absent
-  that theorem, the diagnostic p-values under action dominance stay
-  non-production and the roots remain fail-closed.
-- [[root-selected-population-law-requirement-20260617]] translates the
-  remaining spectral gap into an \(H_u\) requirement. For the three
-  action-dominance fail-closed roots, matching the target to the largest
-  supported \(S_{\mathrm{root}}\) would require MP-edge multipliers
-  `2.353980`, `3.257578`, and `2.378802`. This is too large to treat as a
-  harmless identity-MP numerical correction. The next path must either
-  estimate a real local null-whitened spectral population law \(H_u\), or
-  derive the selected spectral-tail law directly under the selected root event.
 - [[legacy-internal-spectral-comparison-panel-20260616]] records the copied
   old internal-barycenter spectral path as a standard-dispatch diagnostic. It
   greatly increases MP threshold rows and raw MP signal counts, but the
@@ -711,7 +600,6 @@ should otherwise stop and report the mathematical reason.
 - [[selected-neighborhood-bottleneck-law]]
 - [[traversal-neighborhood-method-comparison]]
 - [[sibling-null-prior-interpolation-audit-20260604]]
-- [[overlap-signal-suppression-localizer-20260616]]
 - [[selected-neighborhood-spectral-flow-diagnostic-20260616]]
 - [[selected-neighborhood-topology-frontier-diagnostic-20260616]]
 - [[root-selected-region-overlap-case-family-20260616]]
@@ -720,13 +608,7 @@ should otherwise stop and report the mathematical reason.
 - [[root-tie-rank-calibration-feasibility-20260616]]
 - [[root-tie-rank-selected-null-simulation-pilot-20260616]]
 - [[root-tie-rank-null-proposal-frontier-20260616]]
-- [[root-tie-rank-proposal-gap-panel-20260616]]
-- [[root-tie-rank-spectral-action-dominance-panel-20260616]]
-- [[root-tie-rank-coupling-equation-panel-20260616]]
-- [[root-tie-rank-neighborhood-join-audit-20260616]]
 - [[root-tie-rank-generated-neighborhood-replay-20260616]]
-- [[root-tie-rank-measured-coupling-residual-panel-20260616]]
-- [[root-tie-rank-selected-spectral-excess-panel-20260616]]
 - [[root-tie-rank-selected-spectral-generator-targets-20260616]]
 - [[root-tie-rank-spectral-lift-parameter-sweep-20260616]]
 - [[root-tie-rank-conditioned-coherent-topology-join-20260617]]
@@ -736,9 +618,7 @@ should otherwise stop and report the mathematical reason.
 - [[spectral-transport-passthrough-guard-20260616]]
 - [[spectral-transport-threshold-calibration-panel-20260616]]
 - [[spectral-transport-overlap-dispatch-panel-20260616]]
-- [[spectral-transport-promotion-gate-20260616]]
 - [[spectral-transport-promoted-replicate-panel-20260616]]
-- [[spectral-vs-bandwidth-tradeoff-panel-20260616]]
 - [[legacy-internal-spectral-comparison-panel-20260616]]
 
 ## Open Questions

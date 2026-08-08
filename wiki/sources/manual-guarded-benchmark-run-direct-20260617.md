@@ -2,7 +2,7 @@
 title: Manual Guarded Benchmark Run Direct 2026-06-17
 type: source
 status: reviewed
-updated: 2026-06-18
+updated: 2026-08-08
 sources:
   - raw/assets/benchmark-results/manual_guarded_benchmark_run_direct_20260617/manifest.json
   - raw/assets/benchmark-results/manual_guarded_benchmark_run_direct_20260617/rows.csv
@@ -78,4 +78,3 @@ support problem.
 - [[legacy-c2ef9a69-method-package-20260616]]
 - [[legacy-c2ef9a69-edge-alpha-comparison-20260617]]
 - [[root-tree-geometry-hard-negative-replay-20260617]]
-- [[selected-neighborhood-internal-spectral-flow-conditional-energy-20260617]]

@@ -2,7 +2,7 @@
 title: Overlap Structural Sibling Panel 2026-06-14
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_structural_sibling_panel.py
   - raw/assets/benchmark-results/overlap_structural_sibling_20260614/overlap_structural_sibling_rows.csv
@@ -89,5 +89,4 @@ production traversal or calibration.
 ## Links
 
 - [[selected-family-traversal-panel-20260614]]
-- [[path-conditioned-barycentric-action-diagnostics-20260606]]
 - [[open-mathematical-questions]]

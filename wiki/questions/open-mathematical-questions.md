@@ -2,7 +2,7 @@
 title: Open Mathematical Questions
 type: question
 status: reviewed
-updated: 2026-08-03
+updated: 2026-08-08
 sources:
   - manuscript/guides/full_method_logic_map.md
   - manuscript/guides/edge_sibling_derivation_guide.md
@@ -45,7 +45,6 @@ sources:
   - wiki/sources/recursive-method-followups-20260604.md
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
   - raw/assets/benchmark-results/sibling_null_weight_rule_validation_20260604/sibling_null_weight_rule_summary.csv
-  - benchmarks/diagnostics/spectral/mp/sibling_projection_dimension_rule_grid.py
   - raw/assets/benchmark-results/sibling_projection_dimension_rule_grid_20260604/sibling_projection_dimension_rule_grid.csv
   - raw/assets/benchmark-results/mp_kmin_q14_q15_smoke_20260604/mp_kmin_contract_smoke.csv
   - wiki/sources/barycentric-method-literature-request-20260604.md
@@ -54,13 +53,9 @@ sources:
   - manuscript/references.bib
   - wiki/sources/open-question-diagnostic-audit-20260604.md
   - raw/assets/benchmark-results/open_question_diagnostic_audit_20260604/open_question_diagnostic_audit.csv
-  - wiki/sources/open-question-full-diagnostic-contract-20260604.md
   - wiki/sources/cosine-band-coherence-comparator-20260615.md
-  - benchmarks/diagnostics/open_questions/full_diagnostic_contract.py
   - raw/assets/benchmark-results/open_question_full_diagnostic_contract_20260604/open_question_full_diagnostic_contract.csv
   - raw/assets/benchmark-results/open_question_full_diagnostic_contract_20260604/open_question_full_diagnostic_summary.csv
-  - wiki/sources/selected-tail-promotion-gate-20260604.md
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_promotion_gate.py
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_promotion_contexts.csv
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_q5_promotion_gate.csv
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_promotion_summary.csv
@@ -85,7 +80,6 @@ sources:
   - raw/assets/benchmark-results/sibling_null_prior_interpolation_audit_full_skips_20260604/case_summary.csv
   - raw/assets/benchmark-results/traversal_sibling_fdr_smoke_20260604/synthetic/traversal_sibling_fdr_summary.csv
   - raw/assets/benchmark-results/traversal_sibling_fdr_smoke_20260604/binary/traversal_sibling_fdr_summary.csv
-  - wiki/sources/selected-tail-admissibility-domain-20260603.md
   - raw/assets/benchmark-results/selected_tail_admissibility_domain_20260603/context_admissibility_domain.csv
   - raw/assets/benchmark-results/selected_hierarchy_tail_law_binary_boundary_20260603_600/selected_ratio_tail_law.csv
   - wiki/sources/phylogenetic-ml-topological-selected-tail-literature-20260603.md
@@ -110,11 +104,7 @@ sources:
   - raw/inbox/refined-profile-all-benchmark-tests-20260614.md
   - wiki/sources/refined-profile-all-benchmark-tests-20260614.md
   - raw/inbox/toomanycells-method-notes-20260613.md
-  - wiki/sources/overlap-context-negative-edge-conditioning-20260615.md
-  - wiki/sources/overlap-context-negative-topology-conditioning-20260615.md
-  - wiki/sources/overlap-context-negative-topology-transfer-20260615.md
   - wiki/sources/overlap-context-negative-bayesian-topology-law-20260615.md
-  - wiki/sources/overlap-context-negative-bayesian-topology-sensitivity-20260615.md
   - wiki/sources/overlap-conditional-topology-law-panel-20260615.md
   - wiki/sources/topology-vector-benchmark-20260615.md
   - wiki/analyses/traversal-neighborhood-method-comparison.md
@@ -1051,15 +1041,14 @@ still lack a sufficient diagnostic to close them; and the rest are partially
 diagnosed but need larger, better-conditioned, or more specific validation
 panels before they can become method claims.
 
-Full diagnostic-contract checkpoint:
-[[open-question-full-diagnostic-contract-20260604]] converts every item below
+Full diagnostic-contract checkpoint: the archived diagnostic contract converts every item below
 into a fully specified diagnostic work unit. The generated contract has `44`
 rows and every row has `diagnostic_contract_status=fully_specified`, with
 required inputs, required outputs, acceptance criteria, diagnostic scale, and
 the blocker before method-claim promotion. This closes the vague "needs more
 diagnostics" state; it does not close the mathematical questions themselves.
 
-Promotion checkpoint: [[selected-tail-promotion-gate-20260604]] runs the
+Promotion checkpoint: the archived selected-tail promotion run applies the
 strict Q1/Q5/Q7/Q8 gate on the 2026-06-04 1000-replicate selected-tail table.
 It evaluates `79` contexts: `69` are `undefined_support_failure`, `10` are
 `external_diagnostic_only`, and `0` are `external_admissible`. Seven contexts
@@ -2376,36 +2365,8 @@ is only `0.16343`.
 - [[top-down-traversal]]
 - [[manuscript-life-science-readiness]]
 - [[overlap-structural-sibling-panel-20260614]]
-- [[overlap-structural-threshold-sensitivity-20260614]]
-- [[overlap-structural-context-thresholds-20260614]]
-- [[overlap-structural-continuous-rule-20260614]]
-- [[overlap-structural-decision-zones-20260614]]
-- [[overlap-weak-zone-separability-20260614]]
-- [[overlap-weak-family-thresholds-20260614]]
-- [[overlap-weak-truth-geometry-20260614]]
-- [[overlap-recovery-proxy-separability-20260614]]
-- [[overlap-fragment-risk-guard-20260614]]
-- [[overlap-diagnostic-traversal-policy-20260614]]
-- [[overlap-residual-family-recovery-20260614]]
-- [[overlap-residual-recovery-eligibility-20260614]]
-- [[overlap-threshold-hierarchy-20260614]]
-- [[overlap-residual-threshold-transfer-20260614]]
-- [[overlap-threshold-stability-contract-20260614]]
-- [[overlap-selected-family-law-requirements-20260614]]
-- [[overlap-conditional-bayesian-traversal-law-20260615]]
-- [[overlap-bayesian-neighborhood-component-audit-20260615]]
-- [[overlap-internal-node-bayesian-likelihood-probe-20260615]]
-- [[overlap-internal-node-likelihood-sensitivity-20260615]]
-- [[overlap-internal-node-likelihood-transfer-20260615]]
-- [[overlap-internal-node-transfer-gap-audit-20260615]]
-- [[overlap-income-outcome-junction-law-20260615]]
 - [[overlap-branch-incidence-junction-panel-20260615]]
-- [[overlap-bayesian-incidence-mode-law-20260615]]
-- [[overlap-context-negative-edge-conditioning-20260615]]
-- [[overlap-context-negative-topology-conditioning-20260615]]
-- [[overlap-context-negative-topology-transfer-20260615]]
 - [[overlap-context-negative-bayesian-topology-law-20260615]]
-- [[overlap-context-negative-bayesian-topology-sensitivity-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
 - [[traversal-neighborhood-method-comparison]]
 - [[selected-neighborhood-distribution-panel-20260615]]

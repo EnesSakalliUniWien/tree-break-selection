@@ -2,10 +2,9 @@
 title: Selected Ratio Tail Law Diagnostic 2026-06-02
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_admissibility_domain.py
   - raw/assets/benchmark-results/selected_hierarchy_tail_law_20260602_broad_200/manifest.json
   - raw/assets/benchmark-results/selected_hierarchy_tail_law_20260602_broad_200/case_summary.csv
   - raw/assets/benchmark-results/selected_hierarchy_tail_law_20260602_broad_200/geometry_summary_by_case.csv
@@ -170,5 +169,4 @@ a general external calibration law.
 - [[selected-hierarchy-selection-geometry]]
 - [[selected-hierarchy-geometric-law-map]]
 - [[selected-hierarchy-geometry-covariates-20260602]]
-- [[selected-tail-admissibility-domain-20260603]]
 - [[open-mathematical-questions]]

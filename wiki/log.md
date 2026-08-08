@@ -6306,6 +6306,23 @@ supported validation artifact-contract cases, and removed obsolete deleted-test
 paths from wiki source frontmatter while preserving the underlying diagnostic
 implementations and research evidence. The project gate now collects 635 cases.
 
+#### Benchmark production-boundary cleanup
+
+Removed 79 benchmark modules (38,557 lines) that neither invoke or reach the
+`tree_break_selection` production package nor support a benchmark path covered
+by the current 635-case suite. The removed cohort consisted of research-only
+calibration panels, post-run analyses, mathematical trace helpers, open-question
+contracts, and standalone validation programs. Preserved benchmark adapters,
+artifact contracts, and diagnostic support modules exercised by current tests,
+as well as all raw result captures.
+
+Removed 65 dedicated wiki source pages for that retired research cohort and
+pruned their current index, source metadata, and wikilinks. Kept eight mixed
+source pages that still cite production-reaching benchmark modules. Historical
+log entries remain unchanged; the wiki linter now exempts the append-only log
+from dangling-link checks while continuing to enforce them on current synthesis
+pages.
+
 ## Evidence
 
 - `raw/inbox/wiki-construction-brief.md` records the requested scaffold.

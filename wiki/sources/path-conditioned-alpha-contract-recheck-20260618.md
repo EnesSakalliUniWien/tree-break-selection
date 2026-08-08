@@ -2,7 +2,7 @@
 title: Path Conditioned Alpha Contract Recheck 2026-06-18
 type: source
 status: reviewed
-updated: 2026-06-18
+updated: 2026-08-08
 sources:
   - raw/assets/benchmark-results/path_conditioned_traversal_audit_alpha_contract_20260618/manifest.json
   - raw/assets/benchmark-results/path_conditioned_traversal_audit_alpha_contract_20260618/path_conditioned_traversal_tuples.csv
@@ -75,6 +75,5 @@ promotion audit on the selected 16-case panel.
 
 ## Links
 
-- [[path-conditioned-hypothesis-audit-20260618]]
 - [[path-conditioned-traversal-audit-20260618]]
 - [[branch-length-candidate-promotion-audit-20260618]]

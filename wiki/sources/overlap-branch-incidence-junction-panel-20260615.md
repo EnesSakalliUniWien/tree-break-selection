@@ -2,7 +2,7 @@
 title: Overlap Branch-Incidence Junction Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_branch_incidence_junction_panel.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/branch_incidence_junction_panel/overlap_branch_incidence_junction_rows.csv
@@ -88,8 +88,4 @@ The current focused overlap failures live in the second mode.
 
 ## Links
 
-- [[overlap-income-outcome-junction-law-20260615]]
-- [[overlap-internal-node-transfer-gap-audit-20260615]]
-- [[overlap-context-negative-edge-conditioning-20260615]]
-- [[overlap-context-negative-topology-conditioning-20260615]]
 - [[open-mathematical-questions]]

@@ -2,7 +2,7 @@
 title: Selected Hierarchy Geometric Law Map
 type: analysis
 status: reviewed
-updated: 2026-06-03
+updated: 2026-08-08
 sources:
   - wiki/sources/selected-hierarchy-geometry-covariates-20260602.md
   - wiki/analyses/selected-hierarchy-selection-geometry.md
@@ -22,7 +22,6 @@ sources:
   - raw/assets/benchmark-results/selected_hierarchy_tail_law_admissibility_boundary_20260603_500/selected_ratio_tail_law.csv
   - raw/assets/benchmark-results/selected_hierarchy_tail_law_binary_boundary_20260603_600/selected_ratio_tail_law.csv
   - wiki/sources/selected-ratio-tail-law-diagnostic-20260602.md
-  - wiki/sources/selected-tail-admissibility-domain-20260603.md
 tags:
   - analysis
   - geometry

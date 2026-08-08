@@ -2,7 +2,7 @@
 title: Selected Hierarchy Null Support Contract
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_null_audit.py
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_external_calibration_contract.py
@@ -29,7 +29,6 @@ sources:
   - wiki/sources/selected-hierarchy-stratification-diagnostic-20260602.md
   - wiki/sources/selected-hierarchy-geometry-covariates-20260602.md
   - wiki/sources/selected-ratio-tail-law-diagnostic-20260602.md
-  - wiki/sources/selected-tail-admissibility-domain-20260603.md
   - wiki/sources/phylogenetic-ml-topological-selected-tail-literature-20260603.md
   - wiki/sources/selected-tail-topology-refinement-20260603.md
   - wiki/sources/selected-tail-equation-cloud-run-20260603.md

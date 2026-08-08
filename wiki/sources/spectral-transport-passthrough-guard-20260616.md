@@ -2,7 +2,7 @@
 title: Spectral Transport Passthrough Guard 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - tree_break_selection/hierarchy_analysis/decomposition/gates/spectral_transport.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
@@ -15,7 +15,6 @@ sources:
   - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_overlap_dispatch_panel.py
   - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_threshold_calibration_panel.py
   - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
-  - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_promotion_gate.py
   - tests/localization/35_test_gates_traversal.py
   - tests/pipeline/51_test_dispatch_contract.py
   - tests/integration/63_test_local_structural_kernel_regression.py
@@ -143,5 +142,3 @@ standard benchmark registry as `tbs_spectral_transport_passthrough`; the older
 - [[spectral-transport-overlap-dispatch-panel-20260616]]
 - [[spectral-transport-threshold-calibration-panel-20260616]]
 - [[spectral-transport-promoted-replicate-panel-20260616]]
-- [[spectral-transport-promotion-gate-20260616]]
-- [[overlap-method-clustering-comparison-20260616]]

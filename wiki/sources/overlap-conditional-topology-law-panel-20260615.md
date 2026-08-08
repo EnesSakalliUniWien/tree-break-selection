@@ -2,7 +2,7 @@
 title: Overlap Conditional Topology Law Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py
   - raw/inbox/c2ef-cosine-subspace-method-notes-20260615.md
@@ -144,7 +144,5 @@ threshold.
 ## Links
 
 - [[overlap-context-negative-bayesian-topology-law-20260615]]
-- [[overlap-context-negative-bayesian-topology-sensitivity-20260615]]
-- [[overlap-context-negative-topology-transfer-20260615]]
 - [[topology-vector-benchmark-20260615]]
 - [[open-mathematical-questions]]

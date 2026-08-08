@@ -2,7 +2,7 @@
 title: Root Selected Same Geometry External Support Attempt 2026-06-17
 type: source
 status: draft
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/root/selected/root_selected_same_geometry_external_support_attempt.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_selected_same_geometry_external_support_attempt_five_target_tiny_smoke
@@ -69,7 +69,4 @@ has nonzero \(S_{H_u}\).
 
 ## Links
 
-- [[root-selected-external-law-equation-20260617]]
-- [[root-selected-conditional-tilt-feasibility-20260617]]
 - [[root-tie-rank-target-conditioned-importance-frontier-20260617]]
-- [[root-selected-deformed-tail-support-gap-20260617]]

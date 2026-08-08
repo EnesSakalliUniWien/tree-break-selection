@@ -2,7 +2,7 @@
 title: Root Selected Deformed MP Edge 2026-06-17
 type: source
 status: draft
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/root/selected/root_selected_mixed_region_law.py
   - benchmarks/diagnostics/calibration/root/selected/root_selected_deformed_mp_edge_panel.py
@@ -137,6 +137,5 @@ selected-null or external generator that occupies the missing
 ## Links
 
 - [[root-selected-h-u-observability-20260617]]
-- [[root-selected-population-law-requirement-20260617]]
 - [[local-marchenko-pastur-rule]]
 - [[selected-geometry-mp-integral-literature-20260602]]

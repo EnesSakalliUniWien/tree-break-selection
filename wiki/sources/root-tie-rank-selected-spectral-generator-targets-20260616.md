@@ -2,7 +2,7 @@
 title: Root Tie Rank Selected Spectral Generator Targets 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_selected_spectral_generator_target_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_selected_spectral_generator_targets_after_generated_replay
@@ -63,7 +63,5 @@ the conditioning stratum.
 
 ## Links
 
-- [[root-tie-rank-selected-spectral-excess-panel-20260616]]
-- [[root-tie-rank-measured-coupling-residual-panel-20260616]]
 - [[root-tie-rank-generated-neighborhood-replay-20260616]]
 - [[selected-neighborhood-measurability-law]]

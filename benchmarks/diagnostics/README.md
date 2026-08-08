@@ -37,9 +37,6 @@ Maintained entrypoints:
 - `analysis/analyze_relationships.py`
 - `spectral/compare_mp_dimension_contracts.py`
 - `spectral/mp_projection_dimension_behavior_sweep.py`
-- `spectral/sibling_projection_dimension_rule_grid.py`
-- `open_questions/full_diagnostic_contract.py`
-- `math_trace/infer_benchmark_math.py`
 
 `calibration/sibling/gates/fixed_sibling_gate_profile_validation.py` is the current shared
 runner smoke for fixed sibling-gate profiles, root-stability metadata, and the

@@ -2,7 +2,7 @@
 title: Topology Vector Benchmark 2026-06-15
 type: source
 status: reviewed
-updated: 2026-06-15
+updated: 2026-08-08
 sources:
   - benchmarks/shared/runners/dispatch.py
   - tests/pipeline/51_test_dispatch_contract.py
@@ -86,8 +86,6 @@ TBS parameter variant.
 ## Links
 
 - [[overlap-context-negative-bayesian-topology-law-20260615]]
-- [[overlap-context-negative-bayesian-topology-sensitivity-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
-- [[overlap-context-negative-topology-transfer-20260615]]
 - [[fixed-sibling-gate-profile-validation-20260613]]
 - [[open-mathematical-questions]]

@@ -2,7 +2,7 @@
 title: Phase 1 Path B Foundation 2026-06-06
 type: source
 status: reviewed
-updated: 2026-06-06
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/path_b/phase1_path_b_foundation.py
   - benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/phase1_path_b_benchmark_comparison.csv
@@ -75,7 +75,6 @@ production traversal or calibration rule.
 
 ## Links
 
-- [[path-conditioned-barycentric-action-diagnostics-20260606]]
 - [[mp-projection-dimension-behavior-sweeps-20260605]]
 - [[selected-tail-law-q5-validation-20260604]]
 - [[null-edge-sibling-calibration-enhancement-plan]]

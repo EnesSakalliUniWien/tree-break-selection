@@ -2,7 +2,7 @@
 title: Legacy Internal Spectral Comparison Panel 2026-06-16
 type: source
 status: reviewed
-updated: 2026-06-16
+updated: 2026-08-08
 sources:
   - tests/statistics/48_test_spectral_context_regressions.py
   - tests/pipeline/51_test_dispatch_contract.py
@@ -85,4 +85,3 @@ spectral perturbation, not as a production rescue rule.
 
 - [[local-marchenko-pastur-rule]]
 - [[selected-neighborhood-measurability-law]]
-- [[spectral-vs-bandwidth-tradeoff-panel-20260616]]

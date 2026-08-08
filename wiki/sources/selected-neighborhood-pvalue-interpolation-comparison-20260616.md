@@ -2,7 +2,7 @@
 title: Selected Neighborhood Pvalue Interpolation Comparison 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_pvalue_interpolation_comparison.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_pvalue_interpolation_comparison_overlap_expanded_candidates
@@ -131,4 +131,3 @@ not a calibrated production p-value.
 - [[selected-neighborhood-measurability-law]]
 - [[selected-neighborhood-bottleneck-law]]
 - [[sibling-null-prior-interpolation-audit-20260604]]
-- [[overlap-method-clustering-comparison-20260616]]

@@ -29,17 +29,12 @@ not re-export moved names.
 Shared diagnostic contracts remain at this package root:
 
 - `reporting.py` writes named table bundles and their manifest envelope.
-- `overlap/binary_threshold_scan.py` owns two-direction threshold scans for
-  binary truth/negative roles.
 - `overlap/panel_runner.py` owns the shared binary-overlap diagnostic runner
   mechanics: supported-case filtering, replicate/data-role iteration, one-case
   TBS execution, rows/summary writing, and manifest envelopes.
 - `root/root_tail_values.py` owns shared selected-root value parsing,
   support-role classification, log-action transforms, spectral-excess
   transforms, and T,A,E,B,H_u stratum keys.
-- `root/selected/root_tail_action_support.py` owns the common selected-root
-  action-support geometry used by the conditioning and dominance panels.
-
 ## Maintained runners
 
 - `selected/family/run_selected_family_matrix.py`

@@ -2,13 +2,11 @@
 title: Production Admissibility Contract 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
-  - benchmarks/diagnostics/calibration/edge/selected_edge_sibling_null_equation.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py
-  - benchmarks/diagnostics/calibration/edge/selected_edge_sibling_postrun_analysis.py
   - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
   - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
   - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
@@ -92,9 +90,6 @@ component statuses into `production_admissible`, `diagnostic_only`, or
 ## Links
 
 - [[null-edge-sibling-calibration-enhancement-plan]]
-- [[edge-null-calibration-panel-20260613]]
-- [[sibling-null-calibration-panel-20260613]]
-- [[traversal-guard-validation-panel-20260613]]
 - [[differential-statistic-validity-panel-20260613]]
 - [[regularized-wald-statistic-panel-20260613]]
 - [[null-law-decomposition-panel-20260613]]

@@ -2,7 +2,7 @@
 title: Selected Tail Topology Refinement 2026-06-03
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/selected/tail/selected_tail_topology_refinement.py
   - raw/assets/benchmark-results/selected_hierarchy_topology_refinement_input_20260603_300/manifest.json
@@ -92,5 +92,4 @@ admissible calibration rule.
 - [[phylogenetic-ml-topological-selected-tail-literature-20260603]]
 - [[selected-hierarchy-null-support-contract]]
 - [[selected-hierarchy-geometric-law-map]]
-- [[selected-tail-admissibility-domain-20260603]]
 - [[open-mathematical-questions]]

@@ -2,15 +2,12 @@
 title: Root Conditional Kernel Spectral Law
 type: analysis
 status: draft
-updated: 2026-06-17
+updated: 2026-08-08
 sources:
   - wiki/sources/legacy-c2ef9a69-root-tail-overlap-comparison-20260617.md
   - wiki/sources/legacy-c2ef9a69-edge-alpha-comparison-20260617.md
-  - wiki/sources/spectral-vs-bandwidth-tradeoff-panel-20260616.md
   - wiki/sources/root-selected-same-geometry-external-support-attempt-20260617.md
   - wiki/sources/root-selected-spectral-tail-law-with-legacy-overlay-20260617.md
-  - wiki/sources/root-selected-kernel-spectral-tail-law-20260617.md
-  - wiki/sources/root-selected-validity-replay-panel-20260617.md
   - wiki/sources/root-tree-geometry-hard-negative-replay-20260617.md
   - wiki/sources/selected-neighborhood-signal-flow-literature-20260617.md
 tags:
@@ -248,11 +245,8 @@ make an unsupported root significant.
 
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]]
 - [[legacy-c2ef9a69-edge-alpha-comparison-20260617]]
-- [[spectral-vs-bandwidth-tradeoff-panel-20260616]]
 - [[root-selected-same-geometry-external-support-attempt-20260617]]
 - [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]
-- [[root-selected-kernel-spectral-tail-law-20260617]]
-- [[root-selected-validity-replay-panel-20260617]]
 - [[root-tree-geometry-hard-negative-replay-20260617]]
 - [[selected-neighborhood-signal-flow-literature-20260617]]
 - [[selected-neighborhood-measurability-law]]

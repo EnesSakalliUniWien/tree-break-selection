@@ -2,12 +2,10 @@
 title: Barycentric Split Action Formula 2026-06-24
 type: analysis
 status: draft
-updated: 2026-06-24
+updated: 2026-08-08
 sources:
   - tree_break_selection/hierarchy_analysis/statistics/distributional_action.py
   - tests/statistics/47_test_distributional_action_contract.py
-  - benchmarks/diagnostics/math_trace/barycentric_action.py
-  - benchmarks/diagnostics/math_trace/path_conditioned_barycentric_action.py
   - wiki/analyses/scrna-distributional-action-audit-20260624.md
 tags:
   - barycentric
@@ -122,16 +120,10 @@ total inertia is \(131\). This matches \(2+8+121\).
   `Distributional_Split_Action_*` annotation columns into tree-edge CSV outputs
   as diagnostics; non-`none` split-action filtering is rejected until calibrated
   against the projected-Wald edge/sibling gates.
-- `benchmarks/diagnostics/math_trace/barycentric_action.py` already contained
-  the same local barycentric contrast residual and parallel-axis split-action
-  diagnostic; the statistics helper now carries that formula into tested
-  reusable code.
-
 ## Links
 
 - [[scrna-distributional-action-audit-20260624]]
 - [[barycentric-action-equation-diagnostic-20260606]]
-- [[path-conditioned-barycentric-action-diagnostics-20260606]]
 
 ## Open Questions
 

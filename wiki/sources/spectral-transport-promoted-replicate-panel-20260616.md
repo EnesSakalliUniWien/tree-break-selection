@@ -2,10 +2,9 @@
 title: Spectral Transport Promoted Replicate Panel 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
-  - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_promotion_gate.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_family_traversal_spectral_transport_promoted_replicates
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/spectral_transport_promotion_gate_promoted_replicates
@@ -63,6 +62,5 @@ the zero-regression promotion gate.
 ## Links
 
 - [[spectral-transport-passthrough-guard-20260616]]
-- [[spectral-transport-promotion-gate-20260616]]
 - [[spectral-transport-threshold-calibration-panel-20260616]]
 - [[selected-neighborhood-measurability-law]]

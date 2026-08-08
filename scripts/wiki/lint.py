@@ -184,9 +184,12 @@ def check_page(path: Path, stems: set[str], index_text: str) -> list[str]:
                 f"{rel}: missing required sections: {', '.join(sorted(missing_sections))}"
             )
 
-    for target in WIKILINK_RE.findall(body):
-        if target not in stems:
-            errors.append(f"{rel}: dangling wikilink [[{target}]]")
+    # The chronology is append-only, so removed pages may remain named in old
+    # log entries. Current synthesis pages must still resolve every wikilink.
+    if path.name != "log.md":
+        for target in WIKILINK_RE.findall(body):
+            if target not in stems:
+                errors.append(f"{rel}: dangling wikilink [[{target}]]")
 
     if path.name not in {"index.md", "README.md"}:
         stem = path.stem

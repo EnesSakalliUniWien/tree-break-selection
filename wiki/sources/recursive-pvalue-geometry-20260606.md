@@ -2,7 +2,7 @@
 title: Recursive P-Value Geometry 2026-06-06
 type: source
 status: reviewed
-updated: 2026-06-06
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/path_b/recursive_pvalue_geometry.py
   - benchmarks/results/diagnostics/recursive_pvalue_geometry_full_20260606/recursive_pvalue_geometry_summary.csv
@@ -92,7 +92,6 @@ calibration or traversal rule.
 ## Links
 
 - [[phase1-path-b-foundation-20260606]]
-- [[path-conditioned-barycentric-action-diagnostics-20260606]]
 - [[barycentric-action-equation-diagnostic-20260606]]
 - [[selected-tail-law-q5-validation-20260604]]
 - [[null-edge-sibling-calibration-enhancement-plan]]

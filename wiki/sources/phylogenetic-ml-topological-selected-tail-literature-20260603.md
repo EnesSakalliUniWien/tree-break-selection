@@ -2,7 +2,7 @@
 title: Phylogenetic ML Topological Selected Tail Literature 2026-06-03
 type: source
 status: reviewed
-updated: 2026-06-03
+updated: 2026-08-08
 sources:
   - raw/inbox/phylogenetic-ml-topological-selected-tail-literature-20260603.md
 tags:
@@ -86,5 +86,4 @@ and tree balance can be part of the selected object.
 
 - [[selected-hierarchy-null-support-contract]]
 - [[selected-hierarchy-geometric-law-map]]
-- [[selected-tail-admissibility-domain-20260603]]
 - [[open-mathematical-questions]]

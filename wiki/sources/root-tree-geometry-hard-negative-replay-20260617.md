@@ -2,7 +2,7 @@
 title: Root Tree Geometry Hard Negative Replay 2026-06-17
 type: source
 status: draft
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/root/center/root_tree_geometry_hard_negative_replay_panel.py
   - tests/pipeline/51_test_dispatch_contract.py
@@ -111,7 +111,5 @@ distance/linkage/rooting families.
 
 ## Links
 
-- [[root-selected-validity-replay-panel-20260617]]
-- [[root-selected-kernel-spectral-tail-law-20260617]]
 - [[root-conditional-kernel-spectral-law]]
 - [[selected-neighborhood-measurability-law]]

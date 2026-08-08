@@ -2,7 +2,7 @@
 title: Selected Neighborhood Measurability Law Diagnostic 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_measurability_law.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_measurability_law_overlap_expanded
@@ -91,4 +91,3 @@ label.
 
 - [[selected-neighborhood-measurability-law]]
 - [[selected-neighborhood-bottleneck-law]]
-- [[overlap-signal-suppression-localizer-20260616]]

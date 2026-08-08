@@ -2,7 +2,7 @@
 title: Selected Neighborhood Distribution Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_distribution
@@ -280,6 +280,5 @@ cutoffs.
 ## Links
 
 - [[traversal-neighborhood-method-comparison]]
-- [[specific-small-method-benchmark-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
 - [[open-mathematical-questions]]

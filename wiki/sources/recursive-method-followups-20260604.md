@@ -2,7 +2,7 @@
 title: Recursive Method Followups 2026-06-04
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - raw/inbox/recursive-method-program-20260604.txt
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/types/inflation_model.py
@@ -11,7 +11,6 @@ sources:
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
   - raw/assets/benchmark-results/sibling_null_weight_rule_validation_20260604/manifest.json
   - raw/assets/benchmark-results/sibling_null_weight_rule_validation_20260604/sibling_null_weight_rule_summary.csv
-  - benchmarks/diagnostics/spectral/mp/sibling_projection_dimension_rule_grid.py
   - raw/assets/benchmark-results/sibling_projection_dimension_rule_grid_20260604/manifest.json
   - raw/assets/benchmark-results/sibling_projection_dimension_rule_grid_20260604/sibling_projection_dimension_rule_grid.csv
   - raw/assets/benchmark-results/mp_kmin_q14_q15_smoke_20260604/mp_kmin_contract_smoke.csv

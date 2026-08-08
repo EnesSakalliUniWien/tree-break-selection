@@ -2,7 +2,7 @@
 title: Spectral Transport Threshold Calibration Panel 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_threshold_calibration_panel.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/spectral_transport.py
@@ -71,5 +71,4 @@ selected-family cases.
 
 - [[spectral-transport-passthrough-guard-20260616]]
 - [[spectral-transport-overlap-dispatch-panel-20260616]]
-- [[spectral-transport-promotion-gate-20260616]]
 - [[selected-neighborhood-measurability-law]]

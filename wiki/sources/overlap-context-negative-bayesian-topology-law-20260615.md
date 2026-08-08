@@ -2,7 +2,7 @@
 title: Overlap Context-Negative Bayesian Topology Law 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_context_negative_bayesian_topology_law.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/context_negative_bayesian_topology_law/overlap_context_negative_bayesian_topology_rows.csv
@@ -72,9 +72,4 @@ negative context.
 
 ## Links
 
-- [[overlap-context-negative-topology-transfer-20260615]]
-- [[overlap-context-negative-bayesian-topology-sensitivity-20260615]]
-- [[overlap-context-negative-topology-conditioning-20260615]]
-- [[overlap-context-negative-edge-conditioning-20260615]]
-- [[overlap-bayesian-incidence-mode-law-20260615]]
 - [[open-mathematical-questions]]

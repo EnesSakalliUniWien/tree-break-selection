@@ -2,7 +2,7 @@
 title: Traversal Neighborhood Method Comparison
 type: analysis
 status: reviewed
-updated: 2026-06-15
+updated: 2026-08-08
 sources:
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
@@ -12,7 +12,6 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
   - wiki/sources/old-vs-current-method-stack-comparison-20260615.md
   - wiki/sources/overlap-conditional-topology-law-panel-20260615.md
-  - wiki/sources/specific-small-method-benchmark-20260615.md
   - wiki/sources/selected-neighborhood-distribution-panel-20260615.md
   - wiki/sources/retained-pass-through-topology-likelihood-panel-20260615.md
   - wiki/sources/overlap-selected-pass-through-fixture-miner-20260615.md
@@ -398,15 +397,11 @@ repeatable selected-neighborhood distribution, or whether the focused
   and a log projection-dimension/log parent-size neighborhood kernel.
 - [[old-vs-current-method-stack-comparison-20260615]] records the old c2ef
   topology-aware bandwidth variables and the current strict support path.
-- [[specific-small-method-benchmark-20260615]] records that focused
-  `balance_product` recovery works on synthetic positives but not yet on the
-  real sparse context-negative slice.
 
 ## Links
 
 - [[old-vs-current-method-stack-comparison-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
-- [[specific-small-method-benchmark-20260615]]
 - [[open-mathematical-questions]]
 
 ## Open Questions

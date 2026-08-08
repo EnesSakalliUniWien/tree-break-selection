@@ -2,13 +2,11 @@
 title: Root Tie Rank Generated Neighborhood Replay 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_generated_neighborhood_replay.py
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_null_proposal_frontier.py
   - benchmarks/diagnostics/calibration/root/selected/root_selected_mixed_region_law.py
-  - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_neighborhood_join_audit.py
-  - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_coupling_equation_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_generated_neighborhood_replay_all_generated_smoke
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_null_proposal_frontier_with_generated_replay
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_coupling_equation_after_generated_replay
@@ -87,7 +85,5 @@ spectral-action/tie-rank coupling and a calibrated discrete root law."
 
 ## Links
 
-- [[root-tie-rank-neighborhood-join-audit-20260616]]
-- [[root-tie-rank-coupling-equation-panel-20260616]]
 - [[root-tie-rank-null-proposal-frontier-20260616]]
 - [[selected-neighborhood-measurability-law]]

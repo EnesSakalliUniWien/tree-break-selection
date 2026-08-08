@@ -2,7 +2,7 @@
 title: Root Tie Rank Spectral Lift Parameter Sweep 2026-06-16
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-08
 sources:
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_spectral_lift_parameter_sweep.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_spectral_lift_parameter_sweep_overlap_mod6_highlift_smoke
@@ -127,5 +127,4 @@ median residual spectral lift `1.805514` and maximum `2.952730`.
 ## Links
 
 - [[root-tie-rank-selected-spectral-generator-targets-20260616]]
-- [[root-tie-rank-selected-spectral-excess-panel-20260616]]
 - [[selected-neighborhood-measurability-law]]

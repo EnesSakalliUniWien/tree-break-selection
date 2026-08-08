@@ -2,7 +2,7 @@
 title: Diagnostic Framework GitHub Scan 2026-06-06
 type: source
 status: reviewed
-updated: 2026-06-06
+updated: 2026-08-08
 sources:
   - raw/inbox/diagnostic-framework-github-scan-20260606.md
 tags:
@@ -79,4 +79,3 @@ drop-in production calibration.
 - [[mixed-null-signal-geometry-validation-20260606]]
 - [[selected-tail-law-q5-validation-20260604]]
 - [[null-edge-sibling-calibration-enhancement-plan]]
-- [[path-conditioned-barycentric-action-diagnostics-20260606]]
