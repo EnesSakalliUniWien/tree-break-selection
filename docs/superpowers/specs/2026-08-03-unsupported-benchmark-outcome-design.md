@@ -49,10 +49,10 @@ create parallel abstractions:
 - `benchmarks/diagnostics/generators/case_geometry_audit.py` already audits
   source representation, duplicate geometry, within/between distances, and
   nearest-neighbor label purity.
-- The in-progress `tbs-audit --mode calibration-contract` work already provides
-  detailed tested-null, stopped-frontier, and nested-blocked record evidence.
-  Runtime status must consume production-stamped support, not duplicate or
-  independently rederive this audit.
+- At design time, the calibration-contract audit provided detailed tested-null,
+  stopped-frontier, and nested-blocked record evidence. Runtime status consumes
+  production-stamped support rather than independently re-deriving it. The
+  standalone repository-audit tool has since been retired.
 - The current worktree contains unrelated and overlapping changes. An
   implementation must inspect each overlapping diff, preserve unrelated work,
   and stage only files belonging to this tranche.
@@ -163,8 +163,8 @@ active empirical-null gate reports focal records with
 
 The runner does not recompute whether a sibling record is null-like,
 edge-blocked, or role-supported. Those roles are determined and stamped by the
-gate pipeline. The separate calibration-contract audit remains responsible for
-detailed structural support analysis.
+gate pipeline. Detailed structural support analysis is no longer part of the
+maintained repository tooling.
 
 Annotations, stage timings, tree-build diagnostics, and branch-length
 optimization diagnostics remain available under `extra` when diagnostic

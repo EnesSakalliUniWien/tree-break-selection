@@ -6323,6 +6323,23 @@ log entries remain unchanged; the wiki linter now exempts the append-only log
 from dangling-link checks while continuing to enforce them on current synthesis
 pages.
 
+#### Repository-audit subsystem retirement
+
+Retired the standalone `tbs-audit` developer subsystem after confirming its 53
+tests protected only the isolated audit CLI and did not exercise the shipped
+`tree_break_selection` package. Removed the seven-module implementation, six
+test files, isolated manifest and lockfile, `make audit*` commands, the
+`audit-test` project gate, and current README/wiki instructions as one coherent
+slice. Historical log entries and the unsupported-outcome design record remain
+as chronology rather than current commands.
+
+The tracked tool project contained 16 files and 5,098 lines. Its ignored local
+virtual environment and caches occupied 313 MB and were moved to Trash; Git
+history preserves the tracked source. Thirty-five ignored reports and transient
+coverage/lineage artifacts produced by the tool occupied another 868 MB and
+were also moved to Trash. Unrelated generated scientific-audit artifacts remain
+in place.
+
 ## Evidence
 
 - `raw/inbox/wiki-construction-brief.md` records the requested scaffold.
