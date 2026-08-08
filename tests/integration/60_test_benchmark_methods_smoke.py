@@ -46,15 +46,16 @@ def test_benchmark_graphtools_diffusion_method_smoke():
     """Run the optional graphtools diffusion backend when it is installed."""
     pytest.importorskip("graphtools")
     case = SMALL_TEST_CASES[0].copy()
-    df_results, _ = benchmark_cluster_algorithm(
-        test_cases=[case],
-        verbose=False,
-        plot_umap=False,
-        methods=[
-            "tbs_diffusion_graphtools",
-            "tbs_diffusion_graphtools_adaptive_nnls",
-        ],
-    )
+    with pytest.warns(RuntimeWarning, match="Detected zero distance between samples"):
+        df_results, _ = benchmark_cluster_algorithm(
+            test_cases=[case],
+            verbose=False,
+            plot_umap=False,
+            methods=[
+                "tbs_diffusion_graphtools",
+                "tbs_diffusion_graphtools_adaptive_nnls",
+            ],
+        )
 
     assert set(df_results["method"]) == {
         "tbs_diffusion_graphtools",

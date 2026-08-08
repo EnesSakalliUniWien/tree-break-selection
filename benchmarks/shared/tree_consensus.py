@@ -556,6 +556,9 @@ def _summary(
         and category_loss_count == 0
     )
     selected_rows = selection[selection["selector_status"].eq("selected")]
+    selected_ari = selected_rows["selected_ari"].dropna()
+    selected_nmi = selected_rows["selected_nmi"].dropna()
+    selected_macro_f1 = selected_rows["selected_macro_f1"].dropna()
     summary = {
         "gate_status": "pass" if promotion_pass else "no_promotion",
         "cases": case_count,
@@ -576,17 +579,17 @@ def _summary(
         "metric_median_pass": bool(all(median_passes.values())),
         "category_loss_count": int(category_loss_count),
         "category_gate_pass": bool(category_loss_count == 0),
-        "mean_selected_ari": float(selected_rows["selected_ari"].mean())
-        if not selected_rows.empty
+        "mean_selected_ari": float(selected_ari.mean())
+        if not selected_ari.empty
         else np.nan,
-        "median_selected_ari": float(selected_rows["selected_ari"].median())
-        if not selected_rows.empty
+        "median_selected_ari": float(selected_ari.median())
+        if not selected_ari.empty
         else np.nan,
-        "mean_selected_nmi": float(selected_rows["selected_nmi"].mean())
-        if not selected_rows.empty
+        "mean_selected_nmi": float(selected_nmi.mean())
+        if not selected_nmi.empty
         else np.nan,
-        "mean_selected_macro_f1": float(selected_rows["selected_macro_f1"].mean())
-        if not selected_rows.empty
+        "mean_selected_macro_f1": float(selected_macro_f1.mean())
+        if not selected_macro_f1.empty
         else np.nan,
         **metric_records,
     }

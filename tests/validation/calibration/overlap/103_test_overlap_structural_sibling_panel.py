@@ -162,6 +162,7 @@ def test_run_overlap_structural_sibling_panel_writes_outputs(tmp_path) -> None:
         assert path.exists()
 
     rows = pd.read_csv(outputs["rows"])
+    summary = pd.read_csv(outputs["summary"])
     assert set(rows.columns) >= {
         "case_id",
         "structural_sibling_status",
@@ -173,3 +174,4 @@ def test_run_overlap_structural_sibling_panel_writes_outputs(tmp_path) -> None:
         "heterogeneity_gain_max",
         "structural_change_mode",
     }
+    assert summary["median_truth_split_ari"].isna().all()

@@ -6275,6 +6275,17 @@ contributors to run the installer before prose linting. This reduces checkout
 size only; the historical blob remains in Git until an explicitly authorized
 history migration is performed.
 
+#### Test suite maintenance follow-up
+
+Reconciled `tests/README.md` with the current 1,366-case collection after the
+repository cleanup. Consolidated the shared selected-hierarchy geometry record
+builder used by the AWS tail-equation and hierarchy-covariate studies, and
+shared deterministic high-dimensional benchmark input setup across the paired
+unsupported/control integration contracts without removing either outcome
+test. All-missing summary medians now return `NaN` without NumPy warning noise,
+while GraphTools duplicate-sample and disconnected spectral-graph warnings are
+asserted narrowly at their intentional smoke-test call sites.
+
 ## Evidence
 
 - `raw/inbox/wiki-construction-brief.md` records the requested scaffold.

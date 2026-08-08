@@ -612,6 +612,7 @@ def _summarize_rows(rows: pd.DataFrame) -> pd.DataFrame:
         status_counts = group["structural_sibling_status"].value_counts().to_dict()
         change_counts = group["structural_change_mode"].value_counts().to_dict()
         signal_counts = group["signal_alignment_status"].value_counts().to_dict()
+        truth_split_ari = group["truth_split_ari"].dropna()
         weak_or_mismatch = group["structural_sibling_status"].isin(
             {
                 "weak_homogeneity_gain",
@@ -649,7 +650,9 @@ def _summarize_rows(rows: pd.DataFrame) -> pd.DataFrame:
                 ),
                 "mean_homogeneity_gain_min": float(group["homogeneity_gain_min"].mean()),
                 "mean_heterogeneity_gain_max": float(group["heterogeneity_gain_max"].mean()),
-                "median_truth_split_ari": float(group["truth_split_ari"].median()),
+                "median_truth_split_ari": (
+                    float(truth_split_ari.median()) if not truth_split_ari.empty else np.nan
+                ),
                 "structural_status_counts": json.dumps(status_counts, sort_keys=True),
                 "structural_change_mode_counts": json.dumps(
                     change_counts,

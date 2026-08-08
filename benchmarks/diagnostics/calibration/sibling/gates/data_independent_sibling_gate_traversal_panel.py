@@ -1333,6 +1333,7 @@ def summarize_root_selective_guard_sensitivity(
         row = dict(zip(group_columns, key))
         false_count = int(group["selected_root_guard_false_split"].astype(bool).sum())
         root_p = pd.to_numeric(group["root_selective_p_value"], errors="coerce")
+        valid_root_p = root_p.dropna()
         row.update(
             {
                 "n_replicates": int(group.shape[0]),
@@ -1345,9 +1346,15 @@ def summarize_root_selective_guard_sensitivity(
                 "selected_root_guard_block_rate": float(
                     group["selected_root_guard_blocked"].mean()
                 ),
-                "root_selective_p_value_min": float(root_p.min()),
-                "root_selective_p_value_median": float(root_p.median()),
-                "root_selective_p_value_max": float(root_p.max()),
+                "root_selective_p_value_min": (
+                    float(valid_root_p.min()) if not valid_root_p.empty else np.nan
+                ),
+                "root_selective_p_value_median": (
+                    float(valid_root_p.median()) if not valid_root_p.empty else np.nan
+                ),
+                "root_selective_p_value_max": (
+                    float(valid_root_p.max()) if not valid_root_p.empty else np.nan
+                ),
                 "false_split_rate": float(group["selected_root_guard_false_split"].mean()),
                 "false_split_rate_upper_confidence": _wilson_upper_bound(
                     false_count,

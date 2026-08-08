@@ -186,9 +186,11 @@ def test_selector_is_invariant_to_external_metrics() -> None:
     for column in ["ari", "nmi", "macro_f1", "purity", "true_clusters"]:
         perturbed[column] = np.nan
 
-    selected = build_tree_consensus_tables(perturbed, labels).selection
+    perturbed_tables = build_tree_consensus_tables(perturbed, labels)
+    selected = perturbed_tables.selection
 
     assert selected["selected_run_id"].tolist() == baseline["selected_run_id"].tolist()
+    assert pd.isna(perturbed_tables.summary.iloc[0]["median_selected_ari"])
 
 
 def test_cases_with_no_valid_topology_are_reported_as_skips() -> None:

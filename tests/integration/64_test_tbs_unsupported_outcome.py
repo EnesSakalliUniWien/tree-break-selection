@@ -25,6 +25,17 @@ def _unsupported_annotations() -> pd.DataFrame:
     return annotations
 
 
+@pytest.fixture(scope="module")
+def dense_highd_case_data() -> tuple[pd.DataFrame, np.ndarray]:
+    case = next(
+        case
+        for case in get_default_test_cases()
+        if case["name"] == "gauss_dense_signal_highd"
+    )
+    data, _truth, _original, _metadata = generate_case_data(case)
+    return data, pdist(data.to_numpy(), metric="hamming")
+
+
 def test_unsupported_reason_uses_production_stamped_calibration_evidence():
     reason = unsupported_empirical_null_reason(
         _unsupported_annotations(),
@@ -81,14 +92,12 @@ def test_non_empirical_and_supported_gates_do_not_report_unsupported():
     )
 
 
-def test_dense_high_dimensional_empirical_gate_returns_unsupported():
-    case = next(
-        case
-        for case in get_default_test_cases()
-        if case["name"] == "gauss_dense_signal_highd"
-    )
-    data, _truth, _original, _metadata = generate_case_data(case)
-    distances = pdist(data.to_numpy(), metric="hamming")
+def test_dense_high_dimensional_empirical_gate_returns_unsupported(
+    dense_highd_case_data: tuple[pd.DataFrame, np.ndarray],
+):
+    fixture_data, fixture_distances = dense_highd_case_data
+    data = fixture_data.copy(deep=True)
+    distances = fixture_distances.copy()
 
     result = run_tbs_on_distance(
         data,
@@ -106,14 +115,12 @@ def test_dense_high_dimensional_empirical_gate_returns_unsupported():
     assert result.unsupported_reason.evidence.upstream_rejected_count == 78
 
 
-def test_dense_high_dimensional_fixed_coordinate_control_remains_ok():
-    case = next(
-        case
-        for case in get_default_test_cases()
-        if case["name"] == "gauss_dense_signal_highd"
-    )
-    data, _truth, _original, _metadata = generate_case_data(case)
-    distances = pdist(data.to_numpy(), metric="hamming")
+def test_dense_high_dimensional_fixed_coordinate_control_remains_ok(
+    dense_highd_case_data: tuple[pd.DataFrame, np.ndarray],
+):
+    fixture_data, fixture_distances = dense_highd_case_data
+    data = fixture_data.copy(deep=True)
+    distances = fixture_distances.copy()
 
     result = run_tbs_on_distance(
         data,
