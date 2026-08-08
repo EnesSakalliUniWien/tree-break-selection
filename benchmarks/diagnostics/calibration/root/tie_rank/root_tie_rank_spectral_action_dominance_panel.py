@@ -23,6 +23,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.comparison import (
     partition_target_and_generated_rows,
     row_bandwidth_gap_status,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
 SCHEMA_VERSION = "root_tie_rank_spectral_action_dominance_panel/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_spectral_action_dominance_panel_not_calibration"
@@ -101,23 +102,15 @@ class RootTieRankSpectralActionDominanceConfig:
     proposal_feasibility_rows_path: Path = DEFAULT_PROPOSAL_FEASIBILITY_ROWS
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _safe_log1p(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(math.log1p(max(numeric, 0.0)))
 
 
 def _safe_log(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(math.log(max(numeric, 1e-12)))
@@ -127,15 +120,6 @@ def _deficit(*, target: float, generated: float, missing_value: float = 10.0) ->
     if not (math.isfinite(target) and math.isfinite(generated)):
         return float(missing_value)
     return float(max(target - generated, 0.0))
-
-
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def _dominance_pattern(
@@ -164,8 +148,8 @@ def _dominance_pattern(
 
 
 def _dominance_record(target: pd.Series, generated: pd.Series) -> dict[str, object]:
-    target_tie = _finite_float(target.get("root_tie_rank_median_fraction", math.nan))
-    generated_tie = _finite_float(generated.get("root_tie_rank_median_fraction", math.nan))
+    target_tie = finite_float(target.get("root_tie_rank_median_fraction", math.nan))
+    generated_tie = finite_float(generated.get("root_tie_rank_median_fraction", math.nan))
     target_action = _safe_log1p(target.get("root_sibling_selected_ratio", math.nan))
     generated_action = _safe_log1p(generated.get("root_sibling_selected_ratio", math.nan))
     target_edge = _safe_log1p(target.get("root_edge_path_statistic_margin", math.nan))
@@ -202,9 +186,9 @@ def _dominance_record(target: pd.Series, generated: pd.Series) -> dict[str, obje
     return {
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
-        "target_case_id": _string_value(target, "case_id"),
-        "proposal_family": _string_value(generated, "proposal_family"),
-        "best_generated_case_id": _string_value(generated, "case_id"),
+        "target_case_id": string_value(target, "case_id"),
+        "proposal_family": string_value(generated, "proposal_family"),
+        "best_generated_case_id": string_value(generated, "case_id"),
         "target_tie_fraction": target_tie,
         "generated_tie_fraction": generated_tie,
         "tie_fraction_deficit": tie_deficit,

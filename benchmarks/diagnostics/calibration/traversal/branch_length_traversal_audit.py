@@ -24,6 +24,7 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
 )
 
 from benchmarks.diagnostics.calibration.traversal.cli import parse_traversal_audit_args
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.result_records import benchmark_rows_to_dataframe
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
@@ -99,16 +100,6 @@ def _path_to_str(value: object) -> str:
     if value is None:
         return ""
     return str(value)
-
-
-def _finite_float(value: object) -> float:
-    if value is None:
-        return math.nan
-    try:
-        out = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return out if math.isfinite(out) else math.nan
 
 
 def _validate_methods(methods: tuple[str, ...]) -> tuple[str, ...]:
@@ -201,7 +192,7 @@ def _tuple_rows_from_computed(
                 "status": row.status.value,
                 "true_clusters": int(row.true_clusters),
                 "found_clusters": int(row.found_clusters),
-                "ari": _finite_float(row.ari),
+                "ari": finite_float(row.ari),
                 "tuple_order": int(order),
                 "node_id": _node_to_str(trace_row.get("node_id")),
                 "left_child": _node_to_str(trace_row.get("left_child")),
@@ -221,8 +212,8 @@ def _tuple_rows_from_computed(
                 "sibling_different": bool(trace_row.get("sibling_different", False)),
                 "sibling_skipped": bool(trace_row.get("sibling_skipped", False)),
                 "sibling_gate_open": bool(trace_row.get("sibling_gate_open", False)),
-                "left_branch_length": _finite_float(trace_row.get("left_branch_length")),
-                "right_branch_length": _finite_float(trace_row.get("right_branch_length")),
+                "left_branch_length": finite_float(trace_row.get("left_branch_length")),
+                "right_branch_length": finite_float(trace_row.get("right_branch_length")),
                 "left_branch_length_missing": bool(
                     trace_row.get("left_branch_length_missing", False)
                 ),

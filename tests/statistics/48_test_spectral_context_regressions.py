@@ -125,6 +125,57 @@ class TestSpectralContextRegressions:
         with pytest.raises(ValueError, match="projection/eigenvalue row count mismatch"):
             spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
 
+    def test_spectral_context_mirrors_every_decomposition_field(self, monkeypatch):
+        """The projection-to-gate boundary must forward every field, not silently default it."""
+        import dataclasses
+
+        import networkx as nx
+        import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
+        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+            SpectralDecompositionResult,
+        )
+
+        names = {field.name for field in dataclasses.fields(SpectralDecompositionResult)}
+        context_names = {
+            field.name for field in dataclasses.fields(spectral_module.SpectralContext)
+        }
+        assert names <= context_names
+
+        decomposition = SpectralDecompositionResult(
+            test_projection_dimensions_by_node={"root": 1},
+            raw_mp_signal_counts_by_node={"root": 4},
+            effective_independent_rows_by_node={"root": 5},
+            mp_threshold_rows_by_node={"root": 6},
+            principal_component_projections_by_node={"root": np.array([[1.0, 2.0]])},
+            principal_component_eigenvalues_by_node={"root": np.array([3.0])},
+            descendant_leaf_row_counts_by_node={"root": 7},
+            internal_distribution_row_counts_by_node={"root": 8},
+            spectral_matrix_row_counts_by_node={"root": 9},
+            full_component_eigenvalues_by_node={"root": np.array([3.0, 0.25])},
+            active_feature_counts_by_node={"root": 2},
+            stage_timings={"spectral_decomposition_sec": 0.5},
+        )
+        tree = nx.DiGraph()
+        tree.add_edges_from([("root", "L0"), ("root", "L1")])
+        for leaf in ["L0", "L1"]:
+            tree.nodes[leaf]["label"] = leaf
+            tree.nodes[leaf]["is_leaf"] = True
+        leaf_data = pd.DataFrame([[0.0], [1.0]], index=["L0", "L1"], columns=["F0"])
+        monkeypatch.setattr(
+            spectral_module, "compute_spectral_decomposition", lambda *_, **__: decomposition
+        )
+
+        context = spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
+
+        for name in sorted(names - {"stage_timings"}):
+            actual = getattr(context, name)
+            assert actual, f"SpectralContext dropped {name!r} from the decomposition result"
+            assert np.array_equal(
+                np.asarray(actual["root"]), np.asarray(getattr(decomposition, name)["root"])
+            )
+        assert context.stage_timings["spectral_decomposition_sec"] == 0.5
+        assert "spectral_context_sec" in context.stage_timings
+
     def test_single_active_feature_spectral_path_returns_coordinate_projection(self):
         """A one-active-feature node is already a valid 1D spectral problem."""
         import networkx as nx

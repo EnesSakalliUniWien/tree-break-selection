@@ -866,9 +866,7 @@ def apply_root_selective_permutation_guard(
                 out.loc[node, "Selective_Permutation_Guard_Blocked"] = True
         return True
 
-    if scope_value == "root":
-        candidate_nodes = [root] if _selective_guard_root_candidate(out, root, root) else []
-    elif scope_value == "open_internal":
+    if scope_value == "open_internal":
         candidate_nodes = [
             node
             for node in out.index

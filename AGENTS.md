@@ -32,8 +32,8 @@ synthesis:
 - `README.md`, `CHANGELOG.md`, and root configuration files for current project
   intent.
 - `manuscript/` for the paper, derivations, terminology, and submission gaps.
-- `tree_break_selection/`, `benchmarks/`, `tests/`, `scripts/`, and
-  `notebooks/` for implementation and validation behavior.
+- `tree_break_selection/`, `benchmarks/`, `tests/`, and `scripts/` for
+  implementation and validation behavior.
 - `data/`, `reports/`, `docs/`, and `local_data/` for datasets, outputs,
   audits, and local notes.
 - root `analysis/` is ignored local workspace if present; do not treat it as

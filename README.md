@@ -83,8 +83,6 @@ surfaces with their own contracts.
 - `reports/`: policy marker for deliberately retained evidence. Routine logs,
   profiling outputs, scan reports, and notebook image exports should stay local
   unless they are intentionally cited.
-- `notebooks/`: notebooks only; reusable Python code belongs in package,
-  benchmark, or script directories.
 - `raw/`: captured primary material before synthesis into the wiki.
 - `local_data/`: ignored local-only data.
 
@@ -237,8 +235,8 @@ performed without cleanup.
 
 - After the full test environment sync above, run the automated tests with
   `uv run pytest`.
-- Run `make check` for the repository hygiene gate: Ruff, wiki lint, and the
-  purpose-ordered full test suite.
+- Run `make check` for the repository hygiene gate: Ruff, wiki lint, the
+  purpose-ordered full test suite, and the `tools/repository_audit` test suite.
 - In the lean development environment, run targeted tests for the code you
   changed. scRNA-only tests are skipped when their optional dependencies are
   absent, but full-suite parity expects the full environment.

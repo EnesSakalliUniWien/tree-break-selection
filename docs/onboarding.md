@@ -70,8 +70,9 @@ short: follow it before opening deep implementation directories.
 ## Do Not Start Here
 
 - `benchmarks/results/`: generated outputs and historical run products.
-- `raw/assets/benchmark-results/`: small promoted evidence snapshots cited by
-  wiki or analysis notes.
+- `raw/assets/benchmark-results/`: promoted evidence snapshots cited by wiki or
+  analysis notes. About 1.13 GiB across 120 top-level entries (100 directories
+  and 20 files), and the reason a clone is large.
 - `manuscript/build/`: build output.
 - root `analysis/`: ignored local analysis workspace if present.
 - hidden tool directories such as `.venv/`, `.pytest_cache/`, `.ruff_cache/`,

@@ -747,7 +747,7 @@ def _literature_adaptive_summary(literature_case_summary: pd.DataFrame) -> pd.Da
     )
 
 
-def _subtree_case_summary(subtree_support: pd.DataFrame) -> pd.DataFrame:
+def _subtree_case_summary(subtree_support: pd.DataFrame | None) -> pd.DataFrame:
     if subtree_support is None or subtree_support.empty:
         return pd.DataFrame(columns=["case_id"])
     unstable = subtree_support[subtree_support["is_unstable"].astype(bool)].copy()
@@ -782,7 +782,7 @@ def _subtree_case_summary(subtree_support: pd.DataFrame) -> pd.DataFrame:
     return summary.merge(large_summary, on="case_id", how="left")
 
 
-def _top_subtree_summary(subtree_highlights: pd.DataFrame) -> pd.DataFrame:
+def _top_subtree_summary(subtree_highlights: pd.DataFrame | None) -> pd.DataFrame:
     if subtree_highlights is None or subtree_highlights.empty:
         return pd.DataFrame(columns=["case_id"])
     top = subtree_highlights[subtree_highlights["subtree_difference_rank"] == 1].copy()

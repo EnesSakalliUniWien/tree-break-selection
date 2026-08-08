@@ -20,6 +20,7 @@ from benchmarks.diagnostics.calibration.reporting import (
     print_diagnostic_output_paths,
     write_diagnostic_bundle,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
 SCHEMA_VERSION = "root_tie_rank_neighborhood_join_audit/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_neighborhood_join_audit_not_calibration"
@@ -134,16 +135,8 @@ def _read_optional_csv(path: Path | None) -> pd.DataFrame:
     return pd.read_csv(path, low_memory=False)
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _int_or_zero(value: object) -> int:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     return int(numeric) if math.isfinite(numeric) else 0
 
 
@@ -159,15 +152,6 @@ def _bool_sum(values: pd.Series) -> int:
     if values.empty:
         return 0
     return int(values.map(_bool_value).sum())
-
-
-def _string_value(row: pd.Series | dict[str, object], column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def _mixed_lookup(mixed_rows: pd.DataFrame) -> dict[str, dict[str, object]]:
@@ -308,15 +292,15 @@ def build_root_tie_rank_neighborhood_join_audit_rows(
     records: list[dict[str, object]] = []
     for _, row in proposal_feasibility_rows.sort_values("case_id").iterrows():
         case_id = str(row["case_id"])
-        proposal_family = _string_value(row, "proposal_family")
+        proposal_family = string_value(row, "proposal_family")
         mixed = mixed_by_case.get(case_id, {})
         frontier = frontier_by_case.get(case_id, {})
         matrix_path, matrix_exists = _matrix_path_for_case(
             case_id=case_id,
             generated_matrix_dir=generated_matrix_dir,
         )
-        bandwidth_band = _string_value(row, "root_bandwidth_reopen_band")
-        mixed_locality_status = _string_value(
+        bandwidth_band = string_value(row, "root_bandwidth_reopen_band")
+        mixed_locality_status = string_value(
             mixed,
             "root_bandwidth_locality_status",
         )
@@ -339,12 +323,12 @@ def build_root_tie_rank_neighborhood_join_audit_rows(
                 "schema_version": SCHEMA_VERSION,
                 "study_role": STUDY_ROLE,
                 "case_id": case_id,
-                "base_case_id": _string_value(row, "base_case_id", case_id),
-                "data_role": _string_value(row, "data_role"),
-                "calibration_role": _string_value(row, "calibration_role"),
+                "base_case_id": string_value(row, "base_case_id", case_id),
+                "data_role": string_value(row, "data_role"),
+                "calibration_role": string_value(row, "calibration_role"),
                 "proposal_family": proposal_family,
                 "root_bandwidth_reopen_band": bandwidth_band,
-                "feasibility_root_bandwidth_reopen_count": _finite_float(
+                "feasibility_root_bandwidth_reopen_count": finite_float(
                     row.get("root_bandwidth_reopen_count", math.nan)
                 ),
                 "mixed_root_frontier_row_count": _int_or_zero(

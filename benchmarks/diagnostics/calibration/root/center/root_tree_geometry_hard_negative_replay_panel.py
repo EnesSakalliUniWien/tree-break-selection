@@ -25,6 +25,7 @@ from sklearn.metrics import adjusted_rand_score
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
@@ -115,14 +116,6 @@ def parse_tree_geometries(raw: str | None) -> tuple[TreeGeometrySpec, ...]:
     return tuple(geometries)
 
 
-def _finite_float(value: object) -> float:
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return parsed if math.isfinite(parsed) else math.nan
-
-
 def _bool_value(value: object) -> bool:
     if isinstance(value, bool):
         return bool(value)
@@ -147,7 +140,7 @@ def classify_hard_negative_row(
             False,
         )
 
-    mean_ari = _finite_float(row.get("root_stability_subsample_mean_ari"))
+    mean_ari = finite_float(row.get("root_stability_subsample_mean_ari"))
     stability_blocked = _bool_value(row.get("root_stability_guard_blocked"))
     root_stability_supported = (
         math.isfinite(mean_ari)
@@ -155,7 +148,7 @@ def classify_hard_negative_row(
         and not stability_blocked
     )
 
-    selective_p_value = _finite_float(row.get("root_selective_permutation_p_value"))
+    selective_p_value = finite_float(row.get("root_selective_permutation_p_value"))
     selective_blocked = _bool_value(row.get("root_selective_permutation_guard_blocked"))
     selective_would_block = _bool_value(row.get("root_selective_permutation_guard_would_block"))
     root_selective_supported = (
@@ -490,7 +483,7 @@ def _row_for_geometry(
         {
             "found_clusters": int(result.found_clusters),
             "ari": float(adjusted_rand_score(truth, predicted)),
-            "root_sibling_p_value": _finite_float(
+            "root_sibling_p_value": finite_float(
                 _annotation_value(
                     annotations,
                     root,
@@ -509,7 +502,7 @@ def _row_for_geometry(
                     False,
                 )
             ),
-            "root_stability_subsample_mean_ari": _finite_float(
+            "root_stability_subsample_mean_ari": finite_float(
                 _annotation_value(
                     annotations,
                     root,
@@ -517,7 +510,7 @@ def _row_for_geometry(
                     math.nan,
                 )
             ),
-            "root_stability_subsample_median_ari": _finite_float(
+            "root_stability_subsample_median_ari": finite_float(
                 _annotation_value(
                     annotations,
                     root,
@@ -525,7 +518,7 @@ def _row_for_geometry(
                     math.nan,
                 )
             ),
-            "root_stability_subsample_q10_ari": _finite_float(
+            "root_stability_subsample_q10_ari": finite_float(
                 _annotation_value(
                     annotations,
                     root,
@@ -533,7 +526,7 @@ def _row_for_geometry(
                     math.nan,
                 )
             ),
-            "root_selective_permutation_p_value": _finite_float(
+            "root_selective_permutation_p_value": finite_float(
                 _annotation_value(
                     annotations,
                     root,

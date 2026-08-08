@@ -46,6 +46,7 @@ from benchmarks.diagnostics.calibration.selected.neighborhood.selected_neighborh
     build_topology_frontier_rows,
     summarize_topology_frontier_rows,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 
 SCHEMA_VERSION = "root_tie_rank_generated_neighborhood_replay/v1"
@@ -188,30 +189,9 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _finite_int(value: object, default: int = 0) -> int:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     return int(numeric) if math.isfinite(numeric) else int(default)
-
-
-def _string_value(
-    row: pd.Series | dict[str, object],
-    column: str,
-    default: str = "",
-) -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def _generated_proposal_rows(
@@ -237,7 +217,7 @@ def _generated_proposal_rows(
 
 
 def _matrix_path(row: pd.Series, generated_matrix_dir: Path) -> Path:
-    return Path(generated_matrix_dir) / f"{_string_value(row, 'case_id')}.csv"
+    return Path(generated_matrix_dir) / f"{string_value(row, 'case_id')}.csv"
 
 
 def _metadata_lookup(proposal_rows: pd.DataFrame) -> pd.DataFrame:
@@ -273,8 +253,8 @@ def _replay_one_matrix(
     edge_alpha: float,
     tree_linkage_method: str,
 ) -> tuple[dict[str, object], pd.DataFrame]:
-    case_id = _string_value(row, "case_id")
-    data_role = _string_value(row, "data_role", "diagnostic_proposal")
+    case_id = string_value(row, "case_id")
+    data_role = string_value(row, "data_role", "diagnostic_proposal")
     replicate = _finite_int(row.get("replicate", 0))
     data_seed = _finite_int(row.get("null_seed", row.get("data_seed", replicate)))
 
@@ -331,9 +311,9 @@ def _replay_one_matrix(
             result=result,
         )
         node_decisions = node_decisions.copy()
-        node_decisions["base_case_id"] = _string_value(row, "base_case_id", case_id)
-        node_decisions["calibration_role"] = _string_value(row, "calibration_role")
-        node_decisions["proposal_family"] = _string_value(row, "proposal_family")
+        node_decisions["base_case_id"] = string_value(row, "base_case_id", case_id)
+        node_decisions["calibration_role"] = string_value(row, "calibration_role")
+        node_decisions["proposal_family"] = string_value(row, "proposal_family")
         run_row = _run_summary_row(
             row=row,
             matrix_path=matrix_path,
@@ -379,11 +359,11 @@ def _base_run_row(
     return {
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
-        "case_id": _string_value(row, "case_id"),
-        "base_case_id": _string_value(row, "base_case_id", _string_value(row, "case_id")),
-        "data_role": _string_value(row, "data_role"),
-        "calibration_role": _string_value(row, "calibration_role"),
-        "proposal_family": _string_value(row, "proposal_family"),
+        "case_id": string_value(row, "case_id"),
+        "base_case_id": string_value(row, "base_case_id", string_value(row, "case_id")),
+        "data_role": string_value(row, "data_role"),
+        "calibration_role": string_value(row, "calibration_role"),
+        "proposal_family": string_value(row, "proposal_family"),
         "method_id": method_id,
         "profile_id": _profile_id_for_method(method_id) or "",
         "sibling_gate_method": _method_label(method_id),

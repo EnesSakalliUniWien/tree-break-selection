@@ -28,6 +28,7 @@ from benchmarks.diagnostics.calibration.selected.family.selected_pass_through_br
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -731,16 +732,8 @@ class SelectedCandidateTruthLawPanelConfig:
         return self.output_dir / "generated_support_gene_assignments.csv"
 
 
-def _finite_float(value: object) -> float:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return number if math.isfinite(number) else math.nan
-
-
 def _negative_log10(value: object) -> float:
-    number = _finite_float(value)
+    number = finite_float(value)
     if not math.isfinite(number):
         return math.nan
     return float(-math.log10(max(number, np.finfo(float).tiny)))
@@ -755,7 +748,7 @@ def _bool_value(value: object) -> bool:
 
 
 def _optional_finite(row: pd.Series, column: str) -> float:
-    return _finite_float(row[column]) if column in row.index else math.nan
+    return finite_float(row[column]) if column in row.index else math.nan
 
 
 def _optional_int(row: pd.Series, column: str) -> int:
@@ -1271,8 +1264,8 @@ def _classify_own_split(
         return "selected_null_control"
     if metrics.get("own_split_status") != "own_split_truth_observed":
         return "own_split_unavailable"
-    ari = _finite_float(metrics.get("own_split_ari"))
-    purity = _finite_float(metrics.get("own_split_child_mean_purity"))
+    ari = finite_float(metrics.get("own_split_ari"))
+    purity = finite_float(metrics.get("own_split_child_mean_purity"))
     distinct = _bool_value(metrics.get("own_split_child_majority_distinct"))
     if not math.isfinite(ari) or not math.isfinite(purity):
         return "own_split_unavailable"
@@ -3360,8 +3353,8 @@ def build_selected_candidate_frontier_witness_rows(
                 "active_metric": active_metric,
                 "active_metric_direction": active_direction,
                 "active_metric_gap": float(witness_gaps[active_position]),
-                "active_metric_family_value": _finite_float(positive_row[active_metric]),
-                "active_metric_witness_value": _finite_float(witness_row[active_metric]),
+                "active_metric_family_value": finite_float(positive_row[active_metric]),
+                "active_metric_witness_value": finite_float(witness_row[active_metric]),
                 **{column: math.nan for column in FRONTIER_WITNESS_GAP_COLUMNS},
             }
             for metric_index, (metric, _direction) in enumerate(metric_specs):
@@ -3429,9 +3422,9 @@ def build_selected_candidate_sibling_rescue_audit_rows(
     for _, row in witness_rows.iterrows():
         structural_values = np.asarray(
             [
-                _finite_float(row[column])
+                finite_float(row[column])
                 for column in structural_gap_columns
-                if column in row.index and math.isfinite(_finite_float(row[column]))
+                if column in row.index and math.isfinite(finite_float(row[column]))
             ],
             dtype=float,
         )
@@ -3457,9 +3450,9 @@ def build_selected_candidate_sibling_rescue_audit_rows(
                 "witness_replicate": int(row["witness_replicate"]),
                 "frontier_margin_status": str(row["frontier_margin_status"]),
                 "active_metric": str(row["active_metric"]),
-                "frontier_margin_to_witness": _finite_float(row["frontier_margin_to_witness"]),
-                "sibling_gap": _finite_float(row.get("gap_median_min_sibling_p_value", math.nan)),
-                "log_sibling_gap": _finite_float(
+                "frontier_margin_to_witness": finite_float(row["frontier_margin_to_witness"]),
+                "sibling_gap": finite_float(row.get("gap_median_min_sibling_p_value", math.nan)),
+                "log_sibling_gap": finite_float(
                     row.get(
                         "gap_median_negative_log10_min_sibling_p_value",
                         math.nan,

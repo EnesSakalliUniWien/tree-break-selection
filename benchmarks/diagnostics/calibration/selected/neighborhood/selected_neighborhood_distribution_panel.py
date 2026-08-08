@@ -23,6 +23,7 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator im
 )
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_selected_neighborhood_distribution_not_calibration"
@@ -714,7 +715,7 @@ def _classify_stop_reason(row: pd.Series) -> str:
         return "sibling_closed_descendant_split_available"
     if bool(row.get("explicit_guard_blocked", False)):
         return "explicit_guard_blocked"
-    n_children = _finite_float(row.get("n_children", math.nan))
+    n_children = finite_float(row.get("n_children", math.nan))
     if math.isfinite(n_children) and int(n_children) != 2:
         return "non_binary_or_leaf_boundary"
     if not bool(row.get("child_parent_edge_open", False)):
@@ -724,17 +725,9 @@ def _classify_stop_reason(row: pd.Series) -> str:
     return "sibling_closed_no_descendant_split"
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _neighborhood_evidence_family(row: pd.Series) -> str:
     has_current = any(
-        math.isfinite(_finite_float(row.get(column, math.nan)))
+        math.isfinite(finite_float(row.get(column, math.nan)))
         for column in (
             "incoming_branch_balance",
             "outgoing_balance",
@@ -744,7 +737,7 @@ def _neighborhood_evidence_family(row: pd.Series) -> str:
         )
     )
     has_old = any(
-        math.isfinite(_finite_float(row.get(column, math.nan)))
+        math.isfinite(finite_float(row.get(column, math.nan)))
         for column in (
             "topology_neighborhood_tau_b",
             "topology_neighborhood_tau_t",
@@ -1541,20 +1534,20 @@ def build_selected_neighborhood_candidate_method_contrast_rows(
                     ),
                     "left_explicit_guard_blocked": bool(row["explicit_guard_blocked_left"]),
                     "right_explicit_guard_blocked": bool(row["explicit_guard_blocked_right"]),
-                    "left_depth": _finite_float(row["depth_left"]),
-                    "right_depth": _finite_float(row["depth_right"]),
-                    "left_n_descendant_leaves": _finite_float(row["n_descendant_leaves_left"]),
-                    "right_n_descendant_leaves": _finite_float(row["n_descendant_leaves_right"]),
+                    "left_depth": finite_float(row["depth_left"]),
+                    "right_depth": finite_float(row["depth_right"]),
+                    "left_n_descendant_leaves": finite_float(row["n_descendant_leaves_left"]),
+                    "right_n_descendant_leaves": finite_float(row["n_descendant_leaves_right"]),
                     "left_child_parent_edge_open": bool(row["child_parent_edge_open_left"]),
                     "right_child_parent_edge_open": bool(row["child_parent_edge_open_right"]),
                     "left_sibling_open": bool(row["sibling_open_left"]),
                     "right_sibling_open": bool(row["sibling_open_right"]),
-                    "left_sibling_p_value": _finite_float(row["sibling_p_value_left"]),
-                    "right_sibling_p_value": _finite_float(row["sibling_p_value_right"]),
-                    "left_sibling_projection_dimension": _finite_float(
+                    "left_sibling_p_value": finite_float(row["sibling_p_value_left"]),
+                    "right_sibling_p_value": finite_float(row["sibling_p_value_right"]),
+                    "left_sibling_projection_dimension": finite_float(
                         row["sibling_projection_dimension_left"]
                     ),
-                    "right_sibling_projection_dimension": _finite_float(
+                    "right_sibling_projection_dimension": finite_float(
                         row["sibling_projection_dimension_right"]
                     ),
                     "left_topology_pass_through_candidate": bool(
@@ -1563,12 +1556,12 @@ def build_selected_neighborhood_candidate_method_contrast_rows(
                     "right_topology_pass_through_candidate": bool(
                         row["topology_pass_through_candidate_right"]
                     ),
-                    "left_balance_product": _finite_float(row["balance_product_left"]),
-                    "right_balance_product": _finite_float(row["balance_product_right"]),
-                    "left_outgoing_edge_norm_balance": _finite_float(
+                    "left_balance_product": finite_float(row["balance_product_left"]),
+                    "right_balance_product": finite_float(row["balance_product_right"]),
+                    "left_outgoing_edge_norm_balance": finite_float(
                         row["outgoing_edge_norm_balance_left"]
                     ),
-                    "right_outgoing_edge_norm_balance": _finite_float(
+                    "right_outgoing_edge_norm_balance": finite_float(
                         row["outgoing_edge_norm_balance_right"]
                     ),
                     "left_descendant_accepted_split_count": int(
@@ -1883,11 +1876,11 @@ def summarize_selected_neighborhood_candidate_law_targets(
                 "left_sibling_open_count": int(local.get("sibling_open_count", 0)),
                 "left_pass_through_candidate_count": pass_through_candidate_count,
                 "left_guard_blocked_count": int(local.get("guard_blocked_count", 0)),
-                "left_median_sibling_p_value": _finite_float(
+                "left_median_sibling_p_value": finite_float(
                     local.get("median_sibling_p_value", math.nan)
                 ),
-                "left_median_depth": _finite_float(local.get("median_depth", math.nan)),
-                "left_median_descendant_leaves": _finite_float(
+                "left_median_depth": finite_float(local.get("median_depth", math.nan)),
+                "left_median_descendant_leaves": finite_float(
                     local.get("median_descendant_leaves", math.nan)
                 ),
                 "left_finite_balance_product_count": finite_balance_product_count,

@@ -31,6 +31,7 @@ from benchmarks.diagnostics.calibration.root.root_tail_values import finite_floa
 from benchmarks.diagnostics.calibration.root.selected.root_selected_spectral_tail_law_panel import (
     DEFAULT_RESULT_ROOT,
 )
+from benchmarks.diagnostics.calibration.values import string_value
 
 SCHEMA_VERSION = "root_selected_deformed_external_law_target_panel/v1"
 STUDY_ROLE = "diagnostic_root_selected_deformed_external_law_target_not_calibration"
@@ -102,15 +103,6 @@ def _require_columns(frame: pd.DataFrame, columns: set[str], label: str) -> None
     missing = columns - set(frame.columns)
     if missing:
         raise ValueError(f"{label} missing required columns: {sorted(missing)!r}.")
-
-
-def string_value(row: pd.Series | dict[str, object], column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def _moment_vector(row: pd.Series, *, prefix: str) -> dict[str, float]:

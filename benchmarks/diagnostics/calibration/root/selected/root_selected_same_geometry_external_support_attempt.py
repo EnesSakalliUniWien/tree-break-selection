@@ -98,6 +98,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_target_condi
 from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_target_conditioned_importance_frontier import (
     TARGET_ROWS_OUTPUT as FRONTIER_TARGET_ROWS_OUTPUT,
 )
+from benchmarks.diagnostics.calibration.values import string_value
 
 SCHEMA_VERSION = "root_selected_same_geometry_external_support_attempt/v1"
 STUDY_ROLE = "diagnostic_root_selected_same_geometry_external_support_attempt"
@@ -319,19 +320,6 @@ def finite_float(value: object) -> float:
     except (TypeError, ValueError):
         return math.nan
     return numeric if math.isfinite(numeric) else math.nan
-
-
-def string_value(
-    row: pd.Series | dict[str, object],
-    column: str,
-    default: str = "",
-) -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def _select_external_law_target_case_ids(

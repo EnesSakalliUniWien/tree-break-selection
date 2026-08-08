@@ -23,6 +23,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
+
 SCHEMA_VERSION = "selected_neighborhood_topology_frontier/v1"
 STUDY_ROLE = "diagnostic_selected_neighborhood_topology_frontier_not_calibration"
 GENERATED_BY = "benchmarks.diagnostics.calibration.selected.neighborhood.selected_neighborhood_topology_frontier"
@@ -214,14 +216,6 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _finite_median(values: pd.Series) -> float:
     numeric = pd.to_numeric(values, errors="coerce")
     numeric = numeric[np.isfinite(numeric)]
@@ -242,15 +236,6 @@ def _bool_sum(values: pd.Series) -> int:
     return int(values.map(_bool_value).sum())
 
 
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
-
-
 def _fraction(numerator: int, denominator: int) -> float:
     if int(denominator) <= 0:
         return math.nan
@@ -260,9 +245,9 @@ def _fraction(numerator: int, denominator: int) -> float:
 def _candidate_scope(row: pd.Series) -> str:
     if _bool_value(row.get("direct_sibling_measurable", False)):
         return "direct_measurable"
-    parent_id = _string_value(row, "parent_id")
-    bottleneck = _string_value(row, "measurability_bottleneck")
-    topology_status = _string_value(row, "topology_coherence_status")
+    parent_id = string_value(row, "parent_id")
+    bottleneck = string_value(row, "measurability_bottleneck")
+    topology_status = string_value(row, "topology_coherence_status")
     if (
         not parent_id
         or bottleneck == "root_selected_topology_requires_root_law"
@@ -326,10 +311,10 @@ def _root_margin_status(
     return (
         law_status,
         "root_margin_joined_case_family_diagnostic_only",
-        _finite_float(margin.get("root_child_min_merge_margin", math.nan)),
-        int(_finite_float(margin.get("root_child_tied_minimum_merge_count", 0))),
-        int(_finite_float(margin.get("root_child_discrete_tie_cell_count", 0))),
-        _finite_float(margin.get("root_sibling_selected_ratio", math.nan)),
+        finite_float(margin.get("root_child_min_merge_margin", math.nan)),
+        int(finite_float(margin.get("root_child_tied_minimum_merge_count", 0))),
+        int(finite_float(margin.get("root_child_discrete_tie_cell_count", 0))),
+        finite_float(margin.get("root_sibling_selected_ratio", math.nan)),
     )
 
 
@@ -356,7 +341,7 @@ def _spectral_strict_pass(row: pd.Series, *, require_spectral_flow: bool) -> boo
     if not bool(require_spectral_flow):
         return True
     return (
-        _string_value(row, "spectral_bottleneck_status") == "spectral_flow_observed_diagnostic_only"
+        string_value(row, "spectral_bottleneck_status") == "spectral_flow_observed_diagnostic_only"
     )
 
 
@@ -422,19 +407,19 @@ def build_topology_frontier_rows(
     records: list[dict[str, object]] = []
     root_margin_by_case = _root_margin_lookup(root_selected_region_summary)
     for _, row in measurability_rows.iterrows():
-        case_id = _string_value(row, "case_id")
+        case_id = string_value(row, "case_id")
         scope = _candidate_scope(row)
-        current_action = _string_value(row, "measurability_action")
-        direct_p_value = _finite_float(row.get("direct_sibling_p_value", math.nan))
+        current_action = string_value(row, "measurability_action")
+        direct_p_value = finite_float(row.get("direct_sibling_p_value", math.nan))
         direct_significant = _bool_value(row.get("direct_sibling_open", False)) or (
             math.isfinite(direct_p_value) and direct_p_value <= float(alpha)
         )
-        pair_prior = _finite_float(row.get("interpolated_pair_null_prior", math.nan))
-        effective_support = _finite_float(row.get("interpolation_effective_support", math.nan))
+        pair_prior = finite_float(row.get("interpolated_pair_null_prior", math.nan))
+        effective_support = finite_float(row.get("interpolation_effective_support", math.nan))
         effective_support_pass = math.isfinite(effective_support) and effective_support >= float(
             effective_support_floor
         )
-        best_case_tau = _finite_float(
+        best_case_tau = finite_float(
             row.get("interpolation_best_case_required_tau_s_for_alpha", math.nan)
         )
         bandwidth_reference_reopens = math.isfinite(best_case_tau) and best_case_tau <= float(
@@ -443,7 +428,7 @@ def build_topology_frontier_rows(
         bandwidth_reference_direct_positive_reopens = (
             bandwidth_reference_reopens and direct_significant
         )
-        root_outgoing = _finite_float(row.get("structural_outgoing_balance", math.nan))
+        root_outgoing = finite_float(row.get("structural_outgoing_balance", math.nan))
         root_proxy_pass, root_proxy_status = _root_structural_proxy_status(
             scope=scope,
             outgoing_balance=root_outgoing,
@@ -462,7 +447,7 @@ def build_topology_frontier_rows(
             case_id=case_id,
             margin_by_case=root_margin_by_case,
         )
-        nonroot_balance = _finite_float(row.get("topology_balance_product_value", math.nan))
+        nonroot_balance = finite_float(row.get("topology_balance_product_value", math.nan))
         near_frontier, nonroot_status = _nonroot_frontier_status(
             scope=scope,
             balance_product=nonroot_balance,
@@ -494,15 +479,15 @@ def build_topology_frontier_rows(
                 "schema_version": SCHEMA_VERSION,
                 "study_role": STUDY_ROLE,
                 "case_id": case_id,
-                "data_role": _string_value(row, "data_role"),
-                "method_id": _string_value(row, "method_id"),
+                "data_role": string_value(row, "data_role"),
+                "method_id": string_value(row, "method_id"),
                 "replicate": row.get("replicate", math.nan),
-                "node_id": _string_value(row, "node_id"),
-                "parent_id": _string_value(row, "parent_id"),
-                "depth": _finite_float(row.get("depth", math.nan)),
+                "node_id": string_value(row, "node_id"),
+                "parent_id": string_value(row, "parent_id"),
+                "depth": finite_float(row.get("depth", math.nan)),
                 "candidate_scope": scope,
                 "current_measurability_action": current_action,
-                "current_measurability_bottleneck": _string_value(
+                "current_measurability_bottleneck": string_value(
                     row,
                     "measurability_bottleneck",
                 ),
@@ -537,7 +522,7 @@ def build_topology_frontier_rows(
                 "nonroot_current_floor_margin": nonroot_margin,
                 "nonroot_near_frontier": near_frontier,
                 "nonroot_frontier_status": nonroot_status,
-                "spectral_bottleneck_status": _string_value(
+                "spectral_bottleneck_status": string_value(
                     row,
                     "spectral_bottleneck_status",
                 ),

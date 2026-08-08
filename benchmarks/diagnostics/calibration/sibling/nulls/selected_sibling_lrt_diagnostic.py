@@ -39,6 +39,8 @@ from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecom
 from tree_break_selection.space_separation import hamming_knn_diffusion_geometry
 from tree_break_selection.tree.construction import tree_from_linkage
 
+from benchmarks.diagnostics.calibration.values import finite_float
+
 DEFAULT_GRID: tuple[tuple[int, int], ...] = ((15, 3), (15, 5), (30, 3))
 SCHEMA_VERSION = "selected_sibling_lrt_diagnostic/v1"
 
@@ -76,16 +78,8 @@ def _node_depths(tree: nx.DiGraph) -> dict[object, int]:
     }
 
 
-def _finite_float(value: object) -> float:
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return parsed if math.isfinite(parsed) else math.nan
-
-
 def _p_value(value: object) -> float:
-    parsed = _finite_float(value)
+    parsed = finite_float(value)
     if not math.isfinite(parsed) or parsed < 0.0 or parsed > 1.0:
         return math.nan
     return parsed
@@ -198,8 +192,8 @@ def extract_sibling_lrt_rows(
             n_left=n_left,
             n_right=n_right,
         )
-        sibling_stat = _finite_float(annotations.at[parent, "Sibling_Test_Statistic"])
-        sibling_df = _finite_float(annotations.at[parent, "Sibling_Degrees_of_Freedom"])
+        sibling_stat = finite_float(annotations.at[parent, "Sibling_Test_Statistic"])
+        sibling_df = finite_float(annotations.at[parent, "Sibling_Degrees_of_Freedom"])
         selected_ratio = (
             float(sibling_stat / sibling_df)
             if math.isfinite(sibling_stat) and math.isfinite(sibling_df) and sibling_df > 0.0
@@ -251,7 +245,7 @@ def extract_sibling_lrt_rows(
                 ),
                 "sibling_rejected": bool(annotations.at[parent, "Sibling_BH_Different"]),
                 "sibling_skipped": bool(annotations.at[parent, "Sibling_Divergence_Skipped"]),
-                "sibling_projection_dimension": _finite_float(
+                "sibling_projection_dimension": finite_float(
                     annotations.at[parent, "Sibling_Projection_Dimension"]
                 ),
                 "calibration_readout": _calibration_readout(annotations.loc[parent]),

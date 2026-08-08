@@ -35,6 +35,7 @@ from benchmarks.diagnostics.calibration.selected.family.selected_family_traversa
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
@@ -299,14 +300,6 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _annotation_value(annotations: pd.DataFrame, node: object, column: str) -> object:
     if column not in annotations or node not in annotations.index:
         return np.nan
@@ -555,10 +548,10 @@ def spectral_mode_distance(
         right.polynomial_coefficients,
     )
     cost_terms = [
-        active_weights.get("projector", 1.0) * _finite_float(projector_distance),
-        active_weights.get("log_eigenvalue", 1.0) * _finite_float(log_delta),
-        active_weights.get("multiplicity", 0.5) * _finite_float(multiplicity_distance),
-        active_weights.get("polynomial", 0.5) * _finite_float(polynomial_distance),
+        active_weights.get("projector", 1.0) * finite_float(projector_distance),
+        active_weights.get("log_eigenvalue", 1.0) * finite_float(log_delta),
+        active_weights.get("multiplicity", 0.5) * finite_float(multiplicity_distance),
+        active_weights.get("polynomial", 0.5) * finite_float(polynomial_distance),
     ]
     total_cost = float(sum(term for term in cost_terms if math.isfinite(term)))
     return SpectralModeDistance(
@@ -668,16 +661,16 @@ def spectral_barrier(
 ) -> float:
     """Return a diagnostic spectral-flow barrier."""
     terms = [
-        _finite_float(subspace_chordal_distance),
-        _finite_float(log_eigenvalue_delta_value),
-        _finite_float(mp_dimension_gap),
+        finite_float(subspace_chordal_distance),
+        finite_float(log_eigenvalue_delta_value),
+        finite_float(mp_dimension_gap),
     ]
     positive_terms = [value for value in terms if math.isfinite(value)]
     if not positive_terms:
         return math.nan
     gap_values = [
         value
-        for value in (_finite_float(parent_gap_ratio), _finite_float(child_gap_ratio))
+        for value in (finite_float(parent_gap_ratio), finite_float(child_gap_ratio))
         if math.isfinite(value) and value > 0.0
     ]
     gap_reward = 0.0
@@ -803,12 +796,12 @@ def build_spectral_flow_panels(
             if max(parent_raw, child_raw, 1) > 0
             else 0.0
         )
-        parent_gap = _finite_float(
+        parent_gap = finite_float(
             node_table.at[parent_key, "selected_eigenvalue_gap_ratio"]
             if parent_key in node_table.index
             else math.nan
         )
-        child_gap = _finite_float(
+        child_gap = finite_float(
             node_table.at[child_key, "selected_eigenvalue_gap_ratio"]
             if child_key in node_table.index
             else math.nan

@@ -20,6 +20,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import finite_float
+
 SCHEMA_VERSION = "selected_neighborhood_internal_spectral_flow_conditional_energy/v1"
 STUDY_ROLE = "diagnostic_internal_barycenter_conditional_energy_not_calibration"
 GENERATED_BY = (
@@ -96,16 +98,8 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _finite_int(value: object) -> int:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     return int(numeric) if math.isfinite(numeric) else 0
 
 
@@ -319,10 +313,10 @@ def build_conditional_internal_energy_rows(
             "internal_only_mp_supported_edge_count": _finite_int(
                 row.get("internal_only_mp_supported_edge_count", 0)
             ),
-            "delta_strict_shared_mp_joint_transport_energy": _finite_float(
+            "delta_strict_shared_mp_joint_transport_energy": finite_float(
                 row.get("delta_strict_shared_mp_joint_transport_energy")
             ),
-            "internal_only_mp_joint_transport_energy": _finite_float(
+            "internal_only_mp_joint_transport_energy": finite_float(
                 row.get("internal_only_mp_joint_transport_energy")
             ),
             "neighborhood_energy_status": str(row.get("neighborhood_energy_status", "")),

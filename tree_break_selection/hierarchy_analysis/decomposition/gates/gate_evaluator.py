@@ -136,10 +136,6 @@ class GateEvaluator:
 
         return bool(self._sibling_different[parent])
 
-    def _can_split(self, parent: object) -> bool:
-        """Return whether all split gates are open for *parent*."""
-        return self._passes_split_prerequisites(parent) and self._sibling_gate_is_open(parent)
-
     def _compute_split_prerequisites_by_node(self) -> dict[object, bool]:
         """Return cached binary-structure plus edge-gate status for every node."""
         return {node: self._passes_split_prerequisites(node) for node in self._node_ids}

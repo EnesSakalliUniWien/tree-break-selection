@@ -18,6 +18,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
+
 SCHEMA_VERSION = "selected_neighborhood_conditional_support_panel/v1"
 STUDY_ROLE = "diagnostic_selected_neighborhood_conditional_support_not_calibration"
 GENERATED_BY = "benchmarks.diagnostics.calibration.selected.neighborhood.selected_neighborhood_conditional_support_panel"
@@ -237,16 +239,8 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _finite_int(value: object) -> int:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     return int(numeric) if math.isfinite(numeric) else 0
 
 
@@ -256,15 +250,6 @@ def _bool_value(value: object) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "yes"}
     return bool(value)
-
-
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def _finite_median(values: pd.Series) -> float:
@@ -280,9 +265,9 @@ def _bool_sum(values: pd.Series) -> int:
 
 
 def _candidate_scope(row: pd.Series) -> str:
-    parent_id = _string_value(row, "parent_id")
-    bottleneck = _string_value(row, "measurability_bottleneck")
-    topology_status = _string_value(row, "topology_coherence_status")
+    parent_id = string_value(row, "parent_id")
+    bottleneck = string_value(row, "measurability_bottleneck")
+    topology_status = string_value(row, "topology_coherence_status")
     if (
         parent_id == ""
         or bottleneck == "root_selected_topology_requires_root_law"
@@ -322,8 +307,8 @@ def _root_context(
     validity_by_case: dict[str, dict[str, object]],
     tail_by_case: dict[str, dict[str, object]],
 ) -> tuple[str, str, str, str, bool, bool, bool]:
-    case_id = _string_value(row, "case_id")
-    data_role = _string_value(row, "data_role")
+    case_id = string_value(row, "case_id")
+    data_role = string_value(row, "data_role")
     validity_record = validity_by_case.get(case_id, {})
     tail_record = tail_by_case.get(case_id, {})
     validity_status = str(validity_record.get("root_validity_status", "root_validity_unmeasured"))
@@ -390,8 +375,8 @@ def _root_context(
 
 
 def _support_weight_share_fields(row: pd.Series) -> tuple[float, float, float, str]:
-    effective_support = _finite_float(row.get("interpolation_effective_support", math.nan))
-    observed = _finite_float(row.get("interpolation_max_weight_share", math.nan))
+    effective_support = finite_float(row.get("interpolation_effective_support", math.nan))
+    observed = finite_float(row.get("interpolation_max_weight_share", math.nan))
     if math.isfinite(observed):
         lower = observed
         upper = observed
@@ -439,7 +424,7 @@ def _spectral_flow_pass(row: pd.Series, *, require_spectral_flow: bool) -> bool:
     if not bool(require_spectral_flow):
         return True
     return (
-        _string_value(row, "spectral_bottleneck_status") == "spectral_flow_observed_diagnostic_only"
+        string_value(row, "spectral_bottleneck_status") == "spectral_flow_observed_diagnostic_only"
     )
 
 
@@ -456,7 +441,7 @@ def _classify_row(
     topology_pass: bool,
     spectral_pass: bool,
 ) -> tuple[bool, bool, bool, bool, str, str, str]:
-    data_role = _string_value(row, "data_role")
+    data_role = string_value(row, "data_role")
     direct_measurable = _bool_value(row.get("direct_sibling_measurable", False))
     direct_open = _bool_value(row.get("direct_sibling_open", False))
     if hard_negative_control and not root_gate_allows_neighborhood:
@@ -525,7 +510,7 @@ def _classify_row(
             False,
             False,
             False,
-            _string_value(row, "topology_coherence_status", "topology_not_coherent"),
+            string_value(row, "topology_coherence_status", "topology_not_coherent"),
             "fail_closed_topology_not_coherent",
             "The local incoming/outgoing topology is not coherent enough for support borrowing.",
         )
@@ -535,7 +520,7 @@ def _classify_row(
             False,
             False,
             False,
-            _string_value(row, "spectral_bottleneck_status", "spectral_flow_missing"),
+            string_value(row, "spectral_bottleneck_status", "spectral_flow_missing"),
             "fail_closed_spectral_flow_missing",
             "The MP-supported spectral-flow check is missing or blocks the row.",
         )
@@ -613,10 +598,10 @@ def build_conditional_support_rows(
     records: list[dict[str, object]] = []
 
     for _, row in measurability_rows.iterrows():
-        case_id = _string_value(row, "case_id")
+        case_id = string_value(row, "case_id")
         candidate_scope = _candidate_scope(row)
         hard_negative_control = (
-            case_id in hard_negative_set and _string_value(row, "data_role") == "signal"
+            case_id in hard_negative_set and string_value(row, "data_role") == "signal"
         )
         (
             root_validity_status,
@@ -642,7 +627,7 @@ def build_conditional_support_rows(
         selected_nonnull_excluded_count = _finite_int(
             row.get("interpolation_selected_nonnull_excluded_count", 0)
         )
-        effective_support = _finite_float(row.get("interpolation_effective_support", math.nan))
+        effective_support = finite_float(row.get("interpolation_effective_support", math.nan))
         support_pass, support_status = _local_support_pass(
             support_count=support_count,
             effective_support=effective_support,
@@ -683,23 +668,23 @@ def build_conditional_support_rows(
                 "schema_version": SCHEMA_VERSION,
                 "study_role": STUDY_ROLE,
                 "case_id": case_id,
-                "data_role": _string_value(row, "data_role"),
-                "method_id": _string_value(row, "method_id"),
+                "data_role": string_value(row, "data_role"),
+                "method_id": string_value(row, "method_id"),
                 "replicate": row.get("replicate", math.nan),
-                "node_id": _string_value(row, "node_id"),
-                "parent_id": _string_value(row, "parent_id"),
-                "depth": _finite_float(row.get("depth", math.nan)),
+                "node_id": string_value(row, "node_id"),
+                "parent_id": string_value(row, "parent_id"),
+                "depth": finite_float(row.get("depth", math.nan)),
                 "candidate_scope": candidate_scope,
                 "hard_negative_control": hard_negative_control,
                 "direct_sibling_measurable": _bool_value(
                     row.get("direct_sibling_measurable", False)
                 ),
                 "direct_sibling_open": _bool_value(row.get("direct_sibling_open", False)),
-                "direct_sibling_p_value": _finite_float(
+                "direct_sibling_p_value": finite_float(
                     row.get("direct_sibling_p_value", math.nan)
                 ),
-                "measurability_action": _string_value(row, "measurability_action"),
-                "measurability_bottleneck": _string_value(
+                "measurability_action": string_value(row, "measurability_action"),
+                "measurability_bottleneck": string_value(
                     row,
                     "measurability_bottleneck",
                 ),
@@ -714,7 +699,7 @@ def build_conditional_support_rows(
                 "local_signal_anchor_count": signal_anchor_count,
                 "local_selected_nonnull_excluded_count": selected_nonnull_excluded_count,
                 "local_effective_support": effective_support,
-                "local_support_weight": _finite_float(
+                "local_support_weight": finite_float(
                     row.get("interpolation_support_weight", math.nan)
                 ),
                 "local_max_weight_share": local_max_weight_share,
@@ -722,40 +707,40 @@ def build_conditional_support_rows(
                 "local_max_weight_share_upper_bound": (local_max_weight_share_upper_bound),
                 "local_max_weight_share_status": local_max_weight_share_status,
                 "local_support_pass": support_pass,
-                "nearest_support_distance": _finite_float(
+                "nearest_support_distance": finite_float(
                     row.get("interpolation_nearest_support_distance", math.nan)
                 ),
-                "nearest_signal_distance": _finite_float(
+                "nearest_signal_distance": finite_float(
                     row.get("interpolation_nearest_signal_distance", math.nan)
                 ),
-                "tau_t": _finite_float(row.get("interpolation_tau_t", math.nan)),
-                "tau_s": _finite_float(row.get("interpolation_tau_s", math.nan)),
-                "h_k": _finite_float(row.get("interpolation_h_k", math.nan)),
-                "interpolated_pair_null_prior": _finite_float(
+                "tau_t": finite_float(row.get("interpolation_tau_t", math.nan)),
+                "tau_s": finite_float(row.get("interpolation_tau_s", math.nan)),
+                "h_k": finite_float(row.get("interpolation_h_k", math.nan)),
+                "interpolated_pair_null_prior": finite_float(
                     row.get("interpolated_pair_null_prior", math.nan)
                 ),
-                "interpolation_best_case_required_tau_s_for_alpha": _finite_float(
+                "interpolation_best_case_required_tau_s_for_alpha": finite_float(
                     row.get(
                         "interpolation_best_case_required_tau_s_for_alpha",
                         math.nan,
                     )
                 ),
-                "interpolation_behavior_label": _string_value(
+                "interpolation_behavior_label": string_value(
                     row,
                     "interpolation_behavior_label",
                 ),
                 "topology_coherent": topology_pass,
-                "topology_coherence_status": _string_value(
+                "topology_coherence_status": string_value(
                     row,
                     "topology_coherence_status",
                 ),
-                "topology_balance_product_value": _finite_float(
+                "topology_balance_product_value": finite_float(
                     row.get("topology_balance_product_value", math.nan)
                 ),
-                "structural_outgoing_balance": _finite_float(
+                "structural_outgoing_balance": finite_float(
                     row.get("structural_outgoing_balance", math.nan)
                 ),
-                "spectral_bottleneck_status": _string_value(
+                "spectral_bottleneck_status": string_value(
                     row,
                     "spectral_bottleneck_status",
                 ),

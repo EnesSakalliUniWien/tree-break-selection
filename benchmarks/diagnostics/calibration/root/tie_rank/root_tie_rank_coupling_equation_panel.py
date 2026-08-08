@@ -23,6 +23,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.comparison import (
     partition_target_and_generated_rows,
     row_bandwidth_gap_status,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
 SCHEMA_VERSION = "root_tie_rank_coupling_equation_panel/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_coupling_equation_panel_not_calibration"
@@ -117,23 +118,15 @@ class RootTieRankCouplingEquationConfig:
     proposal_feasibility_rows_path: Path = DEFAULT_PROPOSAL_FEASIBILITY_ROWS
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _safe_log1p(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(math.log1p(max(numeric, 0.0)))
 
 
 def _spectral_excess_log(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(max(math.log(max(numeric, 1e-12)), 0.0))
@@ -153,24 +146,15 @@ def _ratio(*, target: float, generated: float) -> float:
     return float(generated / target)
 
 
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
-
-
 def _neighborhood_weight(row: pd.Series) -> float:
-    bandwidth_band = _string_value(row, "root_bandwidth_reopen_band")
+    bandwidth_band = string_value(row, "root_bandwidth_reopen_band")
     if bandwidth_band == "bandwidth_reopen_missing" or not bandwidth_band:
         return 0.0
     return 1.0
 
 
 def _coupling_values(row: pd.Series) -> dict[str, float]:
-    tie = _finite_float(row.get("root_tie_rank_median_fraction", math.nan))
+    tie = finite_float(row.get("root_tie_rank_median_fraction", math.nan))
     action = _safe_log1p(row.get("root_sibling_selected_ratio", math.nan))
     edge = _safe_log1p(row.get("root_edge_path_statistic_margin", math.nan))
     spectral = _spectral_excess_log(
@@ -304,9 +288,9 @@ def _coupling_record(target: pd.Series, generated: pd.Series) -> dict[str, objec
     return {
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
-        "target_case_id": _string_value(target, "case_id"),
-        "proposal_family": _string_value(generated, "proposal_family"),
-        "best_generated_case_id": _string_value(generated, "case_id"),
+        "target_case_id": string_value(target, "case_id"),
+        "proposal_family": string_value(generated, "proposal_family"),
+        "best_generated_case_id": string_value(generated, "case_id"),
         "target_tie_fraction": target_values["tie"],
         "generated_tie_fraction": generated_values["tie"],
         "target_action_log": target_values["action"],

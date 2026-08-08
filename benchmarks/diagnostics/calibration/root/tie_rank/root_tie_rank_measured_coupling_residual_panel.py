@@ -21,6 +21,7 @@ from benchmarks.diagnostics.calibration.reporting import (
     print_diagnostic_output_paths,
     write_diagnostic_bundle,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
 SCHEMA_VERSION = "root_tie_rank_measured_coupling_residual_panel/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_measured_coupling_residual_panel_not_calibration"
@@ -112,14 +113,6 @@ def _require_columns(frame: pd.DataFrame, columns: set[str], label: str) -> None
         raise ValueError(f"{label} missing required columns: {sorted(missing)!r}.")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _bool_value(value: object) -> bool:
     if pd.isna(value):
         return False
@@ -128,29 +121,16 @@ def _bool_value(value: object) -> bool:
     return bool(value)
 
 
-def _string_value(
-    row: pd.Series | dict[str, object],
-    column: str,
-    default: str = "",
-) -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
-
-
 def _positive_deficit(target: object, generated: object) -> float:
-    target_value = _finite_float(target)
-    generated_value = _finite_float(generated)
+    target_value = finite_float(target)
+    generated_value = finite_float(generated)
     if not (math.isfinite(target_value) and math.isfinite(generated_value)):
         return math.nan
     return float(max(target_value - generated_value, 0.0))
 
 
 def _relative_deficit(deficit: float, target: object) -> float:
-    target_value = _finite_float(target)
+    target_value = finite_float(target)
     if not (math.isfinite(deficit) and math.isfinite(target_value)):
         return math.nan
     if abs(target_value) <= 1e-12:
@@ -159,12 +139,12 @@ def _relative_deficit(deficit: float, target: object) -> float:
 
 
 def _finite_or_negative_inf(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     return numeric if math.isfinite(numeric) else -math.inf
 
 
 def _finite_or_positive_inf(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     return numeric if math.isfinite(numeric) else math.inf
 
 
@@ -175,8 +155,8 @@ def _proposal_support_role(family: str) -> str:
 
 
 def _dominant_action_edge_axis(action_deficit: float, edge_deficit: float) -> str:
-    action = _finite_float(action_deficit)
-    edge = _finite_float(edge_deficit)
+    action = finite_float(action_deficit)
+    edge = finite_float(edge_deficit)
     if not (math.isfinite(action) and math.isfinite(edge)):
         return "action_edge_unavailable"
     if action <= 0.0 and edge <= 0.0:
@@ -191,7 +171,7 @@ def _dominant_action_edge_axis(action_deficit: float, edge_deficit: float) -> st
 def _bandwidth_conditioning_status(row: pd.Series) -> str:
     if not _bool_value(row.get("generated_neighborhood_measured", False)):
         return "generated_bandwidth_unmeasured"
-    status = _string_value(row, "bandwidth_gap_status")
+    status = string_value(row, "bandwidth_gap_status")
     if status == "bandwidth_band_match":
         return "bandwidth_stratum_match"
     return "bandwidth_measured_but_stratum_mismatch"
@@ -210,9 +190,9 @@ def _dominant_residual_axis(
     if bandwidth_status == "generated_bandwidth_unmeasured":
         return "bandwidth_unmeasured"
     candidates = {
-        "tie_rank_fraction": _finite_float(tie_relative_deficit),
-        "action_edge_bottleneck": _finite_float(action_edge_relative_deficit),
-        "spectral_excess": _finite_float(spectral_relative_deficit),
+        "tie_rank_fraction": finite_float(tie_relative_deficit),
+        "action_edge_bottleneck": finite_float(action_edge_relative_deficit),
+        "spectral_excess": finite_float(spectral_relative_deficit),
     }
     finite = {key: value for key, value in candidates.items() if math.isfinite(value)}
     if not finite:
@@ -294,7 +274,7 @@ def _best_row_for_target(group: pd.DataFrame) -> pd.Series:
 
 
 def _residual_record(row: pd.Series, *, partial_ratio_floor: float) -> dict[str, object]:
-    family = _string_value(row, "proposal_family")
+    family = string_value(row, "proposal_family")
     support_role = _proposal_support_role(family)
     measured_reached = _bool_value(row.get("measured_neighborhood_coupling_dominates", False))
     tie_deficit = _positive_deficit(
@@ -334,7 +314,7 @@ def _residual_record(row: pd.Series, *, partial_ratio_floor: float) -> dict[str,
         action_edge_relative_deficit=action_edge_relative,
         spectral_relative_deficit=spectral_relative,
     )
-    measured_ratio = _finite_float(row.get("measured_neighborhood_coupling_ratio"))
+    measured_ratio = finite_float(row.get("measured_neighborhood_coupling_ratio"))
     target_status = _target_resolution_status(
         measured_reached=measured_reached,
         support_role=support_role,
@@ -344,27 +324,27 @@ def _residual_record(row: pd.Series, *, partial_ratio_floor: float) -> dict[str,
     return {
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
-        "target_case_id": _string_value(row, "target_case_id"),
+        "target_case_id": string_value(row, "target_case_id"),
         "best_proposal_family": family,
-        "best_generated_case_id": _string_value(row, "best_generated_case_id"),
+        "best_generated_case_id": string_value(row, "best_generated_case_id"),
         "proposal_support_role": support_role,
-        "target_bottleneck_coupling": _finite_float(
+        "target_bottleneck_coupling": finite_float(
             row.get("target_bottleneck_coupling", math.nan)
         ),
-        "best_generated_bottleneck_coupling": _finite_float(
+        "best_generated_bottleneck_coupling": finite_float(
             row.get("generated_bottleneck_coupling", math.nan)
         ),
-        "target_measured_neighborhood_coupling": _finite_float(
+        "target_measured_neighborhood_coupling": finite_float(
             row.get("target_measured_neighborhood_coupling", math.nan)
         ),
-        "best_generated_measured_neighborhood_coupling": _finite_float(
+        "best_generated_measured_neighborhood_coupling": finite_float(
             row.get("generated_measured_neighborhood_coupling", math.nan)
         ),
-        "best_bottleneck_coupling_ratio": _finite_float(
+        "best_bottleneck_coupling_ratio": finite_float(
             row.get("bottleneck_coupling_ratio", math.nan)
         ),
         "best_measured_neighborhood_coupling_ratio": measured_ratio,
-        "measured_neighborhood_coupling_deficit": _finite_float(
+        "measured_neighborhood_coupling_deficit": finite_float(
             row.get("measured_neighborhood_coupling_deficit", math.nan)
         ),
         "tie_fraction_deficit": tie_deficit,
@@ -380,9 +360,9 @@ def _residual_record(row: pd.Series, *, partial_ratio_floor: float) -> dict[str,
             edge_deficit,
         ),
         "dominant_residual_axis": dominant_axis,
-        "bandwidth_gap_status": _string_value(row, "bandwidth_gap_status"),
+        "bandwidth_gap_status": string_value(row, "bandwidth_gap_status"),
         "bandwidth_conditioning_status": bandwidth_status,
-        "best_coupling_pattern": _string_value(row, "coupling_pattern"),
+        "best_coupling_pattern": string_value(row, "coupling_pattern"),
         "measured_neighborhood_coupling_reached": measured_reached,
         "target_resolution_status": target_status,
         "next_mathematical_step": _next_mathematical_step(

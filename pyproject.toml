@@ -125,7 +125,6 @@ src = ["applications", "benchmarks", "tree_break_selection", "scripts", "tests"]
 force-exclude = true
 extend-exclude = [
     "manuscript",
-    "notebooks",
     "vendor",
 ]
 
@@ -137,6 +136,6 @@ ignore = ["E402", "E501"]
 ignore_notebooks = true
 known_first_party = ["applications", "benchmarks", "tree_break_selection", "brancharchitect"]
 pep621_dev_dependency_groups = ["dev", "benchmark", "benchmark-infra", "diffusion", "trajectory", "viz", "all", "experimental-gpl", "brancharchitect"]
-extend_exclude = ["^manuscript/", "^notebooks/", "^vendor/"]
+extend_exclude = ["^manuscript/", "^vendor/"]
 per_rule_ignores = { DEP002 = ["biopython", "orjson"], DEP003 = ["tensorflow"] }
 package_module_name_map = { "python-louvain" = "community", "scikit-bio" = "skbio" }

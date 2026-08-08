@@ -44,6 +44,7 @@ from benchmarks.diagnostics.calibration.overlap.panel_runner import (
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
     DEFAULT_DATA_ROLES,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     parse_names,
 )
@@ -339,14 +340,6 @@ def _annotation_value(annotations: pd.DataFrame, node: object, column: str) -> o
     return np.nan
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return float("nan")
-    return numeric if math.isfinite(numeric) else float("nan")
-
-
 def _bool_value(value: object) -> bool:
     if pd.isna(value):
         return False
@@ -354,7 +347,7 @@ def _bool_value(value: object) -> bool:
 
 
 def _neglog10_p_value(value: object) -> float:
-    p_value = _finite_float(value)
+    p_value = finite_float(value)
     if not math.isfinite(p_value):
         return float("nan")
     return float(-math.log10(min(max(p_value, 1e-300), 1.0)))
@@ -374,8 +367,8 @@ def _edge_record(annotations: pd.DataFrame, node: object, prefix: str) -> dict[s
         "Child_Parent_Divergence_Significant",
     )
     return {
-        f"{prefix}_edge_p_value": _finite_float(p_value),
-        f"{prefix}_edge_bh_p_value": _finite_float(bh_p_value),
+        f"{prefix}_edge_p_value": finite_float(p_value),
+        f"{prefix}_edge_bh_p_value": finite_float(bh_p_value),
         f"{prefix}_edge_neglog10_bh_p_value": _neglog10_p_value(bh_p_value),
         f"{prefix}_edge_tested": _bool_value(tested),
         f"{prefix}_edge_rejected": _bool_value(rejected),
@@ -640,7 +633,7 @@ def _branch_row_for_node(
         "traversal_decision": str(node_row["traversal_decision"]),
         "sibling_open": bool(node_row["sibling_open"]),
         "sibling_p_value": float(node_row["sibling_p_value"]),
-        "sibling_projection_dimension": _finite_float(
+        "sibling_projection_dimension": finite_float(
             node_row.get("sibling_projection_dimension", np.nan)
         ),
         "selected_family_guard_blocked": bool(node_row["selected_family_guard_blocked"]),

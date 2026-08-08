@@ -2,7 +2,7 @@
 title: Wiki Log
 type: control
 status: reviewed
-updated: 2026-07-29
+updated: 2026-08-07
 sources:
   - AGENTS.md
   - raw/inbox/wiki-construction-brief.md
@@ -5929,6 +5929,35 @@ verification, and maintenance events here in chronological order.
   `oracle_tree_recoverability.py` leaks deliberately and is read after the loop
   as `dinkelbach_iterations`, and `method_registry.py:120` is prose, not code.
 
+### Root selective-permutation guard scope audit
+
+Audited every guard layer in `decomposition/gates/`. Removed one redundant
+dispatch arm in `guards.py`: the `scope_value == "root"` branch called
+`_selective_guard_root_candidate(out, root, root)` with the same arguments as
+the `else` branch and produced the same `[root]` or `[]` result. The predicate
+is a pure two-read boolean, so deleting the arm is behavior-preserving; the
+`else` branch already handles the `root` scope, which
+`fixed_coordinate_selective_root_v1` exercises with 99 replicates.
+
+Two guard scopes are reachable only from tests and were **deliberately kept**:
+
+| Scope | Sole enabling profile | Why it is retained |
+| --- | --- | --- |
+| `open_internal` | `fixed_coordinate_selective_traversal_v1` | Closes the pass-through null leak but is too conservative for signal: binary signal mean ARI `0.651330`, categorical `0.521072`. Superseded by `fixed_coordinate_selective_passthrough_v1`. |
+| `global_sibling_min_passthrough_descendant` | `fixed_coordinate_global_passthrough_v1` | Still shows boundary false splits. Superseded by `fixed_coordinate_global_passthrough_refined_v1`. |
+
+Neither profile is a default and no module outside `profiles.py` selects
+either one, so static reachability reports both as dead. They are not: the wiki
+cites their measured results as the evidence for choosing the profiles that do
+run, so removing them would delete the justification for the current gate
+configuration. Treat a future "unused guard scope" report on these two as
+expected, not as a cleanup target.
+
+All other guard machinery is live. Every guard helper has call sites beyond its
+definition, `root_stability_guard_threshold` is set by all profiles, and
+`spectral_transport_passthrough_guard` is enabled by two profiles that
+production paths select.
+
 ### Retired overlapping benchmark cases
 
 Removed seven commented-out binary overlap case definitions from
@@ -5950,6 +5979,194 @@ All seven use `generator: binary` with `feature_sparsity: 0.05`. The active case
 counts are unchanged: four heavy, three moderate, three partial, one
 high-dimensional, three unbalanced binary groups, plus eight Gaussian and three
 Gaussian-quantile cases.
+
+### 2026-08-07
+
+Repository-wide documentation, legacy, and dead-code audit. Ruff, `wiki-lint`
+(272 pages), the ordered suite, `tools/repository_audit`, and `tbs-audit --mode
+quick` all passed before and after. No new dead code: vulture silent, no dead
+fixtures, no unused imports or locals, zero import cycles across the 125 package
+modules, and the only two extended-ruff findings are the 2026-08-04 false
+positives. The GitHub wiki remote returns `Repository not found` while the main
+remote resolves, so in-repo `wiki/` is the only wiki surface.
+
+- Fixed four surfaces that documented things which do not exist.
+  `benchmarks/README.md` section 9 described `benchmarks/calibration/`, removed
+  by `69225de9`, plus `TBS_CAL_NULL_REPS`, `TBS_CAL_TREEBH_REPS`,
+  `calibration_plots.pdf`, and `calibration_report.md` — none of which occur
+  anywhere else in the repository. `tests/README.md` claimed 1,272 collected
+  cases against a measured 1,367. `notebooks/` was still a path policy and a
+  ruff/deptry exclusion after `4a502615` emptied it. `wiki/maintenance.md` told
+  maintainers to promote pages from `wiki/candidates/`, which has no history in
+  this repository and is absent from the `AGENTS.md` layout and [[schema]].
+  Also named the `audit-test` stage that `make check` runs but `README.md`
+  omitted.
+- Added `test_spectral_context_mirrors_every_decomposition_field`. The
+  `SpectralContext`/`SpectralDecompositionResult` split kept on 2026-08-04 had
+  nothing protecting its 12-field hand-written forwarding, where a dropped
+  field silently defaults to `{}`. Mutation check: with one field dropped the
+  other seven tests in that file still passed. The test iterates
+  `dataclasses.fields`, so future fields are covered.
+- Two gaps left open: `selected_quadratic_law_audit.py` is the only calibration
+  diagnostic with no wiki record, and `[tool.deptry]` configures a tool that no
+  dependency group installs and no command invokes.
+
+### Second bloat pass below the configured thresholds
+
+The first pass used the repository's own audit thresholds and found the
+repository clean. Re-running the same signals at lower thresholds found the
+duplication those thresholds sit above.
+
+- **Correction to the 2026-08-04 entry.** It recorded that "the six
+  `_run_*_method` benchmark runners and `_can_split` are reached through
+  name-string registries." That is true for all six runners — each has an
+  `_import_runner(..., "_run_*_method")` string in `method_registry.py`, checked
+  individually. It is **not** true for `GateEvaluator._can_split`:
+  `method_registry.py` never names it, `rg 'self\._can_split\('` returns
+  nothing, `GateEvaluator` is never subclassed, and the only other repository
+  hit is an unrelated tuple-unpacking local in `gate_path_trace.py:348`. Its
+  body was also already inlined in `_compute_can_split_by_node`. Removed; the
+  full suite still passes 1,368. Re-running vulture afterwards surfaced
+  `passthrough_support_status`, which is live via
+  `tests/localization/35_test_gates_traversal.py:351`, so the cascade stops
+  there.
+- **jscpd at 5 lines / 40 tokens reports 7.01% duplication (1,191 clones,
+  12,893 lines), against 2.66% at the configured 8 lines / 70 tokens.** This
+  repository's duplication is mostly 6-to-8-line scalar helpers, which sit just
+  under the configured floor. An AST scan with docstrings stripped and names
+  normalized finds 67 duplicate function groups worth 1,114 redundant lines.
+- **The canonical helpers exist and are bypassed.** `reporting.py` owns
+  `diagnostic_json_default`: 2 modules import it, 20 declare their own
+  `_json_default`. `root/root_tail_values.py` owns `finite_float` and
+  `string_value`, which the calibration README already names as the shared
+  owner: 31 modules declare `_finite_float`, 17 declare `_string_value`, 17
+  declare `_bool_value`. The two `_string_value` variants differ only in one
+  type annotation, and the canonical version is otherwise byte-identical, so
+  this is copying rather than divergence. Consolidation is safe in principle but
+  spans 31 files and is left for a dedicated patch.
+- **Repository weight is the largest untracked issue.** `.git` is 1.8 GB and
+  tracked content is 1.74 GB, of which all source is about 11 MB. `results/` has
+  been ignored by `.gitignore:102` since 2026-02-13, yet 865 files and 211 MB
+  under `results/analyses/aml_michel_...20260623_151556/` were force-added on
+  2026-06-23 by `c74e3e15`, and that run directory is cited by no wiki, doc,
+  report, or manuscript file. Separately, `docs/onboarding.md:73` calls
+  `raw/assets/benchmark-results/` "small promoted evidence snapshots" while it
+  holds 191 files over 1 MB totalling 978 MB, including single 71 MB and 67 MB
+  CSVs. The citation discipline itself holds: 94 of 120 promoted top-level
+  entries are cited. There is no `.gitattributes` and no Git LFS.
+- Smaller items recorded for later: `_capture_runner` is defined 10 times in
+  `tests/pipeline/51_test_dispatch_contract.py` (222 redundant lines across 9
+  within-file test groups); `benchmarks/cloud/` triplicates
+  `validate_shard_contract`, `_validate_replicate_coverage`, `current_git_state`,
+  and `main`; and the `all` extra hand-duplicates 28 dependency specs from eight
+  other extras with no test keeping them in sync. Excluding `graphtools` and
+  `phate` from `all` is a documented GPL boundary, but excluding `biopython` and
+  `orjson` is not explained anywhere.
+
+### Scalar-helper consolidation and the dead AML result set
+
+**Correction to the bloat pass above.** It reported the duplicated helpers as
+"copying, not divergence" on the strength of two `_string_value` variants. That
+generalisation was wrong. Comparing every copy against the canonical body:
+
+| Local helper | Copies | Match canonical | Distinct bodies |
+| --- | ---: | ---: | ---: |
+| `_finite_float` | 28 | 26 | 7 |
+| `_string_value` / `string_value` | 16 | 15 | 3 |
+| `_json_default` | 20 | **0** | **10** |
+| `_require_columns` | 22 | **0** | 7 |
+| `_bool_value` | 17 | n/a (no canonical) | 8 |
+
+Only the first two families are safe to merge. The `_json_default` copies
+genuinely differ: nine omit the canonical dataclass branch, two add
+`np.ndarray -> tolist()`, one replaces the `TypeError` with a `str(value)`
+fallback, and two hand-roll a dataclass branch for one specific config class.
+Merging them would change serialization behaviour, so they are left alone;
+`_require_columns` and `_bool_value` likewise need per-family review.
+
+- Added `benchmarks/diagnostics/calibration/values.py` holding `finite_float`
+  and `string_value`, moved from `root/root_tail_values.py`, which now imports
+  them and keeps its `__all__` so its 22 importers are unaffected. The generic
+  coercers sit at the package root because `overlap/`, `selected/`,
+  `statistics/`, and `traversal/` all need them and should not import from the
+  `root/` category.
+- Removed 41 provably equivalent local definitions across 30 files. Equivalence
+  was checked on unparsed source, not by eye: alpha-renamed locals,
+  `float('nan')` for `math.nan`, and a redundant `value is None` guard all
+  reduce to the canonical body. The two `_finite_float` copies that delegate to
+  a local `_is_finite` or use `pd.to_numeric(errors='coerce')`, and the one
+  `_string_value` that restructures its guard, were left in place.
+- Effect: the AST duplicate scan falls from 67 groups / 1,114 redundant lines to
+  63 / 878; jscpd at 5 lines / 40 tokens falls from 7.01% to 6.87%. The
+  remaining duplication is the `_json_default`, `_require_columns`, and
+  `_bool_value` families plus the panel run/report mechanics.
+- Untracked the dead AML result set. `results/` has been ignored by
+  `.gitignore:102` since 2026-02-13, yet 865 files and about 211 MB were
+  force-added on 2026-06-23 by `c74e3e15`, and no wiki page, doc, report,
+  manuscript, manifest, or test names that run directory. `git rm -r --cached
+  results` drops it from the index; the working tree is untouched, so the
+  `results/analyses` scan in `inventory_go_annotation_datasets.py` still sees
+  local runs, and history still holds every byte. Tracked content falls from
+  1.74 GB to 1.49 GB. **This does not shrink `.git`, which stays at 1.8 GB;
+  only a history rewrite would.** If the AML analysis should stay citable, the
+  repository's own pattern is to promote a curated subset into `raw/assets/`
+  and give it a `wiki/sources/` page.
+- `docs/onboarding.md` called `raw/assets/benchmark-results/` "small promoted
+  evidence snapshots". It is about 1.13 GiB across 120 top-level entries (100
+  directories and 20 files), and is the reason a clone is large. Corrected to
+  say so.
+
+### Dead-fallback audit
+
+`README.md` states that unsupported statistical contexts fail closed and never
+take a neutral fallback. Audited that contract structurally.
+
+**The production contract holds.** No handler anywhere in `tree_break_selection/`
+swallows an exception or returns a neutral value. The `.get(key, 0)` defaults in
+`empirical_null_inflation_estimation.py` fail closed by construction: a missing
+support key reads as `0`, which is below every
+`CalibrationSupportThresholds` floor and therefore appends a support failure.
+Four structural checks across all five source roots also came back empty:
+no statement after an unconditional `return`/`raise`/`continue`/`break`, no
+repeated condition in an `if`/`elif` chain, no `except` handler shadowed by an
+earlier broader one, and no `sys.version_info` guard (`requires-python` is
+already `>=3.11`).
+
+Removed three unreachable fallbacks:
+
+- `kak_lens_alpha_sweep.py:543` and `adaptive_cosine_kak_diffusion_matrix_probe.py:242`
+  wrapped `import matplotlib.pyplot` in `except ImportError: return`. Matplotlib
+  is a base dependency, and both modules already call
+  `configure_matplotlib_backend()` at module scope, which imports it — so the
+  module cannot load without matplotlib and the handler cannot run. Had it run,
+  a function named `write_plots` would have silently written nothing. The other
+  52 files that import `pyplot` use no guard.
+- `overlap_conditional_topology_law_panel.py:717` read
+  `parent = "" if parent_id is None else str(parent_id)` for a parameter
+  annotated `str = ""`. All four call sites pass a string or omit it; the
+  production caller passes `string_value(...)`, which is total over `str`.
+
+Corrected two annotations that were lying rather than dead. In
+`tree_topology_difference_diagnosis.py`, `_subtree_case_summary` and
+`_top_subtree_summary` both annotate `pd.DataFrame` and guard `is None`, but
+their only caller declares `subtree_support`/`subtree_highlights` as
+`pd.DataFrame | None = None` and forwards them unchanged. The guards are live;
+the signatures were wrong, and are now `pd.DataFrame | None`.
+
+Left in place with reasons: the fourteen `except ImportError` guards over
+optional extras (`skbio`, `graphtools`, `umap`, `bokeh`, `pypdf`, `PIL`,
+`requests`, `brancharchitect`); the `plotly` guard in
+`mnist/run_higher_categories.py:653`, which bundles the genuinely optional
+`umap` and reports the skip instead of returning silently; and
+`_annotation_value`'s `annotations is None` guard in
+`overlap_branch_incidence_junction_panel.py:333`, because line 432 builds its
+argument with `result.extra.get("annotations", tree.annotations_df)` and a
+stored `None` could reach it. The three broad `except Exception: continue`
+handlers are also retained: the bootstrap loop in `relationship_analysis.py:1930`
+converts dropped draws into `nan` through its `min_success` check, and the other
+two scan arbitrary local result directories where a malformed CSV must not abort
+an inventory. Narrowing those exception types is worth doing but changes
+behaviour, so it is not part of this pass.
 
 ## Evidence
 

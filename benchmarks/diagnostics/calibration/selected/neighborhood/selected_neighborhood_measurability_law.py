@@ -23,6 +23,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
+
 SCHEMA_VERSION = "selected_neighborhood_measurability_law/v1"
 STUDY_ROLE = "diagnostic_selected_neighborhood_measurability_law_not_calibration"
 GENERATED_BY = "benchmarks.diagnostics.calibration.selected.neighborhood.selected_neighborhood_measurability_law"
@@ -229,14 +231,6 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _bool_value(value: object) -> bool:
     if pd.isna(value):
         return False
@@ -245,17 +239,8 @@ def _bool_value(value: object) -> bool:
     return bool(value)
 
 
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
-
-
 def _probability_or_nan(value: object, *, tolerance: float = PROBABILITY_TOLERANCE) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     if numeric < -tolerance or numeric > 1.0 + tolerance:
@@ -268,7 +253,7 @@ def _probability_or_nan(value: object, *, tolerance: float = PROBABILITY_TOLERAN
 
 
 def _finite_int(value: object, default: int = 0) -> int:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return int(default)
     return int(numeric)
@@ -283,7 +268,7 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
 def _first_finite(row: pd.Series, columns: tuple[str, ...], default: float = math.nan) -> float:
     for column in columns:
         if column in row:
-            value = _finite_float(row[column])
+            value = finite_float(row[column])
             if math.isfinite(value):
                 return value
     return float(default)
@@ -291,7 +276,7 @@ def _first_finite(row: pd.Series, columns: tuple[str, ...], default: float = mat
 
 def _first_string(row: pd.Series, columns: tuple[str, ...], default: str = "") -> str:
     for column in columns:
-        value = _string_value(row, column, default="")
+        value = string_value(row, column, default="")
         if value:
             return value
     return default
@@ -308,7 +293,7 @@ def _first_probability(row: pd.Series, columns: tuple[str, ...]) -> float:
 
 def validate_probability(value: object, *, label: str) -> float:
     """Return a probability or raise for values outside [0, 1]."""
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric) or numeric < 0.0 or numeric > 1.0:
         raise ValueError(f"{label} must be a finite probability in [0, 1].")
     return numeric
@@ -431,7 +416,7 @@ def _pair_prior_from_row(row: pd.Series) -> tuple[float, str]:
         "interpolated_left_null_prior",
         "interpolated_right_null_prior",
     ):
-        raw = _finite_float(row.get(column, math.nan))
+        raw = finite_float(row.get(column, math.nan))
         if math.isfinite(raw) and (raw < 0.0 or raw > 1.0):
             return math.nan, "invalid_interpolated_prior_probability_domain"
     return math.nan, "interpolated_prior_unavailable"
@@ -492,7 +477,7 @@ def _interpolation_contract_status(
             signal_count,
             excluded_count,
         )
-    tau_b = _finite_float(row.get("topology_neighborhood_tau_b", math.nan))
+    tau_b = finite_float(row.get("topology_neighborhood_tau_b", math.nan))
     if math.isfinite(tau_b) and tau_b <= 0.0:
         return (
             False,
@@ -534,13 +519,13 @@ def _topology_coherence_status(
     outgoing_edge_norm_floor: float,
 ) -> tuple[bool, str]:
     balance_product, _source = _topology_balance_product(row)
-    outgoing_edge = _finite_float(row.get("outgoing_edge_norm_balance", math.nan))
+    outgoing_edge = finite_float(row.get("outgoing_edge_norm_balance", math.nan))
 
     if not math.isfinite(balance_product):
-        structural_incoming = _finite_float(row.get("structural_incoming_branch_balance", math.nan))
-        structural_outgoing = _finite_float(row.get("structural_outgoing_balance", math.nan))
+        structural_incoming = finite_float(row.get("structural_incoming_branch_balance", math.nan))
+        structural_outgoing = finite_float(row.get("structural_outgoing_balance", math.nan))
         if math.isfinite(structural_outgoing) and not math.isfinite(structural_incoming):
-            if not _string_value(row, "parent_id"):
+            if not string_value(row, "parent_id"):
                 return False, "root_selected_topology_requires_root_law"
             return False, "structural_incoming_topology_missing"
         if math.isfinite(structural_incoming) and not math.isfinite(structural_outgoing):
@@ -556,23 +541,23 @@ def _topology_coherence_status(
 
 
 def _topology_balance_product(row: pd.Series) -> tuple[float, str]:
-    balance_product = _finite_float(row.get("balance_product", math.nan))
+    balance_product = finite_float(row.get("balance_product", math.nan))
     if math.isfinite(balance_product):
         return balance_product, "observed_balance_product"
-    incoming = _finite_float(row.get("incoming_branch_balance", math.nan))
-    outgoing = _finite_float(row.get("outgoing_balance", math.nan))
+    incoming = finite_float(row.get("incoming_branch_balance", math.nan))
+    outgoing = finite_float(row.get("outgoing_balance", math.nan))
     if math.isfinite(incoming) and math.isfinite(outgoing):
         return float(incoming * outgoing), "observed_incoming_outgoing"
-    structural_balance_product = _finite_float(row.get("structural_balance_product", math.nan))
+    structural_balance_product = finite_float(row.get("structural_balance_product", math.nan))
     if math.isfinite(structural_balance_product):
         return structural_balance_product, "structural_selected_tree_fallback"
     return math.nan, "unavailable"
 
 
 def _spectral_bottleneck_status(row: pd.Series) -> str:
-    flow_status = _string_value(row, "spectral_flow_status")
+    flow_status = string_value(row, "spectral_flow_status")
     if not flow_status:
-        flow_status = _string_value(row, "flow_status")
+        flow_status = string_value(row, "flow_status")
     if not flow_status:
         return "spectral_not_joined"
 
@@ -718,54 +703,54 @@ def build_measurability_law_rows(
         record = {
             "schema_version": SCHEMA_VERSION,
             "study_role": STUDY_ROLE,
-            "case_id": _string_value(row, "case_id"),
-            "data_role": _string_value(row, "data_role"),
-            "method_id": _string_value(row, "method_id"),
+            "case_id": string_value(row, "case_id"),
+            "data_role": string_value(row, "data_role"),
+            "method_id": string_value(row, "method_id"),
             "replicate": row.get("replicate", math.nan),
-            "node_id": _string_value(row, "node_id"),
-            "parent_id": _string_value(row, "parent_id"),
-            "depth": _finite_float(row.get("depth", math.nan)),
-            "traversal_decision": _string_value(row, "traversal_decision"),
-            "decision_class": _string_value(row, "decision_class"),
-            "traversal_state": _string_value(row, "traversal_state"),
-            "traversal_stop_reason": _string_value(row, "traversal_stop_reason"),
-            "n_descendant_leaves": _finite_float(row.get("n_descendant_leaves", math.nan)),
-            "structural_n_parent_context": _finite_float(
+            "node_id": string_value(row, "node_id"),
+            "parent_id": string_value(row, "parent_id"),
+            "depth": finite_float(row.get("depth", math.nan)),
+            "traversal_decision": string_value(row, "traversal_decision"),
+            "decision_class": string_value(row, "decision_class"),
+            "traversal_state": string_value(row, "traversal_state"),
+            "traversal_stop_reason": string_value(row, "traversal_stop_reason"),
+            "n_descendant_leaves": finite_float(row.get("n_descendant_leaves", math.nan)),
+            "structural_n_parent_context": finite_float(
                 row.get("structural_n_parent_context", math.nan)
             ),
-            "structural_n_node": _finite_float(row.get("structural_n_node", math.nan)),
-            "structural_n_incoming_sibling": _finite_float(
+            "structural_n_node": finite_float(row.get("structural_n_node", math.nan)),
+            "structural_n_incoming_sibling": finite_float(
                 row.get("structural_n_incoming_sibling", math.nan)
             ),
-            "structural_n_left": _finite_float(row.get("structural_n_left", math.nan)),
-            "structural_n_right": _finite_float(row.get("structural_n_right", math.nan)),
-            "structural_incoming_branch_balance": _finite_float(
+            "structural_n_left": finite_float(row.get("structural_n_left", math.nan)),
+            "structural_n_right": finite_float(row.get("structural_n_right", math.nan)),
+            "structural_incoming_branch_balance": finite_float(
                 row.get("structural_incoming_branch_balance", math.nan)
             ),
-            "structural_outgoing_balance": _finite_float(
+            "structural_outgoing_balance": finite_float(
                 row.get("structural_outgoing_balance", math.nan)
             ),
-            "structural_balance_product": _finite_float(
+            "structural_balance_product": finite_float(
                 row.get("structural_balance_product", math.nan)
             ),
             "structural_topology_feature_count": _finite_int(
                 row.get("structural_topology_feature_count", 0)
             ),
-            "structural_topology_context_status": _string_value(
+            "structural_topology_context_status": string_value(
                 row,
                 "structural_topology_context_status",
             ),
-            "sibling_projection_dimension": _finite_float(
+            "sibling_projection_dimension": finite_float(
                 row.get("sibling_projection_dimension", math.nan)
             ),
-            "topology_incidence_role": _string_value(row, "topology_incidence_role"),
+            "topology_incidence_role": string_value(row, "topology_incidence_role"),
             "topology_pass_through_candidate": _bool_value(
                 row.get("topology_pass_through_candidate", False)
             ),
-            "guard_truth_role": _string_value(row, "guard_truth_role"),
-            "topology_support_role": _string_value(row, "topology_support_role"),
-            "topology_signal_role": _string_value(row, "topology_signal_role"),
-            "neighborhood_evidence_family": _string_value(
+            "guard_truth_role": string_value(row, "guard_truth_role"),
+            "topology_support_role": string_value(row, "topology_support_role"),
+            "topology_signal_role": string_value(row, "topology_signal_role"),
+            "neighborhood_evidence_family": string_value(
                 row,
                 "neighborhood_evidence_family",
             ),
@@ -790,11 +775,11 @@ def build_measurability_law_rows(
                 ("effective_support", "topology_neighborhood_support_count"),
                 default=float(support_count),
             ),
-            "interpolation_support_weight": _finite_float(row.get("support_weight", math.nan)),
-            "interpolation_stable_weighted_p_mean": _finite_float(
+            "interpolation_support_weight": finite_float(row.get("support_weight", math.nan)),
+            "interpolation_stable_weighted_p_mean": finite_float(
                 row.get("stable_weighted_p_mean", math.nan)
             ),
-            "interpolation_signal_attenuation": _finite_float(
+            "interpolation_signal_attenuation": finite_float(
                 row.get("signal_attenuation", math.nan)
             ),
             "interpolation_nearest_support_distance": _first_finite(
@@ -811,15 +796,15 @@ def build_measurability_law_rows(
                     "topology_neighborhood_nearest_signal_distance",
                 ),
             ),
-            "interpolation_tau_t": _finite_float(row.get("tau_t", math.nan)),
-            "interpolation_tau_s": _finite_float(row.get("tau_s", math.nan)),
-            "interpolation_h_k": _finite_float(row.get("h_k", math.nan)),
-            "interpolation_best_case_required_tau_s_for_alpha": _finite_float(
+            "interpolation_tau_t": finite_float(row.get("tau_t", math.nan)),
+            "interpolation_tau_s": finite_float(row.get("tau_s", math.nan)),
+            "interpolation_h_k": finite_float(row.get("h_k", math.nan)),
+            "interpolation_best_case_required_tau_s_for_alpha": finite_float(
                 row.get("best_case_required_tau_s_for_alpha", math.nan)
             ),
-            "interpolation_comparison_class": _string_value(row, "comparison_class"),
-            "interpolation_behavior_label": _string_value(row, "behavior_label"),
-            "topology_neighborhood_tau_b": _finite_float(
+            "interpolation_comparison_class": string_value(row, "comparison_class"),
+            "interpolation_behavior_label": string_value(row, "behavior_label"),
+            "topology_neighborhood_tau_b": finite_float(
                 row.get("topology_neighborhood_tau_b", math.nan)
             ),
             "topology_neighborhood_tau_t": _first_finite(
@@ -834,29 +819,29 @@ def build_measurability_law_rows(
                 row,
                 ("topology_neighborhood_h_k", "h_k"),
             ),
-            "topology_neighborhood_nearest_stable_distance": _finite_float(
+            "topology_neighborhood_nearest_stable_distance": finite_float(
                 row.get("topology_neighborhood_nearest_stable_distance", math.nan)
             ),
-            "topology_neighborhood_nearest_signal_distance": _finite_float(
+            "topology_neighborhood_nearest_signal_distance": finite_float(
                 row.get("topology_neighborhood_nearest_signal_distance", math.nan)
             ),
-            "incoming_branch_balance": _finite_float(row.get("incoming_branch_balance", math.nan)),
-            "outgoing_balance": _finite_float(row.get("outgoing_balance", math.nan)),
-            "outgoing_edge_norm_balance": _finite_float(
+            "incoming_branch_balance": finite_float(row.get("incoming_branch_balance", math.nan)),
+            "outgoing_balance": finite_float(row.get("outgoing_balance", math.nan)),
+            "outgoing_edge_norm_balance": finite_float(
                 row.get("outgoing_edge_norm_balance", math.nan)
             ),
-            "outgoing_fragment_risk_proxy_score": _finite_float(
+            "outgoing_fragment_risk_proxy_score": finite_float(
                 row.get("outgoing_fragment_risk_proxy_score", math.nan)
             ),
-            "balance_product": _finite_float(row.get("balance_product", math.nan)),
+            "balance_product": finite_float(row.get("balance_product", math.nan)),
             "topology_balance_product_value": topology_balance_product,
             "topology_balance_product_source": topology_balance_source,
-            "outgoing_balance_edge_product": _finite_float(
+            "outgoing_balance_edge_product": finite_float(
                 row.get("outgoing_balance_edge_product", math.nan)
             ),
             "topology_coherent": topology_coherent,
             "topology_coherence_status": topology_status,
-            "spectral_parent_id": _string_value(row, "spectral_parent_id"),
+            "spectral_parent_id": string_value(row, "spectral_parent_id"),
             "spectral_mp_common_dimension": _first_finite(
                 row,
                 ("spectral_mp_common_dimension", "mp_common_dimension"),
@@ -870,8 +855,8 @@ def build_measurability_law_rows(
                 row,
                 ("spectral_mp_log_eigenvalue_delta", "mp_log_eigenvalue_delta"),
             ),
-            "spectral_barrier": _finite_float(row.get("spectral_barrier", math.nan)),
-            "spectral_flow_affinity": _finite_float(row.get("spectral_flow_affinity", math.nan)),
+            "spectral_barrier": finite_float(row.get("spectral_barrier", math.nan)),
+            "spectral_flow_affinity": finite_float(row.get("spectral_flow_affinity", math.nan)),
             "spectral_flow_status": _first_string(
                 row,
                 ("spectral_flow_status", "flow_status"),
@@ -966,7 +951,7 @@ def _add_selected_tree_structural_topology(rows: pd.DataFrame) -> pd.DataFrame:
 
     for _keys, group in grouped:
         node_size = {
-            str(row.node_id): _finite_float(row.n_descendant_leaves) for row in group.itertuples()
+            str(row.node_id): finite_float(row.n_descendant_leaves) for row in group.itertuples()
         }
         parent_by_node = {
             str(row.node_id): ("" if pd.isna(row.parent_id) else str(row.parent_id))

@@ -22,6 +22,7 @@ from benchmarks.diagnostics.calibration.reporting import (
     print_diagnostic_output_paths,
     write_diagnostic_bundle,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
 SCHEMA_VERSION = "root_tie_rank_selected_spectral_excess_panel/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_selected_spectral_excess_panel_not_calibration"
@@ -121,43 +122,22 @@ def _require_columns(frame: pd.DataFrame, columns: set[str], label: str) -> None
         raise ValueError(f"{label} missing required columns: {sorted(missing)!r}.")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
-def _string_value(
-    row: pd.Series | dict[str, object],
-    column: str,
-    default: str = "",
-) -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
-
-
 def _safe_log1p(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(math.log1p(max(numeric, 0.0)))
 
 
 def _spectral_excess_log(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(max(math.log(max(numeric, 1e-12)), 0.0))
 
 
 def _action_edge_bottleneck(row: pd.Series) -> float:
-    tie = _finite_float(row.get("root_tie_rank_median_fraction", math.nan))
+    tie = finite_float(row.get("root_tie_rank_median_fraction", math.nan))
     action = _safe_log1p(row.get("root_sibling_selected_ratio", math.nan))
     edge = _safe_log1p(row.get("root_edge_path_statistic_margin", math.nan))
     if not (math.isfinite(tie) and math.isfinite(action) and math.isfinite(edge)):
@@ -166,9 +146,9 @@ def _action_edge_bottleneck(row: pd.Series) -> float:
 
 
 def _is_observed_target(row: pd.Series) -> bool:
-    family = _string_value(row, "proposal_family")
-    role = _string_value(row, "calibration_role")
-    data_role = _string_value(row, "data_role")
+    family = string_value(row, "proposal_family")
+    role = string_value(row, "calibration_role")
+    data_role = string_value(row, "data_role")
     return (
         family == "observed_target"
         or role == "observed_target_not_null_support"
@@ -178,13 +158,13 @@ def _is_observed_target(row: pd.Series) -> bool:
 
 def _is_calibration_support(row: pd.Series) -> bool:
     return (
-        _string_value(row, "data_role") in CALIBRATION_SUPPORT_ROLES
-        or _string_value(row, "calibration_role") in CALIBRATION_SUPPORT_ROLES
+        string_value(row, "data_role") in CALIBRATION_SUPPORT_ROLES
+        or string_value(row, "calibration_role") in CALIBRATION_SUPPORT_ROLES
     )
 
 
 def _is_neighborhood_measured(row: pd.Series) -> bool:
-    band = _string_value(row, "root_bandwidth_reopen_band")
+    band = string_value(row, "root_bandwidth_reopen_band")
     return bool(band) and band != "bandwidth_reopen_missing"
 
 
@@ -303,7 +283,7 @@ def _spectral_law_record(
     min_tie_fraction_floor: float,
     partial_spectral_ratio_floor: float,
 ) -> dict[str, object]:
-    target_id = _string_value(target, "case_id")
+    target_id = string_value(target, "case_id")
     target_spectral = _spectral_excess_log(
         target.get("root_selected_eigenvalue_over_mp_upper_bound", math.nan)
     )
@@ -344,13 +324,13 @@ def _spectral_law_record(
         best_tie = math.nan
         best_band = ""
     else:
-        best_spectral = _finite_float(best.get("_spectral_excess_log", math.nan))
-        best_case_id = _string_value(best, "case_id")
-        best_family = _string_value(best, "proposal_family")
+        best_spectral = finite_float(best.get("_spectral_excess_log", math.nan))
+        best_case_id = string_value(best, "case_id")
+        best_family = string_value(best, "proposal_family")
         best_support_role = _support_role(best)
-        best_bottleneck = _finite_float(best.get("_action_edge_bottleneck", math.nan))
-        best_tie = _finite_float(best.get("_tie_fraction", math.nan))
-        best_band = _string_value(best, "root_bandwidth_reopen_band")
+        best_bottleneck = finite_float(best.get("_action_edge_bottleneck", math.nan))
+        best_tie = finite_float(best.get("_tie_fraction", math.nan))
+        best_band = string_value(best, "root_bandwidth_reopen_band")
     spectral_deficit = (
         float(max(target_spectral - best_spectral, 0.0))
         if math.isfinite(target_spectral) and math.isfinite(best_spectral)

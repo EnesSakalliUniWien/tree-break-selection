@@ -6,6 +6,8 @@ import math
 
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
+
 CALIBRATION_SUPPORT_ROLES = {
     "selected_null",
     "selected_null_candidate_support",
@@ -22,33 +24,10 @@ def require_columns(frame: pd.DataFrame, columns: set[str], label: str) -> None:
         raise ValueError(f"{label} missing required columns: {sorted(missing)!r}.")
 
 
-def finite_float(value: object) -> float:
-    """Return a finite float or ``nan`` for invalid diagnostic values."""
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def finite_int(value: object) -> int:
     """Return a finite integer or zero for invalid diagnostic counts."""
     numeric = finite_float(value)
     return int(numeric) if math.isfinite(numeric) else 0
-
-
-def string_value(
-    row: pd.Series | dict[str, object],
-    column: str,
-    default: str = "",
-) -> str:
-    """Return a non-missing string field from a diagnostic row."""
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def safe_log1p(value: object) -> float:

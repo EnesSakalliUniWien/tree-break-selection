@@ -23,6 +23,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.comparison import (
     partition_target_and_generated_rows,
     row_bandwidth_gap_status,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
 SCHEMA_VERSION = "root_tie_rank_proposal_gap_panel/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_proposal_gap_panel_not_calibration"
@@ -107,23 +108,15 @@ class RootTieRankProposalGapPanelConfig:
     proposal_feasibility_rows_path: Path = DEFAULT_PROPOSAL_FEASIBILITY_ROWS
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _positive_log1p(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(math.log1p(max(numeric, 0.0)))
 
 
 def _positive_log(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     return float(math.log(max(numeric, 1e-12)))
@@ -133,15 +126,6 @@ def _abs_gap(left: float, right: float, *, missing_value: float = 10.0) -> float
     if not (math.isfinite(left) and math.isfinite(right)):
         return float(missing_value)
     return float(abs(left - right))
-
-
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
 
 
 def _gap_pattern(
@@ -169,16 +153,16 @@ def _gap_pattern(
 
 
 def _row_gap_record(target: pd.Series, generated: pd.Series) -> dict[str, object]:
-    target_stratum = _string_value(target, "root_conditioning_stratum_key")
-    generated_stratum = _string_value(generated, "root_conditioning_stratum_key")
-    target_tie_band = _string_value(target, "root_tie_rank_band")
-    generated_tie_band = _string_value(generated, "root_tie_rank_band")
-    target_edge_band = _string_value(target, "root_edge_margin_band")
-    generated_edge_band = _string_value(generated, "root_edge_margin_band")
-    target_spectral_band = _string_value(target, "root_spectral_ratio_band")
-    generated_spectral_band = _string_value(generated, "root_spectral_ratio_band")
-    target_bandwidth_band = _string_value(target, "root_bandwidth_reopen_band")
-    generated_bandwidth_band = _string_value(generated, "root_bandwidth_reopen_band")
+    target_stratum = string_value(target, "root_conditioning_stratum_key")
+    generated_stratum = string_value(generated, "root_conditioning_stratum_key")
+    target_tie_band = string_value(target, "root_tie_rank_band")
+    generated_tie_band = string_value(generated, "root_tie_rank_band")
+    target_edge_band = string_value(target, "root_edge_margin_band")
+    generated_edge_band = string_value(generated, "root_edge_margin_band")
+    target_spectral_band = string_value(target, "root_spectral_ratio_band")
+    generated_spectral_band = string_value(generated, "root_spectral_ratio_band")
+    target_bandwidth_band = string_value(target, "root_bandwidth_reopen_band")
+    generated_bandwidth_band = string_value(generated, "root_bandwidth_reopen_band")
 
     tie_match = target_tie_band == generated_tie_band
     edge_match = target_edge_band == generated_edge_band
@@ -186,16 +170,16 @@ def _row_gap_record(target: pd.Series, generated: pd.Series) -> dict[str, object
     bandwidth_match = target_bandwidth_band == generated_bandwidth_band
     bandwidth_status = row_bandwidth_gap_status(target, generated)
     exact_hit = target_stratum == generated_stratum
-    target_ratio = _finite_float(target.get("root_sibling_selected_ratio", math.nan))
-    generated_ratio = _finite_float(generated.get("root_sibling_selected_ratio", math.nan))
+    target_ratio = finite_float(target.get("root_sibling_selected_ratio", math.nan))
+    generated_ratio = finite_float(generated.get("root_sibling_selected_ratio", math.nan))
     ratio_exceeds = (
         math.isfinite(target_ratio)
         and math.isfinite(generated_ratio)
         and generated_ratio >= target_ratio
     )
     tie_fraction_gap = _abs_gap(
-        _finite_float(target.get("root_tie_rank_median_fraction", math.nan)),
-        _finite_float(generated.get("root_tie_rank_median_fraction", math.nan)),
+        finite_float(target.get("root_tie_rank_median_fraction", math.nan)),
+        finite_float(generated.get("root_tie_rank_median_fraction", math.nan)),
         missing_value=1.0,
     )
     selected_ratio_log_gap = _abs_gap(
@@ -241,9 +225,9 @@ def _row_gap_record(target: pd.Series, generated: pd.Series) -> dict[str, object
     return {
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
-        "target_case_id": _string_value(target, "case_id"),
-        "proposal_family": _string_value(generated, "proposal_family"),
-        "best_generated_case_id": _string_value(generated, "case_id"),
+        "target_case_id": string_value(target, "case_id"),
+        "proposal_family": string_value(generated, "proposal_family"),
+        "best_generated_case_id": string_value(generated, "case_id"),
         "target_root_conditioning_stratum_key": target_stratum,
         "generated_root_conditioning_stratum_key": generated_stratum,
         "exact_stratum_hit": exact_hit,
@@ -263,16 +247,16 @@ def _row_gap_record(target: pd.Series, generated: pd.Series) -> dict[str, object
         "target_root_sibling_selected_ratio": target_ratio,
         "generated_root_sibling_selected_ratio": generated_ratio,
         "selected_ratio_exceeds_target": ratio_exceeds,
-        "target_root_edge_path_statistic_margin": _finite_float(
+        "target_root_edge_path_statistic_margin": finite_float(
             target.get("root_edge_path_statistic_margin", math.nan)
         ),
-        "generated_root_edge_path_statistic_margin": _finite_float(
+        "generated_root_edge_path_statistic_margin": finite_float(
             generated.get("root_edge_path_statistic_margin", math.nan)
         ),
-        "target_root_selected_eigenvalue_over_mp_upper_bound": _finite_float(
+        "target_root_selected_eigenvalue_over_mp_upper_bound": finite_float(
             target.get("root_selected_eigenvalue_over_mp_upper_bound", math.nan)
         ),
-        "generated_root_selected_eigenvalue_over_mp_upper_bound": _finite_float(
+        "generated_root_selected_eigenvalue_over_mp_upper_bound": finite_float(
             generated.get("root_selected_eigenvalue_over_mp_upper_bound", math.nan)
         ),
         "tie_fraction_gap": tie_fraction_gap,

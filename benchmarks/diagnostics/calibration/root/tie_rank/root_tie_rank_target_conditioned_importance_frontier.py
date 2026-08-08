@@ -40,6 +40,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_nul
     DEFAULT_OBSERVED_MIXED_ROWS,
     binary_null_probability_for_case,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.cases import get_test_cases_by_suite
 
 SCHEMA_VERSION = "root_tie_rank_target_conditioned_importance_frontier/v1"
@@ -215,16 +216,8 @@ def _require_columns(frame: pd.DataFrame, columns: set[str], label: str) -> None
         raise ValueError(f"{label} missing required columns: {sorted(missing)!r}.")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _tie_band(value: object) -> str:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return "tie_missing"
     if numeric < 0.70:
@@ -235,7 +228,7 @@ def _tie_band(value: object) -> str:
 
 
 def _action_band(value: object) -> str:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return "action_missing"
     log_value = math.log1p(max(numeric, 0.0))
@@ -522,10 +515,10 @@ def collect_target_conditioned_importance_rows(
         target_key = _pre_topology_stratum_key(target_row)
         for setting_index, setting in enumerate(settings):
             family = str(setting["proposal_family"])
-            two_block_delta = _finite_float(setting["proposal_two_block_delta"])
-            spike_fraction = _finite_float(setting["proposal_spike_feature_fraction"])
-            spike_delta = _finite_float(setting["proposal_spike_delta"])
-            block_fraction = _finite_float(setting["proposal_block_fraction"])
+            two_block_delta = finite_float(setting["proposal_two_block_delta"])
+            spike_fraction = finite_float(setting["proposal_spike_feature_fraction"])
+            spike_delta = finite_float(setting["proposal_spike_delta"])
+            block_fraction = finite_float(setting["proposal_block_fraction"])
             setting_id = (
                 f"{family}"
                 f"__td{_safe_float_token(two_block_delta)}"
@@ -755,12 +748,12 @@ def build_target_rows(
                     "candidate_count": int(group.shape[0]),
                     "pre_topology_stratum_hit_count": int(hits.shape[0]),
                     "best_candidate_case_id": str(best["case_id"]) if best is not None else "",
-                    "best_candidate_spectral_ratio": _finite_float(
+                    "best_candidate_spectral_ratio": finite_float(
                         best.get("root_selected_eigenvalue_over_mp_upper_bound", math.nan)
                     )
                     if best is not None
                     else math.nan,
-                    "best_candidate_importance_log_weight": _finite_float(
+                    "best_candidate_importance_log_weight": finite_float(
                         best.get("importance_log_weight", math.nan)
                     )
                     if best is not None

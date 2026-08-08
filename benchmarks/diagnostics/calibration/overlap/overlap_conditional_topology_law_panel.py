@@ -26,6 +26,7 @@ import pandas as pd
 from benchmarks.diagnostics.calibration.overlap.overlap_context_negative_bayesian_topology_law import (
     beta_log_likelihood_ratio,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_overlap_conditional_topology_law_not_calibration"
@@ -338,19 +339,11 @@ def _string_value(row: pd.Series, column: str, default: str = "") -> str:
     return str(value)
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _branch_length_to_parent(row: pd.Series) -> tuple[float, bool]:
     for column in BRANCH_LENGTH_TO_PARENT_COLUMNS:
         if column not in row:
             continue
-        value = _finite_float(row.get(column, math.nan))
+        value = finite_float(row.get(column, math.nan))
         if math.isfinite(value) and value >= 0.0:
             return float(value), True
     return 1.0, False
@@ -538,11 +531,11 @@ def _neighborhood_scale_components(
 
         for idx in member_index:
             value = (
-                float(scale.loc[idx]) if math.isfinite(_finite_float(scale.loc[idx])) else math.nan
+                float(scale.loc[idx]) if math.isfinite(finite_float(scale.loc[idx])) else math.nan
             )
             log_value = (
                 float(log_scale.loc[idx])
-                if math.isfinite(_finite_float(log_scale.loc[idx]))
+                if math.isfinite(finite_float(log_scale.loc[idx]))
                 else math.nan
             )
             if not has_any_scale:
@@ -660,7 +653,7 @@ def _topology_neighborhood_components(
             node_id = rows.loc[idx, "node_id"]
             nearest_stable = _nearest_distance(cache, node_id, support_nodes)
             nearest_signal = _nearest_distance(cache, node_id, signal_nodes)
-            log_value = _finite_float(log_scale.loc[idx])
+            log_value = finite_float(log_scale.loc[idx])
             if not has_explicit_neighborhood_evidence:
                 status = "topology_neighborhood_unavailable_neutral"
                 component = 0.0
@@ -717,11 +710,11 @@ def infer_directed_incidence(
     parent_id: str = "",
 ) -> DirectedIncidence:
     """Infer root/internal/leaf directed incidence from row-level metadata."""
-    depth_value = _finite_float(depth)
-    child_value = _finite_float(n_children)
-    left_value = _finite_float(n_left)
-    right_value = _finite_float(n_right)
-    parent = "" if parent_id is None else str(parent_id)
+    depth_value = finite_float(depth)
+    child_value = finite_float(n_children)
+    left_value = finite_float(n_left)
+    right_value = finite_float(n_right)
+    parent = str(parent_id)
     decision = str(decision_class)
     traversal = str(traversal_decision)
 
@@ -989,7 +982,7 @@ def build_conditional_topology_law_rows(
             topology_required.append(incoming.loc[idx])
         missing_topology = bool(
             incidence.has_outgoing_test
-            and any(not math.isfinite(_finite_float(value)) for value in topology_required)
+            and any(not math.isfinite(finite_float(value)) for value in topology_required)
         )
         topology_core = incoming_component + outgoing_component + edge_component + anti_component
         neighborhood_component = float(
@@ -1059,7 +1052,7 @@ def build_conditional_topology_law_rows(
                 "selected_family_log_bayes_factor_lower": float(selected_family.loc[idx]),
                 "selected_family_evidence_log": float(
                     np.log1p(max(float(selected_family.loc[idx]), 0.0))
-                    if math.isfinite(_finite_float(selected_family.loc[idx]))
+                    if math.isfinite(finite_float(selected_family.loc[idx]))
                     else 0.0
                 ),
                 "continuous_context_min_margin": float(context.loc[idx]),

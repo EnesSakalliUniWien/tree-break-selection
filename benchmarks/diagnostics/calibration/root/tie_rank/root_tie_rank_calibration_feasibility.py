@@ -22,6 +22,7 @@ import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
 from benchmarks.diagnostics.calibration.root.root_tail_values import finite_float, require_columns
+from benchmarks.diagnostics.calibration.values import string_value
 
 SCHEMA_VERSION = "root_tie_rank_calibration_feasibility/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_calibration_feasibility_not_calibration"
@@ -166,17 +167,8 @@ def tail_precision_required_null_count(
     )
 
 
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
-
-
 def _data_role(row: pd.Series) -> str:
-    return _string_value(row, "data_role", "unlabeled")
+    return string_value(row, "data_role", "unlabeled")
 
 
 def _calibration_role(row: pd.Series) -> str:
@@ -245,7 +237,7 @@ def _bandwidth_reopen_band(value: float) -> str:
 
 
 def _bandwidth_count_for_stratum(row: pd.Series) -> float:
-    locality_status = _string_value(row, "root_bandwidth_locality_status", "")
+    locality_status = string_value(row, "root_bandwidth_locality_status", "")
     if locality_status == "topology_frontier_not_joined":
         return math.nan
     return finite_float(row.get("root_bandwidth_reopen_count", 0))
@@ -288,7 +280,7 @@ def _feasibility_status(
 def _annotate_conditioning_strata(mixed_rows: pd.DataFrame) -> pd.DataFrame:
     records: list[dict[str, object]] = []
     for _, row in mixed_rows.iterrows():
-        component = _string_value(
+        component = string_value(
             row,
             "root_mixed_region_component",
             "component_missing",
@@ -305,7 +297,7 @@ def _annotate_conditioning_strata(mixed_rows: pd.DataFrame) -> pd.DataFrame:
         bandwidth_band = _bandwidth_reopen_band(bandwidth_count)
         records.append(
             {
-                "case_id": _string_value(row, "case_id", "case_missing"),
+                "case_id": string_value(row, "case_id", "case_missing"),
                 "data_role": _data_role(row),
                 "calibration_role": _calibration_role(row),
                 "root_mixed_region_component": component,

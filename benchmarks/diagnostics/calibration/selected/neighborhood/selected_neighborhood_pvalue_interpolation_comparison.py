@@ -30,6 +30,7 @@ from benchmarks.diagnostics.calibration.selected.neighborhood.selected_neighborh
     candidate_evidence_mask,
     compute_child_interpolated_null_prior,
 )
+from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
 SCHEMA_VERSION = "selected_neighborhood_pvalue_interpolation_comparison/v1"
 STUDY_ROLE = "diagnostic_selected_neighborhood_pvalue_interpolation_comparison_not_calibration"
@@ -372,16 +373,8 @@ def _json_default(value: object) -> object:
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _finite_positive(value: object, default: float) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if math.isfinite(numeric) and numeric > 0.0:
         return float(numeric)
     return float(default)
@@ -395,15 +388,6 @@ def _bool_value(value: object) -> bool:
     return bool(value)
 
 
-def _string_value(row: pd.Series, column: str, default: str = "") -> str:
-    if column not in row:
-        return default
-    value = row[column]
-    if pd.isna(value):
-        return default
-    return str(value)
-
-
 def _clean_role_series(rows: pd.DataFrame, column: str) -> pd.Series:
     if column not in rows:
         return pd.Series("", index=rows.index, dtype=str)
@@ -413,7 +397,7 @@ def _clean_role_series(rows: pd.DataFrame, column: str) -> pd.Series:
 
 
 def _probability_or_nan(value: object) -> float:
-    numeric = _finite_float(value)
+    numeric = finite_float(value)
     if not math.isfinite(numeric):
         return math.nan
     if numeric < -PROBABILITY_TOLERANCE or numeric > 1.0 + PROBABILITY_TOLERANCE:
@@ -497,7 +481,7 @@ def _scale_value(row: pd.Series) -> float:
         "neighborhood_scale",
         "n_descendant_leaves",
     ):
-        value = _finite_float(row.get(column, math.nan))
+        value = finite_float(row.get(column, math.nan))
         if math.isfinite(value) and value > 0.0:
             return float(value)
     return math.nan
@@ -711,7 +695,7 @@ def compute_holdout_interpolated_p_like(
         "topology_neighborhood_tau_s",
         fallback=float(fallback_tau_s),
     )
-    row_h_k = _finite_float(target_row.get("topology_neighborhood_h_k", math.nan))
+    row_h_k = finite_float(target_row.get("topology_neighborhood_h_k", math.nan))
     if math.isfinite(row_h_k) and row_h_k > 0.0:
         h_k = float(row_h_k)
     elif group_h_k is not None and math.isfinite(group_h_k) and group_h_k > 0.0:
@@ -1193,7 +1177,7 @@ def _build_group_rows(
             interpolation_status=interpolation.status,
         )
         behavior = _behavior_label(
-            data_role=_string_value(row, "data_role"),
+            data_role=string_value(row, "data_role"),
             direct_significant=direct_significant,
             interpolated_significant=interpolated_significant,
             interpolation_status=interpolation.status,
@@ -1202,17 +1186,17 @@ def _build_group_rows(
             {
                 "schema_version": SCHEMA_VERSION,
                 "study_role": STUDY_ROLE,
-                "case_id": _string_value(row, "case_id"),
-                "data_role": _string_value(row, "data_role"),
-                "method_id": _string_value(row, "method_id"),
+                "case_id": string_value(row, "case_id"),
+                "data_role": string_value(row, "data_role"),
+                "method_id": string_value(row, "method_id"),
                 "replicate": row.get("replicate", math.nan),
-                "node_id": _string_value(row, "node_id"),
-                "parent_id": _string_value(row, "parent_id"),
-                "branch_length_to_parent": _finite_float(
+                "node_id": string_value(row, "node_id"),
+                "parent_id": string_value(row, "parent_id"),
+                "branch_length_to_parent": finite_float(
                     row.get("branch_length_to_parent", math.nan)
                 ),
-                "decision_class": _string_value(row, "decision_class"),
-                "traversal_decision": _string_value(row, "traversal_decision"),
+                "decision_class": string_value(row, "decision_class"),
+                "traversal_decision": string_value(row, "traversal_decision"),
                 "direct_sibling_p_value": direct_p,
                 "direct_sibling_open": direct_open,
                 "direct_significant": direct_significant,
@@ -1248,10 +1232,10 @@ def _build_group_rows(
                 "signal_attenuation": interpolation.signal_attenuation,
                 "nearest_support_distance": interpolation.nearest_support_distance,
                 "nearest_signal_distance": interpolation.nearest_signal_distance,
-                "distance_to_stopping_edge": _finite_float(
+                "distance_to_stopping_edge": finite_float(
                     row.get("distance_to_stopping_edge", math.nan)
                 ),
-                "tau_b": _finite_float(row.get("topology_neighborhood_tau_b", math.nan)),
+                "tau_b": finite_float(row.get("topology_neighborhood_tau_b", math.nan)),
                 "tau_t": interpolation.tau_t,
                 "tau_s": interpolation.tau_s,
                 "h_k": interpolation.h_k,

@@ -322,21 +322,15 @@ making networked data downloads part of the default benchmark suite.
 
 ---
 
-### 9. Calibration ([calibration/](calibration/))
+### 9. Calibration Diagnostics ([diagnostics/calibration/](diagnostics/calibration/))
 
-**Purpose**: Empirical statistical calibration — verifies that the edge and sibling tests maintain correct Type I error rates under the null hypothesis, and that TreeBH FDR control is valid.
+**Purpose**: Empirical calibration investigation — edge-null, sibling-null,
+selected-hierarchy, overlap, root, traversal, and spectral-transport studies.
+Not a production calibration layer.
 
-**Data generation**:
-
-- **Null scenarios**: Pure-noise binary matrices with `p_one=0.5` (no cluster structure). Three sizes: 64×32, 128×64, 192×96.
-- **TreeBH scenarios**: Tree-structured synthetic p-values with known alt/null partition. Varying alt fractions (0–50%) and signal strengths (beta distribution shape parameter 0.2–0.5).
-
-**Experiment setup**:
-
-- Null calibration: 30 replicates per scenario (configurable via `TBS_CAL_NULL_REPS`). Full pipeline runs (linkage → tree → decompose) on each replicate.
-- TreeBH calibration: 200 replicates per scenario (configurable via `TBS_CAL_TREEBH_REPS`).
-
-**Evaluation**: Per-scenario Type I error rates with 95% binomial CIs. Edge and sibling rejection rates compared to nominal α = 0.05. TreeBH FDR and power summaries. Results written to CSV + `calibration_plots.pdf` + `calibration_report.md`.
+See `diagnostics/calibration/README.md` for the categories, shared reporting
+contracts, and maintained runners. Matching tests live under
+`tests/validation/calibration/`.
 
 ---
 

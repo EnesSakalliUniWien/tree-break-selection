@@ -29,6 +29,7 @@ from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -214,14 +215,6 @@ class SelectedPassThroughBranchRecoveryConditioningConfig:
         return self.output_dir / "generated_branch_support_gene_assignments.csv"
 
 
-def _finite_float(value: object) -> float:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return number if math.isfinite(number) else math.nan
-
-
 def _bool_value(value: object) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "yes"}
@@ -267,7 +260,7 @@ def _feature_geometry_empty_row(
     return {
         "case_id": str(row.get("case_id", "")),
         "data_role": str(row.get("data_role", "")),
-        "replicate": int(_finite_float(row.get("replicate", -1))),
+        "replicate": int(finite_float(row.get("replicate", -1))),
         "node_id": str(row.get("node_id", "")),
         "feature_geometry_status": status,
         "feature_geometry_node_sample_count": 0,
@@ -1225,8 +1218,8 @@ def build_branch_recovery_conditioning_rows(node_rows: pd.DataFrame) -> pd.DataF
     for _, row in node_rows.iterrows():
         truth_class = _truth_geometry_class(row)
         distinct = _bool_value(row["truth_downstream_child_majority_distinct"])
-        split_ari = _finite_float(row["truth_downstream_split_ari"])
-        child_purity = _finite_float(row["truth_downstream_child_mean_purity"])
+        split_ari = finite_float(row["truth_downstream_split_ari"])
+        child_purity = finite_float(row["truth_downstream_child_mean_purity"])
         branch_score = (
             split_ari * child_purity
             if math.isfinite(split_ari) and math.isfinite(child_purity) and distinct
@@ -1261,74 +1254,74 @@ def build_branch_recovery_conditioning_rows(node_rows: pd.DataFrame) -> pd.DataF
                 "fragment_target": truth_class == "false_fragment",
                 "selected_null_control_target": truth_class == "selected_null_control",
                 "unresolved_signal_target": truth_class == "unresolved_signal",
-                "truth_node_cluster_count": int(_finite_float(row["truth_node_cluster_count"])),
-                "truth_node_majority_fraction": _finite_float(row["truth_node_majority_fraction"]),
+                "truth_node_cluster_count": int(finite_float(row["truth_node_cluster_count"])),
+                "truth_node_majority_fraction": finite_float(row["truth_node_majority_fraction"]),
                 "truth_downstream_split_ari": split_ari,
                 "truth_downstream_child_mean_purity": child_purity,
                 "truth_downstream_child_majority_distinct": distinct,
                 "truth_downstream_child_majority_distinct_numeric": float(int(distinct)),
-                "completed_balance_product": _finite_float(row["completed_balance_product"]),
-                "structural_incoming_branch_balance": _finite_float(
+                "completed_balance_product": finite_float(row["completed_balance_product"]),
+                "structural_incoming_branch_balance": finite_float(
                     row["structural_incoming_branch_balance"]
                 ),
-                "structural_outgoing_balance": _finite_float(row["structural_outgoing_balance"]),
-                "structural_balance_product": _finite_float(row["structural_balance_product"]),
-                "distance_to_downstream_accepted_split": _finite_float(
+                "structural_outgoing_balance": finite_float(row["structural_outgoing_balance"]),
+                "structural_balance_product": finite_float(row["structural_balance_product"]),
+                "distance_to_downstream_accepted_split": finite_float(
                     row["distance_to_downstream_accepted_split"]
                 ),
                 "feature_geometry_status": feature_status,
                 "feature_geometry_node_sample_count": int(
-                    _finite_float(row.get("feature_geometry_node_sample_count", 0))
+                    finite_float(row.get("feature_geometry_node_sample_count", 0))
                     if math.isfinite(
-                        _finite_float(row.get("feature_geometry_node_sample_count", 0))
+                        finite_float(row.get("feature_geometry_node_sample_count", 0))
                     )
                     else 0
                 ),
                 "feature_geometry_left_child_count": int(
-                    _finite_float(row.get("feature_geometry_left_child_count", 0))
-                    if math.isfinite(_finite_float(row.get("feature_geometry_left_child_count", 0)))
+                    finite_float(row.get("feature_geometry_left_child_count", 0))
+                    if math.isfinite(finite_float(row.get("feature_geometry_left_child_count", 0)))
                     else 0
                 ),
                 "feature_geometry_right_child_count": int(
-                    _finite_float(row.get("feature_geometry_right_child_count", 0))
+                    finite_float(row.get("feature_geometry_right_child_count", 0))
                     if math.isfinite(
-                        _finite_float(row.get("feature_geometry_right_child_count", 0))
+                        finite_float(row.get("feature_geometry_right_child_count", 0))
                     )
                     else 0
                 ),
-                "feature_node_pairwise_jaccard": _finite_float(
+                "feature_node_pairwise_jaccard": finite_float(
                     row.get("feature_node_pairwise_jaccard", math.nan)
                 ),
-                "feature_left_pairwise_jaccard": _finite_float(
+                "feature_left_pairwise_jaccard": finite_float(
                     row.get("feature_left_pairwise_jaccard", math.nan)
                 ),
-                "feature_right_pairwise_jaccard": _finite_float(
+                "feature_right_pairwise_jaccard": finite_float(
                     row.get("feature_right_pairwise_jaccard", math.nan)
                 ),
-                "feature_homogeneity_gain_min": _finite_float(
+                "feature_homogeneity_gain_min": finite_float(
                     row.get("feature_homogeneity_gain_min", math.nan)
                 ),
-                "feature_heterogeneity_gain_max": _finite_float(
+                "feature_heterogeneity_gain_max": finite_float(
                     row.get("feature_heterogeneity_gain_max", math.nan)
                 ),
-                "feature_subspace_consensus_jaccard_topk": _finite_float(
+                "feature_subspace_consensus_jaccard_topk": finite_float(
                     row.get("feature_subspace_consensus_jaccard_topk", math.nan)
                 ),
                 "feature_heterogeneity_subspace_consensus_jaccard_topk": (
-                    _finite_float(
+                    finite_float(
                         row.get(
                             "feature_heterogeneity_subspace_consensus_jaccard_topk",
                             math.nan,
                         )
                     )
                 ),
-                "feature_child_contrast_norm": _finite_float(
+                "feature_child_contrast_norm": finite_float(
                     row.get("feature_child_contrast_norm", math.nan)
                 ),
-                "feature_branch_geometry_score": _finite_float(
+                "feature_branch_geometry_score": finite_float(
                     row.get("feature_branch_geometry_score", math.nan)
                 ),
-                "feature_barycentric_geometry_score": _finite_float(
+                "feature_barycentric_geometry_score": finite_float(
                     row.get("feature_barycentric_geometry_score", math.nan)
                 ),
                 "branch_recovery_oracle_score": branch_score,

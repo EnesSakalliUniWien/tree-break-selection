@@ -29,22 +29,22 @@ tests/
 
 ## Current Suite Map
 
-The ordered gate currently collects 1,272 test cases:
+The ordered gate currently collects 1,368 test cases:
 
 | Stage | Responsibility | Tests |
 | --- | --- | ---: |
-| 1 | Core structure and decomposition (`core/`, `tree/`) | 116 |
-| 2 | Statistical engines and calibration (`statistics/`) | 205 |
+| 1 | Core structure and decomposition (`core/`, `tree/`) | 141 |
+| 2 | Statistical engines and calibration (`statistics/`) | 229 |
 | 3 | Localization and post-hoc merge behavior (`localization/`) | 33 |
-| 4 | Validation, calibration, and diagnostic studies (`validation/`) | 725 |
-| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 156 |
-| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 33 |
+| 4 | Validation, calibration, and diagnostic studies (`validation/`) | 752 |
+| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 172 |
+| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 37 |
 | 7 | Wiki memory contracts (`wiki/`) | 4 |
 
-Stage 4 is large because it includes 550 collected calibration cases. Its
+Stage 4 is large because it includes 568 collected calibration cases. Its
 remaining cases cover validation contracts (3), diagnostic annotations (2),
-spectral behavior (33), statistical validation (35), sweeps (5), tree
-validation (18), and 79 direct validation tests at the stage root.
+spectral behavior (26), statistical validation (35), sweeps (9), tree
+validation (18), and 91 direct validation tests at the stage root.
 
 `conftest.py` is the only shared root test module. Tests otherwise belong to
 the directory matching the production or research responsibility they protect.

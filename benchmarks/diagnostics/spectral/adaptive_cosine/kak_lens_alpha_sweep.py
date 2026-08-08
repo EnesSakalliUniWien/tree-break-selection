@@ -540,10 +540,7 @@ def run_alpha_grid(
 
 
 def write_plots(summary: pd.DataFrame, output_dir: Path) -> None:
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        return
+    import matplotlib.pyplot as plt
 
     ok = summary[summary["status"].eq("ok")].copy()
     if ok.empty:

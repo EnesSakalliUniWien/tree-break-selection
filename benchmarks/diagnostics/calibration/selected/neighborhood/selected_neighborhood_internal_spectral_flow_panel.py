@@ -48,6 +48,7 @@ from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_g
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -149,14 +150,6 @@ def _json_default(value: object) -> object:
     if isinstance(value, np.floating):
         return float(value)
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
-
-
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
 
 
 def _finite_bool(value: object) -> bool:
@@ -306,9 +299,9 @@ def _radial_transport(
 
 
 def _object_transport_status(row: pd.Series) -> str:
-    leaf_q = int(_finite_float(row.get("leaf_raw_mp_signal_count", 0.0)))
-    internal_q = int(_finite_float(row.get("internal_raw_mp_signal_count", 0.0)))
-    common = int(_finite_float(row.get("mp_common_dimension", 0.0)))
+    leaf_q = int(finite_float(row.get("leaf_raw_mp_signal_count", 0.0)))
+    internal_q = int(finite_float(row.get("internal_raw_mp_signal_count", 0.0)))
+    common = int(finite_float(row.get("mp_common_dimension", 0.0)))
     if leaf_q <= 0 and internal_q > 0:
         return "internal_only_spike_created"
     if leaf_q > 0 and internal_q <= 0:
@@ -316,13 +309,13 @@ def _object_transport_status(row: pd.Series) -> str:
     if common <= 0:
         return "no_shared_mp_object"
 
-    mean_sin = _finite_float(row.get("mp_mean_sin_angle", row.get("mean_sin_angle")))
-    max_sin = _finite_float(row.get("mp_max_sin_angle", row.get("max_sin_angle")))
-    rotating_rank = _finite_float(
+    mean_sin = finite_float(row.get("mp_mean_sin_angle", row.get("mean_sin_angle")))
+    max_sin = finite_float(row.get("mp_max_sin_angle", row.get("max_sin_angle")))
+    rotating_rank = finite_float(
         row.get("mp_effective_rotating_rank", row.get("effective_rotating_rank"))
     )
-    rms_radius = _finite_float(row.get("mp_rms_log_radius_delta", row.get("rms_log_radius_delta")))
-    mean_radius = _finite_float(
+    rms_radius = finite_float(row.get("mp_rms_log_radius_delta", row.get("rms_log_radius_delta")))
+    mean_radius = finite_float(
         row.get("mp_mean_log_radius_delta", row.get("mean_log_radius_delta"))
     )
 
@@ -590,8 +583,8 @@ def _edge_gain_status(row: pd.Series) -> str:
     if not leaf_supported and not internal_supported:
         return "floor_only_both_variants"
 
-    delta_barrier = _finite_float(row.get("delta_spectral_barrier"))
-    delta_affinity = _finite_float(row.get("delta_spectral_flow_affinity"))
+    delta_barrier = finite_float(row.get("delta_spectral_barrier"))
+    delta_affinity = finite_float(row.get("delta_spectral_flow_affinity"))
     if math.isfinite(delta_barrier) and delta_barrier < -1e-12:
         return "both_supported_barrier_improved"
     if math.isfinite(delta_affinity) and delta_affinity > 1e-12:
@@ -602,10 +595,10 @@ def _edge_gain_status(row: pd.Series) -> str:
 
 
 def _mode_gain_status(row: pd.Series) -> str:
-    leaf_matched = _finite_float(
+    leaf_matched = finite_float(
         row.get("leaf_matched_mp_block_count", row.get("matched_mp_block_count_leaf"))
     )
-    internal_matched = _finite_float(
+    internal_matched = finite_float(
         row.get(
             "internal_matched_mp_block_count",
             row.get("matched_mp_block_count_internal"),
@@ -620,8 +613,8 @@ def _mode_gain_status(row: pd.Series) -> str:
     if not leaf_supported and not internal_supported:
         return "floor_only_or_unmatched_both_variants"
 
-    delta_cost = _finite_float(row.get("delta_mode_transport_cost"))
-    delta_affinity = _finite_float(row.get("delta_mode_transport_affinity"))
+    delta_cost = finite_float(row.get("delta_mode_transport_cost"))
+    delta_affinity = finite_float(row.get("delta_mode_transport_affinity"))
     if math.isfinite(delta_cost) and delta_cost < -1e-12:
         return "both_supported_transport_improved"
     if math.isfinite(delta_affinity) and delta_affinity > 1e-12:
@@ -672,20 +665,20 @@ def build_edge_pairwise_rows(edge_rows: pd.DataFrame) -> pd.DataFrame:
                 ),
                 "leaf_mp_common_dimension": int(row["mp_common_dimension_leaf"]),
                 "internal_mp_common_dimension": int(row["mp_common_dimension_internal"]),
-                "leaf_mp_subspace_chordal_distance": _finite_float(
+                "leaf_mp_subspace_chordal_distance": finite_float(
                     row["mp_subspace_chordal_distance_leaf"]
                 ),
-                "internal_mp_subspace_chordal_distance": _finite_float(
+                "internal_mp_subspace_chordal_distance": finite_float(
                     row["mp_subspace_chordal_distance_internal"]
                 ),
-                "leaf_mp_log_eigenvalue_delta": _finite_float(row["mp_log_eigenvalue_delta_leaf"]),
-                "internal_mp_log_eigenvalue_delta": _finite_float(
+                "leaf_mp_log_eigenvalue_delta": finite_float(row["mp_log_eigenvalue_delta_leaf"]),
+                "internal_mp_log_eigenvalue_delta": finite_float(
                     row["mp_log_eigenvalue_delta_internal"]
                 ),
-                "leaf_spectral_barrier": _finite_float(row["spectral_barrier_leaf"]),
-                "internal_spectral_barrier": _finite_float(row["spectral_barrier_internal"]),
-                "leaf_spectral_flow_affinity": _finite_float(row["spectral_flow_affinity_leaf"]),
-                "internal_spectral_flow_affinity": _finite_float(
+                "leaf_spectral_barrier": finite_float(row["spectral_barrier_leaf"]),
+                "internal_spectral_barrier": finite_float(row["spectral_barrier_internal"]),
+                "leaf_spectral_flow_affinity": finite_float(row["spectral_flow_affinity_leaf"]),
+                "internal_spectral_flow_affinity": finite_float(
                     row["spectral_flow_affinity_internal"]
                 ),
             }
@@ -757,22 +750,22 @@ def build_mode_pairwise_rows(mode_edge_rows: pd.DataFrame) -> pd.DataFrame:
                 "internal_matched_mp_block_count": int(row["matched_mp_block_count_internal"]),
                 "leaf_unmatched_mp_block_count": int(row["unmatched_mp_block_count_leaf"]),
                 "internal_unmatched_mp_block_count": int(row["unmatched_mp_block_count_internal"]),
-                "leaf_mode_transport_cost": _finite_float(row["mode_transport_cost_leaf"]),
-                "internal_mode_transport_cost": _finite_float(row["mode_transport_cost_internal"]),
-                "leaf_mode_transport_affinity": _finite_float(row["mode_transport_affinity_leaf"]),
-                "internal_mode_transport_affinity": _finite_float(
+                "leaf_mode_transport_cost": finite_float(row["mode_transport_cost_leaf"]),
+                "internal_mode_transport_cost": finite_float(row["mode_transport_cost_internal"]),
+                "leaf_mode_transport_affinity": finite_float(row["mode_transport_affinity_leaf"]),
+                "internal_mode_transport_affinity": finite_float(
                     row["mode_transport_affinity_internal"]
                 ),
-                "leaf_connection_laplacian_residual": _finite_float(
+                "leaf_connection_laplacian_residual": finite_float(
                     row["connection_laplacian_residual_leaf"]
                 ),
-                "internal_connection_laplacian_residual": _finite_float(
+                "internal_connection_laplacian_residual": finite_float(
                     row["connection_laplacian_residual_internal"]
                 ),
-                "leaf_mean_block_projector_chordal_distance": _finite_float(
+                "leaf_mean_block_projector_chordal_distance": finite_float(
                     row["mean_block_projector_chordal_distance_leaf"]
                 ),
-                "internal_mean_block_projector_chordal_distance": _finite_float(
+                "internal_mean_block_projector_chordal_distance": finite_float(
                     row["mean_block_projector_chordal_distance_internal"]
                 ),
             }
@@ -826,8 +819,8 @@ def _energy_terms(
     radius_energy = _mean_square(frame[radius_column])
     joint_terms = []
     for _, row in frame.iterrows():
-        angle = _finite_float(row.get(angle_column))
-        radius = _finite_float(row.get(radius_column))
+        angle = finite_float(row.get(angle_column))
+        radius = finite_float(row.get(radius_column))
         terms = []
         if math.isfinite(angle):
             terms.append(angle**2)
@@ -844,8 +837,8 @@ def _energy_terms(
 
 
 def _energy_status(row: pd.Series) -> str:
-    internal_only_value = _finite_float(row.get("internal_only_mp_supported_edge_count", 0))
-    strict_count_value = _finite_float(row.get("strict_shared_mp_supported_edge_count", 0))
+    internal_only_value = finite_float(row.get("internal_only_mp_supported_edge_count", 0))
+    strict_count_value = finite_float(row.get("strict_shared_mp_supported_edge_count", 0))
     internal_only = int(internal_only_value) if math.isfinite(internal_only_value) else 0
     strict_count = int(strict_count_value) if math.isfinite(strict_count_value) else 0
     data_role = str(row.get("data_role", ""))
@@ -853,7 +846,7 @@ def _energy_status(row: pd.Series) -> str:
         return "diagnostic_warn_selected_null_internal_only_transport_energy"
     if strict_count <= 0:
         return "diagnostic_no_strict_shared_mp_transport_energy"
-    delta = _finite_float(row.get("delta_strict_shared_mp_joint_transport_energy"))
+    delta = finite_float(row.get("delta_strict_shared_mp_joint_transport_energy"))
     if math.isfinite(delta) and delta < -1e-12:
         return "diagnostic_internal_smooths_strict_shared_transport"
     if math.isfinite(delta) and delta > 1e-12:

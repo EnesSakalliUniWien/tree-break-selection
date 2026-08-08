@@ -32,6 +32,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_spe
     build_selected_spectral_generator_target_rows,
     summarize_selected_spectral_generator_target_rows,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 
 SCHEMA_VERSION = "root_tie_rank_conditioned_coherent_topology_join/v1"
 STUDY_ROLE = "diagnostic_root_tie_rank_conditioned_coherent_topology_join"
@@ -120,14 +121,6 @@ def _require_columns(frame: pd.DataFrame, columns: set[str], label: str) -> None
         raise ValueError(f"{label} missing required columns: {sorted(missing)!r}.")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _bandwidth_reopen_band(*, locality_status: str, reopen_count: float) -> str:
     if str(locality_status) == "topology_frontier_not_joined":
         return "bandwidth_reopen_missing"
@@ -176,10 +169,10 @@ def _apply_root_frontier_join(
                 frontier.get("root_structural_proxy_pass_count", 0)
             ),
             "root_hybrid_strict_support_count": hybrid_count,
-            "root_frontier_min_best_case_tau_s": _finite_float(
+            "root_frontier_min_best_case_tau_s": finite_float(
                 frontier.get("root_frontier_min_best_case_tau_s", math.nan)
             ),
-            "root_frontier_median_best_case_tau_s": _finite_float(
+            "root_frontier_median_best_case_tau_s": finite_float(
                 frontier.get("root_frontier_median_best_case_tau_s", math.nan)
             ),
             "root_bandwidth_locality_status": locality_status,

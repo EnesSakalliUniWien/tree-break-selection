@@ -2,7 +2,7 @@
 title: Wiki Maintenance
 type: control
 status: reviewed
-updated: 2026-05-24
+updated: 2026-08-07
 sources:
   - raw/inbox/wiki-construction-brief.md
   - scripts/wiki/lint.py
@@ -28,7 +28,6 @@ coverage current, and the chronology append-only.
   verification, and maintenance events.
 - Preserve frontmatter `sources` when revising a page.
 - Repair broken wikilinks immediately.
-- Promote useful pages from `wiki/candidates/` once they become reusable.
 
 ### Cleanup Cadence
 

@@ -26,6 +26,7 @@ from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_g
 from benchmarks.diagnostics.calibration.traversal.retained_pass_through_topology_likelihood_panel import (
     build_traversal_network_context_rows,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -291,16 +292,8 @@ def _numeric(rows: pd.DataFrame, column: str) -> pd.Series:
     return pd.to_numeric(rows[column], errors="coerce")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return number if math.isfinite(number) else math.nan
-
-
 def _is_finite(value: object) -> bool:
-    return math.isfinite(_finite_float(value))
+    return math.isfinite(finite_float(value))
 
 
 def _bool_value(value: object) -> bool:
@@ -323,7 +316,7 @@ def _finite_array(values: pd.Series) -> np.ndarray:
 
 
 def _finite_int(value: object, default: int = 0) -> int:
-    number = _finite_float(value)
+    number = finite_float(value)
     if not math.isfinite(number):
         return int(default)
     return int(number)
@@ -479,7 +472,7 @@ def build_structural_topology_context_rows(
         node_ids = [str(node_id) for node_id in group["node_id"]]
         node_set = set(node_ids)
         node_size = {
-            str(row["node_id"]): _finite_float(row["n_descendant_leaves"])
+            str(row["node_id"]): finite_float(row["n_descendant_leaves"])
             for _, row in group.iterrows()
         }
         parent_by_node: dict[str, str] = {}
@@ -807,7 +800,7 @@ def build_selected_pass_through_truth_context_rows(
             if parent_id.lower() in {"", "nan", "none", "null"}:
                 parent_id = ""
             parent_by_node[node_id] = parent_id if parent_id in node_set else ""
-            depth_by_node[node_id] = _finite_float(row["depth"])
+            depth_by_node[node_id] = finite_float(row["depth"])
             decision_by_node[node_id] = str(row["decision_class"])
         for node_id, parent_id in parent_by_node.items():
             if parent_id:
@@ -886,12 +879,12 @@ def build_selected_pass_through_truth_context_rows(
                 accepted_descendants.sort(
                     key=lambda item: (
                         item[0],
-                        -_finite_float(item[2]["split_ari"]),
+                        -finite_float(item[2]["split_ari"]),
                     )
                 )
                 split_distance, split_node_id, best = accepted_descendants[0]
-                split_ari = _finite_float(best["split_ari"])
-                child_mean_purity = _finite_float(best["child_mean_purity"])
+                split_ari = finite_float(best["split_ari"])
+                child_mean_purity = finite_float(best["child_mean_purity"])
                 child_majority_distinct = bool(best["child_majority_distinct"])
             else:
                 split_distance = math.nan
@@ -1034,10 +1027,10 @@ def build_overlap_selected_pass_through_node_rows(
         structural_balance_product = (
             math.nan
             if structural is None
-            else _finite_float(structural["structural_balance_product"])
+            else finite_float(structural["structural_balance_product"])
         )
         completed_balance_product = (
-            _finite_float(row["left_balance_product"])
+            finite_float(row["left_balance_product"])
             if _is_finite(row["left_balance_product"])
             else structural_balance_product
         )
@@ -1070,7 +1063,7 @@ def build_overlap_selected_pass_through_node_rows(
                 "right_method_id": str(row["right_method_id"]),
                 "fixture_role": fixture_role,
                 "truth_evidence_role": guard_truth_role,
-                "data_seed": (math.nan if truth is None else _finite_float(truth["data_seed"])),
+                "data_seed": (math.nan if truth is None else finite_float(truth["data_seed"])),
                 "truth_geometry_role": truth_geometry_role,
                 "truth_context_status": truth_context_status,
                 "truth_node_sample_count": (
@@ -1082,7 +1075,7 @@ def build_overlap_selected_pass_through_node_rows(
                 "truth_node_majority_fraction": (
                     math.nan
                     if truth is None
-                    else _finite_float(truth["truth_node_majority_fraction"])
+                    else finite_float(truth["truth_node_majority_fraction"])
                 ),
                 "truth_downstream_split_node_id": (
                     "" if truth is None else str(truth["truth_downstream_split_node_id"])
@@ -1090,17 +1083,17 @@ def build_overlap_selected_pass_through_node_rows(
                 "truth_downstream_split_distance": (
                     math.nan
                     if truth is None
-                    else _finite_float(truth["truth_downstream_split_distance"])
+                    else finite_float(truth["truth_downstream_split_distance"])
                 ),
                 "truth_downstream_split_ari": (
                     math.nan
                     if truth is None
-                    else _finite_float(truth["truth_downstream_split_ari"])
+                    else finite_float(truth["truth_downstream_split_ari"])
                 ),
                 "truth_downstream_child_mean_purity": (
                     math.nan
                     if truth is None
-                    else _finite_float(truth["truth_downstream_child_mean_purity"])
+                    else finite_float(truth["truth_downstream_child_mean_purity"])
                 ),
                 "truth_downstream_child_majority_distinct": (
                     False
@@ -1108,9 +1101,9 @@ def build_overlap_selected_pass_through_node_rows(
                     else _bool_value(truth["truth_downstream_child_majority_distinct"])
                 ),
                 "topology_feature_status": _topology_feature_status(finite_topology_count),
-                "left_depth": _finite_float(row["left_depth"]),
-                "left_n_descendant_leaves": _finite_float(row["left_n_descendant_leaves"]),
-                "left_sibling_p_value": _finite_float(row["left_sibling_p_value"]),
+                "left_depth": finite_float(row["left_depth"]),
+                "left_n_descendant_leaves": finite_float(row["left_n_descendant_leaves"]),
+                "left_sibling_p_value": finite_float(row["left_sibling_p_value"]),
                 "left_child_parent_edge_open": _bool_value(row["left_child_parent_edge_open"]),
                 "left_sibling_open": _bool_value(row["left_sibling_open"]),
                 "left_descendant_accepted_split_count": int(
@@ -1124,45 +1117,45 @@ def build_overlap_selected_pass_through_node_rows(
                 "right_neighborhood_evidence_family": str(
                     row["right_neighborhood_evidence_family"]
                 ),
-                "left_balance_product": _finite_float(row["left_balance_product"]),
-                "left_outgoing_edge_norm_balance": _finite_float(
+                "left_balance_product": finite_float(row["left_balance_product"]),
+                "left_outgoing_edge_norm_balance": finite_float(
                     row["left_outgoing_edge_norm_balance"]
                 ),
                 "finite_topology_feature_count": finite_topology_count,
                 "structural_n_parent_context": (
                     math.nan
                     if structural is None
-                    else _finite_float(structural["structural_n_parent_context"])
+                    else finite_float(structural["structural_n_parent_context"])
                 ),
                 "structural_n_node": (
                     math.nan
                     if structural is None
-                    else _finite_float(structural["structural_n_node"])
+                    else finite_float(structural["structural_n_node"])
                 ),
                 "structural_n_incoming_sibling": (
                     math.nan
                     if structural is None
-                    else _finite_float(structural["structural_n_incoming_sibling"])
+                    else finite_float(structural["structural_n_incoming_sibling"])
                 ),
                 "structural_n_left": (
                     math.nan
                     if structural is None
-                    else _finite_float(structural["structural_n_left"])
+                    else finite_float(structural["structural_n_left"])
                 ),
                 "structural_n_right": (
                     math.nan
                     if structural is None
-                    else _finite_float(structural["structural_n_right"])
+                    else finite_float(structural["structural_n_right"])
                 ),
                 "structural_incoming_branch_balance": (
                     math.nan
                     if structural is None
-                    else _finite_float(structural["structural_incoming_branch_balance"])
+                    else finite_float(structural["structural_incoming_branch_balance"])
                 ),
                 "structural_outgoing_balance": (
                     math.nan
                     if structural is None
-                    else _finite_float(structural["structural_outgoing_balance"])
+                    else finite_float(structural["structural_outgoing_balance"])
                 ),
                 "structural_balance_product": structural_balance_product,
                 "structural_topology_feature_count": structural_feature_count,
@@ -1181,17 +1174,17 @@ def build_overlap_selected_pass_through_node_rows(
                 "distance_to_pass_through_context": (
                     math.nan
                     if traversal is None
-                    else _finite_float(traversal["distance_to_pass_through_context"])
+                    else finite_float(traversal["distance_to_pass_through_context"])
                 ),
                 "distance_to_downstream_accepted_split": (
                     math.nan
                     if traversal is None
-                    else _finite_float(traversal["distance_to_downstream_accepted_split"])
+                    else finite_float(traversal["distance_to_downstream_accepted_split"])
                 ),
                 "network_component_node_count": (
                     math.nan
                     if traversal is None
-                    else _finite_float(traversal["network_component_node_count"])
+                    else finite_float(traversal["network_component_node_count"])
                 ),
                 "traversal_network_context_status": (
                     "traversal_network_context_not_provided"
@@ -1313,8 +1306,8 @@ def build_overlap_selected_pass_through_case_rows(
                     group["completed_topology_feature_count"].gt(0).sum()
                 ),
                 "finite_traversal_context_row_count": int(finite_context.sum()),
-                "min_depth": _finite_float(group["left_depth"].min(skipna=True)),
-                "max_depth": _finite_float(group["left_depth"].max(skipna=True)),
+                "min_depth": finite_float(group["left_depth"].min(skipna=True)),
+                "max_depth": finite_float(group["left_depth"].max(skipna=True)),
                 "median_descendant_leaves": _median(group["left_n_descendant_leaves"]),
                 "median_sibling_p_value": _median(group["left_sibling_p_value"]),
                 "case_support_status": _case_support_status(group),

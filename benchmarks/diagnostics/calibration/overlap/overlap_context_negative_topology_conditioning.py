@@ -30,6 +30,7 @@ from benchmarks.diagnostics.calibration.overlap.binary_threshold_scan import (
 from benchmarks.diagnostics.calibration.overlap.overlap_weak_zone_separability import (
     rank_auc,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_overlap_context_negative_topology_conditioning"
@@ -308,14 +309,6 @@ def _numeric(rows: pd.DataFrame, column: str) -> pd.Series:
     return pd.to_numeric(rows[column], errors="coerce")
 
 
-def _finite_float(value: object) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return numeric if math.isfinite(numeric) else math.nan
-
-
 def _finite(values: Sequence[float]) -> np.ndarray:
     array = np.asarray(values, dtype=float)
     return array[np.isfinite(array)]
@@ -552,7 +545,7 @@ def build_context_negative_topology_conditioning_rows(
                 if "incoming_parent_id" in row and pd.notna(row["incoming_parent_id"])
                 else ""
             ),
-            "branch_length_to_parent": _finite_float(row.get("branch_length_to_parent", math.nan)),
+            "branch_length_to_parent": finite_float(row.get("branch_length_to_parent", math.nan)),
             "guard_truth_role": str(row["guard_truth_role"]),
             "topology_support_role": _topology_support_role(
                 data_role=row["data_role"],

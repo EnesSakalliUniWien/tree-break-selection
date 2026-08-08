@@ -239,10 +239,7 @@ def write_reference_ranking(summary: pd.DataFrame, output_dir: Path) -> None:
     ok.insert(0, "display_order_rank", np.arange(1, len(ok) + 1))
     ok[cols].to_csv(output_dir / "kak_diffusion_reference_nmi_metrics.csv", index=False)
 
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        return
+    import matplotlib.pyplot as plt
 
     frame = ok.dropna(subset=["reference_nmi"]).sort_values("reference_nmi", ascending=True)
     if frame.empty:
