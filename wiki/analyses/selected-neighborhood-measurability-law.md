@@ -14,7 +14,6 @@ sources:
   - wiki/sources/root-tie-rank-calibration-feasibility-20260616.md
   - wiki/sources/root-tie-rank-selected-null-simulation-pilot-20260616.md
   - wiki/sources/root-tie-rank-null-proposal-frontier-20260616.md
-  - wiki/sources/root-tie-rank-spectral-lift-parameter-sweep-20260616.md
   - wiki/sources/legacy-internal-spectral-comparison-panel-20260616.md
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py
 tags:
@@ -310,10 +309,6 @@ should otherwise stop and report the mathematical reason.
 - [[root-tie-rank-null-proposal-frontier-20260616]] separates proposal-family
   reachability from calibration admissibility and preserves likelihood-ratio
   metadata for supported external-null families.
-- [[root-tie-rank-spectral-lift-parameter-sweep-20260616]] screens generated
-  roots for action-edge/tie eligibility and selected spectral reach. Version 3
-  records standalone proposal-reach evidence; it does not feed a retained tail
-  evaluator.
 - [[legacy-internal-spectral-comparison-panel-20260616]] records the copied
   old internal-barycenter spectral path as a standard-dispatch diagnostic. It
   greatly increases MP threshold rows and raw MP signal counts, but the
@@ -332,7 +327,6 @@ should otherwise stop and report the mathematical reason.
 - [[root-tie-rank-calibration-feasibility-20260616]]
 - [[root-tie-rank-selected-null-simulation-pilot-20260616]]
 - [[root-tie-rank-null-proposal-frontier-20260616]]
-- [[root-tie-rank-spectral-lift-parameter-sweep-20260616]]
 - [[legacy-internal-spectral-comparison-panel-20260616]]
 
 ## Open Questions

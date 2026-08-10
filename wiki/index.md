@@ -185,10 +185,6 @@ renamed, or promoted.
 - [[root-tie-rank-null-proposal-frontier-20260616]] - proposal-family frontier
   separating stratum reachability from calibration admissibility and retaining
   likelihood-ratio metadata for supported external-null families.
-- [[root-tie-rank-spectral-lift-parameter-sweep-20260616]] - versioned
-  generator sweep measuring action-edge/tie eligibility and remaining selected
-  spectral lift as standalone proposal-generator reach evidence; it does not
-  define production p-values or feed a retained tail evaluator.
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]] - seven-case
   overlap rerun of the full legacy package on selected-root-tail cases; the
   old method improves one signal row but creates two selected-null false

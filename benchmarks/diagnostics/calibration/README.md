@@ -11,8 +11,8 @@ construction, testing, and plotting interfaces remain under
 - `overlap/`: overlap, junction, recovery, and structural-threshold studies.
 - `root/center/`: robust root-center and rooted-tree geometry checks.
 - `root/selected/`: selected-root region and tie-cell studies.
-- `root/tie_rank/`: tie-rank feasibility, selected-null simulation, proposal,
-  and spectral-lift diagnostics.
+- `root/tie_rank/`: tie-rank feasibility, selected-null simulation, and
+  null-proposal diagnostics.
 - `selected/family/`: selected-family traversal and candidate-law studies.
 - `selected/hierarchy/`: hierarchy selection and external-calibration studies.
 - `selected/neighborhood/`: neighborhood conditioning and measurability studies.
@@ -36,8 +36,7 @@ Shared diagnostic contracts remain at this package root:
   mechanics: supported-case filtering, replicate/data-role iteration, one-case
   TBS execution, rows/summary writing, and manifest envelopes.
 - `root/root_values.py` owns shared selected-root value parsing,
-  required-column validation, log-action transforms, and spectral-excess
-  transforms.
+  and required-column validation.
 ## Maintained runners
 
 - `selected/family/run_selected_family_matrix.py`

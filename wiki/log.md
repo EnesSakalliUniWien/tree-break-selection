@@ -6574,3 +6574,15 @@ Removed the calibration package's stale reference to optional
 target-conditioned tail rows and corrected the wiki index so the retained
 kernel-spectral synthesis is described as an unresolved historical research
 direction, not a current calibrated-tail contract.
+
+#### Retired the terminal root spectral-lift sweep
+
+Removed the standalone root tie-rank spectral-lift parameter sweep after the
+recursive audit found no downstream consumer, registered runner, focused test,
+packaged surface, or non-empty retained result capture. Removed its direct
+source page and the selected-root log-action and spectral-excess helpers that
+became orphaned.
+
+The calibration-feasibility, selected-null simulation, and null-proposal
+frontier diagnostics remain for a separate dependency review. Production code,
+raw evidence, and earlier chronology remain unchanged.
