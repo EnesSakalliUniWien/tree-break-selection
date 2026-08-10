@@ -2402,7 +2402,7 @@ def _profile_contract_status(field_name: str, values_match: bool) -> tuple[str, 
             "refined_selected_family_guard_difference",
             (
                 "The refined profile adds selected-family pass-through guard "
-                "behavior that the conditional diagnostic profile does not apply."
+                "behavior that the guarded baseline profile does not apply."
             ),
         )
     if field_name == "status":
@@ -2419,7 +2419,7 @@ def _profile_contract_status(field_name: str, values_match: bool) -> tuple[str, 
 def _method_ids_from_candidate_rows(candidate_rows: pd.DataFrame) -> tuple[str, str]:
     if candidate_rows.empty:
         return (
-            "fixed_coordinate_conditional_topology_diagnostic_v1",
+            "fixed_coordinate_guarded_v1",
             "fixed_coordinate_global_passthrough_refined_v1",
         )
     return (
@@ -2479,7 +2479,7 @@ def _method_ids_from_profile_contract(
 ) -> tuple[str, str]:
     if profile_config_contract.empty:
         return (
-            "fixed_coordinate_conditional_topology_diagnostic_v1",
+            "fixed_coordinate_guarded_v1",
             "fixed_coordinate_global_passthrough_refined_v1",
         )
     return (

@@ -28,7 +28,6 @@ TBS_DISTANCE_TREE_METHODS = {
     "tbs_fixed_block_simes_bh",
     "tbs_conditional_topology_diagnostic",
     "tbs_global_passthrough_refined_diagnostic",
-    "tbs_spectral_transport_passthrough_diagnostic",
     "tbs_spectral_transport_passthrough",
     "tbs_internal_filter_v1",
     "tbs_internal_filter_branch_length_v1",

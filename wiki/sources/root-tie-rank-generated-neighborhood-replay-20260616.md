@@ -2,7 +2,7 @@
 title: Root Tie Rank Generated Neighborhood Replay 2026-06-16
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_generated_neighborhood_replay.py
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_null_proposal_frontier.py
@@ -43,7 +43,9 @@ spectral-action/tie-rank coupling and a calibrated discrete root law."
   decisions, selected-neighborhood distribution, p-value interpolation,
   measurability, and topology frontier.
 - All `10` generated proposal matrices replay successfully under
-  `fixed_coordinate_conditional_topology_diagnostic_v1`.
+  the then-named `fixed_coordinate_conditional_topology_diagnostic_v1` profile.
+  That behavior-identical alias is now retired; new runs use the canonical
+  `fixed_coordinate_guarded_v1` profile.
 - The topology-frontier replay contains `4,990` direct-measurable rows and
   `5,000` nonroot non-direct rows. After the root aggregation was refined to
   count direct-measurable depth-0 rows, every generated proposal case has one

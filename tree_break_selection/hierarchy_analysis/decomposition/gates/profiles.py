@@ -46,22 +46,6 @@ GLOBAL_PASSTHROUGH_REFINED_REPLICATES = 999
 
 
 SIBLING_GATE_PROFILES: dict[str, SiblingGateProfile] = {
-    "fixed_coordinate_conditional_topology_diagnostic_v1": SiblingGateProfile(
-        profile_id="fixed_coordinate_conditional_topology_diagnostic_v1",
-        sibling_gate_method="fixed_coordinate_bh",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="diagnostic_only_not_production",
-        description=(
-            "Same-data fixed coordinate-BH sibling gate with selected-topology "
-            "alpha penalty and selected-root feature-subsample stability guard. "
-            "Conditional topology traversal-law evidence is emitted by the "
-            "diagnostic panel, not applied as a production calibration rule."
-        ),
-    ),
     "fixed_coordinate_guarded_v1": SiblingGateProfile(
         profile_id="fixed_coordinate_guarded_v1",
         sibling_gate_method="fixed_coordinate_bh",
@@ -109,25 +93,6 @@ SIBLING_GATE_PROFILES: dict[str, SiblingGateProfile] = {
         root_selective_permutation_guard_seed=0,
         root_selective_permutation_guard_alpha=0.01,
     ),
-    "fixed_coordinate_selective_traversal_v1": SiblingGateProfile(
-        profile_id="fixed_coordinate_selective_traversal_v1",
-        sibling_gate_method="fixed_coordinate_bh",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="diagnostic_candidate",
-        description=(
-            "Same-data fixed coordinate-BH sibling gate with selected-topology "
-            "alpha penalty, selected-root feature-subsample stability guard, and "
-            "selected-subtree permutation guard for traversal-open internal nodes."
-        ),
-        root_selective_permutation_guard_replicates=99,
-        root_selective_permutation_guard_seed=0,
-        root_selective_permutation_guard_alpha=0.01,
-        root_selective_permutation_guard_scope="open_internal",
-    ),
     "fixed_coordinate_selective_passthrough_v1": SiblingGateProfile(
         profile_id="fixed_coordinate_selective_passthrough_v1",
         sibling_gate_method="fixed_coordinate_bh",
@@ -147,26 +112,6 @@ SIBLING_GATE_PROFILES: dict[str, SiblingGateProfile] = {
         root_selective_permutation_guard_seed=0,
         root_selective_permutation_guard_alpha=0.01,
         root_selective_permutation_guard_scope="passthrough_descendant",
-    ),
-    "fixed_coordinate_global_passthrough_v1": SiblingGateProfile(
-        profile_id="fixed_coordinate_global_passthrough_v1",
-        sibling_gate_method="fixed_coordinate_bh",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="diagnostic_candidate",
-        description=(
-            "Same-data fixed coordinate-BH sibling gate with selected-topology "
-            "alpha penalty, selected-root feature-subsample stability guard, and "
-            "a global selected-family sibling-min permutation guard for "
-            "pass-through descendant splits."
-        ),
-        root_selective_permutation_guard_replicates=99,
-        root_selective_permutation_guard_seed=0,
-        root_selective_permutation_guard_alpha=0.01,
-        root_selective_permutation_guard_scope="global_sibling_min_passthrough_descendant",
     ),
     "fixed_coordinate_global_passthrough_refined_v1": SiblingGateProfile(
         profile_id="fixed_coordinate_global_passthrough_refined_v1",
@@ -188,35 +133,6 @@ SIBLING_GATE_PROFILES: dict[str, SiblingGateProfile] = {
         root_selective_permutation_guard_alpha=0.01,
         root_selective_permutation_guard_scope=(
             "global_sibling_min_passthrough_descendant_refined"
-        ),
-    ),
-    "fixed_coordinate_spectral_transport_passthrough_diagnostic_v1": SiblingGateProfile(
-        profile_id="fixed_coordinate_spectral_transport_passthrough_diagnostic_v1",
-        sibling_gate_method="fixed_coordinate_bh",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="diagnostic_only_not_production",
-        description=(
-            "Refined fixed-coordinate selected-family pass-through guard plus a "
-            "fail-closed MP mode-transport pass-through support guard. The "
-            "spectral transport layer can only block pass-through; it cannot "
-            "open sibling splits or create calibrated p-values."
-        ),
-        root_selective_permutation_guard_replicates=99,
-        root_selective_permutation_guard_seed=0,
-        root_selective_permutation_guard_alpha=0.01,
-        root_selective_permutation_guard_scope=(
-            "global_sibling_min_passthrough_descendant_refined"
-        ),
-        spectral_transport_passthrough_guard=True,
-        spectral_transport_max_cost=DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-        spectral_transport_require_mp_blocks=True,
-        spectral_transport_block_log_tolerance=DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-        spectral_transport_unmatched_mode_penalty=(
-            DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
         ),
     ),
     "fixed_coordinate_spectral_transport_passthrough_v1": SiblingGateProfile(

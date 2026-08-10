@@ -61,7 +61,7 @@ DEFAULT_PROPOSAL_FEASIBILITY_ROWS = (
     DEFAULT_PROPOSAL_ROOT / "root_tie_rank_null_proposal_combined_feasibility_rows.csv"
 )
 DEFAULT_GENERATED_MATRIX_DIR = DEFAULT_PROPOSAL_ROOT / "generated_proposal_matrices"
-DEFAULT_METHOD_ID = "fixed_coordinate_conditional_topology_diagnostic_v1"
+DEFAULT_METHOD_ID = "fixed_coordinate_guarded_v1"
 
 RUN_ROWS_OUTPUT = "root_tie_rank_generated_neighborhood_replay_rows.csv"
 NODE_DECISIONS_OUTPUT = "generated_multiscale_node_decisions.csv"

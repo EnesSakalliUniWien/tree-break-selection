@@ -53,7 +53,8 @@ diagnostic comparison. The guard does not open sibling splits and does not
 create calibrated p-values. The opt-in profile is available through the
 standard benchmark registry as `tbs_spectral_transport_passthrough`; the older
 `fixed_coordinate_spectral_transport_passthrough_diagnostic_v1` and
-`tbs_spectral_transport_passthrough_diagnostic` names remain diagnostic aliases.
+`tbs_spectral_transport_passthrough_diagnostic` aliases were retired after the
+opt-in profile superseded them with identical strict guard parameters.
 
 ## Key Points
 
@@ -69,16 +70,12 @@ standard benchmark registry as `tbs_spectral_transport_passthrough`; the older
   map is absent, traversal behavior is unchanged. When present, `PASS_THROUGH`
   is returned only if the selected node has descendant split evidence and
   spectral transport support.
-- The diagnostic profile
-  `fixed_coordinate_spectral_transport_passthrough_diagnostic_v1` reuses the
-  refined global selected-family pass-through guard and adds the spectral
-  transport pass-through guard.
 - The opt-in profile `fixed_coordinate_spectral_transport_passthrough_v1` has
   status `opt_in_candidate_not_default` and the same strict guard parameters.
 - The standard benchmark method registry exposes
   `tbs_spectral_transport_passthrough`, which points to the TBS runner with the
-  promoted spectral transport sibling-gate profile. The diagnostic method id
-  remains available for backward compatibility.
+  promoted spectral transport sibling-gate profile. The behavior-identical
+  diagnostic method id has been retired.
 - The refined baseline profile is also exposed as
   `tbs_global_passthrough_refined_diagnostic`, which lets the standard benchmark
   path isolate the spectral guard effect.
@@ -110,14 +107,12 @@ standard benchmark registry as `tbs_spectral_transport_passthrough`; the older
   annotation.
 - `gate_evaluator.py` consumes the optional support map and blocks
   pass-through without altering split decisions.
-- `orchestrator.py` registers
-  `fixed_coordinate_spectral_transport_passthrough_diagnostic_v1` and adds the
-  spectral transport annotation step to the gate pipeline when that profile is
-  selected.
+- `orchestrator.py` adds the spectral transport annotation step to the gate
+  pipeline when the opt-in profile is selected.
 - `tree_decomposition.py` passes spectral transport support into traversal and
   records support/bottleneck fields in the traversal trace.
 - `method_registry.py`, `method_sets.py`, `dispatch.py`, and `tbs_runner.py`
-  expose the diagnostic profile as a standard TBS benchmark method and carry its
+  expose the opt-in profile as a standard TBS benchmark method and carry its
   resolved runtime configuration through result metadata.
 - `spectral_transport_overlap_dispatch_panel.py` compares the registered
   spectral method to the refined baseline through the standard benchmark

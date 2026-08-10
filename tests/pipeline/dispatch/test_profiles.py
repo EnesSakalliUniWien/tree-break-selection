@@ -15,7 +15,7 @@ from .helpers import _capturing_runner, _toy_dataframe
         pytest.param(
             "tbs_conditional_topology_diagnostic",
             "TBS (Conditional Topology Diagnostic)",
-            "fixed_coordinate_conditional_topology_diagnostic_v1",
+            "fixed_coordinate_guarded_v1",
             id="conditional-topology",
         ),
         pytest.param(

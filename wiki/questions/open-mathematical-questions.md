@@ -474,7 +474,7 @@ Small diagnostic replays move the false row to global p-values about `0.05` to
 `0.06`, but this needs an optimized implementation and signal validation
 before it can become a guard.
 
-The first implementation of that object is now available as
+The first implementation of that object was evaluated as
 `fixed_coordinate_global_passthrough_v1`. It uses a conservative
 selected-family null: for each feature-block permutation, rebuild the whole
 tree and take the minimum fixed-subspace sibling p-value over every binary
@@ -486,7 +486,9 @@ ten-replicate binary smoke has zero false splits across `30` null rows and
 signal mean ARI `0.945084`; the matching direct-categorical smoke also has zero
 false splits across `30` null rows and signal mean ARI `0.832022`. The
 direct-categorical rerun preserves those statistics while improving wall time
-from about `309` seconds to about `147` seconds.
+from about `309` seconds to about `147` seconds. That superseded profile id is
+now retired from the live registry; the evidence and underlying explicit guard
+scope remain available for research reproduction.
 
 The support-level binary run sharpens the remaining open problem. The
 unrefined global profile reaches acceptable point behavior but not the Wilson

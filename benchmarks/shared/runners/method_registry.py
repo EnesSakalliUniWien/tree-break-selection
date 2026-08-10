@@ -317,7 +317,7 @@ METHOD_SPECS: dict[str, MethodSpec] = {
             {
                 "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
                 "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "sibling_gate_profile": ("fixed_coordinate_conditional_topology_diagnostic_v1"),
+                "sibling_gate_profile": "fixed_coordinate_guarded_v1",
             },
         ],
     ),
@@ -329,19 +329,6 @@ METHOD_SPECS: dict[str, MethodSpec] = {
                 "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
                 "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_profile": ("fixed_coordinate_global_passthrough_refined_v1"),
-            },
-        ],
-    ),
-    "tbs_spectral_transport_passthrough_diagnostic": MethodSpec(
-        name="TBS (Spectral Transport Passthrough Diagnostic)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "sibling_gate_profile": (
-                    "fixed_coordinate_spectral_transport_passthrough_diagnostic_v1"
-                ),
             },
         ],
     ),

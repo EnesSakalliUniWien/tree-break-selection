@@ -6395,3 +6395,31 @@ Split the monolithic dispatch-contract module into validation, distance-input,
 parameter-forwarding, compatibility-outcome, method-registry, and profile
 contracts. Parameterized the repeated gate-profile resolver, method-registry,
 and KL-dispatch matrices while preserving the 589 collected behavioral cases.
+
+#### Retired superseded fixed-coordinate profiles
+
+Removed the superseded `fixed_coordinate_selective_traversal_v1` and
+`fixed_coordinate_global_passthrough_v1` named presets from the production
+profile registry. Their `open_internal` and unrefined global selected-family
+guard implementations remain available through explicit configuration and are
+still covered directly; raw captures and wiki source summaries preserve the
+experimental results that motivated their refined successors.
+
+Also removed the behavior-identical
+`fixed_coordinate_spectral_transport_passthrough_diagnostic_v1` profile alias
+and `tbs_spectral_transport_passthrough_diagnostic` benchmark method alias. The
+canonical opt-in `fixed_coordinate_spectral_transport_passthrough_v1` profile
+and `tbs_spectral_transport_passthrough` method retain the same strict spectral
+transport guard behavior.
+
+#### Consolidated the conditional-topology runtime profile
+
+Removed `fixed_coordinate_conditional_topology_diagnostic_v1` from the
+production profile registry after confirming that every executable setting was
+identical to `fixed_coordinate_guarded_v1`. The distinct maturity label and
+description belonged to the benchmark study, not to runtime behavior.
+
+The benchmark-facing `tbs_conditional_topology_diagnostic` method id remains
+available and now resolves to `fixed_coordinate_guarded_v1`. Conditional-
+topology diagnostic scripts and new output metadata use that canonical profile;
+historical raw results retain the retired profile id as provenance.

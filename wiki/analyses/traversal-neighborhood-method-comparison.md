@@ -2,7 +2,7 @@
 title: Traversal Neighborhood Method Comparison
 type: analysis
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
@@ -239,8 +239,9 @@ same selected-root stability settings. The concrete configuration difference is
 that `fixed_coordinate_global_passthrough_refined_v1` enables a selected-family
 global sibling-min pass-through guard with `99` draws, alpha `0.01`, and scope
 `global_sibling_min_passthrough_descendant_refined`, while
-`fixed_coordinate_conditional_topology_diagnostic_v1` leaves that guard off and
-emits topology-law evidence diagnostically.
+the canonical `fixed_coordinate_guarded_v1` profile leaves that guard off. The
+conditional-topology panel emits the topology-law evidence diagnostically; its
+former behavior-identical profile id has been retired.
 
 The readiness summary gives the working verdict. Both profiles are ready only
 as diagnostics for the shared traversal skeleton. The refined profile is ready

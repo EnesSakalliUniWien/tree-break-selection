@@ -2,7 +2,7 @@
 title: Projected-Wald Statistic
 type: concept
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-10
 sources:
   - manuscript/guides/full_method_logic_map.md
   - manuscript/sections/method/edge_test.tex
@@ -232,7 +232,7 @@ replays move the observed null failure to global p-values around `0.05` to
 `0.06`, but this layer is not yet production behavior because signal
 sensitivity and runtime need optimized validation.
 
-That global correction is now executable as
+That global correction was evaluated as
 `fixed_coordinate_global_passthrough_v1`. Its guard scope,
 `global_sibling_min_passthrough_descendant`, compares pass-through descendant
 candidates with the minimum fixed-subspace sibling p-value over every binary
@@ -247,7 +247,9 @@ null false splits across `30` null rows and signal mean ARI `0.832022`. The
 direct-categorical rerun preserves those statistics while improving wall time
 from about `309` seconds to about `147` seconds. The method remains
 diagnostic-only because support-level binary validation finds boundary
-pass-through false splits in `binary_unbalanced_low`.
+pass-through false splits in `binary_unbalanced_low`. The superseded named
+profile has since been retired from the live registry; the underlying guard
+scope and direct behavioral coverage remain available.
 
 The refined successor,
 `fixed_coordinate_global_passthrough_refined_v1`, leaves the statistic and

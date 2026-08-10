@@ -20,25 +20,11 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.profiles import
         pytest.param("fixed_coordinate_guarded_v1", 0, None, "root", id="guarded"),
         pytest.param("fixed_coordinate_selective_root_v1", 99, 0.01, "root", id="selective-root"),
         pytest.param(
-            "fixed_coordinate_selective_traversal_v1",
-            99,
-            0.01,
-            "open_internal",
-            id="selective-traversal",
-        ),
-        pytest.param(
             "fixed_coordinate_selective_passthrough_v1",
             99,
             0.01,
             "passthrough_descendant",
             id="selective-passthrough",
-        ),
-        pytest.param(
-            "fixed_coordinate_global_passthrough_v1",
-            99,
-            0.01,
-            "global_sibling_min_passthrough_descendant",
-            id="global-passthrough",
         ),
         pytest.param(
             "fixed_coordinate_global_passthrough_refined_v1",
@@ -92,10 +78,10 @@ def test_fixed_profile_resolves_spectral_transport_passthrough_constants() -> No
         spectral_block_log_tolerance,
         spectral_unmatched_mode_penalty,
     ) = resolve_sibling_gate_profile_config(
-        sibling_gate_profile=("fixed_coordinate_spectral_transport_passthrough_diagnostic_v1"),
+        sibling_gate_profile="fixed_coordinate_spectral_transport_passthrough_v1",
     )
 
-    assert profile_id == "fixed_coordinate_spectral_transport_passthrough_diagnostic_v1"
+    assert profile_id == "fixed_coordinate_spectral_transport_passthrough_v1"
     assert method == "fixed_coordinate_bh"
     assert penalty == 50.0
     assert threshold == 0.24
@@ -111,30 +97,7 @@ def test_fixed_profile_resolves_spectral_transport_passthrough_constants() -> No
     assert spectral_require_mp_blocks is True
     assert spectral_block_log_tolerance == 0.05
     assert spectral_unmatched_mode_penalty == 1.0
-    assert SIBLING_GATE_PROFILES[profile_id].status == "diagnostic_only_not_production"
-
-    promoted = resolve_sibling_gate_profile_config(
-        sibling_gate_profile="fixed_coordinate_spectral_transport_passthrough_v1",
-    )
-    assert promoted[0] == "fixed_coordinate_spectral_transport_passthrough_v1"
-    assert promoted[1:16] == (
-        method,
-        penalty,
-        threshold,
-        stability_replicates,
-        fraction,
-        stability_seed,
-        root_selective_replicates,
-        root_selective_seed,
-        root_selective_alpha,
-        root_selective_scope,
-        spectral_guard,
-        spectral_max_cost,
-        spectral_require_mp_blocks,
-        spectral_block_log_tolerance,
-        spectral_unmatched_mode_penalty,
-    )
-    assert SIBLING_GATE_PROFILES[promoted[0]].status == "opt_in_candidate_not_default"
+    assert SIBLING_GATE_PROFILES[profile_id].status == "opt_in_candidate_not_default"
 
 
 def test_fixed_profile_allows_explicit_root_selective_guard_when_disabled() -> None:

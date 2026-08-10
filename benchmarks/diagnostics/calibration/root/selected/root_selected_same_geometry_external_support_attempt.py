@@ -218,7 +218,7 @@ class RootSelectedSameGeometryExternalSupportAttemptConfig:
     sibling_alpha: float = 0.01
     edge_alpha: float = 0.001
     tree_linkage_method: str = "average"
-    method_id: str = "fixed_coordinate_conditional_topology_diagnostic_v1"
+    method_id: str = "fixed_coordinate_guarded_v1"
     h_u_population_law_status: str = DEFAULT_H_U_STATUS
     seed_offset: int = DEFAULT_SEED_OFFSET
 
@@ -285,7 +285,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tree-linkage-method", default="average")
     parser.add_argument(
         "--method-id",
-        default="fixed_coordinate_conditional_topology_diagnostic_v1",
+        default="fixed_coordinate_guarded_v1",
     )
     parser.add_argument(
         "--h-u-population-law-status",

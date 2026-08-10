@@ -2,7 +2,7 @@
 title: Overlap Conditional Topology Law Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py
   - raw/inbox/c2ef-cosine-subspace-method-notes-20260615.md
@@ -90,11 +90,11 @@ threshold.
   context-negative overlap slice, it recovers `0` rows because the only truth
   row remains support-insufficient. This is the desired fail-closed boundary:
   coherent topology evidence is necessary but not enough without support.
-- The diagnostic profile
-  `fixed_coordinate_conditional_topology_diagnostic_v1` is now registered for
-  benchmark selection. It does not apply the topology law during traversal.
-  Multi-scale node decisions expose directed incidence fields and a
-  fail-closed conditional-topology status placeholder.
+- The benchmark method `tbs_conditional_topology_diagnostic` is registered for
+  benchmark selection and now resolves through the canonical
+  `fixed_coordinate_guarded_v1` runtime profile. It does not apply the topology
+  law during traversal. Multi-scale node decisions expose directed incidence
+  fields and a fail-closed conditional-topology status placeholder.
 - In the 17-case regression gate, the benchmark-facing profile runs without
   skips, has mean ARI `0.460293`, median ARI `0.480000`, and exact-K count
   `4/17`. This is a runnable diagnostic profile, not a production improvement

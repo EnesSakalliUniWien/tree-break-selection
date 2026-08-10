@@ -634,8 +634,8 @@ renamed, or promoted.
   `fixed_coordinate_selective_root_v1` and the narrower
   `fixed_coordinate_selective_passthrough_v1` validation stress profiles, and
   recording the ten-replicate recheck that rejects a hard closed-root barrier,
-  the support run showing
-  `fixed_coordinate_global_passthrough_v1` still has boundary false splits,
+  the support run showing that the now-retired unrefined global passthrough
+  profile still had boundary false splits,
   and `fixed_coordinate_global_passthrough_refined_v1` as the current
   selected-family pass-through diagnostic candidate after binary support
   validation moved its production summary from fail-closed to diagnostic-only.

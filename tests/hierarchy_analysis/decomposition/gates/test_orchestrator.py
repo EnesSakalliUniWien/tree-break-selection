@@ -331,47 +331,6 @@ def test_pipeline_selective_root_profile_runs_packaged_guard(monkeypatch) -> Non
     assert "Root_Selective_Permutation_Guard_Blocked" in bundle.annotated_df.columns
 
 
-def test_pipeline_selective_traversal_profile_sets_open_internal_scope(
-    monkeypatch,
-) -> None:
-    import tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator as orchestrator
-
-    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-
-    stable_root = _stable_root
-
-    fake_selected_root = _selected_root(0.01)
-
-    monkeypatch.setattr(
-        orchestrator,
-        "compute_root_feature_subsample_stability",
-        stable_root,
-    )
-    monkeypatch.setattr(
-        guard_module,
-        "selected_root_permutation_p_value",
-        fake_selected_root,
-    )
-
-    bundle = orchestrator.run_gate_annotation_pipeline(
-        tree,
-        annotations_df.copy(),
-        edge_alpha=0.01,
-        sibling_alpha=0.01,
-        leaf_data=leaf_data,
-        feature_space=feature_space,
-        sibling_gate_profile="fixed_coordinate_selective_traversal_v1",
-    )
-
-    assert bundle.metadata.config.sibling_gate_profile_id == (
-        "fixed_coordinate_selective_traversal_v1"
-    )
-    assert bundle.metadata.config.root_selective_permutation_guard_replicates == 99
-    assert bundle.metadata.config.root_selective_permutation_guard_scope == ("open_internal")
-    assert "Selective_Permutation_Guard_Blocked" in bundle.annotated_df.columns
-
-
 def test_pipeline_selective_passthrough_profile_sets_passthrough_scope(
     monkeypatch,
 ) -> None:
@@ -411,62 +370,6 @@ def test_pipeline_selective_passthrough_profile_sets_passthrough_scope(
     assert bundle.metadata.config.root_selective_permutation_guard_replicates == 99
     assert bundle.metadata.config.root_selective_permutation_guard_scope == (
         "passthrough_descendant"
-    )
-    assert "Selective_Permutation_Guard_Blocked" in bundle.annotated_df.columns
-
-
-def test_pipeline_global_passthrough_profile_sets_global_scope(
-    monkeypatch,
-) -> None:
-    import tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator as orchestrator
-
-    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-
-    stable_root = _stable_root
-
-    fake_selected_root = _selected_root(0.01)
-
-    def fake_selected_family(*_args, **kwargs):
-        return {
-            "root_observed_p_value": kwargs.get("observed_p_value", 0.001),
-            "root_selective_p_value": 0.01,
-            "root_selective_null_min_p_value": 0.01,
-            "root_selective_null_q05_p_value": 0.05,
-        }
-
-    monkeypatch.setattr(
-        orchestrator,
-        "compute_root_feature_subsample_stability",
-        stable_root,
-    )
-    monkeypatch.setattr(
-        guard_module,
-        "selected_root_permutation_p_value",
-        fake_selected_root,
-    )
-    monkeypatch.setattr(
-        guard_module,
-        "selected_global_sibling_min_permutation_p_value",
-        fake_selected_family,
-    )
-
-    bundle = orchestrator.run_gate_annotation_pipeline(
-        tree,
-        annotations_df.copy(),
-        edge_alpha=0.01,
-        sibling_alpha=0.01,
-        leaf_data=leaf_data,
-        feature_space=feature_space,
-        sibling_gate_profile="fixed_coordinate_global_passthrough_v1",
-    )
-
-    assert bundle.metadata.config.sibling_gate_profile_id == (
-        "fixed_coordinate_global_passthrough_v1"
-    )
-    assert bundle.metadata.config.root_selective_permutation_guard_replicates == 99
-    assert bundle.metadata.config.root_selective_permutation_guard_scope == (
-        "global_sibling_min_passthrough_descendant"
     )
     assert "Selective_Permutation_Guard_Blocked" in bundle.annotated_df.columns
 

@@ -64,12 +64,6 @@ clustering pipeline.
   narrower pass-through descendant guard. It targets the observed null sibling
   leak without applying the broad selected-subtree permutation check to every
   internal split.
-- `sibling_gate_profile="fixed_coordinate_global_passthrough_v1"` is the
-  diagnostic follow-up for pass-through leaks below closed roots. It uses the
-  conservative global selected-family sibling-min permutation check for
-  pass-through descendants and remains validation-only because TBS itself should
-  not depend on runtime resampling, and broad signal sensitivity and runtime
-  cost are not production-certified.
 - `sibling_gate_profile="fixed_coordinate_global_passthrough_refined_v1"` adds
   a higher-resolution replay for global pass-through families that land on the
   base Monte Carlo p-value floor. It is the current diagnostic follow-up after

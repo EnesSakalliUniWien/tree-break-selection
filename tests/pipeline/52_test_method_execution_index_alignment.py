@@ -318,7 +318,7 @@ def test_run_single_method_once_records_conditional_topology_precomputed_distanc
         params={
             "tree_distance_metric": "hamming",
             "tree_linkage_method": "average",
-            "sibling_gate_profile": "fixed_coordinate_conditional_topology_diagnostic_v1",
+            "sibling_gate_profile": "fixed_coordinate_guarded_v1",
         },
         case_idx=1,
         case_name="continuous_case",
