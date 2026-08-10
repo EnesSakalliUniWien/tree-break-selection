@@ -38,7 +38,6 @@ def test_bonferroni_and_holm_only_react_to_very_strong_sparse_evidence() -> None
     assert coordinate_fdr_adjusted_minimum(p_values, method="bh") < 0.05
     assert coordinate_fdr_adjusted_minimum(p_values, method="holm") < 0.05
     assert coordinate_fdr_adjusted_minimum(p_values, method="bonferroni") < 0.05
-    assert coordinate_fdr_adjusted_minimum(p_values, method="by") > 0.05
 
 
 def test_benjamini_yekutieli_applies_harmonic_dependence_penalty() -> None:

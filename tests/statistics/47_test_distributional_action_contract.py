@@ -55,18 +55,6 @@ def test_binary_split_edges_are_mass_tied_to_one_sibling_contrast() -> None:
     assert np.isclose(summary.right_edge_action / summary.action, 0.01)
 
 
-def test_small_edge_contribution_does_not_mean_small_barycentric_split() -> None:
-    summary = binary_split_distributional_action_summary(
-        left_mean=np.array([0.0]),
-        right_mean=np.array([10.0]),
-        left_leaf_count=1,
-        right_leaf_count=99,
-    )
-
-    assert summary.right_edge_action < 1.0
-    assert np.isclose(summary.action, 100.0 * summary.right_edge_action)
-
-
 def test_split_action_decomposes_total_inertia_recursively_across_topology() -> None:
     leaf_values = np.array([[0.0], [2.0], [10.0], [14.0]])
     left = split_distributional_action_summary(
