@@ -36,6 +36,8 @@ penalty.
   and side-asymmetry measures.
 - Relationship tables are descriptive diagnostics only.
 - The output feeds the mixed selected-region law.
+- Both root-summary and merge-margin predecessor paths are explicit inputs;
+  the panel does not select a historical result capture.
 
 ## Evidence
 

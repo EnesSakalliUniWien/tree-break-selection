@@ -27,16 +27,6 @@ SCHEMA_VERSION = "root_selected_tie_cell_burden/v1"
 STUDY_ROLE = "diagnostic_root_selected_tie_cell_burden_not_calibration"
 GENERATED_BY = "benchmarks.diagnostics.calibration.root.selected.root_selected_tie_cell_burden"
 
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
-DEFAULT_ROOT_SELECTED_REGION_DIR = (
-    DEFAULT_RESULT_ROOT / "root_selected_region_margins_overlap_case_family"
-)
-DEFAULT_ROOT_SELECTED_REGION_SUMMARY = (
-    DEFAULT_ROOT_SELECTED_REGION_DIR / "root_selected_region_summary.csv"
-)
-DEFAULT_ROOT_SELECTED_REGION_MERGE_MARGINS = (
-    DEFAULT_ROOT_SELECTED_REGION_DIR / "root_selected_region_merge_margins.csv"
-)
 DEFAULT_NEAR_ZERO_TOLERANCE = 1e-12
 
 ROWS_OUTPUT = "root_selected_tie_cell_burden_rows.csv"
@@ -107,8 +97,8 @@ class RootSelectedTieCellBurdenConfig:
     """Input paths and numerical knobs for the tie-cell burden panel."""
 
     output_dir: Path
-    root_selected_region_summary_path: Path = DEFAULT_ROOT_SELECTED_REGION_SUMMARY
-    root_selected_region_merge_margins_path: Path = DEFAULT_ROOT_SELECTED_REGION_MERGE_MARGINS
+    root_selected_region_summary_path: Path
+    root_selected_region_merge_margins_path: Path
     near_zero_tolerance: float = DEFAULT_NEAR_ZERO_TOLERANCE
 
 
@@ -118,12 +108,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root-selected-region-summary-path",
         type=Path,
-        default=DEFAULT_ROOT_SELECTED_REGION_SUMMARY,
+        required=True,
     )
     parser.add_argument(
         "--root-selected-region-merge-margins-path",
         type=Path,
-        default=DEFAULT_ROOT_SELECTED_REGION_MERGE_MARGINS,
+        required=True,
     )
     parser.add_argument(
         "--near-zero-tolerance",

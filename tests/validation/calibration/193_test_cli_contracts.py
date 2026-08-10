@@ -5,76 +5,12 @@ from pathlib import Path
 
 import pytest
 from benchmarks.diagnostics.calibration.cli import parse_null_calibration_panel_args
-from benchmarks.diagnostics.calibration.root.selected.cli import (
-    parse_action_support_panel_args,
-)
-from benchmarks.diagnostics.calibration.root.tie_rank.cli import (
-    parse_proposal_panel_args,
-)
 from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
     parse_selected_hierarchy_args,
 )
 from benchmarks.diagnostics.calibration.traversal.cli import (
     parse_traversal_audit_args,
 )
-
-
-def test_root_tie_rank_proposal_cli_contract(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    output_dir = tmp_path / "out"
-    rows_path = tmp_path / "proposal.csv"
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "root-tie-rank-panel",
-            "--output-dir",
-            str(output_dir),
-            "--proposal-feasibility-rows-path",
-            str(rows_path),
-        ],
-    )
-
-    args = parse_proposal_panel_args(
-        description="test panel",
-        default_rows_path=tmp_path / "default.csv",
-    )
-
-    assert args.output_dir == output_dir
-    assert args.proposal_feasibility_rows_path == rows_path
-
-
-def test_root_selected_action_cli_contract(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    output_dir = tmp_path / "out"
-    rows_path = tmp_path / "joined.csv"
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "root-selected-action-panel",
-            "--output-dir",
-            str(output_dir),
-            "--joined-feasibility-rows-path",
-            str(rows_path),
-            "--h-u-population-law-status",
-            "measured_deformed_mp",
-        ],
-    )
-
-    args = parse_action_support_panel_args(
-        description="test panel",
-        default_rows_path=tmp_path / "default.csv",
-        default_population_law_status="identity_mp",
-    )
-
-    assert args.output_dir == output_dir
-    assert args.joined_feasibility_rows_path == rows_path
-    assert args.h_u_population_law_status == "measured_deformed_mp"
 
 
 def test_traversal_audit_cli_contract(

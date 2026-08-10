@@ -36,6 +36,8 @@ historical page name, the retained module no longer owns legacy overlay fields.
   before the conservative tail estimate is reported.
 - Missing support remains an explicit fail-closed outcome.
 - `root_selected_spectral_tail_law_panel/v2` records the reduced schema.
+- Optional deformed-MP inputs default to absent, but explicitly supplied
+  missing paths fail instead of silently becoming empty evidence.
 
 ## Evidence
 

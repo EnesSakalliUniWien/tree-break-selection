@@ -27,17 +27,6 @@ SCHEMA_VERSION = "root_selected_mixed_region_law/v2"
 STUDY_ROLE = "diagnostic_root_selected_mixed_region_law_not_calibration"
 GENERATED_BY = "benchmarks.diagnostics.calibration.root.selected.root_selected_mixed_region_law"
 
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
-DEFAULT_ROOT_SELECTED_REGION_SUMMARY = (
-    DEFAULT_RESULT_ROOT
-    / "root_selected_region_margins_overlap_case_family"
-    / "root_selected_region_summary.csv"
-)
-DEFAULT_TIE_CELL_BURDEN_ROWS = (
-    DEFAULT_RESULT_ROOT
-    / "root_selected_tie_cell_burden_overlap_case_family"
-    / "root_selected_tie_cell_burden_rows.csv"
-)
 DEFAULT_MARGIN_TOLERANCE = 1e-12
 
 ROWS_OUTPUT = "root_selected_mixed_region_law_rows.csv"
@@ -143,8 +132,8 @@ class RootSelectedMixedRegionLawConfig:
     """Input paths and numerical knobs for the mixed root-law panel."""
 
     output_dir: Path
-    root_selected_region_summary_path: Path = DEFAULT_ROOT_SELECTED_REGION_SUMMARY
-    tie_cell_burden_rows_path: Path = DEFAULT_TIE_CELL_BURDEN_ROWS
+    root_selected_region_summary_path: Path
+    tie_cell_burden_rows_path: Path
     margin_tolerance: float = DEFAULT_MARGIN_TOLERANCE
 
 
@@ -154,12 +143,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root-selected-region-summary-path",
         type=Path,
-        default=DEFAULT_ROOT_SELECTED_REGION_SUMMARY,
+        required=True,
     )
     parser.add_argument(
         "--tie-cell-burden-rows-path",
         type=Path,
-        default=DEFAULT_TIE_CELL_BURDEN_ROWS,
+        required=True,
     )
     parser.add_argument(
         "--margin-tolerance",

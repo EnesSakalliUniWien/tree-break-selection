@@ -44,7 +44,6 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_calibration_
     summarize_root_tie_rank_calibration_strata,
 )
 from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_null_simulation_pilot import (
-    DEFAULT_OBSERVED_MIXED_ROWS,
     DEFAULT_RELATIVE_SE_TARGET,
     DEFAULT_TARGET_ALPHA,
     binary_null_probability_for_case,
@@ -196,7 +195,7 @@ class RootTieRankNullProposalFrontierConfig:
     """Configuration for the root tie-rank proposal frontier."""
 
     output_dir: Path
-    observed_mixed_region_rows_path: Path = DEFAULT_OBSERVED_MIXED_ROWS
+    observed_mixed_region_rows_path: Path
     suite: str = "full"
     case_names: tuple[str, ...] | None = None
     proposal_families: tuple[str, ...] = DEFAULT_PROPOSAL_FAMILIES
@@ -216,7 +215,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--observed-mixed-region-rows-path",
         type=Path,
-        default=DEFAULT_OBSERVED_MIXED_ROWS,
+        required=True,
     )
     parser.add_argument("--suite", default="full")
     parser.add_argument(

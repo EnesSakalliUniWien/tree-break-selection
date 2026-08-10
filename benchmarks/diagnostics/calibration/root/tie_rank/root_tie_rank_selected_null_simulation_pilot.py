@@ -49,12 +49,6 @@ GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_null_simulation_pilot"
 )
 
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
-DEFAULT_OBSERVED_MIXED_ROWS = (
-    DEFAULT_RESULT_ROOT
-    / "root_selected_mixed_region_law_overlap_case_family"
-    / "root_selected_mixed_region_law_rows.csv"
-)
 DEFAULT_TARGET_ALPHA = 0.01
 DEFAULT_RELATIVE_SE_TARGET = 0.25
 DEFAULT_REPLICATES_PER_CASE = 1
@@ -126,7 +120,7 @@ class RootTieRankSelectedNullSimulationConfig:
     """Configuration for selected-null root tie-rank simulation."""
 
     output_dir: Path
-    observed_mixed_region_rows_path: Path = DEFAULT_OBSERVED_MIXED_ROWS
+    observed_mixed_region_rows_path: Path
     suite: str = "full"
     case_names: tuple[str, ...] | None = None
     replicates_per_case: int = DEFAULT_REPLICATES_PER_CASE
@@ -141,7 +135,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--observed-mixed-region-rows-path",
         type=Path,
-        default=DEFAULT_OBSERVED_MIXED_ROWS,
+        required=True,
     )
     parser.add_argument("--suite", default="full")
     parser.add_argument(

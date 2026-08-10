@@ -41,7 +41,6 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_null_proposa
     generate_binary_proposal_matrix,
 )
 from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_null_simulation_pilot import (
-    DEFAULT_OBSERVED_MIXED_ROWS,
     binary_null_probability_for_case,
 )
 from benchmarks.shared.cases import get_test_cases_by_suite
@@ -146,7 +145,7 @@ class RootTieRankSpectralLiftParameterSweepConfig:
     """Configuration for root spectral-lift parameter sweeps."""
 
     output_dir: Path
-    observed_mixed_region_rows_path: Path = DEFAULT_OBSERVED_MIXED_ROWS
+    observed_mixed_region_rows_path: Path
     suite: str = "full"
     case_names: tuple[str, ...] | None = None
     proposal_families: tuple[str, ...] = DEFAULT_PROPOSAL_FAMILIES
@@ -165,7 +164,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--observed-mixed-region-rows-path",
         type=Path,
-        default=DEFAULT_OBSERVED_MIXED_ROWS,
+        required=True,
     )
     parser.add_argument("--suite", default="full")
     parser.add_argument("--case-names", default=None)

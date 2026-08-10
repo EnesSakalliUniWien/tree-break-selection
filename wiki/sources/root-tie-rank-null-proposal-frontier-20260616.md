@@ -35,6 +35,7 @@ overlay.
 - Importance proposal families record target-null probability, proposal
   probability, and log-weight metadata.
 - Conditioning keys follow the reduced component/tie/edge/spectral contract.
+- The observed mixed-law rows are an explicit predecessor input.
 
 ## Evidence
 

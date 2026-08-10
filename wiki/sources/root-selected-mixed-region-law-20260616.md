@@ -44,6 +44,7 @@ compute a calibrated p-value and does not promote traversal.
   coordinate into a production rescue rule.
 - The output schema no longer exposes the retired neighborhood-locality
   overlay columns.
+- Root-summary and tie-cell predecessor paths must be supplied explicitly.
 
 ## Evidence
 

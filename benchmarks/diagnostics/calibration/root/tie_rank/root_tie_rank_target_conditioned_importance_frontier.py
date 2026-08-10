@@ -37,7 +37,6 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_null_proposa
     generate_binary_proposal_matrix,
 )
 from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_null_simulation_pilot import (
-    DEFAULT_OBSERVED_MIXED_ROWS,
     binary_null_probability_for_case,
 )
 from benchmarks.diagnostics.calibration.values import finite_float
@@ -47,12 +46,6 @@ SCHEMA_VERSION = "root_tie_rank_target_conditioned_importance_frontier/v2"
 STUDY_ROLE = "diagnostic_root_tie_rank_target_conditioned_importance_frontier"
 GENERATED_BY = "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_target_conditioned_importance_frontier"
 
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
-DEFAULT_TAIL_ROWS = (
-    DEFAULT_RESULT_ROOT
-    / "root_selected_spectral_tail_law_importance_external_mild_accumulated"
-    / "root_selected_spectral_tail_law_rows.csv"
-)
 DEFAULT_PROPOSAL_FAMILIES = (
     IMPORTANCE_TWO_BLOCK_EXTERNAL_NULL,
     IMPORTANCE_COUPLED_EXTERNAL_NULL,
@@ -139,8 +132,8 @@ class TargetConditionedImportanceFrontierConfig:
     """Input/output contract for target-conditioned importance search."""
 
     output_dir: Path
-    observed_mixed_region_rows_path: Path = DEFAULT_OBSERVED_MIXED_ROWS
-    tail_rows_path: Path | None = DEFAULT_TAIL_ROWS
+    observed_mixed_region_rows_path: Path
+    tail_rows_path: Path | None = None
     suite: str = "full"
     target_case_ids: tuple[str, ...] = ()
     proposal_families: tuple[str, ...] = DEFAULT_PROPOSAL_FAMILIES
@@ -160,9 +153,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--observed-mixed-region-rows-path",
         type=Path,
-        default=DEFAULT_OBSERVED_MIXED_ROWS,
+        required=True,
     )
-    parser.add_argument("--tail-rows-path", type=Path, default=DEFAULT_TAIL_ROWS)
+    parser.add_argument("--tail-rows-path", type=Path)
     parser.add_argument("--suite", default="full")
     parser.add_argument("--target-case-ids", default=None)
     parser.add_argument("--proposal-families", default=",".join(DEFAULT_PROPOSAL_FAMILIES))
@@ -267,7 +260,7 @@ def _target_case_ids(
 ) -> tuple[str, ...]:
     if explicit:
         return explicit
-    if tail_rows_path is not None and Path(tail_rows_path).exists():
+    if tail_rows_path is not None:
         tail_rows = pd.read_csv(tail_rows_path)
         _require_columns(
             tail_rows,

@@ -30,12 +30,6 @@ GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_calibration_feasibility"
 )
 
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
-DEFAULT_MIXED_REGION_ROWS = (
-    DEFAULT_RESULT_ROOT
-    / "root_selected_mixed_region_law_overlap_case_family"
-    / "root_selected_mixed_region_law_rows.csv"
-)
 DEFAULT_TARGET_ALPHA = 0.01
 DEFAULT_RELATIVE_SE_TARGET = 0.25
 
@@ -112,7 +106,7 @@ class RootTieRankCalibrationFeasibilityConfig:
     """Input path and calibration support requirements."""
 
     output_dir: Path
-    mixed_region_rows_path: Path = DEFAULT_MIXED_REGION_ROWS
+    mixed_region_rows_path: Path
     target_alpha: float = DEFAULT_TARGET_ALPHA
     relative_se_target: float = DEFAULT_RELATIVE_SE_TARGET
 
@@ -123,7 +117,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--mixed-region-rows-path",
         type=Path,
-        default=DEFAULT_MIXED_REGION_ROWS,
+        required=True,
     )
     parser.add_argument("--target-alpha", type=float, default=DEFAULT_TARGET_ALPHA)
     parser.add_argument(

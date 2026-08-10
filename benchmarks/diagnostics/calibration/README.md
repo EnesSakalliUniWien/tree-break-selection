@@ -26,6 +26,10 @@ The matching tests live under `tests/validation/calibration/` with the same
 category path. Import modules from their owning category; the package roots do
 not re-export moved names.
 
+Root diagnostic stages require callers to pass predecessor CSV artifacts
+explicitly; they do not silently select a dated result capture. Optional
+evidence, such as target-conditioned tail rows, defaults to absent.
+
 Shared diagnostic contracts remain at this package root:
 
 - `reporting.py` writes named table bundles and their manifest envelope.

@@ -6540,3 +6540,17 @@ The final checkpoint review also corrected the calibration category map so the
 surviving tie-rank package is described by feasibility, selected-null
 simulation, proposal, and spectral-tail responsibilities rather than the
 retired replay stage.
+
+#### Removed historical root-diagnostic input defaults
+
+Required explicit predecessor CSV paths across the retained selected-root and
+tie-rank diagnostic chain instead of silently binding live entry points to the
+dated 2026-06-15 result tree. The target-conditioned frontier now treats its
+optional tail rows as absent unless a caller supplies them, and a supplied
+missing path fails rather than silently selecting all observed targets.
+The spectral-tail panel applies the same rule to its optional deformed-MP rows
+and support rows.
+
+Removed two uncalled root CLI helper modules and the two tests that only kept
+those helpers reachable. Numerical parameter defaults, diagnostic algorithms,
+production code, raw captures, and append-only history remain unchanged.

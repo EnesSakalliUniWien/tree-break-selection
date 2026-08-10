@@ -43,6 +43,8 @@ topology-derived bandwidth coordinate.
 - Only rows with an explicit admissible calibration role count as selected-null
   support.
 - Conditioning keys now contain component, tie, edge, and spectral bands only.
+- The mixed-region predecessor table is an explicit input rather than a dated
+  capture default.
 
 ## Evidence
 

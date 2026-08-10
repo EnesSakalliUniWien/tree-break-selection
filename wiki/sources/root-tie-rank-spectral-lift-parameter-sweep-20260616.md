@@ -34,6 +34,8 @@ replay.
 - Version 2 replaces replay-oriented statuses and `next_replay_step` with a
   direct `next_diagnostic_step` toward selected-root tail evaluation.
 - All outputs remain diagnostic-only.
+- The sweep requires an explicit observed mixed-law table and does not select
+  a historical result capture.
 
 ## Evidence
 

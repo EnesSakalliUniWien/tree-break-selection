@@ -372,7 +372,7 @@ def summarize_root_selected_spectral_tail_law_rows(rows: pd.DataFrame) -> pd.Dat
 
 
 def _read_optional_csv(path: Path | None) -> pd.DataFrame:
-    if path is None or not Path(path).exists():
+    if path is None:
         return pd.DataFrame()
     return pd.read_csv(path, low_memory=False)
 

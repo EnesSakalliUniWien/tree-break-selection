@@ -36,6 +36,7 @@ contract and no longer emits a topology-derived bandwidth count.
   reducing the attempted replicate count.
 - Target support output now follows
   `root_tie_rank_selected_null_simulation_pilot/v2`.
+- The observed mixed-law rows must be supplied explicitly by the caller.
 
 ## Evidence
 

@@ -34,6 +34,9 @@ tail evaluation.
   concern rather than a production p-value rule.
 - Version 2 renames the former `pre_topology_*` schema and statuses to the
   final conditioning contract and removes replay-oriented outcomes.
+- Observed mixed-law rows are required explicitly; optional tail rows default
+  to absent rather than to a dated capture, while an explicitly supplied
+  missing path fails instead of silently falling back.
 
 ## Evidence
 
