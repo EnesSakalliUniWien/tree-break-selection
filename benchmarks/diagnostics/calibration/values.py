@@ -6,8 +6,8 @@ deliberately permissive: a missing column, an unparseable value, or a pandas
 missing marker yields the neutral result rather than raising, because a
 diagnostic row is evidence and a single bad field must not abort a panel.
 
-`root/root_tail_values.py` re-exports these for the root-tail callers that
-already import them from there.
+`root/root_values.py` builds on `finite_float` for selected-root diagnostics
+that also need root-specific transforms.
 """
 
 from __future__ import annotations

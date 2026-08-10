@@ -19,9 +19,9 @@ tags:
 
 `root_tie_rank_spectral_lift_parameter_sweep.py` tests whether generated roots
 can reach an observed selected spectral excess while satisfying selected
-tie-rank and action-edge conditions. Passing rows are candidates for the
-selected-root tail evaluation, not for the retired neighborhood/topology
-replay.
+tie-rank and action-edge conditions. Passing rows are standalone
+proposal-generator reach evidence; they do not feed a retained tail evaluator
+or define production p-values.
 
 ## Key Points
 
@@ -31,8 +31,8 @@ replay.
   coordinate.
 - Target-conditioned settings prevent generated rows from supporting unrelated
   targets.
-- Version 2 replaces replay-oriented statuses and `next_replay_step` with a
-  direct `next_diagnostic_step` toward selected-root tail evaluation.
+- Version 3 replaces tail-oriented statuses and follow-up steps with standalone
+  root-metric reach diagnostics.
 - All outputs remain diagnostic-only.
 - The sweep requires an explicit observed mixed-law table and does not select
   a historical result capture.
@@ -49,4 +49,3 @@ replay.
 ## Links
 
 - [[selected-neighborhood-measurability-law]]
-- [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]

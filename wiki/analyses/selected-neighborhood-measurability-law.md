@@ -15,9 +15,6 @@ sources:
   - wiki/sources/root-tie-rank-selected-null-simulation-pilot-20260616.md
   - wiki/sources/root-tie-rank-null-proposal-frontier-20260616.md
   - wiki/sources/root-tie-rank-spectral-lift-parameter-sweep-20260616.md
-  - wiki/sources/root-selected-spectral-tail-law-with-legacy-overlay-20260617.md
-  - wiki/sources/root-selected-importance-tail-support-20260617.md
-  - wiki/sources/root-tie-rank-target-conditioned-importance-frontier-20260617.md
   - wiki/sources/legacy-internal-spectral-comparison-panel-20260616.md
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py
 tags:
@@ -314,27 +311,9 @@ should otherwise stop and report the mathematical reason.
   reachability from calibration admissibility and preserves likelihood-ratio
   metadata for supported external-null families.
 - [[root-tie-rank-spectral-lift-parameter-sweep-20260616]] screens generated
-  roots for action-edge/tie eligibility and selected spectral reach. Version 2
-  sends passing diagnostic candidates directly to selected-root tail
-  evaluation rather than to the retired topology replay.
-- [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]] makes that
-  final root-tail object explicit. It conditions on the root selected event,
-  selected tie-rank \(T\), selected-ratio action \(A\), edge action \(E\), and
-  population-law status \(H_u\), while
-  leaving \(S_{\mathrm{root}}\) as the tail variable. The panel emits a
-  conservative tail only when admissible same-stratum support exists and
-  otherwise fails closed.
-- [[root-selected-importance-tail-support-20260617]] adds the next inference
-  path for that blocker. Instead of relabeling tilted proposal rows as ordinary
-  null rows, it records \(\log(dP_0/dQ)\) for tilted binary proposals and lets
-  the root-tail panel compute an ESS-conservative weighted tail p-value inside
-  the same \(T,A,E,H_u\) stratum. Importance effective sample size limits the
-  evidence contributed by concentrated proposal weights.
-- [[root-tie-rank-target-conditioned-importance-frontier-20260617]] scopes
-  likelihood-ratio proposal rows to `conditioning_target_case_id` and matches
-  the reduced component/tie/action/edge conditioning key. Version 2 removes
-  the former `pre_topology` and replay contract; matching candidates proceed
-  directly to selected-root tail evaluation.
+  roots for action-edge/tie eligibility and selected spectral reach. Version 3
+  records standalone proposal-reach evidence; it does not feed a retained tail
+  evaluator.
 - [[legacy-internal-spectral-comparison-panel-20260616]] records the copied
   old internal-barycenter spectral path as a standard-dispatch diagnostic. It
   greatly increases MP threshold rows and raw MP signal counts, but the
@@ -354,9 +333,6 @@ should otherwise stop and report the mathematical reason.
 - [[root-tie-rank-selected-null-simulation-pilot-20260616]]
 - [[root-tie-rank-null-proposal-frontier-20260616]]
 - [[root-tie-rank-spectral-lift-parameter-sweep-20260616]]
-- [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]
-- [[root-selected-importance-tail-support-20260617]]
-- [[root-tie-rank-target-conditioned-importance-frontier-20260617]]
 - [[legacy-internal-spectral-comparison-panel-20260616]]
 
 ## Open Questions

@@ -78,5 +78,4 @@ root law.
 
 - [[legacy-c2ef9a69-method-comparison-panel-20260616]]
 - [[legacy-c2ef9a69-method-package-20260616]]
-- [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]
 - [[root-conditional-kernel-spectral-law]]

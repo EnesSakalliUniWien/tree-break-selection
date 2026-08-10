@@ -21,7 +21,7 @@ import pandas as pd
 from scipy import stats
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
-from benchmarks.diagnostics.calibration.root.root_tail_values import finite_float, require_columns
+from benchmarks.diagnostics.calibration.root.root_values import finite_float, require_columns
 
 SCHEMA_VERSION = "root_selected_tie_cell_burden/v1"
 STUDY_ROLE = "diagnostic_root_selected_tie_cell_burden_not_calibration"

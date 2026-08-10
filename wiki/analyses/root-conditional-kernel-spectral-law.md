@@ -6,7 +6,6 @@ updated: 2026-08-10
 sources:
   - wiki/sources/legacy-c2ef9a69-root-tail-overlap-comparison-20260617.md
   - wiki/sources/legacy-c2ef9a69-edge-alpha-comparison-20260617.md
-  - wiki/sources/root-selected-spectral-tail-law-with-legacy-overlay-20260617.md
   - wiki/sources/root-tree-geometry-hard-negative-replay-20260617.md
   - wiki/sources/selected-neighborhood-signal-flow-literature-20260617.md
 tags:
@@ -27,7 +26,7 @@ which nearby tree states look stable, which nearby states look signal-like, and
 how far the target is from its stopping-edge ancestry and structural scale.
 The vendored old-method implementation that motivated this comparison was
 retired on 2026-06-25; this page remains historical synthesis over retained raw
-diagnostic outputs and current kernel-tail diagnostics.
+diagnostic outputs and an unresolved research direction.
 
 The root law to learn is therefore a selected conditional spectral-tail law
 with kernel-smoothed admissible support, not a lower p-value threshold.
@@ -193,9 +192,9 @@ make an unsupported root significant.
 - The bandwidth tradeoff panel shows default interpolation is conservative but
   misses direct signal positives, while widening `tau_s` reopens selected-null
   positives faster than it recovers signal.
-- The current root-tail panel conditions on \(T,A,E,H_u\) and fails
-  closed when support is absent. The missing improvement is the kernel-weighted
-  admissible support law, not an unconditional rescue rule.
+- No retained executable root-tail evaluator implements the proposed
+  \(T,A,E,H_u\) law. It remains an open research object rather than a current
+  calibration contract.
 - The first scalar kernel-spectral candidate panel measures this law on the
   seven overlap roots. It adds scalar kernel support for `2/7` roots, including
   one strict fail-closed root, but `kernel_nonzero_support_target_count = 0`,
@@ -241,7 +240,6 @@ make an unsupported root significant.
 
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]]
 - [[legacy-c2ef9a69-edge-alpha-comparison-20260617]]
-- [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]
 - [[root-tree-geometry-hard-negative-replay-20260617]]
 - [[selected-neighborhood-signal-flow-literature-20260617]]
 - [[selected-neighborhood-measurability-law]]

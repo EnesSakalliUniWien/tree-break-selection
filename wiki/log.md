@@ -6554,3 +6554,23 @@ and support rows.
 Removed two uncalled root CLI helper modules and the two tests that only kept
 those helpers reachable. Numerical parameter defaults, diagnostic algorithms,
 production code, raw captures, and append-only history remain unchanged.
+
+#### Retired the selected-root spectral-tail research boundary
+
+Removed the deformed-MP edge panel, selected-root spectral-tail evaluator, and
+target-conditioned importance selector after audit found no maintained runner,
+current test, retained capture, or complete artifact loop. Removed their direct
+source pages and the shared root-tail helpers that became orphaned.
+
+Preserved the broader null-proposal and spectral-lift reach diagnostics. The
+spectral-lift contract is now version 3 and reports standalone root-metric
+reach evidence without claiming that candidates feed a retained tail evaluator
+or define production p-values. Production tree code, raw captures, and earlier
+chronology remain unchanged.
+
+#### Corrected the remaining spectral-tail retirement documentation
+
+Removed the calibration package's stale reference to optional
+target-conditioned tail rows and corrected the wiki index so the retained
+kernel-spectral synthesis is described as an unresolved historical research
+direction, not a current calibrated-tail contract.

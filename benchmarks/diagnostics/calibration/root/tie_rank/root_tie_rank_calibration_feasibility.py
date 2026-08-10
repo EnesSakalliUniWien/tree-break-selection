@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
-from benchmarks.diagnostics.calibration.root.root_tail_values import finite_float, require_columns
+from benchmarks.diagnostics.calibration.root.root_values import finite_float, require_columns
 from benchmarks.diagnostics.calibration.values import string_value
 
 SCHEMA_VERSION = "root_tie_rank_calibration_feasibility/v2"

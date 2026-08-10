@@ -2,8 +2,8 @@
 
 This diagnostic varies proposal-generator knobs and asks whether a generated
 root can reach the observed spectral excess while also satisfying the selected
-tie-rank and action-edge conditions. Passing rows remain diagnostic candidates
-for the selected-root tail evaluation; they do not define production p-values.
+tie-rank and action-edge conditions. Passing rows remain proposal-generator
+reach evidence; they do not define production p-values.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from benchmarks.diagnostics.calibration.reporting import (
     print_diagnostic_output_paths,
     write_diagnostic_bundle,
 )
-from benchmarks.diagnostics.calibration.root.root_tail_values import (
+from benchmarks.diagnostics.calibration.root.root_values import (
     finite_float,
     require_columns,
     safe_log1p,
@@ -45,7 +45,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_nul
 )
 from benchmarks.shared.cases import get_test_cases_by_suite
 
-SCHEMA_VERSION = "root_tie_rank_spectral_lift_parameter_sweep/v2"
+SCHEMA_VERSION = "root_tie_rank_spectral_lift_parameter_sweep/v3"
 STUDY_ROLE = "diagnostic_root_tie_rank_spectral_lift_parameter_sweep_not_calibration"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_spectral_lift_parameter_sweep"
@@ -712,13 +712,13 @@ def build_spectral_lift_sweep_target_rows(
             reached = math.isfinite(lift_log) and lift_log <= 0.0
             if eligible.empty:
                 status = "root_metric_conditioning_missing"
-                next_step = "increase_action_edge_tie_before_tail_evaluation"
+                next_step = "increase_action_edge_tie_for_root_metric_reach"
             elif reached:
-                status = "root_metric_spectral_reach_tail_evaluation_ready"
-                next_step = "evaluate_setting_in_selected_root_tail"
+                status = "root_metric_spectral_reach_diagnostic_complete"
+                next_step = "record_setting_as_root_metric_reach_candidate"
             else:
                 status = "root_metric_spectral_lift_still_required"
-                next_step = "increase_spectral_lift_before_tail_evaluation"
+                next_step = "increase_spectral_lift_for_root_metric_reach"
             records.append(
                 {
                     "schema_version": SCHEMA_VERSION,
@@ -768,9 +768,9 @@ def _summary_status(group: pd.DataFrame) -> str:
     if covered <= 0:
         return "setting_misses_action_edge_tie_conditioning"
     if reached == int(group.shape[0]):
-        return "setting_reaches_all_targets_root_metrics_tail_evaluation_ready"
+        return "setting_reaches_all_targets_root_metrics"
     if reached > 0:
-        return "setting_reaches_some_targets_root_metrics_tail_evaluation_ready"
+        return "setting_reaches_some_targets_root_metrics"
     return "setting_requires_more_spectral_lift"
 
 

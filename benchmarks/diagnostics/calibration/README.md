@@ -10,9 +10,9 @@ construction, testing, and plotting interfaces remain under
 - `edge/`: edge-null behavior and selected-edge post-run analysis.
 - `overlap/`: overlap, junction, recovery, and structural-threshold studies.
 - `root/center/`: robust root-center and rooted-tree geometry checks.
-- `root/selected/`: selected-root region, support, and spectral-tail studies.
+- `root/selected/`: selected-root region and tie-cell studies.
 - `root/tie_rank/`: tie-rank feasibility, selected-null simulation, proposal,
-  and spectral-tail diagnostics.
+  and spectral-lift diagnostics.
 - `selected/family/`: selected-family traversal and candidate-law studies.
 - `selected/hierarchy/`: hierarchy selection and external-calibration studies.
 - `selected/neighborhood/`: neighborhood conditioning and measurability studies.
@@ -27,8 +27,7 @@ category path. Import modules from their owning category; the package roots do
 not re-export moved names.
 
 Root diagnostic stages require callers to pass predecessor CSV artifacts
-explicitly; they do not silently select a dated result capture. Optional
-evidence, such as target-conditioned tail rows, defaults to absent.
+explicitly; they do not silently select a dated result capture.
 
 Shared diagnostic contracts remain at this package root:
 
@@ -36,9 +35,9 @@ Shared diagnostic contracts remain at this package root:
 - `overlap/panel_runner.py` owns the shared binary-overlap diagnostic runner
   mechanics: supported-case filtering, replicate/data-role iteration, one-case
   TBS execution, rows/summary writing, and manifest envelopes.
-- `root/root_tail_values.py` owns shared selected-root value parsing,
-  support-role classification, log-action transforms, spectral-excess
-  transforms, and T,A,E,H_u stratum keys.
+- `root/root_values.py` owns shared selected-root value parsing,
+  required-column validation, log-action transforms, and spectral-excess
+  transforms.
 ## Maintained runners
 
 - `selected/family/run_selected_family_matrix.py`

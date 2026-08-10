@@ -187,18 +187,8 @@ renamed, or promoted.
   likelihood-ratio metadata for supported external-null families.
 - [[root-tie-rank-spectral-lift-parameter-sweep-20260616]] - versioned
   generator sweep measuring action-edge/tie eligibility and remaining selected
-  spectral lift before direct selected-root tail evaluation.
-- [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]] -
-  support-aware selected-root spectral-tail contract using
-  \(S_{\mathrm{root}}\), \(T,A,E,H_u\); despite the historical page name, the
-  retained version no longer owns legacy overlays.
-- [[root-selected-importance-tail-support-20260617]] - importance-weighted
-  external-null support contract for selected-root spectral tails, preserving
-  likelihood-ratio metadata and ESS-conservative p-values.
-- [[root-tie-rank-target-conditioned-importance-frontier-20260617]] -
-  versioned target-conditioned importance frontier matching component,
-  tie-rank, selected-ratio action, and edge-action strata before direct
-  selected-root tail evaluation.
+  spectral lift as standalone proposal-generator reach evidence; it does not
+  define production p-values or feed a retained tail evaluator.
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]] - seven-case
   overlap rerun of the full legacy package on selected-root-tail cases; the
   old method improves one signal row but creates two selected-null false
@@ -299,10 +289,6 @@ renamed, or promoted.
   linkage/rooting choices; current `0/6` geometries become root-validity
   supported, while the old commit either under-splits or fragments without a
   valid-root guard, so the case is a hard negative for root-tail rescue.
-- [[root-selected-deformed-mp-edge-20260617]] - plug-in deformed MP edge
-  diagnostic for observed and support selected-root spectra, with explicit
-  feasibility and \(H_u\)-observability inputs and no dependency on retired
-  diagnostic defaults.
 - [[internal-vs-selected-hierarchy-inflation-20260603]] - diagnostic-only
   comparison showing that diffuse Gaussian root internal inflation agrees with
   selected-hierarchy scale, while null and high-cardinality categorical root
@@ -706,9 +692,9 @@ renamed, or promoted.
   `E_root = E_margin intersect E_tie_cell intersect E_tie_rank` without the
   retired topology/bandwidth overlay.
 - [[root-conditional-kernel-spectral-law]] - refined law statement that keeps
-  the old kernel smoother as support-gated neighborhood weighting and makes
-  the selected-root deformed spectral excess the calibrated tail variable
-  after conditioning on root bifurcation topology.
+  the old kernel smoother as support-gated neighborhood weighting while
+  retaining the selected-root deformed spectral tail as an unresolved research
+  direction with no current evaluator or calibration contract.
 - [[legacy-internal-spectral-comparison-panel-20260616]] - standard-dispatch
   comparison between current leaf-only MP spectra and the copied commit-era
   internal-barycenter spectral diagnostic; internal rows substantially increase

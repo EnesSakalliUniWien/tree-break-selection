@@ -90,4 +90,3 @@ The run completed `121` cases and `9` methods, producing `1089` result rows in
 - [[full-benchmark-run-20260606]]
 - [[continuous-tree-geometry-rethink-20260623]]
 - [[benchmark-pipeline-contract]]
-- [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]
