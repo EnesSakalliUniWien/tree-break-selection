@@ -2,13 +2,12 @@
 title: Manual Guarded Benchmark Run Direct 2026-06-17
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - raw/assets/benchmark-results/manual_guarded_benchmark_run_direct_20260617/manifest.json
   - raw/assets/benchmark-results/manual_guarded_benchmark_run_direct_20260617/rows.csv
   - raw/assets/benchmark-results/manual_guarded_benchmark_run_direct_20260617/summary_by_method.csv
   - raw/assets/benchmark-results/manual_guarded_benchmark_run_direct_20260617/summary_by_case.csv
-  - tests/pipeline/51_test_dispatch_contract.py
 tags:
   - source
   - benchmarks

@@ -42,9 +42,11 @@ def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
     assert (df_results["labels_length"] == df_results["samples"]).all()
 
 
-def test_benchmark_graphtools_diffusion_method_smoke():
+@pytest.mark.optional
+@pytest.mark.graphtools
+def test_benchmark_graphtools_diffusion_method_smoke(require_optional_dependencies):
     """Run the optional graphtools diffusion backend when it is installed."""
-    pytest.importorskip("graphtools")
+    require_optional_dependencies("graphtools")
     case = SMALL_TEST_CASES[0].copy()
     with pytest.warns(RuntimeWarning, match="Detected zero distance between samples"):
         df_results, _ = benchmark_cluster_algorithm(

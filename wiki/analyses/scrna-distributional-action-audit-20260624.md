@@ -2,12 +2,12 @@
 title: scRNA Distributional Action Audit 2026-06-24
 type: analysis
 status: draft
-updated: 2026-07-29
+updated: 2026-08-10
 sources:
   - tree_break_selection/hierarchy_analysis/statistics/distributional_action.py
   - benchmarks/diagnostics/analysis/distributional_action.py
   - tests/statistics/47_test_distributional_action_contract.py
-  - tests/pipeline/51_test_dispatch_contract.py
+  - tests/pipeline/dispatch/test_parameter_forwarding.py
   - tests/pipeline/65_test_scrna_benchmark_branch_time_config.py
   - tests/pipeline/66_test_scrna_benchmark_distributional_action.py
   - benchmarks/shared/runners/dispatch.py

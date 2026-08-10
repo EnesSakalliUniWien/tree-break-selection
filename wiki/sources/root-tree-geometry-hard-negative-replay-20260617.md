@@ -2,10 +2,10 @@
 title: Root Tree Geometry Hard Negative Replay 2026-06-17
 type: source
 status: draft
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/root/center/root_tree_geometry_hard_negative_replay_panel.py
-  - tests/pipeline/51_test_dispatch_contract.py
+  - tests/pipeline/dispatch/test_parameter_forwarding.py
   - benchmarks/shared/runners/tbs_runner.py
   - benchmarks/shared/runners/dispatch.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tree_geometry_hard_negative_overlap_extreme_4c_v1
@@ -91,7 +91,7 @@ distance/linkage/rooting families.
 - `186_test_root_tree_geometry_hard_negative_replay_panel.py` checks geometry
   parsing, fail-closed unstable-root classification, leak classification, and
   summary failure when any geometry leaks.
-- `51_test_dispatch_contract.py` verifies that root replay distance/linkage
+- `test_parameter_forwarding.py` verifies that root replay distance/linkage
   parameters are forwarded through the shared TBS dispatcher.
 - `root_tree_geometry_hard_negative_replay_summary.csv` records
   `row_count = 6`, `ok_geometry_count = 6`,

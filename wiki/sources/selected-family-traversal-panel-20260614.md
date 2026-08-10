@@ -2,7 +2,7 @@
 title: Selected Family Traversal Panel 2026-06-14
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
   - benchmarks/diagnostics/calibration/selected/family/multiscale_umap.py
@@ -76,7 +76,7 @@ only one flat clustering.
   validation, node decision classification, conservative production summaries,
   CSV-stable null role output, checkpoint resume, row timeout recording, UMAP
   overlay rendering, and a tiny binary output run.
-- `tests/localization/35_test_gates_traversal.py` continues to cover
+- `tests/hierarchy_analysis/test_tree_decomposition.py` continues to cover
   pass-through traversal behavior through `TreeDecomposition`.
 - `tests/validation/calibration/sibling/gates/101_test_fixed_sibling_gate_profile_validation.py` covers
   the fixed-profile evidence path reused by this panel.

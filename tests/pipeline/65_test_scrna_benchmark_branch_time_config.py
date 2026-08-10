@@ -8,10 +8,13 @@ import pytest
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/kl_te_cluster_matplotlib")
 os.environ.setdefault("NUMBA_CACHE_DIR", "/tmp/kl_te_cluster_numba")
 
+pytestmark = [pytest.mark.optional, pytest.mark.scrna]
 
-def test_scrna_benchmark_branch_time_rows_use_nnls_branch_lengths() -> None:
-    pytest.importorskip("anndata")
-    pytest.importorskip("scanpy")
+
+def test_scrna_benchmark_branch_time_rows_use_nnls_branch_lengths(
+    require_optional_dependencies,
+) -> None:
+    require_optional_dependencies("anndata", "scanpy")
 
     pancreas = importlib.import_module("applications.scrna.pancreas_benchmark")
     configs_by_label = {config.label: config for config in pancreas._method_configs(true_k=8)}
@@ -54,9 +57,10 @@ def test_scrna_benchmark_branch_time_rows_use_nnls_branch_lengths() -> None:
         assert "branch_length_optimization_method" not in config.params
 
 
-def test_scrna_benchmark_does_not_register_distributional_action_configuration() -> None:
-    pytest.importorskip("anndata")
-    pytest.importorskip("scanpy")
+def test_scrna_benchmark_does_not_register_distributional_action_configuration(
+    require_optional_dependencies,
+) -> None:
+    require_optional_dependencies("anndata", "scanpy")
 
     pancreas = importlib.import_module("applications.scrna.pancreas_benchmark")
     configs = pancreas._method_configs(true_k=8)
@@ -68,9 +72,10 @@ def test_scrna_benchmark_does_not_register_distributional_action_configuration()
     )
 
 
-def test_goncalves_benchmark_reuses_scrna_method_configs() -> None:
-    pytest.importorskip("anndata")
-    pytest.importorskip("scanpy")
+def test_goncalves_benchmark_reuses_scrna_method_configs(
+    require_optional_dependencies,
+) -> None:
+    require_optional_dependencies("anndata", "scanpy")
 
     pancreas = importlib.import_module("applications.scrna.pancreas_benchmark")
     goncalves = importlib.import_module("applications.scrna.goncalves_benchmark")

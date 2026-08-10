@@ -108,6 +108,10 @@ addopts = "-q"
 python_files = ["*test_*.py"]
 markers = [
     "slow: long-running integration and regression coverage",
+    "optional: requires a dependency or runtime outside the lean development environment",
+    "scrna: requires the optional single-cell RNA dependency stack",
+    "graphtools: requires the optional GPL graphtools backend",
+    "r_runtime: requires an external Rscript runtime",
 ]
 
 [tool.ruff]

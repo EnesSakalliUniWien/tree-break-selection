@@ -29,6 +29,7 @@ STAGES: tuple[Stage, ...] = (
         (
             "tests/core",
             "tests/tree",
+            "tests/hierarchy_analysis",
         ),
     ),
     Stage(

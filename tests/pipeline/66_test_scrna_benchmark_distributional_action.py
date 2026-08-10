@@ -13,6 +13,8 @@ from tree_break_selection.tree.poset_tree import PosetTree
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/kl_te_cluster_matplotlib")
 os.environ.setdefault("NUMBA_CACHE_DIR", "/tmp/kl_te_cluster_numba")
 
+pytestmark = [pytest.mark.optional, pytest.mark.scrna]
+
 
 def _small_benchmark_tree() -> PosetTree:
     tree = PosetTree()
@@ -41,9 +43,9 @@ def _small_benchmark_tree() -> PosetTree:
 
 def test_scrna_benchmark_tree_edges_include_distributional_action_and_mass(
     tmp_path: Path,
+    require_optional_dependencies,
 ) -> None:
-    pytest.importorskip("anndata")
-    pytest.importorskip("scanpy")
+    require_optional_dependencies("anndata", "scanpy")
     pancreas = importlib.import_module("applications.scrna.pancreas_benchmark")
 
     leaf_data = pd.DataFrame(

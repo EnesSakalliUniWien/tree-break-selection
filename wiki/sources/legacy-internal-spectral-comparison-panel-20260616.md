@@ -2,10 +2,9 @@
 title: Legacy Internal Spectral Comparison Panel 2026-06-16
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - tests/statistics/48_test_spectral_context_regressions.py
-  - tests/pipeline/51_test_dispatch_contract.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/runners/dispatch.py
   - benchmarks/shared/runners/tbs_runner.py

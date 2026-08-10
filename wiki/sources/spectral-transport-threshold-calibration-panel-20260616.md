@@ -2,11 +2,11 @@
 title: Spectral Transport Threshold Calibration Panel 2026-06-16
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_threshold_calibration_panel.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/spectral_transport.py
-  - tests/localization/35_test_gates_traversal.py
+  - tests/hierarchy_analysis/decomposition/gates/test_spectral_transport.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/spectral_transport_threshold_calibration_panel
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/spectral_transport_threshold_calibration_panel_strict_mp_low_grid
 tags:
@@ -59,7 +59,7 @@ selected-family cases.
   summary, and manifest outputs for baseline-vs-threshold comparisons.
 - `149_test_spectral_transport_threshold_calibration_panel.py` covers summary
   status separation and output-writing behavior.
-- `35_test_gates_traversal.py` now distinguishes strict MP-required support
+- `test_spectral_transport.py` now distinguishes strict MP-required support
   from the non-required neutral floor-only policy.
 - The canonical output directory records `30` row records, `24` pairwise
   records, and `4` threshold summaries; all summaries are

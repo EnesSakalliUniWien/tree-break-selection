@@ -2,10 +2,10 @@
 title: Topology Vector Benchmark 2026-06-15
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - benchmarks/shared/runners/dispatch.py
-  - tests/pipeline/51_test_dispatch_contract.py
+  - tests/pipeline/dispatch/test_parameter_forwarding.py
   - raw/assets/benchmark-results/topology_vector_benchmark_20260615/regression_gate_kl_profile/regression_gate_kl_profile_comparison.csv
   - raw/assets/benchmark-results/topology_vector_benchmark_20260615/regression_gate_kl_profile/regression_gate_kl_profile_summary.csv
   - raw/assets/benchmark-results/topology_vector_benchmark_20260615/regression_gate_kl_profile/regression_gate_kl_profile_by_case.csv
@@ -76,7 +76,7 @@ TBS parameter variant.
 
 ## Evidence
 
-- `tests/pipeline/51_test_dispatch_contract.py` verifies that the benchmark
+- `tests/pipeline/dispatch/test_parameter_forwarding.py` verifies that the benchmark
   dispatcher forwards `sibling_gate_profile`, root-stability settings,
   selected-root/selected-family guard settings, and `passthrough` to the TBS
   runner.

@@ -11,6 +11,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[4]
 HELPER_PATH = PROJECT_ROOT / "applications/scrna/plots/tree_plot_helpers.R"
 
 
+@pytest.mark.optional
+@pytest.mark.r_runtime
 def test_tree_plot_helpers_preserve_tree_and_branch_length_contract() -> None:
     rscript = shutil.which("Rscript")
     if rscript is None:

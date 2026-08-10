@@ -74,6 +74,26 @@ def test_block_chi_square_reacts_to_dense_categorical_block_evidence() -> None:
     assert block_chi_square_bh < 0.05
 
 
+def test_fixed_block_gate_aggregates_categorical_feature_blocks() -> None:
+    feature_space = infer_feature_space_from_columns(
+        ("F0_c0", "F0_c1", "F0_c2", "F1_c0", "F1_c1", "F1_c2")
+    )
+    z = np.array([2.0, 0.0, 0.0, 0.0], dtype=float)
+
+    coordinate_p = fixed_subspace_sibling_p_value(
+        z,
+        feature_space,
+        method="fixed_coordinate_bh",
+    )
+    block_p = fixed_subspace_sibling_p_value(
+        z,
+        feature_space,
+        method="fixed_block_bh",
+    )
+
+    assert 0.0 < coordinate_p < block_p < 1.0
+
+
 def test_coordinate_fdr_rejects_invalid_method() -> None:
     with pytest.raises(ValueError, match="Unknown coordinate FDR method"):
         coordinate_fdr_adjusted_minimum(

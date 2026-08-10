@@ -1,6 +1,10 @@
+import importlib
+import importlib.util
 import os
 import sys
 from dataclasses import dataclass
+
+import pytest
 
 # Prevent pytest from collecting functions whose names start with ``test_``
 # from the *source* package when they are re-exported into a test module's
@@ -17,6 +21,23 @@ class _ProgressState:
 
 
 _PROGRESS = _ProgressState()
+
+
+@pytest.fixture(scope="module")
+def require_optional_dependencies():
+    """Import optional modules, skipping only when they are not installed.
+
+    An installed module whose import fails is a broken optional environment and
+    must remain visible as a test failure instead of being silently skipped.
+    """
+
+    def require(*module_names: str) -> tuple[object, ...]:
+        missing = [name for name in module_names if importlib.util.find_spec(name) is None]
+        if missing:
+            pytest.skip(f"Missing optional dependencies: {', '.join(missing)}")
+        return tuple(importlib.import_module(name) for name in module_names)
+
+    return require
 
 
 def pytest_addoption(parser):  # type: ignore[no-untyped-def]

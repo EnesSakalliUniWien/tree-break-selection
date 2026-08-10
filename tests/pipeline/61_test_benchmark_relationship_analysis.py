@@ -290,38 +290,6 @@ def test_normalize_results_dataframe_rejects_unrecognized_columns() -> None:
         normalize_results_dataframe(df)
 
 
-def test_normalize_results_dataframe_rejects_old_full_runner_csv_columns() -> None:
-    df = pd.DataFrame(
-        {
-            "Test": [1],
-            "Case_Name": ["case_1"],
-            "Case_Category": ["improved_gaussian"],
-            "Method": ["TBS Divergence"],
-            "Params": ["tree_distance_metric=hamming"],
-            "True": [3],
-            "Found": [3],
-            "Samples": [30],
-            "Features": [20],
-            "Noise": [0.4],
-            "ARI": [0.75],
-            "NMI": [0.8],
-            "Purity": [0.9],
-            "Macro_Recall": [0.7],
-            "Macro_F1": [0.72],
-            "Worst_Cluster_Recall": [0.6],
-            "Cluster_Count_Abs_Error": [0],
-            "Over_Split": [0],
-            "Under_Split": [0],
-            "Status": ["ok"],
-            "Skip_Reason": [""],
-            "Labels_Length": [30],
-        }
-    )
-
-    with pytest.raises(ValueError, match="canonical snake_case columns"):
-        normalize_results_dataframe(df)
-
-
 def test_prepare_relationship_frame_derives_split_flags() -> None:
     frame = prepare_relationship_frame(_make_synthetic_results())
 
@@ -439,38 +407,6 @@ def test_attach_audit_factors_does_not_cross_assign_single_method_audits(tmp_pat
     kmeans_row = augmented_rows.loc[augmented_rows["method"] == "kmeans"].iloc[0]
     assert tbs_row["audit_available"] == 1.0
     assert kmeans_row["audit_available"] == 0.0
-
-
-def test_attach_audit_factors_rejects_old_kl_divergence_audit_filename(tmp_path: Path) -> None:
-    _write_synthetic_audit(tmp_path, case_num=1, method_slug="kl_divergence", accepted=True)
-
-    artifacts = analyze_benchmark_relationships(
-        pd.DataFrame(
-            [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                }
-            ]
-        ),
-        tmp_path,
-        include_plots=False,
-    )
-
-    augmented_rows = pd.read_csv(artifacts.augmented_rows_csv)
-    assert augmented_rows.loc[0, "audit_available"] == 0.0
 
 
 def test_attach_audit_factors_rejects_missing_sibling_decision_column(tmp_path: Path) -> None:

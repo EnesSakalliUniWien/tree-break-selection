@@ -21,27 +21,6 @@ from benchmarks.shared.plots.cover_page import GROUP_ORDER, category_group
 from benchmarks.shared.result_records import NUMERIC_RESULT_COLUMNS, RESULT_COLUMNS
 from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
 
-_OLD_RESULT_COLUMNS = frozenset(
-    {
-        "Test",
-        "Case_Name",
-        "Case_Category",
-        "Method",
-        "Params",
-        "True",
-        "Found",
-        "Samples",
-        "Features",
-        "Noise",
-        "ARI",
-        "NMI",
-        "Purity",
-        "Status",
-        "Skip_Reason",
-        "Labels_Length",
-    }
-)
-
 _AUDIT_SUMMARY_REQUIRED_COLUMNS = frozenset(
     {
         "node_id",
@@ -133,12 +112,6 @@ class BenchmarkRelationshipArtifacts:
 
 def normalize_results_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize current-schema result columns."""
-    old_columns = sorted(_OLD_RESULT_COLUMNS.intersection(df.columns))
-    if old_columns:
-        raise ValueError(
-            "Benchmark results must use canonical snake_case columns; "
-            f"found old result columns: {old_columns}."
-        )
     unknown_columns = sorted(set(df.columns).difference(RESULT_COLUMNS))
     if unknown_columns:
         raise ValueError(

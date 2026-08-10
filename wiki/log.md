@@ -6340,6 +6340,20 @@ coverage/lineage artifacts produced by the tool occupied another 868 MB and
 were also moved to Trash. Unrelated generated scientific-audit artifacts remain
 in place.
 
+#### Remaining test-maintenance cleanup
+
+Retired the unwired recent-benchmark provenance verifier and its 43 synthetic
+tests as one coherent maintenance slice. The verifier was fixed to the June
+23--24 benchmark folders, had no active build or documentation entry point, and
+its real repository invocation reported 221 stale generator/source references
+after application commands moved to their owned packages. Historical raw
+captures and earlier log evidence remain unchanged.
+
+Removed the pytest wrapper that invoked `scripts/wiki/lint.py` a second time
+during `make check`. The canonical `make wiki-lint` gate remains responsible for
+the wiki structure contract, while the three distinct mex routing and wiki
+lookup behavior tests remain in the suite.
+
 ## Evidence
 
 - `raw/inbox/wiki-construction-brief.md` records the requested scaffold.
@@ -6352,3 +6366,32 @@ in place.
 - [[schema]]
 - [[maintenance]]
 - [[wiki-search]]
+
+### 2026-08-09
+
+#### Highest-confidence test cleanup
+
+Removed two legacy-only benchmark tests after the recursive test audit found no
+live requirement for their retired names. The relationship analyzer now relies
+on its canonical unknown-column rejection instead of maintaining a separate
+old-result-column list and error path, and the suite no longer preserves an
+absence guard for the retired `kl_divergence` audit filename.
+
+Tightened the supported TBS condensed-distance dispatch test to require an
+`ok` result, and removed a redundant status assertion from the NNLS dispatch
+test whose controlled runner already guarantees success. Current-schema,
+method-specific audit matching, and dispatch geometry coverage remain.
+
+### 2026-08-10
+
+#### Optional-test and dispatch-contract cleanup
+
+Marked scRNA, graphtools, and R-runtime coverage explicitly and changed
+optional Python dependency handling to skip only genuinely missing modules;
+installed but incompatible environments now fail instead of being hidden as
+skips. Added the regrouped hierarchy-analysis tests to the ordered test gate.
+
+Split the monolithic dispatch-contract module into validation, distance-input,
+parameter-forwarding, compatibility-outcome, method-registry, and profile
+contracts. Parameterized the repeated gate-profile resolver, method-registry,
+and KL-dispatch matrices while preserving the 589 collected behavioral cases.

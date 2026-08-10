@@ -10,6 +10,7 @@ tests/
 ├── conftest.py
 ├── core/
 ├── tree/
+├── hierarchy_analysis/
 ├── statistics/
 ├── localization/
 ├── validation/
@@ -24,17 +25,17 @@ tests/
 
 ## Current Suite Map
 
-The ordered gate currently collects 635 test cases:
+The ordered gate currently collects 589 test cases:
 
 | Stage | Responsibility | Tests |
 | --- | --- | ---: |
-| 1 | Core structure and decomposition (`core/`, `tree/`) | 140 |
-| 2 | Statistical engines and calibration (`statistics/`) | 237 |
-| 3 | Localization and post-hoc merge behavior (`localization/`) | 33 |
+| 1 | Core structure and decomposition (`core/`, `tree/`, `hierarchy_analysis/`) | 211 |
+| 2 | Statistical engines and calibration (`statistics/`) | 198 |
+| 3 | Localization and post-hoc merge behavior (`localization/`) | 1 |
 | 4 | Validation artifact contracts (`validation/`) | 11 |
-| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 171 |
+| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 126 |
 | 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 39 |
-| 7 | Wiki memory contracts (`wiki/`) | 4 |
+| 7 | Wiki memory contracts (`wiki/`) | 3 |
 
 Stage 4 is intentionally narrow: eight cases protect the diagnostic reporting
 and CLI contracts, while three protect the method-constant manifest. Research
@@ -55,9 +56,9 @@ Use the lean development environment for targeted suites:
 uv sync --extra dev --extra benchmark --extra viz --locked
 ```
 
-Use the full test environment before running the full suite. The full suite
-includes scRNA and optional GPL paths backed by `scanpy`, `anndata`, and
-`graphtools`.
+Use the full test environment before running optional scRNA and GPL tests.
+Optional tests are marked by runtime so the lean suite and each optional
+dependency surface can be selected explicitly.
 
 ```bash
 uv sync --extra all --extra experimental-gpl --locked
@@ -97,6 +98,14 @@ uv run pytest tests/wiki/
 
 # Full suite
 uv run pytest
+
+# Lean suite without optional runtimes
+uv run pytest -m "not optional"
+
+# Optional dependency surfaces
+uv run pytest -m scrna
+uv run pytest -m graphtools
+uv run pytest -m r_runtime
 ```
 
 ## Notes

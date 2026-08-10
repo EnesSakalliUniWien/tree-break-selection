@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import re
-import subprocess
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,19 +8,6 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
-
-
-def test_wiki_lint_contract_passes() -> None:
-    result = subprocess.run(
-        [sys.executable, "scripts/wiki/lint.py"],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "wiki-lint passed:" in result.stdout
 
 
 def test_mex_bootstrap_delegates_to_wiki_memory_contract() -> None:

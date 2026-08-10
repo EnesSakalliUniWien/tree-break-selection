@@ -2,13 +2,13 @@
 title: Data-Independent Sibling Gate Traversal Panel 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
-  - tests/statistics/31_test_registry_config_wiring.py
+  - tests/hierarchy_analysis/decomposition/gates/test_profiles.py
   - tests/core/test_gate_annotation_reuse.py
   - raw/inbox/data-independent-sibling-gate-traversal-20260613.md
 tags:

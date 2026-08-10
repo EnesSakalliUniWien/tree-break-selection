@@ -2,7 +2,7 @@
 title: Spectral Transport Passthrough Guard 2026-06-16
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - tree_break_selection/hierarchy_analysis/decomposition/gates/spectral_transport.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
@@ -15,8 +15,9 @@ sources:
   - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_overlap_dispatch_panel.py
   - benchmarks/diagnostics/calibration/spectral_transport/spectral_transport_threshold_calibration_panel.py
   - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
-  - tests/localization/35_test_gates_traversal.py
-  - tests/pipeline/51_test_dispatch_contract.py
+  - tests/hierarchy_analysis/decomposition/gates/test_spectral_transport.py
+  - tests/pipeline/dispatch/test_method_registry.py
+  - tests/pipeline/dispatch/test_profiles.py
   - tests/integration/63_test_local_structural_kernel_regression.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_family_traversal_spectral_transport_overlap_three_case
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/spectral_transport_overlap_dispatch_panel
@@ -126,8 +127,8 @@ standard benchmark registry as `tbs_spectral_transport_passthrough`; the older
 - `spectral_transport_promotion_gate.py` now defaults to the 50-replicate
   selected-family evidence and records selected-family signal retention as the
   blocking component.
-- `51_test_dispatch_contract.py` covers registry exposure, dispatch as a TBS
-  runner method, and forwarding of spectral transport parameters.
+- `test_method_registry.py` covers registry exposure and `test_profiles.py`
+  covers dispatch through the shared TBS runner path.
 - `63_test_local_structural_kernel_regression.py` checks that TBS runner result
   metadata includes default spectral transport values.
 - The current paired standard-dispatch signal rows remain neutral, while the
