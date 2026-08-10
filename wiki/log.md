@@ -6600,3 +6600,13 @@ Updated the seven-stage suite map to match collection and marked eight
 catalog-wide or end-to-end cases as slow so the fast lean gate, complete
 non-optional gate, and expensive regression slice can be selected explicitly.
 Production code and supported behavioral coverage remain unchanged.
+
+#### Isolated the IQ-TREE subprocess test seam
+
+Corrected the IQ-TREE construction test so its command stub replaces only the
+phylogenetic module's subprocess binding instead of mutating the process-wide
+`subprocess.run` function. The previous mock was order-dependent: it passed
+after another test imported scikit-bio but failed alone when a lazy dependency
+used subprocess for a platform probe. The standalone test, its complete file,
+and the 194-case core/decomposition stage now pass without changing production
+behavior.

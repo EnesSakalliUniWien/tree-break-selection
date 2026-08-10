@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import subprocess
+from types import SimpleNamespace
 
 import networkx as nx
 import numpy as np
 import pandas as pd
+import tree_break_selection.tree.construction.phylogenetic as phylogenetic
 from tree_break_selection.tree.construction.phylogenetic import (
     iqtree3_tree_from_alignment,
     minimum_ancestor_deviation_root,
@@ -104,8 +106,9 @@ def test_iqtree3_tree_from_alignment_runs_command_and_mad_roots_newick(
         _fake_which,
     )
     monkeypatch.setattr(
-        "tree_break_selection.tree.construction.phylogenetic.subprocess.run",
-        _fake_run,
+        phylogenetic,
+        "subprocess",
+        SimpleNamespace(run=_fake_run),
     )
 
     tree, root, metadata = iqtree3_tree_from_alignment(
