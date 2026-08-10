@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -729,12 +729,10 @@ renamed, or promoted.
   bandwidth interpolation for non-measurable evidence, topology coherence, and
   fail-closed bottleneck labels without any fragmentation penalty.
 - [[selected-neighborhood-measurability-law-diagnostic-20260616]] - executable
-  diagnostic evaluator for the measurability law; expanded overlap rows produce
-  direct splits and fail-closed bottlenecks only, while the refined candidate
-  audit joins interpolation support, bandwidth scales, topology fields, and
-  spectral bottleneck labels into one table; the non-direct rows now localize
-  to a required root-selected topology law or low selected-tree structural balance
-  rather than missing interpolated p-like values.
+  diagnostic evaluator for the measurability law; its versioned candidate table
+  joins interpolation support, bandwidth scales, and topology fields. The page
+  remains draft because no non-empty result capture or focused test currently
+  validates empirical conclusions.
 - [[selected-neighborhood-pvalue-interpolation-comparison-20260616]] -
   hold-out diagnostic comparing direct sibling p-values with reconstructed
   interpolated p-like values on expanded overlap candidates; default bandwidth
@@ -760,22 +758,6 @@ renamed, or promoted.
   the old kernel smoother as support-gated neighborhood weighting and makes
   the selected-root deformed spectral excess the calibrated tail variable
   after conditioning on root bifurcation topology.
-- [[selected-neighborhood-spectral-flow-diagnostic-20260616]] -
-  MP eigenvalue/eigenvector flow diagnostic for selected-neighborhood
-  parent-child edges; the three-case overlap run finds weak but useful
-  signal-vs-selected-null separation and identical spectral summaries across
-  the refined and conditional profiles; the multiplicity-aware extension adds
-  MP block projectors and polynomial mode transport, but current overlap MP
-  blocks are almost all singleton, supporting spectral flow as a bottleneck
-  localizer rather than a standalone rescue rule.
-- [[selected-neighborhood-internal-spectral-flow-panel-20260617]] -
-  diagnostic-only leaf-versus-internal-barycenter spectral-flow comparison;
-  internal barycenters create many MP-supported edges in both signal and
-  selected-null roles, supporting them as tree-filter evidence while warning
-  against restoring them as independent MP samples or split rescue. The
-  neighborhood-energy extension records graph Dirichlet-style angle/radius
-  transport: strict shared smoothing is mixed and internal-only support remains
-  a fail-closed warning channel.
 - [[legacy-internal-spectral-comparison-panel-20260616]] - standard-dispatch
   comparison between current leaf-only MP spectra and the copied commit-era
   internal-barycenter spectral diagnostic; internal rows substantially increase

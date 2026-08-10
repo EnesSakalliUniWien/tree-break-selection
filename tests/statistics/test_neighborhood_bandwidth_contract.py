@@ -4,7 +4,6 @@ import networkx as nx
 import numpy as np
 import pytest
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.neighborhood_bandwidth import (
-    CoherentSupportDecision,
     SupportRole,
     TauRegionKey,
     build_branch_length_distance_cache,
@@ -122,17 +121,3 @@ def test_kernel_weights_combine_tree_distance_and_log_dimension() -> None:
 
     assert weights[0] == 1.0
     assert 0.0 < weights[1] < weights[0]
-
-
-def test_coherent_support_decision_fails_closed_on_root_invalid() -> None:
-    decision = CoherentSupportDecision(
-        root_usable_or_nonroot=False,
-        topology_coherent=True,
-        regional_tau_stable=True,
-        spectral_flow_supported=True,
-        empirical_null_admissible_or_not_required=True,
-    )
-
-    assert not decision.promotion_eligible
-    assert decision.dominant_blocker == "root_invalid_or_unusable"
-    assert decision.method_action == "fail_closed_root_invalid"

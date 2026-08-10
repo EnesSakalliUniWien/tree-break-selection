@@ -2,7 +2,7 @@
 title: Wiki Log
 type: control
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - AGENTS.md
   - raw/inbox/wiki-construction-brief.md
@@ -6471,3 +6471,31 @@ its callers. Generic selected-family pass-through support, the independent
 PCA/Marchenko-Pastur spectral context, adjacent selected-neighborhood
 spectral-flow diagnostics, immutable raw captures, and historical log entries
 remain intact.
+
+#### Retired selected-neighborhood spectral-flow diagnostics
+
+Removed the two benchmark-only selected-neighborhood spectral-flow panels
+after recursive reachability found no registered runner or consumer beyond the
+panels themselves and an optional diagnostic CSV join. Their validation tests
+had already been retired as research-only, all seven referenced result
+directories were empty, and a fresh one-case run contradicted the retained
+internal-support narrative.
+
+Removed the unused spectral-flow join and output fields from the
+selected-neighborhood measurability evaluator, plus the orphaned exported
+`CoherentSupportDecision` and its self-contained test. The live PCA/MP spectral
+context, internal-barycenter and branch-length-state estimator options,
+registered internal-filter methods, and the remaining neighborhood bandwidth
+distance, role, kernel, and tau primitives are unchanged. Deleted the two
+obsolete source pages and removed their unsupported claims from retained wiki
+synthesis; raw captures and earlier chronology remain untouched.
+
+#### Corrected the spectral-flow retirement boundary after review
+
+Versioned the reduced measurability CSV contract as
+`selected_neighborhood_measurability_law/v2`, removed retained prose that still
+described the deleted mode-transport implementation, and removed the retired
+spectral bottleneck from the conceptual status list. The measurability source
+page now cites only its live implementation, omits numerical and test-coverage
+claims unsupported by local evidence, and is draft until a non-empty result
+capture and focused contract tests are restored.

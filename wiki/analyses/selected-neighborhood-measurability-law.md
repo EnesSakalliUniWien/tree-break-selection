@@ -8,7 +8,6 @@ sources:
   - wiki/analyses/selected-neighborhood-bottleneck-law.md
   - wiki/sources/sibling-null-prior-interpolation-audit-20260604.md
   - wiki/sources/old-vs-current-method-stack-comparison-20260615.md
-  - wiki/sources/selected-neighborhood-spectral-flow-diagnostic-20260616.md
   - wiki/sources/selected-neighborhood-topology-frontier-diagnostic-20260616.md
   - wiki/sources/root-selected-region-overlap-case-family-20260616.md
   - wiki/sources/root-selected-tie-cell-burden-20260616.md
@@ -25,7 +24,6 @@ sources:
   - wiki/sources/root-tie-rank-target-conditioned-importance-frontier-20260617.md
   - wiki/sources/legacy-internal-spectral-comparison-panel-20260616.md
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py
-  - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_spectral_flow.py
 tags:
   - analysis
   - traversal
@@ -224,114 +222,6 @@ have no incoming branch under this definition and are labeled as requiring a
 separate root-selected topology law; rows whose \(\widetilde P_v\) is below
 the balance floor remain fail-closed.
 
-The spectral refinement should be attached to the same coherence predicate,
-not used as a direct p-value. Let \(q_x\) be the raw
-Marchenko--Pastur-certified signal count at node \(x\), and let
-\(U_x^{(r)}\) contain the first \(r\) row-basis eigenvectors for that node.
-For a neighboring selected-tree edge \(e=(u,w)\), define
-
-\[
-r_e=\min\{q_u,q_w\}.
-\]
-
-If \(r_e=0\), the edge has no MP-certified shared mode and is labeled
-floor-only. If \(r_e>0\), compare the matched eigenspaces by the singular
-values \(\sigma_j(e)\) of
-
-\[
-U_u^{(r_e)}U_w^{(r_e)\top}.
-\]
-
-This removes arbitrary eigenvector sign flips while still detecting real
-rotations of the selected subspace. The normalized chordal distance is
-
-\[
-D_U(e)=
-\sqrt{
-\frac{
-r_e-\sum_{j=1}^{r_e}\sigma_j(e)^2
-}{r_e}
-}.
-\]
-
-Eigenvalue flow is measured on log scale:
-
-\[
-D_\lambda(e)=
-\sqrt{
-\frac1{r_e}
-\sum_{j=1}^{r_e}
-\left(\log\lambda_{u,j}-\log\lambda_{w,j}\right)^2
-}.
-\]
-
-The diagnostic spectral barrier is
-
-\[
-B_{\mathrm{spec}}(e)
-=
-D_U(e)+D_\lambda(e)+
-\frac{|q_u-q_w|}{\max(q_u,q_w,1)}
--\gamma R(e),
-\]
-
-where \(R(e)\) is a bounded reward for clear local eigengaps. The spectral
-flow affinity is
-
-\[
-A_{\mathrm{spec}}(e)=\exp\{-B_{\mathrm{spec}}(e)\}.
-\]
-
-Plainly, \(A_{\mathrm{spec}}\) asks whether the same physical mode appears to
-flow from leaves toward the parent without rotating away or changing scale too
-quickly. The existing bandwidth \(\tau\) variables then act like diffusion
-lengths: small \(\tau\) trusts only very local evidence, while large \(\tau\)
-allows information to spread farther through the selected tree. The spectral
-diagnostic says whether that spread is coherent in the MP-supported modes.
-
-The multiplicity-aware version replaces single-index mode matching with a
-block spectral signature. For node \(x\), let
-
-\[
-\mathfrak S_x=
-\left\{
-\left(P_{x,a},m_{x,a},\chi_{x,a},\bar \ell_{x,a}\right)
-\right\}_{a=1}^{K_x},
-\]
-
-where \(P_{x,a}\) is the projector onto MP block \(a\), \(m_{x,a}\) is its
-multiplicity, \(\chi_{x,a}\) is its scale-normalized characteristic
-polynomial, and \(\bar\ell_{x,a}\) is its mean log eigenvalue. Across an edge
-\(e=(u,w)\), the block transport cost is
-
-\[
-D_{\mathrm{mode}}(u,w)=
-\min_{\pi}
-\frac{1}{\max(K_u,K_w,1)}
-\left[
-\sum_{(a,b)\in\pi}
-\left(
-\alpha D_P(P_{u,a},P_{w,b})
-+\beta |\bar\ell_{u,a}-\bar\ell_{w,b}|
-+\eta D_m(m_{u,a},m_{w,b})
-+\zeta D_\chi(\chi_{u,a},\chi_{w,b})
-\right)
-+\rho N_{\mathrm{unmatched}}
-\right].
-\]
-
-The corresponding conductance is
-
-\[
-c_{uw}
-=
-\exp\{-D_{\mathrm{mode}}(u,w)\}.
-\]
-
-This is the implemented analogue of a connection-Laplacian residual: evidence
-is allowed to flow only when MP mode blocks can be transported with low
-projector, eigenvalue, multiplicity, and polynomial distortion.
-
 The traversal law is:
 
 \[
@@ -350,18 +240,6 @@ The traversal law is:
 \end{cases}}
 \label{eq:selected-neighborhood-action}
 \]
-
-The first implementation step is narrower than
-Equation \(\ref{eq:selected-neighborhood-action}\): spectral transport is
-introduced only as a pass-through support guard. If a closed sibling gate would
-otherwise pass through to a descendant split, traversal now requires a
-supported measured MP-mode path when `require_mp_blocks=True`. Floor-only,
-missing, or unmatched MP evidence is therefore an unmeasured bottleneck rather
-than support. The optional non-required diagnostic mode can keep such edges
-neutral, but the promoted targeted guard follows the measurability law: no
-measured support means no spectral support for pass-through. This realizes the
-bottleneck logic without promoting interpolated evidence into a split or
-rescue rule.
 
 Fragmentation is not an argument of
 Equation \(\ref{eq:selected-neighborhood-action}\). Cluster count, singleton
@@ -408,14 +286,6 @@ should otherwise stop and report the mathematical reason.
   fragmentation is an audit outcome, not a production penalty.
 - [[sibling-null-prior-interpolation-audit-20260604]] records why interpolated
   priors are diagnostic unless support excludes selected non-null borrowing.
-- [[selected-neighborhood-spectral-flow-diagnostic-20260616]] records that
-  MP eigenvalue/eigenvector flow has weak but directionally useful
-  signal-vs-selected-null separation on three overlap cases, so it is a
-  bottleneck localizer and possible stratum variable rather than a direct
-  rescue threshold. Its multiplicity-aware extension adds MP block projectors,
-  multiplicities, normalized characteristic polynomials, and mode-transport
-  residuals; the current overlap run has almost only singleton blocks, so
-  multiplicity and polynomial terms are implemented but not active separators.
 - [[selected-neighborhood-topology-frontier-diagnostic-20260616]] records the
   root/non-root threshold version of the same problem. At `tau_s = 20`,
   direct-positive bandwidth reopen counts are `579` selected-null versus `388`
@@ -423,7 +293,7 @@ should otherwise stop and report the mathematical reason.
   non-root balance-product floors also admit selected-null rows more readily
   than signal rows, so root structural balance and non-root topology frontiers
   remain bottleneck/localization variables until a selected-root margin law and
-  stricter spectral/topology support are available.
+  stricter topology and admissible-support guards are available.
 - [[root-selected-region-overlap-case-family-20260616]] narrows the root-law
   blocker: all seven overlap case-family roots have
   `discrete_tie_cell_geometry_required`, with numerical-zero root-child
@@ -588,7 +458,6 @@ should otherwise stop and report the mathematical reason.
 - [[selected-neighborhood-bottleneck-law]]
 - [[traversal-neighborhood-method-comparison]]
 - [[sibling-null-prior-interpolation-audit-20260604]]
-- [[selected-neighborhood-spectral-flow-diagnostic-20260616]]
 - [[selected-neighborhood-topology-frontier-diagnostic-20260616]]
 - [[root-selected-region-overlap-case-family-20260616]]
 - [[root-selected-tie-cell-burden-20260616]]
@@ -609,8 +478,6 @@ should otherwise stop and report the mathematical reason.
 
 - What threshold \(\alpha_{\mathrm{int}}\) is admissible for an interpolated
   diagnostic prior that is not a calibrated p-value?
-- How much MP-supported spectral-flow evidence is required before a local
-  bandwidth stratum is identifiable rather than floor-only?
 - Which local support count is sufficient for \(M_{\mathrm{int}}(v)=1\) when
   signal-neighborhood evidence is present but excluded from null support?
 - Should \(C(v)\) be a hard predicate or a monotone frontier over incoming and

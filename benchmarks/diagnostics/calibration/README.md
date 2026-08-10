@@ -14,7 +14,7 @@ construction, testing, and plotting interfaces remain under
 - `root/tie_rank/`: tie-rank-conditioned root proposals and replay panels.
 - `selected/family/`: selected-family traversal and candidate-law studies.
 - `selected/hierarchy/`: hierarchy selection and external-calibration studies.
-- `selected/neighborhood/`: neighborhood conditioning and spectral-flow studies.
+- `selected/neighborhood/`: neighborhood conditioning and measurability studies.
 - `selected/tail/`: selected-tail law and promotion-gate studies.
 - `sibling/gates/`: data-independent sibling-gate profiles.
 - `sibling/nulls/`: sibling-null models, calibration panels, and their runners.

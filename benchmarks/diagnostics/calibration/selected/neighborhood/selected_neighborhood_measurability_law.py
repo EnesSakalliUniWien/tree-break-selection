@@ -25,7 +25,7 @@ import pandas as pd
 
 from benchmarks.diagnostics.calibration.values import finite_float, string_value
 
-SCHEMA_VERSION = "selected_neighborhood_measurability_law/v1"
+SCHEMA_VERSION = "selected_neighborhood_measurability_law/v2"
 STUDY_ROLE = "diagnostic_selected_neighborhood_measurability_law_not_calibration"
 GENERATED_BY = "benchmarks.diagnostics.calibration.selected.neighborhood.selected_neighborhood_measurability_law"
 
@@ -108,15 +108,6 @@ ROW_COLUMNS = (
     "outgoing_balance_edge_product",
     "topology_coherent",
     "topology_coherence_status",
-    "spectral_parent_id",
-    "spectral_mp_common_dimension",
-    "spectral_mp_pair_supported",
-    "spectral_mp_subspace_chordal_distance",
-    "spectral_mp_log_eigenvalue_delta",
-    "spectral_barrier",
-    "spectral_flow_affinity",
-    "spectral_flow_status",
-    "spectral_bottleneck_status",
     "measurability_action",
     "measurability_bottleneck",
     "measurability_status",
@@ -207,15 +198,6 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Optional selected_neighborhood_pvalue_interpolation_rows.csv to join "
             "hold-out interpolation diagnostics into the candidate audit table."
-        ),
-    )
-    parser.add_argument(
-        "--spectral-flow-edges",
-        type=Path,
-        default=None,
-        help=(
-            "Optional selected_neighborhood_spectral_flow_edges.csv to join "
-            "parent-child MP eigenspace bottleneck diagnostics."
         ),
     )
     return parser.parse_args()
@@ -554,42 +536,6 @@ def _topology_balance_product(row: pd.Series) -> tuple[float, str]:
     return math.nan, "unavailable"
 
 
-def _spectral_bottleneck_status(row: pd.Series) -> str:
-    flow_status = string_value(row, "spectral_flow_status")
-    if not flow_status:
-        flow_status = string_value(row, "flow_status")
-    if not flow_status:
-        return "spectral_not_joined"
-
-    common_dimension = _first_finite(
-        row,
-        ("spectral_mp_common_dimension", "mp_common_dimension"),
-    )
-    pair_supported = (
-        _bool_value(row["spectral_mp_pair_supported"])
-        if "spectral_mp_pair_supported" in row
-        else _bool_value(row.get("mp_pair_supported", False))
-    )
-    chordal = _first_finite(
-        row,
-        ("spectral_mp_subspace_chordal_distance", "mp_subspace_chordal_distance"),
-    )
-    eigen_delta = _first_finite(
-        row,
-        ("spectral_mp_log_eigenvalue_delta", "mp_log_eigenvalue_delta"),
-    )
-
-    if math.isfinite(common_dimension) and common_dimension <= 0:
-        return "spectral_floor_only"
-    if not pair_supported:
-        return "spectral_mp_pair_unsupported"
-    if math.isfinite(chordal) and chordal >= 0.75:
-        return "spectral_subspace_rotation_bottleneck"
-    if math.isfinite(eigen_delta) and eigen_delta >= 1.0:
-        return "spectral_eigenvalue_drift_bottleneck"
-    return "spectral_flow_observed_diagnostic_only"
-
-
 def evaluate_measurability_decision(
     row: pd.Series,
     *,
@@ -841,27 +787,6 @@ def build_measurability_law_rows(
             ),
             "topology_coherent": topology_coherent,
             "topology_coherence_status": topology_status,
-            "spectral_parent_id": string_value(row, "spectral_parent_id"),
-            "spectral_mp_common_dimension": _first_finite(
-                row,
-                ("spectral_mp_common_dimension", "mp_common_dimension"),
-            ),
-            "spectral_mp_pair_supported": _bool_value(row.get("spectral_mp_pair_supported", False)),
-            "spectral_mp_subspace_chordal_distance": _first_finite(
-                row,
-                ("spectral_mp_subspace_chordal_distance", "mp_subspace_chordal_distance"),
-            ),
-            "spectral_mp_log_eigenvalue_delta": _first_finite(
-                row,
-                ("spectral_mp_log_eigenvalue_delta", "mp_log_eigenvalue_delta"),
-            ),
-            "spectral_barrier": finite_float(row.get("spectral_barrier", math.nan)),
-            "spectral_flow_affinity": finite_float(row.get("spectral_flow_affinity", math.nan)),
-            "spectral_flow_status": _first_string(
-                row,
-                ("spectral_flow_status", "flow_status"),
-            ),
-            "spectral_bottleneck_status": _spectral_bottleneck_status(row),
             "measurability_action": decision.action,
             "measurability_bottleneck": decision.bottleneck,
             "measurability_status": decision.status,
@@ -1040,11 +965,10 @@ def enrich_measurability_input_rows(
     rows: pd.DataFrame,
     *,
     pvalue_rows: pd.DataFrame | None = None,
-    spectral_flow_edges: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """Join optional old-neighborhood and spectral bottleneck diagnostics.
+    """Join optional old-neighborhood diagnostics.
 
-    The joins are diagnostic only. Missing joins leave fields empty rather than
+    The join is diagnostic only. Missing input leaves fields empty rather than
     changing a traversal decision.
     """
     enriched = _add_selected_tree_structural_topology(rows)
@@ -1082,48 +1006,6 @@ def enrich_measurability_input_rows(
         if not pvalue_join.empty:
             enriched = enriched.merge(
                 pvalue_join,
-                on=list(JOIN_COLUMNS),
-                how="left",
-            )
-
-    if spectral_flow_edges is not None and not spectral_flow_edges.empty:
-        spectral_columns = (
-            "case_id",
-            "data_role",
-            "method_id",
-            "replicate",
-            "parent_id",
-            "child_id",
-            "mp_common_dimension",
-            "mp_pair_supported",
-            "mp_subspace_chordal_distance",
-            "mp_log_eigenvalue_delta",
-            "spectral_barrier",
-            "spectral_flow_affinity",
-            "flow_status",
-        )
-        spectral_keep = [
-            column for column in spectral_columns if column in spectral_flow_edges.columns
-        ]
-        if "child_id" in spectral_keep:
-            spectral_join = spectral_flow_edges.loc[:, spectral_keep].copy()
-            spectral_join = spectral_join.rename(
-                columns={
-                    "child_id": "node_id",
-                    "parent_id": "spectral_parent_id",
-                    "mp_common_dimension": "spectral_mp_common_dimension",
-                    "mp_pair_supported": "spectral_mp_pair_supported",
-                    "mp_subspace_chordal_distance": ("spectral_mp_subspace_chordal_distance"),
-                    "mp_log_eigenvalue_delta": "spectral_mp_log_eigenvalue_delta",
-                    "flow_status": "spectral_flow_status",
-                }
-            )
-            spectral_join = spectral_join.drop_duplicates(
-                subset=list(JOIN_COLUMNS),
-                keep="first",
-            )
-            enriched = enriched.merge(
-                spectral_join,
                 on=list(JOIN_COLUMNS),
                 how="left",
             )
@@ -1169,7 +1051,6 @@ def run_selected_neighborhood_measurability_law(
     min_interpolation_support: int = DEFAULT_MIN_INTERPOLATION_SUPPORT,
     candidate_only: bool = False,
     pvalue_comparison_rows_path: Path | None = None,
-    spectral_flow_edges_path: Path | None = None,
 ) -> dict[str, Path]:
     input_rows = pd.read_csv(rows_path)
     pvalue_rows = (
@@ -1177,15 +1058,9 @@ def run_selected_neighborhood_measurability_law(
         if pvalue_comparison_rows_path is not None and pvalue_comparison_rows_path.exists()
         else None
     )
-    spectral_flow_edges = (
-        pd.read_csv(spectral_flow_edges_path)
-        if spectral_flow_edges_path is not None and spectral_flow_edges_path.exists()
-        else None
-    )
     input_rows = enrich_measurability_input_rows(
         input_rows,
         pvalue_rows=pvalue_rows,
-        spectral_flow_edges=spectral_flow_edges,
     )
     if candidate_only:
         input_rows = input_rows.loc[candidate_evidence_mask(input_rows)].copy()
@@ -1214,7 +1089,6 @@ def run_selected_neighborhood_measurability_law(
         "min_interpolation_support": int(min_interpolation_support),
         "candidate_only": bool(candidate_only),
         "pvalue_comparison_rows": pvalue_comparison_rows_path,
-        "spectral_flow_edges": spectral_flow_edges_path,
         "input_row_count": int(len(input_rows)),
         "output_row_count": int(len(law_rows)),
         "outputs": {
@@ -1236,7 +1110,6 @@ def main() -> None:
         min_interpolation_support=args.min_interpolation_support,
         candidate_only=bool(args.candidate_only),
         pvalue_comparison_rows_path=args.pvalue_comparison_rows,
-        spectral_flow_edges_path=args.spectral_flow_edges,
     )
 
 

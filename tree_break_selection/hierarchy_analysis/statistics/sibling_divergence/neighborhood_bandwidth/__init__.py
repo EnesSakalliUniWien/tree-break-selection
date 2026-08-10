@@ -1,6 +1,5 @@
 """Guarded selected-neighborhood bandwidth primitives."""
 
-from .decision import CoherentSupportDecision
 from .kernel_weights import (
     effective_support,
     selected_neighborhood_kernel_weights,
@@ -18,7 +17,6 @@ from .tree_distance import BranchLengthDistanceCache, build_branch_length_distan
 
 __all__ = [
     "BranchLengthDistanceCache",
-    "CoherentSupportDecision",
     "NULL_CALIBRATION_ROLES",
     "SupportRole",
     "TauRegionEstimate",
