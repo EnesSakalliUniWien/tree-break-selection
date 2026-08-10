@@ -9,12 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .spectral_transport import (
-    DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-    DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
-)
-
 
 @dataclass(frozen=True)
 class SiblingGateProfile:
@@ -33,13 +27,6 @@ class SiblingGateProfile:
     root_selective_permutation_guard_seed: int = 0
     root_selective_permutation_guard_alpha: float | None = None
     root_selective_permutation_guard_scope: str = "root"
-    spectral_transport_passthrough_guard: bool = False
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST
-    spectral_transport_require_mp_blocks: bool = True
-    spectral_transport_block_log_tolerance: float = DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
-    )
 
 
 GLOBAL_PASSTHROUGH_REFINED_REPLICATES = 999
@@ -58,21 +45,6 @@ SIBLING_GATE_PROFILES: dict[str, SiblingGateProfile] = {
         description=(
             "Same-data fixed coordinate-BH sibling gate with selected-topology "
             "alpha penalty and selected-root feature-subsample stability guard."
-        ),
-    ),
-    "fixed_global_guarded_v1": SiblingGateProfile(
-        profile_id="fixed_global_guarded_v1",
-        sibling_gate_method="fixed_global_chi_square",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="diagnostic_candidate",
-        description=(
-            "Same-data full fixed-subspace chi-square sibling gate with "
-            "selected-topology alpha penalty and selected-root feature-subsample "
-            "stability guard."
         ),
     ),
     "fixed_coordinate_global_passthrough_refined_v1": SiblingGateProfile(
@@ -95,38 +67,6 @@ SIBLING_GATE_PROFILES: dict[str, SiblingGateProfile] = {
         root_selective_permutation_guard_alpha=0.01,
         root_selective_permutation_guard_scope=(
             "global_sibling_min_passthrough_descendant_refined"
-        ),
-    ),
-    "fixed_coordinate_spectral_transport_passthrough_v1": SiblingGateProfile(
-        profile_id="fixed_coordinate_spectral_transport_passthrough_v1",
-        sibling_gate_method="fixed_coordinate_bh",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="opt_in_candidate_not_default",
-        description=(
-            "Refined fixed-coordinate selected-family pass-through guard plus a "
-            "strict MP mode-transport pass-through support guard. The spectral "
-            "transport layer can only block pass-through; it cannot open sibling "
-            "splits or create calibrated p-values. The one-replicate targeted "
-            "overlap gate passed, but the 50-replicate panel found signal "
-            "regressions, so this profile remains opt-in and is not the default "
-            "traversal rule."
-        ),
-        root_selective_permutation_guard_replicates=99,
-        root_selective_permutation_guard_seed=0,
-        root_selective_permutation_guard_alpha=0.01,
-        root_selective_permutation_guard_scope=(
-            "global_sibling_min_passthrough_descendant_refined"
-        ),
-        spectral_transport_passthrough_guard=True,
-        spectral_transport_max_cost=DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-        spectral_transport_require_mp_blocks=True,
-        spectral_transport_block_log_tolerance=DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-        spectral_transport_unmatched_mode_penalty=(
-            DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
         ),
     ),
 }
@@ -178,15 +118,6 @@ def resolve_sibling_gate_profile_config(
     root_selective_permutation_guard_seed: int = 0,
     root_selective_permutation_guard_alpha: float | None = None,
     root_selective_permutation_guard_scope: str = "root",
-    spectral_transport_passthrough_guard: bool = False,
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    spectral_transport_require_mp_blocks: bool = True,
-    spectral_transport_block_log_tolerance: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    ),
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
-    ),
 ) -> tuple[
     str | None,
     str,
@@ -199,11 +130,6 @@ def resolve_sibling_gate_profile_config(
     int,
     float | None,
     str,
-    bool,
-    float,
-    bool,
-    float,
-    float,
 ]:
     """Resolve profile and explicit sibling-gate settings to concrete values."""
     profile = resolve_sibling_gate_profile(sibling_gate_profile)
@@ -228,11 +154,6 @@ def resolve_sibling_gate_profile_config(
                 else float(root_selective_permutation_guard_alpha)
             ),
             str(root_selective_permutation_guard_scope),
-            bool(spectral_transport_passthrough_guard),
-            float(spectral_transport_max_cost),
-            bool(spectral_transport_require_mp_blocks),
-            float(spectral_transport_block_log_tolerance),
-            float(spectral_transport_unmatched_mode_penalty),
         )
 
     method = _profile_value(
@@ -313,36 +234,6 @@ def resolve_sibling_gate_profile_config(
             else float(root_selective_permutation_guard_alpha)
         )
         root_selective_scope = str(root_selective_permutation_guard_scope)
-    spectral_guard = _profile_value(
-        field_name="spectral_transport_passthrough_guard",
-        current=bool(spectral_transport_passthrough_guard),
-        default=False,
-        profile_value=bool(profile.spectral_transport_passthrough_guard),
-    )
-    spectral_max_cost = _profile_value(
-        field_name="spectral_transport_max_cost",
-        current=float(spectral_transport_max_cost),
-        default=float(DEFAULT_SPECTRAL_TRANSPORT_MAX_COST),
-        profile_value=float(profile.spectral_transport_max_cost),
-    )
-    spectral_require_mp_blocks = _profile_value(
-        field_name="spectral_transport_require_mp_blocks",
-        current=bool(spectral_transport_require_mp_blocks),
-        default=True,
-        profile_value=bool(profile.spectral_transport_require_mp_blocks),
-    )
-    spectral_block_log_tolerance = _profile_value(
-        field_name="spectral_transport_block_log_tolerance",
-        current=float(spectral_transport_block_log_tolerance),
-        default=float(DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE),
-        profile_value=float(profile.spectral_transport_block_log_tolerance),
-    )
-    spectral_unmatched_mode_penalty = _profile_value(
-        field_name="spectral_transport_unmatched_mode_penalty",
-        current=float(spectral_transport_unmatched_mode_penalty),
-        default=float(DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY),
-        profile_value=float(profile.spectral_transport_unmatched_mode_penalty),
-    )
     return (
         profile.profile_id,
         str(method),
@@ -355,11 +246,6 @@ def resolve_sibling_gate_profile_config(
         int(root_selective_seed),
         None if root_selective_alpha is None else float(root_selective_alpha),
         str(root_selective_scope),
-        bool(spectral_guard),
-        float(spectral_max_cost),
-        bool(spectral_require_mp_blocks),
-        float(spectral_block_log_tolerance),
-        float(spectral_unmatched_mode_penalty),
     )
 
 

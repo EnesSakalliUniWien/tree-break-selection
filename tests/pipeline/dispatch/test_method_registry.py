@@ -13,24 +13,12 @@ from .helpers import _toy_dataframe
     "expected_profiles",
     [
         pytest.param(
-            {"tbs_conditional_topology_diagnostic": "fixed_coordinate_guarded_v1"},
-            id="conditional-topology",
-        ),
-        pytest.param(
             {
                 "tbs_global_passthrough_refined_diagnostic": (
                     "fixed_coordinate_global_passthrough_refined_v1"
                 )
             },
             id="global-passthrough-refined",
-        ),
-        pytest.param(
-            {
-                "tbs_spectral_transport_passthrough": (
-                    "fixed_coordinate_spectral_transport_passthrough_v1"
-                ),
-            },
-            id="spectral-transport",
         ),
     ],
 )

@@ -325,7 +325,7 @@ making networked data downloads part of the default benchmark suite.
 ### 9. Calibration Diagnostics ([diagnostics/calibration/](diagnostics/calibration/))
 
 **Purpose**: Empirical calibration investigation — edge-null, sibling-null,
-selected-hierarchy, overlap, root, traversal, and spectral-transport studies.
+selected-hierarchy, overlap, root, and traversal studies.
 Not a production calibration layer.
 
 See `diagnostics/calibration/README.md` for the categories, shared reporting

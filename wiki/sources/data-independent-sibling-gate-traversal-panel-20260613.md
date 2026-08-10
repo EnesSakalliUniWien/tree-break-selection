@@ -219,12 +219,11 @@ and reports cluster-level outcomes.
   expected artifacts and behaved as a point-transfer candidate, but production
   admissibility stayed fail-closed because the confidence component was still
   null-uncertain with only two null replicates.
-- Named profiles `fixed_coordinate_guarded_v1` and `fixed_global_guarded_v1`
-  now package the same-data method knobs as auditable diagnostic
-  candidates. They set the fixed sibling method, selected-topology penalty
-  `50`, root-stability threshold `0.24`, `12` stability subsamples, feature
-  fraction `0.8`, and deterministic seed `0`; the profile id is stored in
-  gate config metadata and participates in cache reuse checks.
+- `fixed_coordinate_guarded_v1` packages the fixed-coordinate same-data method
+  knobs as an auditable diagnostic candidate. The historical fixed-global
+  profile used the same penalty and stability constants with
+  `fixed_global_chi_square`; its ID is now retired and targeted fixed-global
+  runs supply those settings explicitly.
 - The shared TBS benchmark runner now forwards profile/fixed-gate settings to
   both gate annotation and decomposition, and records them in
   `MethodRunResult.extra`. The method-constants manifest tracks
@@ -272,8 +271,6 @@ and reports cluster-level outcomes.
 
 ## Evidence
 
-- `tests/validation/calibration/sibling/gates/100_test_data_independent_sibling_gate_traversal_panel.py`
-  verifies summary statuses and output writing.
 - `raw/inbox/data-independent-sibling-gate-traversal-20260613.md` records the
   six-case binary/categorical traversal smoke, stricter transfer sweep, and
   high-cardinality categorical split-geometry, selected-root permutation,

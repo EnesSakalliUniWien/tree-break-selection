@@ -64,10 +64,11 @@ TBS parameter variant.
   rank `1`, with conditional log-odds margin `4.694486`, but the support
   status is `support_insufficient_fail_closed` because the internal incidence
   stratum has only one truth-recovery row.
-- The benchmark-facing `tbs_conditional_topology_diagnostic` method id runs the
+- The now-retired `tbs_conditional_topology_diagnostic` method ID ran the
   17-case regression gate with `17/17` ok rows, mean ARI `0.460293`, median
-  ARI `0.480000`, and exact-K count `4/17`. This confirms registry/dispatch
-  integration but does not promote the law to production.
+  ARI `0.480000`, and exact-K count `4/17`. It was a behavior-identical registry
+  alias for the guarded fixed-coordinate profile and did not apply the
+  topology law during traversal.
 - Interpretation: the topology vector is supported as a diagnostic
   conditioning object, especially outgoing balance and outgoing edge-norm
   balance conditioned by the incoming/family event. The refined traversal

@@ -18,13 +18,11 @@ def _decompose_with_annotations(
     annotations_df: pd.DataFrame,
     *,
     passthrough: bool,
-    spectral_transport_passthrough_guard: bool = False,
 ) -> dict[str, object]:
     decomposer = TreeDecomposition(
         tree=tree,
         annotations_df=annotations_df,
         passthrough=passthrough,
-        spectral_transport_passthrough_guard=spectral_transport_passthrough_guard,
         trace_level="full",
     )
     return decomposer.decompose_tree()
@@ -320,53 +318,5 @@ class TestTreeDecompositionTraversal:
         assert root_trace["passthrough_candidate"] is True
         assert root_trace["passthrough_supported"] is False
         assert root_trace["passthrough_bottleneck"] == ("selected_family_passthrough_guard_blocked")
-        assert root_trace["passthrough_decision_reason"] == "passthrough_support_blocked"
-        assert result["traversal_counters"]["live_passthrough_support_blocked_count"] == 1
-
-    def test_decompose_tree_spectral_support_guard_blocks_passthrough(self) -> None:
-        tree = _make_deep_tree()
-        edge_divergent = {node: True for node in tree.nodes}
-        sibling_different = {node: False for node in tree.nodes}
-        sibling_different["B"] = True
-        annotations_df = _make_annotations(
-            tree,
-            edge_divergent=edge_divergent,
-            sibling_different=sibling_different,
-        )
-        annotations_df["Spectral_Transport_Pass_Through_Supported"] = True
-        annotations_df["Spectral_Transport_Bottleneck"] = "supported_mp_mode_path"
-        annotations_df.loc["root", "Spectral_Transport_Pass_Through_Supported"] = False
-        annotations_df.loc["root", "Spectral_Transport_Bottleneck"] = (
-            "spectral_transport_bottleneck"
-        )
-
-        result = _decompose_with_annotations(
-            tree,
-            annotations_df,
-            passthrough=True,
-            spectral_transport_passthrough_guard=True,
-        )
-
-        assert _cluster_leaf_sets(result) == [{"A1", "A2", "C1", "C2", "D1", "D2"}]
-        root_trace = result["traversal_trace"][0]
-        assert root_trace["decision"] == "boundary"
-        assert root_trace["left_edge_test_tuple"] == ("root", "A")
-        assert root_trace["right_edge_test_tuple"] == ("root", "B")
-        assert root_trace["sibling_test_tuple"] == ("root", "A", "B")
-        assert root_trace["left_edge_p_value"] == 0.01
-        assert root_trace["right_edge_p_value"] == 0.01
-        assert root_trace["sibling_p_value"] == 0.80
-        assert root_trace["sibling_p_value_corrected"] == 0.80
-        assert root_trace["descendant_leaf_signature"] == (
-            "A1",
-            "A2",
-            "C1",
-            "C2",
-            "D1",
-            "D2",
-        )
-        assert root_trace["passthrough_supported"] is False
-        assert root_trace["passthrough_bottleneck"] == "spectral_transport_bottleneck"
-        assert root_trace["passthrough_candidate"] is True
         assert root_trace["passthrough_decision_reason"] == "passthrough_support_blocked"
         assert result["traversal_counters"]["live_passthrough_support_blocked_count"] == 1

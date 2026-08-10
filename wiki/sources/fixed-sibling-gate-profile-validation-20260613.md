@@ -32,11 +32,17 @@ historical provenance. They were retired from the runtime registry on
 explicit settings, while the refined global selected-family profile remains the
 packaged candidate.
 
+The historical `fixed_global_guarded_v1` routing profile was also retired after
+its fixed-global runner regression was migrated to explicit settings. The fixed
+global statistic remains available through `sibling_gate_method`; raw profile
+validation captures retain the old ID as provenance.
+
 ## Key Points
 
 - The panel runs selected binary or direct categorical null/signal cases
-  through `_run_tbs_method` with a named profile such as
-  `fixed_coordinate_guarded_v1` or `fixed_global_guarded_v1`.
+  through `_run_tbs_method`; its default profile is now
+  `fixed_coordinate_guarded_v1`. Historical runs also compared the retired
+  fixed-global profile.
 - It records gate config metadata, observed `Sibling_Test_Method` values,
   whether any `projected_wald_inflation` sibling rows were used, traversal
   cluster counts, ARI, null false-split flags, root-stability guard blocking,
@@ -83,10 +89,10 @@ packaged candidate.
   stability subsamples, feature fraction `0.8`, selected-root permutation
   replicates `99`, selected-root guard seed `0`, and selected-root guard alpha
   `0.01`.
-- The older `fixed_coordinate_guarded_v1` and `fixed_global_guarded_v1`
-  profiles keep selected-root permutation disabled by default, so existing
-  profile-validation smoke runs remain compatible. They can still accept
-  explicit selected-root guard settings for targeted replay.
+- `fixed_coordinate_guarded_v1` keeps selected-root permutation disabled by
+  default and can accept explicit selected-root guard settings for targeted
+  replay. The equivalent fixed-global settings are supplied explicitly when
+  that statistic is needed.
 - The guard is deliberately limited to fixed-subspace sibling methods. It
   raises with `projected_wald_inflation` because the same-sample adaptive PCA
   statistic is the layer being avoided, not a valid input to repair.
@@ -238,9 +244,6 @@ packaged candidate.
 
 ## Evidence
 
-- `tests/validation/calibration/sibling/gates/101_test_fixed_sibling_gate_profile_validation.py` checks
-  profile validation, adaptive-projection detection, fail-closed production
-  components for missing coverage, and a tiny `binary_2clusters` output run.
 - `raw/inbox/fixed-sibling-gate-profile-validation-20260613.md` records the
   diagnostic purpose, command shape, outputs, targeted root replay, runtime
   selected-root guard replay, narrowed pass-through descendant replay, and

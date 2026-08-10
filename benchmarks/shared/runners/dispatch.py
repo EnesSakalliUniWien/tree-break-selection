@@ -7,11 +7,6 @@ from typing import Any, Dict, Optional
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist, squareform
-from tree_break_selection.hierarchy_analysis.decomposition.gates.spectral_transport import (
-    DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-    DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
-)
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -359,32 +354,6 @@ def _run_tbs_distance_tree_method(
         ),
         root_selective_permutation_guard_tree_linkage_method=params.get(
             "root_selective_permutation_guard_tree_linkage_method"
-        ),
-        spectral_transport_passthrough_guard=coerce_bool_param(
-            params.get("spectral_transport_passthrough_guard", False),
-            name="spectral_transport_passthrough_guard",
-        ),
-        spectral_transport_max_cost=float(
-            params.get(
-                "spectral_transport_max_cost",
-                DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-            )
-        ),
-        spectral_transport_require_mp_blocks=coerce_bool_param(
-            params.get("spectral_transport_require_mp_blocks", True),
-            name="spectral_transport_require_mp_blocks",
-        ),
-        spectral_transport_block_log_tolerance=float(
-            params.get(
-                "spectral_transport_block_log_tolerance",
-                DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-            )
-        ),
-        spectral_transport_unmatched_mode_penalty=float(
-            params.get(
-                "spectral_transport_unmatched_mode_penalty",
-                DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
-            )
         ),
         neighborhood_bandwidth_profile=params.get("neighborhood_bandwidth_profile"),
         **_tbs_branch_length_optimization_kwargs(params),

@@ -100,8 +100,6 @@ def test_tbs_dispatch_bool_params_do_not_treat_false_strings_as_true(monkeypatch
             "tree_linkage_method": "average",
             "spectral_include_internal_barycenters": "false",
             "enforce_internal_support_thresholds": "false",
-            "spectral_transport_passthrough_guard": "false",
-            "spectral_transport_require_mp_blocks": "false",
             "allow_linkage_ultrametric_branch_time": "false",
             "passthrough": "false",
         },
@@ -111,8 +109,6 @@ def test_tbs_dispatch_bool_params_do_not_treat_false_strings_as_true(monkeypatch
     for key in (
         "spectral_include_internal_barycenters",
         "enforce_internal_support_thresholds",
-        "spectral_transport_passthrough_guard",
-        "spectral_transport_require_mp_blocks",
         "allow_linkage_ultrametric_branch_time",
         "passthrough",
     ):

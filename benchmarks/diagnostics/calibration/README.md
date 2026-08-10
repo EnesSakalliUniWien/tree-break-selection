@@ -18,7 +18,6 @@ construction, testing, and plotting interfaces remain under
 - `selected/tail/`: selected-tail law and promotion-gate studies.
 - `sibling/gates/`: data-independent sibling-gate profiles.
 - `sibling/nulls/`: sibling-null models, calibration panels, and their runners.
-- `spectral_transport/`: spectral-transport dispatch and threshold studies.
 - `statistics/`: covariance, test-statistic, and null-law studies.
 - `traversal/`: traversal guards, path conditioning, and admissibility checks.
 

@@ -2,7 +2,7 @@
 title: Selected Neighborhood Measurability Law
 type: analysis
 status: draft
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/analyses/selected-neighborhood-bottleneck-law.md
@@ -23,9 +23,6 @@ sources:
   - wiki/sources/root-selected-spectral-tail-law-with-legacy-overlay-20260617.md
   - wiki/sources/root-selected-importance-tail-support-20260617.md
   - wiki/sources/root-tie-rank-target-conditioned-importance-frontier-20260617.md
-  - wiki/sources/spectral-transport-passthrough-guard-20260616.md
-  - wiki/sources/spectral-transport-threshold-calibration-panel-20260616.md
-  - wiki/sources/spectral-transport-promoted-replicate-panel-20260616.md
   - wiki/sources/legacy-internal-spectral-comparison-panel-20260616.md
   - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py
   - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_spectral_flow.py
@@ -419,15 +416,6 @@ should otherwise stop and report the mathematical reason.
   multiplicities, normalized characteristic polynomials, and mode-transport
   residuals; the current overlap run has almost only singleton blocks, so
   multiplicity and polynomial terms are implemented but not active separators.
-- [[spectral-transport-passthrough-guard-20260616]],
-  [[spectral-transport-threshold-calibration-panel-20260616]], and
-  [[spectral-transport-overlap-dispatch-panel-20260616]] record the current traversal
-  integration: strict MP-required support preserves the three standard signal
-  overlap rows, fixes the selected-null `overlap_mod_4c_small` oversplit, and
-  passes the one-replicate targeted traversal-promotion gate. The later
-  [[spectral-transport-promoted-replicate-panel-20260616]] shows why it should
-  stay opt-in rather than default: selected-null false splits are greatly
-  reduced, but four signal rows regress under the strict support rule.
 - [[selected-neighborhood-topology-frontier-diagnostic-20260616]] records the
   root/non-root threshold version of the same problem. At `tau_s = 20`,
   direct-positive bandwidth reopen counts are `579` selected-null versus `388`
@@ -615,10 +603,6 @@ should otherwise stop and report the mathematical reason.
 - [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]
 - [[root-selected-importance-tail-support-20260617]]
 - [[root-tie-rank-target-conditioned-importance-frontier-20260617]]
-- [[spectral-transport-passthrough-guard-20260616]]
-- [[spectral-transport-threshold-calibration-panel-20260616]]
-- [[spectral-transport-overlap-dispatch-panel-20260616]]
-- [[spectral-transport-promoted-replicate-panel-20260616]]
 - [[legacy-internal-spectral-comparison-panel-20260616]]
 
 ## Open Questions

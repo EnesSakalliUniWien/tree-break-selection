@@ -83,12 +83,6 @@ from .profiles import (
     resolve_sibling_gate_profile,
     resolve_sibling_gate_profile_config,
 )
-from .spectral_transport import (
-    DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-    DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
-    annotate_spectral_transport_passthrough_support,
-)
 
 
 @dataclass(frozen=True)
@@ -175,15 +169,6 @@ def build_gate_annotation_config_metadata(
     internal_support_thresholds: CalibrationSupportThresholds = (
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
     ),
-    spectral_transport_passthrough_guard: bool = False,
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    spectral_transport_require_mp_blocks: bool = True,
-    spectral_transport_block_log_tolerance: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    ),
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
-    ),
 ) -> GateAnnotationConfigMetadata:
     """Capture config values that affect gate annotation outputs."""
     return GateAnnotationConfigMetadata(
@@ -241,11 +226,6 @@ def build_gate_annotation_config_metadata(
         internal_support_thresholds_signature=_support_thresholds_signature(
             internal_support_thresholds
         ),
-        spectral_transport_passthrough_guard=bool(spectral_transport_passthrough_guard),
-        spectral_transport_max_cost=float(spectral_transport_max_cost),
-        spectral_transport_require_mp_blocks=bool(spectral_transport_require_mp_blocks),
-        spectral_transport_block_log_tolerance=float(spectral_transport_block_log_tolerance),
-        spectral_transport_unmatched_mode_penalty=float(spectral_transport_unmatched_mode_penalty),
     )
 
 
@@ -356,15 +336,6 @@ def run_gate_annotation_pipeline(
     internal_support_thresholds: CalibrationSupportThresholds = (
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
     ),
-    spectral_transport_passthrough_guard: bool = False,
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    spectral_transport_require_mp_blocks: bool = True,
-    spectral_transport_block_log_tolerance: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    ),
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
-    ),
 ) -> GateAnnotationBundle:
     """Run the edge-gate and sibling-gate annotation pipeline.
 
@@ -382,7 +353,6 @@ def run_gate_annotation_pipeline(
         "sibling_gate_fdr_sec": 0.0,
         "root_stability_guard_sec": 0.0,
         "root_selective_permutation_guard_sec": 0.0,
-        "spectral_transport_passthrough_guard_sec": 0.0,
     }
     (
         sibling_gate_profile_id,
@@ -396,11 +366,6 @@ def run_gate_annotation_pipeline(
         root_selective_permutation_guard_seed,
         root_selective_permutation_guard_alpha,
         root_selective_permutation_guard_scope,
-        spectral_transport_passthrough_guard,
-        spectral_transport_max_cost,
-        spectral_transport_require_mp_blocks,
-        spectral_transport_block_log_tolerance,
-        spectral_transport_unmatched_mode_penalty,
     ) = resolve_sibling_gate_profile_config(
         sibling_gate_profile=sibling_gate_profile,
         sibling_gate_method=sibling_gate_method,
@@ -413,11 +378,6 @@ def run_gate_annotation_pipeline(
         root_selective_permutation_guard_seed=root_selective_permutation_guard_seed,
         root_selective_permutation_guard_alpha=(root_selective_permutation_guard_alpha),
         root_selective_permutation_guard_scope=root_selective_permutation_guard_scope,
-        spectral_transport_passthrough_guard=spectral_transport_passthrough_guard,
-        spectral_transport_max_cost=spectral_transport_max_cost,
-        spectral_transport_require_mp_blocks=spectral_transport_require_mp_blocks,
-        spectral_transport_block_log_tolerance=spectral_transport_block_log_tolerance,
-        spectral_transport_unmatched_mode_penalty=(spectral_transport_unmatched_mode_penalty),
     )
     continuous_covariance_policy = validate_continuous_covariance_policy(
         continuous_covariance_policy
@@ -634,20 +594,6 @@ def run_gate_annotation_pipeline(
         stage_timings["root_selective_permutation_guard_sec"] = float(
             perf_counter() - root_selective_start_sec
         )
-    if bool(spectral_transport_passthrough_guard):
-        spectral_transport_start_sec = perf_counter()
-        annotated_df = annotate_spectral_transport_passthrough_support(
-            tree,
-            annotated_df,
-            spectral_context,
-            max_cost=float(spectral_transport_max_cost),
-            require_mp_blocks=bool(spectral_transport_require_mp_blocks),
-            eigenvalue_block_log_tolerance=float(spectral_transport_block_log_tolerance),
-            unmatched_mode_penalty=float(spectral_transport_unmatched_mode_penalty),
-        )
-        stage_timings["spectral_transport_passthrough_guard_sec"] = float(
-            perf_counter() - spectral_transport_start_sec
-        )
     validate_edge_gate_columns(
         annotated_df,
         error_context="Sibling gate input/output edge columns differ from required contract",
@@ -692,11 +638,6 @@ def run_gate_annotation_pipeline(
             ),
             enforce_internal_support_thresholds=enforce_internal_support_thresholds,
             internal_support_thresholds=internal_support_thresholds,
-            spectral_transport_passthrough_guard=spectral_transport_passthrough_guard,
-            spectral_transport_max_cost=spectral_transport_max_cost,
-            spectral_transport_require_mp_blocks=spectral_transport_require_mp_blocks,
-            spectral_transport_block_log_tolerance=(spectral_transport_block_log_tolerance),
-            spectral_transport_unmatched_mode_penalty=(spectral_transport_unmatched_mode_penalty),
         ),
     )
 

@@ -6,11 +6,6 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-from tree_break_selection.hierarchy_analysis.decomposition.gates.spectral_transport import (
-    DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-    DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
-)
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
 )
@@ -64,13 +59,6 @@ class GateAnnotationConfigMetadata:
     root_selective_permutation_guard_tree_linkage_method: str = "average"
     enforce_internal_support_thresholds: bool = False
     internal_support_thresholds_signature: tuple[tuple[str, float | int], ...] = ()
-    spectral_transport_passthrough_guard: bool = False
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST
-    spectral_transport_require_mp_blocks: bool = True
-    spectral_transport_block_log_tolerance: float = DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
-    )
 
 
 @dataclass(frozen=True)

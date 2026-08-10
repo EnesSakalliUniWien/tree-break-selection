@@ -6437,3 +6437,37 @@ to explicit fixed-coordinate, root-stability, and selected-root permutation
 parameters before removing the root profile ID. The underlying default-off
 guard scopes and their direct behavioral coverage remain; raw captures and
 historical wiki measurements retain the retired identifiers as provenance.
+
+#### Retired redundant benchmark and fixed-global profile IDs
+
+Removed the behavior-identical `tbs_conditional_topology_diagnostic` benchmark
+method alias. It resolved to `fixed_coordinate_guarded_v1` and never applied
+the conditional-topology law during traversal; the canonical profile and the
+separate topology-law diagnostic remain. Alias-only registry, dispatch, and
+duplicate precomputed-distance tests were removed with it.
+
+Migrated the fixed-global runner regression to explicit
+`fixed_global_chi_square`, selected-topology penalty, and root-stability
+parameters, then removed `fixed_global_guarded_v1` from the runtime registry and
+profile-validation defaults. The statistic and its behavioral regression
+remain available without the obsolete public profile ID. Raw captures preserve
+`fixed_global_guarded_v1` and the predecessor conditional-topology IDs; wiki
+history preserves the later `tbs_conditional_topology_diagnostic` alias. Stale
+wiki links to already-removed validation test files were deleted.
+
+#### Retired the spectral-transport traversal experiment
+
+Removed the opt-in `fixed_coordinate_spectral_transport_passthrough_v1`
+profile and `tbs_spectral_transport_passthrough` benchmark method after the
+calibration evidence showed signal-retention regressions and the referenced
+result directories proved empty or untracked. The spectral-transport gate
+module, traversal/config plumbing, two dedicated calibration panels,
+spectral-only tests, and four obsolete wiki source pages were removed with the
+public IDs.
+
+Also removed spectral-transport-only output fields from the selected-family
+panel and the optional spectral branch from the topology-frontier replay and
+its callers. Generic selected-family pass-through support, the independent
+PCA/Marchenko-Pastur spectral context, adjacent selected-neighborhood
+spectral-flow diagnostics, immutable raw captures, and historical log entries
+remain intact.

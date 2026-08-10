@@ -310,17 +310,6 @@ METHOD_SPECS: dict[str, MethodSpec] = {
             },
         ],
     ),
-    "tbs_conditional_topology_diagnostic": MethodSpec(
-        name="TBS (Conditional Topology Diagnostic)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "sibling_gate_profile": "fixed_coordinate_guarded_v1",
-            },
-        ],
-    ),
     "tbs_global_passthrough_refined_diagnostic": MethodSpec(
         name="TBS (Global Passthrough Refined Diagnostic)",
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
@@ -329,17 +318,6 @@ METHOD_SPECS: dict[str, MethodSpec] = {
                 "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
                 "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_profile": ("fixed_coordinate_global_passthrough_refined_v1"),
-            },
-        ],
-    ),
-    "tbs_spectral_transport_passthrough": MethodSpec(
-        name="TBS (Spectral Transport Passthrough)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "sibling_gate_profile": ("fixed_coordinate_spectral_transport_passthrough_v1"),
             },
         ],
     ),

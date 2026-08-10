@@ -53,7 +53,7 @@ SCHEMA_VERSION = "fixed_sibling_gate_profile_validation/v1"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.sibling.gates.fixed_sibling_gate_profile_validation"
 )
-DEFAULT_PROFILES = ("fixed_coordinate_guarded_v1", "fixed_global_guarded_v1")
+DEFAULT_PROFILES = ("fixed_coordinate_guarded_v1",)
 COMMON_EVIDENCE_FIELDS = (
     "validation_design",
     "source_artifact_paths",
@@ -219,11 +219,6 @@ def _resolved_profile_metadata(
             root_selective_seed,
             root_selective_alpha,
             root_selective_scope,
-            spectral_transport_passthrough_guard,
-            spectral_transport_max_cost,
-            spectral_transport_require_mp_blocks,
-            spectral_transport_block_log_tolerance,
-            spectral_transport_unmatched_mode_penalty,
         ) = resolve_sibling_gate_profile_config(
             sibling_gate_profile=requested_profile_id,
             root_selective_permutation_guard_replicates=(
@@ -247,13 +242,6 @@ def _resolved_profile_metadata(
                 None if root_selective_alpha is None else float(root_selective_alpha)
             ),
             "root_selective_permutation_guard_scope": str(root_selective_scope),
-            "spectral_transport_passthrough_guard": bool(spectral_transport_passthrough_guard),
-            "spectral_transport_max_cost": float(spectral_transport_max_cost),
-            "spectral_transport_require_mp_blocks": bool(spectral_transport_require_mp_blocks),
-            "spectral_transport_block_log_tolerance": float(spectral_transport_block_log_tolerance),
-            "spectral_transport_unmatched_mode_penalty": float(
-                spectral_transport_unmatched_mode_penalty
-            ),
         }
         metadata[requested_profile_id] = profile_record
     return metadata

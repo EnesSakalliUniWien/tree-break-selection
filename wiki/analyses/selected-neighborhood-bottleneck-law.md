@@ -2,7 +2,7 @@
 title: Selected Neighborhood Bottleneck Law
 type: analysis
 status: draft
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/sources/selected-neighborhood-signal-flow-literature-20260617.md
@@ -14,7 +14,6 @@ sources:
   - wiki/sources/overlap-conditional-topology-law-panel-20260615.md
   - wiki/sources/retained-pass-through-topology-likelihood-panel-20260615.md
   - wiki/sources/selected-neighborhood-spectral-flow-diagnostic-20260616.md
-  - wiki/sources/spectral-transport-passthrough-guard-20260616.md
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
@@ -292,9 +291,6 @@ pass-through signal once the missing topology likelihood is identifiable.
   MP-supported eigenspace flow has weak signal-vs-selected-null separation and
   many floor-only edges, supporting spectral flow as a bottleneck localizer
   rather than a standalone split rule.
-- [[spectral-transport-passthrough-guard-20260616]] records the first
-  traversal integration of that bottleneck: the spectral term is fail-closed
-  and applies only to pass-through support, not sibling split creation.
 
 ## Links
 
@@ -307,7 +303,6 @@ pass-through signal once the missing topology likelihood is identifiable.
 - [[overlap-conditional-topology-law-panel-20260615]]
 - [[retained-pass-through-topology-likelihood-panel-20260615]]
 - [[selected-neighborhood-spectral-flow-diagnostic-20260616]]
-- [[spectral-transport-passthrough-guard-20260616]]
 
 ## Open Questions
 

@@ -133,7 +133,7 @@ def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
         assert stage_timings[key] >= 0.0
 
 
-def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
+def test_tbs_runner_accepts_explicit_fixed_sibling_gate_config() -> None:
     rng = np.random.default_rng(123)
     data = pd.DataFrame(
         rng.integers(0, 2, size=(16, 8)),
@@ -145,7 +145,12 @@ def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
         pdist(data.to_numpy(), metric="hamming"),
         DEFAULT_SIBLING_ALPHA,
         tree_linkage_method="average",
-        sibling_gate_profile="fixed_global_guarded_v1",
+        sibling_gate_method="fixed_global_chi_square",
+        sibling_gate_alpha_penalty=50.0,
+        root_stability_guard_threshold=0.24,
+        root_stability_subsample_replicates=12,
+        root_stability_feature_fraction=0.8,
+        root_stability_seed=0,
         root_selective_permutation_guard_replicates=1,
         root_selective_permutation_guard_seed=19,
         root_selective_permutation_guard_alpha=0.01,
@@ -154,7 +159,7 @@ def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
 
     metadata = result.extra["gate_bundle"].metadata.config
     assert result.status == "ok"
-    assert metadata.sibling_gate_profile_id == "fixed_global_guarded_v1"
+    assert metadata.sibling_gate_profile_id is None
     assert metadata.sibling_gate_method == "fixed_global_chi_square"
     assert metadata.sibling_gate_alpha_penalty == 50.0
     assert metadata.root_stability_guard_threshold == 0.24
@@ -163,7 +168,7 @@ def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
     assert metadata.root_selective_permutation_guard_replicates == 1
     assert metadata.root_selective_permutation_guard_seed == 19
     assert metadata.root_selective_permutation_guard_alpha == 0.01
-    assert result.extra["sibling_gate_profile"] == "fixed_global_guarded_v1"
+    assert result.extra["sibling_gate_profile"] is None
     assert result.extra["sibling_gate_method"] == "fixed_global_chi_square"
     assert result.extra["sibling_gate_alpha_penalty"] == 50.0
     assert result.extra["root_stability_subsample_replicates"] == 12
@@ -171,11 +176,6 @@ def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
     assert result.extra["root_stability_tree_linkage_method"] == "average"
     assert result.extra["root_selective_permutation_guard_tree_distance_metric"] == ("hamming")
     assert result.extra["root_selective_permutation_guard_tree_linkage_method"] == ("average")
-    assert result.extra["spectral_transport_passthrough_guard"] is False
-    assert result.extra["spectral_transport_max_cost"] == 1.2
-    assert result.extra["spectral_transport_require_mp_blocks"] is True
-
-
 def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() -> None:
     from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
         _generate_data_with_truth,

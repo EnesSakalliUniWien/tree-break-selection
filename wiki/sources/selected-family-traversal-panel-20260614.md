@@ -79,9 +79,6 @@ only one flat clustering.
   overlay rendering, and a tiny binary output run.
 - `tests/hierarchy_analysis/test_tree_decomposition.py` continues to cover
   pass-through traversal behavior through `TreeDecomposition`.
-- `tests/validation/calibration/sibling/gates/101_test_fixed_sibling_gate_profile_validation.py` covers
-  the fixed-profile evidence path reused by this panel.
-
 ## Links
 
 - [[fixed-sibling-gate-profile-validation-20260613]]

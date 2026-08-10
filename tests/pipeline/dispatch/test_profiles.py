@@ -13,22 +13,10 @@ from .helpers import _capturing_runner, _toy_dataframe
     ("method_id", "method_name", "profile_id"),
     [
         pytest.param(
-            "tbs_conditional_topology_diagnostic",
-            "TBS (Conditional Topology Diagnostic)",
-            "fixed_coordinate_guarded_v1",
-            id="conditional-topology",
-        ),
-        pytest.param(
             "tbs_global_passthrough_refined_diagnostic",
             "TBS (Global Passthrough Refined Diagnostic)",
             "fixed_coordinate_global_passthrough_refined_v1",
             id="global-passthrough-refined",
-        ),
-        pytest.param(
-            "tbs_spectral_transport_passthrough",
-            "TBS (Spectral Transport Passthrough)",
-            "fixed_coordinate_spectral_transport_passthrough_v1",
-            id="spectral-transport",
         ),
     ],
 )

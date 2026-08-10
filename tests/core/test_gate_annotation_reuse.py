@@ -134,7 +134,6 @@ def test_bundle_metadata_must_identify_the_gate_pipeline() -> None:
     "guard_kwargs",
     [
         {"selected_family_passthrough_guard": True},
-        {"spectral_transport_passthrough_guard": True},
     ],
 )
 def test_bundle_metadata_owns_guard_behavior(guard_kwargs: dict[str, bool]) -> None:

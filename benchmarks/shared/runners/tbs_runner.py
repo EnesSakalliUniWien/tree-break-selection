@@ -13,11 +13,6 @@ import pandas as pd
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
-from tree_break_selection.hierarchy_analysis.decomposition.gates.spectral_transport import (
-    DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-    DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
-)
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
 )
@@ -93,15 +88,6 @@ def run_tbs_on_distance(
     root_selective_permutation_guard_scope: str = "root",
     root_selective_permutation_guard_tree_distance_metric: str = "hamming",
     root_selective_permutation_guard_tree_linkage_method: str | None = None,
-    spectral_transport_passthrough_guard: bool = False,
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    spectral_transport_require_mp_blocks: bool = True,
-    spectral_transport_block_log_tolerance: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    ),
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
-    ),
     neighborhood_bandwidth_profile: str | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_data_df: pd.DataFrame | None = None,
@@ -259,11 +245,6 @@ def run_tbs_on_distance(
             root_selective_permutation_guard_tree_distance_metric
         ),
         root_selective_permutation_guard_tree_linkage_method=(root_selective_replay_linkage),
-        spectral_transport_passthrough_guard=spectral_transport_passthrough_guard,
-        spectral_transport_max_cost=spectral_transport_max_cost,
-        spectral_transport_require_mp_blocks=spectral_transport_require_mp_blocks,
-        spectral_transport_block_log_tolerance=spectral_transport_block_log_tolerance,
-        spectral_transport_unmatched_mode_penalty=(spectral_transport_unmatched_mode_penalty),
     )
     stage_timings.update(gate_annotation_bundle.stage_timings)
     resolved_gate_config = gate_annotation_bundle.metadata.config
@@ -390,19 +371,6 @@ def run_tbs_on_distance(
         ),
         "root_selective_permutation_guard_tree_linkage_method": str(
             resolved_gate_config.root_selective_permutation_guard_tree_linkage_method
-        ),
-        "spectral_transport_passthrough_guard": bool(
-            resolved_gate_config.spectral_transport_passthrough_guard
-        ),
-        "spectral_transport_max_cost": float(resolved_gate_config.spectral_transport_max_cost),
-        "spectral_transport_require_mp_blocks": bool(
-            resolved_gate_config.spectral_transport_require_mp_blocks
-        ),
-        "spectral_transport_block_log_tolerance": float(
-            resolved_gate_config.spectral_transport_block_log_tolerance
-        ),
-        "spectral_transport_unmatched_mode_penalty": float(
-            resolved_gate_config.spectral_transport_unmatched_mode_penalty
         ),
         **neighborhood_bandwidth_metadata,
     }

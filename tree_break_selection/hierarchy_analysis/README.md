@@ -52,10 +52,9 @@ clustering pipeline.
   The `global_sibling_min_passthrough_descendant` scope evaluates those
   pass-through candidates against a whole selected-family minimum sibling
   p-value under feature-block permutations.
-- `sibling_gate_profile="fixed_coordinate_guarded_v1"` and
-  `sibling_gate_profile="fixed_global_guarded_v1"` package the same-data
-  fixed-gate repair as named diagnostic candidates. The profile id is recorded
-  in gate annotation metadata and participates in cache reuse checks.
+- `sibling_gate_profile="fixed_coordinate_guarded_v1"` packages the same-data
+  fixed-coordinate repair as a named diagnostic candidate. The profile id is
+  recorded in gate annotation metadata and participates in cache reuse checks.
 - `sibling_gate_profile="fixed_coordinate_global_passthrough_refined_v1"` adds
   a higher-resolution replay for global pass-through families that land on the
   base Monte Carlo p-value floor. It is the current diagnostic follow-up after

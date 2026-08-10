@@ -8,7 +8,6 @@ sources:
   - raw/inbox/c2ef-cosine-subspace-method-notes-20260615.md
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
-  - benchmarks/shared/runners/method_registry.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_component_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_summary.csv
@@ -90,12 +89,13 @@ threshold.
   context-negative overlap slice, it recovers `0` rows because the only truth
   row remains support-insufficient. This is the desired fail-closed boundary:
   coherent topology evidence is necessary but not enough without support.
-- The benchmark method `tbs_conditional_topology_diagnostic` is registered for
-  benchmark selection and now resolves through the canonical
-  `fixed_coordinate_guarded_v1` runtime profile. It does not apply the topology
-  law during traversal. Multi-scale node decisions expose directed incidence
-  fields and a fail-closed conditional-topology status placeholder.
-- In the 17-case regression gate, the benchmark-facing profile runs without
+- The historical benchmark method `tbs_conditional_topology_diagnostic`
+  resolved through `fixed_coordinate_guarded_v1` and did not apply the topology
+  law during traversal. The behavior-identical method alias is now retired;
+  raw regression artifacts retain the predecessor
+  `kl_conditional_topology_diagnostic` ID, while wiki history preserves the
+  later alias and the topology-law panel remains a separate diagnostic.
+- In the 17-case regression gate, the historical benchmark alias ran without
   skips, has mean ARI `0.460293`, median ARI `0.480000`, and exact-K count
   `4/17`. This is a runnable diagnostic profile, not a production improvement
   over all existing cases.

@@ -776,27 +776,6 @@ renamed, or promoted.
   neighborhood-energy extension records graph Dirichlet-style angle/radius
   transport: strict shared smoothing is mixed and internal-only support remains
   a fail-closed warning channel.
-- [[spectral-transport-passthrough-guard-20260616]] -
-  opt-in traversal profile that introduces MP mode transport as a fail-closed
-  pass-through support guard; strict `require_mp_blocks=True` semantics now
-  treat unmeasured no-MP paths as bottlenecks rather than support, and the
-  profile is exposed as standard benchmark method id
-  `tbs_spectral_transport_passthrough` with the old diagnostic id kept as an
-  alias.
-- [[spectral-transport-overlap-dispatch-panel-20260616]] - standard-dispatch
-  comparison between `tbs_global_passthrough_refined_diagnostic` and
-  `tbs_spectral_transport_passthrough`; the current strict measured
-  MP support rule preserves the three overlap signal rows and the selected-
-  family rerun fixes the `overlap_mod_4c_small` selected-null oversplit by
-  blocking one pass-through node.
-- [[spectral-transport-threshold-calibration-panel-20260616]] - threshold panel
-  over the three overlap selected-family cases; all default thresholds
-  `0.75`, `1.0`, `1.2`, and `1.5` are `threshold_candidate`, reducing
-  selected-null false splits from `1` to `0` without signal ARI regression.
-- [[spectral-transport-promoted-replicate-panel-20260616]] - 50-replicate
-  validation of `fixed_coordinate_spectral_transport_passthrough_v1`, showing
-  selected-null false splits drop from `117/150` to `3/150` but `4/150` signal
-  rows regress, blocking default promotion.
 - [[legacy-internal-spectral-comparison-panel-20260616]] - standard-dispatch
   comparison between current leaf-only MP spectra and the copied commit-era
   internal-barycenter spectral diagnostic; internal rows substantially increase

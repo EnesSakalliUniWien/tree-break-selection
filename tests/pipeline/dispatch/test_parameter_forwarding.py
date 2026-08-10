@@ -52,11 +52,6 @@ def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
             ),
             "root_selective_permutation_guard_tree_distance_metric": ("rogerstanimoto"),
             "root_selective_permutation_guard_tree_linkage_method": "weighted",
-            "spectral_transport_passthrough_guard": True,
-            "spectral_transport_max_cost": 0.75,
-            "spectral_transport_require_mp_blocks": False,
-            "spectral_transport_block_log_tolerance": 0.02,
-            "spectral_transport_unmatched_mode_penalty": 1.5,
             "spectral_include_internal_barycenters": True,
             "spectral_internal_distribution_mode": "branch_length_state",
             "continuous_covariance_policy": "guarded_within_child",
@@ -91,11 +86,6 @@ def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
         == "rogerstanimoto"
     )
     assert captured["kwargs"]["root_selective_permutation_guard_tree_linkage_method"] == "weighted"
-    assert captured["kwargs"]["spectral_transport_passthrough_guard"] is True
-    assert captured["kwargs"]["spectral_transport_max_cost"] == 0.75
-    assert captured["kwargs"]["spectral_transport_require_mp_blocks"] is False
-    assert captured["kwargs"]["spectral_transport_block_log_tolerance"] == 0.02
-    assert captured["kwargs"]["spectral_transport_unmatched_mode_penalty"] == 1.5
     assert captured["kwargs"]["spectral_include_internal_barycenters"] is True
     assert captured["kwargs"]["spectral_internal_distribution_mode"] == ("branch_length_state")
     assert captured["kwargs"]["continuous_covariance_policy"] == "guarded_within_child"

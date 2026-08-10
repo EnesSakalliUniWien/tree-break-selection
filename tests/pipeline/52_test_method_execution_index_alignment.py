@@ -289,65 +289,6 @@ def test_run_single_method_once_records_precomputed_tbs_distance_contract(monkey
     assert computed_result.params["sibling_alpha"] == 0.05
 
 
-def test_run_single_method_once_records_conditional_topology_precomputed_distance(
-    monkeypatch,
-):
-    data_t = pd.DataFrame(
-        [[0.0, 0.0], [0.1, 0.0], [1.0, 1.0], [0.9, 1.0]],
-        index=["S0", "S1", "S2", "S3"],
-        columns=["F0", "F1"],
-    )
-    y_t = np.array([0, 0, 1, 1], dtype=int)
-    precomputed_distance = np.array([0.1, 1.4, 1.3, 1.3, 1.2, 0.1], dtype=float)
-    captured_kwargs = {}
-
-    monkeypatch.setattr(
-        method_execution,
-        "run_clustering_result",
-        _capturing_successful_tbs_result(captured_kwargs),
-    )
-
-    spec = MethodSpec(
-        name="TBS (Conditional Topology Diagnostic)",
-        runner=lambda **_kwargs: None,
-        param_grid=[{}],
-    )
-    result_row, computed_result, _method_audit = method_execution.run_single_method_once(
-        method_id="tbs_conditional_topology_diagnostic",
-        spec=spec,
-        params={
-            "tree_distance_metric": "hamming",
-            "tree_linkage_method": "average",
-            "sibling_gate_profile": "fixed_coordinate_guarded_v1",
-        },
-        case_idx=1,
-        case_name="continuous_case",
-        tc_seed=42,
-        significance_level=0.05,
-        edge_alpha=DEFAULT_EDGE_ALPHA,
-        data_t=data_t,
-        y_t=y_t,
-        x_original=data_t.values.astype(float),
-        meta=_benchmark_meta(
-            name="continuous_case",
-            source_family="gaussian_blobs",
-            feature_representation="continuous",
-            distance_metric="euclidean",
-            requires_precomputed_tbs_distance=True,
-        ),
-        distance_matrix=None,
-        distance_condensed=precomputed_distance,
-        matrix_audit=False,
-    )
-
-    np.testing.assert_allclose(captured_kwargs["distance_condensed"], precomputed_distance)
-    assert result_row.params_raw["tree_distance_metric"] == "euclidean"
-    assert result_row.params_raw["tree_distance_source"] == "precomputed"
-    assert computed_result is not None
-    assert computed_result.params["tree_distance_metric"] == "euclidean"
-    assert computed_result.params["tree_distance_source"] == "precomputed"
-
-
 def test_run_single_method_once_records_neighbor_joining_tree_contract(monkeypatch):
     data_t = pd.DataFrame(
         [[0, 0], [0, 1], [1, 0], [1, 1]],

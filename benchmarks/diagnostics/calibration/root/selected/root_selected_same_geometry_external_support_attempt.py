@@ -214,7 +214,6 @@ class RootSelectedSameGeometryExternalSupportAttemptConfig:
     max_replay_cases: int | None = None
     candidate_only: bool = False
     reference_tau_s: float = 20.0
-    require_spectral_flow: bool = False
     sibling_alpha: float = 0.01
     edge_alpha: float = 0.001
     tree_linkage_method: str = "average"
@@ -279,7 +278,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-replay-cases", type=int, default=None)
     parser.add_argument("--candidate-only", action="store_true")
     parser.add_argument("--reference-tau-s", type=float, default=20.0)
-    parser.add_argument("--require-spectral-flow", action="store_true")
     parser.add_argument("--sibling-alpha", type=float, default=0.01)
     parser.add_argument("--edge-alpha", type=float, default=0.001)
     parser.add_argument("--tree-linkage-method", default="average")
@@ -753,7 +751,6 @@ def evaluate_same_geometry_external_support_attempt(
         max_cases=config.max_replay_cases,
         candidate_only=bool(config.candidate_only),
         reference_tau_s=float(config.reference_tau_s),
-        require_spectral_flow=bool(config.require_spectral_flow),
     )
     base_rows = pd.read_csv(config.base_feasibility_rows_path, low_memory=False)
     observed_summary = _read_optional_csv(config.observed_root_summary_rows_path)
@@ -895,7 +892,6 @@ def main() -> None:
             max_replay_cases=args.max_replay_cases,
             candidate_only=bool(args.candidate_only),
             reference_tau_s=float(args.reference_tau_s),
-            require_spectral_flow=bool(args.require_spectral_flow),
             sibling_alpha=float(args.sibling_alpha),
             edge_alpha=float(args.edge_alpha),
             tree_linkage_method=str(args.tree_linkage_method),

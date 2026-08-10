@@ -70,7 +70,6 @@ class TreeDecomposition:
         *,
         gate_annotation_bundle: GateAnnotationBundle | None = None,
         selected_family_passthrough_guard: bool = False,
-        spectral_transport_passthrough_guard: bool = False,
         passthrough: bool = True,
         trace_level: TraceLevel = "compact",
     ):
@@ -90,17 +89,12 @@ class TreeDecomposition:
         selected_family_passthrough_guard
             Use selected-family blocking columns when traversing a direct
             annotations frame.
-        spectral_transport_passthrough_guard
-            Use spectral-transport support columns when traversing a direct
-            annotations frame.
         """
         if annotations_df is not None and gate_annotation_bundle is not None:
             raise ValueError("Pass either annotations_df or gate_annotation_bundle, not both.")
         if annotations_df is None and gate_annotation_bundle is None:
             raise ValueError("annotations_df or gate_annotation_bundle is required.")
-        if gate_annotation_bundle is not None and (
-            selected_family_passthrough_guard or spectral_transport_passthrough_guard
-        ):
+        if gate_annotation_bundle is not None and selected_family_passthrough_guard:
             raise ValueError(
                 "GateAnnotationBundle metadata owns passthrough guard behavior; "
                 "do not pass raw-annotation guard flags with a bundle."
@@ -115,15 +109,11 @@ class TreeDecomposition:
                 gate_config.root_selective_permutation_guard_scope
                 in _SELECTED_FAMILY_PASSTHROUGH_SCOPES
             )
-            self._spectral_transport_passthrough_guard = bool(
-                gate_config.spectral_transport_passthrough_guard
-            )
             self._annotation_edge_alpha = float(gate_annotation_bundle.metadata.edge.alpha)
             self._annotation_sibling_alpha = float(gate_annotation_bundle.metadata.sibling.alpha)
         else:
             self.annotations_df = self._validated_annotations(annotations_df)
             self._selected_family_passthrough_guard = bool(selected_family_passthrough_guard)
-            self._spectral_transport_passthrough_guard = bool(spectral_transport_passthrough_guard)
             self._annotation_edge_alpha = None
             self._annotation_sibling_alpha = None
         self._trace_level = validate_trace_level(str(trace_level))
@@ -189,22 +179,7 @@ class TreeDecomposition:
                 for node in self._node_ids
             }
 
-        spectral_support = None
-        if self._spectral_transport_passthrough_guard:
-            spectral_support = self._extract_required_bool_annotation_column(
-                "Spectral_Transport_Pass_Through_Supported"
-            )
-
-        if selected_family_support is None and spectral_support is None:
-            return None
-
-        return {
-            node: bool(
-                (selected_family_support[node] if selected_family_support is not None else True)
-                and (spectral_support[node] if spectral_support is not None else True)
-            )
-            for node in self._node_ids
-        }
+        return selected_family_support
 
     def _build_passthrough_bottleneck_map(self) -> dict[object, str] | None:
         if self._passthrough_supported is None:
@@ -217,20 +192,6 @@ class TreeDecomposition:
                 node, "Selective_Permutation_Guard_Would_Block"
             ):
                 reasons.append("selected_family_passthrough_guard_blocked")
-            if (
-                self._spectral_transport_passthrough_guard
-                and "Spectral_Transport_Pass_Through_Supported" in self.annotations_df.columns
-                and not self._annotation_bool_value(
-                    node, "Spectral_Transport_Pass_Through_Supported"
-                )
-            ):
-                spectral_bottleneck = (
-                    str(self.annotations_df.loc[node, "Spectral_Transport_Bottleneck"])
-                    if "Spectral_Transport_Bottleneck" in self.annotations_df.columns
-                    and node in self.annotations_df.index
-                    else "spectral_transport_bottleneck"
-                )
-                reasons.append(spectral_bottleneck)
             bottlenecks[node] = ";".join(reason for reason in reasons if reason)
         return bottlenecks
 

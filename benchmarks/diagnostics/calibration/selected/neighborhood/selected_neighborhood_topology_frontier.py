@@ -42,7 +42,6 @@ DEFAULT_EFFECTIVE_SUPPORT_FLOOR = 2.0
 DEFAULT_ROOT_OUTGOING_BALANCE_FLOOR = 0.30
 DEFAULT_NONROOT_BALANCE_PRODUCT_FLOOR = 0.22
 DEFAULT_NEAR_FRONTIER_WIDTH = 0.05
-DEFAULT_REQUIRE_SPECTRAL_FLOW = True
 DEFAULT_ROOT_GRID = (0.10, 0.15, 0.20, 0.22, 0.25, 0.30, 0.35, 0.40, 0.45)
 DEFAULT_NONROOT_GRID = (0.00, 0.02, 0.05, 0.08, 0.10, 0.12, 0.15, 0.18, 0.20, 0.22)
 
@@ -89,8 +88,6 @@ ROW_COLUMNS = (
     "nonroot_current_floor_margin",
     "nonroot_near_frontier",
     "nonroot_frontier_status",
-    "spectral_bottleneck_status",
-    "spectral_strict_pass",
     "hybrid_strict_support",
     "hybrid_strict_status",
 )
@@ -114,7 +111,6 @@ SUMMARY_COLUMNS = (
     "nonroot_non_direct_count",
     "nonroot_near_frontier_count",
     "nonroot_current_floor_pass_count",
-    "spectral_strict_pass_non_direct_count",
     "hybrid_strict_support_count",
     "median_root_outgoing_balance",
     "median_nonroot_balance_product",
@@ -155,7 +151,6 @@ class SelectedNeighborhoodTopologyFrontierConfig:
     root_outgoing_balance_floor: float = DEFAULT_ROOT_OUTGOING_BALANCE_FLOOR
     nonroot_balance_product_floor: float = DEFAULT_NONROOT_BALANCE_PRODUCT_FLOOR
     near_frontier_width: float = DEFAULT_NEAR_FRONTIER_WIDTH
-    require_spectral_flow: bool = DEFAULT_REQUIRE_SPECTRAL_FLOW
     root_threshold_grid: tuple[float, ...] = DEFAULT_ROOT_GRID
     nonroot_threshold_grid: tuple[float, ...] = DEFAULT_NONROOT_GRID
 
@@ -195,11 +190,6 @@ def parse_args() -> argparse.Namespace:
         "--near-frontier-width",
         type=float,
         default=DEFAULT_NEAR_FRONTIER_WIDTH,
-    )
-    parser.add_argument(
-        "--allow-spectral-unmeasured",
-        action="store_true",
-        help="Treat missing/floor-only spectral flow as neutral diagnostic evidence.",
     )
     return parser.parse_args()
 
@@ -337,14 +327,6 @@ def _nonroot_frontier_status(
     return False, "nonroot_far_below_current_floor"
 
 
-def _spectral_strict_pass(row: pd.Series, *, require_spectral_flow: bool) -> bool:
-    if not bool(require_spectral_flow):
-        return True
-    return (
-        string_value(row, "spectral_bottleneck_status") == "spectral_flow_observed_diagnostic_only"
-    )
-
-
 def _hybrid_strict_status(
     *,
     scope: str,
@@ -353,8 +335,6 @@ def _hybrid_strict_status(
     root_law_status: str,
     nonroot_balance_product: float,
     nonroot_floor: float,
-    spectral_pass: bool,
-    require_spectral_flow: bool,
 ) -> tuple[bool, str]:
     if scope == "direct_measurable":
         if current_action == "split":
@@ -368,8 +348,6 @@ def _hybrid_strict_status(
         return False, "nonroot_balance_product_missing"
     if nonroot_balance_product < float(nonroot_floor):
         return False, "nonroot_topology_below_current_floor"
-    if bool(require_spectral_flow) and not spectral_pass:
-        return False, "spectral_transport_unmeasured_or_blocked"
     return True, "hybrid_support_observed_diagnostic_only"
 
 
@@ -383,7 +361,6 @@ def build_topology_frontier_rows(
     root_outgoing_balance_floor: float = DEFAULT_ROOT_OUTGOING_BALANCE_FLOOR,
     nonroot_balance_product_floor: float = DEFAULT_NONROOT_BALANCE_PRODUCT_FLOOR,
     near_frontier_width: float = DEFAULT_NEAR_FRONTIER_WIDTH,
-    require_spectral_flow: bool = DEFAULT_REQUIRE_SPECTRAL_FLOW,
 ) -> pd.DataFrame:
     """Annotate candidate rows with topology-frontier support statuses."""
     required = {
@@ -398,7 +375,6 @@ def build_topology_frontier_rows(
         "interpolation_best_case_required_tau_s_for_alpha",
         "structural_outgoing_balance",
         "topology_balance_product_value",
-        "spectral_bottleneck_status",
     }
     missing = required - set(measurability_rows.columns)
     if missing:
@@ -459,10 +435,6 @@ def build_topology_frontier_rows(
             if math.isfinite(nonroot_balance)
             else math.nan
         )
-        spectral_pass = _spectral_strict_pass(
-            row,
-            require_spectral_flow=bool(require_spectral_flow),
-        )
         hybrid_support, hybrid_status = _hybrid_strict_status(
             scope=scope,
             current_action=current_action,
@@ -470,8 +442,6 @@ def build_topology_frontier_rows(
             root_law_status=root_law_status,
             nonroot_balance_product=nonroot_balance,
             nonroot_floor=float(nonroot_balance_product_floor),
-            spectral_pass=spectral_pass,
-            require_spectral_flow=bool(require_spectral_flow),
         )
 
         records.append(
@@ -522,11 +492,6 @@ def build_topology_frontier_rows(
                 "nonroot_current_floor_margin": nonroot_margin,
                 "nonroot_near_frontier": near_frontier,
                 "nonroot_frontier_status": nonroot_status,
-                "spectral_bottleneck_status": string_value(
-                    row,
-                    "spectral_bottleneck_status",
-                ),
-                "spectral_strict_pass": spectral_pass,
                 "hybrid_strict_support": hybrid_support,
                 "hybrid_strict_status": hybrid_status,
             }
@@ -591,9 +556,6 @@ def summarize_topology_frontier_rows(rows: pd.DataFrame) -> pd.DataFrame:
                         pd.to_numeric(nonroot["nonroot_current_floor_margin"], errors="coerce")
                         >= 0.0
                     ).sum()
-                ),
-                "spectral_strict_pass_non_direct_count": _bool_sum(
-                    non_direct["spectral_strict_pass"]
                 ),
                 "hybrid_strict_support_count": _bool_sum(non_direct["hybrid_strict_support"]),
                 "median_root_outgoing_balance": _finite_median(root["root_outgoing_balance"]),
@@ -696,7 +658,6 @@ def evaluate_selected_neighborhood_topology_frontier(
         root_outgoing_balance_floor=float(config.root_outgoing_balance_floor),
         nonroot_balance_product_floor=float(config.nonroot_balance_product_floor),
         near_frontier_width=float(config.near_frontier_width),
-        require_spectral_flow=bool(config.require_spectral_flow),
     )
     summary = summarize_topology_frontier_rows(rows)
     sweep = build_threshold_sweep(
@@ -761,7 +722,6 @@ def main() -> None:
             root_outgoing_balance_floor=float(args.root_outgoing_balance_floor),
             nonroot_balance_product_floor=float(args.nonroot_balance_product_floor),
             near_frontier_width=float(args.near_frontier_width),
-            require_spectral_flow=not bool(args.allow_spectral_unmeasured),
         )
     )
 

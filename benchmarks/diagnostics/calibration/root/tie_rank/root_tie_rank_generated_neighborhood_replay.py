@@ -147,7 +147,6 @@ class RootTieRankGeneratedNeighborhoodReplayConfig:
     case_ids: tuple[str, ...] = ()
     candidate_only: bool = False
     reference_tau_s: float = 20.0
-    require_spectral_flow: bool = False
 
 
 def parse_args() -> argparse.Namespace:
@@ -171,7 +170,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--case-id", dest="case_ids", action="append", default=[])
     parser.add_argument("--candidate-only", action="store_true")
     parser.add_argument("--reference-tau-s", type=float, default=20.0)
-    parser.add_argument("--require-spectral-flow", action="store_true")
     return parser.parse_args()
 
 
@@ -497,7 +495,6 @@ def build_generated_neighborhood_replay_tables(
     case_ids: tuple[str, ...] = (),
     candidate_only: bool = False,
     reference_tau_s: float = 20.0,
-    require_spectral_flow: bool = False,
 ) -> dict[str, pd.DataFrame]:
     """Return generated proposal replay tables without writing files."""
     selected_rows = _generated_proposal_rows(
@@ -558,7 +555,6 @@ def build_generated_neighborhood_replay_tables(
         measurability_rows,
         root_selected_region_summary=proposal_rows,
         reference_tau_s=float(reference_tau_s),
-        require_spectral_flow=bool(require_spectral_flow),
     )
     topology_summary = summarize_topology_frontier_rows(topology_rows)
     run_rows = _update_run_rows_with_frontier(run_rows, topology_rows)
@@ -594,7 +590,6 @@ def run_root_tie_rank_generated_neighborhood_replay(
         case_ids=tuple(config.case_ids),
         candidate_only=bool(config.candidate_only),
         reference_tau_s=float(config.reference_tau_s),
-        require_spectral_flow=bool(config.require_spectral_flow),
     )
 
     config.output_dir.mkdir(parents=True, exist_ok=True)
@@ -647,7 +642,6 @@ def main() -> None:
             case_ids=tuple(args.case_ids),
             candidate_only=args.candidate_only,
             reference_tau_s=args.reference_tau_s,
-            require_spectral_flow=args.require_spectral_flow,
         )
     )
 
