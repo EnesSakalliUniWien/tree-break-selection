@@ -25,19 +25,19 @@ tests/
 
 ## Current Suite Map
 
-The ordered gate currently collects 589 test cases:
+The ordered gate currently collects 563 test cases:
 
 | Stage | Responsibility | Tests |
 | --- | --- | ---: |
-| 1 | Core structure and decomposition (`core/`, `tree/`, `hierarchy_analysis/`) | 211 |
-| 2 | Statistical engines and calibration (`statistics/`) | 198 |
+| 1 | Core structure and decomposition (`core/`, `tree/`, `hierarchy_analysis/`) | 194 |
+| 2 | Statistical engines and calibration (`statistics/`) | 196 |
 | 3 | Localization and post-hoc merge behavior (`localization/`) | 1 |
-| 4 | Validation artifact contracts (`validation/`) | 11 |
-| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 126 |
+| 4 | Validation artifact contracts (`validation/`) | 9 |
+| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 121 |
 | 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 39 |
 | 7 | Wiki memory contracts (`wiki/`) | 3 |
 
-Stage 4 is intentionally narrow: eight cases protect the diagnostic reporting
+Stage 4 is intentionally narrow: six cases protect the diagnostic reporting
 and CLI contracts, while three protect the method-constant manifest. Research
 simulations, calibration panels, sweeps, and one-off diagnostic studies are
 evidence-generating tools rather than production contracts and are not part of
@@ -76,12 +76,12 @@ Or run the suites directly:
 
 ```bash
 # 1) Core structure + decomposition
-uv run pytest tests/core/ tests/tree/
+uv run pytest tests/core/ tests/tree/ tests/hierarchy_analysis/
 
 # 2) Statistical engines + calibration
 uv run pytest tests/statistics/
 
-# 3) Traversal and gate behavior
+# 3) Localization + post-hoc merge behavior
 uv run pytest tests/localization/
 
 # 4) Validation artifact contracts
@@ -99,8 +99,14 @@ uv run pytest tests/wiki/
 # Full suite
 uv run pytest
 
-# Lean suite without optional runtimes
+# Fast lean suite
+uv run pytest -m "not optional and not slow"
+
+# Complete suite without optional runtimes
 uv run pytest -m "not optional"
+
+# Expensive regression and catalog-wide contracts
+uv run pytest -m slow
 
 # Optional dependency surfaces
 uv run pytest -m scrna

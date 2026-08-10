@@ -21,7 +21,10 @@ from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance impo
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
     fixed_subspace_sibling_p_value,
 )
-from tree_break_selection.tree.feature_space import infer_feature_space_from_columns
+from tree_break_selection.tree.feature_space import (
+    FeatureSpace,
+    infer_feature_space_from_columns,
+)
 
 from .gate_annotation_support import (
     _build_small_tree_with_leaf_data,
@@ -64,6 +67,26 @@ def _build_passthrough_tree_with_leaf_data() -> tuple[
         dtype=np.float64,
     )
     return tree, annotations_df, leaf_data
+
+
+def _passthrough_guard_inputs(
+    *,
+    root_open: bool = False,
+) -> tuple[nx.DiGraph, pd.DataFrame, pd.DataFrame, FeatureSpace]:
+    tree, annotations_df, leaf_data = _build_passthrough_tree_with_leaf_data()
+    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
+    assert feature_space is not None
+    annotated = annotations_df.copy()
+    annotated["Child_Parent_Divergence_Significant"] = True
+    annotated["Sibling_BH_Different"] = False
+    annotated["Sibling_BH_Same"] = True
+    annotated["Sibling_Divergence_Skipped"] = False
+    annotated["Sibling_Divergence_P_Value"] = 1.0
+    for node in (("root", "B") if root_open else ("B",)):
+        annotated.loc[node, "Sibling_BH_Different"] = True
+        annotated.loc[node, "Sibling_BH_Same"] = False
+        annotated.loc[node, "Sibling_Divergence_P_Value"] = 0.001
+    return tree, annotated, leaf_data, feature_space
 
 
 def _recording_selected_root(calls: list[tuple[object, ...]], selected_p_value: float):
@@ -211,17 +234,7 @@ def test_selective_permutation_guard_closes_open_internal_context(
 def test_selective_permutation_guard_closes_only_passthrough_descendant(
     monkeypatch,
 ) -> None:
-    tree, annotations_df, leaf_data = _build_passthrough_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-    annotated = annotations_df.copy()
-    annotated["Child_Parent_Divergence_Significant"] = True
-    annotated["Sibling_BH_Different"] = False
-    annotated["Sibling_BH_Same"] = True
-    annotated["Sibling_Divergence_Skipped"] = False
-    annotated["Sibling_Divergence_P_Value"] = 1.0
-    annotated.loc["B", "Sibling_BH_Different"] = True
-    annotated.loc["B", "Sibling_BH_Same"] = False
-    annotated.loc["B", "Sibling_Divergence_P_Value"] = 0.001
+    tree, annotated, leaf_data, feature_space = _passthrough_guard_inputs()
 
     calls: list[tuple[object, ...]] = []
 
@@ -255,17 +268,7 @@ def test_selective_permutation_guard_closes_only_passthrough_descendant(
 def test_global_selected_family_guard_closes_passthrough_descendant(
     monkeypatch,
 ) -> None:
-    tree, annotations_df, leaf_data = _build_passthrough_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-    annotated = annotations_df.copy()
-    annotated["Child_Parent_Divergence_Significant"] = True
-    annotated["Sibling_BH_Different"] = False
-    annotated["Sibling_BH_Same"] = True
-    annotated["Sibling_Divergence_Skipped"] = False
-    annotated["Sibling_Divergence_P_Value"] = 1.0
-    annotated.loc["B", "Sibling_BH_Different"] = True
-    annotated.loc["B", "Sibling_BH_Same"] = False
-    annotated.loc["B", "Sibling_Divergence_P_Value"] = 0.001
+    tree, annotated, leaf_data, feature_space = _passthrough_guard_inputs()
 
     seen: dict[str, object] = {}
 
@@ -310,17 +313,7 @@ def test_global_selected_family_guard_closes_passthrough_descendant(
 def test_global_selected_family_guard_keeps_significant_passthrough_descendant(
     monkeypatch,
 ) -> None:
-    tree, annotations_df, leaf_data = _build_passthrough_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-    annotated = annotations_df.copy()
-    annotated["Child_Parent_Divergence_Significant"] = True
-    annotated["Sibling_BH_Different"] = False
-    annotated["Sibling_BH_Same"] = True
-    annotated["Sibling_Divergence_Skipped"] = False
-    annotated["Sibling_Divergence_P_Value"] = 1.0
-    annotated.loc["B", "Sibling_BH_Different"] = True
-    annotated.loc["B", "Sibling_BH_Same"] = False
-    annotated.loc["B", "Sibling_Divergence_P_Value"] = 0.001
+    tree, annotated, leaf_data, feature_space = _passthrough_guard_inputs()
 
     def fake_selected_family(*_args, **kwargs):
         return {
@@ -356,17 +349,7 @@ def test_global_selected_family_guard_keeps_significant_passthrough_descendant(
 def test_refined_global_selected_family_guard_refines_floor_p_value(
     monkeypatch,
 ) -> None:
-    tree, annotations_df, leaf_data = _build_passthrough_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-    annotated = annotations_df.copy()
-    annotated["Child_Parent_Divergence_Significant"] = True
-    annotated["Sibling_BH_Different"] = False
-    annotated["Sibling_BH_Same"] = True
-    annotated["Sibling_Divergence_Skipped"] = False
-    annotated["Sibling_Divergence_P_Value"] = 1.0
-    annotated.loc["B", "Sibling_BH_Different"] = True
-    annotated.loc["B", "Sibling_BH_Same"] = False
-    annotated.loc["B", "Sibling_Divergence_P_Value"] = 0.001
+    tree, annotated, leaf_data, feature_space = _passthrough_guard_inputs()
 
     calls: list[int] = []
 
@@ -510,32 +493,25 @@ def test_fast_categorical_coordinate_p_value_matches_canonical_contrast() -> Non
     assert fast == pytest.approx(canonical)
 
 
-def test_selective_permutation_passthrough_scope_keeps_descendant_after_open_root(
+@pytest.mark.parametrize(
+    ("selected_p_value", "expected_root_open"),
+    [
+        pytest.param(0.01, True, id="open-root-keeps-descendant"),
+        pytest.param(0.50, False, id="blocked-root-skips-descendant"),
+    ],
+)
+def test_selective_permutation_passthrough_scope_respects_root_guard_outcome(
     monkeypatch,
+    selected_p_value: float,
+    expected_root_open: bool,
 ) -> None:
-    tree, annotations_df, leaf_data = _build_passthrough_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-    annotated = annotations_df.copy()
-    annotated["Child_Parent_Divergence_Significant"] = True
-    annotated["Sibling_BH_Different"] = False
-    annotated["Sibling_BH_Same"] = True
-    annotated["Sibling_Divergence_Skipped"] = False
-    annotated["Sibling_Divergence_P_Value"] = 1.0
-    annotated.loc["root", "Sibling_BH_Different"] = True
-    annotated.loc["root", "Sibling_BH_Same"] = False
-    annotated.loc["root", "Sibling_Divergence_P_Value"] = 0.001
-    annotated.loc["B", "Sibling_BH_Different"] = True
-    annotated.loc["B", "Sibling_BH_Same"] = False
-    annotated.loc["B", "Sibling_Divergence_P_Value"] = 0.001
+    tree, annotated, leaf_data, feature_space = _passthrough_guard_inputs(root_open=True)
 
     calls: list[tuple[object, ...]] = []
-
-    fake_selected_root = _recording_selected_root(calls, 0.01)
-
     monkeypatch.setattr(
         guard_module,
         "selected_root_permutation_p_value",
-        fake_selected_root,
+        _recording_selected_root(calls, selected_p_value),
     )
 
     guarded = apply_root_selective_permutation_guard(
@@ -551,53 +527,9 @@ def test_selective_permutation_passthrough_scope_keeps_descendant_after_open_roo
     )
 
     assert calls == [("A", "C", "D")]
-    assert bool(guarded.loc["root", "Sibling_BH_Different"]) is True
-    assert bool(guarded.loc["B", "Sibling_BH_Different"]) is True
-    assert guarded.loc["B", "Selective_Permutation_Guard_Scope"] == ""
-
-
-def test_selective_permutation_passthrough_scope_skips_guard_blocked_ancestor(
-    monkeypatch,
-) -> None:
-    tree, annotations_df, leaf_data = _build_passthrough_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-    annotated = annotations_df.copy()
-    annotated["Child_Parent_Divergence_Significant"] = True
-    annotated["Sibling_BH_Different"] = False
-    annotated["Sibling_BH_Same"] = True
-    annotated["Sibling_Divergence_Skipped"] = False
-    annotated["Sibling_Divergence_P_Value"] = 1.0
-    annotated.loc["root", "Sibling_BH_Different"] = True
-    annotated.loc["root", "Sibling_BH_Same"] = False
-    annotated.loc["root", "Sibling_Divergence_P_Value"] = 0.001
-    annotated.loc["B", "Sibling_BH_Different"] = True
-    annotated.loc["B", "Sibling_BH_Same"] = False
-    annotated.loc["B", "Sibling_Divergence_P_Value"] = 0.001
-
-    calls: list[tuple[object, ...]] = []
-
-    fake_selected_root = _recording_selected_root(calls, 0.50)
-
-    monkeypatch.setattr(
-        guard_module,
-        "selected_root_permutation_p_value",
-        fake_selected_root,
+    assert bool(guarded.loc["root", "Sibling_BH_Different"]) is expected_root_open
+    assert bool(guarded.loc["root", "Root_Selective_Permutation_Guard_Blocked"]) is (
+        not expected_root_open
     )
-
-    guarded = apply_root_selective_permutation_guard(
-        tree,
-        annotated,
-        leaf_data,
-        feature_space,
-        method="fixed_coordinate_bh",
-        bootstrap_replicates=5,
-        seed=123,
-        alpha=0.01,
-        scope="passthrough_descendant",
-    )
-
-    assert calls == [("A", "C", "D")]
-    assert bool(guarded.loc["root", "Sibling_BH_Different"]) is False
-    assert bool(guarded.loc["root", "Root_Selective_Permutation_Guard_Blocked"]) is True
     assert bool(guarded.loc["B", "Sibling_BH_Different"]) is True
     assert guarded.loc["B", "Selective_Permutation_Guard_Scope"] == ""

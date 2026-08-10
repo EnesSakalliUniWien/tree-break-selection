@@ -13,7 +13,8 @@ def test_default_benchmark_cases_declare_generator() -> None:
         assert "generator" in case
 
 
-def test_generated_case_metadata_names_source_family_and_representation() -> None:
+@pytest.mark.slow
+def test_generated_case_metadata_and_recipe_geometry_match_contract() -> None:
     for case in get_default_test_cases():
         _data_df, _labels, _x_original, metadata = generate_case_data(case)
         assert isinstance(metadata["source_family"], str)
@@ -30,11 +31,6 @@ def test_generated_case_metadata_names_source_family_and_representation() -> Non
         assert metadata["scientific_caution"]
         assert isinstance(metadata["recommended_simulation_family"], str)
         assert metadata["recommended_simulation_family"]
-
-
-def test_case_recipe_geometry_matches_generated_metadata() -> None:
-    for case in get_default_test_cases():
-        _data_df, _labels, _x_original, metadata = generate_case_data(case)
         assert case_recipe_geometry(case) == (
             int(metadata["n_samples"]),
             int(metadata["n_features"]),

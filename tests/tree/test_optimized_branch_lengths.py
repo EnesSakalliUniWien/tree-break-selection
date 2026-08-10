@@ -173,8 +173,18 @@ def test_fixed_topology_nnls_matches_dense_scipy_nnls_on_tiny_tree() -> None:
     )
 
 
-def test_fixed_topology_nnls_does_not_mutate_tree_when_solver_does_not_converge(
+@pytest.mark.parametrize(
+    ("apply_nonconverged", "expected_applied", "expected_branch_length"),
+    [
+        pytest.param(None, False, 0.5, id="default-rejects-solution"),
+        pytest.param(True, True, 9.0, id="explicitly-applies-solution"),
+    ],
+)
+def test_fixed_topology_nnls_nonconverged_solution_policy(
     monkeypatch: pytest.MonkeyPatch,
+    apply_nonconverged: bool | None,
+    expected_applied: bool,
+    expected_branch_length: float,
 ) -> None:
     tree = _small_binary_tree()
     geometry = _prepared_geometry()
@@ -194,55 +204,26 @@ def test_fixed_topology_nnls_does_not_mutate_tree_when_solver_does_not_converge(
         fake_lsq_linear,
     )
 
+    kwargs = {} if apply_nonconverged is None else {"apply_nonconverged": apply_nonconverged}
     result = fit_fixed_topology_nnls_branch_lengths(
         tree,
         geometry,
         target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
         pair_sample_size=None,
+        **kwargs,
     )
 
     assert result.status == "solver_not_converged"
-    assert result.applied_to_tree is False
-    assert result.apply_nonconverged is False
-    assert {attrs["branch_length"] for _, _, attrs in tree.edges(data=True)} == {0.5}
-    assert all("linkage_branch_length" not in attrs for _, _, attrs in tree.edges(data=True))
-    assert all("branch_length_source" not in attrs for _, _, attrs in tree.edges(data=True))
-    assert tree.graph["branch_length_optimization"]["applied_to_tree"] is False
-
-
-def test_fixed_topology_nnls_can_explicitly_apply_nonconverged_solution(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    tree = _small_binary_tree()
-    geometry = _prepared_geometry()
-
-    def fake_lsq_linear(design: object, *_args: object, **_kwargs: object) -> SimpleNamespace:
-        return SimpleNamespace(
-            x=np.full(design.shape[1], 9.0, dtype=float),
-            success=False,
-            cost=123.0,
-            optimality=456.0,
-            nit=7,
-            message="forced non-convergence",
-        )
-
-    monkeypatch.setattr(
-        "tree_break_selection.tree.optimized_branch_lengths.lsq_linear",
-        fake_lsq_linear,
-    )
-
-    result = fit_fixed_topology_nnls_branch_lengths(
-        tree,
-        geometry,
-        target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
-        pair_sample_size=None,
-        apply_nonconverged=True,
-    )
-
-    assert result.status == "solver_not_converged"
-    assert result.applied_to_tree is True
-    assert result.apply_nonconverged is True
-    assert {attrs["branch_length"] for _, _, attrs in tree.edges(data=True)} == {9.0}
-    assert {
-        tree.edges[parent, child]["branch_length_source"] for parent, child in tree.edges()
-    } == {BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS}
+    assert result.applied_to_tree is expected_applied
+    assert result.apply_nonconverged is expected_applied
+    assert {attrs["branch_length"] for _, _, attrs in tree.edges(data=True)} == {
+        expected_branch_length
+    }
+    assert tree.graph["branch_length_optimization"]["applied_to_tree"] is expected_applied
+    if expected_applied:
+        assert {
+            tree.edges[parent, child]["branch_length_source"] for parent, child in tree.edges()
+        } == {BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS}
+    else:
+        assert all("linkage_branch_length" not in attrs for _, _, attrs in tree.edges(data=True))
+        assert all("branch_length_source" not in attrs for _, _, attrs in tree.edges(data=True))

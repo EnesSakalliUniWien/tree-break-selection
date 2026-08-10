@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 from benchmarks.shared.runners.tbs_diffusion_runner import (
     GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_CONNECTIVITY_MINIMUM,
     GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_FRAGMENTATION_GUARD,
@@ -45,8 +46,8 @@ def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix():
     assert geometry.metadata["epsilon"] > 0
 
 
-def test_pydiffmap_neighbor_resolver_offsets_exact_duplicate_rows():
-    values = np.vstack(
+def _duplicate_neighbor_values() -> np.ndarray:
+    return np.vstack(
         [
             np.zeros((4, 5)),
             np.column_stack(
@@ -61,38 +62,25 @@ def test_pydiffmap_neighbor_resolver_offsets_exact_duplicate_rows():
         ]
     )
 
+
+@pytest.mark.parametrize(
+    ("bandwidth_type", "expected_k"),
+    [
+        pytest.param("-1/(d+2)", 11, id="adaptive-bandwidth-offsets-duplicates"),
+        pytest.param(None, 10, id="fixed-bandwidth-preserves-requested-k"),
+    ],
+)
+def test_pydiffmap_neighbor_resolver_handles_duplicate_rows_by_bandwidth_policy(
+    bandwidth_type: str | None,
+    expected_k: int,
+) -> None:
     selected_k = _resolve_pydiffmap_neighbor_search_k(
-        values,
+        _duplicate_neighbor_values(),
         k_neighbors=10,
-        bandwidth_type="-1/(d+2)",
+        bandwidth_type=bandwidth_type,
     )
 
-    assert selected_k == 11
-
-
-def test_pydiffmap_neighbor_resolver_preserves_fixed_bandwidth_k():
-    values = np.vstack(
-        [
-            np.zeros((4, 5)),
-            np.column_stack(
-                [
-                    np.arange(1, 57, dtype=float),
-                    np.arange(101, 157, dtype=float),
-                    np.arange(201, 257, dtype=float),
-                    np.arange(301, 357, dtype=float),
-                    np.arange(401, 457, dtype=float),
-                ]
-            ),
-        ]
-    )
-
-    selected_k = _resolve_pydiffmap_neighbor_search_k(
-        values,
-        k_neighbors=10,
-        bandwidth_type=None,
-    )
-
-    assert selected_k == 10
+    assert selected_k == expected_k
 
 
 def test_pydiffmap_neighbor_resolver_rejects_insufficient_positive_neighbors():

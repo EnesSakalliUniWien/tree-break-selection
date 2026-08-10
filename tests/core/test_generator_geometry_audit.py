@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from benchmarks.diagnostics.generators.case_geometry_audit import (
     audit_case,
     build_generator_geometry_audit,
@@ -57,6 +58,7 @@ def test_generator_geometry_audit_records_graph_assumption_warning() -> None:
     assert row.recommended_simulation_family == "graph_sbm_or_lfr_with_graph_native_distances"
 
 
+@pytest.mark.slow
 def test_build_generator_geometry_audit_has_one_row_per_default_case() -> None:
     frame = build_generator_geometry_audit()
 

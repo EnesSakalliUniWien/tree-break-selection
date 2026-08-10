@@ -506,6 +506,32 @@ def test_continuous_covariance_rejects_non_psd_blocks() -> None:
         )
 
 
+def _assert_grouped_categorical_null_whitening_matches_block_formula(
+    observations: np.ndarray,
+    null_distribution: np.ndarray,
+    feature_space: FeatureSpace,
+) -> None:
+    grouped = contrast_covariance_module._build_grouped_categorical_null_whitened_tangent_matrix(
+        observations,
+        null_distribution,
+        feature_space,
+        ridge=1e-12,
+    )
+    expected = np.column_stack(
+        [
+            contrast_covariance_module._block_null_whitened_tangent_matrix(
+                observations,
+                null_distribution,
+                block,
+                continuous_covariance_by_block={},
+                ridge=1e-12,
+            )
+            for block in feature_space.blocks
+        ]
+    )
+    np.testing.assert_allclose(grouped, expected, rtol=1e-13, atol=1e-13)
+
+
 def test_grouped_categorical_null_whitening_matches_block_formula() -> None:
     feature_space = _make_categorical_space(n_features=4, n_categories=3)
     observations_blocks = np.array(
@@ -528,30 +554,11 @@ def test_grouped_categorical_null_whitening_matches_block_formula() -> None:
     observations = observations_blocks.reshape(observations_blocks.shape[0], -1)
     null_distribution = null_blocks.ravel()
 
-    assert hasattr(
-        contrast_covariance_module,
-        "_build_grouped_categorical_null_whitened_tangent_matrix",
-    )
-    grouped = contrast_covariance_module._build_grouped_categorical_null_whitened_tangent_matrix(
+    _assert_grouped_categorical_null_whitening_matches_block_formula(
         observations,
         null_distribution,
         feature_space,
-        ridge=1e-12,
     )
-
-    expected = np.column_stack(
-        [
-            contrast_covariance_module._block_null_whitened_tangent_matrix(
-                observations,
-                null_distribution,
-                block,
-                continuous_covariance_by_block={},
-                ridge=1e-12,
-            )
-            for block in feature_space.blocks
-        ]
-    )
-    np.testing.assert_allclose(grouped, expected, rtol=1e-13, atol=1e-13)
 
 
 def test_grouped_categorical_null_whitening_supports_mixed_category_counts() -> None:
@@ -579,30 +586,11 @@ def test_grouped_categorical_null_whitening_supports_mixed_category_counts() -> 
         dtype=np.float64,
     )
 
-    assert hasattr(
-        contrast_covariance_module,
-        "_build_grouped_categorical_null_whitened_tangent_matrix",
-    )
-    grouped = contrast_covariance_module._build_grouped_categorical_null_whitened_tangent_matrix(
+    _assert_grouped_categorical_null_whitening_matches_block_formula(
         observations,
         null_distribution,
         feature_space,
-        ridge=1e-12,
     )
-
-    expected = np.column_stack(
-        [
-            contrast_covariance_module._block_null_whitened_tangent_matrix(
-                observations,
-                null_distribution,
-                block,
-                continuous_covariance_by_block={},
-                ridge=1e-12,
-            )
-            for block in feature_space.blocks
-        ]
-    )
-    np.testing.assert_allclose(grouped, expected, rtol=1e-13, atol=1e-13)
 
 
 def test_bernoulli_is_two_category_multinomial_for_sibling_whitening() -> None:

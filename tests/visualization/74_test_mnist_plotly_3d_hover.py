@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
+import pytest
 from benchmarks.experiments.mnist.run_higher_categories import (
     create_plotly_higher_category_plot_3d,
 )
@@ -56,6 +57,19 @@ def _load_mnist_report_module():
     return importlib.import_module("applications.mnist.plot_interactive")
 
 
+def _radial_tree_inputs() -> tuple[pd.DataFrame, np.ndarray]:
+    assignments = pd.DataFrame(
+        {
+            "sample": ["Sample_0", "Sample_1", "Sample_2", "Sample_3"],
+            "true_digit": [0, 0, 9, 9],
+            "best": [0, 0, 1, 1],
+        }
+    )
+    feature_matrix = np.array([[0.0], [0.1], [10.0], [10.1]], dtype=float)
+    return assignments, feature_matrix
+
+
+@pytest.mark.slow
 def test_2d_report_hover_shows_number_before_sample():
     report = _load_mnist_report_module()
     frame = pd.DataFrame(
@@ -115,14 +129,7 @@ def test_2d_image_inspector_embeds_digit_pixels(monkeypatch, tmp_path):
 
 def test_radial_tree_context_recovers_final_cluster_boundaries():
     report = _load_mnist_report_module()
-    assignments = pd.DataFrame(
-        {
-            "sample": ["Sample_0", "Sample_1", "Sample_2", "Sample_3"],
-            "true_digit": [0, 0, 9, 9],
-            "best": [0, 0, 1, 1],
-        }
-    )
-    feature_matrix = np.array([[0.0], [0.1], [10.0], [10.1]], dtype=float)
+    assignments, feature_matrix = _radial_tree_inputs()
 
     context = report._build_tbs_radial_tree_context(
         assignments,
@@ -144,14 +151,7 @@ def test_radial_tree_context_recovers_final_cluster_boundaries():
 
 def test_full_radial_tree_context_includes_all_linkage_nodes():
     report = _load_mnist_report_module()
-    assignments = pd.DataFrame(
-        {
-            "sample": ["Sample_0", "Sample_1", "Sample_2", "Sample_3"],
-            "true_digit": [0, 0, 9, 9],
-            "best": [0, 0, 1, 1],
-        }
-    )
-    feature_matrix = np.array([[0.0], [0.1], [10.0], [10.1]], dtype=float)
+    assignments, feature_matrix = _radial_tree_inputs()
 
     context = report._build_tbs_radial_tree_context(
         assignments,

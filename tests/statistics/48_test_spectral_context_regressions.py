@@ -2,35 +2,40 @@
 
 from __future__ import annotations
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
+)
+
+
+def _leaf_tree_and_data() -> tuple[nx.DiGraph, pd.DataFrame]:
+    tree = nx.DiGraph()
+    tree.add_edges_from([("root", "L0"), ("root", "L1")])
+    for leaf in ("L0", "L1"):
+        tree.nodes[leaf]["label"] = leaf
+        tree.nodes[leaf]["is_leaf"] = True
+    leaf_data = pd.DataFrame([[0.0], [1.0]], index=["L0", "L1"], columns=["F0"])
+    return tree, leaf_data
 
 
 class TestSpectralContextRegressions:
     """Verify edge-gate spectral context invariants."""
 
-    def test_edge_gate_spectral_minimum_projection_dimension_is_fixed(self, monkeypatch):
+    def test_edge_gate_spectral_minimum_projection_dimension_is_fixed(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """The edge gate should pass the fixed spectral floor into the spectral estimator."""
-        import networkx as nx
         import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
 
-        tree = nx.DiGraph()
-        tree.add_edge("root", "L0")
-        tree.add_edge("root", "L1")
-        tree.nodes["L0"]["label"] = "L0"
-        tree.nodes["L1"]["label"] = "L1"
-        tree.nodes["L0"]["is_leaf"] = True
-        tree.nodes["L1"]["is_leaf"] = True
-        leaf_data = pd.DataFrame([[0.0], [1.0]], index=["L0", "L1"], columns=["F0"])
+        tree, leaf_data = _leaf_tree_and_data()
 
         captured: list[int] = []
 
         def _fake_compute_spectral_decomposition(*args, **kwargs):
-            from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
-                SpectralDecompositionResult,
-            )
-
             captured.append(kwargs["minimum_projection_dimension"])
             return SpectralDecompositionResult(
                 test_projection_dimensions_by_node={},
@@ -51,32 +56,45 @@ class TestSpectralContextRegressions:
 
         assert captured == [2]
 
-    def test_edge_gate_spectral_context_requires_paired_projection_eigenvalue_keys(
-        self, monkeypatch
-    ):
-        """Edge-gate PCA projections and eigenvalues must be keyed identically."""
-        import networkx as nx
+    @pytest.mark.parametrize(
+        ("projection_dimension", "projections", "eigenvalues", "message"),
+        [
+            pytest.param(
+                1,
+                {"root": np.array([[1.0]])},
+                {},
+                "matching PCA projection/eigenvalue node keys",
+                id="paired-node-keys",
+            ),
+            pytest.param(
+                2,
+                {"root": np.array([[1.0]])},
+                {"root": np.array([1.0, 0.5])},
+                "projection/eigenvalue row count mismatch",
+                id="matching-row-counts",
+            ),
+        ],
+    )
+    def test_edge_gate_spectral_context_validates_projection_eigenvalue_pairing(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        projection_dimension: int,
+        projections: dict[str, np.ndarray],
+        eigenvalues: dict[str, np.ndarray],
+        message: str,
+    ) -> None:
         import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
 
-        tree = nx.DiGraph()
-        tree.add_edges_from([("root", "L0"), ("root", "L1")])
-        for leaf in ["L0", "L1"]:
-            tree.nodes[leaf]["label"] = leaf
-            tree.nodes[leaf]["is_leaf"] = True
-        leaf_data = pd.DataFrame([[0.0], [1.0]], index=["L0", "L1"], columns=["F0"])
+        tree, leaf_data = _leaf_tree_and_data()
 
         def _fake_compute_spectral_decomposition(*args, **kwargs):
-            from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
-                SpectralDecompositionResult,
-            )
-
             return SpectralDecompositionResult(
-                test_projection_dimensions_by_node={"root": 1},
-                raw_mp_signal_counts_by_node={"root": 1},
+                test_projection_dimensions_by_node={"root": projection_dimension},
+                raw_mp_signal_counts_by_node={"root": projection_dimension},
                 effective_independent_rows_by_node={"root": 2},
                 mp_threshold_rows_by_node={"root": 2},
-                principal_component_projections_by_node={"root": np.array([[1.0]])},
-                principal_component_eigenvalues_by_node={},
+                principal_component_projections_by_node=projections,
+                principal_component_eigenvalues_by_node=eigenvalues,
             )
 
         monkeypatch.setattr(
@@ -85,55 +103,17 @@ class TestSpectralContextRegressions:
             _fake_compute_spectral_decomposition,
         )
 
-        with pytest.raises(ValueError, match="matching PCA projection/eigenvalue node keys"):
+        with pytest.raises(ValueError, match=message):
             spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
 
-    def test_edge_gate_spectral_context_requires_projection_rows_to_match_eigenvalues(
-        self, monkeypatch
-    ):
-        """Edge-gate PCA projection row count must match the whitening eigenvalues."""
-        import networkx as nx
-        import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
-
-        tree = nx.DiGraph()
-        tree.add_edges_from([("root", "L0"), ("root", "L1")])
-        for leaf in ["L0", "L1"]:
-            tree.nodes[leaf]["label"] = leaf
-            tree.nodes[leaf]["is_leaf"] = True
-        leaf_data = pd.DataFrame([[0.0], [1.0]], index=["L0", "L1"], columns=["F0"])
-
-        def _fake_compute_spectral_decomposition(*args, **kwargs):
-            from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
-                SpectralDecompositionResult,
-            )
-
-            return SpectralDecompositionResult(
-                test_projection_dimensions_by_node={"root": 2},
-                raw_mp_signal_counts_by_node={"root": 2},
-                effective_independent_rows_by_node={"root": 2},
-                mp_threshold_rows_by_node={"root": 2},
-                principal_component_projections_by_node={"root": np.array([[1.0]])},
-                principal_component_eigenvalues_by_node={"root": np.array([1.0, 0.5])},
-            )
-
-        monkeypatch.setattr(
-            spectral_module,
-            "compute_spectral_decomposition",
-            _fake_compute_spectral_decomposition,
-        )
-
-        with pytest.raises(ValueError, match="projection/eigenvalue row count mismatch"):
-            spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
-
-    def test_spectral_context_mirrors_every_decomposition_field(self, monkeypatch):
+    def test_spectral_context_mirrors_every_decomposition_field(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """The projection-to-gate boundary must forward every field, not silently default it."""
         import dataclasses
 
-        import networkx as nx
         import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
-        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
-            SpectralDecompositionResult,
-        )
 
         names = {field.name for field in dataclasses.fields(SpectralDecompositionResult)}
         context_names = {

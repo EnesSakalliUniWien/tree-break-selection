@@ -92,6 +92,7 @@ def test_non_empirical_and_supported_gates_do_not_report_unsupported():
     )
 
 
+@pytest.mark.slow
 def test_dense_high_dimensional_empirical_gate_returns_unsupported(
     dense_highd_case_data: tuple[pd.DataFrame, np.ndarray],
 ):
@@ -115,6 +116,7 @@ def test_dense_high_dimensional_empirical_gate_returns_unsupported(
     assert result.unsupported_reason.evidence.upstream_rejected_count == 78
 
 
+@pytest.mark.slow
 def test_dense_high_dimensional_fixed_coordinate_control_remains_ok(
     dense_highd_case_data: tuple[pd.DataFrame, np.ndarray],
 ):

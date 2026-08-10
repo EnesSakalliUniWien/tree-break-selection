@@ -83,6 +83,36 @@ def _write_label_files(
         )
 
 
+def _computed_result_record(*, test_case: int, case_id: str) -> ComputedResultRecord:
+    data = pd.DataFrame({"x": [0, 1, 2, 3]}, index=["S0", "S1", "S2", "S3"])
+    return ComputedResultRecord(
+        test_case_num=test_case,
+        method="tbs_diffusion_graphtools_adaptive_nnls",
+        method_name="TBS",
+        run_id=_run_id("weighted"),
+        benchmark_class="optional_gpl",
+        benchmark_grid="graphtools_adaptive_k_tree_strategy",
+        benchmark_repeat=0,
+        params={},
+        ari=1.0,
+        nmi=1.0,
+        purity=1.0,
+        outlier_precision=np.nan,
+        outlier_recall=np.nan,
+        outlier_f1=np.nan,
+        singleton_outlier_isolated=np.nan,
+        grouped_outlier_cluster_recovered=np.nan,
+        labels=np.array([0, 0, 1, 1]),
+        data=data,
+        meta={"name": case_id},
+        x_original=np.zeros((4, 1)),
+        y_true=np.array([0, 0, 1, 1]),
+        tree=None,
+        decomposition=None,
+        annotations=None,
+    )
+
+
 def test_write_tree_consensus_artifacts_outputs_expected_files(tmp_path: Path) -> None:
     results = pd.concat(
         [
@@ -145,33 +175,7 @@ def test_write_tree_consensus_artifacts_rejects_duplicate_case_run(tmp_path: Pat
 
 
 def test_export_tree_consensus_label_files_writes_stable_columns(tmp_path: Path) -> None:
-    data = pd.DataFrame({"x": [0, 1, 2, 3]}, index=["S0", "S1", "S2", "S3"])
-    record = ComputedResultRecord(
-        test_case_num=7,
-        method="tbs_diffusion_graphtools_adaptive_nnls",
-        method_name="TBS",
-        run_id=_run_id("weighted"),
-        benchmark_class="optional_gpl",
-        benchmark_grid="graphtools_adaptive_k_tree_strategy",
-        benchmark_repeat=0,
-        params={},
-        ari=1.0,
-        nmi=1.0,
-        purity=1.0,
-        outlier_precision=np.nan,
-        outlier_recall=np.nan,
-        outlier_f1=np.nan,
-        singleton_outlier_isolated=np.nan,
-        grouped_outlier_cluster_recovered=np.nan,
-        labels=np.array([0, 0, 1, 1]),
-        data=data,
-        meta={"name": "case_export"},
-        x_original=np.zeros((4, 1)),
-        y_true=np.array([0, 0, 1, 1]),
-        tree=None,
-        decomposition=None,
-        annotations=None,
-    )
+    record = _computed_result_record(test_case=7, case_id="case_export")
 
     paths = export_tree_consensus_label_files([record], tmp_path)
 
@@ -207,33 +211,8 @@ def test_export_tree_consensus_label_files_rejects_malformed_records(tmp_path: P
 def test_run_single_case_exports_tree_consensus_labels(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    data = pd.DataFrame({"x": [0, 1, 2, 3]}, index=["S0", "S1", "S2", "S3"])
-    record = ComputedResultRecord(
-        test_case_num=3,
-        method="tbs_diffusion_graphtools_adaptive_nnls",
-        method_name="TBS",
-        run_id=_run_id("weighted"),
-        benchmark_class="optional_gpl",
-        benchmark_grid="graphtools_adaptive_k_tree_strategy",
-        benchmark_repeat=0,
-        params={},
-        ari=1.0,
-        nmi=1.0,
-        purity=1.0,
-        outlier_precision=np.nan,
-        outlier_recall=np.nan,
-        outlier_f1=np.nan,
-        singleton_outlier_isolated=np.nan,
-        grouped_outlier_cluster_recovered=np.nan,
-        labels=np.array([0, 0, 1, 1]),
-        data=data,
-        meta={"name": "case_single"},
-        x_original=np.zeros((4, 1)),
-        y_true=np.array([0, 0, 1, 1]),
-        tree=None,
-        decomposition=None,
-        annotations=None,
-    )
+    record = _computed_result_record(test_case=3, case_id="case_single")
+    data = record.data
     row = build_benchmark_result_row(
         test_case=3,
         case_id="case_single",

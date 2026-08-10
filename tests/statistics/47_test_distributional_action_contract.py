@@ -91,29 +91,6 @@ def test_split_action_decomposes_total_inertia_recursively_across_topology() -> 
     assert np.isclose(total_inertia, left.action + right.action + root.action)
 
 
-def test_edge_action_is_independent_of_branch_length() -> None:
-    parent_mean = np.array([0.0, 0.0])
-    child_mean = np.array([3.0, 4.0])
-    child_count = 5
-    short_branch_length = 0.1
-    long_branch_length = 10.0
-
-    short_branch_action = edge_distributional_action(
-        parent_mean,
-        child_mean,
-        child_count,
-    )
-    long_branch_action = edge_distributional_action(
-        parent_mean,
-        child_mean,
-        child_count,
-    )
-
-    assert short_branch_length != long_branch_length
-    assert short_branch_action == long_branch_action
-    assert np.isclose(short_branch_action, 125.0)
-
-
 def test_edge_action_changes_when_distribution_moves_with_same_branch_length() -> None:
     parent_mean = np.array([0.0, 0.0])
     child_count = 5

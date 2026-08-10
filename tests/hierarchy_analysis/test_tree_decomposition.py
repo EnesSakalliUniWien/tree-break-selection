@@ -51,25 +51,6 @@ class TestTreeDecompositionTraversal:
         cluster_leaf_sets = sorted(_cluster_leaf_sets(result), key=lambda leaves: min(leaves))
         assert cluster_leaf_sets == [{"L1"}, {"L2"}, {"R1"}, {"R2"}]
 
-    def test_direct_annotations_do_not_claim_unknown_alpha(self) -> None:
-        tree = _make_binary_tree()
-        annotations_df = _make_annotations(
-            tree,
-            edge_divergent={node: True for node in tree.nodes},
-            sibling_different={node: False for node in tree.nodes},
-        )
-
-        decomposer = TreeDecomposition(
-            tree=tree,
-            annotations_df=annotations_df,
-            passthrough=False,
-        )
-
-        result = decomposer.decompose_tree()
-
-        assert result["independence_analysis"]["edge_alpha"] is None
-        assert result["independence_analysis"]["sibling_alpha"] is None
-
     def test_decompose_tree_default_trace_level_is_compact(self) -> None:
         tree = _make_binary_tree()
         annotations_df = _make_annotations(

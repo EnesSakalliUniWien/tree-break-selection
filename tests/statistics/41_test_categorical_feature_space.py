@@ -136,6 +136,25 @@ def _continuous_leaf_data() -> pd.DataFrame:
     )
 
 
+def _capture_spectral_input(monkeypatch: pytest.MonkeyPatch) -> list[np.ndarray]:
+    captured_matrices: list[np.ndarray] = []
+
+    def capture(
+        data_matrix: np.ndarray,
+        *,
+        compute_eigenvectors: bool,
+    ) -> None:
+        captured_matrices.append(np.asarray(data_matrix, dtype=np.float64).copy())
+        return None
+
+    monkeypatch.setattr(
+        "tree_break_selection.hierarchy_analysis.statistics.projection.spectral."
+        "marchenko_pastur.eigendecompose_covariance",
+        capture,
+    )
+    return captured_matrices
+
+
 def test_populate_node_divergences_stores_categorical_blocks_for_one_hot_columns() -> None:
     """Flat one-hot columns are one categorical block contract, not Bernoulli blocks."""
     tree = _simple_binary_tree()
@@ -453,21 +472,7 @@ def test_categorical_spectral_decomposition_uses_parent_null_whitened_tangent_ro
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
     assert feature_space is not None
     tree.populate_node_divergences(leaf_data, feature_space=feature_space)
-    captured_matrices: list[np.ndarray] = []
-
-    def _capture_eigendecompose_covariance(
-        data_matrix: np.ndarray,
-        *,
-        compute_eigenvectors: bool,
-    ):
-        captured_matrices.append(np.asarray(data_matrix, dtype=np.float64).copy())
-        return None
-
-    monkeypatch.setattr(
-        "tree_break_selection.hierarchy_analysis.statistics.projection.spectral."
-        "marchenko_pastur.eigendecompose_covariance",
-        _capture_eigendecompose_covariance,
-    )
+    captured_matrices = _capture_spectral_input(monkeypatch)
 
     compute_spectral_decomposition(
         tree,
@@ -496,21 +501,7 @@ def test_continuous_spectral_decomposition_uses_parent_null_whitened_tangent_row
     leaf_data = _continuous_leaf_data()
     feature_space = _continuous_feature_space()
     tree.populate_node_divergences(leaf_data, feature_space=feature_space)
-    captured_matrices: list[np.ndarray] = []
-
-    def _capture_eigendecompose_covariance(
-        data_matrix: np.ndarray,
-        *,
-        compute_eigenvectors: bool,
-    ):
-        captured_matrices.append(np.asarray(data_matrix, dtype=np.float64).copy())
-        return None
-
-    monkeypatch.setattr(
-        "tree_break_selection.hierarchy_analysis.statistics.projection.spectral."
-        "marchenko_pastur.eigendecompose_covariance",
-        _capture_eigendecompose_covariance,
-    )
+    captured_matrices = _capture_spectral_input(monkeypatch)
 
     compute_spectral_decomposition(
         tree,

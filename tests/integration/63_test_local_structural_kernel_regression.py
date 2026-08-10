@@ -16,41 +16,26 @@ from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils impo
 
 
 @pytest.mark.slow
-def test_strict_sibling_calibration_fails_closed_gauss_null_large_without_support() -> None:
-    case = next(case for case in get_default_test_cases() if case["name"] == "gauss_null_large")
+@pytest.mark.parametrize(
+    ("case_name", "forward_feature_space"),
+    [
+        pytest.param("gauss_null_large", False, id="untyped-gaussian-binary"),
+        pytest.param("cat_highcard_20cat_4c", True, id="categorical-feature-space"),
+    ],
+)
+def test_strict_sibling_calibration_fails_closed_without_internal_support(
+    case_name: str,
+    forward_feature_space: bool,
+) -> None:
+    case = next(case for case in get_default_test_cases() if case["name"] == case_name)
     context = build_tbs_tree_context(case, populate_node_distributions=False)
 
-    result = run_tbs_on_distance(context.data, context.distance_condensed, DEFAULT_SIBLING_ALPHA)
-
-    assert result.status == "unsupported"
-    assert result.labels is None
-    assert result.found_clusters == 0
-    assert result.unsupported_reason is not None
-    assert result.unsupported_reason.evidence.admissible_support_count == 0
-    annotations = result.extra["annotations"]
-    fail_closed = annotations[
-        annotations["Sibling_Gate_P_Value_Calibration"].eq("undefined_no_internal_support")
-    ]
-    assert not fail_closed.empty
-    assert fail_closed["Sibling_Test_Method"].eq("empirical_null_no_internal_support").all()
-    assert fail_closed["Sibling_Gate_P_Value_Role"].eq("fail_closed_sibling_gate").all()
-    assert fail_closed["Sibling_Divergence_Skipped"].eq(True).all()
-    assert fail_closed["Sibling_Divergence_Invalid"].eq(True).all()
-    assert not fail_closed["Sibling_BH_Different"].any()
-
-
-@pytest.mark.slow
-def test_leaf_only_cat_highcard_fails_closed_without_explicit_calibration_support() -> None:
-    case = next(
-        case for case in get_default_test_cases() if case["name"] == "cat_highcard_20cat_4c"
-    )
-    context = build_tbs_tree_context(case, populate_node_distributions=False)
-
+    kwargs = {"feature_space": context.feature_space} if forward_feature_space else {}
     result = run_tbs_on_distance(
         context.data,
         context.distance_condensed,
         DEFAULT_SIBLING_ALPHA,
-        feature_space=context.feature_space,
+        **kwargs,
     )
 
     assert result.status == "unsupported"

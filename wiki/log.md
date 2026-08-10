@@ -6586,3 +6586,17 @@ became orphaned.
 The calibration-feasibility, selected-null simulation, and null-proposal
 frontier diagnostics remain for a separate dependency review. Production code,
 raw evidence, and earlier chronology remain unchanged.
+
+#### Consolidated test duplication and execution groups
+
+Reduced the maintained suite from 566 to 563 cases by removing one exact
+semantic duplicate and one ineffective test whose branch-length variables never
+reached the production call. Consolidated repeated case matrices and fixtures
+without merging distinct behavioral outcomes. The exact-clone audit fell from
+17 clones and 325 duplicated lines to two intentionally retained seam-local
+clones and 27 duplicated lines.
+
+Updated the seven-stage suite map to match collection and marked eight
+catalog-wide or end-to-end cases as slow so the fast lean gate, complete
+non-optional gate, and expensive regression slice can be selected explicitly.
+Production code and supported behavioral coverage remain unchanged.

@@ -107,6 +107,31 @@ def _make_synthetic_results() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _minimal_result_row(
+    *,
+    method: str = "tbs",
+    ari: float = 0.8,
+    nmi: float = 0.8,
+    purity: float = 0.9,
+) -> dict[str, object]:
+    return {
+        "test_case": 1,
+        "case_id": "case_1",
+        "case_category": "improved_gaussian",
+        "method": method,
+        "params": "",
+        "true_clusters": 2,
+        "found_clusters": 2,
+        "samples": 10,
+        "features": 5,
+        "noise": 0.1,
+        "ari": ari,
+        "nmi": nmi,
+        "purity": purity,
+        "status": "ok",
+    }
+
+
 def _write_synthetic_audit(
     output_dir: Path, *, case_num: int, method_slug: str, accepted: bool
 ) -> None:
@@ -364,38 +389,8 @@ def test_attach_audit_factors_does_not_cross_assign_single_method_audits(tmp_pat
     artifacts = analyze_benchmark_relationships(
         pd.DataFrame(
             [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                },
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "kmeans",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.9,
-                    "nmi": 0.9,
-                    "purity": 0.95,
-                    "status": "ok",
-                },
+                _minimal_result_row(),
+                _minimal_result_row(method="kmeans", ari=0.9, nmi=0.9, purity=0.95),
             ]
         ),
         tmp_path,
@@ -436,26 +431,7 @@ def test_attach_audit_factors_rejects_missing_sibling_decision_column(tmp_path: 
     ).to_csv(audit_dir / "case_1_tbs_stats.csv", index=False)
 
     artifacts = analyze_benchmark_relationships(
-        pd.DataFrame(
-            [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                }
-            ]
-        ),
+        pd.DataFrame([_minimal_result_row()]),
         tmp_path,
         include_plots=False,
     )
@@ -505,26 +481,7 @@ def test_analyze_benchmark_relationships_handles_missing_branch_length_column(
     ).to_csv(audit_dir / "case_1_tbs_stats.csv", index=False)
 
     artifacts = analyze_benchmark_relationships(
-        pd.DataFrame(
-            [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                }
-            ]
-        ),
+        pd.DataFrame([_minimal_result_row()]),
         tmp_path,
         include_plots=False,
     )
