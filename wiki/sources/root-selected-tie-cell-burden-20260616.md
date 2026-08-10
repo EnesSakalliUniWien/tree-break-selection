@@ -1,11 +1,10 @@
 ---
 title: Root Selected Tie Cell Burden 2026-06-16
 type: source
-status: reviewed
-updated: 2026-07-28
+status: draft
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/root/selected/root_selected_tie_cell_burden.py
-  - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_selected_tie_cell_burden_overlap_case_family
 tags:
   - source
   - diagnostics
@@ -18,54 +17,36 @@ tags:
 
 ## Summary
 
-`root_selected_tie_cell_burden.py` quantifies the discrete root selected-region
-blocker exposed by the overlap root-margin replay. It computes a tie-cell
-selection burden by summing \(\log m_t\) across root-child construction steps,
-where \(m_t\) is the number of tied minimum merge choices at step \(t\). This
-is the diagnostic analogue of a tie-breaking conditioning term, not a
-calibrated p-value.
+`root_selected_tie_cell_burden.py` describes the discrete part of the selected
+root event. It aggregates tied construction choices with
+
+\[
+\sum_t \log m_t,
+\]
+
+where \(m_t\) is the tied-minimum multiplicity at construction step \(t\).
+The burden is a conditioning coordinate, not a calibrated p-value or monotone
+penalty.
 
 ## Key Points
 
-- The seven-case overlap run writes `7` burden rows and `12` relationship rows
-  under `root_selected_tie_cell_burden_overlap_case_family`.
-- Every case has `root_tie_cell_status =
-  discrete_tie_burden_observed_diagnostic_only`.
-- Tie-heavy construction is pervasive: the root tie-step fraction ranges from
-  `0.603679` to `0.718876`; log tie burden ranges from `548.428653` to
-  `959.876888`; geometric mean tie multiplicity ranges from `3.027261` to
-  `6.518937`; maximum tie multiplicity ranges from `27` to `93`.
-- The diagnostic separates the discrete root law status from a smooth margin
-  law. A large tie burden means the root event is a discrete selected-region
-  and tie-breaking problem.
-- Tie burden is not a direct explanation for the largest root selected ratios.
-  On this seven-case slice, `root_tie_step_fraction` has Spearman `-0.964286`
-  with the log root sibling selected ratio, and mean log tie multiplicity has
-  Spearman `-0.857143`. The larger selected ratios still align more with the
-  edge/spectral action variables recorded in the root-margin diagnostic.
-- The rank-aware replay adds deterministic tie-breaking coordinates:
-  `selected_tie_rank_lexicographic`, `selected_tie_rank_fraction`, and
-  `selected_tie_log_rank`. Median selected tie-rank fraction has Spearman
-  `0.928571` with the log root sibling selected ratio, and mean selected
-  tie-rank fraction has Spearman `0.785714`. This suggests the selected
-  position inside the tied set is more relevant than raw tie multiplicity.
-- Therefore the next mathematical object is not a monotone penalty for more
-  ties. It is a conditional discrete selected-region law that includes
-  tie-cell membership, deterministic tie-breaking, and the edge/spectral root
-  statistic.
+- Raw tie multiplicity and the selected pair's deterministic tie rank are
+  recorded as distinct coordinates.
+- Case rows retain tie-step counts, multiplicity summaries, rank fractions,
+  and side-asymmetry measures.
+- Relationship tables are descriptive diagnostics only.
+- The output feeds the mixed selected-region law.
 
 ## Evidence
 
-- `root_selected_tie_cell_burden.py` reads the root selected-region summary and
-  merge-margin tables, computes case-level tie burden, and summarizes
-  relationships to the root sibling selected ratio.
-- The validation test covers log-multiplicity burden, selected tie-rank
-  burden, side asymmetry, relationship rows, and output writing.
-- The output manifest records the overlap root selected-region inputs and the
-  generated burden/relationship outputs.
+- `build_root_selected_tie_cell_burden_rows` derives case-level burden and rank
+  coordinates from root summaries and merge-margin rows.
+- The module writes burden, relationship, summary, and manifest contracts via
+  the shared diagnostic reporting layer.
+- No tracked result capture or focused current test supports the former
+  overlap-run numerical claims, so this page remains draft.
 
 ## Links
 
 - [[root-selected-region-overlap-case-family-20260616]]
-- [[selected-neighborhood-topology-frontier-diagnostic-20260616]]
 - [[selected-neighborhood-measurability-law]]

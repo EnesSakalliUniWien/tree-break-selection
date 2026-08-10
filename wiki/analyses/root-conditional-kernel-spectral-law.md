@@ -2,11 +2,10 @@
 title: Root Conditional Kernel Spectral Law
 type: analysis
 status: draft
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - wiki/sources/legacy-c2ef9a69-root-tail-overlap-comparison-20260617.md
   - wiki/sources/legacy-c2ef9a69-edge-alpha-comparison-20260617.md
-  - wiki/sources/root-selected-same-geometry-external-support-attempt-20260617.md
   - wiki/sources/root-selected-spectral-tail-law-with-legacy-overlay-20260617.md
   - wiki/sources/root-tree-geometry-hard-negative-replay-20260617.md
   - wiki/sources/selected-neighborhood-signal-flow-literature-20260617.md
@@ -101,13 +100,13 @@ The refined target is:
 
 \[
 \Pr\left(S_{H_u}\ge s\mid
-R_{\mathrm{root}},G_u,T,A,E,B,H_u,\mathcal N_\tau(u)\right).
+R_{\mathrm{root}},G_u,T,A,E,H_u,\mathcal N_\tau(u)\right).
 \]
 
 Here \(R_{\mathrm{root}}\) is the selected root event, \(G_u\) is the
 canonical unordered bifurcation signature of the root, \(T\) is selected
-tie-rank geometry, \(A\) is selected-ratio action, \(E\) is edge action, \(B\)
-is measured topology/bandwidth status, \(H_u\) is the local population
+tie-rank geometry, \(A\) is selected-ratio action, \(E\) is edge action,
+\(H_u\) is the local population
 spectral law, and \(S_{H_u}\) is the deformed-MP spectral excess. The
 neighborhood \(\mathcal N_\tau(u)\) should be kernel weighted but
 support-gated:
@@ -194,10 +193,7 @@ make an unsupported root significant.
 - The bandwidth tradeoff panel shows default interpolation is conservative but
   misses direct signal positives, while widening `tau_s` reopens selected-null
   positives faster than it recovers signal.
-- The same-geometry external-support attempt shows the current generator/replay
-  stack can add support rows, but the hard roots still lack same-stratum
-  nonzero \(S_{H_u}\) support.
-- The current root-tail panel already conditions on \(T,A,E,B,H_u\) and fails
+- The current root-tail panel conditions on \(T,A,E,H_u\) and fails
   closed when support is absent. The missing improvement is the kernel-weighted
   admissible support law, not an unconditional rescue rule.
 - The first scalar kernel-spectral candidate panel measures this law on the
@@ -245,7 +241,6 @@ make an unsupported root significant.
 
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]]
 - [[legacy-c2ef9a69-edge-alpha-comparison-20260617]]
-- [[root-selected-same-geometry-external-support-attempt-20260617]]
 - [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]]
 - [[root-tree-geometry-hard-negative-replay-20260617]]
 - [[selected-neighborhood-signal-flow-literature-20260617]]

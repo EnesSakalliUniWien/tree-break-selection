@@ -1,14 +1,9 @@
 """Parameter sweep for root selected spectral-lift proposal families.
 
-The selected spectral generator target panel shows that current dense/action
-proposal families occupy the high action-edge/tie root stratum but do not have
-enough selected spectral excess. This diagnostic varies the proposal generator
-knobs and asks a narrower pre-replay question: can any generated root reach the
-observed spectral excess while also satisfying the high action-edge/tie root
-conditions?
-
-Rows that pass this root-metric screen still require generated-neighborhood
-replay before they can be used in measured-bandwidth calibration.
+This diagnostic varies proposal-generator knobs and asks whether a generated
+root can reach the observed spectral excess while also satisfying the selected
+tie-rank and action-edge conditions. Passing rows remain diagnostic candidates
+for the selected-root tail evaluation; they do not define production p-values.
 """
 
 from __future__ import annotations
@@ -51,13 +46,12 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_nul
 )
 from benchmarks.shared.cases import get_test_cases_by_suite
 
-SCHEMA_VERSION = "root_tie_rank_spectral_lift_parameter_sweep/v1"
+SCHEMA_VERSION = "root_tie_rank_spectral_lift_parameter_sweep/v2"
 STUDY_ROLE = "diagnostic_root_tie_rank_spectral_lift_parameter_sweep_not_calibration"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_spectral_lift_parameter_sweep"
 )
 
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
 DEFAULT_PROPOSAL_FAMILIES = (
     COUPLED_EDGE_SPECTRAL_PROPOSAL,
     TWO_BLOCK_TILT_PROPOSAL,
@@ -111,7 +105,7 @@ TARGET_ROW_COLUMNS = (
     "spectral_lift_multiplier_required",
     "spectral_reach_after_setting",
     "root_metric_screen_status",
-    "next_replay_step",
+    "next_diagnostic_step",
 )
 
 SUMMARY_COLUMNS = (
@@ -719,13 +713,13 @@ def build_spectral_lift_sweep_target_rows(
             reached = math.isfinite(lift_log) and lift_log <= 0.0
             if eligible.empty:
                 status = "root_metric_conditioning_missing"
-                next_step = "increase_action_edge_tie_before_neighborhood_replay"
+                next_step = "increase_action_edge_tie_before_tail_evaluation"
             elif reached:
-                status = "root_metric_spectral_reach_replay_needed"
-                next_step = "replay_setting_through_selected_neighborhood"
+                status = "root_metric_spectral_reach_tail_evaluation_ready"
+                next_step = "evaluate_setting_in_selected_root_tail"
             else:
                 status = "root_metric_spectral_lift_still_required"
-                next_step = "increase_spectral_lift_before_neighborhood_replay"
+                next_step = "increase_spectral_lift_before_tail_evaluation"
             records.append(
                 {
                     "schema_version": SCHEMA_VERSION,
@@ -751,7 +745,7 @@ def build_spectral_lift_sweep_target_rows(
                     else math.nan,
                     "spectral_reach_after_setting": bool(reached),
                     "root_metric_screen_status": status,
-                    "next_replay_step": next_step,
+                    "next_diagnostic_step": next_step,
                 }
             )
     return pd.DataFrame.from_records(records, columns=TARGET_ROW_COLUMNS)
@@ -775,9 +769,9 @@ def _summary_status(group: pd.DataFrame) -> str:
     if covered <= 0:
         return "setting_misses_action_edge_tie_conditioning"
     if reached == int(group.shape[0]):
-        return "setting_reaches_all_targets_root_metrics_replay_needed"
+        return "setting_reaches_all_targets_root_metrics_tail_evaluation_ready"
     if reached > 0:
-        return "setting_reaches_some_targets_root_metrics_replay_needed"
+        return "setting_reaches_some_targets_root_metrics_tail_evaluation_ready"
     return "setting_requires_more_spectral_lift"
 
 

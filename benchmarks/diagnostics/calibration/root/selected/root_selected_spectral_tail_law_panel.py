@@ -6,7 +6,6 @@ This panel expresses the current root inference target explicitly:
 * T is selected tie-rank fraction.
 * A is log selected-ratio action.
 * E is log edge-margin action.
-* B is measured root bandwidth/topology status.
 * H_u is the local null-whitened spectral law status.
 
 Rows are diagnostic only. They estimate a conservative empirical tail p-value
@@ -40,17 +39,10 @@ from benchmarks.diagnostics.calibration.root.root_tail_values import (
     tail_excess_for_case,
 )
 
-SCHEMA_VERSION = "root_selected_spectral_tail_law_panel/v1"
+SCHEMA_VERSION = "root_selected_spectral_tail_law_panel/v2"
 STUDY_ROLE = "diagnostic_root_selected_spectral_tail_law_not_calibration"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.selected.root_selected_spectral_tail_law_panel"
-)
-
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
-DEFAULT_JOINED_FEASIBILITY_ROWS = (
-    DEFAULT_RESULT_ROOT
-    / "root_tie_rank_conditioned_coherent_topology_join_after_replay"
-    / "conditioned_coherent_joined_feasibility_rows.csv"
 )
 
 ROWS_OUTPUT = "root_selected_spectral_tail_law_rows.csv"
@@ -69,7 +61,6 @@ ROW_COLUMNS = (
     "t_selected_tie_rank_fraction",
     "a_selected_ratio_action_log1p",
     "e_edge_margin_action_log1p",
-    "b_bandwidth_topology_status",
     "h_u_population_law_status",
     "root_tail_stratum_key",
     "selected_null_support_count",
@@ -97,7 +88,7 @@ class RootSelectedSpectralTailLawConfig:
     """Input/output contract for the selected-root spectral tail diagnostic."""
 
     output_dir: Path
-    joined_feasibility_rows_path: Path = DEFAULT_JOINED_FEASIBILITY_ROWS
+    joined_feasibility_rows_path: Path
     deformed_mp_edge_rows_path: Path | None = None
     deformed_mp_edge_support_rows_path: Path | None = None
     h_u_population_law_status: str = "identity_mp_assumed_deformed_mp_unestimated"
@@ -109,7 +100,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--joined-feasibility-rows-path",
         type=Path,
-        default=DEFAULT_JOINED_FEASIBILITY_ROWS,
+        required=True,
     )
     parser.add_argument("--deformed-mp-edge-rows-path", type=Path, default=None)
     parser.add_argument(
@@ -237,8 +228,6 @@ def build_root_selected_spectral_tail_law_rows(
         "joined feasibility rows",
     )
     rows = joined_feasibility_rows.copy()
-    if "root_bandwidth_reopen_band" not in rows.columns:
-        rows["root_bandwidth_reopen_band"] = ""
     if "root_mixed_region_component" not in rows.columns:
         rows["root_mixed_region_component"] = "root_component_missing"
     target_mask = rows.apply(is_observed_target, axis=1)
@@ -329,10 +318,6 @@ def build_root_selected_spectral_tail_law_rows(
                 "t_selected_tie_rank_fraction": t_rank,
                 "a_selected_ratio_action_log1p": action,
                 "e_edge_margin_action_log1p": edge,
-                "b_bandwidth_topology_status": string_value(
-                    target,
-                    "root_bandwidth_reopen_band",
-                ),
                 "h_u_population_law_status": str(h_u_population_law_status),
                 "root_tail_stratum_key": root_tail_stratum_key(
                     target=target,

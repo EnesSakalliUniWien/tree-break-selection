@@ -24,7 +24,7 @@ from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
 from benchmarks.diagnostics.calibration.root.root_tail_values import finite_float, require_columns
 from benchmarks.diagnostics.calibration.values import string_value
 
-SCHEMA_VERSION = "root_tie_rank_calibration_feasibility/v1"
+SCHEMA_VERSION = "root_tie_rank_calibration_feasibility/v2"
 STUDY_ROLE = "diagnostic_root_tie_rank_calibration_feasibility_not_calibration"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_calibration_feasibility"
@@ -54,13 +54,11 @@ ROW_COLUMNS = (
     "root_tie_rank_band",
     "root_edge_margin_band",
     "root_spectral_ratio_band",
-    "root_bandwidth_reopen_band",
     "root_conditioning_stratum_key",
     "root_sibling_selected_ratio",
     "root_tie_rank_median_fraction",
     "root_edge_path_statistic_margin",
     "root_selected_eigenvalue_over_mp_upper_bound",
-    "root_bandwidth_reopen_count",
     "stratum_observed_count",
     "stratum_calibration_null_support_count",
     "stratum_calibration_null_exceedance_count",
@@ -81,7 +79,6 @@ STRATA_COLUMNS = (
     "root_tie_rank_band",
     "root_edge_margin_band",
     "root_spectral_ratio_band",
-    "root_bandwidth_reopen_band",
     "stratum_observed_count",
     "stratum_calibration_null_support_count",
     "target_alpha",
@@ -228,28 +225,12 @@ def _spectral_ratio_band(value: float) -> str:
     return "spectral_ratio_gt_4"
 
 
-def _bandwidth_reopen_band(value: float) -> str:
-    if not math.isfinite(value):
-        return "bandwidth_reopen_missing"
-    if value <= 0.0:
-        return "bandwidth_no_root_reopen"
-    return "bandwidth_root_reopen_observed"
-
-
-def _bandwidth_count_for_stratum(row: pd.Series) -> float:
-    locality_status = string_value(row, "root_bandwidth_locality_status", "")
-    if locality_status == "topology_frontier_not_joined":
-        return math.nan
-    return finite_float(row.get("root_bandwidth_reopen_count", 0))
-
-
 def _stratum_key(
     *,
     component: str,
     tie_band: str,
     edge_band: str,
     spectral_band: str,
-    bandwidth_band: str,
 ) -> str:
     return "|".join(
         (
@@ -257,7 +238,6 @@ def _stratum_key(
             f"tie={tie_band}",
             f"edge={edge_band}",
             f"spectral={spectral_band}",
-            f"bandwidth={bandwidth_band}",
         )
     )
 
@@ -290,11 +270,9 @@ def _annotate_conditioning_strata(mixed_rows: pd.DataFrame) -> pd.DataFrame:
         spectral_ratio = finite_float(
             row.get("root_selected_eigenvalue_over_mp_upper_bound", math.nan)
         )
-        bandwidth_count = _bandwidth_count_for_stratum(row)
         tie_band = _tie_rank_band(tie_fraction)
         edge_band = _edge_margin_band(edge_margin)
         spectral_band = _spectral_ratio_band(spectral_ratio)
-        bandwidth_band = _bandwidth_reopen_band(bandwidth_count)
         records.append(
             {
                 "case_id": string_value(row, "case_id", "case_missing"),
@@ -304,13 +282,11 @@ def _annotate_conditioning_strata(mixed_rows: pd.DataFrame) -> pd.DataFrame:
                 "root_tie_rank_band": tie_band,
                 "root_edge_margin_band": edge_band,
                 "root_spectral_ratio_band": spectral_band,
-                "root_bandwidth_reopen_band": bandwidth_band,
                 "root_conditioning_stratum_key": _stratum_key(
                     component=component,
                     tie_band=tie_band,
                     edge_band=edge_band,
                     spectral_band=spectral_band,
-                    bandwidth_band=bandwidth_band,
                 ),
                 "root_sibling_selected_ratio": finite_float(
                     row.get("root_sibling_selected_ratio", math.nan)
@@ -318,7 +294,6 @@ def _annotate_conditioning_strata(mixed_rows: pd.DataFrame) -> pd.DataFrame:
                 "root_tie_rank_median_fraction": tie_fraction,
                 "root_edge_path_statistic_margin": edge_margin,
                 "root_selected_eigenvalue_over_mp_upper_bound": spectral_ratio,
-                "root_bandwidth_reopen_count": bandwidth_count,
                 "_is_calibration_null_support": _is_calibration_null_support(row),
             }
         )
@@ -341,7 +316,6 @@ def build_root_tie_rank_calibration_feasibility_rows(
             "root_tie_rank_median_fraction",
             "root_edge_path_statistic_margin",
             "root_selected_eigenvalue_over_mp_upper_bound",
-            "root_bandwidth_reopen_count",
         },
         "mixed root-law rows",
     )
@@ -385,7 +359,6 @@ def build_root_tie_rank_calibration_feasibility_rows(
                 "root_tie_rank_band": str(row["root_tie_rank_band"]),
                 "root_edge_margin_band": str(row["root_edge_margin_band"]),
                 "root_spectral_ratio_band": str(row["root_spectral_ratio_band"]),
-                "root_bandwidth_reopen_band": str(row["root_bandwidth_reopen_band"]),
                 "root_conditioning_stratum_key": key,
                 "root_sibling_selected_ratio": observed_ratio,
                 "root_tie_rank_median_fraction": finite_float(row["root_tie_rank_median_fraction"]),
@@ -395,7 +368,6 @@ def build_root_tie_rank_calibration_feasibility_rows(
                 "root_selected_eigenvalue_over_mp_upper_bound": finite_float(
                     row["root_selected_eigenvalue_over_mp_upper_bound"]
                 ),
-                "root_bandwidth_reopen_count": finite_float(row["root_bandwidth_reopen_count"]),
                 "stratum_observed_count": int(stratum.shape[0]),
                 "stratum_calibration_null_support_count": null_count,
                 "stratum_calibration_null_exceedance_count": exceedance_count,
@@ -428,7 +400,6 @@ def summarize_root_tie_rank_calibration_strata(rows: pd.DataFrame) -> pd.DataFra
         "root_tie_rank_band",
         "root_edge_margin_band",
         "root_spectral_ratio_band",
-        "root_bandwidth_reopen_band",
     ]
     for keys, group in rows.groupby(group_columns, dropna=False, sort=True):
         (
@@ -437,7 +408,6 @@ def summarize_root_tie_rank_calibration_strata(rows: pd.DataFrame) -> pd.DataFra
             tie_band,
             edge_band,
             spectral_band,
-            bandwidth_band,
         ) = keys
         null_count = int(group["stratum_calibration_null_support_count"].max())
         resolution_required = int(group["alpha_resolution_required_null_count"].max())
@@ -451,7 +421,6 @@ def summarize_root_tie_rank_calibration_strata(rows: pd.DataFrame) -> pd.DataFra
                 "root_tie_rank_band": str(tie_band),
                 "root_edge_margin_band": str(edge_band),
                 "root_spectral_ratio_band": str(spectral_band),
-                "root_bandwidth_reopen_band": str(bandwidth_band),
                 "stratum_observed_count": int(group.shape[0]),
                 "stratum_calibration_null_support_count": null_count,
                 "target_alpha": float(group["target_alpha"].iloc[0]),

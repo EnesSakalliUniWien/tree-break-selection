@@ -6499,3 +6499,44 @@ spectral bottleneck from the conceptual status list. The measurability source
 page now cites only its live implementation, omits numerical and test-coverage
 claims unsupported by local evidence, and is draft until a non-empty result
 capture and focused contract tests are restored.
+
+#### Retired the selected-neighborhood topology-frontier slice
+
+Removed the benchmark-only selected-neighborhood topology frontier, generated
+neighborhood replay, conditioned topology join, same-geometry external-support
+attempt, and selected spectral-generator target panel. Recursive import and
+artifact tracing found no production consumer, registered runner, current test,
+or non-empty retained result capture for the five-module branch.
+
+Removed the topology-derived bandwidth and hybrid-support coordinates from the
+retained mixed-root law, calibration-feasibility, selected-null pilot, shared
+root-tail key, and spectral-tail contracts. The mixed-root event remains
+conditioned on margin, tie-cell, and tie-rank evidence; the spectral-tail key
+now uses the reduced component, tie, action, edge, and population-law
+coordinates. Surviving spectral-tail and deformed-MP runners now require their
+feasibility input explicitly instead of pointing to deleted historical join
+artifacts. Unsupported source pages were removed and retained synthesis was
+reduced to locally supported code contracts.
+
+#### Corrected the topology-frontier retirement boundary after review
+
+Migrated the retained target-conditioned importance frontier from its
+`pre_topology` schema and replay-oriented outcomes to a versioned final
+conditioning contract whose matched candidates proceed directly to the
+selected-root tail evaluation. Migrated the spectral-lift sweep to version 2,
+renamed `next_replay_step` to `next_diagnostic_step`, and removed statuses that
+directed candidates toward the retired generated-neighborhood topology stage.
+
+Removed the stale bandwidth coordinate from the calibration package contract
+and the dead selected-root result-root default. The deformed-MP runner now also
+requires its \(H_u\)-observability input explicitly because the former producer
+and captured output are absent; its orphaned source page was removed. Rewrote
+the affected root source pages and index/analysis summaries around tracked code
+evidence, removed empty result-directory citations and unsupported smoke-run
+numbers, and marked empirical pages draft until durable captures and focused
+tests exist.
+
+The final checkpoint review also corrected the calibration category map so the
+surviving tie-rank package is described by feasibility, selected-null
+simulation, proposal, and spectral-tail responsibilities rather than the
+retired replay stage.

@@ -28,25 +28,11 @@ from benchmarks.diagnostics.calibration.root.root_tail_values import (
     require_columns,
     string_value,
 )
-from benchmarks.diagnostics.calibration.root.selected.root_selected_spectral_tail_law_panel import (
-    DEFAULT_RESULT_ROOT,
-)
 
 SCHEMA_VERSION = "root_selected_deformed_mp_edge_panel/v1"
 STUDY_ROLE = "diagnostic_root_selected_deformed_mp_edge_not_calibration"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.selected.root_selected_deformed_mp_edge_panel"
-)
-
-DEFAULT_JOINED_FEASIBILITY_ROWS = (
-    DEFAULT_RESULT_ROOT
-    / "root_tie_rank_importance_external_null_topology_join_mild_accumulated"
-    / "conditioned_coherent_joined_feasibility_rows.csv"
-)
-DEFAULT_H_U_OBSERVABILITY_ROWS = (
-    DEFAULT_RESULT_ROOT
-    / "root_selected_h_u_observability_mild_accumulated"
-    / "root_selected_h_u_observability_rows.csv"
 )
 
 ROWS_OUTPUT = "root_selected_deformed_mp_edge_rows.csv"
@@ -125,8 +111,8 @@ class RootSelectedDeformedMPEdgeConfig:
     """Input/output contract for plug-in deformed MP edge diagnostics."""
 
     output_dir: Path
-    joined_feasibility_rows_path: Path = DEFAULT_JOINED_FEASIBILITY_ROWS
-    h_u_observability_rows_path: Path = DEFAULT_H_U_OBSERVABILITY_ROWS
+    joined_feasibility_rows_path: Path
+    h_u_observability_rows_path: Path
     minimum_bulk_eigenvalue_count: int = 3
     derivative_tolerance: float = 1e-10
     maximum_bisection_iterations: int = 100
@@ -138,12 +124,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--joined-feasibility-rows-path",
         type=Path,
-        default=DEFAULT_JOINED_FEASIBILITY_ROWS,
+        required=True,
     )
     parser.add_argument(
         "--h-u-observability-rows-path",
         type=Path,
-        default=DEFAULT_H_U_OBSERVABILITY_ROWS,
+        required=True,
     )
     parser.add_argument("--minimum-bulk-eigenvalue-count", type=int, default=3)
     parser.add_argument("--derivative-tolerance", type=float, default=1e-10)

@@ -1,11 +1,10 @@
 ---
 title: Root Tie Rank Selected Null Simulation Pilot 2026-06-16
 type: source
-status: reviewed
-updated: 2026-07-28
+status: draft
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_selected_null_simulation_pilot.py
-  - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tie_rank_selected_null_simulation_pilot_overlap_case_family
 tags:
   - source
   - diagnostics
@@ -24,40 +23,28 @@ builds iid Bernoulli null matrices matched to each binary overlap case's
 sample count, feature count, and expected sparse-template marginal feature
 rate, sends those matrices through the existing root selected-region replay,
 and recomputes target-stratum support against the observed mixed root-law
-rows.
+rows. Version 2 propagates the reduced component/tie/edge/spectral stratum
+contract and no longer emits a topology-derived bandwidth count.
 
 ## Key Points
 
-- The one-replicate overlap pilot attempted `7` selected-null roots and
-  succeeded on all `7`; there were `0` failures.
-- The run writes `7` root rows, `3493` merge-margin rows, `7` tie rows, `7`
-  selected-null mixed rows, `14` combined feasibility rows, `10` combined
-  feasibility strata, and `7` target-support rows.
-- The generated selected-null roots occupy `3` conditioning strata, but none
-  of those strata match the seven observed target strata.
-- Therefore `target_strata_with_null_support_count = 0`,
-  `target_strata_alpha_resolution_ready_count = 0`, and
-  `target_strata_tail_precision_ready_count = 0`.
-- The observed target strata still require `693` selected-null roots for
-  alpha-resolution only and `11088` for the `0.25` relative tail precision
-  target.
-- The combined feasibility table now has `7` selected-null calibration-support
-  rows, but only in null-generated strata. Its status is
-  `calibration_null_support_observed_below_alpha_resolution`, while the target
-  support status remains `no_observed_target_stratum_support_yet`.
-- The generated null root selected ratios are much smaller than the observed
-  overlap roots: they range from about `0.075806` to `11.038714`, while the
-  observed target roots range from `47.831161` to `1768.512366`.
+- Generated null matrices pass through the canonical TBS context and root
+  selected-region extractor.
+- Successful roots are converted to mixed-law and calibration-feasibility
+  rows before observed-target support is summarized.
+- Failures are retained as explicit diagnostic rows rather than silently
+  reducing the attempted replicate count.
+- Target support output now follows
+  `root_tie_rank_selected_null_simulation_pilot/v2`.
 
 ## Evidence
 
 - The implementation uses `preloaded` generated null matrices so the canonical
   TBS context builder and root selected-region extractor remain unchanged.
-- The unit test validates the Bernoulli null marginal-rate calculation,
-  target-stratum support counting, simulation-summary statuses, and output
-  writing.
-- The output manifest records `elapsed_seconds` about `62.20`, the seven
-  successful root rows, and all generated CSV paths.
+- The retained code computes target-stratum support only after recomputing the
+  reduced calibration key.
+- No non-empty retained result capture or focused current test supports the
+  former numerical pilot claims, so this page remains draft.
 
 ## Links
 

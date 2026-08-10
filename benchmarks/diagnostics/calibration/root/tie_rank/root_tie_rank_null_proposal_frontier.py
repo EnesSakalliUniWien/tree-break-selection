@@ -54,7 +54,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_nul
 )
 from benchmarks.shared.cases import get_test_cases_by_suite
 
-SCHEMA_VERSION = "root_tie_rank_null_proposal_frontier/v1"
+SCHEMA_VERSION = "root_tie_rank_null_proposal_frontier/v2"
 STUDY_ROLE = "diagnostic_root_tie_rank_null_proposal_frontier_not_calibration"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_null_proposal_frontier"
@@ -197,7 +197,6 @@ class RootTieRankNullProposalFrontierConfig:
 
     output_dir: Path
     observed_mixed_region_rows_path: Path = DEFAULT_OBSERVED_MIXED_ROWS
-    topology_frontier_rows_path: Path | None = None
     suite: str = "full"
     case_names: tuple[str, ...] | None = None
     proposal_families: tuple[str, ...] = DEFAULT_PROPOSAL_FAMILIES
@@ -218,15 +217,6 @@ def parse_args() -> argparse.Namespace:
         "--observed-mixed-region-rows-path",
         type=Path,
         default=DEFAULT_OBSERVED_MIXED_ROWS,
-    )
-    parser.add_argument(
-        "--topology-frontier-rows-path",
-        type=Path,
-        default=None,
-        help=(
-            "Optional selected-neighborhood topology-frontier rows to join "
-            "when rebuilding generated proposal mixed-law rows."
-        ),
     )
     parser.add_argument("--suite", default="full")
     parser.add_argument(
@@ -705,7 +695,6 @@ def build_proposal_mixed_rows(
     *,
     root_rows: pd.DataFrame,
     merge_margins: pd.DataFrame,
-    topology_frontier_rows: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Return tie-burden and mixed-law rows for generated proposal roots."""
     if root_rows.empty or merge_margins.empty:
@@ -717,7 +706,6 @@ def build_proposal_mixed_rows(
     mixed_rows = build_root_selected_mixed_region_law_rows(
         root_summary=root_rows,
         tie_cell_burden_rows=tie_rows,
-        topology_frontier_rows=topology_frontier_rows,
     )
     metadata = _metadata_by_case(root_rows)
     return _attach_metadata(tie_rows, metadata), _attach_metadata(mixed_rows, metadata)
@@ -942,12 +930,6 @@ def evaluate_root_tie_rank_null_proposal_frontier(
     """Run proposal frontier evaluation and return output tables."""
     families = _validate_proposal_families(config.proposal_families)
     observed_mixed = pd.read_csv(config.observed_mixed_region_rows_path)
-    topology_frontier_rows = (
-        pd.read_csv(config.topology_frontier_rows_path, low_memory=False)
-        if config.topology_frontier_rows_path is not None
-        and Path(config.topology_frontier_rows_path).exists()
-        else None
-    )
     _require_columns(observed_mixed, {"case_id"}, "observed mixed-law rows")
     observed_case_ids = tuple(observed_mixed["case_id"].astype(str).tolist())
     case_names = tuple(config.case_names) if config.case_names else observed_case_ids
@@ -966,7 +948,6 @@ def evaluate_root_tie_rank_null_proposal_frontier(
     tie_rows, proposal_mixed_rows = build_proposal_mixed_rows(
         root_rows=root_rows,
         merge_margins=merge_margins,
-        topology_frontier_rows=topology_frontier_rows,
     )
     observed_targets = _observed_target_rows(observed_mixed)
     combined_mixed = pd.concat(
@@ -1068,7 +1049,6 @@ def main() -> None:
         RootTieRankNullProposalFrontierConfig(
             output_dir=args.output_dir,
             observed_mixed_region_rows_path=args.observed_mixed_region_rows_path,
-            topology_frontier_rows_path=args.topology_frontier_rows_path,
             suite=str(args.suite),
             case_names=_parse_csv_list(args.case_names),
             proposal_families=_parse_csv_list(args.proposal_families) or DEFAULT_PROPOSAL_FAMILIES,

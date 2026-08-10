@@ -167,76 +167,38 @@ renamed, or promoted.
   hierarchy cells from smooth Euclidean first-order signed-distance cells, and
   showing edge-opening boundary/action, the edge/sibling barycentric
   relationship, and the fixed-projection edge-conditioned sibling tail.
-- [[root-selected-region-overlap-case-family-20260616]] - seven-case overlap
-  root selected-region replay showing all overlap roots require discrete
-  tie-cell geometry, so root outgoing balance is not a smooth rescue law.
-- [[root-selected-tie-cell-burden-20260616]] - discrete root tie-cell burden
-  diagnostic over the overlap case family, quantifying tied merge-choice
-  multiplicities and selected tie-rank position, showing raw tie burden itself
-  is not a monotone rescue rule.
+- [[root-selected-region-overlap-case-family-20260616]] - selected-root
+  construction-margin contract separating discrete tie-cell geometry from
+  smooth first-order margin regions.
+- [[root-selected-tie-cell-burden-20260616]] - discrete tie-cell conditioning
+  contract recording merge-choice multiplicities and selected tie-rank
+  position without treating either as a calibrated penalty.
 - [[root-selected-mixed-region-law-20260616]] - mixed root selected-region
-  diagnostic joining margin, tie-cell, tie-rank, and bandwidth frontier
-  evidence; all seven overlap roots remain blocked until a discrete tie-rank
-  null law is calibrated.
-- [[root-tie-rank-calibration-feasibility-20260616]] - conditioning-stratum
-  feasibility table for the discrete root tie-rank law, showing zero
-  admissible null support in the seven-case artifact and quantifying the
-  required selected-null simulation counts.
-- [[root-tie-rank-selected-null-simulation-pilot-20260616]] - first executable
-  selected-null root simulation pilot for the tie-rank law; seven generated
-  null roots succeed but populate null-only strata rather than the observed
-  target strata.
+  diagnostic joining margin, tie-cell, and tie-rank evidence; the retained
+  contract remains blocked until a discrete tie-rank null law is calibrated.
+- [[root-tie-rank-calibration-feasibility-20260616]] - feasibility contract for
+  component/tie/edge/spectral conditioning strata, conservative empirical
+  tails, and selected-null support requirements.
+- [[root-tie-rank-selected-null-simulation-pilot-20260616]] - selected-null
+  root generator that recomputes mixed-law and feasibility rows before
+  summarizing observed-target support.
 - [[root-tie-rank-null-proposal-frontier-20260616]] - proposal-family frontier
-  for the root tie-rank law; a two-case smoke shows iid and column-beta rows
-  stay far below target action, while a two-block tilt creates huge selected
-  ratios with low spectral ratios and a sparse block spike creates one
-  high-spectral-ratio row with low root action; the coupled edge-spectral
-  proposal still behaves like the dense action rows, so all proposal rows miss
-  observed target strata and unjoined bandwidth is now marked missing.
-- [[root-tie-rank-generated-neighborhood-replay-20260616]] - generated proposal
-  matrix replay through selected-neighborhood distribution, p-value
-  interpolation, measurability, and topology-frontier builders; the rerun
-  closes the unmeasured-bandwidth gap and shows measured-neighborhood coupling
-  now reaches only easier targets while hard roots still need the discrete
-  root spectral-action/tie-rank law.
-- [[root-tie-rank-selected-spectral-generator-targets-20260616]] - generator
-  target panel for the remaining selected spectral-excess law, showing only
-  dense/action diagnostic families cover the measured high action-edge/tie
-  stratum and both still require spectral lift for every observed target.
-- [[root-tie-rank-spectral-lift-parameter-sweep-20260616]] - compact
-  parameter sweep showing stronger coupled dense-plus-spike amplitudes keep
-  action-edge/tie coverage but still reach `0/7` target spectral excesses,
-  while a coherent rank-one MP-spike proposal improves the root screen to
-  `2/7` target reach; matched target conditioning by selected
-  tie-rank/action-edge geometry prevents cross-target borrowing but still
-  leaves the hard selected spectral tail unresolved.
-- [[root-tie-rank-conditioned-coherent-topology-join-20260617]] - generated
-  neighborhood/topology replay and spectral-target join for the conditioned
-  coherent spike rows; all seven rows get measured no-reopen root bandwidth,
-  the matched family still reaches only `2/7` spectral targets, and the hard
-  selected-root spectral tail remains open.
+  separating stratum reachability from calibration admissibility and retaining
+  likelihood-ratio metadata for supported external-null families.
+- [[root-tie-rank-spectral-lift-parameter-sweep-20260616]] - versioned
+  generator sweep measuring action-edge/tie eligibility and remaining selected
+  spectral lift before direct selected-root tail evaluation.
 - [[root-selected-spectral-tail-law-with-legacy-overlay-20260617]] -
-  support-aware selected-root spectral-tail diagnostic using
-  \(S_{\mathrm{root}}\), \(T,A,E,B,H_u\), plus full legacy and internal
-  spectral overlays; all seven roots fail closed for missing selected-null
-  support, while the old full method shows one selected-null false split.
+  support-aware selected-root spectral-tail contract using
+  \(S_{\mathrm{root}}\), \(T,A,E,H_u\); despite the historical page name, the
+  retained version no longer owns legacy overlays.
 - [[root-selected-importance-tail-support-20260617]] - importance-weighted
-  external-null support channel for selected-root spectral tails, adding
-  likelihood-ratio metadata, generated-neighborhood topology replay, and
-  ESS-conservative p-values; the accumulated smoke gives same-stratum weighted
-  support for `2/7` observed roots while five remain fail-closed, and scalar
-  tilts miss the remaining mid action-edge strata.
+  external-null support contract for selected-root spectral tails, preserving
+  likelihood-ratio metadata and ESS-conservative p-values.
 - [[root-tie-rank-target-conditioned-importance-frontier-20260617]] -
-  target-conditioned importance frontier for the remaining root-tail strata;
-  narrow pure two-block, coupled, unbalanced, accepted-stratum rejection, and
-  correlated two-factor smokes preserve likelihood-ratio semantics but still
-  produce zero pre-topology hits for the tested mixed action-edge target
-  strata.
-- [[root-selected-same-geometry-external-support-attempt-20260617]] -
-  executable generated external-null support attempt for the selected-root
-  tail law; the five-target tiny smoke replays all five generated candidates,
-  gets zero pre-topology hits, adds only one same-tail support row with
-  `S_Hu = 0`, and leaves the nonzero same-geometry spectral-tail law open.
+  versioned target-conditioned importance frontier matching component,
+  tie-rank, selected-ratio action, and edge-action strata before direct
+  selected-root tail evaluation.
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]] - seven-case
   overlap rerun of the full legacy package on selected-root-tail cases; the
   old method improves one signal row but creates two selected-null false
@@ -337,14 +299,10 @@ renamed, or promoted.
   linkage/rooting choices; current `0/6` geometries become root-validity
   supported, while the old commit either under-splits or fragments without a
   valid-root guard, so the case is a hard negative for root-tail rescue.
-- [[root-selected-h-u-observability-20260617]] - \(H_u\) observability audit
-  for selected-root spectral tails; root eigenvalue spectra and active feature
-  counts are now captured for observed targets, giving `3/7` roots the inputs
-  needed for the next deformed MP edge calculation.
 - [[root-selected-deformed-mp-edge-20260617]] - plug-in deformed MP edge
-  diagnostic for observed selected roots; deformed edges are computed for
-  `3/7` targets, reducing their spectral excess but remaining non-calibrating
-  because generated/support rows still lack full root spectra.
+  diagnostic for observed and support selected-root spectra, with explicit
+  feasibility and \(H_u\)-observability inputs and no dependency on retired
+  diagnostic defaults.
 - [[internal-vs-selected-hierarchy-inflation-20260603]] - diagnostic-only
   comparison showing that diffuse Gaussian root internal inflation agrees with
   selected-hierarchy scale, while null and high-cardinality categorical root
@@ -743,17 +701,10 @@ renamed, or promoted.
   role-region bandwidth vectors; the branch-length rerun localizes support in
   branch units but still has an empty admissible interval because selected-null
   neighborhoods open before signal.
-- [[selected-neighborhood-topology-frontier-diagnostic-20260616]] -
-  root/non-root topology-frontier comparator over the same expanded overlap
-  candidate rows; root outgoing balance and lowered non-root balance-product
-  thresholds pass selected-null rows more readily than signal rows, and joined
-  root margin evidence labels all overlap root rows as discrete tie-cell
-  geometry, so these variables remain bottleneck localizers rather than
-  split-rescue rules.
 - [[root-selected-mixed-region-law-20260616]] - root selected-region law table
   over the overlap cases, explicitly representing
-  `E_root = E_margin intersect E_tie_cell intersect E_tie_rank` and showing
-  that bandwidth reopenings do not close the missing calibrated root law.
+  `E_root = E_margin intersect E_tie_cell intersect E_tie_rank` without the
+  retired topology/bandwidth overlay.
 - [[root-conditional-kernel-spectral-law]] - refined law statement that keeps
   the old kernel smoother as support-gated neighborhood weighting and makes
   the selected-root deformed spectral excess the calibrated tail variable

@@ -11,7 +11,8 @@ construction, testing, and plotting interfaces remain under
 - `overlap/`: overlap, junction, recovery, and structural-threshold studies.
 - `root/center/`: robust root-center and rooted-tree geometry checks.
 - `root/selected/`: selected-root region, support, and spectral-tail studies.
-- `root/tie_rank/`: tie-rank-conditioned root proposals and replay panels.
+- `root/tie_rank/`: tie-rank feasibility, selected-null simulation, proposal,
+  and spectral-tail diagnostics.
 - `selected/family/`: selected-family traversal and candidate-law studies.
 - `selected/hierarchy/`: hierarchy selection and external-calibration studies.
 - `selected/neighborhood/`: neighborhood conditioning and measurability studies.
@@ -33,7 +34,7 @@ Shared diagnostic contracts remain at this package root:
   TBS execution, rows/summary writing, and manifest envelopes.
 - `root/root_tail_values.py` owns shared selected-root value parsing,
   support-role classification, log-action transforms, spectral-excess
-  transforms, and T,A,E,B,H_u stratum keys.
+  transforms, and T,A,E,H_u stratum keys.
 ## Maintained runners
 
 - `selected/family/run_selected_family_matrix.py`

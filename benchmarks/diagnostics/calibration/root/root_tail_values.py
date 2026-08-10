@@ -83,17 +83,6 @@ def is_calibration_support(row: pd.Series) -> bool:
     )
 
 
-def bandwidth_gap_status(*, target_band: str, generated_band: str) -> str:
-    """Classify whether a generated row has measured root-bandwidth support."""
-    if target_band == generated_band:
-        return "bandwidth_band_match"
-    if generated_band == "bandwidth_reopen_missing":
-        return "generated_bandwidth_unmeasured"
-    if target_band == "bandwidth_reopen_missing":
-        return "target_bandwidth_unmeasured"
-    return "bandwidth_band_mismatch"
-
-
 def tie_band(value: float) -> str:
     """Return the coarse selected tie-rank band."""
     if not math.isfinite(value):
@@ -121,18 +110,16 @@ def root_tail_stratum_key(
     target: pd.Series,
     h_u_population_law_status: str,
 ) -> str:
-    """Return the shared selected-root T,A,E,B,H_u stratum key."""
+    """Return the shared selected-root T,A,E,H_u stratum key."""
     tie = finite_float(target.get("root_tie_rank_median_fraction", math.nan))
     action = safe_log1p(target.get("root_sibling_selected_ratio", math.nan))
     edge = safe_log1p(target.get("root_edge_path_statistic_margin", math.nan))
-    bandwidth = string_value(target, "root_bandwidth_reopen_band", "")
     return "|".join(
         [
             string_value(target, "root_mixed_region_component", "root_component_missing"),
             tie_band(tie),
             action_band(action),
             action_band(edge),
-            bandwidth or "bandwidth_missing",
             str(h_u_population_law_status),
         ]
     )
@@ -162,7 +149,6 @@ def tail_excess_for_case(
 __all__ = [
     "CALIBRATION_SUPPORT_ROLES",
     "action_band",
-    "bandwidth_gap_status",
     "finite_float",
     "finite_int",
     "is_calibration_support",

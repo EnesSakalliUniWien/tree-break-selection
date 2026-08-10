@@ -3,8 +3,8 @@
 Blind scalar tilts populate some selected-root strata but miss mixed
 action-edge bands. This diagnostic searches proposal settings per unsupported
 observed target while preserving external-null likelihood-ratio semantics. Rows
-remain diagnostic until generated-neighborhood topology replay measures B and
-the root-tail panel finds same-stratum support.
+remain diagnostic until the selected-root tail panel evaluates their
+same-stratum importance support.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_nul
 from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.cases import get_test_cases_by_suite
 
-SCHEMA_VERSION = "root_tie_rank_target_conditioned_importance_frontier/v1"
+SCHEMA_VERSION = "root_tie_rank_target_conditioned_importance_frontier/v2"
 STUDY_ROLE = "diagnostic_root_tie_rank_target_conditioned_importance_frontier"
 GENERATED_BY = "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_target_conditioned_importance_frontier"
 
@@ -76,14 +76,14 @@ TARGET_ROW_COLUMNS = (
     "schema_version",
     "study_role",
     "target_case_id",
-    "target_pre_topology_stratum_key",
+    "target_conditioning_stratum_key",
     "proposal_family",
     "proposal_two_block_delta",
     "proposal_spike_feature_fraction",
     "proposal_spike_delta",
     "proposal_block_fraction",
     "candidate_count",
-    "pre_topology_stratum_hit_count",
+    "conditioning_stratum_hit_count",
     "best_candidate_case_id",
     "best_candidate_spectral_ratio",
     "best_candidate_importance_log_weight",
@@ -95,7 +95,7 @@ SUMMARY_COLUMNS = (
     "study_role",
     "target_count",
     "generated_count",
-    "pre_topology_supported_target_count",
+    "conditioning_supported_target_count",
     "summary_status",
 )
 
@@ -119,7 +119,7 @@ FAILURE_COLUMNS = (
 GENERATED_EMPTY_COLUMNS = (
     "case_id",
     "conditioning_target_case_id",
-    "conditioning_target_pre_topology_stratum_key",
+    "conditioning_target_stratum_key",
     "target_conditioning_setting_id",
     "proposal_two_block_delta",
     "proposal_spike_feature_fraction",
@@ -128,7 +128,7 @@ GENERATED_EMPTY_COLUMNS = (
     "proposal_attempt",
     "proposal_attempts_per_setting",
     "proposal_acceptance_status",
-    "candidate_pre_topology_stratum_key",
+    "candidate_conditioning_stratum_key",
     "importance_log_weight",
     "importance_law_status",
 )
@@ -150,7 +150,7 @@ class TargetConditionedImportanceFrontierConfig:
     block_fraction_grid: tuple[float, ...] = DEFAULT_BLOCK_FRACTION_GRID
     replicates_per_setting: int = DEFAULT_REPLICATES_PER_SETTING
     attempts_per_setting: int = 1
-    accept_target_pre_topology_stratum: bool = False
+    accept_target_conditioning_stratum: bool = False
     seed_offset: int = DEFAULT_SEED_OFFSET
 
 
@@ -184,7 +184,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--replicates-per-setting", type=int, default=1)
     parser.add_argument("--attempts-per-setting", type=int, default=1)
-    parser.add_argument("--accept-target-pre-topology-stratum", action="store_true")
+    parser.add_argument("--accept-target-conditioning-stratum", action="store_true")
     parser.add_argument("--seed-offset", type=int, default=DEFAULT_SEED_OFFSET)
     return parser.parse_args()
 
@@ -239,7 +239,7 @@ def _action_band(value: object) -> str:
     return "action_log_high_ge_7"
 
 
-def _pre_topology_stratum_key(row: pd.Series | dict[str, object]) -> str:
+def _conditioning_stratum_key(row: pd.Series | dict[str, object]) -> str:
     return "|".join(
         [
             str(row.get("root_mixed_region_component", "root_component_missing")),
@@ -512,7 +512,7 @@ def collect_target_conditioned_importance_rows(
     for target_index, target_id in enumerate(target_case_ids):
         base_case = base_cases_by_id[str(target_id)]
         target_row = target_lookup[str(target_id)]
-        target_key = _pre_topology_stratum_key(target_row)
+        target_key = _conditioning_stratum_key(target_row)
         for setting_index, setting in enumerate(settings):
             family = str(setting["proposal_family"])
             two_block_delta = finite_float(setting["proposal_two_block_delta"])
@@ -597,9 +597,9 @@ def collect_target_conditioned_importance_rows(
                             "seed": int(seed),
                         }
                         row, margins = collect_observed_root_selected_region_row(proposal_case)
-                        candidate_key = _pre_topology_stratum_key(row)
+                        candidate_key = _conditioning_stratum_key(row)
                         accepted = candidate_key == target_key
-                        if config.accept_target_pre_topology_stratum and not accepted:
+                        if config.accept_target_conditioning_stratum and not accepted:
                             continue
                         row.update(
                             {
@@ -610,17 +610,17 @@ def collect_target_conditioned_importance_rows(
                                 "proposal_attempt": int(attempt),
                                 "proposal_attempts_per_setting": int(attempts_per_setting),
                                 "proposal_acceptance_status": (
-                                    "accepted_target_pre_topology_stratum"
+                                    "accepted_target_conditioning_stratum"
                                     if accepted
                                     else "unfiltered_candidate"
                                 ),
-                                "candidate_pre_topology_stratum_key": candidate_key,
+                                "candidate_conditioning_stratum_key": candidate_key,
                                 "proposal_family": family,
                                 "proposal_calibration_status": (
                                     "importance_weighted_external_null_support"
                                 ),
                                 "conditioning_target_case_id": str(target_id),
-                                "conditioning_target_pre_topology_stratum_key": target_key,
+                                "conditioning_target_stratum_key": target_key,
                                 "target_conditioning_setting_id": setting_id,
                                 "proposal_two_block_delta": two_block_delta,
                                 "proposal_spike_feature_fraction": spike_fraction,
@@ -673,7 +673,7 @@ def build_generated_mixed_rows(
     metadata_columns = [
         "case_id",
         "conditioning_target_case_id",
-        "conditioning_target_pre_topology_stratum_key",
+        "conditioning_target_stratum_key",
         "target_conditioning_setting_id",
         "proposal_two_block_delta",
         "proposal_spike_feature_fraction",
@@ -682,7 +682,7 @@ def build_generated_mixed_rows(
         "proposal_attempt",
         "proposal_attempts_per_setting",
         "proposal_acceptance_status",
-        "candidate_pre_topology_stratum_key",
+        "candidate_conditioning_stratum_key",
         "importance_log_weight",
         "importance_law_status",
     ]
@@ -708,7 +708,7 @@ def build_target_rows(
     if generated_mixed_rows.empty:
         return pd.DataFrame(columns=TARGET_ROW_COLUMNS)
     generated = generated_mixed_rows.copy()
-    generated["_pre_topology_key"] = generated.apply(_pre_topology_stratum_key, axis=1)
+    generated["_conditioning_key"] = generated.apply(_conditioning_stratum_key, axis=1)
     observed = observed_mixed.set_index("case_id", drop=False)
     records: list[dict[str, object]] = []
     setting_keys = [
@@ -720,12 +720,12 @@ def build_target_rows(
     ]
     for target_id in target_case_ids:
         target = observed.loc[str(target_id)]
-        target_key = _pre_topology_stratum_key(target)
+        target_key = _conditioning_stratum_key(target)
         target_generated = generated.loc[
             generated["conditioning_target_case_id"].astype(str).eq(str(target_id))
         ].copy()
         for keys, group in target_generated.groupby(setting_keys, dropna=False, sort=True):
-            hits = group.loc[group["_pre_topology_key"].eq(target_key)].copy()
+            hits = group.loc[group["_conditioning_key"].eq(target_key)].copy()
             ranked = hits.sort_values(
                 [
                     "root_selected_eigenvalue_over_mp_upper_bound",
@@ -739,14 +739,14 @@ def build_target_rows(
                     "schema_version": SCHEMA_VERSION,
                     "study_role": STUDY_ROLE,
                     "target_case_id": str(target_id),
-                    "target_pre_topology_stratum_key": target_key,
+                    "target_conditioning_stratum_key": target_key,
                     "proposal_family": keys[0],
                     "proposal_two_block_delta": keys[1],
                     "proposal_spike_feature_fraction": keys[2],
                     "proposal_spike_delta": keys[3],
                     "proposal_block_fraction": keys[4],
                     "candidate_count": int(group.shape[0]),
-                    "pre_topology_stratum_hit_count": int(hits.shape[0]),
+                    "conditioning_stratum_hit_count": int(hits.shape[0]),
                     "best_candidate_case_id": str(best["case_id"]) if best is not None else "",
                     "best_candidate_spectral_ratio": finite_float(
                         best.get("root_selected_eigenvalue_over_mp_upper_bound", math.nan)
@@ -759,9 +759,9 @@ def build_target_rows(
                     if best is not None
                     else math.nan,
                     "target_conditioning_status": (
-                        "pre_topology_stratum_hit_replay_needed"
+                        "conditioning_stratum_hit_tail_evaluation_ready"
                         if not hits.empty
-                        else "pre_topology_stratum_missing"
+                        else "conditioning_stratum_missing"
                     ),
                 }
             )
@@ -776,16 +776,19 @@ def summarize_target_rows(
     if target_rows.empty:
         return pd.DataFrame(columns=SUMMARY_COLUMNS)
     supported = int(
-        target_rows.groupby("target_case_id")["pre_topology_stratum_hit_count"].max().gt(0).sum()
+        target_rows.groupby("target_case_id")["conditioning_stratum_hit_count"]
+        .max()
+        .gt(0)
+        .sum()
     )
     generated_count = int(generated_mixed_rows.shape[0])
     target_count = int(target_rows["target_case_id"].nunique())
     status = (
-        "all_targets_have_pre_topology_candidates_replay_needed"
+        "all_targets_have_conditioning_candidates_tail_evaluation_ready"
         if supported == target_count and target_count > 0
-        else "partial_pre_topology_candidate_support"
+        else "partial_conditioning_candidate_support"
         if supported > 0
-        else "no_pre_topology_candidate_support"
+        else "no_conditioning_candidate_support"
     )
     return pd.DataFrame.from_records(
         [
@@ -794,7 +797,7 @@ def summarize_target_rows(
                 "study_role": STUDY_ROLE,
                 "target_count": target_count,
                 "generated_count": generated_count,
-                "pre_topology_supported_target_count": supported,
+                "conditioning_supported_target_count": supported,
                 "summary_status": status,
             }
         ],
@@ -881,7 +884,7 @@ def main() -> None:
             block_fraction_grid=_parse_float_grid(args.block_fraction_grid),
             replicates_per_setting=int(args.replicates_per_setting),
             attempts_per_setting=int(args.attempts_per_setting),
-            accept_target_pre_topology_stratum=bool(args.accept_target_pre_topology_stratum),
+            accept_target_conditioning_stratum=bool(args.accept_target_conditioning_stratum),
             seed_offset=int(args.seed_offset),
         )
     )

@@ -43,7 +43,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_calibration_
 )
 from benchmarks.shared.cases import get_test_cases_by_suite
 
-SCHEMA_VERSION = "root_tie_rank_selected_null_simulation_pilot/v1"
+SCHEMA_VERSION = "root_tie_rank_selected_null_simulation_pilot/v2"
 STUDY_ROLE = "diagnostic_root_tie_rank_selected_null_simulation_not_calibration"
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_selected_null_simulation_pilot"
@@ -81,7 +81,6 @@ TARGET_SUPPORT_COLUMNS = (
     "root_tie_rank_median_fraction",
     "root_edge_path_statistic_margin",
     "root_selected_eigenvalue_over_mp_upper_bound",
-    "root_bandwidth_reopen_count",
     "stratum_observed_count",
     "stratum_calibration_null_support_count",
     "stratum_calibration_null_exceedance_count",
@@ -332,7 +331,6 @@ def build_selected_null_mixed_rows(
     mixed_rows = build_root_selected_mixed_region_law_rows(
         root_summary=root_rows,
         tie_cell_burden_rows=tie_rows,
-        topology_frontier_rows=None,
     )
     metadata = _metadata_by_case(root_rows)
     mixed_rows = _attach_metadata(mixed_rows, metadata)
@@ -378,7 +376,6 @@ def build_target_support_rows(
                 "root_selected_eigenvalue_over_mp_upper_bound": float(
                     row["root_selected_eigenvalue_over_mp_upper_bound"]
                 ),
-                "root_bandwidth_reopen_count": float(row["root_bandwidth_reopen_count"]),
                 "stratum_observed_count": int(row["stratum_observed_count"]),
                 "stratum_calibration_null_support_count": int(
                     row["stratum_calibration_null_support_count"]
