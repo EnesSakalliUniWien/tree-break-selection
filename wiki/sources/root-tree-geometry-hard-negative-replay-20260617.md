@@ -24,9 +24,10 @@ tags:
 
 `root_tree_geometry_hard_negative_replay_panel.py` replays the warning case
 `overlap_extreme_4c` across alternative selected-tree geometries. The panel
-uses the same signal seed and `fixed_coordinate_selective_root_v1` guard
-settings as the prior all-seven root-validity artifact, but varies tree
-construction and distance:
+uses the same signal seed and explicit selected-root guard settings as the prior
+all-seven root-validity artifact, but varies tree construction and distance.
+The original artifact recorded those settings under the now-retired
+`fixed_coordinate_selective_root_v1` profile ID:
 
 - linkage/Hamming/average,
 - linkage/Hamming/complete,

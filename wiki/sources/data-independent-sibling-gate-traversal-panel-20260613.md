@@ -263,11 +263,12 @@ and reports cluster-level outcomes.
   fixed-profile replay while retaining matched signal, but broad confidence,
   guard replicate count, guard alpha, and supported feature-family/tree-domain
   evidence remain open.
-- The packaged profile for future direct runtime validation is
+- The historical direct-runtime validation profile was
   `fixed_coordinate_selective_root_v1`: fixed coordinate BH, selected-topology
   penalty `50`, root-stability threshold `0.24`, `12` stability subsamples,
   feature fraction `0.8`, and a `99`-draw selected-root permutation guard at
-  alpha `0.01`.
+  alpha `0.01`. That profile ID is now retired; targeted replays supply these
+  default-off guard settings explicitly.
 
 ## Evidence
 

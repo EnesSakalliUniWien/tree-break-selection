@@ -216,13 +216,22 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
             tree_linkage_method="average",
             edge_alpha=0.001,
             feature_space=feature_space,
-            sibling_gate_profile="fixed_coordinate_selective_root_v1",
+            sibling_gate_method="fixed_coordinate_bh",
+            sibling_gate_alpha_penalty=50.0,
+            root_stability_guard_threshold=0.24,
+            root_stability_subsample_replicates=12,
+            root_stability_feature_fraction=0.8,
+            root_stability_seed=0,
+            root_selective_permutation_guard_replicates=99,
+            root_selective_permutation_guard_seed=0,
+            root_selective_permutation_guard_alpha=0.01,
+            root_selective_permutation_guard_scope="root",
             trace_level="full",
         )
         annotations = run.extra["annotations"]
         root = run.extra["tree"].root()
         metadata = run.extra["gate_bundle"].metadata.config
-        assert metadata.sibling_gate_profile_id == "fixed_coordinate_selective_root_v1"
+        assert metadata.sibling_gate_profile_id is None
         assert metadata.root_selective_permutation_guard_replicates == 99
         assert metadata.root_selective_permutation_guard_seed == 0
         assert metadata.root_selective_permutation_guard_alpha == 0.01

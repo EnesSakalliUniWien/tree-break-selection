@@ -18,14 +18,6 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.profiles import
     ),
     [
         pytest.param("fixed_coordinate_guarded_v1", 0, None, "root", id="guarded"),
-        pytest.param("fixed_coordinate_selective_root_v1", 99, 0.01, "root", id="selective-root"),
-        pytest.param(
-            "fixed_coordinate_selective_passthrough_v1",
-            99,
-            0.01,
-            "passthrough_descendant",
-            id="selective-passthrough",
-        ),
         pytest.param(
             "fixed_coordinate_global_passthrough_refined_v1",
             99,
@@ -127,13 +119,13 @@ def test_fixed_profile_allows_explicit_root_selective_guard_when_disabled() -> N
     assert root_selective_scope == "root"
 
 
-def test_selective_root_profile_rejects_conflicting_guard_replicates() -> None:
+def test_profile_rejects_conflicting_guard_replicates() -> None:
     with pytest.raises(
         ValueError,
         match="conflicts with explicit root_selective_permutation_guard_replicates",
     ):
         resolve_sibling_gate_profile_config(
-            sibling_gate_profile="fixed_coordinate_selective_root_v1",
+            sibling_gate_profile="fixed_coordinate_global_passthrough_refined_v1",
             root_selective_permutation_guard_replicates=5,
         )
 

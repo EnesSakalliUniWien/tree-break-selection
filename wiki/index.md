@@ -630,9 +630,8 @@ renamed, or promoted.
 - [[fixed-sibling-gate-profile-validation-20260613]] - shared-runner
   validation artifact proving that named fixed sibling-gate profiles avoid
   adaptive projected-Wald sibling rows, exposing selected-root permutation as a
-  validation diagnostic in the profile path, packaging
-  `fixed_coordinate_selective_root_v1` and the narrower
-  `fixed_coordinate_selective_passthrough_v1` validation stress profiles, and
+  validation diagnostic in the profile path, preserving results from the now-
+  retired selected-root and selective-pass-through stress profiles, and
   recording the ten-replicate recheck that rejects a hard closed-root barrier,
   the support run showing that the now-retired unrefined global passthrough
   profile still had boundary false splits,
@@ -640,9 +639,9 @@ renamed, or promoted.
   selected-family pass-through diagnostic candidate after binary support
   validation moved its production summary from fail-closed to diagnostic-only.
 - [[selected-family-traversal-panel-20260614]] - diagnostic runner comparing
-  baseline traversal with fixed-coordinate selected-root and selected-family
-  profiles, surfacing selected-family guard rows and multi-scale node, region,
-  and sample outputs instead of only a flat clustering.
+  baseline traversal with the guarded fixed-coordinate and refined global
+  selected-family profiles, surfacing selected-family guard rows and multi-scale
+  node, region, and sample outputs instead of only a flat clustering.
 - [[refined-profile-all-benchmark-tests-20260614]] - all-supported
   selected-null smoke and full 120-case performance pass for
   `fixed_coordinate_global_passthrough_refined_v1`, showing overlap-template

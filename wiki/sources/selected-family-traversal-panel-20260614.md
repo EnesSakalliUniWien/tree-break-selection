@@ -21,7 +21,7 @@ tags:
 
 `selected_family_traversal_panel.py` is a diagnostic-only runner that compares
 baseline TBS traversal with fixed-coordinate selected-root and selected-family
-profiles, then emits multi-scale node, region, and sample outputs instead of
+diagnostics, then emits multi-scale node, region, and sample outputs instead of
 only one flat clustering.
 
 ## Key Points
@@ -29,9 +29,10 @@ only one flat clustering.
 - The panel treats `fixed_coordinate_global_passthrough_refined_v1` as the
   primary V1 selected-family diagnostic candidate, not as a production default.
 - The default method grid includes baseline projected-Wald traversal,
-  `fixed_coordinate_guarded_v1`, `fixed_coordinate_selective_root_v1`,
-  `fixed_coordinate_selective_passthrough_v1`, and
-  `fixed_coordinate_global_passthrough_refined_v1`.
+  `fixed_coordinate_guarded_v1`, and
+  `fixed_coordinate_global_passthrough_refined_v1`. The original study also
+  compared the now-retired selected-root and selective-pass-through profiles;
+  its raw results retain those IDs as provenance.
 - Fixed-profile rows surface the existing same-data fixed coordinate BH
   path; the panel does not reintroduce adaptive parent
   PCA into the sibling statistic.

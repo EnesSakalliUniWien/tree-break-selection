@@ -75,44 +75,6 @@ SIBLING_GATE_PROFILES: dict[str, SiblingGateProfile] = {
             "stability guard."
         ),
     ),
-    "fixed_coordinate_selective_root_v1": SiblingGateProfile(
-        profile_id="fixed_coordinate_selective_root_v1",
-        sibling_gate_method="fixed_coordinate_bh",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="diagnostic_candidate",
-        description=(
-            "Same-data fixed coordinate-BH sibling gate with selected-topology "
-            "alpha penalty, selected-root feature-subsample stability guard, and "
-            "selected-root permutation guard."
-        ),
-        root_selective_permutation_guard_replicates=99,
-        root_selective_permutation_guard_seed=0,
-        root_selective_permutation_guard_alpha=0.01,
-    ),
-    "fixed_coordinate_selective_passthrough_v1": SiblingGateProfile(
-        profile_id="fixed_coordinate_selective_passthrough_v1",
-        sibling_gate_method="fixed_coordinate_bh",
-        sibling_gate_alpha_penalty=50.0,
-        root_stability_guard_threshold=0.24,
-        root_stability_subsample_replicates=12,
-        root_stability_feature_fraction=0.8,
-        root_stability_seed=0,
-        status="diagnostic_candidate",
-        description=(
-            "Same-data fixed coordinate-BH sibling gate with selected-topology "
-            "alpha penalty, selected-root feature-subsample stability guard, and "
-            "selected-subtree permutation guard only for splits reachable through "
-            "a pass-through ancestor."
-        ),
-        root_selective_permutation_guard_replicates=99,
-        root_selective_permutation_guard_seed=0,
-        root_selective_permutation_guard_alpha=0.01,
-        root_selective_permutation_guard_scope="passthrough_descendant",
-    ),
     "fixed_coordinate_global_passthrough_refined_v1": SiblingGateProfile(
         profile_id="fixed_coordinate_global_passthrough_refined_v1",
         sibling_gate_method="fixed_coordinate_bh",

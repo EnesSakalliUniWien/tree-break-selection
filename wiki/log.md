@@ -6423,3 +6423,17 @@ The benchmark-facing `tbs_conditional_topology_diagnostic` method id remains
 available and now resolves to `fixed_coordinate_guarded_v1`. Conditional-
 topology diagnostic scripts and new output metadata use that canonical profile;
 historical raw results retain the retired profile id as provenance.
+
+#### Retired root and selective-pass-through validation profiles
+
+Removed `fixed_coordinate_selective_root_v1` and
+`fixed_coordinate_selective_passthrough_v1` from the production profile
+registry after their diagnostic roles were superseded. The selected-family
+panel default now compares the projected-Wald baseline, guarded fixed-coordinate
+profile, and refined global selected-family profile.
+
+Migrated the root tree-geometry replay and its categorical false-root regression
+to explicit fixed-coordinate, root-stability, and selected-root permutation
+parameters before removing the root profile ID. The underlying default-off
+guard scopes and their direct behavioral coverage remain; raw captures and
+historical wiki measurements retain the retired identifiers as provenance.

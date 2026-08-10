@@ -56,14 +56,6 @@ clustering pipeline.
   `sibling_gate_profile="fixed_global_guarded_v1"` package the same-data
   fixed-gate repair as named diagnostic candidates. The profile id is recorded
   in gate annotation metadata and participates in cache reuse checks.
-- `sibling_gate_profile="fixed_coordinate_selective_root_v1"` packages a
-  validation stress profile: fixed coordinate BH, selected-topology alpha
-  penalty, selected-root stability, and an explicit selected-root permutation
-  diagnostic. It is not the TBS method and is not a default runtime path.
-- `sibling_gate_profile="fixed_coordinate_selective_passthrough_v1"` adds the
-  narrower pass-through descendant guard. It targets the observed null sibling
-  leak without applying the broad selected-subtree permutation check to every
-  internal split.
 - `sibling_gate_profile="fixed_coordinate_global_passthrough_refined_v1"` adds
   a higher-resolution replay for global pass-through families that land on the
   base Monte Carlo p-value floor. It is the current diagnostic follow-up after

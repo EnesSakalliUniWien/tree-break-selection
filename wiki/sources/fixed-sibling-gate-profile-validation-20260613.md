@@ -2,7 +2,7 @@
 title: Fixed Sibling Gate Profile Validation 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-10
 sources:
   - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - benchmarks/shared/runners/tbs_runner.py
@@ -25,6 +25,12 @@ tags:
 sibling-gate profiles through the shared TBS benchmark runner. It is a
 diagnostic artifact for routing and evidence fields, not a production
 calibration rule.
+
+The selected-root and selective-pass-through profile IDs described below are
+historical provenance. They were retired from the runtime registry on
+2026-08-10; their default-off guard behaviors remain reproducible through
+explicit settings, while the refined global selected-family profile remains the
+packaged candidate.
 
 ## Key Points
 
@@ -71,8 +77,8 @@ calibration rule.
   CLI forwards guard replicates, seed, and alpha into the shared TBS runner,
   records `Root_Selective_Permutation_*` audit columns, and summarizes
   selected-root p-values and guard block rates.
-- The selected-root method layer is now packaged as
-  `fixed_coordinate_selective_root_v1`. This profile sets fixed coordinate BH,
+- The selected-root method layer was packaged as
+  `fixed_coordinate_selective_root_v1`. This profile set fixed coordinate BH,
   selected-topology penalty `50`, root-stability threshold `0.24`, `12`
   stability subsamples, feature fraction `0.8`, selected-root permutation
   replicates `99`, selected-root guard seed `0`, and selected-root guard alpha
@@ -89,8 +95,9 @@ calibration rule.
   sibling method, selected-topology penalty, stability constants, and
   selected-root guard constants rather than only raw explicit kwargs.
 - The method-constant evidence builder also uses resolved profile settings.
-  A profile-validation run that asks only for `fixed_coordinate_selective_root_v1`
-  now reports selected-root permutation grids `[99]` and `[0.01]` in evidence
+  A historical profile-validation run asking only for
+  `fixed_coordinate_selective_root_v1` reports selected-root permutation grids
+  `[99]` and `[0.01]` in evidence
   JSON, rather than incorrectly treating the guard as disabled because the CLI
   override knobs were left at defaults.
 - A targeted profile replay at data seed `20309045`, guard seed `20318458`,
@@ -117,8 +124,8 @@ calibration rule.
   conservative for signal. In the same two-replicate mixed smoke it has zero
   observed null false splits, but binary signal mean ARI is `0.651330` and
   categorical signal mean ARI is `0.521072`.
-- The narrowed scope is packaged as
-  `fixed_coordinate_selective_passthrough_v1`. It runs selected-subtree
+- The narrowed scope was packaged as
+  `fixed_coordinate_selective_passthrough_v1`. It ran selected-subtree
   permutation only for open descendant splits reachable through an ordinary
   closed sibling ancestor, and skips descendant compounding below roots already
   closed by explicit root-stability or selected-permutation guards.

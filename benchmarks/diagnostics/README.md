@@ -42,14 +42,12 @@ Maintained entrypoints:
 runner smoke for fixed sibling-gate profiles, root-stability metadata, and the
 default-off selected-root permutation guard. Its successful rows remain
 diagnostic evidence unless the production-admissibility outputs pass the
-confidence contract. Use `fixed_coordinate_selective_root_v1` to exercise the
-packaged selected-root permutation candidate directly, and
-`fixed_coordinate_selective_passthrough_v1` to exercise the narrower
-pass-through descendant selected-subtree guard.
+confidence contract. Configure selected-root and pass-through-descendant guard
+parameters explicitly when reproducing those historical diagnostic variants.
 
 `calibration/selected/family/selected_family_traversal_panel.py` compares baseline traversal
-with the fixed-coordinate selected-root/pass-through profile family and writes
-multi-scale node, region, and sample outputs. Use
+with the guarded fixed-coordinate baseline and refined selected-family profile,
+and writes multi-scale node, region, and sample outputs. Use
 `fixed_coordinate_global_passthrough_refined_v1` as the primary binary V1
 selected-family diagnostic candidate; it remains validation-only, not a
 production default.

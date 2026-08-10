@@ -57,8 +57,6 @@ SIGNAL_OUTPUT_ROLE = "signal"
 DEFAULT_METHODS = (
     BASELINE_METHOD_ID,
     "fixed_coordinate_guarded_v1",
-    "fixed_coordinate_selective_root_v1",
-    "fixed_coordinate_selective_passthrough_v1",
     "fixed_coordinate_global_passthrough_refined_v1",
 )
 

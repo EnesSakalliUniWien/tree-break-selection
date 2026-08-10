@@ -183,18 +183,12 @@ null root and retains the matched signal, so this evidence helps identify the
 selected-root failure mode; it should not be folded into the TBS method
 definition.
 
-The packaged validation stress profile is
-`fixed_coordinate_selective_root_v1`: fixed coordinate BH replaces the
-same-sample adaptive sibling projection, selected-topology penalty `50`
-controls edge-selected traversal multiplicity, root-stability threshold `0.24`
-guards unstable selected roots, and the `99`-draw selected-root permutation
-diagnostic probes selected-tree null behavior. This is not a production default
-and not the non-resampling TBS runtime method.
-
-The newest rooting/null-sibling validation refinement is
-`fixed_coordinate_selective_passthrough_v1`. It keeps the fixed coordinate BH
-statistic and selected-root diagnostic, but adds selected-subtree permutation
-only for descendant splits reached through an ordinary closed sibling ancestor.
+The historical `fixed_coordinate_selective_root_v1` validation profile packaged
+fixed coordinate BH, selected-topology penalty `50`, root-stability threshold
+`0.24`, and a `99`-draw selected-root permutation diagnostic. The historical
+`fixed_coordinate_selective_passthrough_v1` variant added selected-subtree
+permutation only for descendant splits reached through an ordinary closed
+sibling ancestor.
 This targets the pass-through leak that root-only diagnostics miss without
 applying the broad `open_internal` diagnostic to every internal signal split. In
 the
@@ -206,6 +200,12 @@ the support requirement directly: with zero observed false splits, production
 confidence at a `0.05` Wilson upper-bound target requires `73` null replicates
 per case, so the current smoke needs `71` additional zero-false null replicates
 per case.
+
+Both named profiles were retired from the runtime registry after this diagnostic
+sequence. The default-off selected-root and pass-through-descendant guard scopes
+remain available through explicit parameters for historical reproduction; the
+refined global selected-family profile is the current packaged diagnostic
+candidate.
 
 The fixed-coordinate FDR reaction panel now makes the aggregation choice
 explicit. Plain coordinate BH reacts to repeated moderate coordinate evidence

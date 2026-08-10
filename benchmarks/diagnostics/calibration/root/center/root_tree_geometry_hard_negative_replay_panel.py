@@ -72,7 +72,6 @@ class RootTreeGeometryHardNegativeReplayConfig:
     case_name: str = "overlap_extreme_4c"
     data_role: str = "signal"
     method_id: str = "tbs"
-    profile_id: str = "fixed_coordinate_selective_root_v1"
     tree_geometries: tuple[TreeGeometrySpec, ...] = tuple(
         TreeGeometrySpec(*item.split(":")) for item in DEFAULT_TREE_GEOMETRIES
     )
@@ -80,10 +79,16 @@ class RootTreeGeometryHardNegativeReplayConfig:
     edge_alpha: float = 0.001
     replicates: int = 1
     base_seed: int = 20260617
+    sibling_gate_method: str = "fixed_coordinate_bh"
+    sibling_gate_alpha_penalty: float = 50.0
     root_stability_threshold: float = 0.24
+    root_stability_subsample_replicates: int = 12
+    root_stability_feature_fraction: float = 0.8
+    root_stability_seed: int = 0
     root_selective_permutation_alpha: float = 0.01
     root_selective_permutation_replicates: int = 99
     root_selective_permutation_seed: int = 0
+    root_selective_permutation_scope: str = "root"
 
     @property
     def rows_path(self) -> Path:
@@ -386,7 +391,19 @@ def _row_for_geometry(
         "root_selective_permutation_guard_alpha": float(config.root_selective_permutation_alpha),
     }
     if config.method_id == "tbs":
-        params["sibling_gate_profile"] = config.profile_id
+        params.update(
+            {
+                "sibling_gate_method": config.sibling_gate_method,
+                "sibling_gate_alpha_penalty": float(config.sibling_gate_alpha_penalty),
+                "root_stability_guard_threshold": float(config.root_stability_threshold),
+                "root_stability_subsample_replicates": int(
+                    config.root_stability_subsample_replicates
+                ),
+                "root_stability_feature_fraction": float(config.root_stability_feature_fraction),
+                "root_stability_seed": int(config.root_stability_seed),
+                "root_selective_permutation_guard_scope": (config.root_selective_permutation_scope),
+            }
+        )
     result = run_clustering_result(
         data_df=data,
         method_id=config.method_id,
@@ -404,7 +421,7 @@ def _row_for_geometry(
         "source_family": source_family,
         "feature_representation": feature_representation,
         "method_id": config.method_id,
-        "profile_id": config.profile_id,
+        "profile_id": "",
         "replicate": int(replicate),
         "data_seed": int(data_seed),
         "tree_builder": geometry.tree_builder,
@@ -767,10 +784,6 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         choices=("tbs",),
     )
     parser.add_argument(
-        "--profile-id",
-        default="fixed_coordinate_selective_root_v1",
-    )
-    parser.add_argument(
         "--tree-geometries",
         default=None,
         help=(
@@ -798,7 +811,6 @@ def main(argv: Sequence[str] | None = None) -> None:
             case_name=str(args.case_name),
             data_role=str(args.data_role),
             method_id=str(args.method_id),
-            profile_id=str(args.profile_id),
             tree_geometries=parse_tree_geometries(args.tree_geometries),
             sibling_alpha=float(args.sibling_alpha),
             edge_alpha=float(args.edge_alpha),

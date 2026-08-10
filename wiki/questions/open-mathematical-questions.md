@@ -2,7 +2,7 @@
 title: Open Mathematical Questions
 type: question
 status: reviewed
-updated: 2026-08-08
+updated: 2026-08-10
 sources:
   - manuscript/guides/full_method_logic_map.md
   - manuscript/guides/edge_sibling_derivation_guide.md
@@ -316,14 +316,14 @@ explicitly enabled. It is default-off, restricted to fixed-subspace sibling
 methods, and should not be treated as part of the TBS runtime method; it exists
 to reveal selected-tree null behavior.
 
-The packaged validation stress profile is now
-`fixed_coordinate_selective_root_v1`. It combines fixed coordinate BH sibling
+The historical validation stress profile
+`fixed_coordinate_selective_root_v1` combined fixed coordinate BH sibling
 p-values, selected-topology penalty `50`, root-stability threshold `0.24`,
 `12` stability subsamples, feature fraction `0.8`, and a `99`-draw
 selected-root permutation diagnostic at alpha `0.01`. The non-resampling TBS
-candidate excludes that permutation layer. The TBS runner records resolved
-profile constants in its result metadata, so downstream validation artifacts can
-audit whether a run used the method path or a resampling diagnostic.
+candidate excludes that permutation layer. The named profile is now retired;
+reproduction uses the same explicit guard constants and the TBS runner records
+the resolved settings in result metadata.
 
 The first executable selective-null object is now available but not sufficient:
 the traversal panel's selected-root permutation diagnostic preserves
@@ -436,16 +436,17 @@ selected-root permutation would also block it. The open mathematical problem is
 therefore whether the selected-root permutation conditioning,
 replicate count, guard alpha, and feature-family/tree-construction domain can
 be validated broadly enough to satisfy the production-admissibility contract.
-The packaged `fixed_coordinate_selective_root_v1` profile reproduces that
-targeted behavior with its profile-level selected-root guard seed `0`.
+The now-retired `fixed_coordinate_selective_root_v1` profile reproduced that
+targeted behavior with selected-root guard seed `0`; the regression now supplies
+the same settings explicitly.
 
 The next recheck shows that root-only guarding is not enough under pass-through
 traversal. A `cat_clear_3cat_4c` null replicate can have a closed root sibling
 gate and still return three clusters because a descendant sibling split is
 reachable through pass-through. A broad selected-subtree permutation guard
 (`open_internal`) closes this null leak but collapses signal in a two-replicate
-mixed smoke. The current strongest diagnostic refinement is
-`fixed_coordinate_selective_passthrough_v1`: it tests only open descendant
+mixed smoke. The subsequent diagnostic refinement was
+`fixed_coordinate_selective_passthrough_v1`: it tested only open descendant
 splits reached through an ordinary closed sibling ancestor and avoids
 compounding below roots already closed by explicit guards. In the same
 six-case two-replicate smoke it has zero observed null false splits, binary
@@ -459,7 +460,7 @@ mathematical problem is therefore now the selective pass-through null law and
 confidence validation, not the original adaptive sibling projection statistic.
 
 The ten-replicate pass-through recheck reopens that last point in a more
-specific way. `fixed_coordinate_selective_passthrough_v1` keeps categorical
+specific way. The now-retired `fixed_coordinate_selective_passthrough_v1` kept categorical
 nulls closed but has one binary null false split: `binary_many_clusters`, null
 replicate `7`, seed `20316108`, opens descendant node `N585` below a closed
 unstable root. A hard rule that stops all pass-through below closed unstable
