@@ -124,3 +124,21 @@ def test_annotations_expose_parent_positive_eigenvalue_count() -> None:
     # eigenvalues, so the available rank must be auditable next to the dof.
     # The fixture supplies a single unit eigenvalue per parent.
     assert float(result.loc["N3", "Sibling_Parent_Positive_Eigenvalue_Count"]) == 1.0
+
+
+def test_selected_hierarchy_focal_rows_fail_closed_without_calibrated_p_values() -> None:
+    tree = _binary_tree()
+    result = _annotate(tree, _edge_annotations(tree))
+
+    focal_parents = ["N4", "N2"]
+    assert result.loc[
+        focal_parents,
+        "Sibling_Gate_P_Value_Calibration",
+    ].eq("undefined_unvalidated_reference_law").all()
+    assert result.loc[focal_parents, "Sibling_Gate_P_Value_Role"].eq(
+        "fail_closed_sibling_gate"
+    ).all()
+    assert result.loc[focal_parents, "Sibling_Divergence_Skipped"].eq(True).all()
+    assert result.loc[focal_parents, "Sibling_Divergence_Invalid"].eq(True).all()
+    assert result.loc[focal_parents, "Sibling_Divergence_P_Value"].notna().all()
+    assert not result.loc[focal_parents, "Sibling_BH_Different"].any()

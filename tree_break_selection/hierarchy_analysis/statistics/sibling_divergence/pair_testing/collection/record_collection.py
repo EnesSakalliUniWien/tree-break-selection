@@ -29,6 +29,7 @@ from .child_parent_edge_metadata import (
     extract_child_parent_edge_p_values_by_node,
     extract_child_parent_edge_significance_by_node,
     extract_child_parent_edge_testing_status_by_node,
+    resolve_sibling_calibration_dependency_group,
     validate_child_parent_edge_annotation_requirements,
 )
 from .pair_observations import (
@@ -228,6 +229,33 @@ def collect_sibling_pair_records(
             child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
             child_parent_edge_ancestor_blocked_by_node=(child_parent_edge_ancestor_blocked_by_node),
         )
+        calibration_dependency_group = resolve_sibling_calibration_dependency_group(
+            tree,
+            parent_node_id,
+            is_edge_blocked=is_edge_blocked,
+            child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
+            child_parent_edge_significance_by_node=child_parent_edge_significance_by_node,
+        )
+        dependency_owner_children = identify_binary_sibling_children(
+            tree,
+            calibration_dependency_group,
+        )
+        if dependency_owner_children is None:
+            raise ValueError(
+                "Sibling calibration dependency group must own exactly two children; "
+                f"group={calibration_dependency_group!r}."
+            )
+        dependency_left_child_id, dependency_right_child_id = dependency_owner_children
+        calibration_dependency_weight = estimate_sibling_null_weight_from_child_parent_edges(
+            dependency_left_child_id,
+            dependency_right_child_id,
+            child_parent_edge_p_values_by_node=child_parent_edge_p_values_by_node,
+            child_parent_edge_significance_by_node=child_parent_edge_significance_by_node,
+            child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
+            child_parent_edge_ancestor_blocked_by_node=(
+                child_parent_edge_ancestor_blocked_by_node
+            ),
+        )
         records.append(
             build_sibling_pair_record(
                 parent_node_id=parent_node_id,
@@ -242,6 +270,8 @@ def collect_sibling_pair_records(
                 is_null_like=is_null_like,
                 is_edge_blocked=is_edge_blocked,
                 sibling_null_weight=sibling_null_weight,
+                calibration_dependency_group=calibration_dependency_group,
+                calibration_dependency_weight=calibration_dependency_weight,
                 sibling_projection_dimension=float(degrees_of_freedom),
                 **parent_spectral_summary,
                 feature_family=(

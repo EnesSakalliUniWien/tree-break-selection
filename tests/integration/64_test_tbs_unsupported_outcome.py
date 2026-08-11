@@ -52,6 +52,26 @@ def test_unsupported_reason_uses_production_stamped_calibration_evidence():
     assert reason.evidence.upstream_rejected_count == 78
 
 
+def test_unvalidated_selected_hierarchy_reference_law_reports_unsupported() -> None:
+    annotations = _unsupported_annotations()
+    annotations.loc[
+        annotations.index[:39],
+        "Sibling_Gate_P_Value_Calibration",
+    ] = "undefined_unvalidated_reference_law"
+    annotations.loc[annotations.index[-1], "Sibling_Role_Supported"] = True
+
+    reason = unsupported_empirical_null_reason(
+        annotations,
+        sibling_gate_method="projected_wald_inflation",
+    )
+
+    assert reason is not None
+    assert reason.code is UnsupportedReasonCode.EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW
+    assert reason.stage == "sibling_calibration"
+    assert reason.evidence.focal_record_count == 39
+    assert reason.evidence.admissible_support_count == 1
+
+
 def test_non_empirical_and_supported_gates_do_not_report_unsupported():
     annotations = _unsupported_annotations()
 

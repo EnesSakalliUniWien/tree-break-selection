@@ -56,7 +56,7 @@ from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_mixed_internal_calibration_sweep_not_calibration"
-SCHEMA_VERSION = "mixed_internal_calibration_sweep/v1"
+SCHEMA_VERSION = "mixed_internal_calibration_sweep/v2"
 
 
 def _parse_csv_list(raw: str) -> tuple[str, ...]:
@@ -233,23 +233,31 @@ def _collect_case_replicate(
                     "calibration_p_value": (
                         np.nan if decision.p_value is None else float(decision.p_value)
                     ),
-                    "split_rejected_at_alpha": bool(
-                        decision.status == "internal_admissible"
+                    "split_rejected_at_alpha": (
+                        bool(decision.p_value <= sibling_alpha)
+                        if decision.status == "internal_admissible"
                         and decision.p_value is not None
-                        and decision.p_value <= sibling_alpha
+                        else None
                     ),
                     "n_supported_records": int(support.get("n_supported_records", 0)),
-                    "n_family_supported_records": int(support.get("n_family_supported_records", 0)),
-                    "n_stopped_or_null_records": int(support.get("n_stopped_or_null_records", 0)),
+                    "n_supported_groups": int(support.get("n_supported_groups", 0)),
+                    "n_family_supported_records": int(
+                        support.get("n_family_supported_records", 0)
+                    ),
+                    "n_family_supported_groups": int(
+                        support.get("n_family_supported_groups", 0)
+                    ),
                     "family_effective_sample_size": float(
                         support.get("family_effective_sample_size", 0.0)
                     ),
                     "local_effective_sample_size": float(
                         support.get("local_effective_sample_size", 0.0)
                     ),
-                    "local_max_weight_share": float(support.get("local_max_weight_share", 1.0)),
-                    "leave_one_record_max_delta_log_c": float(
-                        support.get("leave_one_record_max_delta_log_c", float("inf"))
+                    "local_max_group_weight_share": float(
+                        support.get("local_max_group_weight_share", 1.0)
+                    ),
+                    "leave_one_group_max_delta_log_c": float(
+                        support.get("leave_one_group_max_delta_log_c", float("inf"))
                     ),
                     "n_selected_nonnull_positive_weight_records": int(
                         support.get("n_selected_nonnull_positive_weight_records", 0)
@@ -303,8 +311,20 @@ def run_mixed_internal_calibration_sweep(
     q10_records_path = output_dir / "mixed_q10_sibling_records.csv"
     threshold_contexts_path = output_dir / "mixed_internal_support_contexts.csv"
     status_path = output_dir / "mixed_internal_calibration_status.csv"
+    manifest_path = output_dir / "manifest.json"
+    resume_schema_matches = False
+    if resume and manifest_path.exists():
+        try:
+            resume_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            resume_manifest = None
+        resume_schema_matches = bool(
+            isinstance(resume_manifest, dict)
+            and resume_manifest.get("schema_version") == SCHEMA_VERSION
+        )
     if (
         resume
+        and resume_schema_matches
         and q10_records_path.exists()
         and threshold_contexts_path.exists()
         and status_path.exists()
@@ -368,7 +388,6 @@ def run_mixed_internal_calibration_sweep(
     weight_summary_path = output_dir / "mixed_q10_weight_rule_summary.csv"
     threshold_decisions_path = output_dir / "mixed_internal_support_threshold_decisions.csv"
     threshold_summary_path = output_dir / "mixed_internal_support_threshold_summary.csv"
-    manifest_path = output_dir / "manifest.json"
     weight_summary.to_csv(weight_summary_path, index=False)
     threshold_decisions.to_csv(threshold_decisions_path, index=False)
     threshold_summary.to_csv(threshold_summary_path, index=False)

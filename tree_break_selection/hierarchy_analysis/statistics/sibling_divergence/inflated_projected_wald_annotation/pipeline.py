@@ -64,12 +64,14 @@ def _has_internal_empirical_null_support(record: SiblingPairRecord) -> bool:
     )
 
 
-def _mark_no_internal_support_as_fail_closed(
+def _mark_empirical_calibration_as_fail_closed(
     annotations_df: pd.DataFrame,
-    records: list[SiblingPairRecord],
+    focal_records: list[SiblingPairRecord],
+    *,
+    method: str,
+    calibration_status: str,
 ) -> pd.DataFrame:
-    """Mark focal sibling tests as fail-closed when calibration support is absent."""
-    focal_records = [record for record in records if not record.is_null_like]
+    """Preserve raw focal evidence while withholding unresolved calibrated p-values."""
     if not focal_records:
         return annotations_df
 
@@ -87,16 +89,24 @@ def _mark_no_internal_support_as_fail_closed(
     annotations_df.loc[focal_parents, "Sibling_Divergence_P_Value"] = [
         float(record.p_value) for record in focal_records
     ]
-    annotations_df.loc[focal_parents, "Sibling_Test_Method"] = (
-        "empirical_null_no_internal_support"
-    )
-    annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Calibration"] = (
-        "undefined_no_internal_support"
-    )
+    annotations_df.loc[focal_parents, "Sibling_Test_Method"] = method
+    annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Calibration"] = calibration_status
     annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Role"] = (
         "fail_closed_sibling_gate"
     )
     return annotations_df
+
+
+def _mark_no_internal_support_as_fail_closed(
+    annotations_df: pd.DataFrame,
+    records: list[SiblingPairRecord],
+) -> pd.DataFrame:
+    return _mark_empirical_calibration_as_fail_closed(
+        annotations_df,
+        [record for record in records if not record.is_null_like],
+        method="empirical_null_no_internal_support",
+        calibration_status="undefined_no_internal_support",
+    )
 
 
 def annotate_sibling_divergence(
@@ -177,6 +187,58 @@ def annotate_sibling_divergence(
         stage_timings["sibling_gate_inflation_fit_sec"] = float(
             stage_timings.get("sibling_gate_inflation_fit_sec", 0.0)
         ) + float(perf_counter() - inflation_fit_start_sec)
+
+    if model.reference_law == "unresolved_same_selected_hierarchy":
+        unresolved_focal_records = [
+            record
+            for record in records
+            if not record.is_null_like and record.degrees_of_freedom > 0.0
+        ]
+        annotations_df = _mark_empirical_calibration_as_fail_closed(
+            annotations_df,
+            unresolved_focal_records,
+            method="empirical_null_unvalidated_selected_hierarchy_reference_law",
+            calibration_status="undefined_unvalidated_reference_law",
+        )
+        zero_dimensional_focal_records = [
+            record
+            for record in records
+            if not record.is_null_like and record.degrees_of_freedom == 0.0
+        ]
+        if not zero_dimensional_focal_records:
+            return apply_traversal_aligned_sibling_bh_results(
+                tree,
+                annotations_df,
+                [],
+                [],
+                significance_level_alpha,
+                skipped_parents=[
+                    *skipped_parents,
+                    *(record.parent for record in unresolved_focal_records),
+                ],
+            )
+        (
+            zero_parent_ids,
+            zero_test_summaries,
+            zero_method_labels,
+        ) = compute_inflation_adjusted_sibling_tests(
+            zero_dimensional_focal_records,
+            model=model,
+            enforce_support_thresholds=enforce_support_thresholds,
+            support_thresholds=support_thresholds,
+        )
+        return apply_traversal_aligned_sibling_bh_results(
+            tree,
+            annotations_df,
+            zero_parent_ids,
+            zero_test_summaries,
+            significance_level_alpha,
+            method_labels=zero_method_labels,
+            skipped_parents=[
+                *skipped_parents,
+                *(record.parent for record in unresolved_focal_records),
+            ],
+        )
 
     adjusted_tests_start_sec = perf_counter()
     (

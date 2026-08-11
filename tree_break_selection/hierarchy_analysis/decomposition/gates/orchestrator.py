@@ -49,6 +49,8 @@ from ...statistics.sibling_divergence.inflation_correction.empirical_null_inflat
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
 )
 from ...statistics.sibling_divergence.inflation_correction.types.inflation_model import (
+    INTERNAL_SUPPORT_CONTRACT_VERSION,
+    CalibrationSupportPolicySnapshot,
     CalibrationSupportThresholds,
 )
 from ...statistics.sibling_divergence.projection.gate_inputs.parent_principal_component_inputs import (
@@ -131,12 +133,6 @@ def resolve_effective_sibling_alpha(
             f"effective={effective!r}."
         )
     return float(effective)
-
-
-def _support_thresholds_signature(
-    thresholds: CalibrationSupportThresholds,
-) -> tuple[tuple[str, float | int], ...]:
-    return tuple((field, getattr(thresholds, field)) for field in thresholds.__dataclass_fields__)
 
 
 def build_gate_annotation_config_metadata(
@@ -223,8 +219,9 @@ def build_gate_annotation_config_metadata(
             root_selective_permutation_guard_tree_linkage_method
         ),
         enforce_internal_support_thresholds=bool(enforce_internal_support_thresholds),
-        internal_support_thresholds_signature=_support_thresholds_signature(
-            internal_support_thresholds
+        internal_support_policy=CalibrationSupportPolicySnapshot(
+            support_contract_version=INTERNAL_SUPPORT_CONTRACT_VERSION,
+            thresholds=internal_support_thresholds,
         ),
     )
 

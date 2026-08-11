@@ -49,7 +49,7 @@ statistic is computed in a parent-local orthonormal basis. The raw sibling
 statistic is anti-conservative when the hierarchy has selected unusually
 separated sibling pairs from the same data.
 
-The implemented correction is context-weighted empirical-null inflation:
+The implemented diagnostic is context-weighted empirical-null inflation:
 
 1. Build sibling records across two-child parents.
 2. Assign each record an empirical-null weight from the two child-parent
@@ -58,10 +58,16 @@ The implemented correction is context-weighted empirical-null inflation:
 4. Smooth over nearby contexts.
 5. Estimate inflation as a weighted ratio of observed raw statistic to
    projected-Wald reference scale.
-6. Divide the focal raw statistic by the estimated inflation.
+6. Retain the scale estimate and support evidence without treating the plug-in
+   chi-square tail as calibrated.
 
 [DEFINITION GUARD: the empirical-null weight is a monotone calibration weight,
 not a posterior probability of the sibling null.]
+
+[REFERENCE-LAW GUARD: positive-dimensional same-selected-hierarchy decisions
+fail closed. A separate exact-F path requires independent focal and calibration
+statistics, pairwise-disjoint observation ownership, fixed unit weights, and a
+common chi-square scale.]
 
 [VALIDATION GAP: the inflation estimator needs null calibration, sensitivity to
 few calibration records, sensitivity to the bandwidth rule, and comparison
@@ -70,8 +76,9 @@ against uninflated sibling testing.]
 ## Multiplicity and Traversal
 
 The edge stage uses tree-aware multiple-testing correction. The sibling stage
-uses corrected focal-pair p-values. The final traversal combines corrected edge
-and sibling decisions with pass-through enabled.
+uses focal-pair p-values only when their calibration status supplies a validated
+reference law. The final traversal combines supported edge and sibling
+decisions with pass-through enabled.
 
 [VALIDATION GAP: local-test calibration is not enough. The final number of
 clusters must be evaluated under null and planted-structure simulations.]

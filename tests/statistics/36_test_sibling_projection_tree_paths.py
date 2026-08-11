@@ -249,7 +249,13 @@ def test_cherry_with_leaf_data_uses_parent_dimension_for_leaf_pair_parent() -> N
         bundle.edge_gate_result.spectral_context.test_projection_dimensions_by_node
         == test_projection_dimensions_by_node
     )
-    assert bundle.annotated_df.loc["root", "Sibling_BH_Different"]
+    assert bundle.annotated_df.loc["root", "Sibling_Projection_Dimension"] == (
+        sibling_projection_dimensions_from_edge_comparisons["root"]
+    )
+    assert bundle.annotated_df.loc[
+        "root",
+        "Sibling_Gate_P_Value_Calibration",
+    ] == "undefined_unvalidated_reference_law"
 
 
 def test_mixed_parent_with_leaf_data_keeps_internal_parent_in_edge_derived_sibling_projection_dimensions() -> (

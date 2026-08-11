@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-08-10
+updated: 2026-08-11
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -840,6 +840,9 @@ renamed, or promoted.
 - [[oracle-gate-path-diagnostic]] - mathematical recoverability and gate-path
   analysis separating tree failures, sibling-calibration under-splits, direct
   sibling false splits, and pass-through fragmentation.
+- [[empirical-null-calibration-reference-law-contract]] - exact-F derivation
+  for the restricted independent common-scale mode, stopping-event dependency-
+  group ownership, and fail-closed selected-hierarchy behavior.
 - [[selected-hierarchy-selection-geometry]] - geometric explanation of why
   same-data hierarchy selection turns subtree barycenters, edge openings, and
   focal sibling contexts into selected high-contrast objects rather than

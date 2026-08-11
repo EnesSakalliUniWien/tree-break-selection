@@ -43,9 +43,11 @@ surfaces with their own contracts.
   contrast coordinates before any projected-Wald test is evaluated.
 - **Projected-Wald statistic** – edge and sibling tests compare distributions in
   a projection basis with an explicit covariance model.
-- **Empirical-null inflation** – sibling split p-values are corrected only when
-  the calibration support is valid. Invalid support produces an unsupported
-  status, not a neutral fallback.
+- **Empirical-null inflation** – same-selected-hierarchy scale estimates remain
+  diagnostic until their selected-tail reference law is validated. Positive-
+  dimensional sibling tests therefore fail closed even when internal support
+  exists. A separate exact-F API is restricted to independent, disjoint,
+  unit-weighted, common-scale calibration data.
 - **Top-down decomposition** – cluster boundaries appear at the first node where
   the traversal contract says the split is not supported.
 
@@ -103,8 +105,8 @@ proceeds through four checkpoints:
    in the projected-Wald geometry, then apply tree-aware multiplicity control.
 
 4. **Sibling split tests** – evaluate whether sibling subtrees should remain
-   separated after projected-Wald testing, empirical-null inflation, and sibling
-   FDR control.
+   separated after projected-Wald testing and apply sibling FDR only when the
+   p-value calibration has a validated reference law.
 
 ## Statistical Gates and Traversal
 
@@ -115,8 +117,11 @@ are satisfied.
 - **Binary structure prerequisite**: the node must have exactly two children.
 - **Edge divergence gate**: at least one child-parent edge must have supported
   and significant child-parent divergence evidence.
-- **Sibling divergence gate**: the sibling pair must have a supported and
-  significant sibling split after empirical-null inflation and sibling FDR.
+- **Sibling divergence gate**: the sibling pair must have a calibrated and
+  significant sibling split after sibling FDR. The current same-data selected-
+  hierarchy calibration has no validated positive-dimensional reference law,
+  so those sibling tests are explicitly unsupported rather than assigned a
+  calibrated p-value.
 
 If the split is not supported, the algorithm labels the parent node as a
 cluster boundary and stops there. When the split is supported, it continues the

@@ -54,8 +54,8 @@ class TreeDecomposition:
        from the parent (projected Wald chi-square test), confirming there is
        edge-level signal to split on.
     #. **Sibling divergence gate** - siblings must have significantly different
-       distributions according to a projected Wald chi-square test with
-       empirical-null inflation and sibling FDR correction.
+       distributions under a validated sibling p-value reference law and
+       sibling FDR correction. Unresolved calibration fails closed.
 
     Nodes that do not split become cluster boundaries. Leaves under the same
     boundary node are assigned the same cluster identifier. In pass-through mode,

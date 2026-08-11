@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import networkx as nx
 import pandas as pd
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.child_parent_edge_metadata import (
     determine_whether_sibling_pair_is_edge_blocked,
@@ -7,6 +8,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_
     estimate_sibling_null_weight_from_child_parent_edges,
     extract_child_parent_edge_significance_by_node,
     extract_child_parent_edge_testing_status_by_node,
+    resolve_sibling_calibration_dependency_group,
 )
 
 
@@ -115,3 +117,43 @@ def test_sibling_null_weight_treats_tree_bh_stopped_edges_as_ancestor_null_evide
     )
 
     assert weight == 0.8
+
+
+def test_nested_blocked_parents_resolve_to_the_same_stopping_event() -> None:
+    tree = nx.DiGraph(
+        [
+            ("root", "A"),
+            ("root", "B"),
+            ("A", "C"),
+            ("A", "D"),
+            ("C", "E"),
+            ("C", "F"),
+        ]
+    )
+    tested = {"A": True, "B": True, "C": False, "D": False, "E": False, "F": False}
+    significant = {
+        "A": False,
+        "B": False,
+        "C": False,
+        "D": False,
+        "E": False,
+        "F": False,
+    }
+
+    direct_group = resolve_sibling_calibration_dependency_group(
+        tree,
+        "A",
+        is_edge_blocked=True,
+        child_parent_edge_tested_by_node=tested,
+        child_parent_edge_significance_by_node=significant,
+    )
+    nested_group = resolve_sibling_calibration_dependency_group(
+        tree,
+        "C",
+        is_edge_blocked=True,
+        child_parent_edge_tested_by_node=tested,
+        child_parent_edge_significance_by_node=significant,
+    )
+
+    assert direct_group == "root"
+    assert nested_group == "root"

@@ -56,7 +56,7 @@ from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
 
-SCHEMA_VERSION = "nnls_null_calibration_sweep/v3"
+SCHEMA_VERSION = "nnls_null_calibration_sweep/v4"
 GENERATED_BY = "benchmarks.validation.sweeps.nnls_null_calibration_sweep"
 DEFAULT_OUTPUT_DIR = Path("reports/nnls_null_calibration_sweep")
 DEFAULT_CASE_NAMES = (
@@ -271,7 +271,6 @@ def _calibration_model_rows(
                 "n_selected_nonnull_positive_weight_records": 0,
                 "n_strict_null_calibration": 0,
                 "n_edge_blocked_calibration": 0,
-                "n_stopped_or_null_calibration": 0,
                 "effective_sample_size": math.nan,
             },
             [
@@ -296,7 +295,6 @@ def _calibration_model_rows(
         ),
         "n_strict_null_calibration": int(model.n_strict_null_calibration),
         "n_edge_blocked_calibration": int(model.n_edge_blocked_calibration),
-        "n_stopped_or_null_calibration": int(model.n_stopped_or_null_calibration),
         "effective_sample_size": float(model.effective_sample_size),
     }
 
@@ -496,6 +494,11 @@ def _run_branch_source(
         case_name=str(extra.get("case_name", "")),
         records=records,
     )
+    sibling_gate_roles = (
+        annotations_df["Sibling_Gate_P_Value_Role"].astype(str)
+        if "Sibling_Gate_P_Value_Role" in annotations_df
+        else pd.Series(index=annotations_df.index, dtype=str)
+    )
 
     predicted = np.asarray(result.labels, dtype=int) if result.labels is not None else np.array([])
     ari = (
@@ -527,20 +530,9 @@ def _run_branch_source(
         "n_edge_significant": _bool_sum(annotations_df, "Child_Parent_Divergence_Significant"),
         "n_sibling_records": int(len(records)),
         "record_collection_error": record_error,
-        "n_sibling_tested": int(
-            annotations_df["Sibling_Divergence_P_Value"].notna().sum()
-            if "Sibling_Divergence_P_Value" in annotations_df
-            else 0
-        ),
+        "n_sibling_tested": int(sibling_gate_roles.eq("active_traversal_sibling_gate").sum()),
         "n_sibling_open": _bool_sum(annotations_df, "Sibling_BH_Different"),
-        "n_sibling_fail_closed": int(
-            annotations_df["Sibling_Gate_P_Value_Calibration"]
-            .astype(str)
-            .eq("undefined_no_internal_support")
-            .sum()
-            if "Sibling_Gate_P_Value_Calibration" in annotations_df
-            else 0
-        ),
+        "n_sibling_fail_closed": int(sibling_gate_roles.eq("fail_closed_sibling_gate").sum()),
         "min_sibling_p_value": _finite_min(
             annotations_df.get("Sibling_Divergence_P_Value", pd.Series(dtype=float))
         ),

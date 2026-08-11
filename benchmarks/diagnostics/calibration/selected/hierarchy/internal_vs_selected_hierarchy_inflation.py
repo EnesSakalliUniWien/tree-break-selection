@@ -268,7 +268,6 @@ def _internal_empirical_inflation_summary(
         "internal_model_calibration_records": int(model.n_calibration),
         "internal_positive_weight_records": int(len(positive_weight_records)),
         "internal_strict_null_records": int(model.n_strict_null_calibration),
-        "internal_stopped_or_null_records": int(model.n_stopped_or_null_calibration),
         "internal_effective_sample_size": float(model.effective_sample_size),
         "internal_baseline_c_hat": float(model.baseline_empirical_inflation_factor),
     }

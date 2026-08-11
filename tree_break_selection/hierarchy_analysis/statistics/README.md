@@ -8,7 +8,7 @@ pipeline.
 | Entrypoint | Purpose |
 | ---------- | ------- |
 | `annotate_child_parent_divergence` | Annotate child-parent edge evidence for tree traversal. |
-| `annotate_sibling_divergence` | Annotate sibling split evidence with projected-Wald testing, inflation, and FDR. |
+| `annotate_sibling_divergence` | Annotate projected-Wald sibling evidence and fail closed when its selected-tail reference law is unresolved. |
 | `annotate_fixed_subspace_sibling_divergence` | Opt-in sibling gate using fixed covariance-whitened coordinate or feature-block BH aggregation without parent PCA adaptation. |
 | `benjamini_hochberg_correction` | Flat BH correction helper. |
 | `apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
@@ -32,8 +32,9 @@ pipeline.
 2. Build spectral/projection context for each node.
 3. Run branch-time-inflated child-parent projected-Wald tests.
 4. Run the configured sibling gate. The default path collects sibling pair
-   records, estimates empirical-null inflation from valid calibration support,
-   and applies sibling FDR. The opt-in fixed-subspace path skips parent PCA and
+   records and estimates empirical-null inflation as diagnostic evidence. Its
+   positive-dimensional same-selected-hierarchy reference law is unresolved,
+   so it withholds calibrated p-values and sibling FDR. The opt-in fixed-subspace path skips parent PCA and
    edge-derived sibling dimensions, then applies either the full fixed
    chi-square statistic or coordinate-wise/feature-block BH p-value
    aggregation before traversal-aligned sibling FDR. A positive
@@ -58,8 +59,8 @@ pipeline.
 
 - Feature-space covariance and contrast dimensions come from the active
   `FeatureSpace`; tests should not infer alternate schema names.
-- Unsupported calibration support is an explicit method status. It is not
-  replaced with a neutral inflation value.
+- Missing support and an unvalidated calibration reference law are distinct
+  explicit method statuses. Neither is replaced with a neutral inflation value.
 - Projection quantities and raw feature coordinates are separate objects.
 - Fixed-subspace sibling gates are opt-in method choices, not automatic
   production promotion.

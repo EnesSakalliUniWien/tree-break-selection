@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -145,6 +146,55 @@ def determine_whether_sibling_pair_is_null_like(
     )
 
 
+def resolve_sibling_calibration_dependency_group(
+    tree: nx.DiGraph,
+    parent_node_id: object,
+    *,
+    is_edge_blocked: bool,
+    child_parent_edge_tested_by_node: dict[object, bool],
+    child_parent_edge_significance_by_node: dict[object, bool],
+) -> object:
+    """Return the sibling group whose Tree-BH outcome owns calibration support."""
+    if not is_edge_blocked:
+        return parent_node_id
+
+    current_node_id = parent_node_id
+    visited: set[object] = set()
+    while current_node_id not in visited:
+        visited.add(current_node_id)
+        predecessors = list(tree.predecessors(current_node_id))
+        if len(predecessors) > 1:
+            raise ValueError(
+                "Sibling calibration dependency grouping requires a unique parent; "
+                f"node={current_node_id!r}, parents={predecessors!r}."
+            )
+        if not predecessors:
+            break
+        owning_parent_id = predecessors[0]
+        edge_tested = bool(
+            _require_child_node_value(
+                child_parent_edge_tested_by_node,
+                current_node_id,
+                "Child_Parent_Divergence_Tested",
+            )
+        )
+        edge_significant = bool(
+            _require_child_node_value(
+                child_parent_edge_significance_by_node,
+                current_node_id,
+                "Child_Parent_Divergence_Significant",
+            )
+        )
+        if edge_tested and not edge_significant:
+            return owning_parent_id
+        current_node_id = owning_parent_id
+
+    raise ValueError(
+        "Blocked sibling calibration record has no tested non-significant ancestor "
+        f"stopping event; parent={parent_node_id!r}."
+    )
+
+
 def estimate_sibling_null_weight_from_child_parent_edges(
     left_child_id: object,
     right_child_id: object,
@@ -233,5 +283,6 @@ __all__ = [
     "extract_child_parent_edge_p_values_by_node",
     "extract_child_parent_edge_significance_by_node",
     "extract_child_parent_edge_testing_status_by_node",
+    "resolve_sibling_calibration_dependency_group",
     "validate_child_parent_edge_annotation_requirements",
 ]

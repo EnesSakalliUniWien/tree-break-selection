@@ -1,18 +1,16 @@
 """
-Production integration tests for cluster validation using complex synthetic data.
+Production integration tests for fail-closed calibration on complex synthetic data.
 
 Tests the full pipeline with:
 - Balanced binary feature matrices with low entropy
 - Unbalanced binary feature matrices with high entropy
 """
 
-import numpy as np
 import pandas as pd
 from benchmarks.shared.generators import generate_random_feature_matrix
 from benchmarks.shared.util.decomposition import _labels_from_decomposition
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from sklearn.metrics import adjusted_rand_score
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -40,12 +38,36 @@ def _run_pipeline_on_dataframe(data_df, significance_level=0.05, **kwargs):
         tree=tree,
         gate_annotation_bundle=gate_bundle,
     ).decompose_tree()
-    return decomposition, tree
+    return decomposition, tree, gate_bundle
+
+
+def _assert_selected_hierarchy_calibration_fails_closed(
+    decomposition: dict,
+    annotations: pd.DataFrame,
+    sample_names: list[str],
+) -> None:
+    predicted = _labels_from_decomposition(decomposition, sample_names)
+    assert all(label != -1 for label in predicted)
+    assert decomposition["num_clusters"] == 1
+
+    unresolved = annotations[
+        annotations["Sibling_Gate_P_Value_Calibration"].eq(
+            "undefined_unvalidated_reference_law"
+        )
+    ]
+    assert not unresolved.empty
+    assert unresolved["Sibling_Gate_P_Value_Role"].eq(
+        "fail_closed_sibling_gate"
+    ).all()
+    assert unresolved["Sibling_Divergence_P_Value"].between(0.0, 1.0).all()
+    assert unresolved["Sibling_Divergence_Skipped"].eq(True).all()
+    assert unresolved["Sibling_Divergence_Invalid"].eq(True).all()
+    assert not unresolved["Sibling_BH_Different"].any()
 
 
 def test_complex_random_feature_matrix_balanced_clusters():
-    """Synthetic binary data with low entropy should recover most clusters."""
-    data_dict, true_clusters = generate_random_feature_matrix(
+    """Low-entropy selected-hierarchy calibration must fail closed."""
+    data_dict, _true_clusters = generate_random_feature_matrix(
         n_rows=72,
         n_cols=40,
         entropy_param=0.1,
@@ -55,27 +77,20 @@ def test_complex_random_feature_matrix_balanced_clusters():
     )
     data_df = pd.DataFrame.from_dict(data_dict, orient="index").astype(int)
 
-    decomposition, _ = _run_pipeline_on_dataframe(data_df, significance_level=0.05)
-    predicted = _labels_from_decomposition(decomposition, data_df.index.tolist())
-    true_labels = [true_clusters[name] for name in data_df.index]
-
-    assigned_mask = np.array(predicted) != -1
-    assigned_fraction = float(np.mean(assigned_mask))
-    assert assigned_fraction > 0.85, "Too many samples left unassigned"
-
-    ari = adjusted_rand_score(
-        np.array(true_labels)[assigned_mask], np.array(predicted)[assigned_mask]
+    decomposition, _, gate_bundle = _run_pipeline_on_dataframe(
+        data_df,
+        significance_level=0.05,
     )
-
-    assert decomposition["num_clusters"] >= 2
-    # The strict sibling calibration can stop before recovering every planted
-    # cluster in this noisy fixture, so the integration threshold stays modest.
-    assert ari > 0.4
+    _assert_selected_hierarchy_calibration_fails_closed(
+        decomposition,
+        gate_bundle.annotated_df,
+        data_df.index.tolist(),
+    )
 
 
 def test_complex_random_feature_matrix_unbalanced_clusters():
-    """Moderately higher entropy and unbalanced clusters should stay informative."""
-    data_dict, true_clusters = generate_random_feature_matrix(
+    """Unbalanced selected-hierarchy calibration must also fail closed."""
+    data_dict, _true_clusters = generate_random_feature_matrix(
         n_rows=150,
         n_cols=36,
         entropy_param=0.25,
@@ -85,20 +100,12 @@ def test_complex_random_feature_matrix_unbalanced_clusters():
     )
     data_df = pd.DataFrame.from_dict(data_dict, orient="index").astype(int)
 
-    decomposition, _ = _run_pipeline_on_dataframe(data_df, significance_level=0.05)
-    predicted = _labels_from_decomposition(decomposition, data_df.index.tolist())
-    true_labels = [true_clusters[name] for name in data_df.index]
-
-    assigned_mask = np.array(predicted) != -1
-    assigned_fraction = float(np.mean(assigned_mask))
-    assert assigned_fraction > 0.6, "Decomposition discarded too many samples"
-
-    if assigned_mask.any():
-        ari = adjusted_rand_score(
-            np.array(true_labels)[assigned_mask], np.array(predicted)[assigned_mask]
-        )
-        # ARI threshold accounts for entropy=0.25 noise and unbalanced clusters.
-        assert ari > 0.25
-
-    assigned_clusters = {label for label in predicted if label != -1}
-    assert len(assigned_clusters) >= 2, "Expected multiple clusters to be detected"
+    decomposition, _, gate_bundle = _run_pipeline_on_dataframe(
+        data_df,
+        significance_level=0.05,
+    )
+    _assert_selected_hierarchy_calibration_fails_closed(
+        decomposition,
+        gate_bundle.annotated_df,
+        data_df.index.tolist(),
+    )

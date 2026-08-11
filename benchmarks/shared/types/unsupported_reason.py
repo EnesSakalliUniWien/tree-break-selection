@@ -10,6 +10,9 @@ class UnsupportedReasonCode(str, Enum):
     """Registered machine-readable unsupported outcome reasons."""
 
     EMPIRICAL_NULL_NO_INTERNAL_SUPPORT = "empirical_null_no_internal_support"
+    EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW = (
+        "empirical_null_unvalidated_reference_law"
+    )
 
 
 @dataclass(frozen=True)
@@ -50,10 +53,14 @@ class UnsupportedReason:
             raise ValueError(f"Unknown unsupported reason code: {self.code!r}.") from exc
         object.__setattr__(self, "code", code)
 
-        if code is UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT:
+        empirical_null_codes = {
+            UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT,
+            UnsupportedReasonCode.EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW,
+        }
+        if code in empirical_null_codes:
             if self.stage != "sibling_calibration":
                 raise ValueError(
-                    "empirical_null_no_internal_support requires "
+                    "Empirical-null unsupported reasons require "
                     "stage='sibling_calibration'."
                 )
             evidence_values = [
@@ -61,8 +68,9 @@ class UnsupportedReason:
             ]
             if any(value is None for value in evidence_values):
                 raise ValueError(
-                    "empirical_null_no_internal_support requires all evidence counts."
+                    "Empirical-null unsupported reasons require all evidence counts."
                 )
+        if code is UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT:
             if self.evidence.admissible_support_count != 0:
                 raise ValueError(
                     "empirical_null_no_internal_support requires "

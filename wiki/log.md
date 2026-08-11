@@ -6673,3 +6673,22 @@ cannot be proven closed. A fixed-point pass then exposed
 `BranchLengthOptimizationResult.to_dict`, whose current benchmark runner caller
 confirms it as a live false positive outside the production-only Vulture scan;
 the final detector count therefore remains 56.
+
+#### Corrected empirical-null calibration ownership and reference laws
+
+Separated the immutable calibration sample from fitted scale state, replaced
+record-level stopping support with nearest-stopping-event dependency groups,
+validated every support-threshold boundary, enforced blocked-record role
+consistency, and replaced the tuple threshold signature with an immutable
+version-2 policy snapshot. Removed the redundant stopped-or-null count and its
+threshold after migrating internal and benchmark consumers.
+
+Derived and implemented a separately named exact-F path only for independent,
+pairwise-disjoint, unit-weighted common-scale calibration data. The production
+same-selected-hierarchy path now preserves raw statistics and scale diagnostics
+but fails closed for positive-dimensional records with
+`undefined_unvalidated_reference_law`; it no longer reports the plug-in
+chi-square tail as a calibrated p-value.
+
+The final project check passed Ruff, Deptry, Vulture, the 190-page wiki lint,
+and all 597 tests across the seven ordered test stages.

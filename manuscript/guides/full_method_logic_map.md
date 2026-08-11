@@ -44,8 +44,10 @@ walks the tree top down to decide the final partition.
 6. Compute the projected quadratic statistic in an orthonormal basis.
 7. Use a chi-square reference for the uninflated projected-Wald statistic.
 8. For sibling tests, estimate context-weighted empirical-null inflation from
-   sibling records and divide the raw statistic by that inflation.
-9. Correct p-values and traverse the tree.
+   sibling records as diagnostic evidence.
+9. Apply sibling p-value correction only when the calibration decision has a
+   validated reference law, then traverse the tree. The current positive-
+   dimensional same-selected-hierarchy path fails closed.
 
 ## Covariance Object Separation
 
@@ -72,6 +74,9 @@ contract promotes such a rule.
   after projection onto orthonormal rows.
 - Use **context-weighted empirical-null inflation** for the sibling calibration
   model.
+- Use **restricted independent common-scale exact-F mode** only when its full
+  independence, observation-ownership, fixed-unit-weight, and common-scale
+  contract is satisfied.
 - Do not call the sibling inflation model an exact selective p-value.
 - Do not call the empirical-null weight a posterior null probability.
 
@@ -86,8 +91,8 @@ contract promotes such a rule.
 - Empirical-null weight from joint child-edge null-evidence weights.
 - Context bandwidth within feature family over active log-context axes.
 - Effective calibration sample size as a diagnostic.
-- External selected-hierarchy selected-tail law for unsupported internal
-  calibration contexts: partially demonstrated only in narrow small-parent,
+- External selected-hierarchy selected-tail law for positive-dimensional
+  same-selected-hierarchy contexts: partially demonstrated only in narrow small-parent,
   high-edge-action contexts for Gaussian, categorical, and binary
   projection-1 settings; undefined elsewhere.
 - Pass-through traversal.
@@ -95,7 +100,7 @@ contract promotes such a rule.
 ## Empirical Claims Not Yet Manuscript-Ready
 
 - Null calibration of the edge stage.
-- Null calibration of the sibling stage after empirical-null inflation.
+- A selected-tail reference law for the same-selected-hierarchy sibling stage.
 - Full-pipeline control of the final number of clusters.
 - Power under planted binary subtree structure.
 - Robustness to sparse high-dimensional feature matrices.

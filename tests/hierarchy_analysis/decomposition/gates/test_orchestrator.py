@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from dataclasses import FrozenInstanceError, asdict
+
 import numpy as np
 import pytest
 import tree_break_selection.hierarchy_analysis.decomposition.gates.guards as guard_module
@@ -10,8 +13,12 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.column_contract
     SIBLING_GATE_COLUMNS,
 )
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+    build_gate_annotation_config_metadata,
     resolve_effective_sibling_alpha,
     run_gate_annotation_pipeline,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.types.inflation_model import (
+    CalibrationSupportThresholds,
 )
 from tree_break_selection.tree.feature_space import infer_feature_space_from_columns
 
@@ -53,15 +60,50 @@ def test_pipeline_supports_current_gate_annotation_contract() -> None:
     assert not tested.empty
     assert tested["Sibling_Sparse_Evidence_P_Value"].between(0.0, 1.0).all()
     active_tested = out[out["Sibling_Gate_P_Value_Role"].eq("active_traversal_sibling_gate")]
-    assert not active_tested.empty
-    assert (
-        active_tested["Sibling_Gate_P_Value_Calibration"]
-        .str.contains("empirical_null_inflation")
-        .all()
-    )
-    assert active_tested["Sibling_Gate_P_Value_Role"].eq("active_traversal_sibling_gate").all()
+    assert active_tested.empty
+    fail_closed = out[
+        out["Sibling_Gate_P_Value_Calibration"].eq(
+            "undefined_unvalidated_reference_law"
+        )
+    ]
+    assert not fail_closed.empty
+    assert fail_closed["Sibling_Gate_P_Value_Role"].eq("fail_closed_sibling_gate").all()
     assert tested["Sibling_Dense_Evidence_Method"].eq("fixed_global_chi_square").all()
     assert tested["Sibling_Dense_Evidence_Calibration"].eq("fixed_subspace_chi_square").all()
+
+
+def test_gate_metadata_owns_typed_versioned_support_policy_snapshot() -> None:
+    thresholds = CalibrationSupportThresholds(
+        min_supported_groups=3,
+        min_family_supported_groups=2,
+        min_family_effective_sample_size=1.5,
+        min_local_effective_sample_size=1.25,
+        max_weight_share=0.75,
+        max_leave_one_group_delta_log_c=0.5,
+    )
+
+    metadata = build_gate_annotation_config_metadata(
+        internal_support_thresholds=thresholds,
+    )
+    policy = metadata.internal_support_policy
+
+    assert policy.support_contract_version == 2
+    assert policy.thresholds == thresholds
+    with pytest.raises(FrozenInstanceError):
+        policy.support_contract_version = 3  # type: ignore[misc]
+
+    payload = json.loads(json.dumps(asdict(metadata)))
+    assert payload["internal_support_policy"] == {
+        "support_contract_version": 2,
+        "thresholds": {
+            "min_supported_groups": 3,
+            "min_family_supported_groups": 2,
+            "min_family_effective_sample_size": 1.5,
+            "min_local_effective_sample_size": 1.25,
+            "max_weight_share": 0.75,
+            "max_leave_one_group_delta_log_c": 0.5,
+        },
+    }
 
 
 def test_pipeline_supports_opt_in_fixed_coordinate_sibling_gate() -> None:

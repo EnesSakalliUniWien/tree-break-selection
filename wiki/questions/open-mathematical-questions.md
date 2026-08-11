@@ -2,7 +2,7 @@
 title: Open Mathematical Questions
 type: question
 status: reviewed
-updated: 2026-08-10
+updated: 2026-08-11
 sources:
   - manuscript/guides/full_method_logic_map.md
   - manuscript/guides/edge_sibling_derivation_guide.md
@@ -38,6 +38,7 @@ sources:
   - wiki/sources/calibration-contract-enhancement-request-20260604.md
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/types/inflation_model.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
+  - wiki/analyses/empirical-null-calibration-reference-law-contract.md
   - wiki/sources/selected-tail-law-q5-validation-20260604.md
   - benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_validation.csv
@@ -127,12 +128,14 @@ treated as publication-ready rather than a gap-marked methods draft?
 
 ## Current State
 
-The central unresolved calibration question is the missing external
-conditional-null object for sibling tests when internal empirical-null support
-is absent. The production estimator may use internal empirical-null calibration
-only when the local support is strict null-like or stopped-edge supported. For
-selected-non-null-only contexts, especially the high-dimensional Gaussian
-blockers, the honest mathematical object is an external conditional law such as
+The central unresolved calibration question is the selected-hierarchy
+conditional-null object for positive-dimensional sibling tests. Internal
+strict-null or stopped-edge support is necessary for estimating a descriptive
+scale, but it is not sufficient for a calibrated p-value because the focal
+statistic, calibration records, hierarchy, and weights share data and selection
+events. Production now fails closed with
+`undefined_unvalidated_reference_law` even when internal support exists. For
+same-selected-hierarchy contexts, the required mathematical object is a law such as
 \[
 \mathcal L\!\left(
 T_u\mid
@@ -147,7 +150,7 @@ c_{\mathrm{external}}(u)
 =
 \frac{\mathbb E_0[W_u^{\mathrm{selected}}]}{a_u\nu_u}.
 \]
-The open work is to derive or simulate this law while preserving the local
+The open work is to derive or validate this law while preserving the local
 context \(n_L,n_R,p,k_u,a_u,\nu_u\), feature family, and selection regime. The
 existing fixed-subspace and root/local edge-selection diagnostics do not
 produce inflation factors in the thousands, so they do not justify a production
@@ -805,21 +808,19 @@ The unchanged active all-informative recipe is now
 `gauss_dense_signal_highd`; the new `gauss_sparse_signal_highd_noise` recipe is
 the distinct question of robustness to 19,988 truly irrelevant coordinates.
 
-The 2026-06-04 calibration-contract implementation makes this separation
-explicit in code. Focal sibling calibration now returns a `CalibrationDecision`
-with an admissibility status, scalar \(c\) when available, adjusted p-value,
-support counts, exact context, and descriptive strata. The scalar prediction
-helper remains only as a compatibility path and raises if the decision is not
-`internal_admissible`. This improves the software contract and prevents
-unsupported contexts from being hidden behind a scalar estimate, but it does
-not solve the mathematical support thresholds: minimum effective support,
-leave-one-target stability, and external selected-tail admissibility remain
-open validation questions.
+The 2026-06-04 calibration-contract implementation made this separation
+explicit in code. The 2026-08-11 correction now returns a diagnostic scalar
+\(c\) but no calibrated p-value for positive-dimensional same-selected-
+hierarchy decisions. Those decisions are
+`undefined_unvalidated_reference_law`; only the zero-dimensional deterministic
+case remains `internal_admissible`. A separately named exact-F API requires
+independent statistics, pairwise-disjoint observation ownership, fixed unit
+weights, and one common chi-square scale.
 
 The recursive follow-up pass adds an executable Q9/Q11 support-threshold
 contract around this decision object. Decisions now report positive-weight
 record counts, selected-nonnull counts, strict and stopped support, family and
-local effective sample size, maximum weight share, leave-one-record
+local group effective sample size, maximum group weight share, leave-one-group
 sensitivity, configured threshold values, and failure reasons. Threshold
 enforcement is opt-in and returns `undefined_sparse_context` when enabled and
 failed; it is not a validated default production threshold. The same pass adds
@@ -1174,13 +1175,16 @@ is only `0.16343`.
    tie-heavy hierarchy cells and continuous positive-margin hierarchy cells
    should not be pooled without a mathematical reason.
 9. What minimum effective calibration support is required before internal
-   empirical-null inflation is trustworthy? The implementation now reports
-   supported-record, positive-weight, selected-nonnull, strict-null,
-   edge-blocked, feature-family, and local effective-support metadata. It also
-   reports maximum weight share and leave-one-record scale stability, and can
-   opt into a sparse-context failure status through the full sibling/gate
-   annotation path. No hard mathematical threshold has been validated as a
-   default production rule. The next support contract should also test whether
+   empirical-null inflation is trustworthy as a scale diagnostic? The
+   implementation now reports supported-record and stopping-event dependency-
+   group counts, positive-weight, selected-nonnull, strict-null, edge-blocked,
+   feature-family, and local effective-support metadata. It also reports
+   maximum group weight share and leave-one-group scale stability, and can opt
+   into a sparse-context failure status through the full sibling/gate
+   annotation path. Nested descendants from one stopping event contribute one
+   support group. No hard mathematical threshold has been validated as a
+   default production rule, and passing one would not validate the selected-
+   hierarchy reference law. The next support contract should also test whether
    calibration records cover comparable barycentric weights, because balanced
    and highly unbalanced splits share different leverage geometry.
 10. Is the empirical-null weight rule calibrated enough to use beyond
@@ -1869,6 +1873,9 @@ is only `0.16343`.
   assumptions and method-constant validation table.
 - `manuscript/sections/method/sibling_test.tex` defines the strict internal
   empirical-null support contract and the fail-closed calibration behavior.
+- `wiki/analyses/empirical-null-calibration-reference-law-contract.md` derives
+  the restricted exact-F law and separates it from the unresolved same-selected-
+  hierarchy law.
 - `manuscript/sections/method/representation.tex` defines one-hot categorical
   variables as drop-last multinomial blocks and continuous inputs as
   empirical-Gaussian covariance blocks; both still require validation.
@@ -2365,6 +2372,7 @@ is only `0.16343`.
 - [[local-marchenko-pastur-rule]]
 - [[dimensional-gaussian-representation-diagnostic]]
 - [[oracle-gate-path-diagnostic]]
+- [[empirical-null-calibration-reference-law-contract]]
 - [[top-down-traversal]]
 - [[manuscript-life-science-readiness]]
 - [[overlap-structural-sibling-panel-20260614]]

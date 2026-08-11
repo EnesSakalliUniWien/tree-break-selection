@@ -45,10 +45,11 @@ continuous empirical-Gaussian blocks. It builds a candidate hierarchy,
 summarizes each subtree by its empirical feature distribution, and annotates
 candidate splits with two tests. The child-parent edge test asks whether a child
 departs from its parent under the relevant feature-space covariance model. The
-sibling test asks whether the two children under the same parent are distinct
-after accounting for tree-selection scale distortion with a context-weighted
-empirical-null inflation estimate. A top-down traversal then turns the
-corrected annotations into terminal clusters. This manuscript records the
+sibling test asks whether the two children under the same parent are distinct.
+Context-weighted empirical-null records estimate selected-hierarchy scale
+distortion, but the positive-dimensional sibling gate fails closed until its
+selected-tail reference law is validated. A top-down traversal then turns the
+supported annotations into terminal clusters. This manuscript records the
 implemented method and the validation gaps that must be closed before
 submission-level calibration or power claims can be made.
 \end{abstract}

@@ -15,6 +15,10 @@ from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.
 from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
 )
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.types.inflation_model import (
+    DEFAULT_INTERNAL_SUPPORT_POLICY,
+    CalibrationSupportPolicySnapshot,
+)
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
     DEFAULT_CONTINUOUS_COVARIANCE_POLICY,
@@ -58,7 +62,7 @@ class GateAnnotationConfigMetadata:
     root_selective_permutation_guard_tree_distance_metric: str = "hamming"
     root_selective_permutation_guard_tree_linkage_method: str = "average"
     enforce_internal_support_thresholds: bool = False
-    internal_support_thresholds_signature: tuple[tuple[str, float | int], ...] = ()
+    internal_support_policy: CalibrationSupportPolicySnapshot = DEFAULT_INTERNAL_SUPPORT_POLICY
 
 
 @dataclass(frozen=True)

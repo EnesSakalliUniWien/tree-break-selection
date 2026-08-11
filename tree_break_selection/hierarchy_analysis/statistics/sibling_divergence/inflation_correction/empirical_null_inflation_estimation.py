@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection, Mapping
+
 import numpy as np
 from scipy.special import logsumexp
-from scipy.stats import chi2
+from scipy.stats import chi2, f
 
 from ..pair_testing.types.sibling_pair_record import SiblingPairRecord
 from .types.inflation_model import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     CalibrationDecision,
+    CalibrationFitDiagnostics,
+    CalibrationReferenceLaw,
+    CalibrationSample,
     CalibrationSupportThresholds,
     EmpiricalNullInflationModel,
+    IndependentUnweightedCommonScaleContract,
 )
 
 # =============================================================================
@@ -34,12 +40,6 @@ def _validate_calibration_record(record: SiblingPairRecord) -> None:
         raise ValueError(
             "Sibling inflation calibration requires finite positive reference_scale; "
             f"parent={record.parent!r}."
-        )
-    if not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12):
-        raise ValueError(
-            "Sibling empirical-null inflation currently requires unit reference_scale "
-            "from the orthonormal projected-Wald reference law; "
-            f"parent={record.parent!r}, reference_scale={record.reference_scale!r}."
         )
     if record.stat < 0:
         raise ValueError(
@@ -74,16 +74,6 @@ def _validate_calibration_record(record: SiblingPairRecord) -> None:
         )
 
 
-def _weighted_mean_columns(values: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    return np.sum(values * weights[:, None], axis=0) / np.sum(weights)
-
-
-def _weighted_std_columns(values: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    center = _weighted_mean_columns(values, weights)
-    variances = np.sum(((values - center) ** 2) * weights[:, None], axis=0) / np.sum(weights)
-    return np.sqrt(np.maximum(variances, 0.0))
-
-
 def _inflation_mle(
     statistics: np.ndarray,
     reference_expectations: np.ndarray,
@@ -112,19 +102,21 @@ def _max_weight_share(weights: np.ndarray) -> float:
     return float(np.max(positive_weights) / np.sum(positive_weights))
 
 
-def _leave_one_record_max_delta_log_c(
+def _leave_one_group_max_delta_log_c(
     statistics: np.ndarray,
     reference_expectations: np.ndarray,
     weights: np.ndarray,
+    dependency_group_ids: tuple[object, ...],
     baseline_c_hat: float,
 ) -> float:
-    if weights.size <= 1:
+    unique_groups = tuple(dict.fromkeys(dependency_group_ids))
+    if len(unique_groups) <= 1:
         return float("inf")
     deltas: list[float] = []
     baseline_log_c = float(np.log(max(baseline_c_hat, 1e-300)))
-    for index in range(weights.size):
-        keep = np.ones(weights.size, dtype=bool)
-        keep[index] = False
+    group_array = np.asarray(dependency_group_ids, dtype=object)
+    for group_id in unique_groups:
+        keep = group_array != group_id
         if float(np.sum(weights[keep])) <= 0.0:
             return float("inf")
         c_hat = max(
@@ -139,14 +131,73 @@ def _leave_one_record_max_delta_log_c(
     return float(max(deltas)) if deltas else float("inf")
 
 
-def fit_empirical_null_inflation_model(
+def _dependency_group_support_weights(
+    model: EmpiricalNullInflationModel,
+    *,
+    family_mask: np.ndarray | None = None,
+    local_record_weights: np.ndarray | None = None,
+) -> np.ndarray:
+    sample = model.sample
+    selected_indices = (
+        np.arange(sample.n_records, dtype=int)
+        if family_mask is None
+        else np.flatnonzero(family_mask)
+    )
+    if local_record_weights is not None and local_record_weights.shape != selected_indices.shape:
+        raise ValueError("Local calibration weights must align to the selected sample records.")
+
+    representative_by_group: dict[object, int] = {}
+    selected_position_by_index = {
+        int(sample_index): position for position, sample_index in enumerate(selected_indices)
+    }
+    for sample_index in selected_indices:
+        index = int(sample_index)
+        group_id = sample.dependency_group_ids[index]
+        representative_by_group.setdefault(group_id, index)
+        if sample.parent_ids[index] == group_id:
+            representative_by_group[group_id] = index
+
+    group_weights: list[float] = []
+    for sample_index in representative_by_group.values():
+        weight = float(sample.dependency_group_weights[sample_index])
+        if local_record_weights is not None:
+            selected_position = selected_position_by_index[sample_index]
+            kernel_multiplier = float(
+                local_record_weights[selected_position] / sample.weights[sample_index]
+            )
+            weight *= kernel_multiplier
+        group_weights.append(weight)
+    return np.asarray(group_weights, dtype=float)
+
+
+def _fit_empirical_null_inflation_model(
     records: list[SiblingPairRecord],
+    *,
+    _require_unit_reference_scale: bool = True,
+    _method: str = "context_weighted_supported_empirical_null_inflation",
+    _reference_law: CalibrationReferenceLaw = "unresolved_same_selected_hierarchy",
+    _independent_contract: IndependentUnweightedCommonScaleContract | None = None,
 ) -> EmpiricalNullInflationModel:
     """Fit the context-weighted empirical-null inflation model."""
     if not records:
         raise ValueError("Cannot fit sibling inflation model: no sibling calibration records.")
     for record in records:
         _validate_calibration_record(record)
+    if _require_unit_reference_scale and any(
+        not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12)
+        for record in records
+    ):
+        first_non_unit = next(
+            record
+            for record in records
+            if not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12)
+        )
+        raise ValueError(
+            "Sibling empirical-null inflation currently requires unit reference_scale "
+            "from the orthonormal projected-Wald reference law; "
+            f"parent={first_non_unit.parent!r}, "
+            f"reference_scale={first_non_unit.reference_scale!r}."
+        )
 
     positive_df_records = [record for record in records if record.degrees_of_freedom > 0]
     if not positive_df_records:
@@ -211,16 +262,28 @@ def fit_empirical_null_inflation_model(
     )
     calibration_feature_families = tuple(record.feature_family for record in supported_records)
     calibration_parent_ids = tuple(record.parent for record in supported_records)
+    calibration_dependency_group_ids = tuple(
+        record.parent
+        if record.calibration_dependency_group is None
+        else record.calibration_dependency_group
+        for record in supported_records
+    )
+    calibration_dependency_group_weights = np.array(
+        [
+            record.sibling_null_weight
+            if record.calibration_dependency_weight is None
+            else record.calibration_dependency_weight
+            for record in supported_records
+        ],
+        dtype=float,
+    )
     reference_expectations = reference_scales * degrees_of_freedom
 
-    baseline_empirical_inflation_factor = _inflation_mle(
+    baseline_scale_estimate = _inflation_mle(
         statistics,
         reference_expectations,
         null_weights,
     )
-
-    # One-sided post-selection correction: never increase the sibling statistic.
-    baseline_empirical_inflation_factor = max(baseline_empirical_inflation_factor, 1.0)
 
     sample_contexts = np.column_stack(
         [
@@ -228,35 +291,119 @@ def fit_empirical_null_inflation_model(
             np.log(calibration_parent_sample_sizes),
         ]
     )
-    context_center = _weighted_mean_columns(sample_contexts, null_weights)
-    context_bandwidth = _weighted_std_columns(sample_contexts, null_weights)
-    context_bandwidth = np.where(context_bandwidth <= 1e-12, 0.0, context_bandwidth)
-
-    effective_sample_size = _effective_sample_size(null_weights)
-
     return EmpiricalNullInflationModel(
-        method="context_weighted_supported_empirical_null_inflation",
-        n_calibration=int(len(statistics)),
-        n_positive_weight_records=int(len(positive_weight_records)),
-        n_selected_nonnull_positive_weight_records=sum(
-            not _has_internal_empirical_null_support(record) for record in positive_weight_records
+        method=_method,
+        sample=CalibrationSample(
+            contexts=sample_contexts,
+            feature_families=calibration_feature_families,
+            weights=null_weights,
+            parent_ids=calibration_parent_ids,
+            dependency_group_ids=calibration_dependency_group_ids,
+            dependency_group_weights=calibration_dependency_group_weights,
+            is_strict_null=is_strict_null,
+            is_edge_blocked=is_edge_blocked,
+            statistics=statistics,
+            reference_scales=reference_scales,
+            degrees_of_freedom=degrees_of_freedom,
         ),
-        n_strict_null_calibration=int(np.sum(is_strict_null)),
-        n_edge_blocked_calibration=sum(record.is_edge_blocked for record in supported_records),
-        n_stopped_or_null_calibration=len(supported_records),
-        baseline_empirical_inflation_factor=baseline_empirical_inflation_factor,
-        effective_sample_size=effective_sample_size,
-        context_center=context_center,
-        context_bandwidth=context_bandwidth,
-        sample_contexts=sample_contexts,
-        sample_feature_families=calibration_feature_families,
-        sample_weights=null_weights,
-        sample_parent_ids=calibration_parent_ids,
-        sample_is_strict_null=is_strict_null,
-        sample_is_edge_blocked=is_edge_blocked,
-        sample_statistics=statistics,
-        sample_reference_scales=reference_scales,
-        sample_degrees_of_freedom=degrees_of_freedom,
+        baseline_scale_estimate=baseline_scale_estimate,
+        fit_diagnostics=CalibrationFitDiagnostics(
+            n_positive_weight_records=int(len(positive_weight_records)),
+        ),
+        reference_law=_reference_law,
+        independent_contract=_independent_contract,
+    )
+
+
+def fit_empirical_null_inflation_model(
+    records: list[SiblingPairRecord],
+) -> EmpiricalNullInflationModel:
+    """Fit the diagnostic same-selected-hierarchy empirical-null scale model."""
+    return _fit_empirical_null_inflation_model(records)
+
+
+def _validated_observation_ids(
+    observation_ids: Collection[object],
+    *,
+    role: str,
+) -> frozenset[object]:
+    values = tuple(observation_ids)
+    if not values:
+        raise ValueError(f"{role} observation IDs must be non-empty.")
+    try:
+        unique_values = frozenset(values)
+    except TypeError as exc:
+        raise ValueError(f"{role} observation IDs must be hashable.") from exc
+    if len(unique_values) != len(values):
+        raise ValueError(f"{role} observation IDs must be unique.")
+    return unique_values
+
+
+def fit_independent_unweighted_common_scale_inflation_model(
+    records: list[SiblingPairRecord],
+    *,
+    calibration_observation_ids_by_parent: Mapping[object, Collection[object]],
+) -> EmpiricalNullInflationModel:
+    """Fit the denominator for the restricted independent exact F reference law."""
+    if any(not record.has_empirical_null_support for record in records):
+        raise ValueError("Independent exact calibration records must all have a null role.")
+    if any(record.degrees_of_freedom <= 0.0 for record in records):
+        raise ValueError("Independent exact calibration records must have positive degrees of freedom.")
+    if any(
+        record.sibling_null_weight != 1.0
+        or (
+            record.calibration_dependency_weight is not None
+            and record.calibration_dependency_weight != 1.0
+        )
+        for record in records
+    ):
+        raise ValueError("Independent exact calibration requires unit fixed weights.")
+    dependency_group_ids = tuple(
+        record.parent
+        if record.calibration_dependency_group is None
+        else record.calibration_dependency_group
+        for record in records
+    )
+    if len(set(dependency_group_ids)) != len(dependency_group_ids):
+        raise ValueError("Independent exact calibration records must have distinct dependency groups.")
+    reference_scales = np.asarray([record.reference_scale for record in records], dtype=float)
+    if reference_scales.size == 0:
+        raise ValueError("Independent exact calibration requires calibration records.")
+    common_reference_scale = float(reference_scales[0])
+    if not np.allclose(reference_scales, common_reference_scale, rtol=1e-12, atol=1e-12):
+        raise ValueError("Independent exact calibration requires one common reference_scale.")
+    parent_ids = tuple(record.parent for record in records)
+    if set(calibration_observation_ids_by_parent) != set(parent_ids):
+        raise ValueError(
+            "Independent calibration observation-ID keys must match calibration parent IDs."
+        )
+    observation_ids_by_parent: list[tuple[object, frozenset[object]]] = []
+    seen_observation_ids: set[object] = set()
+    for parent_id in parent_ids:
+        observation_ids = _validated_observation_ids(
+            calibration_observation_ids_by_parent[parent_id],
+            role=f"Calibration parent {parent_id!r}",
+        )
+        if seen_observation_ids.intersection(observation_ids):
+            raise ValueError(
+                "Independent calibration record observation IDs must be pairwise disjoint."
+            )
+        seen_observation_ids.update(observation_ids)
+        observation_ids_by_parent.append((parent_id, observation_ids))
+    denominator_degrees_of_freedom = float(
+        np.sum([record.degrees_of_freedom for record in records])
+    )
+    contract = IndependentUnweightedCommonScaleContract(
+        calibration_observation_ids_by_parent=tuple(observation_ids_by_parent),
+        common_reference_scale=common_reference_scale,
+        denominator_degrees_of_freedom=denominator_degrees_of_freedom,
+    )
+    return _fit_empirical_null_inflation_model(
+        records,
+        _require_unit_reference_scale=False,
+        _method="exact_independent_unweighted_common_scale_f",
+        _reference_law="exact_independent_unweighted_common_scale_f",
+        _independent_contract=contract,
     )
 
 
@@ -270,28 +417,47 @@ def _decision_support(
     support: dict[str, float | int | str | bool] = {
         "n_positive_weight_records": int(model.n_positive_weight_records),
         "n_supported_records": int(model.n_calibration),
+        "n_supported_groups": len(model.sample.unique_dependency_group_ids),
         "n_selected_nonnull_positive_weight_records": int(
             model.n_selected_nonnull_positive_weight_records
         ),
         "n_strict_null_records": int(model.n_strict_null_calibration),
         "n_edge_blocked_records": int(model.n_edge_blocked_calibration),
-        "n_stopped_or_null_records": int(model.n_stopped_or_null_calibration),
         "model_effective_sample_size": float(model.effective_sample_size),
-        "model_max_weight_share": _max_weight_share(model.sample_weights),
+        "model_max_group_weight_share": _max_weight_share(
+            model.sample.unique_dependency_group_weights
+        ),
         "feature_family": str(record.feature_family),
     }
     if family_mask is not None:
         support["n_family_supported_records"] = int(np.sum(family_mask))
         if np.any(family_mask):
             family_weights = model.sample_weights[family_mask]
-            support["family_effective_sample_size"] = _effective_sample_size(family_weights)
-            support["leave_one_record_max_delta_log_c"] = _leave_one_record_max_delta_log_c(
+            family_group_weights = _dependency_group_support_weights(
+                model,
+                family_mask=family_mask,
+            )
+            support["n_family_supported_groups"] = int(family_group_weights.size)
+            support["family_effective_sample_size"] = _effective_sample_size(
+                family_group_weights
+            )
+            family_dependency_group_ids = tuple(
+                group_id
+                for group_id, include in zip(
+                    model.sample.dependency_group_ids,
+                    family_mask,
+                    strict=True,
+                )
+                if include
+            )
+            support["leave_one_group_max_delta_log_c"] = _leave_one_group_max_delta_log_c(
                 model.sample_statistics[family_mask],
                 (
                     model.sample_reference_scales[family_mask]
                     * model.sample_degrees_of_freedom[family_mask]
                 ),
                 family_weights,
+                family_dependency_group_ids,
                 max(
                     _inflation_mle(
                         model.sample_statistics[family_mask],
@@ -305,10 +471,17 @@ def _decision_support(
                 ),
             )
     if local_weights is not None:
-        support["local_effective_sample_size"] = (
-            _effective_sample_size(local_weights) if float(np.sum(local_weights)) > 0.0 else 0.0
+        local_group_weights = _dependency_group_support_weights(
+            model,
+            family_mask=family_mask,
+            local_record_weights=local_weights,
         )
-        support["local_max_weight_share"] = _max_weight_share(local_weights)
+        support["local_effective_sample_size"] = (
+            _effective_sample_size(local_group_weights)
+            if float(np.sum(local_group_weights)) > 0.0
+            else 0.0
+        )
+        support["local_max_group_weight_share"] = _max_weight_share(local_group_weights)
     return support
 
 
@@ -318,14 +491,12 @@ def _support_contract_failures(
     thresholds: CalibrationSupportThresholds,
 ) -> tuple[str, ...]:
     failures: list[str] = []
-    if int(support.get("n_supported_records", 0)) < thresholds.min_supported_records:
-        failures.append("supported_records_below_threshold")
-    if int(support.get("n_family_supported_records", 0)) < (
-        thresholds.min_family_supported_records
+    if int(support.get("n_supported_groups", 0)) < thresholds.min_supported_groups:
+        failures.append("supported_groups_below_threshold")
+    if int(support.get("n_family_supported_groups", 0)) < (
+        thresholds.min_family_supported_groups
     ):
-        failures.append("family_supported_records_below_threshold")
-    if int(support.get("n_stopped_or_null_records", 0)) < (thresholds.min_stopped_or_null_records):
-        failures.append("stopped_or_null_records_below_threshold")
+        failures.append("family_supported_groups_below_threshold")
     if float(support.get("family_effective_sample_size", 0.0)) < (
         thresholds.min_family_effective_sample_size
     ):
@@ -334,12 +505,12 @@ def _support_contract_failures(
         thresholds.min_local_effective_sample_size
     ):
         failures.append("local_effective_sample_size_below_threshold")
-    if float(support.get("local_max_weight_share", 1.0)) > thresholds.max_weight_share:
-        failures.append("local_max_weight_share_above_threshold")
-    if float(support.get("leave_one_record_max_delta_log_c", float("inf"))) > (
-        thresholds.max_leave_one_record_delta_log_c
+    if float(support.get("local_max_group_weight_share", 1.0)) > thresholds.max_weight_share:
+        failures.append("local_max_group_weight_share_above_threshold")
+    if float(support.get("leave_one_group_max_delta_log_c", float("inf"))) > (
+        thresholds.max_leave_one_group_delta_log_c
     ):
-        failures.append("leave_one_record_delta_log_c_above_threshold")
+        failures.append("leave_one_group_delta_log_c_above_threshold")
     return tuple(failures)
 
 
@@ -367,16 +538,85 @@ def _decision_context(record: SiblingPairRecord) -> dict[str, object]:
     }
 
 
-def _adjusted_p_value(record: SiblingPairRecord, inflation_factor: float) -> float:
-    if record.degrees_of_freedom == 0:
-        return 1.0
-    if not np.isfinite(record.reference_scale) or record.reference_scale <= 0.0:
-        raise ValueError(
-            "Sibling reference_scale must be finite and positive before adjustment; "
-            f"parent={record.parent!r}."
+def decide_independent_unweighted_common_scale_calibration(
+    model: EmpiricalNullInflationModel,
+    record: SiblingPairRecord,
+    *,
+    focal_observation_ids: Collection[object],
+) -> CalibrationDecision:
+    """Return the restricted exact F decision for disjoint focal observations."""
+    if model.reference_law != "exact_independent_unweighted_common_scale_f":
+        raise ValueError("Exact F calibration requires the independently fitted exact model.")
+    contract = model.independent_contract
+    if contract is None:
+        raise ValueError("Exact F calibration model is missing its provenance contract.")
+    focal_ids = _validated_observation_ids(focal_observation_ids, role="Focal")
+    if focal_ids.intersection(contract.calibration_observation_ids):
+        raise ValueError("Focal and calibration observation IDs must be disjoint.")
+    if record.parent in model.sample.parent_ids:
+        raise ValueError("Focal and calibration parent IDs must be disjoint.")
+    _validate_calibration_record(record)
+    if record.degrees_of_freedom <= 0.0:
+        raise ValueError("Exact F calibration requires positive focal degrees of freedom.")
+    if not np.isclose(
+        record.reference_scale,
+        contract.common_reference_scale,
+        rtol=1e-12,
+        atol=1e-12,
+    ):
+        raise ValueError("Exact F calibration requires the focal common reference_scale.")
+    expected_unadjusted_p_value = float(
+        chi2.sf(
+            record.stat / record.reference_scale,
+            df=float(record.degrees_of_freedom),
         )
-    adjusted_statistic = float(record.stat / (record.reference_scale * inflation_factor))
-    return float(chi2.sf(adjusted_statistic, df=float(record.degrees_of_freedom)))
+    )
+    if not np.isclose(record.p_value, expected_unadjusted_p_value, rtol=1e-10, atol=1e-14):
+        raise ValueError(
+            "Exact F calibration requires the focal p_value to match its unadjusted "
+            "common-scale chi-square law."
+        )
+    scale_estimate = float(model.baseline_scale_estimate)
+    f_statistic = (
+        float("inf")
+        if scale_estimate <= 0.0
+        else float(
+            record.stat
+            / (
+                record.reference_scale
+                * record.degrees_of_freedom
+                * scale_estimate
+            )
+        )
+    )
+    exact_p_value = float(
+        f.sf(
+            f_statistic,
+            dfn=float(record.degrees_of_freedom),
+            dfd=contract.denominator_degrees_of_freedom,
+        )
+    )
+    one_sided_p_value = max(exact_p_value, expected_unadjusted_p_value)
+    return CalibrationDecision(
+        status="independent_exact_admissible",
+        c_hat=model.baseline_empirical_inflation_factor,
+        p_value=one_sided_p_value,
+        estimator="exact_independent_unweighted_common_scale_f",
+        support=_decision_support(model=model, record=record),
+        exact_context={
+            **_decision_context(record),
+            "reference_law": "exact_independent_unweighted_common_scale_f",
+            "denominator_degrees_of_freedom": contract.denominator_degrees_of_freedom,
+            "common_reference_scale": contract.common_reference_scale,
+        },
+        descriptive_strata={
+            "f_statistic": f_statistic,
+            "unadjusted_p_value": expected_unadjusted_p_value,
+            "one_sided_p_value_floor_applied": bool(
+                expected_unadjusted_p_value > exact_p_value
+            ),
+        },
+    )
 
 
 def decide_empirical_null_calibration(
@@ -494,13 +734,16 @@ def decide_empirical_null_calibration(
                 },
             )
         return CalibrationDecision(
-            status="internal_admissible",
+            status="undefined_unvalidated_reference_law",
             c_hat=c_hat,
-            p_value=_adjusted_p_value(record, c_hat),
+            p_value=None,
             estimator=f"{model.method}:family_baseline",
             support=support,
             exact_context=exact_context,
-            descriptive_strata=descriptive_strata,
+            descriptive_strata={
+                **descriptive_strata,
+                "reason": "same_selected_hierarchy_reference_law_unvalidated",
+            },
         )
 
     if record.n_parent <= 0:
@@ -573,13 +816,16 @@ def decide_empirical_null_calibration(
             },
         )
     return CalibrationDecision(
-        status="internal_admissible",
+        status="undefined_unvalidated_reference_law",
         c_hat=c_hat,
-        p_value=_adjusted_p_value(record, c_hat),
+        p_value=None,
         estimator=f"{model.method}:local_kernel",
         support=support,
         exact_context=exact_context,
-        descriptive_strata=descriptive_strata,
+        descriptive_strata={
+            **descriptive_strata,
+            "reason": "same_selected_hierarchy_reference_law_unvalidated",
+        },
     )
 
 
@@ -597,10 +843,14 @@ def predict_empirical_inflation_factor(
         enforce_support_thresholds=enforce_support_thresholds,
         support_thresholds=support_thresholds,
     )
-    if decision.status != "internal_admissible" or decision.c_hat is None:
+    diagnostic_statuses = {
+        "internal_admissible",
+        "undefined_unvalidated_reference_law",
+    }
+    if decision.status not in diagnostic_statuses or decision.c_hat is None:
         reason = decision.descriptive_strata.get("reason", decision.status)
         raise ValueError(
-            "Empirical-null inflation prediction is not internally admissible: "
+            "Empirical-null diagnostic inflation prediction is unavailable: "
             f"{decision.status}; parent={record.parent!r}; reason={reason!r}."
         )
     return decision.c_hat
@@ -612,6 +862,8 @@ __all__ = [
     "EmpiricalNullInflationModel",
     "DEFAULT_INTERNAL_SUPPORT_THRESHOLDS",
     "decide_empirical_null_calibration",
+    "decide_independent_unweighted_common_scale_calibration",
     "fit_empirical_null_inflation_model",
+    "fit_independent_unweighted_common_scale_inflation_model",
     "predict_empirical_inflation_factor",
 ]

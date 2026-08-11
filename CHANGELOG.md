@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased] - 2026-08-11
+
+### Added
+- A separately named exact-F sibling calibration path for independent focal and calibration statistics with pairwise-disjoint observation ownership, independent calibration records, unit fixed weights, and a common chi-square scale.
+- Immutable calibration-sample and versioned support-policy types, including parent provenance and stopping-event dependency groups.
+
+### Changed
+- Internal support diagnostics now count dependency groups rather than nested records for supported-group counts, effective support, maximum group weight share, and leave-one-group stability.
+- Positive-dimensional same-selected-hierarchy sibling calibration now preserves raw evidence but returns `undefined_unvalidated_reference_law`; it no longer reports a calibrated chi-square p-value.
+
+### Fixed
+- Reject invalid support thresholds, including booleans as counts, nonfinite values, invalid weight shares, and negative stability limits.
+- Reject the invalid sibling-record role `is_edge_blocked=True, is_null_like=False` and remove the redundant stopped-or-null calibration count and threshold.
+
 ## [Unreleased] - 2026-02-17
 
 ### Added
