@@ -259,8 +259,13 @@ def _build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--base-seed", type=int, default=20260604)
         sub.add_argument("--shard-count", type=int, required=True)
         sub.add_argument("--s3-uri")
-        sub.add_argument("--resume", action="store_true", default=True)
         if command == "run-shard":
+            sub.add_argument(
+                "--resume",
+                action=argparse.BooleanOptionalAction,
+                default=True,
+                help="Reuse existing shard outputs when present (default: enabled).",
+            )
             sub.add_argument("--shard-index", type=int)
     return parser
 
@@ -279,7 +284,7 @@ def _configured_from_args(args: argparse.Namespace) -> AwsSelectedEdgeGeometryCo
         base_seed=int(args.base_seed),
         shard_count=int(args.shard_count),
         s3_uri=args.s3_uri,
-        resume=bool(args.resume),
+        resume=bool(getattr(args, "resume", True)),
     )
 
 

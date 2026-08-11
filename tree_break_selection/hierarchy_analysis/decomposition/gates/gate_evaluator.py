@@ -167,14 +167,6 @@ class GateEvaluator:
             return True
         return bool(self._passthrough_supported[parent])
 
-    def passthrough_support_status(self, parent: object) -> dict[str, object]:
-        """Return diagnostic support metadata for a possible pass-through node."""
-        supported = self._passthrough_support_is_open(parent)
-        return {
-            "passthrough_supported": supported,
-            "passthrough_bottleneck": self._passthrough_bottleneck.get(parent, ""),
-        }
-
     def passthrough_audit_status(self, parent: object) -> dict[str, object]:
         """Return auditable pass-through prerequisites without changing decisions."""
         if self._passthrough:

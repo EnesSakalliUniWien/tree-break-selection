@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
+from benchmarks.cloud.aws_selected_edge_type1_geometry import (
+    _build_parser as build_selected_edge_geometry_parser,
+)
 from benchmarks.shared.benchmark_runs.regression_gate import (
     parse_methods,
     resolve_case_list,
@@ -68,3 +71,20 @@ def test_regression_gate_cli_parser_uses_supplied_case_label() -> None:
 
     assert "Run test gate." in help_text
     assert "continuous gate" in help_text
+
+
+def test_selected_edge_geometry_cli_exposes_resume_control() -> None:
+    parser = build_selected_edge_geometry_parser()
+    required_args = [
+        "run-shard",
+        "--output-dir",
+        "out",
+        "--shard-count",
+        "1",
+    ]
+
+    default_args = parser.parse_args(required_args)
+    no_resume_args = parser.parse_args([*required_args, "--no-resume"])
+
+    assert default_args.resume is True
+    assert no_resume_args.resume is False

@@ -24,17 +24,18 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "deptry>=0.12.0",
     "jupyter>=1.0.0",
     "ipython>=8.12.0",
     "notebook>=7.0.0",
     "pytest>=7.4.0",
     "pypdf>=5.0.0",
     "ruff>=0.15.6",
+    "vulture>=2.15",
 ]
 benchmark = [
     "leidenalg>=0.10.0",
     "igraph>=0.10.0",
-    "python-louvain>=0.16",
     "hdbscan>=0.8.41",
 ]
 benchmark-infra = [
@@ -59,6 +60,7 @@ viz = [
 ]
 all = [
     "bokeh>=3.0.0",
+    "deptry>=0.12.0",
     "jupyter>=1.0.0",
     "ipython>=8.12.0",
     "notebook>=7.0.0",
@@ -66,7 +68,6 @@ all = [
     "ruff>=0.15.6",
     "leidenalg>=0.10.0",
     "igraph>=0.10.0",
-    "python-louvain>=0.16",
     "hdbscan>=0.8.41",
     "scikit-bio>=0.6.0",
     "umap-learn>=0.5.11",
@@ -82,6 +83,7 @@ all = [
     "asv>=0.6.6",
     "clustering-benchmarks>=1.1.6",
     "openml>=0.15.0",
+    "vulture>=2.15",
 ]
 experimental-gpl = [
     "graphtools>=2.1.0",
@@ -131,7 +133,12 @@ ignore = ["E402", "E501"]
 [tool.deptry]
 ignore_notebooks = true
 known_first_party = ["applications", "benchmarks", "tree_break_selection", "brancharchitect"]
-pep621_dev_dependency_groups = ["dev", "benchmark", "benchmark-infra", "diffusion", "trajectory", "viz", "all", "experimental-gpl", "brancharchitect"]
+optional_dependencies_dev_groups = ["dev"]
 extend_exclude = ["^manuscript/", "^vendor/"]
-per_rule_ignores = { DEP002 = ["biopython", "orjson"], DEP003 = ["tensorflow"] }
-package_module_name_map = { "python-louvain" = "community", "scikit-bio" = "skbio" }
+package_module_name_map = { "biopython" = "Bio", "clustering-benchmarks" = "clustbench", "scikit-bio" = "skbio" }
+
+[tool.deptry.per_rule_ignores]
+# CLI tools, dynamic adapters, renderer backends, and optional research runtimes
+# do not appear as direct static imports in the audited source paths.
+DEP002 = ["asv", "biopython", "clustering-benchmarks", "deeptime", "deptry", "ipython", "jupyter", "kaleido", "notebook", "openml", "orjson", "phate", "pygraphviz", "pygsp", "pytest", "ruff", "vulture"]
+DEP001 = ["tensorflow"]

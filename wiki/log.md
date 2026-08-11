@@ -2,7 +2,7 @@
 title: Wiki Log
 type: control
 status: reviewed
-updated: 2026-08-10
+updated: 2026-08-11
 sources:
   - AGENTS.md
   - raw/inbox/wiki-construction-brief.md
@@ -6610,3 +6610,66 @@ after another test imported scikit-bio but failed alone when a lazy dependency
 used subprocess for a platform probe. The standalone test, its complete file,
 and the 194-case core/decomposition stage now pass without changing production
 behavior.
+
+#### Removed benchmark orphans exposed by research-test pruning
+
+Removed seven uncalled diagnostic symbols left behind when research-only tests
+and the math-trace inference entrypoint were retired: an unused cached-distance
+count property, the scalar hold-out interpolation path and its private helper,
+an orphaned table classifier, and the child-null-prior result, validator, and
+calculator used only by that scalar path. The maintained vectorized hold-out
+interpolation path, row-level failure classifier, cached-distance behavior, and
+selected-neighborhood evaluator remain unchanged.
+
+#### Audited the maintained test boundary
+
+Recursively audited 128 tracked test files containing 531 test functions and
+562 collected cases. No test met the two-signal deletion rule: the one exact
+test-body pair protects separate module constants, while delegated assertions,
+protocol hooks, and optional-runtime skips remain live. Corrected the suite map
+from 563 to 562 cases and the statistics stage from 196 to 195 after the recent
+statistical-test pruning.
+
+### 2026-08-11
+
+#### Removed confirmed unfinished-work anti-patterns
+
+Removed the unused `--plot-all` option and made selected-edge AWS resume control
+explicitly disableable while preserving resume as the default. Added the
+dependency and dead-code audits to the locked development tools and `make
+check`, removed the obsolete `python-louvain` dependency after the runner's
+NetworkX implementation was traced, and documented justified dynamic/runtime
+dependency exceptions. Repaired repository-relative links in the categorical
+overlap diagnosis, removed an empty unreferenced guide, and added a focused CLI
+contract test.
+
+#### Audited the production clustering package
+
+Recursively enumerated 125 Python modules under `tree_break_selection/`,
+including 90 concrete modules, 35 package initializers, 469 classes, functions,
+and methods, and 206 internal import edges. Repository entry points reach every
+concrete module; test paths reach 88, while application consumers reach the two
+remaining plotting modules. The package contains no orphan concrete module,
+exact duplicate function body, or incomplete function body.
+
+Removed `GateEvaluator.passthrough_support_status`, whose only consumer was a
+redundant test assertion and whose two diagnostic fields are already supplied
+by the production-used `passthrough_audit_status`. Retained the remaining
+lower-confidence detector findings because they are live application,
+benchmark, or test contracts; exported result properties; or public dataclass
+fields whose external-consumer boundary is unresolved.
+
+#### Audited retained production candidates against downstream consumers
+
+Reproduced the 56 retained Vulture candidates and inspected the 36 direct-child
+Git repositories under `/Users/berksakalli/Projects`, the public source
+repository and its two public forks, PyPI, indexed public code, current package
+contracts, tests, documentation, and history. Removed the unexported
+`extract_row_column_maps` helper, its three self-referential tests, and its
+`core_utils` catalog row after no runtime, downstream, copied-implementation, or
+indexed public consumer was found. The remaining 55 findings are retained
+contracts or require an owner decision because their public-consumer boundary
+cannot be proven closed. A fixed-point pass then exposed
+`BranchLengthOptimizationResult.to_dict`, whose current benchmark runner caller
+confirms it as a live false positive outside the production-only Vulture scan;
+the final detector count therefore remains 56.

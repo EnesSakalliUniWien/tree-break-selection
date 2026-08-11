@@ -80,7 +80,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--global-embedding", type=Path)
     parser.add_argument("--max-rank", type=int, default=80)
-    parser.add_argument("--plot-all", action="store_true", default=True)
     parser.add_argument("--top-summary-count", type=int, default=12)
     return parser.parse_args()
 

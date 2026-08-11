@@ -130,16 +130,6 @@ JOIN_COLUMNS = ("case_id", "data_role", "method_id", "replicate", "node_id")
 
 
 @dataclass(frozen=True)
-class ChildNullPriorResult:
-    """Diagnostic child-level interpolated null prior."""
-
-    prior: float
-    support_weight: float
-    signal_attenuation: float
-    status: str
-
-
-@dataclass(frozen=True)
 class MeasurabilityDecision:
     """Selected-neighborhood action and bottleneck for one candidate row."""
 
@@ -271,88 +261,6 @@ def _first_probability(row: pd.Series, columns: tuple[str, ...]) -> float:
             if math.isfinite(value):
                 return value
     return math.nan
-
-
-def validate_probability(value: object, *, label: str) -> float:
-    """Return a probability or raise for values outside [0, 1]."""
-    numeric = finite_float(value)
-    if not math.isfinite(numeric) or numeric < 0.0 or numeric > 1.0:
-        raise ValueError(f"{label} must be a finite probability in [0, 1].")
-    return numeric
-
-
-def compute_child_interpolated_null_prior(
-    *,
-    ancestor_p_values: list[float] | tuple[float, ...] = (),
-    ancestor_weights: list[float] | tuple[float, ...] = (),
-    stable_p_values: list[float] | tuple[float, ...] = (),
-    stable_weights: list[float] | tuple[float, ...] = (),
-    signal_p_values: list[float] | tuple[float, ...] = (),
-    signal_distances: list[float] | tuple[float, ...] = (),
-    tau_s: float = 1.0,
-) -> ChildNullPriorResult:
-    """Compute the unclipped diagnostic child null prior.
-
-    The result is invalid rather than clipped if the mathematical assumptions
-    fail. Tiny floating-point drift is not expected because the formula is a
-    convex average multiplied by a unit attenuation.
-    """
-    ancestor_p = [
-        validate_probability(value, label="ancestor_p_value") for value in ancestor_p_values
-    ]
-    stable_p = [validate_probability(value, label="stable_p_value") for value in stable_p_values]
-    signal_p = [validate_probability(value, label="signal_p_value") for value in signal_p_values]
-    ancestor_w = [float(value) for value in ancestor_weights]
-    stable_w = [float(value) for value in stable_weights]
-    signal_d = [float(value) for value in signal_distances]
-
-    if len(ancestor_p) != len(ancestor_w):
-        raise ValueError("ancestor_p_values and ancestor_weights must have equal length.")
-    if len(stable_p) != len(stable_w):
-        raise ValueError("stable_p_values and stable_weights must have equal length.")
-    if len(signal_p) != len(signal_d):
-        raise ValueError("signal_p_values and signal_distances must have equal length.")
-    if any((not math.isfinite(weight)) or weight < 0.0 for weight in (*ancestor_w, *stable_w)):
-        raise ValueError("Interpolation weights must be finite and nonnegative.")
-    tau_s_value = float(tau_s)
-    if not math.isfinite(tau_s_value) or tau_s_value <= 0.0:
-        raise ValueError("tau_s must be finite and positive.")
-
-    support_weight = float(sum(ancestor_w) + sum(stable_w))
-    if support_weight <= 0.0:
-        return ChildNullPriorResult(
-            prior=math.nan,
-            support_weight=support_weight,
-            signal_attenuation=math.nan,
-            status="support_bottleneck",
-        )
-
-    numerator = float(
-        sum(weight * value for weight, value in zip(ancestor_w, ancestor_p))
-        + sum(weight * value for weight, value in zip(stable_w, stable_p))
-    )
-    interpolated = numerator / support_weight
-    attenuation = 0.0
-    if signal_p:
-        attenuation = max(
-            (1.0 - p_value) * math.exp(-distance / tau_s_value)
-            for p_value, distance in zip(signal_p, signal_d)
-        )
-    prior = interpolated * (1.0 - attenuation)
-
-    if prior < -PROBABILITY_TOLERANCE or prior > 1.0 + PROBABILITY_TOLERANCE:
-        return ChildNullPriorResult(
-            prior=math.nan,
-            support_weight=support_weight,
-            signal_attenuation=attenuation,
-            status="invalid_probability_domain",
-        )
-    return ChildNullPriorResult(
-        prior=float(min(max(prior, 0.0), 1.0)),
-        support_weight=support_weight,
-        signal_attenuation=float(attenuation),
-        status="interpolated_prior_observed_diagnostic_only",
-    )
 
 
 def _guard_blocked(row: pd.Series) -> bool:

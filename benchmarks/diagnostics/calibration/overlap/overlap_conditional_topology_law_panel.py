@@ -263,10 +263,6 @@ class CachedTreeDistances:
     branch_length_edge_count: int = 0
 
     @property
-    def computed_pair_count(self) -> int:
-        return int(len(self.distances))
-
-    @property
     def distances_available(self) -> bool:
         return str(self.status).startswith("cached_all_pairs_")
 

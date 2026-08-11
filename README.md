@@ -235,7 +235,8 @@ performed without cleanup.
 
 - After the full test environment sync above, run the automated tests with
   `uv run pytest`.
-- Run `make check` for Ruff, wiki lint, and the purpose-ordered full test suite.
+- Run `make check` for Ruff, dependency and dead-code audits, wiki lint, and the
+  purpose-ordered full test suite.
 - In the lean development environment, run targeted tests for the code you
   changed. scRNA-only tests are skipped when their optional dependencies are
   absent, but full-suite parity expects the full environment.

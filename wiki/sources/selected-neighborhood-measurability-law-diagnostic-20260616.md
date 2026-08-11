@@ -26,9 +26,9 @@ label.
 
 ## Key Points
 
-- The implementation includes an unclipped
-  `compute_child_interpolated_null_prior` helper. Probability-domain violations
-  raise or mark the row invalid instead of being made valid by clipping.
+- The row evaluator consumes interpolated priors already present in its input
+  or joined from optional hold-out interpolation rows. Probability-domain
+  violations mark the row invalid instead of being made valid by clipping.
 - The row evaluator produces `split`, `diagnostic_rescue`, or `fail_closed`
   actions and reports bottlenecks such as
   `direct_measurable_not_significant`, `interpolated_prior_unavailable`,

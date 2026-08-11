@@ -436,19 +436,16 @@ def test_resolve_sibling_projection_dimension_rejects_negative_dimension() -> No
         )
 
 
-def test_resolve_sibling_projection_dimension_accepts_zero_dimension() -> None:
+@pytest.mark.parametrize(
+    "projection_dimension",
+    [pytest.param(0, id="zero"), pytest.param(3, id="positive")],
+)
+def test_resolve_sibling_projection_dimension_uses_supplied_edge_derived_dimension(
+    projection_dimension: int,
+) -> None:
     resolved_k, source = resolve_sibling_projection_dimension(
-        projection_dimension_from_edge_comparisons=0,
+        projection_dimension_from_edge_comparisons=projection_dimension,
     )
 
-    assert resolved_k == 0
-    assert source == "derived_from_edge_comparisons"
-
-
-def test_resolve_sibling_projection_dimension_uses_supplied_edge_derived_dimension() -> None:
-    resolved_k, source = resolve_sibling_projection_dimension(
-        projection_dimension_from_edge_comparisons=3,
-    )
-
-    assert resolved_k == 3
+    assert resolved_k == projection_dimension
     assert source == "derived_from_edge_comparisons"

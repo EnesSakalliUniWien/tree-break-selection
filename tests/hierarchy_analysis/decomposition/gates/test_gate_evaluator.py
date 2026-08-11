@@ -212,10 +212,6 @@ class TestGateEvaluator:
         )
 
         assert gate.decision("root") is TraversalDecision.BOUNDARY
-        assert gate.passthrough_support_status("root") == {
-            "passthrough_supported": False,
-            "passthrough_bottleneck": "",
-        }
         assert gate.passthrough_audit_status("root") == {
             "passthrough_enabled": True,
             "passthrough_split_prerequisites_open": True,

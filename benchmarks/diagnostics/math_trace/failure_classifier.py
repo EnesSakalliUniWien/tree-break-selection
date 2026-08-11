@@ -80,17 +80,3 @@ def classify_failure(row: Mapping[str, Any]) -> str:
     if existing and existing not in {"nan", "none", "solved", "ok"}:
         return str(row.get("failure_label"))
     return "solved_or_unattributed"
-
-
-def classify_table(table: pd.DataFrame) -> pd.DataFrame:
-    """Return a row-level failure-attribution table with primary labels."""
-    columns = [
-        column
-        for column in ("case_id", "replicate_id", "node_id", "parent_id")
-        if column in table.columns
-    ]
-    result = table.loc[:, columns].copy()
-    result["primary_failure_label"] = [
-        classify_failure(row) for row in table.to_dict(orient="records")
-    ]
-    return result
