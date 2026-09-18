@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-08-11
+updated: 2026-09-10
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -56,6 +56,14 @@ renamed, or promoted.
 
 ### Source Summaries
 
+- [[diffusion-nnls-versions-and-support-review-20260909]] - diffusion NNLS
+  benchmark versions and matched support-rule/gate diagnostics, including
+  zero-support signal recovery, null splits and geometry limitations.
+- [[calibration-rule-restoration-20260909]] - restoration of empirical sibling
+  p-values, benchmark verification and necessary held-out null/signal validation.
+- [[latest-changes-benchmark-review-20260909]] - calibration and selected-Gaussian
+  review with numerical counterexamples and latest benchmark coverage, matched
+  NNLS comparisons and reporting limitations.
 - [[wiki-construction-brief]] - summary of the captured wiki construction
   request and its required layers, tooling, workflows, and open questions.
 - [[github-wiki-structure-research]] - design-reference notes for Foam-style
@@ -857,7 +865,12 @@ renamed, or promoted.
   and oracle recoverability while marking selected-inference proof gaps.
 - [[root-selected-region-model]] - first simplified selected-region model for
   a root sibling context, written as hierarchy merge inequalities plus
-  edge-opening inequalities in the null-whitened tangent geometry.
+  edge-opening inequalities in the null-whitened tangent geometry, with an
+  internal nuisance-derived continuous Gaussian radial prototype and analytic
+  squared-Euclidean average-linkage merge-sequence cells, fixed branch-time
+  covariance scaling, adaptive-pydiffmap pointwise replay, the Hamming binary
+  support boundary, and the unresolved recomputed branch-length-adjusted
+  internal-node projection and diffusion selected-region boundaries.
 - [[local-marchenko-pastur-rule]] - audit of the local MP dimension rule,
   eigenvalue scale, finite-sample null behavior, leaf-only spectral rows, and
   calibration-support fallout.
@@ -890,6 +903,9 @@ renamed, or promoted.
   non-promotion of unsupported calibration claims.
 
 ### Questions
+
+- [[diffusion-nnls-calibration-open-points]] - calibration checklist with the
+  false-split definition, required data conditions and remaining validation points.
 
 - [[pancreas-progenitor-dataset-selection-20260624]] - dataset decision record
   recommending a progenitor-rich human fetal pancreas rerun, with Goncalves

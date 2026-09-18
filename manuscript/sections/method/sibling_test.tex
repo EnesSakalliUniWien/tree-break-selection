@@ -254,7 +254,7 @@ posterior null probability. Also,
 x_q = (\log s_q,\log n_q),
 \]
 where $s_q$ is the resolved sibling projection dimension and $n_q$ is the
-parent leaf count. The diagnostic estimator uses the working post-selection scale family
+parent leaf count. The empirical estimator uses the working post-selection scale family
 \begin{equation}\label{eq:sibling-context-scale-model}
 T_q^{\mathrm{raw}} \mid H_0
 \approx
@@ -374,7 +374,7 @@ resolve the selected-hierarchy reference law.
 The denominator is required to have positive effective calibration mass from
 tested-null or stopped-path records. If no such positive-degree sibling
 records carry positive null weight, the calibration contract is not satisfied
-and the implementation raises an error.
+and the pipeline closes focal sibling gates; the benchmark reports an unsupported outcome.
 
 \paragraph{Reference-law contract and sibling false-discovery-rate correction.}
 For same-data selected hierarchies, the hierarchy, focal pair, calibration
@@ -387,10 +387,12 @@ observations. Consequently,
 \frac{T_u^{\mathrm{raw}}}{a_u\hat c_{f_u}(x_u)}
 \right)
 \end{equation}
-is not a validated calibrated p-value. The production path preserves the raw
-statistic, raw fixed-reference p-value, scale estimate, support diagnostics,
-and dependency groups, but positive-dimensional decisions have status
-\texttt{undefined\_unvalidated\_reference\_law} and do not enter sibling FDR.
+is the restored empirical plug-in p-value, whose selected-tail validity remains
+unproven. With internal support, the production path reports
+\texttt{internal\_admissible} and supplies this p-value to traversal-aligned
+sibling BH. Here admissibility means availability under the support policy,
+not a selective-inference guarantee. Dependency-group support diagnostics
+and the unresolved reference-law metadata remain available in the decision API.
 The zero-dimensional case remains the deterministic decision $p=1$.
 
 A separate exact mode is available only under a stronger contract. Suppose a

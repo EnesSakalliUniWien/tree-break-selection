@@ -60,14 +60,9 @@ def test_pipeline_supports_current_gate_annotation_contract() -> None:
     assert not tested.empty
     assert tested["Sibling_Sparse_Evidence_P_Value"].between(0.0, 1.0).all()
     active_tested = out[out["Sibling_Gate_P_Value_Role"].eq("active_traversal_sibling_gate")]
-    assert active_tested.empty
-    fail_closed = out[
-        out["Sibling_Gate_P_Value_Calibration"].eq(
-            "undefined_unvalidated_reference_law"
-        )
-    ]
-    assert not fail_closed.empty
-    assert fail_closed["Sibling_Gate_P_Value_Role"].eq("fail_closed_sibling_gate").all()
+    assert not active_tested.empty
+    assert active_tested["Sibling_Gate_P_Value_Calibration"].eq("empirical_null_inflation").all()
+    assert active_tested["Sibling_Divergence_P_Value"].between(0.0, 1.0).all()
     assert tested["Sibling_Dense_Evidence_Method"].eq("fixed_global_chi_square").all()
     assert tested["Sibling_Dense_Evidence_Calibration"].eq("fixed_subspace_chi_square").all()
 

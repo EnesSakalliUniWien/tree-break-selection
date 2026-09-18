@@ -40,13 +40,13 @@ optimal detector in this setting.
 
 \paragraph{Empirical-null inflation assumptions.}
 The sibling inflation model assumes that tree-selected sibling statistics
-share a context-dependent multiplicative scale distortion. The diagnostic estimator uses
+share a context-dependent multiplicative scale distortion. The empirical estimator uses
 joint child-edge null-evidence weights, feature-family matching, and a local
 context over log sibling projection dimension and, for non-Bernoulli feature
 families, log parent size. These choices define a practical calibration model.
-They do not estimate posterior null probabilities and do not currently define a
-production p-value: positive-dimensional same-selected-hierarchy decisions fail
-closed. The open mathematical object is the selected-hierarchy law for the
+They do not estimate posterior null probabilities. The restored production
+rule uses a plug-in chi-square p-value with empirical inflation when internal
+support exists; its selected-tail validity remains unproven. The open mathematical object is the selected-hierarchy law for the
 selected ratio, not merely a mean inflation factor. A separate exact-F path
 applies only to mutually independent focal and calibration chi-square
 statistics, fixed unit weights, a common scale, and disjoint observation
@@ -77,7 +77,7 @@ Empirical-null weight $\pi_q$ & Weights calibration records by joint child-edge 
 Context bandwidth $h$ & Localizes inflation estimates within feature family & null-weighted empirical standard deviation over active log-context axes & Needs sensitivity and behavior under few unique dimensions or parent sizes. \\
 Barycentric leverage variables & Describe selected child balance and edge/sibling shared-direction geometry & $b_u$, $\ell_u^{\mathrm{bar}}$, and $s_u^{\mathrm{samp}}$ in selected-tail diagnostics & Diagnostic coordinates; the current Q5 rerun improves some tail-error metrics but does not validate a production external law. \\
 Effective calibration sample size & Reports degeneracy of calibration dependency-group weights & diagnostic only & Nested records sharing one stopping event count once; thresholds still need validation. \\
-Sibling calibration reference law & Determines whether a scale estimate yields a calibrated p-value & selected-hierarchy law unresolved; restricted independent common-scale exact-F mode available & Same-selected-hierarchy positive-dimensional tests fail closed; exact mode requires its full independence and ownership contract. \\
+Sibling calibration reference law & Determines whether a scale estimate yields a calibrated p-value & selected-hierarchy law unresolved; restricted independent common-scale exact-F mode available & The empirical plug-in tail is active with internal support, without a selected-tail guarantee; exact mode requires its full independence and ownership contract. \\
 External selected-hierarchy law & Would replace unsupported internal empirical-null contexts & no general production path; narrow small-parent, high-edge-action selected-tail contexts are diagnostic-admissible for some feature families & Requires admissible support and selected-ratio tail validation in each target context before use. \\
 Pass-through traversal & Allows deeper splits after shallow sibling failure & enabled & Algorithmic policy; needs ablation on over-split and under-split behavior. \\
 \bottomrule

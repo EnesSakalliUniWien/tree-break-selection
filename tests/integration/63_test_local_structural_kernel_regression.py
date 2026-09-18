@@ -6,7 +6,6 @@ import pytest
 from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-from benchmarks.shared.types import UnsupportedReasonCode
 from scipy.spatial.distance import pdist
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_SIBLING_ALPHA,
@@ -57,7 +56,7 @@ def test_strict_sibling_calibration_fails_closed_without_internal_support(
 
 
 @pytest.mark.slow
-def test_default_sibling_calibration_fails_closed_for_unvalidated_reference_law() -> None:
+def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
     case = next(case for case in get_default_test_cases() if case["name"] == "gauss_clear_small")
     context = build_tbs_tree_context(case, populate_node_distributions=False)
 
@@ -70,31 +69,31 @@ def test_default_sibling_calibration_fails_closed_for_unvalidated_reference_law(
         trace_level="full",
     )
 
-    assert result.status == "unsupported"
-    assert result.labels is None
-    assert result.found_clusters == 0
-    assert result.unsupported_reason is not None
-    assert result.unsupported_reason.code is (
-        UnsupportedReasonCode.EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW
-    )
-    assert result.unsupported_reason.evidence.admissible_support_count > 0
-    annotations = result.extra["annotations"]
-    fail_closed = annotations[
-        annotations["Sibling_Gate_P_Value_Calibration"].eq(
-            "undefined_unvalidated_reference_law"
-        )
+    assert result.found_clusters == 2
+    visited_internal_nodes = [
+        node
+        for node in result.extra["full_edge_traversal_trace"]
+        if node["actual_visited"] and not node["is_leaf"]
     ]
-    assert not fail_closed.empty
-    assert fail_closed["Sibling_Test_Method"].eq(
-        "empirical_null_unvalidated_selected_hierarchy_reference_law"
-    ).all()
-    assert fail_closed["Sibling_Gate_P_Value_Role"].eq(
-        "fail_closed_sibling_gate"
-    ).all()
-    assert fail_closed["Sibling_Divergence_P_Value"].notna().all()
-    assert fail_closed["Sibling_Divergence_Skipped"].eq(True).all()
-    assert fail_closed["Sibling_Divergence_Invalid"].eq(True).all()
-    assert not fail_closed["Sibling_BH_Different"].any()
+    conservative_boundaries = [
+        node
+        for node in visited_internal_nodes
+        if node["n_descendant_leaves"] == 20
+        and node["edge_gate_open"] is True
+        and node["sibling_gate_open"] is False
+        and node["sibling_p_value"] > DEFAULT_SIBLING_ALPHA
+    ]
+    assert len(conservative_boundaries) == 1
+
+    relaxed_result = run_tbs_on_distance(
+        context.data,
+        context.distance_condensed,
+        0.03,
+        edge_branch_length_variance_policy=EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
+        allow_linkage_ultrametric_branch_time=True,
+        trace_level="full",
+    )
+    assert relaxed_result.found_clusters == 3
 
     stage_timings = result.extra["stage_timings"]
     for key in (
@@ -114,10 +113,9 @@ def test_default_sibling_calibration_fails_closed_for_unvalidated_reference_law(
         "sibling_gate_inflation_fit_sec",
         "sibling_gate_adjusted_tests_sec",
         "sibling_gate_fdr_sec",
+        "traversal_sec",
     ):
         assert stage_timings[key] >= 0.0
-    assert stage_timings["sibling_gate_adjusted_tests_sec"] == 0.0
-    assert stage_timings["sibling_gate_fdr_sec"] == 0.0
 
 
 def test_tbs_runner_accepts_explicit_fixed_sibling_gate_config() -> None:

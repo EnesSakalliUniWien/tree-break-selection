@@ -188,58 +188,6 @@ def annotate_sibling_divergence(
             stage_timings.get("sibling_gate_inflation_fit_sec", 0.0)
         ) + float(perf_counter() - inflation_fit_start_sec)
 
-    if model.reference_law == "unresolved_same_selected_hierarchy":
-        unresolved_focal_records = [
-            record
-            for record in records
-            if not record.is_null_like and record.degrees_of_freedom > 0.0
-        ]
-        annotations_df = _mark_empirical_calibration_as_fail_closed(
-            annotations_df,
-            unresolved_focal_records,
-            method="empirical_null_unvalidated_selected_hierarchy_reference_law",
-            calibration_status="undefined_unvalidated_reference_law",
-        )
-        zero_dimensional_focal_records = [
-            record
-            for record in records
-            if not record.is_null_like and record.degrees_of_freedom == 0.0
-        ]
-        if not zero_dimensional_focal_records:
-            return apply_traversal_aligned_sibling_bh_results(
-                tree,
-                annotations_df,
-                [],
-                [],
-                significance_level_alpha,
-                skipped_parents=[
-                    *skipped_parents,
-                    *(record.parent for record in unresolved_focal_records),
-                ],
-            )
-        (
-            zero_parent_ids,
-            zero_test_summaries,
-            zero_method_labels,
-        ) = compute_inflation_adjusted_sibling_tests(
-            zero_dimensional_focal_records,
-            model=model,
-            enforce_support_thresholds=enforce_support_thresholds,
-            support_thresholds=support_thresholds,
-        )
-        return apply_traversal_aligned_sibling_bh_results(
-            tree,
-            annotations_df,
-            zero_parent_ids,
-            zero_test_summaries,
-            significance_level_alpha,
-            method_labels=zero_method_labels,
-            skipped_parents=[
-                *skipped_parents,
-                *(record.parent for record in unresolved_focal_records),
-            ],
-        )
-
     adjusted_tests_start_sec = perf_counter()
     (
         tested_parent_ids,

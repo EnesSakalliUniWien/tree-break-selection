@@ -27,7 +27,7 @@ def test_benchmark_graph_and_density_methods_smoke():
 
 
 def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
-    """Separate a working comparator from fail-closed selected-hierarchy TBS."""
+    """Run the previously nonfunctional methods through one benchmark case."""
     case = SMALL_TEST_CASES[0].copy()
     df_results, _ = benchmark_cluster_algorithm(
         test_cases=[case],
@@ -38,16 +38,8 @@ def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
 
     assert len(df_results) == 2
     assert set(df_results["method"]) == {"louvain", "tbs_diffusion_adaptive"}
-    louvain_row = df_results[df_results["method"] == "louvain"].iloc[0]
-    assert louvain_row["status"] == "ok"
-    assert louvain_row["labels_length"] == louvain_row["samples"]
-    tbs_row = df_results[df_results["method"] == "tbs_diffusion_adaptive"].iloc[0]
-    assert tbs_row["status"] == "unsupported"
-    assert tbs_row["labels_length"] == 0
-    assert tbs_row["unsupported_reason_code"] == (
-        "empirical_null_unvalidated_reference_law"
-    )
-    assert tbs_row["unsupported_admissible_support_count"] > 0
+    assert set(df_results["status"]) == {"ok"}
+    assert (df_results["labels_length"] == df_results["samples"]).all()
 
 
 @pytest.mark.optional
@@ -79,12 +71,8 @@ def test_benchmark_graphtools_diffusion_method_smoke(require_optional_dependenci
         ]
         == "graphtools_adaptive_k_tree_strategy"
     ).all()
-    assert set(df_results["status"]) == {"unsupported"}
-    assert (df_results["labels_length"] == 0).all()
-    assert df_results["unsupported_reason_code"].eq(
-        "empirical_null_unvalidated_reference_law"
-    ).all()
-    assert (df_results["unsupported_admissible_support_count"] > 0).all()
+    assert set(df_results["status"]) == {"ok"}
+    assert (df_results["labels_length"] == df_results["samples"]).all()
 
 
 def test_hamming_diffusion_rejects_continuous_benchmark_input():

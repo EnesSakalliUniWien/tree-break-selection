@@ -2,8 +2,9 @@
 title: Open Mathematical Questions
 type: question
 status: reviewed
-updated: 2026-08-11
+updated: 2026-09-17
 sources:
+  - reports/calibration_restoration_20260909/validation_protocol.md
   - manuscript/guides/full_method_logic_map.md
   - manuscript/guides/edge_sibling_derivation_guide.md
   - manuscript/sections/method/assumptions_validation.tex
@@ -128,13 +129,20 @@ treated as publication-ready rather than a gap-marked methods draft?
 
 ## Current State
 
+The focused checklist for the restored method is
+[[diffusion-nnls-calibration-open-points]]: twelve points covering null
+simulations, data-dependent selection, calibration support, held-out evaluation,
+false splits and signal recovery, with evidence required to resolve each point.
+
 The central unresolved calibration question is the selected-hierarchy
 conditional-null object for positive-dimensional sibling tests. Internal
 strict-null or stopped-edge support is necessary for estimating a descriptive
 scale, but it is not sufficient for a calibrated p-value because the focal
 statistic, calibration records, hierarchy, and weights share data and selection
-events. Production now fails closed with
-`undefined_unvalidated_reference_law` even when internal support exists. For
+events. The 2026-09-09 restoration reactivates the historical empirical
+plug-in chi-square p-value and sibling BH with internal support, without
+claiming a validated selected-tail law. See [[calibration-rule-restoration-20260909]]
+for the held-out full-pipeline error-rate validation needed next. For
 same-selected-hierarchy contexts, the required mathematical object is a law such as
 \[
 \mathcal L\!\left(
@@ -809,11 +817,13 @@ The unchanged active all-informative recipe is now
 the distinct question of robustness to 19,988 truly irrelevant coordinates.
 
 The 2026-06-04 calibration-contract implementation made this separation
-explicit in code. The 2026-08-11 correction now returns a diagnostic scalar
-\(c\) but no calibrated p-value for positive-dimensional same-selected-
-hierarchy decisions. Those decisions are
-`undefined_unvalidated_reference_law`; only the zero-dimensional deterministic
-case remains `internal_admissible`. A separately named exact-F API requires
+explicit in code. The 2026-08-11 correction withheld positive-dimensional
+same-selected-hierarchy p-values. The 2026-09-09 restoration returns empirical
+plug-in chi-square p-values with `internal_admissible` status when internal
+support satisfies the requested support policy. This status denotes
+availability, not validated selected-tail error control. Missing internal
+support still closes focal sibling gates; zero-dimensional decisions remain
+the deterministic p=1 case. A separately named exact-F API requires
 independent statistics, pairwise-disjoint observation ownership, fixed unit
 weights, and one common chi-square scale.
 

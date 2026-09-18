@@ -1,0 +1,1416 @@
+{
+  "review_date": "2026-09-09",
+  "reviewed_head": "6441b2e6",
+  "base": "641c0e7a9145be3b4d18f147af95042a7c5e7fc5",
+  "source_files": [
+    {
+      "path": "benchmarks/results/run_20260811_selected_law_variants_full/full_benchmark_comparison.csv",
+      "bytes": 4430079,
+      "sha256": "c0b2509a91619d867547c2507def3f6db6c22da4178232528396df6ad6dc479d"
+    },
+    {
+      "path": "benchmarks/results/run_20260811_123017Z_tbs_full_quality/full_benchmark_comparison.csv",
+      "bytes": 142430,
+      "sha256": "b5bf4b9dc0459ec6dcd017078ac844f0d5ce889bcf98975414e043d506d9d2e5"
+    },
+    {
+      "path": "benchmarks/results/run_20260811_selected_law_variants_full/benchmark_performance_grid_summary.csv",
+      "bytes": 8251,
+      "sha256": "2c40c3b054215a42877bd5637b6462bb5f2a692463e49c53897fadefaa7ea458"
+    },
+    {
+      "path": "benchmarks/results/run_20260811_selected_law_variants_full/benchmark_performance_grid.md",
+      "bytes": 8963,
+      "sha256": "dd04ea5fef0bb247fd20f2f708bcc20deb846ab73a44796b2b97c5e24413257b"
+    }
+  ],
+  "rows": 2790,
+  "methods": 25,
+  "cases": 122,
+  "statuses": {
+    "ok": 1596,
+    "unsupported": 1139,
+    "skip": 55
+  },
+  "duplicate_case_run_cells": 0,
+  "nonfinite_ok_ari": 0,
+  "finite_non_ok_ari": 0,
+  "per_case_metadata_conflicts": {
+    "recorded_seed": 0,
+    "samples": 0,
+    "features": 0,
+    "true_clusters": 0,
+    "feature_representation": 0,
+    "noise": 0
+  },
+  "repeats": [
+    0
+  ],
+  "sibling_alphas": [
+    "0.01"
+  ],
+  "edge_alphas": [
+    "0.001"
+  ],
+  "canonical_status_quality_matches_standalone": true,
+  "canonical_unsupported_reasons": {
+    "empirical_null_unvalidated_reference_law": 85,
+    "empirical_null_no_internal_support": 26
+  },
+  "method_summaries": [
+    {
+      "method": "tbs",
+      "rows": 122,
+      "ok": 11,
+      "unsupported": 111,
+      "skip": 0,
+      "mean_ari_on_ok": 0.3636363636,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 4,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 7.0,
+      "mean_abs_k_error_on_ok": 3.1818181818
+    },
+    {
+      "method": "tbs_bandwidth_context_v1",
+      "rows": 52,
+      "ok": 6,
+      "unsupported": 46,
+      "skip": 0,
+      "mean_ari_on_ok": 0.1666666667,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 1,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 5.0,
+      "mean_abs_k_error_on_ok": 3.1666666667
+    },
+    {
+      "method": "tbs_complete",
+      "rows": 122,
+      "ok": 9,
+      "unsupported": 113,
+      "skip": 0,
+      "mean_ari_on_ok": 0.3333333333,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 3,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 6.0,
+      "mean_abs_k_error_on_ok": 1.8888888889
+    },
+    {
+      "method": "tbs_continuous_guarded_within_covariance",
+      "rows": 122,
+      "ok": 18,
+      "unsupported": 104,
+      "skip": 0,
+      "mean_ari_on_ok": 0.5512674823,
+      "median_ari_on_ok": 0.9614073403,
+      "exact_k_on_ok": 9,
+      "over_split_on_ok": 1.0,
+      "under_split_on_ok": 8.0,
+      "mean_abs_k_error_on_ok": 2.1666666667
+    },
+    {
+      "method": "tbs_diffusion",
+      "rows": 122,
+      "ok": 2,
+      "unsupported": 107,
+      "skip": 13,
+      "mean_ari_on_ok": 1.0,
+      "median_ari_on_ok": 1.0,
+      "exact_k_on_ok": 2,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 0.0,
+      "mean_abs_k_error_on_ok": 0.0
+    },
+    {
+      "method": "tbs_diffusion_adaptive",
+      "rows": 122,
+      "ok": 5,
+      "unsupported": 96,
+      "skip": 21,
+      "mean_ari_on_ok": 0.2,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 1,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 4.0,
+      "mean_abs_k_error_on_ok": 2.2
+    },
+    {
+      "method": "tbs_diffusion_adaptive_nnls",
+      "rows": 122,
+      "ok": 5,
+      "unsupported": 96,
+      "skip": 21,
+      "mean_ari_on_ok": 0.2,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 1,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 4.0,
+      "mean_abs_k_error_on_ok": 2.2
+    },
+    {
+      "method": "tbs_fixed_block_bh",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6680240335,
+      "median_ari_on_ok": 0.7945277612,
+      "exact_k_on_ok": 22,
+      "over_split_on_ok": 83.0,
+      "under_split_on_ok": 17.0,
+      "mean_abs_k_error_on_ok": 9.7540983607
+    },
+    {
+      "method": "tbs_fixed_block_bh_nnls",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.673907086,
+      "median_ari_on_ok": 0.7945277612,
+      "exact_k_on_ok": 25,
+      "over_split_on_ok": 80.0,
+      "under_split_on_ok": 17.0,
+      "mean_abs_k_error_on_ok": 8.9918032787
+    },
+    {
+      "method": "tbs_fixed_block_simes_bh",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6732233281,
+      "median_ari_on_ok": 0.784346632,
+      "exact_k_on_ok": 24,
+      "over_split_on_ok": 85.0,
+      "under_split_on_ok": 13.0,
+      "mean_abs_k_error_on_ok": 10.8360655738
+    },
+    {
+      "method": "tbs_fixed_block_simes_bh_nnls",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6626533124,
+      "median_ari_on_ok": 0.7714910674,
+      "exact_k_on_ok": 24,
+      "over_split_on_ok": 82.0,
+      "under_split_on_ok": 16.0,
+      "mean_abs_k_error_on_ok": 10.131147541
+    },
+    {
+      "method": "tbs_fixed_coordinate_bh",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6732233281,
+      "median_ari_on_ok": 0.784346632,
+      "exact_k_on_ok": 24,
+      "over_split_on_ok": 85.0,
+      "under_split_on_ok": 13.0,
+      "mean_abs_k_error_on_ok": 10.8360655738
+    },
+    {
+      "method": "tbs_fixed_coordinate_bh_nnls",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6626533124,
+      "median_ari_on_ok": 0.7714910674,
+      "exact_k_on_ok": 24,
+      "over_split_on_ok": 82.0,
+      "under_split_on_ok": 16.0,
+      "mean_abs_k_error_on_ok": 10.131147541
+    },
+    {
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6929625849,
+      "median_ari_on_ok": 0.835741932,
+      "exact_k_on_ok": 25,
+      "over_split_on_ok": 81.0,
+      "under_split_on_ok": 16.0,
+      "mean_abs_k_error_on_ok": 8.7213114754
+    },
+    {
+      "method": "tbs_fixed_coordinate_bonferroni_nnls",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.682367281,
+      "median_ari_on_ok": 0.819647263,
+      "exact_k_on_ok": 25,
+      "over_split_on_ok": 78.0,
+      "under_split_on_ok": 19.0,
+      "mean_abs_k_error_on_ok": 8.0163934426
+    },
+    {
+      "method": "tbs_fixed_coordinate_by",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.7122560686,
+      "median_ari_on_ok": 0.8809973299,
+      "exact_k_on_ok": 30,
+      "over_split_on_ok": 74.0,
+      "under_split_on_ok": 18.0,
+      "mean_abs_k_error_on_ok": 7.2049180328
+    },
+    {
+      "method": "tbs_fixed_coordinate_by_nnls",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6989578738,
+      "median_ari_on_ok": 0.8626579871,
+      "exact_k_on_ok": 28,
+      "over_split_on_ok": 73.0,
+      "under_split_on_ok": 21.0,
+      "mean_abs_k_error_on_ok": 6.7950819672
+    },
+    {
+      "method": "tbs_fixed_coordinate_holm",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.6929625849,
+      "median_ari_on_ok": 0.835741932,
+      "exact_k_on_ok": 25,
+      "over_split_on_ok": 81.0,
+      "under_split_on_ok": 16.0,
+      "mean_abs_k_error_on_ok": 8.7213114754
+    },
+    {
+      "method": "tbs_fixed_coordinate_holm_nnls",
+      "rows": 122,
+      "ok": 122,
+      "unsupported": 0,
+      "skip": 0,
+      "mean_ari_on_ok": 0.682367281,
+      "median_ari_on_ok": 0.819647263,
+      "exact_k_on_ok": 25,
+      "over_split_on_ok": 78.0,
+      "under_split_on_ok": 19.0,
+      "mean_abs_k_error_on_ok": 8.0163934426
+    },
+    {
+      "method": "tbs_internal_filter_branch_length_v1",
+      "rows": 122,
+      "ok": 12,
+      "unsupported": 110,
+      "skip": 0,
+      "mean_ari_on_ok": 0.3333333333,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 4,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 8.0,
+      "mean_abs_k_error_on_ok": 3.1666666667
+    },
+    {
+      "method": "tbs_internal_filter_v1",
+      "rows": 122,
+      "ok": 12,
+      "unsupported": 110,
+      "skip": 0,
+      "mean_ari_on_ok": 0.3333333333,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 4,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 8.0,
+      "mean_abs_k_error_on_ok": 3.1666666667
+    },
+    {
+      "method": "tbs_iqtree3",
+      "rows": 2,
+      "ok": 0,
+      "unsupported": 2,
+      "skip": 0,
+      "mean_ari_on_ok": null,
+      "median_ari_on_ok": null,
+      "exact_k_on_ok": 0,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 0.0,
+      "mean_abs_k_error_on_ok": null
+    },
+    {
+      "method": "tbs_neighbor_joining",
+      "rows": 52,
+      "ok": 1,
+      "unsupported": 51,
+      "skip": 0,
+      "mean_ari_on_ok": 1.0,
+      "median_ari_on_ok": 1.0,
+      "exact_k_on_ok": 1,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 0.0,
+      "mean_abs_k_error_on_ok": 0.0
+    },
+    {
+      "method": "tbs_nnls",
+      "rows": 122,
+      "ok": 13,
+      "unsupported": 109,
+      "skip": 0,
+      "mean_ari_on_ok": 0.3076923077,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 4,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 9.0,
+      "mean_abs_k_error_on_ok": 3.0769230769
+    },
+    {
+      "method": "tbs_single",
+      "rows": 122,
+      "ok": 38,
+      "unsupported": 84,
+      "skip": 0,
+      "mean_ari_on_ok": 0.1578947368,
+      "median_ari_on_ok": 0.0,
+      "exact_k_on_ok": 6,
+      "over_split_on_ok": 0.0,
+      "under_split_on_ok": 32.0,
+      "mean_abs_k_error_on_ok": 3.2631578947
+    }
+  ],
+  "nnls_paired_comparisons": [
+    {
+      "method": "tbs_fixed_coordinate_by",
+      "matched_cases": 122,
+      "nnls_wins": 10,
+      "ties": 106,
+      "nnls_losses": 6,
+      "mean_ari_change": -0.01329819486000047
+    },
+    {
+      "method": "tbs_fixed_coordinate_bh",
+      "matched_cases": 122,
+      "nnls_wins": 14,
+      "ties": 101,
+      "nnls_losses": 7,
+      "mean_ari_change": -0.010570015772179498
+    },
+    {
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "matched_cases": 122,
+      "nnls_wins": 14,
+      "ties": 101,
+      "nnls_losses": 7,
+      "mean_ari_change": -0.010595303912178096
+    },
+    {
+      "method": "tbs_fixed_block_bh",
+      "matched_cases": 122,
+      "nnls_wins": 15,
+      "ties": 104,
+      "nnls_losses": 3,
+      "mean_ari_change": 0.005883052478107204
+    }
+  ],
+  "one_cluster_truth_rows": [
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_continuous_guarded_within_covariance",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_complete",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_single",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_bh",
+      "status": "ok",
+      "found_clusters": 2,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_by",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_holm",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_block_bh",
+      "status": "ok",
+      "found_clusters": 2,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_block_simes_bh",
+      "status": "ok",
+      "found_clusters": 2,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_nnls",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_bh_nnls",
+      "status": "ok",
+      "found_clusters": 2,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_by_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_holm_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_coordinate_bonferroni_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_block_bh_nnls",
+      "status": "ok",
+      "found_clusters": 2,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_fixed_block_simes_bh_nnls",
+      "status": "ok",
+      "found_clusters": 2,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_internal_filter_v1",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_internal_filter_branch_length_v1",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_bandwidth_context_v1",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_neighbor_joining",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_diffusion",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_diffusion_adaptive",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_small",
+      "method": "tbs_diffusion_adaptive_nnls",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_continuous_guarded_within_covariance",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_complete",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_single",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_bh",
+      "status": "ok",
+      "found_clusters": 4,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_by",
+      "status": "ok",
+      "found_clusters": 3,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_holm",
+      "status": "ok",
+      "found_clusters": 3,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "status": "ok",
+      "found_clusters": 3,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_block_bh",
+      "status": "ok",
+      "found_clusters": 4,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_block_simes_bh",
+      "status": "ok",
+      "found_clusters": 4,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_nnls",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_bh_nnls",
+      "status": "ok",
+      "found_clusters": 4,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_by_nnls",
+      "status": "ok",
+      "found_clusters": 3,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_holm_nnls",
+      "status": "ok",
+      "found_clusters": 3,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_coordinate_bonferroni_nnls",
+      "status": "ok",
+      "found_clusters": 3,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_block_bh_nnls",
+      "status": "ok",
+      "found_clusters": 4,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_fixed_block_simes_bh_nnls",
+      "status": "ok",
+      "found_clusters": 4,
+      "ari": 0.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_internal_filter_v1",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_internal_filter_branch_length_v1",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_bandwidth_context_v1",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_neighbor_joining",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_diffusion",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_diffusion_adaptive",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large",
+      "method": "tbs_diffusion_adaptive_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_continuous_guarded_within_covariance",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_complete",
+      "status": "unsupported",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_single",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_by",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_holm",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_block_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_block_simes_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_by_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_holm_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_coordinate_bonferroni_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_block_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_fixed_block_simes_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_internal_filter_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_internal_filter_branch_length_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_bandwidth_context_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_neighbor_joining",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_diffusion",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_diffusion_adaptive",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "gauss_null_large_continuous",
+      "method": "tbs_diffusion_adaptive_nnls",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_continuous_guarded_within_covariance",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_complete",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_single",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_by",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_holm",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_block_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_block_simes_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_internal_filter_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_internal_filter_branch_length_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_diffusion",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_diffusion_adaptive",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_diffusion_adaptive_nnls",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_continuous_guarded_within_covariance",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_complete",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_single",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_by",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_holm",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_block_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_block_simes_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_internal_filter_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_internal_filter_branch_length_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_diffusion",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_diffusion_adaptive",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_diffusion_adaptive_nnls",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_continuous_guarded_within_covariance",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_complete",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_single",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_by",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_holm",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_bonferroni",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_block_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_block_simes_bh",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_internal_filter_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_internal_filter_branch_length_v1",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_diffusion",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_diffusion_adaptive",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_diffusion_adaptive_nnls",
+      "status": "skip",
+      "found_clusters": 0,
+      "ari": null
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_by_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_holm_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_coordinate_bonferroni_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_block_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_small",
+      "method": "tbs_fixed_block_simes_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_by_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_holm_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_coordinate_bonferroni_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_block_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "binary_null_medium",
+      "method": "tbs_fixed_block_simes_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_by_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_holm_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_coordinate_bonferroni_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_block_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    },
+    {
+      "case_id": "mp_spike_below_bbp_continuous",
+      "method": "tbs_fixed_block_simes_bh_nnls",
+      "status": "ok",
+      "found_clusters": 1,
+      "ari": 1.0
+    }
+  ],
+  "numerical_reproductions": {
+    "hierarchy_actual_p": 0.8561353965238783,
+    "hierarchy_analytic_p": 0.80000001644111,
+    "hierarchy_probe_radius": 1.41421358,
+    "polynomial_first_merge": [
+      [
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "direct_first_merge": [
+      [
+        2
+      ],
+      [
+        3
+      ]
+    ],
+    "underflow_conditional_p": 0.6701192098036811
+  },
+  "verification": {
+    "targeted_tests_passed": 134,
+    "full_make_check_run": false,
+    "full_benchmarks_rerun": false
+  }
+}

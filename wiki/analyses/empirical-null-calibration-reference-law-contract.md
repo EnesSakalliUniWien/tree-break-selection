@@ -2,8 +2,11 @@
 title: Empirical-Null Calibration Reference-Law Contract
 type: analysis
 status: reviewed
-updated: 2026-08-11
+updated: 2026-09-09
 sources:
+  - reports/calibration_restoration_20260909/validation_protocol.md
+  - reports/diffusion_nnls_versions_20260909/README.md
+  - reports/latest_changes_benchmark_review_20260909.md
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/types/inflation_model.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/pair_testing/collection/child_parent_edge_metadata.py
@@ -29,11 +32,39 @@ For independent focal and calibration chi-square statistics with fixed unit
 weights and one common scale, finite calibration uncertainty gives an exact F
 reference law. The production same-selected-hierarchy records do not satisfy
 that contract: they can overlap in observations, share stopping events, and use
-data-derived hierarchy and weights. Positive-dimensional production decisions
-therefore retain raw and diagnostic evidence but fail closed with
-`undefined_unvalidated_reference_law`.
+data-derived hierarchy and weights. The 2026-09-09 restoration returns the historical plug-in chi-square p-values
+and runs traversal-aligned sibling BH when internal support exists. The
+selected-tail law remains unvalidated; `internal_admissible` means availability
+under the support policy, not proven selective error control.
 
 ## Details
+
+### Implementation review boundary
+
+The initial 2026-09-09 review identified a production branch that bypassed
+support-threshold decisions, plus a tuple dependency-group indexing failure.
+The restoration removes that bypass and fixes tuple-group masks. The empirical
+entry point now rejects exact-F models rather than mislabeling a plug-in
+chi-square p-value as exact F. New regressions and the restored integration
+checks cover these behaviors. See [[calibration-rule-restoration-20260909]].
+
+### Clustering utility and calibration status
+
+The diffusion NNLS review demonstrates that zero admissible internal support
+can coexist with an exact clustering result under an explicitly diagnostic
+gate. On the dense four-cluster signal case, pydiffmap NNLS plus
+`fixed_coordinate_bh` returns ARI=1 at alpha 0.01, with the same tree and
+branch lengths as the unsupported production result. This does not supply a
+selected-tail law: fixed-coordinate gates also split null cases.
+
+Removing only the benchmark's outer unsupported check leaves the production
+sibling gates closed and returns one cluster on every compatible diagnostic
+case. Calibration status should therefore remain distinct from empirical
+clustering utility; a diagnostic assignment requires an explicit sibling
+decision rule. That diagnostic review preceded the empirical-rule restoration. Zero internal
+support still closes production sibling gates and remains an unsupported
+benchmark outcome; the restoration does not insert a replacement gate. See
+[[diffusion-nnls-versions-and-support-review-20260909]].
 
 ### Restricted exact law
 
@@ -82,10 +113,13 @@ substituting an estimated scale ignores finite calibration uncertainty. The
 exact F derivation also does not apply because its independence and fixed-weight
 assumptions fail.
 
-The production path consequently uses the fitted scale only as diagnostic
-evidence. Positive-dimensional records preserve the raw statistic, raw
-fixed-reference p-value, scale estimate, calibration sample, and support
-diagnostics but expose no calibrated p-value and do not enter sibling FDR.
+The restored production path uses the fitted scale in the historical plug-in
+chi-square tail and enters sibling BH. The decision API retains the calibration
+sample and support diagnostics, including the unresolved-law reason. Production
+annotations contain adjusted statistics and empirical p-values. The necessary
+next validation is held-out, complete-pipeline null and signal simulation.
+Superuniformity in the declared null/selection context is the validity target;
+nonuniformity alone does not demonstrate anti-conservative error.
 Zero-dimensional records remain the deterministic (p=1) case.
 
 ### Ownership and support
@@ -112,18 +146,18 @@ already strict null-like or edge-blocked.
 
 - `tests/statistics/35_test_empirical_null_inflation_estimation.py` verifies the
   F reference, the unadjusted-p-value floor, observation ownership, invalid
-  thresholds, immutable sample alignment, and selected-hierarchy fail-closed
-  decisions.
+  thresholds, immutable sample alignment, and the restored empirical p-values, strict support decisions and separation
+  of the empirical and exact-F APIs.
 - `tests/statistics/40_test_child_parent_edge_metadata.py` verifies that nested
   blocked descendants resolve to one stopping-event dependency group.
 - `tests/statistics/50_test_sibling_skip_annotation.py` verifies production
-  annotations preserve raw evidence while withholding unresolved calibrated
-  p-values.
+  empirical p-values and requested support-threshold enforcement.
 - [[selected-hierarchy-external-calibration-contract-20260602]] independently
   shows that scalar mean rescaling does not validate the selected-ratio tail.
 
 ## Links
 
+- [[calibration-rule-restoration-20260909]]
 - [[internal-calibration-q9-q10-q11-debug-20260605]]
 - [[selected-hierarchy-null-support-contract]]
 - [[selected-hierarchy-selection-geometry]]

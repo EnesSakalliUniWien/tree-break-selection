@@ -5,6 +5,8 @@ from __future__ import annotations
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pytest
+from scipy.stats import chi2
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline import (
     annotate_sibling_divergence,
 )
@@ -70,11 +72,12 @@ def test_inflated_projected_wald_marks_leaves_as_skipped() -> None:
         assert bool(result.loc[leaf, "Sibling_Divergence_Skipped"])
 
 
-def _annotate(tree: nx.DiGraph, annotations: pd.DataFrame) -> pd.DataFrame:
+def _annotate(tree: nx.DiGraph, annotations: pd.DataFrame, **kwargs) -> pd.DataFrame:
     sibling_parent_ids = ["N4", "N2", "N3"]
     return annotate_sibling_divergence(
         tree,
         annotations,
+        **kwargs,
         sibling_projection_dimensions_from_edge_comparisons={
             parent: 1 for parent in sibling_parent_ids
         },
@@ -126,19 +129,33 @@ def test_annotations_expose_parent_positive_eigenvalue_count() -> None:
     assert float(result.loc["N3", "Sibling_Parent_Positive_Eigenvalue_Count"]) == 1.0
 
 
-def test_selected_hierarchy_focal_rows_fail_closed_without_calibrated_p_values() -> None:
+def test_selected_hierarchy_focal_rows_use_empirical_adjusted_p_values() -> None:
     tree = _binary_tree()
     result = _annotate(tree, _edge_annotations(tree))
 
     focal_parents = ["N4", "N2"]
-    assert result.loc[
-        focal_parents,
-        "Sibling_Gate_P_Value_Calibration",
-    ].eq("undefined_unvalidated_reference_law").all()
-    assert result.loc[focal_parents, "Sibling_Gate_P_Value_Role"].eq(
-        "fail_closed_sibling_gate"
-    ).all()
-    assert result.loc[focal_parents, "Sibling_Divergence_Skipped"].eq(True).all()
-    assert result.loc[focal_parents, "Sibling_Divergence_Invalid"].eq(True).all()
+    assert (
+        result.loc[
+            focal_parents,
+            "Sibling_Gate_P_Value_Calibration",
+        ]
+        .eq("empirical_null_inflation")
+        .all()
+    )
+    assert (
+        result.loc[focal_parents, "Sibling_Gate_P_Value_Role"]
+        .eq("active_traversal_sibling_gate")
+        .all()
+    )
+    assert result.loc[focal_parents, "Sibling_Divergence_Skipped"].eq(False).all()
+    assert result.loc[focal_parents, "Sibling_Divergence_Invalid"].eq(False).all()
     assert result.loc[focal_parents, "Sibling_Divergence_P_Value"].notna().all()
-    assert not result.loc[focal_parents, "Sibling_BH_Different"].any()
+    assert result.loc[focal_parents, "Sibling_Divergence_P_Value"].to_numpy() == pytest.approx(
+        chi2.sf(result.loc[focal_parents, "Sibling_Test_Statistic"], 1)
+    )
+
+
+def test_production_pipeline_enforces_requested_support_thresholds() -> None:
+    tree = _binary_tree()
+    with pytest.raises(ValueError, match="undefined_sparse_context"):
+        _annotate(tree, _edge_annotations(tree), enforce_support_thresholds=True)

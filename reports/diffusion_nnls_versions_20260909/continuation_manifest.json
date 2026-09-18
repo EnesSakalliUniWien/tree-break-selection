@@ -1,0 +1,21 @@
+{
+  "recorded_at": "2026-09-09T14:52:18.233286+00:00",
+  "entrypoint": "reports/diffusion_nnls_versions_20260909/run_panel.py",
+  "entrypoint_sha256": "9fc87cc11e169de61ea24745173ee0e569892e705fb08454630e6f0e8872ebab",
+  "command": [
+    "uv",
+    "run",
+    "--no-sync",
+    "python",
+    "-u",
+    "-m",
+    "reports.diffusion_nnls_versions_20260909.run_panel",
+    "--run-dir",
+    "benchmarks/results/run_20260909_diffusion_nnls_versions_full"
+  ],
+  "reason": "The full runner aborted on the neighbor-joining MAD positive-distance precondition in case 2. Reuse its per-method API and persist exceptions separately while continuing all 1220 planned cells.",
+  "skbio_version": "0.7.2",
+  "initial_reused_completed_cells": 10,
+  "error_policy": "Python exceptions are recorded as execution_error with traceback; no fallback method or invented clustering score.",
+  "parameter_source": "Original run manifest; adaptive neighbor candidates preserve the same sequence after JSON tuple-to-list serialization."
+}

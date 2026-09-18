@@ -12,7 +12,8 @@ This is active research software at version `0.1.0`, not a finished production
 or publication release. The implementation is executable and extensively
 tested, but selected-hierarchy calibration, high-cardinality categorical
 transfer, and promotion of several method constants remain open research
-questions. Unsupported calibration contexts intentionally fail closed. See
+questions. Missing internal calibration support still closes sibling gates. With support, the
+historical empirical p-value rule is active; its selected-tail validity remains unproven. See
 `wiki/questions/open-mathematical-questions.md` for the maintained evidence and
 remaining gaps.
 
@@ -43,10 +44,9 @@ surfaces with their own contracts.
   contrast coordinates before any projected-Wald test is evaluated.
 - **Projected-Wald statistic** – edge and sibling tests compare distributions in
   a projection basis with an explicit covariance model.
-- **Empirical-null inflation** – same-selected-hierarchy scale estimates remain
-  diagnostic until their selected-tail reference law is validated. Positive-
-  dimensional sibling tests therefore fail closed even when internal support
-  exists. A separate exact-F API is restricted to independent, disjoint,
+- **Empirical-null inflation** – same-selected-hierarchy scale estimates adjust
+  sibling statistics before a plug-in chi-square tail and traversal-aligned BH.
+  This restored empirical rule does not establish selected-tail error control. A separate exact-F API is restricted to independent, disjoint,
   unit-weighted, common-scale calibration data.
 - **Top-down decomposition** – cluster boundaries appear at the first node where
   the traversal contract says the split is not supported.

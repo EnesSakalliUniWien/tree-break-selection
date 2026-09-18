@@ -44,10 +44,10 @@ walks the tree top down to decide the final partition.
 6. Compute the projected quadratic statistic in an orthonormal basis.
 7. Use a chi-square reference for the uninflated projected-Wald statistic.
 8. For sibling tests, estimate context-weighted empirical-null inflation from
-   sibling records as diagnostic evidence.
-9. Apply sibling p-value correction only when the calibration decision has a
-   validated reference law, then traverse the tree. The current positive-
-   dimensional same-selected-hierarchy path fails closed.
+   supported sibling records.
+9. Use the restored plug-in chi-square p-value and traversal-aligned sibling BH,
+   then traverse the tree. Selected-tail validity remains unproven; missing
+   internal support closes the sibling gates.
 
 ## Covariance Object Separation
 

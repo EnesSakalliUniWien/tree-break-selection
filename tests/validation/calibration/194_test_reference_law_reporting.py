@@ -23,7 +23,7 @@ from benchmarks.validation.sweeps.nnls_null_calibration_sweep import (
 )
 
 
-def test_mixed_sweep_preserves_unvalidated_reference_law_outcomes_as_missing() -> None:
+def test_mixed_sweep_reports_restored_empirical_p_values() -> None:
     case = next(
         case
         for case in get_test_cases_by_suite("binary")
@@ -40,11 +40,11 @@ def test_mixed_sweep_preserves_unvalidated_reference_law_outcomes_as_missing() -
     assert status["model_status"] == "fit"
     assert not threshold_rows.empty
     unresolved = threshold_rows[
-        threshold_rows["calibration_status"].eq("undefined_unvalidated_reference_law")
+        threshold_rows["calibration_status"].eq("internal_admissible")
     ]
     assert not unresolved.empty
-    assert unresolved["calibration_p_value"].isna().all()
-    assert unresolved["split_rejected_at_alpha"].isna().all()
+    assert unresolved["calibration_p_value"].between(0.0, 1.0).all()
+    assert unresolved["split_rejected_at_alpha"].notna().all()
 
 
 def test_threshold_summary_excludes_unavailable_split_outcomes() -> None:
@@ -77,7 +77,7 @@ def test_threshold_summary_excludes_unavailable_split_outcomes() -> None:
     assert summary["outcome_status"].eq("has_mixed_null_signal_outcomes").all()
 
 
-def test_mixed_sweep_resume_rejects_stale_false_outcomes(tmp_path: Path) -> None:
+def test_mixed_sweep_resume_rejects_stale_withheld_p_values(tmp_path: Path) -> None:
     pd.DataFrame(
         {
             "left_edge_bh_p_value": [0.5],
@@ -106,7 +106,7 @@ def test_mixed_sweep_resume_rejects_stale_false_outcomes(tmp_path: Path) -> None
         index=False,
     )
     (tmp_path / "manifest.json").write_text(
-        json.dumps({"schema_version": "mixed_internal_calibration_sweep/v1"}) + "\n",
+        json.dumps({"schema_version": "mixed_internal_calibration_sweep/v2"}) + "\n",
         encoding="utf-8",
     )
 
@@ -121,10 +121,10 @@ def test_mixed_sweep_resume_rejects_stale_false_outcomes(tmp_path: Path) -> None
     regenerated = pd.read_csv(outputs["threshold_contexts"])
     assert "stale_false_outcome" not in set(regenerated["context_id"])
     unresolved = regenerated[
-        regenerated["calibration_status"].eq("undefined_unvalidated_reference_law")
+        regenerated["calibration_status"].eq("internal_admissible")
     ]
     assert not unresolved.empty
-    assert unresolved["split_rejected_at_alpha"].isna().all()
+    assert unresolved["split_rejected_at_alpha"].notna().all()
 
 
 @pytest.fixture(scope="module")
@@ -150,14 +150,14 @@ def nnls_linkage_row() -> dict[str, object]:
     return row
 
 
-def test_nnls_sweep_counts_unvalidated_reference_law_rows_as_fail_closed(
+def test_nnls_sweep_counts_restored_empirical_tests(
     nnls_linkage_row: dict[str, object],
 ) -> None:
-    assert nnls_linkage_row["n_sibling_tested"] == 0
-    assert nnls_linkage_row["n_sibling_fail_closed"] > 0
+    assert nnls_linkage_row["n_sibling_tested"] > 0
+    assert nnls_linkage_row["n_sibling_fail_closed"] == 0
 
 
-def test_nnls_sweep_marks_changed_reporting_contract_as_v4(
+def test_nnls_sweep_marks_changed_reporting_contract_as_v5(
     nnls_linkage_row: dict[str, object],
 ) -> None:
-    assert nnls_linkage_row["schema_version"] == "nnls_null_calibration_sweep/v4"
+    assert nnls_linkage_row["schema_version"] == "nnls_null_calibration_sweep/v5"

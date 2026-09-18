@@ -56,7 +56,7 @@ from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_mixed_internal_calibration_sweep_not_calibration"
-SCHEMA_VERSION = "mixed_internal_calibration_sweep/v2"
+SCHEMA_VERSION = "mixed_internal_calibration_sweep/v3"
 
 
 def _parse_csv_list(raw: str) -> tuple[str, ...]:

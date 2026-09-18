@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased] - 2026-09-09
+
+### Changed
+- Restore the historical context-weighted empirical-null chi-square p-value rule and traversal-aligned sibling BH when internal support exists. `internal_admissible` denotes availability under the support policy, not a validated selected-tail law.
+- Retain dependency-group support diagnostics, optional support thresholds, the exact independent common-scale F API, and explicit no-internal-support outcomes.
+- Version calibration sweep artifacts to prevent reuse of cached withheld-p-value outcomes after restoration.
+
+### Fixed
+- Allow hashable tuple dependency-group IDs in leave-one-group scale-sensitivity diagnostics.
+- Pass production sibling records through the requested support-threshold decision instead of bypassing it.
+
 ## [Unreleased] - 2026-08-11
 
 ### Added

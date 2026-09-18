@@ -56,7 +56,7 @@ from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
 
-SCHEMA_VERSION = "nnls_null_calibration_sweep/v4"
+SCHEMA_VERSION = "nnls_null_calibration_sweep/v5"
 GENERATED_BY = "benchmarks.validation.sweeps.nnls_null_calibration_sweep"
 DEFAULT_OUTPUT_DIR = Path("reports/nnls_null_calibration_sweep")
 DEFAULT_CASE_NAMES = (

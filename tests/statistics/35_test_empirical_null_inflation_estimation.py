@@ -332,7 +332,7 @@ def test_fit_empirical_null_inflation_model_uses_context_weighted_inflation() ->
     )
 
 
-def test_selected_hierarchy_decision_preserves_diagnostics_but_fails_closed() -> None:
+def test_selected_hierarchy_decision_restores_empirical_tail_and_preserves_diagnostics() -> None:
     records = [
         _make_record("strict", stat=4.0, degrees_of_freedom=2.0),
         _make_record(
@@ -353,9 +353,9 @@ def test_selected_hierarchy_decision_preserves_diagnostics_but_fails_closed() ->
     model = fit_empirical_null_inflation_model(records)
     decision = decide_empirical_null_calibration(model, target)
 
-    assert decision.status == "undefined_unvalidated_reference_law"
-    assert decision.c_hat is not None
-    assert decision.p_value is None
+    assert decision.status == "internal_admissible"
+    assert decision.c_hat == pytest.approx(3.0)
+    assert decision.p_value == pytest.approx(chi2.sf(16.0 / 3.0, 2.0))
     assert decision.support["n_supported_records"] == 2
     assert decision.support["n_positive_weight_records"] == 2
     assert decision.support["n_selected_nonnull_positive_weight_records"] == 0
@@ -404,7 +404,7 @@ def test_decide_empirical_null_calibration_can_enforce_support_thresholds() -> N
         )
 
 
-def test_selected_hierarchy_decision_reports_passing_support_without_admissible_p_value() -> None:
+def test_selected_hierarchy_decision_with_passing_support_returns_empirical_p_value() -> None:
     records = [
         _make_record("strict", stat=4.0, degrees_of_freedom=2.0),
         _make_record("blocked", stat=8.0, degrees_of_freedom=2.0, is_edge_blocked=True),
@@ -432,9 +432,9 @@ def test_selected_hierarchy_decision_reports_passing_support_without_admissible_
         support_thresholds=permissive,
     )
 
-    assert decision.status == "undefined_unvalidated_reference_law"
-    assert decision.c_hat is not None
-    assert decision.p_value is None
+    assert decision.status == "internal_admissible"
+    assert decision.c_hat == pytest.approx(3.0)
+    assert decision.p_value == pytest.approx(chi2.sf(16.0 / 3.0, 2.0))
     assert decision.support["support_contract_status"] == ("passes_internal_support_thresholds")
     assert decision.support["support_contract_failure_reasons"] == ""
 
@@ -452,11 +452,9 @@ def test_compute_inflation_adjusted_sibling_tests_can_enforce_support_thresholds
     ]
     model = fit_empirical_null_inflation_model(records)
 
-    with pytest.raises(ValueError, match="undefined_unvalidated_reference_law"):
-        compute_inflation_adjusted_sibling_tests(
-            records,
-            model=model,
-        )
+    parents, summaries, _methods = compute_inflation_adjusted_sibling_tests(records, model=model)
+    assert parents == ["target"]
+    assert summaries[0] == pytest.approx((16.0 / 3.0, 2.0, chi2.sf(16.0 / 3.0, 2.0)))
 
     with pytest.raises(ValueError, match="undefined_sparse_context"):
         compute_inflation_adjusted_sibling_tests(
@@ -705,8 +703,9 @@ def test_dependency_group_metrics_do_not_count_nested_stopping_records_as_indepe
     assert nested_decision.support["family_effective_sample_size"] == pytest.approx(2.0)
     assert owner_only_decision.support["local_max_group_weight_share"] == pytest.approx(0.5)
     assert nested_decision.support["local_max_group_weight_share"] == pytest.approx(0.5)
-    assert nested_decision.support["leave_one_group_max_delta_log_c"] >= (
-        owner_only_decision.support["leave_one_group_max_delta_log_c"]
+    assert (
+        nested_decision.support["leave_one_group_max_delta_log_c"]
+        >= (owner_only_decision.support["leave_one_group_max_delta_log_c"])
     )
 
 
@@ -751,6 +750,11 @@ def test_independent_unweighted_common_scale_mode_uses_exact_f_reference_law() -
     assert decision.p_value == pytest.approx(expected)
     assert decision.c_hat == pytest.approx(1.0)
     assert decision.estimator == "exact_independent_unweighted_common_scale_f"
+
+    with pytest.raises(ValueError, match="same-selected-hierarchy model"):
+        decide_empirical_null_calibration(model, target)
+    with pytest.raises(ValueError, match="same-selected-hierarchy model"):
+        compute_inflation_adjusted_sibling_tests([target], model=model)
 
 
 def test_exact_f_mode_accepts_one_shared_nonunit_reference_scale() -> None:
@@ -953,3 +957,57 @@ def test_zero_dimensional_selected_hierarchy_decision_remains_degenerate_not_unr
 
     assert decision.status == "internal_admissible"
     assert decision.p_value == 1.0
+
+
+@pytest.mark.parametrize("tuple_groups", [False, True])
+def test_leave_one_group_scale_sensitivity_accepts_hashable_tuple_ids(tuple_groups: bool) -> None:
+    records = [
+        _make_record(
+            "p0",
+            stat=4.0,
+            degrees_of_freedom=2.0,
+            calibration_dependency_group=("edge", "p0") if tuple_groups else "p0",
+        ),
+        _make_record(
+            "p1",
+            stat=8.0,
+            degrees_of_freedom=2.0,
+            calibration_dependency_group=("edge", "p1") if tuple_groups else "p1",
+        ),
+    ]
+    target = _make_record("target", stat=16.0, degrees_of_freedom=2.0, is_null_like=False)
+    decision = decide_empirical_null_calibration(
+        fit_empirical_null_inflation_model(records), target
+    )
+    assert decision.support["leave_one_group_max_delta_log_c"] == pytest.approx(math.log(3.0 / 2.0))
+    assert decision.p_value == pytest.approx(chi2.sf(16.0 / 3.0, 2.0))
+
+
+def test_empirical_local_kernel_p_value_uses_weighted_scale_without_deflation() -> None:
+    records = [
+        _make_record(
+            "p0", stat=0.5, degrees_of_freedom=2.0, n_parent=4, feature_family="categorical"
+        ),
+        _make_record(
+            "p1", stat=12.0, degrees_of_freedom=2.0, n_parent=100, feature_family="categorical"
+        ),
+    ]
+    target = _make_record(
+        "target",
+        stat=16.0,
+        degrees_of_freedom=2.0,
+        n_parent=4,
+        feature_family="categorical",
+        is_null_like=False,
+    )
+    model = fit_empirical_null_inflation_model(records)
+    weights = np.exp(
+        -0.5 * ((np.log([4.0, 100.0]) - np.log(4.0)) / model.context_bandwidth[1]) ** 2
+    )
+    expected_scale = max(float(np.dot(weights, [0.5, 12.0]) / (2.0 * weights.sum())), 1.0)
+    decision = decide_empirical_null_calibration(model, target)
+    assert decision.estimator.endswith("local_kernel")
+    assert decision.c_hat == pytest.approx(expected_scale)
+    assert decision.p_value == pytest.approx(chi2.sf(16.0 / expected_scale, 2.0))
+    assert decision.p_value >= chi2.sf(16.0, 2.0)
+    assert model.reference_law == "unresolved_same_selected_hierarchy"

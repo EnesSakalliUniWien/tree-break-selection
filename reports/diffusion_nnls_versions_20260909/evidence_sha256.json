@@ -1,0 +1,19 @@
+{
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260801_130648Z_full_post_crossfit/full_benchmark_comparison.csv": "a8909f5ff0429da439c54a67997ee3b051cb3f863b2701143f3bc3e905e2a0a4",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260706_170815Z_full_graphtools_tree_consensus/full_benchmark_comparison.csv": "35e8c628479d836542e39cd2eebff86fd1f334f341ae77033a4c209e04f34197",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260630_130921Z_full/full_benchmark_comparison.csv": "2e70a4ce9a1bcfaff528c914a26de30a77aeeb227651e8e595ab007bd10b1f40",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260811_selected_law_variants_full/full_benchmark_comparison.csv": "c0b2509a91619d867547c2507def3f6db6c22da4178232528396df6ad6dc479d",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/run_manifest.json": "f0a7a6c17840da643f0c721735a0408429cc4a95117496a6b3ddd304c6c13cb9",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/execution_status.json": "b729812ecce3ffeeb5640f007ba366ece8b39f37719bae8381f08e52c28bec1b",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/continuation_manifest.json": "844459298512ffd7aeb0d6a12ed7427cb126af16dfe4b86b955ff278a704cf96",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/continuation_status.json": "804e1c46a189f673a8352e0ec9e69da7cecd04f67bf2bf2c30f615b0384b8954",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/parallel_manifest.json": "c209c23d4405feaf8c9a5601337cc9297618b625150351c8c1e2cdb8c0e162c6",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/parallel_exits.json": "32d31f8e37e0790192e2811106c2a3ade88b6cf0ce7061c37a5147424bbcee3c",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/support_review/results.csv": "ac97a31342818401841274ff8c626bfb3080486f1d930a0d92fe1187e8afc167",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/support_review/manifest.json": "cb6a685c2d351fc037675fc73eaf6cb42bd1a0540c435763a43d366a95e614df",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/support_review/status.json": "cb114734de79ddde5a7f95ec4dc1ad5a49a4031ce31ed6fe774e4b74683fcde3",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/support_review/initial_attempt/status.json": "d7927a47c050f1754bbb22d6b12763185b5248338f64f30edcae72df3e71b62f",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/support_review/initial_attempt/manifest.json": "a8737e119b80a9b318cf50ea94e46bf4dfc6fe90e1ebbc9ee0516dedf46128a8",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/full_benchmark_comparison.csv": "c8902ce35c65f6d76b14ddf5b6ef874143a92bd2108872a79ea1a9f12f5f309d",
+  "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20260909_diffusion_nnls_versions_full/execution_errors.jsonl": "742016319eb3168f36e75a41e2dbb20d12c95d18f18fe374d4808398a31da930"
+}

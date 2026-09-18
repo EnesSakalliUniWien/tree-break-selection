@@ -1,0 +1,41 @@
+{
+  "review_date": "2026-09-09",
+  "current_commit": "6441b2e60a62cd2a4fc302708962c27c8e12c0b6",
+  "preceding_committed_snapshot": "260b11f9c031bb80f25a2b63d81dc778945f74ff",
+  "historical_run": "benchmarks/results/run_20260801_130648Z_full_post_crossfit",
+  "provenance_limit": "The historical run has no code-commit or working-tree manifest. 260b11f9 is the preceding committed snapshot, not a certified exact benchmark checkout. Recorded parameters and later code changes are independently verified.",
+  "unchanged_files": [
+    {
+      "path": "tree_break_selection/space_separation/diffusion.py",
+      "identical_committed_pre_august_and_current_worktree": true,
+      "sha256": "19ee963590a0c9fa52dfb7da42db662b20e0e46efb9b88770c70e728afe9cb2f"
+    },
+    {
+      "path": "tree_break_selection/tree/optimized_branch_lengths.py",
+      "identical_committed_pre_august_and_current_worktree": true,
+      "sha256": "8f1d8a11e102d73d14966877b95c5da9381fcf8fe79f1e7c1307fc5029b08db0"
+    },
+    {
+      "path": "benchmarks/shared/runners/tbs_diffusion_runner.py",
+      "identical_committed_pre_august_and_current_worktree": true,
+      "sha256": "18c174a94b7878921f80aff3d3ba95fed46aec5d4d083e9c9e9e2f5e6747aaa9"
+    }
+  ],
+  "changes": [
+    {
+      "commit": "20362435e142e2b705c38f3dd9fa3e7a9623c907",
+      "date": "2026-08-03",
+      "effect": "Added whole-result unsupported outcome for absent internal calibration support. Sibling gates already closed for absent support before this change."
+    },
+    {
+      "commit": "6441b2e60a62cd2a4fc302708962c27c8e12c0b6",
+      "date": "2026-08-11",
+      "effect": "Withholds positive-dimensional same-selected-hierarchy sibling p-values even when internal support exists; marks gates closed and reports unsupported for an unvalidated reference law. Added dependency-group accounting and a restricted independent/common-scale exact-F API."
+    }
+  ],
+  "earlier_sibling_tail": "chi2.sf(record.stat / (record.reference_scale * inflation_factor), df=record.degrees_of_freedom)",
+  "current_selected_hierarchy_decision": "undefined_unvalidated_reference_law; p_value=None",
+  "matched_historical_cases": 119,
+  "matching_recorded_parameters": 119,
+  "former_ok_now_unsupported": 94
+}

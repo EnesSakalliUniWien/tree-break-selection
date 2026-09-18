@@ -75,8 +75,8 @@ def _run_statistical_analysis(
     ).annotated_df
 
 
-def test_supported_fixture_withholds_unvalidated_empirical_null_p_values() -> None:
-    """Internal support must not substitute for a selected-tail reference law."""
+def test_supported_fixture_uses_empirical_null_gate_calibration() -> None:
+    """The full sibling gate must expose active empirical-null calibration rows."""
     x, _y_true = _create_test_case_data(
         n_samples=90,
         n_features=60,
@@ -87,16 +87,7 @@ def test_supported_fixture_withholds_unvalidated_empirical_null_p_values() -> No
     tree, _ = _build_hierarchical_tree(x)
     out = _run_statistical_analysis(tree, x, edge_alpha=0.01)
 
-    unresolved = out[
-        out["Sibling_Gate_P_Value_Calibration"].eq(
-            "undefined_unvalidated_reference_law"
-        )
-    ]
-    assert not unresolved.empty
-    assert unresolved["Sibling_Gate_P_Value_Role"].eq(
-        "fail_closed_sibling_gate"
-    ).all()
-    assert unresolved["Sibling_Divergence_P_Value"].between(0.0, 1.0).all()
-    assert unresolved["Sibling_Divergence_Skipped"].eq(True).all()
-    assert unresolved["Sibling_Divergence_Invalid"].eq(True).all()
-    assert not unresolved["Sibling_BH_Different"].any()
+    active = out[out["Sibling_Gate_P_Value_Role"].eq("active_traversal_sibling_gate")]
+    assert not active.empty
+    assert active["Sibling_Gate_P_Value_Calibration"].eq("empirical_null_inflation").all()
+    assert active["Sibling_Divergence_P_Value"].between(0.0, 1.0).all()

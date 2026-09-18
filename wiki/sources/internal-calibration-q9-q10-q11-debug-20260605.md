@@ -4,6 +4,7 @@ type: source
 status: reviewed
 updated: 2026-08-11
 sources:
+  - reports/calibration_restoration_20260909/validation_protocol.md
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q9_q11_internal_support_debug.csv
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q10_weight_rule_debug.csv
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q9_q10_q11_root_cause_summary.csv
@@ -62,10 +63,10 @@ diagnostic outputs.
   non-significant ancestor's group and cannot increase supported-group counts,
   group effective sample size, maximum group weight share, or leave-one-group
   stability.
-- Support policy metadata is now an immutable version-2 snapshot. Positive-
-  dimensional same-selected-hierarchy decisions fail closed with
-  `undefined_unvalidated_reference_law` even when the support thresholds pass,
-  because support adequacy and reference-law validity are distinct contracts.
+- Support policy metadata remains an immutable version-2 snapshot. The
+  August-11 unresolved-law gate closure was superseded on September 9 by the
+  restored empirical p-value rule. Support adequacy and reference-law validity
+  remain distinct; see [[calibration-rule-restoration-20260909]].
 
 ## Evidence
 

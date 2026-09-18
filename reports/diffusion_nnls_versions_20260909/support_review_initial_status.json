@@ -1,0 +1,4 @@
+{
+  "exit_code": 1,
+  "reason": "Study assertion did not handle the production duplicate-geometry skip on binary_null_small. 120 completed cells are reusable; the skipped baseline is preserved and rerun with explicit propagation of the input contract."
+}

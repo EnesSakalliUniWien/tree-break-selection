@@ -2,8 +2,9 @@
 title: Root Selected Region Model
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-09-17
 sources:
+  - reports/latest_changes_benchmark_review_20260909.md
   - wiki/analyses/method-proof-web.md
   - wiki/analyses/selected-hierarchy-selection-geometry.md
   - wiki/analyses/selected-hierarchy-geometric-law-map.md
@@ -14,6 +15,13 @@ sources:
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py
   - benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py
   - benchmarks/shared/tbs_tree_context.py
+  - tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py
+  - tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py
+  - tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_diffusion.py
+  - tests/statistics/51_test_selected_gaussian_radial.py
+  - tests/statistics/52_test_selected_gaussian_hierarchy.py
+  - tests/statistics/53_test_selected_gaussian_branch_lengths.py
+  - tests/statistics/54_test_selected_gaussian_diffusion.py
 tags:
   - analysis
   - selection
@@ -271,6 +279,205 @@ X\in \mathcal H_\rho\cap\mathcal E_\rho
 \]
 not the unconditional fixed-object law.
 
+### Nuisance-Derived Continuous Gaussian Radial Prototype
+
+The 2026-09-09 review found numerical counterexamples to the implementation's
+exactness claim: a narrow hierarchy interval gives selected p-value 0.8561354
+instead of approximately 0.8, and absolute chi-tail underflow rejects a positive
+selected event. The 2026-09-17 fix preserves the supplied floating-point path
+factors as exact rational values during polynomial construction, linkage
+updates, and discriminant evaluation, then solves roots at 80 decimal digits
+before returning floating-point boundaries. Tail integration now normalizes
+log interval masses, with scaled density integration for narrow intervals.
+Regressions cover the counterexamples and independent reconstructed-distance
+checks. This repairs the reported numerical failures without certifying all
+floating-point boundary cases or establishing production selective validity.
+The original review is preserved in [[latest-changes-benchmark-review-20260909]].
+
+The internal prototype in
+`tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py`
+implements the smallest exact conditional object for a continuous Gaussian
+contrast with known fixed feature covariance. Let \(X\in\mathbb R^{n\times q}\),
+let \(\eta\in\mathbb R^n\) be the tested row contrast, and set
+
+\[
+h=\lVert\eta\rVert_2,
+\qquad
+X_\perp
+=
+\left(I-\frac{\eta\eta^\top}{h^2}\right)X.
+\]
+
+For a fixed positive-definite covariance \(\Sigma=LL^\top\), define the
+whitened contrast
+
+\[
+z=L^{-1}\frac{X^\top\eta}{h}.
+\]
+
+The prototype learns an orthonormal projection \(P\) only from the whitened
+nuisance matrix \(X_\perp L^{-\top}\). It then conditions on \(X_\perp\), \(P\),
+the projected direction
+
+\[
+u=\frac{Pz}{\lVert Pz\rVert_2},
+\]
+
+and the projection-orthogonal coordinate
+
+\[
+z_\perp=(I-P^\top P)z.
+\]
+
+Only the projected radius \(r\ge 0\) varies along
+
+\[
+X(r)
+=
+X_\perp
++
+\frac{\eta}{h}
+\left[L\left(P^\top(ru)+z_\perp\right)\right]^\top.
+\]
+
+Under the fixed-covariance Gaussian contrast null, \(R=\lVert Pz\rVert_2\)
+has a chi law with \(k=\operatorname{rank}(P)\) degrees of freedom after the
+conditioned coordinates are fixed. The Gaussian score/likelihood-ratio
+statistic is \(R^2\). If an exact hierarchy replay supplies the selected radial
+region as an interval union \(S\subseteq[0,\infty)\), the selected p-value is
+
+\[
+p_{\mathrm{sel}}
+=
+\frac{
+\int_{S\cap[r_{\mathrm{obs}},\infty)} f_{\chi_k}(r)\,dr
+}{
+\int_S f_{\chi_k}(r)\,dr
+}.
+\]
+
+The implementation evaluates these interval integrals deterministically with
+log-domain chi CDF and survival functions, using scaled quadrature when finite
+interval tails nearly cancel. Absolute probability fields may underflow to
+zero while the normalized p-value remains representable. Focused tests verify exact reconstruction of
+the observed matrix, invariance of the contrast-orthogonal nuisance and
+projection-orthogonal contrast along the path, nuisance-only projection
+selection, the unconditional chi limit, and a disconnected selected region.
+
+The companion implementation in
+`tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py`
+now constructs the hierarchy component of \(S\) for one explicit model:
+deterministic average linkage over pairwise squared-Euclidean distances along
+the same radial path. Since every row has the affine form
+\[
+x_i(r)=a_i+r b_i,
+\]
+every leaf-pair squared distance is quadratic:
+\[
+\lVert x_i(r)-x_j(r)\rVert_2^2
+=
+\lVert a_i-a_j\rVert_2^2
++2r(a_i-a_j)^\top(b_i-b_j)
++r^2\lVert b_i-b_j\rVert_2^2.
+\]
+Average linkage preserves that form. At each observed merge step \(t\), the
+selected pair \((A_t,B_t)\) is compared with every active competitor
+\((C,D)\), giving the complete constraint family
+\[
+D^{(2)}_{A_t,B_t}(r)-D^{(2)}_{C,D}(r)\le 0.
+\]
+The constructor enumerates every nonnegative real root of these quadratic
+differences, evaluates the constant-sign intervals between roots, and replays
+the full merge signature in every retained interval interior. It preserves
+disconnected cells and does not merge distinct nearby roots. Deterministic
+tie-breaking can differ at finitely many equality points; these boundary
+points have zero probability under the continuous chi-radial law and do not
+change the selected p-value.
+
+### Branch-Length Compatibility Boundary
+
+The fixed-covariance radial construction supports a fixed scalar branch-time
+variance multiplier. If
+
+\[
+\Sigma'=m\Sigma,
+\qquad m>0,
+\]
+
+then the adjusted path satisfies
+
+\[
+X_{\Sigma'}(r/\sqrt m)=X_\Sigma(r),
+\]
+
+and its squared-Euclidean hierarchy interval union is the original interval
+union divided by \(\sqrt m\). A focused check with the runtime multiplier
+\(m=1+0.4/0.2=3\) verifies reconstruction, interval-boundary scaling, and the
+independently derived truncated-\(\chi_1\) tail. This covers a branch-time
+multiplier held fixed along the path; it does not cover branch lengths refitted
+from each candidate matrix.
+
+A 100-case random positive-definite covariance challenge initially exposed a
+floating-point violation of this scaling law. Computing the radial slope as
+`reconstruct(1) - reconstruct(0)` perturbed a mathematically cancelled
+quadratic merge coefficient to about machine epsilon; its sign then created a
+false remote interval near radius \(10^{15}\). The hierarchy implementation now
+constructs the shared raw radial direction directly from the conditioned path
+factors, so equal slope-energy coefficients cancel before root solving. The
+captured counterexample and a fresh 1,000-case challenge pass after this
+correction; the random challenge is numerical evidence, not a universal proof.
+
+Fixed-topology NNLS branch-length refitting preserves the observed merge
+signature by construction. A four-leaf integration check verifies that the
+analytic merge signature agrees with the SciPy squared-Euclidean average-linkage
+tree before and after NNLS changes its edge lengths.
+
+The stronger compatibility assumption fails when branch lengths and
+branch-length-adjusted internal nodes are recomputed along the radial path. At
+two radii inside one retained merge-signature interval, both
+`linkage_ultrametric` and `fixed_topology_nnls` produce different branch
+lengths, and `branch_length_state` produces different one-dimensional root
+spectral projectors. Therefore the hierarchy merge event \(\mathcal H_\rho\)
+does not fix the branch lengths or the branch-length-adjusted internal-node
+projection. The current chi-radial law cannot be claimed for either recomputed
+internal-node variant until that additional data-dependent selection is
+conditioned on, or the branch lengths and projection are derived only from
+coordinates already fixed by the conditioning construction.
+
+### Diffusion-Hierarchy Compatibility Boundary
+
+The two production diffusion families require different radial treatment.
+Adaptive pydiffmap can accept each continuous candidate matrix, but it refits
+the neighbor graph, local bandwidths, kernel eigenspace, diffusion distances,
+and average-linkage hierarchy at every radius. A deterministic 12-leaf
+continuous fixture was replayed at \(0.2r_{\mathrm{obs}}\),
+\(r_{\mathrm{obs}}\), and \(2r_{\mathrm{obs}}\). The first merges were,
+respectively, leaves \(9/10\), \(6/11\), and \(0/11\); all three complete merge
+signatures and diffusion-distance vectors differed. The observed pydiffmap
+epsilon also changed across those radii. Thus the squared-Euclidean quadratic
+constraint constructor cannot be reused for adaptive diffusion. An exact
+selected event would additionally have to condition on or solve every
+data-dependent diffusion fit and its resulting hierarchy cell.
+
+Fixed Hamming-neighbor diffusion and adaptive pydiffmap with Hamming metric
+have a stricter support boundary. They both replay the observed binary matrix,
+but a nearby Gaussian radial candidate such as \(0.5r_{\mathrm{obs}}\) is no
+longer binary or one-hot. The implementation rejects such candidates instead
+of silently applying Hamming distance to continuous values. Consequently,
+these variants do not have a continuous chi-radial selection interval under
+this Gaussian construction; they need a discrete selected-region law or a
+different conditioning path that remains inside the binary feature space.
+
+This closes hierarchy interval construction only for the declared
+squared-Euclidean average-linkage prototype. It does not cover ordinary
+Euclidean average linkage, exact adaptive-diffusion selection cells, Hamming
+selected-region laws, standardized-Euclidean or estimated-Mahalanobis
+transformations, other tree builders, edge-path opening, focal sibling
+selection, covariance estimation, recomputed branch-length-adjusted internal-node
+projections, discrete feature families, or production gates. The next
+conditional boundary is to express and intersect the fixed-projection
+edge-opening event with this hierarchy interval union.
+
 ### Proposition: The Root Selected Law Is Generally Not Chi-Square
 
 Assume the fixed-object root sibling statistic satisfies
@@ -519,6 +726,29 @@ with a declared support and precision contract.
   root and non-root null simulations with large selected-hierarchy ratios.
 - `benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py`
   records the current diagnostic proxy variables.
+- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py`
+  implements the nuisance-derived Gaussian radial path and deterministic
+  selected chi-radial interval integration without production wiring.
+- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py`
+  replays squared-Euclidean average linkage and analytically constructs the
+  complete observed merge-sequence interval union from quadratic constraints.
+- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_diffusion.py`
+  refits adaptive-pydiffmap or Hamming-neighbor geometry and replays average
+  linkage at one radius without claiming an exact interval union.
+- `tests/statistics/51_test_selected_gaussian_radial.py` protects the path
+  invariants and analytic selected-tail examples.
+- `tests/statistics/52_test_selected_gaussian_hierarchy.py` protects full
+  merge-signature replay, every active competitor constraint, analytic
+  boundaries, the two-leaf full region, and narrow disconnected cells.
+- `tests/statistics/53_test_selected_gaussian_branch_lengths.py` protects fixed
+  branch-time covariance scaling, fixed-topology NNLS merge-signature
+  preservation, the cancelled-quadratic remote-interval regression, and the
+  observed failure of fixed projection under recomputed linkage/NNLS branch
+  lengths with `branch_length_state`.
+- `tests/statistics/54_test_selected_gaussian_diffusion.py` protects adaptive
+  diffusion-distance and topology changes across the continuous path, observed
+  binary replay for both Hamming variants, and fail-closed rejection away from
+  binary support.
 - [[root-selected-region-margins-20260603]] records the first concrete replay
   of root merge-selection inequalities and their margins for representative
   benchmark contexts.

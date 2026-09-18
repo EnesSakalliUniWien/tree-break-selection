@@ -49,7 +49,7 @@ statistic is computed in a parent-local orthonormal basis. The raw sibling
 statistic is anti-conservative when the hierarchy has selected unusually
 separated sibling pairs from the same data.
 
-The implemented diagnostic is context-weighted empirical-null inflation:
+The implemented empirical rule is context-weighted empirical-null inflation:
 
 1. Build sibling records across two-child parents.
 2. Assign each record an empirical-null weight from the two child-parent
@@ -58,14 +58,14 @@ The implemented diagnostic is context-weighted empirical-null inflation:
 4. Smooth over nearby contexts.
 5. Estimate inflation as a weighted ratio of observed raw statistic to
    projected-Wald reference scale.
-6. Retain the scale estimate and support evidence without treating the plug-in
-   chi-square tail as calibrated.
+6. Divide the statistic by the estimated inflation and use its plug-in
+   chi-square tail in traversal-aligned sibling BH; retain support diagnostics.
 
 [DEFINITION GUARD: the empirical-null weight is a monotone calibration weight,
 not a posterior probability of the sibling null.]
 
-[REFERENCE-LAW GUARD: positive-dimensional same-selected-hierarchy decisions
-fail closed. A separate exact-F path requires independent focal and calibration
+[REFERENCE-LAW GUARD: the empirical plug-in tail is active with internal
+support, but its selected-tail validity remains unproven. A separate exact-F path requires independent focal and calibration
 statistics, pairwise-disjoint observation ownership, fixed unit weights, and a
 common chi-square scale.]
 

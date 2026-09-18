@@ -6692,3 +6692,206 @@ chi-square tail as a calibrated p-value.
 
 The final project check passed Ruff, Deptry, Vulture, the 190-page wiki lint,
 and all 597 tests across the seven ordered test stages.
+
+#### Added the nuisance-derived Gaussian selected radial prototype
+
+Implemented an internal continuous-Gaussian conditional path that learns its
+projection only from contrast-orthogonal nuisance coordinates, reconstructs
+the observed data exactly along the projected radius, and deterministically
+integrates the chi-radial law over an exact declared union of selected
+intervals. Added focused path and disconnected-region tests. The prototype is
+not exported or connected to production gates; exact hierarchy selection-region
+construction, covariance estimation, and non-Gaussian feature families remain
+outside this smallest scope.
+
+#### Constructed the squared-Euclidean hierarchy selection intervals
+
+Added deterministic average-linkage replay over pairwise squared-Euclidean
+distances along the nuisance-derived Gaussian radial path. The implementation
+turns every observed merge-versus-competitor comparison into a quadratic
+inequality, enumerates its nonnegative roots, constructs the complete
+positive-probability interval union, and certifies every retained interval by
+full merge-signature replay. Focused tests cover analytic hand-derived
+boundaries, all active competitors, the unconstrained two-leaf case, and a
+narrow disconnected cell. The implementation remains internal and does not
+represent production Euclidean/Hamming distance paths or edge-opening
+selection.
+
+#### Tested branch-length compatibility of the selected Gaussian prototype
+
+Added focused checks for a fixed scalar branch-time covariance multiplier,
+fixed-topology NNLS branch-length refitting, and branch-length-adjusted internal
+spectral rows. The fixed multiplier rescales the radial path and exact hierarchy
+intervals by the predicted square-root factor, while NNLS changes edge lengths
+without changing the observed merge signature. Recomputing either linkage or
+NNLS branch lengths plus `branch_length_state` changes the root spectral
+projector within one retained merge-signature interval, so the current
+hierarchy event does not support a chi-radial claim for those internal-node
+variants.
+
+A 100-case random covariance-scaling challenge found a false remote hierarchy
+interval caused by subtracting reconstructed path matrices before forming
+radial-slope energies. Added the captured regression and changed the hierarchy
+polynomial constructor to derive its shared raw radial direction directly from
+the conditioned path factors. This preserves mathematically equal quadratic
+coefficients through cancellation; the captured case and a fresh 1,000-case
+challenge then passed.
+
+#### Extended selected Gaussian coverage to diffusion hierarchies
+
+Added pointwise radial replay for the production adaptive-pydiffmap and
+Hamming-neighbor diffusion geometries followed by average linkage. A
+deterministic continuous fixture changes both diffusion distances and complete
+merge signatures at low, observed, and high radii, confirming that the exact
+squared-Euclidean quadratic interval constructor does not cover adaptive
+diffusion. Both Hamming-neighbor and adaptive-Hamming variants replay the
+observed binary matrix and fail closed once a nearby Gaussian radial candidate
+leaves binary/one-hot support. The replay is diagnostic and does not claim an
+exact diffusion selected-region law or production gate integration.
+
+### 2026-09-09
+
+#### Reviewed latest calibration changes, prototype and benchmark results
+
+Reviewed `6441b2e6`, the uncommitted selected-Gaussian prototype and the two
+latest August benchmark directories. Reproduced incorrect narrow hierarchy
+intervals, chi-tail underflow, bypassed support-threshold decisions and a
+tuple-valued dependency-group crash. Preserved findings and numerical
+reproductions in `reports/latest_changes_benchmark_review_20260909.md`.
+
+Re-aggregated all 2,790 variants rows across 25 methods, exposing a saved
+performance summary restricted to six NNLS variants. Recorded canonical
+coverage of 11 successful one-cluster outcomes and 111 unsupported cases,
+fixed-coordinate diagnostic over-splitting and matched NNLS comparisons.
+Saved method summaries and source-hashed evidence without changing original
+benchmark artifacts. The 134 targeted tests passed; full project gates and
+full benchmarks were not rerun. Production code remains unchanged.
+Final wiki lint passed for 191 pages, and `git diff --check` and saved
+review-artifact consistency checks passed.
+
+
+#### Benchmarked diffusion NNLS versions and reviewed the unsupported rule
+
+Completed ten registered diffusion NNLS configurations on all 122 current full
+suite cases at `6441b2e6`: 137 OK, 856 unsupported, 21 skipped and 206 execution
+errors. Every returned partition contains one cluster. Of the unsupported
+outcomes, 813 have internal support but an unvalidated reference law and 43
+have no internal support. Preserved 190 centroid/median merge-height failures
+and 16 MAD zero-distance failures separately from scientific support status.
+The established full runner initially aborted; the study resumed its completed
+cells and finished through three isolated case shards, preserving the initial
+failure, intentionally interrupted serial stage, commands and source hashes.
+
+A seven-case matched gate review completed 168 outcomes, including explicitly
+propagated input-contract skips. On zero-support dense signal, pydiffmap NNLS
+with fixed-coordinate BH at alpha 0.01 recovers four clusters with ARI 1;
+removing only the outer unsupported status returns one cluster. Existing BH
+and BY diagnostics also split null cases and show alpha sensitivity. They are
+not equivalent to the older empirical gate and do not establish calibration.
+
+Among 119 shared August-1/current pydiffmap cases, 94 previously successful
+outcomes are now unsupported; recorded parameters and input metadata match.
+All 122 fresh pydiffmap statuses agree with August 11. The earlier diffusion
+NNLS preset improves mean ARI by 0.121122 against TBS on 100 jointly scored
+cases, with 43 wins, 47 ties and 10 losses. Historical graphtools comparisons
+retain solver-limit and schema caveats. The review also demonstrates constant
+Hamming distances on a native continuous signal case.
+
+Saved reports, compact outcomes, manifests and reproducible study scripts in
+`reports/diffusion_nnls_versions_20260909/` and indexed
+[[diffusion-nnls-versions-and-support-review-20260909]]. Independently rescored
+all 137 full-suite and 141 diagnostic label files, checked complete unique
+case/configuration coverage, and verified 398 source hashes unchanged. The
+focused readiness and support suites passed 35 tests. Production code,
+defaults and dependencies remain unchanged; no commit or push was made.
+
+
+#### Distinguished August support-status and sibling-tail changes
+
+Traced `20362435` (August 3) adding the no-support unsupported result and
+`6441b2e6` (August 11) withholding the previous inflation-adjusted chi-square
+sibling p-value even with internal support. The pre-August code already closed
+sibling gates when support was absent. Verified diffusion, NNLS solver and
+diffusion runner files unchanged against preceding committed snapshot
+`260b11f9`; retained the caveat that the August-1 run lacks an exact checkout
+manifest. Added the code-history evidence and explanation to the existing
+version comparison report and wiki source summary. Production code unchanged.
+
+
+## 2026-09-09 — Restore empirical calibration rule and verify benchmark recovery
+
+- User confirmed restoration of the old calibration rule and investigation of
+  necessary statistical validation. Restored supported empirical chi-square
+  p-values and traversal-aligned sibling BH; retained no-internal-support
+  outcomes, dependency-group diagnostics, support thresholds and exact-F API.
+- Fixed tuple group masks, restored production threshold enforcement, and
+  rejected exact-F model misuse in the empirical API. Updated calibration
+  artifact schema versions and current documentation/manuscript descriptions.
+- Final-source pydiffmap NNLS rerun: 122 outcomes, 97 results, 21 skips, four
+  no-support outcomes, zero errors. All 97 successful historical overlaps have
+  identical ARI/K; mean ARI 0.797281 in both. Recovered 92 formerly unsupported
+  results. Independently rescored 97 labels and verified 399 source hashes.
+- Two review axes found the same exact-F API boundary issue; fixed and rechecked.
+  The 103 targeted checks and seven ordered stages (624 tests) passed. Ruff,
+  dependency audit, Vulture, 193-page wiki lint and manuscript PDF build passed.
+- Documented the necessary held-out whole-pipeline null/signal study and the
+  distinction between conservative nonuniform p-values and inflated false-split
+  error. Rechecked the existing 500-replicate external diagnostic. No selected-
+  tail/FDR guarantee is claimed, and that new study has not been run.
+- Evidence: [[calibration-rule-restoration-20260909]] and
+  `reports/calibration_restoration_20260909/`. Earlier prototype work preserved;
+  no commit or push.
+
+- Final restoration verification: `make check` exited 0 after all 624 tests,
+  lint, dependency/unused-code audits and wiki lint; `git diff --check` passed.
+  Evidence: `reports/calibration_restoration_20260909/checks.json`.
+
+## 2026-09-10 — Record open diffusion NNLS calibration points
+
+- Created [[diffusion-nnls-calibration-open-points]] from the restored-method
+  validation protocol and existing benchmark/support evidence. The twelve open
+  points cover null truth, error targets, data-dependent selection, calibration
+  contamination/dependence, empirical tails, necessary support, BH/traversal,
+  independent held-out evaluation, simulation precision, signal recovery,
+  sensitivity/transfer and acceptance/correction criteria.
+- Each point names the evidence needed for resolution. Distinguished decisions
+  required before confirmatory simulation from questions the simulation must
+  answer; no new simulation or method change is claimed.
+- Added index coverage and a link from the consolidated mathematical backlog.
+- Verification: `make wiki-lint` passed for 194 pages; `git diff --check` passed.
+
+## 2026-09-10 — Define false splits and required data conditions
+
+- Recorded CAL-01 in
+  `reports/calibration_restoration_20260909/false_split_definition.md`: sibling
+  population-parameter null, traversal-used false rejection, global-null false
+  partition and signal-data fragmentation, with an explicit mixed-child truth
+  calculation and data-fitted representation limitation.
+- Inspected the existing pure-parent/majority-label diagnostic, global-null
+  outcome and traversal distinction. Specified feature families, probabilities,
+  dimensions, balance, dependence, contamination, geometry and support coverage.
+- Marked the CAL-01 definition recorded in
+  [[diffusion-nnls-calibration-open-points]]. Generator implementation, the
+  held-out study and calibration guarantees remain pending.
+- Verification: `make wiki-lint` passed for 194 pages; `git diff --check` passed.
+
+## 2026-09-17 — Repair selected Gaussian numerical counterexamples
+
+- Fixed the narrow-interval counterexample in [[root-selected-region-model]]
+  by retaining exact rational path coefficients through average-linkage
+  updates and discriminants, with 80-digit decimal root evaluation. Independent
+  reconstructed-distance regressions cover leaf separations from 1e-6 to 1e-10.
+- Normalized chi interval masses in the log domain, including an integer-dimension
+  survival recurrence when SciPy underflows and scaled density quadrature for
+  nearly cancelling finite intervals. Absolute reported masses may underflow
+  while the conditional p-value remains representable.
+- Added ten regression cases covering narrow hierarchy intervals, extreme
+  upper tails, disconnected intervals, lower-tail underflow, and endpoints.
+  The first seven failed before the implementation fixes and passed afterward.
+- Reconciled the manuscript's sibling-test table and the stale calibration
+  paragraph in [[open-mathematical-questions]] with the restored empirical rule.
+  Production selected-tail validity remains unproven.
+- Verification: 264 statistical/reporting tests passed, followed by all 15
+  radial tests after adding three lower-tail/endpoint cases; targeted Ruff,
+  194-page wiki lint, manuscript PDF compilation, and `git diff --check` passed.
+  No dependencies were installed or updated; changes remain uncommitted.

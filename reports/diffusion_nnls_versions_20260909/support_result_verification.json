@@ -1,0 +1,8 @@
+{
+  "outcomes": 168,
+  "independently_rescored_saved_label_files": 141,
+  "unique_case_method_groups": 21,
+  "same_tree_and_branch_length_hash_for_all_gate_variants": true,
+  "duplicate_cells": 0,
+  "status": "passed"
+}

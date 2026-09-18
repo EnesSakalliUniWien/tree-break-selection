@@ -114,9 +114,8 @@ def _leave_one_group_max_delta_log_c(
         return float("inf")
     deltas: list[float] = []
     baseline_log_c = float(np.log(max(baseline_c_hat, 1e-300)))
-    group_array = np.asarray(dependency_group_ids, dtype=object)
     for group_id in unique_groups:
-        keep = group_array != group_id
+        keep = np.array([candidate != group_id for candidate in dependency_group_ids])
         if float(np.sum(weights[keep])) <= 0.0:
             return float("inf")
         c_hat = max(
@@ -318,7 +317,7 @@ def _fit_empirical_null_inflation_model(
 def fit_empirical_null_inflation_model(
     records: list[SiblingPairRecord],
 ) -> EmpiricalNullInflationModel:
-    """Fit the diagnostic same-selected-hierarchy empirical-null scale model."""
+    """Fit the empirical-null scale model; its selected-tail law remains unvalidated."""
     return _fit_empirical_null_inflation_model(records)
 
 
@@ -619,6 +618,20 @@ def decide_independent_unweighted_common_scale_calibration(
     )
 
 
+def _adjusted_p_value(record: SiblingPairRecord, c_hat: float) -> float:
+    """Evaluate the historical plug-in chi-square tail after empirical inflation."""
+    if not np.isfinite(record.reference_scale) or record.reference_scale <= 0.0:
+        raise ValueError("Empirical-null adjustment requires a finite positive reference scale.")
+    if record.degrees_of_freedom == 0.0:
+        return 1.0
+    return float(
+        chi2.sf(
+            record.stat / (record.reference_scale * c_hat),
+            df=record.degrees_of_freedom,
+        )
+    )
+
+
 def decide_empirical_null_calibration(
     model: EmpiricalNullInflationModel,
     record: SiblingPairRecord,
@@ -626,7 +639,17 @@ def decide_empirical_null_calibration(
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
 ) -> CalibrationDecision:
-    """Return the focal empirical-null calibration decision for one sibling record."""
+    """Return the historical empirical rule, without claiming selected-tail validity.
+
+    ``internal_admissible`` denotes availability under the internal support policy.
+    The plug-in chi-square p-value does not establish selective error control.
+    """
+    if model.reference_law != "unresolved_same_selected_hierarchy":
+        raise ValueError(
+            "Empirical-null calibration requires a same-selected-hierarchy model; "
+            "use the independent calibration decision with focal observation ownership "
+            "for an exact F model."
+        )
     exact_context = _decision_context(record)
     if record.degrees_of_freedom == 0:
         return CalibrationDecision(
@@ -734,9 +757,9 @@ def decide_empirical_null_calibration(
                 },
             )
         return CalibrationDecision(
-            status="undefined_unvalidated_reference_law",
+            status="internal_admissible",
             c_hat=c_hat,
-            p_value=None,
+            p_value=_adjusted_p_value(record, c_hat),
             estimator=f"{model.method}:family_baseline",
             support=support,
             exact_context=exact_context,
@@ -816,9 +839,9 @@ def decide_empirical_null_calibration(
             },
         )
     return CalibrationDecision(
-        status="undefined_unvalidated_reference_law",
+        status="internal_admissible",
         c_hat=c_hat,
-        p_value=None,
+        p_value=_adjusted_p_value(record, c_hat),
         estimator=f"{model.method}:local_kernel",
         support=support,
         exact_context=exact_context,
