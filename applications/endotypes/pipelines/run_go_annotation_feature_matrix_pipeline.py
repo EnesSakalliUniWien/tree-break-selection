@@ -222,7 +222,7 @@ def build_pipeline_plan(
             args,
             script=(
                 REPO_ROOT
-                / "applications/endotypes/pipelines/run_current_adaptive_diffusion_subspace_tree_experiment.py"
+                / "applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py"
             ),
             output_dir=root / "10_current_adaptive_diffusion_subspace_tree",
             dataset_label=artifact_prefix,
@@ -232,8 +232,8 @@ def build_pipeline_plan(
                 stage_id="10_current_adaptive_diffusion_subspace_tree",
                 analysis_level="30_canonical_current_subspace_pipeline",
                 description=(
-                    "Run the canonical current TBS adaptive-diffusion cosine-subspace "
-                    "tree pipeline with connected PDFs, rankings, and manifests."
+                    "Run adaptive diffusion cosine subspace tree construction, "
+                    "TBS clustering, and extended GO-IC analysis with connected reports."
                 ),
                 output_dir=root / "10_current_adaptive_diffusion_subspace_tree",
                 command=command,

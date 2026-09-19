@@ -6895,3 +6895,161 @@ version comparison report and wiki source summary. Production code unchanged.
   radial tests after adding three lower-tail/endpoint cases; targeted Ruff,
   194-page wiki lint, manuscript PDF compilation, and `git diff --check` passed.
   No dependencies were installed or updated; changes remain uncommitted.
+
+## 2026-09-19 — Name the clustering and GO-IC analysis pipeline by responsibility
+
+- Renamed the executable to
+  `applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py`
+  and updated the orchestrator, application documentation, wiki source links,
+  and [[current-adaptive-diffusion-subspace-tree-pipeline]].
+- The name covers adaptive diffusion cosine subspace tree construction,
+  Tree-Break Selection clustering, and extended GO information-criterion
+  analysis, including specificity-aware ranking. Existing result prefixes and
+  output directories remain compatible with report readers and saved runs.
+- Verification: eight pipeline contract tests, direct and module CLI help,
+  targeted Ruff, 194-page wiki lint, and `git diff --check` passed. An AST
+  comparison confirmed executable behavior is unchanged by the rename.
+
+## 2026-09-19 — Test the renamed clustering and GO-IC pipeline
+
+- Ran [[current-adaptive-diffusion-subspace-tree-pipeline]] on a synthetic
+  90-sample, 60-binary-feature matrix with three planted clusters (seed 42,
+  entropy 0.1), using binary and TF-IDF weighting, 12 modes, and at most
+  three spectral segments. Features are synthetic, not biological GO annotations.
+- Saved input, truth, exact command, input hash, logs, and verification under
+  `results/analyses/synthetic_diffusion_subspace_go_ic_smoke_20260919_153543/`.
+- All six subspaces completed. Verified 90 aligned assignments per subspace,
+  linkage files, finite GO-BIC/specificity scores, connected artifact indexes,
+  and four readable PDFs. The pipeline exited successfully.
+- TF-IDF common mode recovered three clusters with ARI 0.966475; the
+  specificity-aware top-ranked binary common mode returned six clusters with
+  ARI 0.636402. This one synthetic run tests execution and illustrates that
+  specificity ranking need not select the best planted-cluster recovery.
+- Eight pipeline contract tests passed before the run. No algorithm or
+  significance thresholds were changed.
+
+## 2026-09-19 — Modularise adaptive diffusion clustering and GO-IC analysis
+
+- Reduced the executable to CLI parsing and delegation. Extracted workflow,
+  GO-term loadings, ranking, subspace plots, report assembly, and artifact
+  exports into the existing application directories, documented in
+  [[current-adaptive-diffusion-subspace-tree-pipeline]]. CLI arguments,
+  numerical routines, thresholds, and artifact names remain unchanged.
+- Compared the original and modular pipeline on the saved synthetic matrix,
+  selecting the binary and TF-IDF common-mode subspaces: all 63 non-PDF
+  artifacts were byte-identical, including PNGs; four PDFs had identical
+  extracted text and page counts (16 pages total). All 28 original helper and
+  parser function ASTs were unchanged. Direct and module CLI help matched.
+- Added feature-loading reconstruction, ranking-order, and mixed
+  success/failure workflow coverage in
+  `tests/applications/endotypes/pipelines/test_adaptive_diffusion_go_ic.py`.
+  All 20 pipeline/space-separation tests passed, along with repository Ruff,
+  dependency and dead-code audits, wiki lint, and whitespace checks.
+
+## 2026-09-19 — Deduplicate plot types and separate DataFrame I/O
+
+- Replaced the combined subspace plotting module with seven independent plot
+  types: GO-term bars, GO-term heatmaps, plain dendrograms, cluster-strip trees,
+  subspace embeddings, diffusion embeddings, and subspace ranking bars.
+  Figure constructors accept arrays/DataFrames and return figures; shared
+  renderers are reused across PNG and PDF output.
+- Moved CSV/TSV serialization to
+  `applications/endotypes/reports/adaptive_diffusion_dataframe_io.py` and PNG
+  export to `adaptive_diffusion_plot_exports.py`. `build_axis_loadings` returns
+  DataFrames without writing files; removed the duplicate top-term CSV write.
+  The workflow still orchestrates analysis and export.
+- Researched Matplotlib, Seaborn and SciPy using Context7 and official docs;
+  captured the evidence and adoption decisions in
+  [[go-plot-library-research-20260919]]. Reused Matplotlib Axes composition and
+  SciPy dendrogram leaf order; added no dependencies or statistical changes.
+- Compared clean before/after runs across all six synthetic subspaces. Of 173
+  non-PDF files, 172 were byte-identical, including all CSV/JSON data and PNGs.
+  The remaining difference corrects the report README from two to three pages
+  per subspace. Four PDFs matched extracted text and page counts (66 total).
+  Inspected the rendered multi-axis heatmap and cluster-strip tree.
+- Added 12 tests covering pure loading-table construction, independent plot
+  types, shared heatmap semantics, empty heatmaps, DataFrame round trips, and
+  figure cleanup on export failure. All 26 targeted pipeline/plot tests passed.
+- Final `make check` passed: 650 tests, repository Ruff, dependency and
+  dead-code audits, and 195-page wiki lint; `git diff --check` also passed.
+
+## 2026-09-19 — Group GO-IC modules by responsibility
+
+- Grouped computation in `applications/endotypes/analysis/go_ic/`, DataFrame
+  input/output in `applications/endotypes/io/`, and report/artifact export in
+  `applications/endotypes/reports/go_ic/`.
+- Grouped the independent plotting modules into `plots/terms/`, `plots/trees/`,
+  `plots/embeddings/`, `plots/ranking/`, and `plots/shared/`. CLI entry points
+  and workflow orchestration remain in `pipelines/`.
+- Updated live imports, tests, application examples, and wiki source paths.
+  Preserved historical log entries and raw research evidence.
+- Verification: all 15 moved modules import and retain identical non-import
+  ASTs; 138 application/pipeline tests passed. Direct and module CLI help,
+  repository Ruff, dependency/dead-code audits, 195-page wiki lint, stale-path
+  search, and `git diff --check` passed. No numerical or output changes.
+
+## 2026-09-19 — Review unstaged GO-IC modules and repeat latest analysis
+
+- Repeated the latest saved synthetic analysis with identical input and settings
+  in `results/analyses/synthetic_diffusion_subspace_go_ic_review_20260919_164227/`.
+  All six subspaces completed; assignments, linkage tables, and ranking values
+  matched exactly. All 91 PNGs were byte-identical; four PDFs matched text and
+  page counts (66 pages total). Exact provenance and comparison results are in
+  `run_manifest.json` and `verification.json` in that directory.
+- No new numerical or integration regression was identified in the unstaged
+  refactor. Full `make check` passed, including 650 tests and repository audits.
+- Visual review found preserved readability issues: composite embedding pages
+  reduce annotation text to about 4.4 points; cluster colors lack a clear
+  categorical key; ranking bars omit quality tiers and specificity scores.
+  Detailed evidence and recommendations are in the run directory's `review.md`.
+  Also inspected existing real allGO embedding and term pages, without rerunning
+  the real analysis. No implementation fixes, commit, or push were made.
+
+## 2026-09-19 — Repeat unstaged-change and plot review
+
+- Repeated the latest saved synthetic analysis in
+  `results/analyses/synthetic_diffusion_subspace_go_ic_review_20260919_164944/`.
+  All six subspaces, assignment and linkage tables, and ranking values matched
+  the previous review run; all 91 PNGs were byte-identical, and four PDFs matched
+  extracted text and page counts (66 pages total).
+- Source hashes were unchanged. Fresh source and visual review confirmed the
+  same three readability findings, with no additional regression identified.
+  The run's `review.md`, `run_manifest.json`, and `verification.json` record the
+  evidence. Full `make check` passed with 650 tests and repository checks.
+  No implementation change, real-data rerun, commit, or push was made.
+
+## 2026-09-19 — Fix GO-IC plot readability
+
+- Replaced reduced annotated embedding panels with full-width plot panels and
+  separate 12-point native PDF term summaries. Increased standalone summaries
+  to 11 points and allocated space for long descriptions.
+- Reused the existing discrete cluster palette across trees and embeddings,
+  adding explicit integer legends with height based on cluster count. Ranking
+  charts now show quality tier, specificity score, and GO-BIC on aligned rows.
+  Plot types and shared legend rendering remain separate modules.
+- Repeated the synthetic analysis in
+  `results/analyses/synthetic_diffusion_subspace_go_ic_readability_20260919_165736/`.
+  All six subspaces completed; all 64 CSVs matched after path normalization.
+  Inspected updated figures and checked saved real allGO labels and a 146-cluster
+  legend without rerunning real clustering. The run's `readability_review.md`
+  and `verification.json` contain the evidence.
+- Full `make check` passed with 655 tests; final heading/wrapping adjustments
+  passed all 21 focused tests and scoped Ruff checks. PDF extraction confirms
+  12-point annotation text. No dependencies, commit, or push.
+
+## 2026-09-19 — Rerun both real GO-IC analyses
+
+- Repeated both canonical real inputs using their saved rank-80 binary/TF-IDF
+  settings. Interactome completed 12/12 subspaces and Julia completed 15/15.
+  New numerical results differ from the June runs; explicit comparisons and
+  provenance are retained in both run directories, indexed by
+  [[real-go-ic-readability-rerun-20260919]].
+- Interactome's top TF-IDF modes 06–11 assignments remain identical with
+  13 clusters. Julia's top binary modes 12–21 now has 32 clusters versus 38.
+  Former gate-failure subspaces now return single-cluster degenerate results.
+- Inspected the real plots and enlarged annotation panels for long mode blocks.
+  All 27 embedding pages passed bounds checks with 12-point native PDF text.
+  Report-only regeneration preserved all 263 analysis CSV hashes. Workflow
+  reports contain 36 interactome pages and 45 Julia pages.
+- Added a 39-mode layout regression case. Eighteen plot tests, four pipeline
+  tests, scoped Ruff, and whitespace checks passed. No commit or push.

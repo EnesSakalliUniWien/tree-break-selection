@@ -17,7 +17,7 @@ sources:
   - benchmarks/shared/tree_consensus.py
   - tree_break_selection/hierarchy_analysis/bootstrap_consensus.py
   - applications/endotypes/pipelines/run_feature_matrix_with_umap.py
-  - applications/endotypes/pipelines/run_current_adaptive_diffusion_subspace_tree_experiment.py
+  - applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py
   - applications/scrna/pancreas_benchmark.py
   - benchmarks/experiments/mnist/run.py
 tags:

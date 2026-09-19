@@ -19,7 +19,7 @@ sources:
   - raw/assets/benchmark-results/scrna_selected_adaptive_diffusion_nnls_matched_manifest.json
   - applications/scrna/plot_pipeline.py
   - applications/endotypes/plots/go_ic_tree_summary_plots.py
-  - applications/endotypes/pipelines/run_current_adaptive_diffusion_subspace_tree_experiment.py
+  - applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py
   - wiki/analyses/scrna-plot-pipeline-audit-20260624.md
   - wiki/sources/pancreas-scrna-clustering-benchmark-20260623.md
   - wiki/sources/goncalves-pancreas-progenitor-benchmark-prep-20260624.md
@@ -126,7 +126,7 @@ decks, MNIST exploratory figures, and older diagnostic/legacy figure pools.
   `applications/scrna/plots/selected_nnls_fit_summary.py`, and
   `applications/scrna/plots/selected_nnls_matched_report.py` produce the scRNA audit
   and selected-NNLS report figures.
-- `applications/endotypes/pipelines/run_current_adaptive_diffusion_subspace_tree_experiment.py`
+- `applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py`
   and `applications/endotypes/plots/go_ic_tree_summary_plots.py` produce the GO/subspace
   figure decks.
 - `applications/mnist/plot_report.py` and

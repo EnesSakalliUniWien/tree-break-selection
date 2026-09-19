@@ -46,15 +46,21 @@ renamed, or promoted.
 - [[aws-selected-tail-equation-study]] - AWS Batch sharding and merge workflow
   for large selected-tail equation diagnostics, with row-level records and
   namespaced independent simulation ids.
-- [[current-adaptive-diffusion-subspace-tree-pipeline]] - full current
-  adaptive-diffusion cosine-subspace tree pipeline contract, including stable
-  result-directory layout, rankings, PDFs, manifests, and per-subspace files.
+- [[current-adaptive-diffusion-subspace-tree-pipeline]] - adaptive diffusion
+  cosine subspace tree construction, TBS clustering, and extended GO-IC
+  analysis with specificity-aware ranking and connected reports.
 - [[go-annotation-feature-matrix-pipeline]] - consistent GO annotation
   feature-matrix entry point plus an audit that separates matrix quality,
   candidate generation, mixed-method GO-IC reports, canonical current outputs,
   and unclassified legacy folders.
 
 ### Source Summaries
+
+- [[real-go-ic-readability-rerun-20260919]] - both real matrices rerun with
+  numerical comparisons, updated readable PDFs, and long-mode layout checks.
+
+- [[go-plot-library-research-20260919]] - Context7 comparison of Matplotlib,
+  SciPy and Seaborn for shared renderers and independent DataFrame I/O.
 
 - [[diffusion-nnls-versions-and-support-review-20260909]] - diffusion NNLS
   benchmark versions and matched support-rule/gate diagnostics, including
