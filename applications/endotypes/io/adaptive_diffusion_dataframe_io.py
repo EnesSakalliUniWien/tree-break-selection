@@ -20,11 +20,6 @@ def load_binary_matrix(path: Path) -> pd.DataFrame:
     )
 
 
-def read_dataframe(path: Path | str) -> pd.DataFrame:
-    """Read an exported analysis table using the established CSV schema."""
-    return pd.read_csv(path)
-
-
 def write_dataframe(frame: pd.DataFrame, path: Path | str) -> None:
     """Write an analysis table without a synthetic index column."""
     frame.to_csv(path, index=False)

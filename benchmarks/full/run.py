@@ -159,35 +159,36 @@ def run_benchmarks():
     # Load existing results if any to resume
     if output_path.exists():
         all_results = pd.read_csv(output_path)
-        completed_case_keys, missing_run_ids_by_case, tracked_case_count = compute_resume_coverage(
+        completed_case_ids, missing_run_ids_by_case, tracked_case_count = compute_resume_coverage(
             all_results,
             expected_run_ids,
         )
-        partial_case_count = max(0, tracked_case_count - len(completed_case_keys))
+        partial_case_count = max(0, tracked_case_count - len(completed_case_ids))
         print(
             "Resuming... "
-            f"Found {len(completed_case_keys)} fully completed test indices "
+            f"Found {len(completed_case_ids)} fully completed cases "
             f"and {partial_case_count} partial cases."
         )
     else:
         all_results = pd.DataFrame()
-        completed_case_keys = set()
+        completed_case_ids = set()
         missing_run_ids_by_case = {}
 
+    result_frames: list[pd.DataFrame] = []
     for i, case in enumerate(test_cases):
         case_key = i + 1
         case_id = case["name"]
         case_type = case["category"]
 
-        if case_key in completed_case_keys:
+        if case_id in completed_case_ids:
             print(
                 f"[{i + 1}/{len(test_cases)}] Skipping case: {case_id} "
                 f"(test index {case_key} already done)"
             )
             continue
 
-        if case_key in missing_run_ids_by_case:
-            missing_run_ids = set(missing_run_ids_by_case[case_key])
+        if case_id in missing_run_ids_by_case:
+            missing_run_ids = set(missing_run_ids_by_case[case_id])
             methods_for_case, method_params_for_case = filter_methods_and_params_by_run_ids(
                 methods=methods_to_test,
                 param_sets=param_sets,
@@ -196,10 +197,10 @@ def run_benchmarks():
         else:
             methods_for_case = methods_to_test
             method_params_for_case = param_sets
-        if case_key in missing_run_ids_by_case:
+        if case_id in missing_run_ids_by_case:
             print(
                 f"[{i + 1}/{len(test_cases)}] Resuming partial case: {case_id} "
-                f"(missing run IDs: {missing_run_ids_by_case[case_key]})",
+                f"(missing run IDs: {missing_run_ids_by_case[case_id]})",
                 flush=True,
             )
 
@@ -239,7 +240,7 @@ def run_benchmarks():
         )
 
         if not df_res.empty:
-            all_results = pd.concat([all_results, df_res], ignore_index=True)
+            result_frames.append(df_res)
 
             write_header = not output_path.exists()
             df_res.to_csv(output_path, mode="a", header=write_header, index=False)
@@ -254,6 +255,7 @@ def run_benchmarks():
 
     print("-" * 50)
     print("Benchmark Complete.")
+    all_results = pd.concat([all_results, *result_frames], ignore_index=True)
 
     relationship_outputs = None
     relationship_pdf: Path | None = None

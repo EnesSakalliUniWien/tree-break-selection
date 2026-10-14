@@ -30,10 +30,11 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from applications.endotypes._shared import load_binary_feature_matrix
+from applications.endotypes.analysis.audit_go_cluster_meaningfulness import safe_float
 from applications.endotypes.reports.artifact_index import load_artifact_index
 from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
     gene_annotation_blurbs,
-    load_binary_matrix,
     load_cache,
     local_top_terms_for_cluster,
     protein_label,
@@ -91,15 +92,6 @@ def safe_int(value: object, default: int = 0) -> int:
         return int(float(value))
     except (TypeError, ValueError):
         return default
-
-
-def safe_float(value: object) -> float:
-    try:
-        if pd.isna(value):
-            return math.nan
-        return float(value)
-    except (TypeError, ValueError):
-        return math.nan
 
 
 def resolve_path(value: object, experiment_dir: Path) -> Path | None:
@@ -1005,7 +997,7 @@ def main() -> None:
     dataset_label = args.dataset_label or experiment_dir.name
 
     artifact_index = load_artifact_index(experiment_dir)
-    data = load_binary_matrix(args.feature_matrix)
+    data = load_binary_feature_matrix(args.feature_matrix)
     full_space_coordinates = compute_full_space_embedding(data)
     full_space_coordinates.to_csv(output_dir / "full_space_embedding_coordinates.csv", index=False)
     cache = load_cache(output_dir / "life_science_lookup_cache.json")

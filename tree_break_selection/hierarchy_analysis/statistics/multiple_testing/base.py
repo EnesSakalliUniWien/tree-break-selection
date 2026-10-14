@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Tuple
 
 import numpy as np
-from statsmodels.stats.multitest import multipletests
+from scipy.stats import false_discovery_control
 
 
 def benjamini_hochberg_correction(
@@ -42,7 +42,7 @@ def benjamini_hochberg_correction(
     Notes
     -----
     Returns empty arrays if input is empty (guards against edge cases).
-    Uses statsmodels implementation of Benjamini-Hochberg procedure.
+    Uses scipy's Benjamini-Hochberg adjustment; rejection is ``adjusted <= alpha``.
 
     Examples
     --------
@@ -68,16 +68,8 @@ def benjamini_hochberg_correction(
         empty_adjusted = np.array([], dtype=float)
         return empty_rejected, empty_adjusted, alpha_threshold
 
-    rejected, adjusted, _, _ = multipletests(
-        p_values_array,
-        alpha=alpha_threshold,
-        method="fdr_bh",
-        is_sorted=False,
-        returnsorted=False,
-    )
-
-    rejected_hypotheses = rejected.astype(bool)
-    adjusted_p_values = adjusted.astype(float)
+    adjusted_p_values = false_discovery_control(p_values_array, method="bh").astype(float)
+    rejected_hypotheses = adjusted_p_values <= alpha_threshold
 
     return rejected_hypotheses, adjusted_p_values, alpha_threshold
 

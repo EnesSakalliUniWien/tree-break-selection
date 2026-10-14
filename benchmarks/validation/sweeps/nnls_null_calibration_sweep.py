@@ -55,6 +55,7 @@ from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.validation.sweeps.family_metric_nnls_grid import _bool_sum
 
 SCHEMA_VERSION = "nnls_null_calibration_sweep/v5"
 GENERATED_BY = "benchmarks.validation.sweeps.nnls_null_calibration_sweep"
@@ -241,14 +242,6 @@ def _spectral_frame_summary_from_result(result_extra: dict[str, object]) -> dict
         "root_internal_distribution_rows": _root_value(internal_rows),
         "root_spectral_matrix_rows": _root_value(matrix_rows),
     }
-
-
-def _bool_sum(frame: pd.DataFrame, column: str) -> int:
-    if column not in frame.columns:
-        return 0
-    return int(
-        frame[column].map(lambda value: str(value).strip().lower() in {"true", "1", "yes"}).sum()
-    )
 
 
 def _calibration_model_rows(

@@ -41,10 +41,13 @@ from benchmarks.diagnostics.calibration.overlap.panel_runner import (
     build_binary_overlap_case_node_rows,
     run_binary_overlap_panel,
 )
+from benchmarks.diagnostics.calibration.selected.family.selected_family_traversal_panel import (
+    _branch_length_to_parent,
+)
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
     DEFAULT_DATA_ROLES,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     parse_names,
 )
@@ -340,12 +343,6 @@ def _annotation_value(annotations: pd.DataFrame, node: object, column: str) -> o
     return np.nan
 
 
-def _bool_value(value: object) -> bool:
-    if pd.isna(value):
-        return False
-    return bool(value)
-
-
 def _neglog10_p_value(value: object) -> float:
     p_value = finite_float(value)
     if not math.isfinite(p_value):
@@ -370,8 +367,8 @@ def _edge_record(annotations: pd.DataFrame, node: object, prefix: str) -> dict[s
         f"{prefix}_edge_p_value": finite_float(p_value),
         f"{prefix}_edge_bh_p_value": finite_float(bh_p_value),
         f"{prefix}_edge_neglog10_bh_p_value": _neglog10_p_value(bh_p_value),
-        f"{prefix}_edge_tested": _bool_value(tested),
-        f"{prefix}_edge_rejected": _bool_value(rejected),
+        f"{prefix}_edge_tested": bool_value(tested),
+        f"{prefix}_edge_rejected": bool_value(rejected),
     }
 
 
@@ -389,19 +386,6 @@ def _single_parent(tree, node: object) -> object | None:
     if len(parents) != 1:
         raise ValueError(f"Expected at most one parent for node {node!r}.")
     return parents[0]
-
-
-def _branch_length_to_parent(tree, *, parent: object | None, node: object) -> float:
-    if parent is None or not tree.has_edge(parent, node):
-        return math.nan
-    value = tree.edges[parent, node].get("branch_length", math.nan)
-    try:
-        branch_length = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    if not math.isfinite(branch_length) or branch_length < 0.0:
-        return math.nan
-    return float(branch_length)
 
 
 def _incoming_sibling(tree, *, parent: object, node: object) -> object | None:

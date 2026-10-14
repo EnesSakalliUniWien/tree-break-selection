@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 import sys
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
@@ -39,17 +37,13 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection import (
     collect_sibling_pair_records,
 )
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.parent_principal_component_inputs import (
-    collect_parent_principal_component_inputs_for_sibling_tests,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
-    derive_sibling_projection_dimensions_from_child_edge_comparisons,
-)
 
+from benchmarks.shared.util.provenance import current_git_state
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _annotate_edges,
     _case_contract,
     _prepare_tree_for_mode,
+    _projection_inputs,
     _select_cases,
 )
 
@@ -236,26 +230,6 @@ def _run_synthetic_valid_p_replicate(
         "n_support_failures": 0,
         "failure_reason": "",
     }
-
-
-def _projection_inputs(
-    tree: nx.DiGraph, spectral_context: object
-) -> tuple[
-    dict[str, int],
-    dict[str, np.ndarray],
-    dict[str, np.ndarray],
-]:
-    projection_dimensions = derive_sibling_projection_dimensions_from_child_edge_comparisons(
-        tree,
-        spectral_context=spectral_context,
-    )
-    parent_projections, parent_eigenvalues = (
-        collect_parent_principal_component_inputs_for_sibling_tests(
-            projection_dimensions,
-            spectral_context=spectral_context,
-        )
-    )
-    return projection_dimensions, parent_projections, parent_eigenvalues
 
 
 def _run_raw_wald_sibling_fdr(
@@ -509,34 +483,6 @@ def run_traversal_sibling_fdr_layer(
         }
     )
     return {"simulation_rows": rows, "summary": summary}
-
-
-def current_git_state() -> dict[str, object]:
-    """Return git provenance without hiding command failures."""
-    state: dict[str, object] = {
-        "build_commit": os.environ.get("TBS_GIT_COMMIT", "unknown"),
-        "build_branch": os.environ.get("TBS_GIT_BRANCH", "unknown"),
-        "build_dirty": os.environ.get("TBS_GIT_DIRTY", "unknown"),
-    }
-    commands = {
-        "commit": ("git", "rev-parse", "HEAD"),
-        "branch": ("git", "branch", "--show-current"),
-        "status_short": ("git", "status", "--short"),
-    }
-    for key, command in commands.items():
-        try:
-            completed = subprocess.run(command, capture_output=True, text=True)
-        except OSError as exc:
-            state[key] = f"unavailable:{exc}"
-            continue
-        if completed.returncode != 0:
-            state[key] = {
-                "returncode": completed.returncode,
-                "stderr": completed.stderr.strip(),
-            }
-        else:
-            state[key] = completed.stdout.strip()
-    return state
 
 
 def run_traversal_sibling_fdr_layers(

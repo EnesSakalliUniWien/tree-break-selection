@@ -176,10 +176,6 @@ def wrap(value: object, width: int = 90) -> str:
     return "\n".join(textwrap.wrap(str(value), width=width)) or ""
 
 
-def load_binary_matrix(path: Path) -> pd.DataFrame:
-    return load_binary_feature_matrix(path)
-
-
 def resolve_path(value: object, experiment_dir: Path) -> Path:
     path = Path(str(value))
     if path.exists() or path.is_absolute():
@@ -770,7 +766,7 @@ def main() -> None:
     output_dir = args.output_dir or args.experiment_dir / "systematic_subspace_gene_annotations"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    data = load_binary_matrix(args.feature_matrix)
+    data = load_binary_feature_matrix(args.feature_matrix)
     ranking = load_artifact_index(args.experiment_dir)
     if args.top_subspaces > 0:
         ranking = ranking.head(args.top_subspaces).copy()

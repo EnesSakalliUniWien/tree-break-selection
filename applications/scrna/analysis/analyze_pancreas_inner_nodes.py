@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
+from applications.scrna.analysis.compare_pancreas_progenitor_signatures import build_tree_helpers
 
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
 LINEAGE_MAP = {
@@ -203,22 +204,11 @@ def main() -> None:
     assignments = pd.read_csv(output_dir / "method_assignments.csv")
     edges = pd.read_csv(output_dir / f"{METHOD_KEY}_tree_edges.csv")
 
-    children: dict[str, list[str]] = {}
+    children, descendant_leaves = build_tree_helpers(edges)
     parents = set(edges["parent"].astype(str))
     child_nodes = set(edges["child"].astype(str))
-    for parent, child in zip(edges["parent"].astype(str), edges["child"].astype(str), strict=True):
-        children.setdefault(parent, []).append(child)
     root = next(iter(parents - child_nodes))
     parent_of = {child: parent for parent, child_list in children.items() for child in child_list}
-
-    @lru_cache(maxsize=None)
-    def descendant_leaves(node: str) -> tuple[int, ...]:
-        if node.startswith("L"):
-            return (int(node[1:]),)
-        leaves: list[int] = []
-        for child in children[node]:
-            leaves.extend(descendant_leaves(child))
-        return tuple(leaves)
 
     def depth_from_root(node: str) -> int:
         depth = 0

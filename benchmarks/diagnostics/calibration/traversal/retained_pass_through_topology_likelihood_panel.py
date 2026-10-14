@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_retained_pass_through_topology_likelihood_not_calibration"
@@ -212,21 +213,11 @@ def _numeric(rows: pd.DataFrame, column: str) -> pd.Series:
     return pd.to_numeric(rows[column], errors="coerce")
 
 
-def _bool_value(value: object) -> bool:
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes"}
-    return bool(value)
-
-
 def _is_finite(value: object) -> bool:
     try:
         return math.isfinite(float(value))
     except (TypeError, ValueError):
         return False
-
-
-def _finite_float(value: object) -> float:
-    return float(value) if _is_finite(value) else math.nan
 
 
 def _empty_parent_id(value: object) -> bool:
@@ -456,11 +447,11 @@ def build_retained_pass_through_topology_likelihood_rows(
             component_count = math.nan
         else:
             context_status = str(context_row["traversal_network_context_status"])
-            pass_through_distance = _finite_float(context_row["distance_to_pass_through_context"])
-            downstream_split_distance = _finite_float(
+            pass_through_distance = finite_float(context_row["distance_to_pass_through_context"])
+            downstream_split_distance = finite_float(
                 context_row["distance_to_downstream_accepted_split"]
             )
-            component_count = _finite_float(context_row["network_component_node_count"])
+            component_count = finite_float(context_row["network_component_node_count"])
         finite_balance = _is_finite(row["left_balance_product"])
         finite_edge_norm = _is_finite(row["left_outgoing_edge_norm_balance"])
         log_leaves = (
@@ -498,8 +489,8 @@ def build_retained_pass_through_topology_likelihood_rows(
                 "left_n_descendant_leaves": float(row["left_n_descendant_leaves"]),
                 "left_sibling_p_value": float(row["left_sibling_p_value"]),
                 "left_neg_log10_sibling_p_value": _neg_log10_p(row["left_sibling_p_value"]),
-                "left_child_parent_edge_open": _bool_value(row["left_child_parent_edge_open"]),
-                "left_sibling_open": _bool_value(row["left_sibling_open"]),
+                "left_child_parent_edge_open": bool_value(row["left_child_parent_edge_open"]),
+                "left_sibling_open": bool_value(row["left_sibling_open"]),
                 "left_descendant_accepted_split_count": int(
                     row["left_descendant_accepted_split_count"]
                 ),
@@ -616,12 +607,12 @@ def build_retained_pass_through_topology_match_rows(
                     "signal_log_descendant_leaves": float(signal_row["left_log_descendant_leaves"]),
                     "control_log_descendant_leaves": math.nan,
                     "abs_log_descendant_leaves_delta": math.nan,
-                    "signal_distance_to_pass_through_context": _finite_float(
+                    "signal_distance_to_pass_through_context": finite_float(
                         signal_row["distance_to_pass_through_context"]
                     ),
                     "control_distance_to_pass_through_context": math.nan,
                     "abs_pass_through_context_delta": math.nan,
-                    "signal_distance_to_downstream_accepted_split": _finite_float(
+                    "signal_distance_to_downstream_accepted_split": finite_float(
                         signal_row["distance_to_downstream_accepted_split"]
                     ),
                     "control_distance_to_downstream_accepted_split": math.nan,
@@ -662,17 +653,17 @@ def build_retained_pass_through_topology_match_rows(
                 "signal_log_descendant_leaves": float(signal_row["left_log_descendant_leaves"]),
                 "control_log_descendant_leaves": float(best_control["left_log_descendant_leaves"]),
                 "abs_log_descendant_leaves_delta": float(best_log_delta),
-                "signal_distance_to_pass_through_context": _finite_float(
+                "signal_distance_to_pass_through_context": finite_float(
                     signal_row["distance_to_pass_through_context"]
                 ),
-                "control_distance_to_pass_through_context": _finite_float(
+                "control_distance_to_pass_through_context": finite_float(
                     best_control["distance_to_pass_through_context"]
                 ),
                 "abs_pass_through_context_delta": best_pass_delta,
-                "signal_distance_to_downstream_accepted_split": _finite_float(
+                "signal_distance_to_downstream_accepted_split": finite_float(
                     signal_row["distance_to_downstream_accepted_split"]
                 ),
-                "control_distance_to_downstream_accepted_split": _finite_float(
+                "control_distance_to_downstream_accepted_split": finite_float(
                     best_control["distance_to_downstream_accepted_split"]
                 ),
                 "abs_downstream_accepted_split_delta": best_split_delta,

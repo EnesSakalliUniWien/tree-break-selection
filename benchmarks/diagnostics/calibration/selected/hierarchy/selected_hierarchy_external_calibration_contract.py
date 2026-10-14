@@ -27,12 +27,12 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
 
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
-    _parse_csv_list,
     _selected_cases,
 )
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_stratification_diagnostic import (
     _diagnose_case,
 )
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.util.time import format_timestamp_utc
 
 CONDITIONING_SCOPE = "same_data_selected_hierarchy_edge_path_open"
@@ -374,7 +374,7 @@ def main() -> None:
             / f"selected_hierarchy_external_calibration_contract_{format_timestamp_utc()}"
         )
     outputs = run_external_calibration_contract_diagnostic(
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         output_dir=output_dir,
         n_replicates=int(args.n_replicates),
         seed=int(args.seed),

@@ -197,6 +197,44 @@ class TestGateEvaluator:
             "passthrough_decision_reason": "pass_through",
         }
 
+    def test_no_passthrough_when_descendant_split_is_unreachable(self) -> None:
+        tree = nx.DiGraph()
+        tree.add_edges_from(
+            [
+                ("root", "A"),
+                ("root", "B"),
+                ("A", "C"),
+                ("A", "x1"),
+                ("C", "D"),
+                ("C", "x2"),
+                ("D", "y1"),
+                ("D", "y2"),
+                ("B", "z1"),
+                ("B", "z2"),
+            ]
+        )
+        _annotate_tree_structure(tree, {"x1", "x2", "y1", "y2", "z1", "z2"})
+        edge_divergent = {node: True for node in tree.nodes}
+        edge_divergent["C"] = False
+        edge_divergent["x1"] = False
+        sibling_different = {node: False for node in tree.nodes}
+        sibling_different["D"] = True
+
+        gate = _make_gate(
+            tree=tree,
+            passthrough=True,
+            edge_divergent=edge_divergent,
+            sibling_different=sibling_different,
+        )
+
+        # A is a boundary, so the D split below it is never reached.
+        assert gate.decision("A") is TraversalDecision.BOUNDARY
+        assert gate.decision("root") is TraversalDecision.BOUNDARY
+        assert (
+            gate.passthrough_audit_status("root")["passthrough_decision_reason"]
+            == "no_descendant_split"
+        )
+
     def test_spectral_support_guard_blocks_passthrough(self) -> None:
         tree = _make_deep_tree()
         sibling_different = {node: False for node in tree.nodes}

@@ -49,6 +49,7 @@ from tree_break_selection.hierarchy_analysis.decomposition.core.eigen_result imp
     EigenResult,
 )
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
+    _uses_bernoulli_null_whitening,
     build_null_whitened_tangent_matrix,
 )
 from tree_break_selection.hierarchy_analysis.statistics.projection.projection_dimension_estimation.projection_dimension_estimators import (
@@ -243,7 +244,7 @@ def _profile_vectorized_bernoulli_materialization(
     leaf_feature_matrix: np.ndarray,
     feature_space: FeatureSpace,
 ) -> tuple[float, float]:
-    if not _has_vectorizable_bernoulli_blocks(feature_space):
+    if not _uses_bernoulli_null_whitening(feature_space):
         return float("nan"), float("nan")
 
     max_abs_diff = 0.0
@@ -263,12 +264,6 @@ def _profile_vectorized_bernoulli_materialization(
             node_diff = float(np.max(np.abs(vectorized_matrix - record.matrix)))
             max_abs_diff = max(max_abs_diff, node_diff)
     return time.perf_counter() - start, max_abs_diff
-
-
-def _has_vectorizable_bernoulli_blocks(feature_space: FeatureSpace) -> bool:
-    return feature_space.family_label == "bernoulli" and all(
-        block.raw_dimension == 1 for block in feature_space.blocks
-    )
 
 
 def _materialize_task_matrix_vectorized_bernoulli(
@@ -296,7 +291,7 @@ def _vectorized_bernoulli_null_whiten(
 ) -> np.ndarray:
     rows = np.asarray(distributions, dtype=np.float64)
     null = np.asarray(null_distribution, dtype=np.float64)
-    if not _has_vectorizable_bernoulli_blocks(feature_space):
+    if not _uses_bernoulli_null_whitening(feature_space):
         raise ValueError(
             "Vectorized Bernoulli materialization requires pure Bernoulli blocks; "
             f"got {feature_space.family_label!r}."

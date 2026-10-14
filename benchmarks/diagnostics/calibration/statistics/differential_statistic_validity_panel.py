@@ -40,10 +40,10 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _prepare_tree_for_mode,
     _projection_inputs,
     _select_cases,
-    parse_alpha_grid,
     parse_names,
     validate_modes,
 )
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 
 STUDY_ROLE = "diagnostic_differential_statistic_validity_not_calibration"
 SCHEMA_VERSION = "differential_statistic_validity_panel/v1"
@@ -769,7 +769,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             suite=str(args.suite),
             case_names=parse_names(args.case_names),
             modes=validate_modes(parse_names(args.modes)),
-            edge_alphas=parse_alpha_grid(str(args.edge_alphas)),
+            edge_alphas=parse_float_grid(str(args.edge_alphas)),
             sibling_alpha=float(args.sibling_alpha),
             replicates=int(args.replicates),
             base_seed=int(args.base_seed),

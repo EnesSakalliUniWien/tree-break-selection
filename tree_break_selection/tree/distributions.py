@@ -320,6 +320,9 @@ def populate_distributions(
         active_feature_space,
         value_name="leaf_data",
     )
+    if not leaf_data.index.is_unique:
+        duplicates = leaf_data.index[leaf_data.index.duplicated()].unique().tolist()
+        raise ValueError(f"leaf_data index must be unique; duplicated labels: {duplicates[:5]!r}.")
     label_to_row_idx = {label: i for i, label in enumerate(leaf_data.index)}
 
     # Process nodes bottom-up (leaves first, then parents)

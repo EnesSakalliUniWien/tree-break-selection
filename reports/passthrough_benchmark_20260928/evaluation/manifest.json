@@ -1,0 +1,161 @@
+{
+  "schema_version": "known_branch_skew_diagnostic/v1",
+  "generated_by": "benchmarks.diagnostics.calibration.sibling.known_branch_skew_diagnostic",
+  "study_role": "diagnostic_only_known_branch_stage_attribution",
+  "run_command": "/Users/berksakalli/Projects/kl-te-cluster/.venv/bin/python -m benchmarks.diagnostics.calibration.sibling.known_branch_skew_diagnostic --output-dir reports/passthrough_benchmark_20260928/evaluation --replicates 1000 --base-seed 20260928 --n-per-group 32 --dimension 8 --alpha 0.01",
+  "source_commit": "f34f59cacd09b19c34fafa3a4a6e783dd3973f72",
+  "git_worktree_status": [
+    " M applications/endotypes/pipelines/tree_analysis_args.py",
+    " M benchmarks/diagnostics/calibration/README.md",
+    " M benchmarks/diagnostics/spectral/README.md",
+    " M tests/statistics/39_test_projected_wald_statistics.py",
+    " M tests/statistics/48_test_space_separation.py",
+    " M tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/projection.py",
+    " M tree_break_selection/hierarchy_analysis/statistics/README.md",
+    " M tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py",
+    " M tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py",
+    " M tree_break_selection/hierarchy_analysis/statistics/projection/projection_dimension_estimation/projection_dimension_estimators.py",
+    " M tree_break_selection/space_separation/README.md",
+    " M tree_break_selection/space_separation/adaptive_cosine.py",
+    " M tree_break_selection/space_separation/diffusion.py",
+    " M wiki/index.md",
+    " M wiki/log.md",
+    " M wiki/questions/diffusion-nnls-calibration-open-points.md",
+    " M wiki/tools/current-adaptive-diffusion-subspace-tree-pipeline.md",
+    "?? benchmarks/diagnostics/calibration/sibling/independent_projection_control.py",
+    "?? benchmarks/diagnostics/calibration/sibling/known_branch_skew_diagnostic.py",
+    "?? benchmarks/diagnostics/spectral/adaptive_cosine/compare_spectral_blocks.py",
+    "?? benchmarks/diagnostics/spectral/apply_vandermonde_diagnostic.py",
+    "?? benchmarks/diagnostics/spectral/vandermonde.py",
+    "?? raw/inbox/eigensystem-reference-notes-20260928.md",
+    "?? raw/inbox/vandermonde-reference-notes-20260928.md",
+    "?? reports/eigenspace_reassessment_20260928/",
+    "?? reports/eigenvalue_block_comparison_20260926/",
+    "?? reports/independent_projection_vandermonde_20260928/",
+    "?? reports/known_branch_skew_20260928/",
+    "?? reports/mathematical_construction_review_20260928/",
+    "?? reports/passthrough_benchmark_20260928/",
+    "?? tests/statistics/55_test_eigenspace_invariance.py",
+    "?? tests/validation/calibration/195_test_known_branch_skew_diagnostic.py",
+    "?? tests/validation/calibration/196_test_independent_projection_control.py",
+    "?? tests/validation/calibration/197_test_vandermonde_diagnostic.py",
+    "?? tree_break_selection/eigenvalue_groups.py",
+    "?? wiki/analyses/eigenvalue-block-tree-comparison.md",
+    "?? wiki/analyses/eigenvector-calibration-construction-review.md",
+    "?? wiki/sources/eigenspace-benchmark-calibration-reassessment.md",
+    "?? wiki/sources/eigensystem-api-reference-notes.md",
+    "?? wiki/sources/independent-projection-vandermonde-control.md",
+    "?? wiki/sources/known-branch-skew-diagnostic.md",
+    "?? wiki/sources/vandermonde-reference-notes.md"
+  ],
+  "runtime": {
+    "python": "3.11.12",
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "pandas": "2.3.3",
+    "networkx": "3.5"
+  },
+  "source_sha256": {
+    "benchmarks/diagnostics/calibration/sibling/known_branch_skew_diagnostic.py": "965dd462337788d98406a363f592a35dd0772b868f82f85d4ef72dfc85f6c5ce",
+    "tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py": "b1c7c2e6d49837d544dea5b9ce1c8cdb9acb97b354fadd18f39daf0312290f00",
+    "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflated_projected_wald_annotation/fdr_annotation.py": "382fc03fc5fa105f64874ed5885537586c428eb7202d341442febba05b2e5ba9",
+    "tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py": "ae568d891f01ad305de453e14284896def43ebd8f3c9ea01a209cce50b9d421d",
+    "tree_break_selection/hierarchy_analysis/tree_decomposition.py": "d33b0c0a16cd40ed40d51ba2b35f5cd9d294f1fae894074c0775cfd2f7a5ff0a",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projection_dimension_estimation/projection_dimension_estimators.py": "51e1e6dcb3b4627644f689cf63b8dfc3f3288d95a63d7ac3f1a753443ca39b30",
+    "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/decomposition.py": "c1d4c124d4e9ea93dfbe46a0bd976a6bf30a8230283eb265c1d36a33d9250a63",
+    "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/projection.py": "4c1f2b26dad53c973ba947868deecb80f41f202431c4ba1ea2868e8c8c495f17",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py": "3e2534d0ab7c066a3ca0ab4ad7514598b234a860e74a29b5d53ddca30a7583b2",
+    "tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303",
+    "tree_break_selection/tree/feature_space.py": "d01e339f36f63a9b49a4a2404dfd0740b4b42c93e15439ab67712188926269b2",
+    "tree_break_selection/tree/construction/hierarchical.py": "d4433640116b1e7e26880bf0ff29ec3972ae17ca213fccaea2f1d206673ff984",
+    "tree_break_selection/tree/poset_tree.py": "2a7c6ab4df0f1eb1a3b64cd34885266f125232e730b84690892a995af3b9e0e1",
+    "benchmarks/diagnostics/calibration/reporting.py": "f646609848aba31a7cf51e9b1483863f41945d4790950d6abd5f8564533ef3ba",
+    "benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py": "5cd34245eb16f0d9f034a82273e1e5d64b86fb9251c766a8b0696f0ab2cb8021",
+    "benchmarks/validation/contracts/report_contract.py": "956cf5fb2438503a8ff7df138531e4068899e20efe40b4953281b63e7be7ce26",
+    "reports/known_branch_skew_20260928/protocol.md": "5eff4a92bee0cac8a0e7e0b6fdc7150507c71b3f3b758a274d7b567789af2efb"
+  },
+  "random_seed_policy": "SeedSequence(base_seed), one spawned generator per dataset replicate, reused across matched stages",
+  "config": {
+    "output_dir": "reports/passthrough_benchmark_20260928/evaluation",
+    "replicates": 1000,
+    "base_seed": 20260928,
+    "n_per_group": 32,
+    "dimension": 8,
+    "alpha": 0.01,
+    "ridge": 0.0,
+    "patterns": [
+      "global_null",
+      "root_only",
+      "A_deep_only",
+      "separate_deep_branches",
+      "strong_root_weak_A"
+    ],
+    "covariance_profiles": [
+      "identity",
+      "ar1_0.6"
+    ]
+  },
+  "design": {
+    "fixed_tree": [
+      "R",
+      "A",
+      "B",
+      "A0",
+      "A1",
+      "B0",
+      "B1"
+    ],
+    "patterns": [
+      "global_null",
+      "root_only",
+      "A_deep_only",
+      "separate_deep_branches",
+      "strong_root_weak_A"
+    ],
+    "covariance_profiles": [
+      "identity",
+      "ar1_0.6"
+    ],
+    "matched_local_variants": [
+      [
+        "oracle_covariance",
+        "fixed_full"
+      ],
+      [
+        "pooled_sample_covariance",
+        "fixed_full"
+      ],
+      [
+        "oracle_covariance",
+        "same_data_pca_mp"
+      ],
+      [
+        "pooled_sample_covariance",
+        "same_data_pca_mp"
+      ]
+    ],
+    "sample_covariance_label": "sample_pooled_covariance_including_between_sibling_means",
+    "selected_root_estimand": "same_data_average_linkage_euclidean_root_with_known_composition_weighted_population_means",
+    "traversal_edge_regime": "all_edges_deliberately_open",
+    "traversal_counts": "actual visited decision=split from TreeDecomposition full trace"
+  },
+  "limitations": [
+    "Gaussian-only bounded attribution design; categorical covariance validation is outside this run.",
+    "Selected-root p-values condition on a hierarchy selected from the same observations and are descriptive.",
+    "Traversal evidence is empirical under independent known-covariance Gaussian local p-values and open edge prerequisites.",
+    "No production method, default, dependency, or existing report is changed."
+  ],
+  "generated_at": "2026-09-28T15:01:07.543204+00:00",
+  "outputs": {
+    "local": "reports/passthrough_benchmark_20260928/evaluation/known_branch_local_rows.csv",
+    "selected_root": "reports/passthrough_benchmark_20260928/evaluation/known_branch_selected_root_rows.csv",
+    "traversal": "reports/passthrough_benchmark_20260928/evaluation/known_branch_traversal_rows.csv",
+    "summary": "reports/passthrough_benchmark_20260928/evaluation/known_branch_summary.csv"
+  },
+  "row_counts": {
+    "local": 120000,
+    "selected_root": 10000,
+    "traversal": 20000,
+    "summary": 150
+  }
+}

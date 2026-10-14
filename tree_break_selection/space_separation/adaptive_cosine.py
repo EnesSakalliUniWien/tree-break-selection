@@ -13,6 +13,11 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from tree_break_selection.eigenvalue_groups import (
+    extend_rank_through_ties,
+    tied_eigenvalue_neighbors,
+)
+
 
 @dataclass(frozen=True)
 class SpectralBlock:
@@ -70,7 +75,11 @@ def cosine_eigendecomposition(
     values: np.ndarray,
     max_rank: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Eigendecompose the sample cosine operator in descending order."""
+    """Eigendecompose the sample cosine operator in descending order.
+
+    ``max_rank`` is a target: retain the whole numerical tie group containing
+    its last mode, even if that requires additional columns.
+    """
 
     matrix = np.asarray(values, dtype=float)
     if matrix.ndim != 2:
@@ -88,7 +97,10 @@ def cosine_eigendecomposition(
     eigenvalues = eigenvalues[order]
     eigenvectors = eigenvectors[:, order]
     keep = eigenvalues > 1e-10
-    return eigenvalues[keep][:max_rank], eigenvectors[:, keep][:, :max_rank]
+    eigenvalues = eigenvalues[keep]
+    eigenvectors = eigenvectors[:, keep]
+    rank = extend_rank_through_ties(eigenvalues, max_rank)
+    return eigenvalues[:rank], eigenvectors[:, :rank]
 
 
 def _interval_linear_sse(x: np.ndarray, y: np.ndarray) -> float:
@@ -117,7 +129,7 @@ def adaptive_spectral_blocks(
     min_segment_length: int,
     max_segments: int,
 ) -> tuple[list[SpectralBlock], dict[str, object]]:
-    """Segment a descending positive eigenspectrum into adaptive decay regimes."""
+    """Segment descending positive eigenvalues without splitting numerical ties."""
 
     if min_segment_length < 1:
         raise ValueError("min_segment_length must be positive.")
@@ -135,9 +147,10 @@ def adaptive_spectral_blocks(
         }
 
     log_eigenvalues = np.log(np.maximum(eigenvalues, 1e-300))
+    tied = tied_eigenvalue_neighbors(eigenvalues)
     offset = 0
     blocks: list[SpectralBlock] = []
-    if _should_isolate_common_mode(log_eigenvalues):
+    if not tied[0] and _should_isolate_common_mode(log_eigenvalues):
         blocks.append(SpectralBlock(0, "adaptive_common_mode_01", 1, 1, "common_mode"))
         offset = 1
 
@@ -179,6 +192,8 @@ def adaptive_spectral_blocks(
                 (block_count - 1) * min_segment_length - 1,
                 end - min_segment_length + 1,
             ):
+                if tied[cut + offset]:
+                    continue
                 value = dynamic[block_count - 1, cut] + sse[cut + 1, end]
                 if value < dynamic[block_count, end]:
                     dynamic[block_count, end] = value

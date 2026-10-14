@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "verified_rejection_count_rows": 216,
+  "verified_paired_decision_rows": 108,
+  "verified_rank_count_rows": 78,
+  "kernel_checks_passed": 2688,
+  "current_rotation_rank_and_decision_mismatches": 0,
+  "current_max_rotation_p_value_difference": 2.7755575615628914e-15,
+  "outcome_archive_sha256_verified": true
+}

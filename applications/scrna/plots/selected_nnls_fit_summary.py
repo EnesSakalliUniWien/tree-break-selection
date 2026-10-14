@@ -18,6 +18,7 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     _squared_standardized_targets,
 )
 
+from applications.scrna._shared import add_generated_at
 from applications.scrna.plots.selected_nnls_report import (
     BASE,
     DATASETS,
@@ -195,18 +196,6 @@ def _plot_metrics(ax, diagnostic: dict[str, object]) -> None:
     )
 
 
-def _add_generated_at(fig: plt.Figure, generated_at: str) -> None:
-    fig.text(
-        0.99,
-        0.01,
-        f"Generated at: {generated_at}",
-        ha="right",
-        va="bottom",
-        fontsize=7,
-        color="#6b7280",
-    )
-
-
 def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: str) -> None:
     with PdfPages(
         OUT_PDF,
@@ -229,7 +218,7 @@ def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: 
                 annotate_clusters=True,
                 point_size=6,
             )
-            _add_generated_at(fig, generated_at)
+            add_generated_at(fig, generated_at)
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
@@ -247,7 +236,7 @@ def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: 
                 fontsize=9,
                 color="#374151",
             )
-            _add_generated_at(fig, generated_at)
+            add_generated_at(fig, generated_at)
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
@@ -275,7 +264,7 @@ def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: 
                     "alpha": 0.92,
                 },
             )
-            _add_generated_at(fig, generated_at)
+            add_generated_at(fig, generated_at)
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
@@ -338,8 +327,9 @@ def main() -> None:
     fig.text(
         0.012,
         0.012,
-        "Fit check uses the saved selected NNLS tree edges and the saved benchmark PCA matrix. "
-        "Target is squared standardized Euclidean pair distance; fitted value is summed branch time along the real tree path. "
+        "Fit check uses saved NNLS tree edges and the saved benchmark PCA matrix. "
+        "Target: mean squared standardized Euclidean distance (divided by feature count).\n"
+        "Fitted value: summed fitted branch length along the tree path, not calibrated stochastic time. "
         f"Generated at: {generated_at}",
         fontsize=9,
         color="#374151",

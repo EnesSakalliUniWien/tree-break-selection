@@ -24,10 +24,11 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_SIBLING_ALPHA,
 )
 
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
 from benchmarks.diagnostics.calibration.traversal.branch_length_traversal_audit import (
     DEFAULT_CASE_NAMES,
     DEFAULT_METHODS,
-    _json_default,
+    _case_summary_from_skip,
     _log,
     _select_cases,
     _tuple_rows_from_computed,
@@ -397,29 +398,6 @@ def annotate_path_conditioned_tuples(
     )
 
 
-def _skip_summary(
-    *,
-    case_idx: int,
-    case_name: str,
-    case: dict[str, object],
-    method_id: str,
-    row: Any,
-) -> dict[str, object]:
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "study_role": STUDY_ROLE,
-        "test_case": int(case_idx),
-        "case_id": str(case_name),
-        "case_category": str(case.get("category", "")),
-        "method": str(method_id),
-        "status": row.status.value,
-        "skip_reason": row.skip_reason,
-        "true_clusters": int(row.true_clusters),
-        "found_clusters": int(row.found_clusters),
-        "ari": float(row.ari) if math.isfinite(float(row.ari)) else math.nan,
-    }
-
-
 def _case_summary_from_tuples(
     *,
     base_summary: dict[str, object],
@@ -570,7 +548,7 @@ def run_path_conditioned_traversal_audit(
         for method_id in methods:
             spec = METHOD_SPECS[method_id]
             for params in spec.param_grid:
-                row, computed, _method_audit = run_single_method_once(
+                row, computed = run_single_method_once(
                     method_id=method_id,
                     spec=spec,
                     params=params,
@@ -585,12 +563,11 @@ def run_path_conditioned_traversal_audit(
                     meta=inputs.metadata,
                     distance_matrix=inputs.distance_matrix,
                     distance_condensed=inputs.distance_condensed,
-                    matrix_audit=False,
                 )
                 method_rows.append(row)
                 if computed is None:
                     case_summary_rows.append(
-                        _skip_summary(
+                        _case_summary_from_skip(
                             case_idx=case_idx,
                             case_name=case_name,
                             case=case,
@@ -624,7 +601,7 @@ def run_path_conditioned_traversal_audit(
                 tuple_frames.append(path_rows)
 
                 counters = (computed.decomposition or {}).get("traversal_counters", {})
-                base_summary = _skip_summary(
+                base_summary = _case_summary_from_skip(
                     case_idx=case_idx,
                     case_name=case_name,
                     case=case,
@@ -698,7 +675,7 @@ def run_path_conditioned_traversal_audit(
         },
     }
     outputs["manifest"].write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, default=_json_default) + "\n",
+        json.dumps(manifest, indent=2, sort_keys=True, default=diagnostic_json_default) + "\n",
         encoding="utf-8",
     )
     _log(run_log_path, f"wrote_outputs={outputs}")

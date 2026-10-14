@@ -26,10 +26,11 @@ from benchmarks.diagnostics.calibration.overlap.overlap_conditional_topology_law
     CachedTreeDistances,
     build_cached_tree_distances,
 )
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
 from benchmarks.diagnostics.calibration.selected.neighborhood.selected_neighborhood_measurability_law import (
     candidate_evidence_mask,
 )
-from benchmarks.diagnostics.calibration.values import finite_float, string_value
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float, string_value
 
 SCHEMA_VERSION = "selected_neighborhood_pvalue_interpolation_comparison/v1"
 STUDY_ROLE = "diagnostic_selected_neighborhood_pvalue_interpolation_comparison_not_calibration"
@@ -362,29 +363,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _json_default(value: object) -> object:
-    if isinstance(value, Path):
-        return str(value)
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
-
-
 def _finite_positive(value: object, default: float) -> float:
     numeric = finite_float(value)
     if math.isfinite(numeric) and numeric > 0.0:
         return float(numeric)
     return float(default)
-
-
-def _bool_value(value: object) -> bool:
-    if pd.isna(value):
-        return False
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes"}
-    return bool(value)
 
 
 def _clean_role_series(rows: pd.DataFrame, column: str) -> pd.Series:
@@ -499,7 +482,7 @@ def _support_and_signal_masks(
     guard_role = _clean_role_series(group, "guard_truth_role")
     decision = _clean_role_series(group, "decision_class")
     sibling_open = (
-        group["sibling_open"].fillna(False).map(_bool_value)
+        group["sibling_open"].fillna(False).map(bool_value)
         if "sibling_open" in group
         else pd.Series(False, index=group.index)
     )
@@ -939,7 +922,7 @@ def _build_group_rows(
             min_support=int(min_support),
         )
         direct_p = _probability_or_nan(row.get("sibling_p_value", math.nan))
-        direct_open = _bool_value(row.get("sibling_open", False))
+        direct_open = bool_value(row.get("sibling_open", False))
         direct_significant = bool(
             direct_open or (math.isfinite(direct_p) and direct_p <= float(alpha))
         )
@@ -1646,7 +1629,7 @@ def run_pvalue_interpolation_comparison(
             "region_tau_s_range": region_tau_s_ranges_out,
         },
     }
-    manifest_out.write_text(json.dumps(manifest, indent=2, default=_json_default) + "\n")
+    manifest_out.write_text(json.dumps(manifest, indent=2, default=diagnostic_json_default) + "\n")
     return {
         "rows": rows_out,
         "summary": summary_out,

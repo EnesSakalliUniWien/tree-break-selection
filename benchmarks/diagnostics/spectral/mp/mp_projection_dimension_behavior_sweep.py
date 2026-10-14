@@ -37,7 +37,10 @@ from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
 
-from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.diagnostics.calibration.statistics.mixed_internal_calibration_sweep import (
+    _select_cases,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
 
@@ -50,21 +53,6 @@ RULE_IDS = (
     "raw_mp_parent_signal_count_floor1",
     "raw_mp_parent_signal_count_floor2",
 )
-
-
-def _parse_csv_list(raw: str) -> tuple[str, ...]:
-    return tuple(part.strip() for part in str(raw).split(",") if part.strip())
-
-
-def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, object]]:
-    cases = get_test_cases_by_suite(suite)
-    if not case_names:
-        return [case.copy() for case in cases]
-    by_name = {str(case["name"]): case for case in cases}
-    missing = [name for name in case_names if name not in by_name]
-    if missing:
-        raise ValueError(f"Unknown case name(s) for suite {suite!r}: {missing!r}.")
-    return [by_name[name].copy() for name in case_names]
 
 
 def _case_with_replicate_seed(case: dict[str, object], replicate_index: int) -> dict[str, object]:
@@ -496,7 +484,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     started = perf_counter()
     outputs = run_mp_projection_dimension_behavior_sweep(
         suite=str(args.suite),
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         n_replicates=int(args.n_replicates),
         output_dir=args.output_dir,
         edge_alpha=float(args.edge_alpha),

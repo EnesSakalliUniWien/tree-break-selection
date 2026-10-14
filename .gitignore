@@ -102,6 +102,8 @@ results/
 cluster_tree_plots/
 cluster_validation_failures/
 reports/audits/generated/
+# New report runs keep bulk outputs here; the artifact check still inventories them.
+/reports/*/generated/
 
 # Benchmark outputs
 benchmarks/**/results/
@@ -145,3 +147,6 @@ local_data/
 
 # Standalone local analysis pipeline
 /analysis/
+
+# Local tool cache for the Serena code assistant
+.serena/

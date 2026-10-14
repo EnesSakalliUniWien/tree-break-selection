@@ -1,0 +1,49 @@
+{
+  "schema_version": "vandermonde_diagnostic/v1",
+  "source_hashes_before_and_after_equal": true,
+  "source_sha256": {
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/spectral/apply_vandermonde_diagnostic.py": "7f0ec9a26d0e0d5dc4b56e749a64654668e0472f2709c83d91cf3c46a3017d21",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/spectral/vandermonde.py": "1c65e03475a9ee4b51aba9763c4581717dc1bb4ac2ded90ca3a28b5112fe46d3",
+    "/Users/berksakalli/Projects/kl-te-cluster/reports/independent_projection_vandermonde_20260928/vandermonde_protocol.md": "40306bcaf17afcb93ca167bb98923bbb1fb1fc11d2c0bb39b704b2f8f2847007",
+    "/Users/berksakalli/Projects/kl-te-cluster/reports/known_branch_skew_20260928/evaluation/manifest.json": "59c8613416666ab542fd88e956e583b61110968ccbe37c590169cd47d12cf98f",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/sibling/known_branch_skew_diagnostic.py": "965dd462337788d98406a363f592a35dd0772b868f82f85d4ef72dfc85f6c5ce"
+  },
+  "reference": "reports/known_branch_skew_20260928/evaluation",
+  "config": {
+    "output_dir": "reports/known_branch_skew_20260928/evaluation",
+    "replicates": 1000,
+    "base_seed": 20260928,
+    "n_per_group": 32,
+    "dimension": 8,
+    "alpha": 0.01,
+    "ridge": 0.0,
+    "patterns": [
+      "global_null",
+      "root_only",
+      "A_deep_only",
+      "separate_deep_branches",
+      "strong_root_weak_A"
+    ],
+    "covariance_profiles": [
+      "identity",
+      "ar1_0.6"
+    ]
+  },
+  "toeplitz_relative_tolerance": 1e-10,
+  "rank_relative_tolerance": 1e-10,
+  "decomposition_source": "https://arxiv.org/abs/1605.02431",
+  "interpretation": "Exact PSD Toeplitz factorization only; no fitting or production changes. Full-rank frequencies are nonunique. Numerical rank is not exact certification.",
+  "generated_at": "2026-09-28T14:44:59.969191+00:00",
+  "outputs": {
+    "decompositions": "reports/independent_projection_vandermonde_20260928/vandermonde/decompositions.csv",
+    "atoms": "reports/independent_projection_vandermonde_20260928/vandermonde/atoms.csv",
+    "structure": "reports/independent_projection_vandermonde_20260928/vandermonde/structure.csv",
+    "structure_summary": "reports/independent_projection_vandermonde_20260928/vandermonde/structure_summary.csv"
+  },
+  "row_counts": {
+    "decompositions": 12,
+    "atoms": 52,
+    "structure": 30000,
+    "structure_summary": 30
+  }
+}

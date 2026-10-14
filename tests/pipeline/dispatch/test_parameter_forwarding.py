@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import inspect
+import re
+
+import pytest
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.types.method_spec import MethodSpec
@@ -56,7 +60,6 @@ def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
             "spectral_internal_distribution_mode": "branch_length_state",
             "continuous_covariance_policy": "guarded_within_child",
             "continuous_covariance_min_child_leaf_count": 8,
-            "neighborhood_bandwidth_profile": ("regional_tau_branch_length_support_only_v1"),
             "enforce_internal_support_thresholds": True,
             "passthrough": True,
         },
@@ -90,9 +93,6 @@ def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
     assert captured["kwargs"]["spectral_internal_distribution_mode"] == ("branch_length_state")
     assert captured["kwargs"]["continuous_covariance_policy"] == "guarded_within_child"
     assert captured["kwargs"]["continuous_covariance_min_child_leaf_count"] == 8
-    assert captured["kwargs"]["neighborhood_bandwidth_profile"] == (
-        "regional_tau_branch_length_support_only_v1"
-    )
     assert captured["kwargs"]["enforce_internal_support_thresholds"] is True
     assert captured["kwargs"]["passthrough"] is True
 
@@ -206,22 +206,21 @@ def test_run_clustering_result_forwards_graphtools_adaptive_k_params(monkeypatch
     assert result.status == "ok"
     assert captured["kwargs"]["adaptive_neighbor_profile"] == "fragmentation_guard"
     assert captured["kwargs"]["adaptive_neighbor_grid"] == (5, 10, 15, 25, 40, 80, 160)
-    assert captured["kwargs"]["tree_builder"] == "linkage"
-    assert captured["kwargs"]["tree_rooting"] == "linkage_root"
+    assert "tree_builder" not in captured["kwargs"]
     assert captured["kwargs"]["tree_linkage_method"] == "average"
     assert captured["kwargs"]["edge_branch_length_variance_policy"] == ("normalized_branch_length")
     assert captured["kwargs"]["branch_length_optimization_method"] == ("fixed_topology_nnls")
 
 
-def test_run_clustering_result_forwards_graphtools_neighbor_joining_tree_params(
+def test_run_clustering_result_forwards_graphtools_tree_strategy_params(
     monkeypatch,
 ):
     captured = {}
     original_spec = METHOD_SPECS["tbs_diffusion_graphtools_adaptive_nnls"]
-    neighbor_joining_params = next(
+    ward_params = next(
         params
         for params in original_spec.param_grid
-        if params["tree_builder"] == "neighbor_joining"
+        if params.get("tree_linkage_method") == "ward"
     )
     capture_runner = _capturing_runner(captured)
 
@@ -238,12 +237,61 @@ def test_run_clustering_result_forwards_graphtools_neighbor_joining_tree_params(
     result = run_clustering_result(
         data_df=_toy_dataframe(),
         method_id="tbs_diffusion_graphtools_adaptive_nnls",
-        params=neighbor_joining_params,
+        params=ward_params,
         seed=42,
     )
 
     assert result.status == "ok"
-    assert captured["kwargs"]["tree_builder"] == "neighbor_joining"
-    assert captured["kwargs"]["tree_rooting"] == "mad"
-    assert captured["kwargs"]["tree_linkage_method"] == "average"
+    assert "tree_builder" not in captured["kwargs"]
+    assert captured["kwargs"]["tree_linkage_method"] == "ward"
     assert captured["kwargs"]["adaptive_neighbor_profile"] == "fragmentation_guard"
+
+
+def test_run_clustering_result_rejects_unknown_tbs_params():
+    with pytest.raises(ValueError, match="sibling_gate_alpha_penaly"):
+        run_clustering_result(
+            data_df=_toy_dataframe(),
+            method_id="tbs",
+            params={
+                "tree_distance_metric": "hamming",
+                "tree_linkage_method": "average",
+                "sibling_gate_alpha_penaly": 50.0,
+            },
+        )
+
+
+def test_tbs_param_allowlist_matches_keys_read_by_dispatch():
+    from benchmarks.shared.runners import dispatch
+
+    source = "".join(
+        inspect.getsource(function)
+        for function in (
+            dispatch._run_tbs_distance_tree_method,
+            dispatch._tbs_branch_length_optimization_kwargs,
+            dispatch._resolve_tbs_sibling_gate_method,
+        )
+    )
+    read_keys = set(re.findall(r'params(?:\.get\(|\[)\s*"([a-z0-9_]+)"', source))
+    assert read_keys == dispatch._TBS_DISTANCE_TREE_PARAM_KEYS
+
+
+def test_every_registered_method_allows_its_registry_params():
+    from benchmarks.shared.benchmark_grid import BENCHMARK_METADATA_KEYS
+    from benchmarks.shared.runners import dispatch
+
+    for method_id, spec in METHOD_SPECS.items():
+        allowed = dispatch._PARAM_KEYS_BY_METHOD[method_id] | BENCHMARK_METADATA_KEYS
+        for params in spec.param_grid:
+            assert set(params) <= allowed, (method_id, sorted(set(params) - allowed))
+
+
+def test_run_clustering_result_rejects_unknown_diffusion_params():
+    with pytest.raises(ValueError, match="edge_branch_length_variance_polcy"):
+        run_clustering_result(
+            data_df=_toy_dataframe(),
+            method_id="tbs_diffusion_adaptive",
+            params={
+                **METHOD_SPECS["tbs_diffusion_adaptive"].param_grid[0],
+                "edge_branch_length_variance_polcy": "normalized",
+            },
+        )

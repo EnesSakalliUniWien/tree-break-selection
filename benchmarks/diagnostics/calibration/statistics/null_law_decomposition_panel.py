@@ -43,10 +43,10 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
     _projection_inputs,
     _select_cases,
-    parse_alpha_grid,
     parse_names,
     regenerate_null_case,
 )
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 
 STUDY_ROLE = "diagnostic_null_law_decomposition_not_calibration"
 SCHEMA_VERSION = "null_law_decomposition_panel/v1"
@@ -515,7 +515,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             output_dir=args.output_dir,
             suite=str(args.suite),
             case_names=parse_names(args.case_names),
-            edge_alphas=parse_alpha_grid(str(args.edge_alphas)),
+            edge_alphas=parse_float_grid(str(args.edge_alphas)),
             sibling_alpha=float(args.sibling_alpha),
             replicates=int(args.replicates),
             base_seed=int(args.base_seed),

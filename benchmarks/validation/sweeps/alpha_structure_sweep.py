@@ -14,7 +14,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import subprocess
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -32,6 +31,7 @@ from benchmarks.shared.result_records import BenchmarkResultRow, benchmark_rows_
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_run import run_single_case
 from benchmarks.shared.util.method_selection import resolve_selected_methods_and_param_sets
+from benchmarks.shared.util.provenance import current_git_state
 from benchmarks.validation.sweeps.alpha_grid_search import (
     DEFAULT_EDGE_ALPHA_GRID,
     DEFAULT_SIBLING_ALPHA_GRID,
@@ -208,29 +208,6 @@ def _quantile(values: pd.Series, q: float) -> float:
     if numeric.empty:
         return math.nan
     return float(numeric.quantile(q))
-
-
-def _current_git_state() -> dict[str, object]:
-    state: dict[str, object] = {}
-    commands = {
-        "commit": ("git", "rev-parse", "HEAD"),
-        "branch": ("git", "branch", "--show-current"),
-        "status_short": ("git", "status", "--short"),
-    }
-    for key, command in commands.items():
-        try:
-            completed = subprocess.run(command, capture_output=True, text=True, check=False)
-        except OSError as exc:
-            state[key] = f"unavailable:{exc}"
-            continue
-        if completed.returncode == 0:
-            state[key] = completed.stdout.strip()
-        else:
-            state[key] = {
-                "returncode": completed.returncode,
-                "stderr": completed.stderr.strip(),
-            }
-    return state
 
 
 def _annotations_for_output(record: Any) -> pd.DataFrame:
@@ -523,7 +500,6 @@ def run_alpha_structure_sweep(config: AlphaStructureSweepConfig) -> dict[str, ob
                 edge_alpha=float(edge_alpha),
                 output_pdf=pair_dir / "_audit_anchor.pdf",
                 plots_root=pair_dir / "plots",
-                matrix_audit=False,
                 verbose=False,
             )
             result_rows.extend(case_rows)
@@ -618,7 +594,7 @@ def run_alpha_structure_sweep(config: AlphaStructureSweepConfig) -> dict[str, ob
             "P-value margins are descriptive boundary distances, not selected-tree "
             "calibration guarantees."
         ),
-        "git": _current_git_state(),
+        "git": current_git_state(),
     }
     (config.output_dir / "alpha_structure_manifest.json").write_text(
         json.dumps(manifest, indent=2, default=_json_default, sort_keys=True) + "\n",

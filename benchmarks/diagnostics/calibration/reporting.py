@@ -27,6 +27,10 @@ def diagnostic_json_default(value: object) -> object:
         return int(value)
     if isinstance(value, np.floating):
         return float(value)
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, frozenset):
+        return sorted(value)
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 

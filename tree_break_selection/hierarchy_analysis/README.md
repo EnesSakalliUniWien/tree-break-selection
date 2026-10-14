@@ -9,7 +9,6 @@ clustering pipeline.
 | ---- | ------- |
 | `tree_decomposition.py` | Public decomposition engine. Prepares or accepts explicit gate annotation bundles, evaluates gates, and emits cluster assignments. |
 | `cluster_assignments.py` | Builds cluster-root and per-sample assignment tables from explicit final tree boundaries. |
-| `bootstrap_consensus.py` | Bootstrap-based stability helpers layered on top of decomposition results. |
 | `decomposition/gates/orchestrator.py` | Runs the edge-divergence gate then the configured sibling-divergence gate and returns a node-indexed annotation bundle. |
 | `decomposition/gates/profiles.py` | Named sibling-gate profile registry and profile-resolution contract. |
 | `decomposition/gates/guards.py` | Optional root-stability and selected-permutation guard layers used by auditable profiles. |
@@ -33,9 +32,12 @@ clustering pipeline.
 - The default sibling gate remains `projected_wald_inflation`. Opt-in
   `fixed_global_chi_square`, `fixed_coordinate_bh`, and `fixed_block_bh` gates
   avoid learning parent PCA projection rows and projection dimension from the
-  same sibling contrast. `fixed_global_chi_square` is the full fixed-subspace
-  chi-square reference; the BH variants aggregate predeclared coordinates or
-  feature blocks. `sibling_gate_alpha_penalty` can be used to apply the
+  same sibling contrast. `fixed_global_chi_square` applies a nominal chi-square
+  tail to the full fixed-coordinate contrast; the BH variants aggregate
+  predeclared coordinates or feature blocks. Continuous covariance can still
+  be estimated from the same observations, and the tree can still be selected
+  from those data. Fixed projection/rank alone therefore does not establish
+  the reference law. `sibling_gate_alpha_penalty` can be used to apply the
   selected-topology alpha penalty validated in diagnostics while keeping the
   public `sibling_alpha` value recorded in metadata.
   `root_stability_guard_threshold` and its subsampling settings expose the

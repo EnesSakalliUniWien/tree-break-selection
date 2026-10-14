@@ -1,0 +1,21 @@
+{
+  "datasets": 50,
+  "local_rows": 600,
+  "traversal_rows": 100,
+  "verified_source_hashes": 11,
+  "regenerated_datasets_and_oracle_statistics": 50,
+  "local_arithmetic_rows": 600,
+  "local_statuses": {
+    "ok": 600
+  },
+  "selected_root_arithmetic_rows": 50,
+  "selected_root_statuses": {
+    "ok": 50
+  },
+  "independently_reconstructed_traversals": 100,
+  "traversal_statuses": {
+    "ok": 100
+  },
+  "scope": "Regenerated inputs, direct oracle quadratic forms and selected-root composition truth, saved arithmetic, source hashes, and independent three-node BH/traversal reconstruction; not a general calibration proof.",
+  "passed": true
+}

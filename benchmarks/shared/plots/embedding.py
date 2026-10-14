@@ -239,8 +239,6 @@ _PARAM_KEY_ALIASES = {
 }
 
 _PARAM_VALUE_ALIASES = {
-    "tree_distribution_kl": "tree_kl",
-    "tree_distribution_js": "tree_js",
     "average": "avg",
     "complete": "complete",
     "single": "single",
@@ -582,7 +580,7 @@ def _fit_embedding_3d(
 def create_clustering_comparison_plot_3d(
     X_original: np.ndarray,
     y_true: np.ndarray,
-    y_kl: np.ndarray,
+    y_tbs: np.ndarray,
     test_case_num: int,
     meta: dict,
 ):
@@ -596,12 +594,12 @@ def create_clustering_comparison_plot_3d(
     expected_clusters, expected_clusters_label = _resolve_expected_cluster_count(
         meta,
         y_true,
-        y_kl,
+        y_tbs,
     )
     baseline_cluster_count = expected_clusters if expected_clusters is not None else 1
     found_clusters = _coerce_nonnegative_cluster_count(meta.get("found_clusters"))
     if found_clusters is None:
-        inferred_found_clusters = _infer_cluster_count_from_labels(y_kl)
+        inferred_found_clusters = _infer_cluster_count_from_labels(y_tbs)
         found_clusters = inferred_found_clusters if inferred_found_clusters is not None else 0
 
     kmeans = KMeans(n_clusters=baseline_cluster_count, random_state=42, n_init=10)
@@ -634,7 +632,7 @@ def create_clustering_comparison_plot_3d(
 
     methods = [
         ("Ground Truth", y_true),
-        ("TBS Divergence", y_kl),
+        ("TBS Divergence", y_tbs),
         ("K-Means", y_kmeans),
         ("Spectral", y_spectral),
     ]
@@ -643,7 +641,7 @@ def create_clustering_comparison_plot_3d(
         expected_clusters or 0,
         found_clusters,
         y_true,
-        y_kl,
+        y_tbs,
         y_kmeans,
         y_spectral,
     )

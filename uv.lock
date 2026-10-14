@@ -4000,7 +4000,6 @@ dependencies = [
     { name = "pydiffmap" },
     { name = "scikit-learn" },
     { name = "scipy" },
-    { name = "statsmodels" },
 ]
 
 [package.optional-dependencies]
@@ -4029,6 +4028,7 @@ all = [
     { name = "scanpy", version = "1.11.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scanpy", version = "1.12.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "scikit-bio" },
+    { name = "statsmodels" },
     { name = "umap-learn" },
     { name = "vulture" },
 ]
@@ -4145,8 +4145,8 @@ requires-dist = [
     { name = "scikit-bio", marker = "extra == 'all'", specifier = ">=0.6.0" },
     { name = "scikit-bio", marker = "extra == 'viz'", specifier = ">=0.6.0" },
     { name = "scikit-learn", specifier = ">=1.3.0" },
-    { name = "scipy", specifier = ">=1.10.0" },
-    { name = "statsmodels", specifier = ">=0.14.0" },
+    { name = "scipy", specifier = ">=1.11.0" },
+    { name = "statsmodels", marker = "extra == 'all'", specifier = ">=0.14.0" },
     { name = "umap-learn", marker = "extra == 'all'", specifier = ">=0.5.11" },
     { name = "umap-learn", marker = "extra == 'viz'", specifier = ">=0.5.11" },
     { name = "vulture", marker = "extra == 'all'", specifier = ">=2.15" },

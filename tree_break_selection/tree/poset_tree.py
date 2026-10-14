@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import networkx as nx
 
+from tree_break_selection.core_utils.tree_utils import tree_root
 from tree_break_selection.tree.distributions import populate_distributions
 from tree_break_selection.tree.topology import (
     compute_descendant_leaf_sets,
@@ -49,15 +50,9 @@ class PosetTree(nx.DiGraph):
 
     def root(self) -> object:
         """Return the cached root node, discovering it if necessary."""
-        if "root" in self.graph:
-            return self.graph["root"]
-
-        roots = [u for u, d in self.in_degree() if d == 0]
-        if len(roots) != 1:
-            raise ValueError(f"Expected one root, got {roots}")
-        r = roots[0]
-        self.graph["root"] = r
-        return r
+        root = tree_root(self)
+        self.graph["root"] = root
+        return root
 
     def get_leaves(
         self,

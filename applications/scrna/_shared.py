@@ -10,6 +10,19 @@ import numpy as np
 import pandas as pd
 
 
+def add_generated_at(fig, generated_at: str) -> None:
+    """Stamp a figure's lower-right corner with its generation time."""
+    fig.text(
+        0.99,
+        0.01,
+        f"Generated at: {generated_at}",
+        ha="right",
+        va="bottom",
+        fontsize=7,
+        color="#6b7280",
+    )
+
+
 def json_default(value: Any) -> Any:
     """Serialize standard scRNA report values without changing their schema."""
     if isinstance(value, np.integer):

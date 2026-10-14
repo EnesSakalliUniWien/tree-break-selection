@@ -21,7 +21,11 @@ import pandas as pd
 from scipy import stats
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
-from benchmarks.diagnostics.calibration.root.root_values import finite_float, require_columns
+from benchmarks.diagnostics.calibration.root.root_values import (
+    finite_float,
+    finite_median,
+    require_columns,
+)
 
 SCHEMA_VERSION = "root_selected_tie_cell_burden/v1"
 STUDY_ROLE = "diagnostic_root_selected_tie_cell_burden_not_calibration"
@@ -121,12 +125,6 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_NEAR_ZERO_TOLERANCE,
     )
     return parser.parse_args()
-
-
-def _finite_median(values: pd.Series) -> float:
-    numeric = pd.to_numeric(values, errors="coerce")
-    numeric = numeric[np.isfinite(numeric)]
-    return float(numeric.median()) if not numeric.empty else math.nan
 
 
 def _safe_fraction(numerator: int, denominator: int) -> float:
@@ -287,10 +285,10 @@ def build_root_selected_tie_cell_burden_rows(
                     log_burden / float(construction_count)
                 ),
                 "root_tie_cell_max_multiplicity": float(np.max(multiplicity)),
-                "root_tie_cell_median_multiplicity": _finite_median(pd.Series(multiplicity)),
+                "root_tie_cell_median_multiplicity": finite_median(pd.Series(multiplicity)),
                 "root_tie_rank_log_burden": rank_log_burden,
                 "root_tie_rank_mean_fraction": float(np.mean(selected_tie_rank_fraction)),
-                "root_tie_rank_median_fraction": _finite_median(
+                "root_tie_rank_median_fraction": finite_median(
                     pd.Series(selected_tie_rank_fraction)
                 ),
                 "root_tie_rank_max_fraction": float(np.max(selected_tie_rank_fraction)),

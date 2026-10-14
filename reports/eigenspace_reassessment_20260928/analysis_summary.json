@@ -1,0 +1,21 @@
+{
+  "independent_datasets": 4200,
+  "method_alpha_attempts": 23800,
+  "statuses": {
+    "ok": 19595,
+    "skip": 4201,
+    "unsupported": 4
+  },
+  "audit_errors": 0,
+  "unavailable_reasons": {
+    "tbs_diffusion uses Hamming diffusion and requires binary or one-hot feature matrices; continuous FeatureSpace inputs are unsupported.": 2100,
+    "tbs_diffusion_adaptive_nnls uses Hamming diffusion and requires binary or one-hot feature matrices; continuous FeatureSpace inputs are unsupported.": 2100,
+    "UnsupportedReason(code=<UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT: 'empirical_null_no_internal_support'>, stage='sibling_calibration', message='The selected hierarchy contains focal sibling tests but no admissible internal empirical-null calibration support.', evidence=UnsupportedEvidence(focal_record_count=63, admissible_support_count=0, invalid_record_count=63, upstream_tested_count=126, upstream_rejected_count=126))": 4,
+    "tbs_diffusion_adaptive_nnls uses pydiffmap variable-bandwidth diffusion, but the largest exact duplicate block has 8 rows. pydiffmap's internal NNKDE query size is 8, which can produce zero local bandwidths and non-finite diffusion weights.": 1
+  },
+  "primary_null_cells": 30,
+  "primary_null_cells_with_results": 24,
+  "primary_null_cells_holm_excess_partitions": 20,
+  "kernel_adaptive_fraction_in_full_pipeline": null,
+  "bootstrap_intervals": "Descriptive percentile 95%, 2000 dataset draws, seed2026092897; no simultaneous or selection claim"
+}

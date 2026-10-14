@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-09-10
+updated: 2026-09-28
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -34,6 +34,9 @@ renamed, or promoted.
 
 ### Project
 
+- [[eigenvalue-block-tree-comparison]] - matched 11-case comparison of
+  eigenvalue blocks across eight tree inference methods, separating eigenvalue
+  gaps, sample geometry, rooted tree differences, TBS partitions and rank sensitivity.
 - [[project-overview]] - concise map of the Tree-Break Selection repository, source surfaces,
   method purpose, and implementation entry points.
 - [[adaptive-diffusion-nnls-method-library-audit]] - executed method and
@@ -43,6 +46,8 @@ renamed, or promoted.
 
 ### Tools
 
+- [[generated-report-files]] - generated-output classification, checksums,
+  storage decisions, Git checks and archive restoration.
 - [[aws-selected-tail-equation-study]] - AWS Batch sharding and merge workflow
   for large selected-tail equation diagnostics, with row-level records and
   namespaced independent simulation ids.
@@ -55,6 +60,45 @@ renamed, or promoted.
   and unclassified legacy folders.
 
 ### Source Summaries
+
+- [[branch-distribution-variance-benchmark]] - matched internal-distribution and
+  branch-variance comparison, discovery-only compatibility, and the distinct
+  effects on node p-values, calibration support and final partitions.
+- [[dead-code-alias-duplication-audit]] - tool-first single-agent audit; one
+  unused private helper, live duplicate helpers and subsequent removal of
+  three aliases in favor of their original constants.
+- [[naming-and-claims-review]] - three Luna reviews and Sol/cavecrew corrections
+  to independence, calibration, PCA labels, NNLS units and diffusion provenance.
+- [[independent-diffusion-nnls-benchmark]] - discovery-only diffusion/NNLS with
+  independent Gaussian testing; matched benchmarks separate changed branch
+  geometry from unchanged known-covariance p-values.
+- [[independent-gaussian-production-benchmark]] - production discovery/test
+  separation with known Gaussian covariance, conditional energy p-values and
+  matched eight-tree benchmarks; single-matrix and unsupported cases remain explicit.
+- [[distribution-equation-fitting-comparison]] - recovers ratio-fitting methods
+  and compares nominal, independently fitted and exact conditional Gaussian
+  distributions, with Wolfram checks and explicit full-pipeline limits.
+- [[lower-dimension-degrees-of-freedom-audit]] - distinguishes retained-rank
+  bookkeeping from the justified null law, recovers previous research, and
+  demonstrates contrast-selected rank miscalibration in Gaussian controls.
+- [[passthrough-pvalue-normalisation-audit]] - separates unchanged node p-values
+  from changed traversal reach and partitions, with normalisation and upstream
+  calibration audits.
+- [[independent-projection-vandermonde-control]] - independent basis/rank
+  controls isolate same-data PCA distortion; guarded Vandermonde application
+  records applicability, nonuniqueness and remaining projection questions.
+- [[vandermonde-reference-notes]] - primary-source theorem and numerical
+  applicability contract for PSD Toeplitz Vandermonde decomposition.
+- [[known-branch-skew-diagnostic]] - June 4 known null/signal branch plan
+  implemented in 10,000 Gaussian datasets, separating covariance, PCA/MP,
+  selected-root inference, and actual traversal recovery; matched passthrough
+  rerun records descendant recovery and additional false-split opportunities.
+- [[eigenspace-benchmark-calibration-reassessment]] - matched rank-repair
+  benchmark, isolated adaptive-Wald nulls and 4,200 independent full-pipeline
+  datasets showing remaining calibration failures alongside signal recovery.
+- [[eigensystem-api-reference-notes]] - official left/right eigenvector,
+  symmetric eigensolver and full-subspace principal-angle definitions, with
+  locally verified runtime distinctions.
 
 - [[real-go-ic-readability-rerun-20260919]] - both real matrices rerun with
   numerical comparisons, updated readable PDFs, and long-mode layout checks.
@@ -622,6 +666,11 @@ renamed, or promoted.
 
 ### Analyses
 
+- [[eigenvector-calibration-construction-review]] - three-agent review of
+  repeated-eigenspace truncation, adaptive Wald rank, principal angles,
+  left/right pairs, dense whitening, documentation conflicts and unused modules,
+  with the subsequent verified rank-group repair and remaining calibration gaps.
+
 - [[topology-diffusion-pdf-cdf-spectral-relationship-audit-20260730]] -
   all-method construction/diffusion PDF-CDF audit showing raw sibling
   projected-Wald statistics are selected, scaled quadratic forms rather than
@@ -640,7 +689,7 @@ renamed, or promoted.
   benchmark claim levels; records the fresh smoke/regression results,
   fail-closed calibration gaps, and measured runtime bottleneck.
 - [[tree-construction-method-map]] - exact map from feature geometry through
-  linkage, neighbor joining, or IQ-TREE topology, rooting, `PosetTree`
+  linkage topology, rooting, `PosetTree`
   promotion, branch-length fitting, and application-specific use; also marks
   consensus, gates, plotting, and BranchArchitect as downstream consumers.
 - [[adaptive-alpha-gate-design-20260628]] - adaptive-resolution design for TBS

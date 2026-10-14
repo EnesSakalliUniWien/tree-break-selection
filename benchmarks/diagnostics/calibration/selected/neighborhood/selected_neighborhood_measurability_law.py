@@ -20,10 +20,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-from benchmarks.diagnostics.calibration.values import finite_float, string_value
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float, string_value
 
 SCHEMA_VERSION = "selected_neighborhood_measurability_law/v2"
 STUDY_ROLE = "diagnostic_selected_neighborhood_measurability_law_not_calibration"
@@ -193,24 +193,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _json_default(value: object) -> object:
-    if isinstance(value, Path):
-        return str(value)
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
-
-
-def _bool_value(value: object) -> bool:
-    if pd.isna(value):
-        return False
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes"}
-    return bool(value)
-
-
 def _probability_or_nan(value: object, *, tolerance: float = PROBABILITY_TOLERANCE) -> float:
     numeric = finite_float(value)
     if not math.isfinite(numeric):
@@ -265,7 +247,7 @@ def _first_probability(row: pd.Series, columns: tuple[str, ...]) -> float:
 
 def _guard_blocked(row: pd.Series) -> bool:
     return any(
-        _bool_value(row[column]) if column in row else False
+        bool_value(row[column]) if column in row else False
         for column in (
             "explicit_guard_blocked",
             "root_stability_guard_blocked",
@@ -277,7 +259,7 @@ def _guard_blocked(row: pd.Series) -> bool:
 
 def _direct_contract_status(row: pd.Series) -> tuple[bool, str, float, bool]:
     p_value = _probability_or_nan(row.get("sibling_p_value", math.nan))
-    sibling_open = _bool_value(row.get("sibling_open", False))
+    sibling_open = bool_value(row.get("sibling_open", False))
     if _guard_blocked(row):
         return False, "selected_family_or_root_guard_blocked", p_value, sibling_open
     if not math.isfinite(p_value):
@@ -598,7 +580,7 @@ def build_measurability_law_rows(
                 row.get("sibling_projection_dimension", math.nan)
             ),
             "topology_incidence_role": string_value(row, "topology_incidence_role"),
-            "topology_pass_through_candidate": _bool_value(
+            "topology_pass_through_candidate": bool_value(
                 row.get("topology_pass_through_candidate", False)
             ),
             "guard_truth_role": string_value(row, "guard_truth_role"),
@@ -1004,7 +986,7 @@ def run_selected_neighborhood_measurability_law(
             "summary": summary_out,
         },
     }
-    manifest_out.write_text(json.dumps(manifest, indent=2, default=_json_default) + "\n")
+    manifest_out.write_text(json.dumps(manifest, indent=2, default=diagnostic_json_default) + "\n")
     return {"rows": rows_out, "summary": summary_out, "manifest": manifest_out}
 
 

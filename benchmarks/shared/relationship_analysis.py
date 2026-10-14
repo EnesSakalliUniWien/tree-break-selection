@@ -17,6 +17,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import norm, spearmanr
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
+from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.plots.cover_page import GROUP_ORDER, category_group
 from benchmarks.shared.result_records import NUMERIC_RESULT_COLUMNS, RESULT_COLUMNS
 from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
@@ -639,33 +640,33 @@ def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
 
     sibling_valid = pd.Series(True, index=df.index, dtype=bool)
     if "Sibling_Divergence_Skipped" in df.columns:
-        sibling_valid &= ~_coerce_bool_series(df["Sibling_Divergence_Skipped"])
+        sibling_valid &= ~bool_series(df["Sibling_Divergence_Skipped"])
     if "Sibling_Divergence_Invalid" in df.columns:
-        sibling_valid &= ~_coerce_bool_series(df["Sibling_Divergence_Invalid"])
+        sibling_valid &= ~bool_series(df["Sibling_Divergence_Invalid"])
     sibling_valid &= df["Sibling_BH_Different"].notna()
     sibling_total = int(sibling_valid.sum())
     if sibling_total > 0:
         sig_sibling_fraction = float(
-            _coerce_bool_series(df.loc[sibling_valid, "Sibling_BH_Different"]).mean()
+            bool_series(df.loc[sibling_valid, "Sibling_BH_Different"]).mean()
         )
     else:
         sig_sibling_fraction = np.nan
 
     edge_valid = pd.Series(df["parent_node"].notna(), index=df.index, dtype=bool)
     if "Child_Parent_Divergence_Invalid" in df.columns:
-        edge_valid &= ~_coerce_bool_series(df["Child_Parent_Divergence_Invalid"])
+        edge_valid &= ~bool_series(df["Child_Parent_Divergence_Invalid"])
     if "Child_Parent_Divergence_Significant" in df.columns:
         edge_valid &= df["Child_Parent_Divergence_Significant"].notna()
     edge_total = int(edge_valid.sum())
     if "Child_Parent_Divergence_Significant" in df.columns and edge_total > 0:
         sig_edge_fraction = float(
-            _coerce_bool_series(df.loc[edge_valid, "Child_Parent_Divergence_Significant"]).mean()
+            bool_series(df.loc[edge_valid, "Child_Parent_Divergence_Significant"]).mean()
         )
     else:
         sig_edge_fraction = np.nan
 
     is_leaf = (
-        _coerce_bool_series(df["is_leaf"]) if "is_leaf" in df.columns else df["leaf_count"].eq(1)
+        bool_series(df["is_leaf"]) if "is_leaf" in df.columns else df["leaf_count"].eq(1)
     )
     internal_nodes = float((~is_leaf).sum())
     if "branch_length" in df.columns:
@@ -706,14 +707,7 @@ def _select_root_split_pvalue(root_row: pd.Series) -> float:
 def _root_split_rejected_from_sibling_decision(root_row: pd.Series) -> bool:
     if "Sibling_BH_Different" not in root_row.index or pd.isna(root_row["Sibling_BH_Different"]):
         return True
-    return not bool(_coerce_bool_series(pd.Series([root_row["Sibling_BH_Different"]])).iloc[0])
-
-
-def _coerce_bool_series(series: pd.Series) -> pd.Series:
-    if series.dtype == bool:
-        return series.fillna(False)
-    lowered = series.astype(str).str.strip().str.lower()
-    return lowered.isin({"1", "true", "t", "yes"})
+    return not bool(bool_series(pd.Series([root_row["Sibling_BH_Different"]])).iloc[0])
 
 
 def _fit_relationship_model(

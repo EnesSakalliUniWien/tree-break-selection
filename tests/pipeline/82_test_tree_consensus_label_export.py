@@ -10,21 +10,17 @@ import pytest
 from benchmarks.shared.result_records import ComputedResultRecord
 from benchmarks.shared.result_records.factory import build_benchmark_result_row
 from benchmarks.shared.tree_consensus import (
-    TREE_CONSENSUS_STRATEGIES,
     export_tree_consensus_label_files,
     write_tree_consensus_artifacts,
 )
 from benchmarks.shared.util.case_run import run_single_case
+from tree_break_selection.tree.construction import SUPPORTED_LINKAGE_METHODS
 
 
 def _run_id(tree: str) -> str:
-    suffix = (
-        "tree_builder_neighbor_joining"
-        if tree == "neighbor_joining"
-        else f"tree_linkage_method_{tree}"
-    )
     return (
-        f"tbs_diffusion_graphtools_adaptive_nnls::graphtools_adaptive_k_tree_strategy__{suffix}__r0"
+        "tbs_diffusion_graphtools_adaptive_nnls::graphtools_adaptive_k_tree_strategy__"
+        f"tree_linkage_method_{tree}__r0"
     )
 
 
@@ -56,7 +52,7 @@ def _result_rows(case_id: str, *, test_case: int) -> pd.DataFrame:
                 "davies_bouldin_index": 2.0 + index * 0.01,
                 "largest_cluster_fraction": 0.5 if tree == "single" else 0.25,
             }
-            for index, tree in enumerate(TREE_CONSENSUS_STRATEGIES)
+            for index, tree in enumerate(SUPPORTED_LINKAGE_METHODS)
         ]
     )
 
@@ -143,8 +139,8 @@ def test_write_tree_consensus_artifacts_outputs_expected_files(tmp_path: Path) -
         assert path.exists()
 
     summary = pd.read_csv(artifacts.summary_csv)
-    assert summary.loc[0, "result_rows"] == 16
-    assert summary.loc[0, "expected_result_rows"] == 16
+    assert summary.loc[0, "result_rows"] == 14
+    assert summary.loc[0, "expected_result_rows"] == 14
     assert summary.loc[0, "label_integrity_pass"] is True or bool(
         summary.loc[0, "label_integrity_pass"]
     )
@@ -262,7 +258,7 @@ def test_run_single_case_exports_tree_consensus_labels(
     )
 
     def _fake_run_single_method_once(**_kwargs):
-        return row, record, None
+        return row, record
 
     monkeypatch.setattr(
         "benchmarks.shared.util.case_run.run_single_method_once",
@@ -279,7 +275,6 @@ def test_run_single_case_exports_tree_consensus_labels(
         edge_alpha=0.001,
         output_pdf=None,
         plots_root=tmp_path / "plots",
-        matrix_audit=False,
         verbose=False,
         tree_consensus_label_dir=label_dir,
     )

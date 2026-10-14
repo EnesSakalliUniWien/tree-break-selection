@@ -56,7 +56,6 @@ def benchmark_cluster_algorithm(
     method_params: dict[str, list[dict[str, object]]] | None = None,
     concat_plots_pdf: bool = False,
     concat_output: str | None = None,
-    matrix_audit: bool = False,
     include_cover_pages: bool = True,
     include_validation_page: bool = True,
     tree_consensus_label_dir: str | Path | None = None,
@@ -95,8 +94,6 @@ def benchmark_cluster_algorithm(
         When True, stream generated benchmark plots directly into a PDF.
     concat_output : str, optional
         Output PDF path. Defaults to ``plots_root / f'benchmark_plots_{timestamp}.pdf'`` when omitted.
-    matrix_audit : bool, default=False
-        If True, export TensorBoard summaries for key matrices per test case.
     include_cover_pages : bool, default=True
         When streaming plots to PDF, include global benchmark cover/section pages.
         Set False for per-case PDFs that will be merged later by an outer runner.
@@ -179,7 +176,6 @@ def benchmark_cluster_algorithm(
                 edge_alpha=edge_alpha,
                 output_pdf=output_pdf,
                 plots_root=plots_root,
-                matrix_audit=matrix_audit,
                 verbose=verbose,
                 tree_consensus_label_dir=tree_consensus_label_dir,
             )

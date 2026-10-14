@@ -20,16 +20,17 @@ from .diffusion import (
     resolve_adaptive_epsilon_from_scaled_sq,
     resolve_neighbor_search_k,
 )
-from .invariant_equivariant import (
-    InvariantEquivariantSpace,
-    decompose_invariant_equivariant_space,
+from .leading_axes import (
+    LeadingAxesSpace,
+    decompose_leading_axes_space,
     standardize_columns,
 )
 
 __all__ = [
+    "LeadingAxesSpace",
+    "decompose_leading_axes_space",
     "AdaptiveCosineSpace",
     "DiffusionGeometry",
-    "InvariantEquivariantSpace",
     "SpectralBlock",
     "adaptive_spectral_blocks",
     "adaptive_diffusion_geometry",
@@ -38,7 +39,6 @@ __all__ = [
     "compute_diffusion_coordinates",
     "coordinates_for_block",
     "cosine_eigendecomposition",
-    "decompose_invariant_equivariant_space",
     "hamming_knn_diffusion_geometry",
     "separate_adaptive_cosine_space",
     "resolve_adaptive_epsilon",

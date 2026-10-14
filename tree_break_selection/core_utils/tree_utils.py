@@ -12,6 +12,16 @@ from collections.abc import Iterator
 import networkx as nx
 
 
+def tree_root(tree: nx.DiGraph) -> object:
+    """Return the cached ``graph["root"]`` or the single node without a parent."""
+    if "root" in tree.graph:
+        return tree.graph["root"]
+    roots = [node for node, degree in tree.in_degree() if degree == 0]
+    if len(roots) != 1:
+        raise ValueError(f"Expected one root, got {roots!r}.")
+    return roots[0]
+
+
 def bottom_up_nodes(tree: nx.DiGraph) -> Iterator[object]:
     """Yield nodes in bottom-up order (leaves first, root last).
 
@@ -81,4 +91,5 @@ def compute_node_depths(tree: nx.DiGraph) -> dict[object, int]:
 __all__ = [
     "bottom_up_nodes",
     "compute_node_depths",
+    "tree_root",
 ]

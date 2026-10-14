@@ -42,7 +42,10 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
 
-from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
+    _selected_cases,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
 
@@ -120,19 +123,11 @@ class CaseAuditTables:
     record_audit: pd.DataFrame
 
 
-def parse_csv_list(raw: str) -> tuple[str, ...]:
-    values = tuple(part.strip() for part in str(raw).split(",") if part.strip())
+def parse_case_names(raw: str) -> tuple[str, ...]:
+    values = parse_csv_list(raw)
     if not values:
         raise ValueError("case_names must contain at least one case name.")
     return values
-
-
-def _selected_cases(case_names: Sequence[str]) -> list[dict[str, object]]:
-    case_by_name = {str(case["name"]): case for case in get_default_test_cases()}
-    missing = [case_name for case_name in case_names if case_name not in case_by_name]
-    if missing:
-        raise ValueError(f"Unknown benchmark case name(s): {missing!r}.")
-    return [case_by_name[case_name].copy() for case_name in case_names]
 
 
 def _validate_edge_table(edge_df: pd.DataFrame) -> None:
@@ -784,7 +779,7 @@ def _parse_args() -> argparse.Namespace:
 def main() -> None:
     args = _parse_args()
     tables = run_sibling_null_prior_interpolation_audit(
-        case_names=parse_csv_list(str(args.case_names)),
+        case_names=parse_case_names(str(args.case_names)),
         output_dir=Path(args.output_dir),
     )
     print(tables.case_summary.to_string(index=False))

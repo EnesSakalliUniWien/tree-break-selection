@@ -827,7 +827,6 @@ def _write_tbs_tree_diagnostics(
         "adaptive_projection_dimension_energy_fraction": result_extra.get(
             "adaptive_projection_dimension_energy_fraction"
         ),
-        "tree_builder": result_extra.get("tree_builder"),
         "branch_length_optimization_method": result_extra.get(
             "branch_length_optimization_method",
             config.params.get("branch_length_optimization_method", "linkage_ultrametric"),

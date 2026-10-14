@@ -10,55 +10,28 @@ contract.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import subprocess
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
 import numpy as np
 import pandas as pd
 
+from applications.scrna._shared import sha256_file
+
 CANONICAL_FEATURE_ROOT = Path("data/feature_matrices")
 DEFAULT_RESULT_ROOTS = (Path("results/analyses"), Path("raw/assets/benchmark-results"))
 
 
-@dataclass(frozen=True)
-class ResultKind:
-    code: str
-    preferred_root: str
-    description: str
-
-
 RESULT_KINDS = (
-    ResultKind(
-        "go_annotation_pipeline",
-        "results/analyses/<dataset_slug>_go_annotation_pipeline_<YYYYMMDD_HHMMSS>",
-        "Canonical wrapper root with dataset inventory, quality, current subspace, optional audit, and level audit stages.",
-    ),
-    ResultKind(
-        "current_adaptive_diffusion_subspace_tree",
-        "results/analyses/<dataset_slug>_current_adaptive_diffusion_subspace_tree_<YYYYMMDD_HHMMSS>",
-        "Direct current-method adaptive-diffusion cosine-subspace tree run.",
-    ),
-    ResultKind(
-        "feature_matrix_quality",
-        "raw/assets/benchmark-results/<dataset_slug>_feature_matrix_quality_<YYYYMMDD>",
-        "Retained evidence for matrix-quality-only reports.",
-    ),
-    ResultKind(
-        "method_version_tree_matrix",
-        "raw/assets/benchmark-results/<dataset_slug>_method_version_tree_matrix_<suffix>_<YYYYMMDD>",
-        "Candidate-generation or method/tree-geometry audit matrix.",
-    ),
-    ResultKind(
-        "go_ic_tree_plots",
-        "raw/assets/benchmark-results/<dataset_slug>_go_ic_tree_plots_<YYYYMMDD>",
-        "Historical mixed-method GO-IC reader deck; not the canonical final method level.",
-    ),
+    "go_annotation_pipeline",
+    "current_adaptive_diffusion_subspace_tree",
+    "feature_matrix_quality",
+    "method_version_tree_matrix",
+    "go_ic_tree_plots",
 )
 
 
@@ -110,14 +83,6 @@ def canonical_matrix_name(path: Path) -> str:
     if path.name.startswith("feature_matrix_") and re.search(r"[\s()]", path.name) is None:
         return path.name
     return f"feature_matrix_{dataset_slug_from_matrix_name(path)}.tsv"
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def tracked_paths(paths: Sequence[Path]) -> set[str]:
@@ -269,8 +234,8 @@ def duplicate_inventory(matrix_frame: pd.DataFrame) -> pd.DataFrame:
 def infer_result_kind(path: Path) -> str:
     name = path.name
     for kind in RESULT_KINDS:
-        if kind.code in name:
-            return kind.code
+        if kind in name:
+            return kind
     if (path / "pipeline_manifest.json").exists():
         return "go_annotation_pipeline"
     if (path / "connected_results_manifest.json").exists():

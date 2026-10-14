@@ -4,20 +4,16 @@ import numpy as np
 import pandas as pd
 import pytest
 from benchmarks.shared.tree_consensus import (
-    TREE_CONSENSUS_STRATEGIES,
     build_tree_consensus_tables,
     tree_inference_from_run_id,
 )
+from tree_break_selection.tree.construction import SUPPORTED_LINKAGE_METHODS
 
 
 def _run_id(tree: str) -> str:
-    suffix = (
-        "tree_builder_neighbor_joining"
-        if tree == "neighbor_joining"
-        else f"tree_linkage_method_{tree}"
-    )
     return (
-        f"tbs_diffusion_graphtools_adaptive_nnls::graphtools_adaptive_k_tree_strategy__{suffix}__r0"
+        "tbs_diffusion_graphtools_adaptive_nnls::graphtools_adaptive_k_tree_strategy__"
+        f"tree_linkage_method_{tree}__r0"
     )
 
 
@@ -88,14 +84,13 @@ def _baseline_rows(case_id: str) -> list[dict[str, object]]:
             largest=0.3,
             ari=0.5,
         )
-        for tree in TREE_CONSENSUS_STRATEGIES
+        for tree in SUPPORTED_LINKAGE_METHODS
     ]
 
 
 def test_tree_inference_from_run_id_recovers_grid_cells() -> None:
     assert tree_inference_from_run_id(_run_id("average")) == "average"
     assert tree_inference_from_run_id(_run_id("ward")) == "ward"
-    assert tree_inference_from_run_id(_run_id("neighbor_joining")) == "neighbor_joining"
     with pytest.raises(ValueError, match="Cannot infer tree strategy"):
         tree_inference_from_run_id("tbs::default")
 
@@ -111,7 +106,7 @@ def test_selector_penalizes_fragmentation_against_better_internal_fit() -> None:
                 davies_bouldin_index=4.0,
                 largest_cluster_fraction=0.16,
             )
-        if tree_inference_from_run_id(str(row["run_id"])) == "neighbor_joining":
+        if tree_inference_from_run_id(str(row["run_id"])) == "weighted":
             row.update(
                 found_clusters=3,
                 silhouette_score=0.30,
@@ -121,14 +116,14 @@ def test_selector_penalizes_fragmentation_against_better_internal_fit() -> None:
             )
     labels = _labels(
         "fragmented",
-        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in TREE_CONSENSUS_STRATEGIES},
+        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in SUPPORTED_LINKAGE_METHODS},
     )
 
     tables = build_tree_consensus_tables(pd.DataFrame(rows), labels)
 
     selected = tables.selection.iloc[0]
     assert selected["selector_status"] == "selected"
-    assert selected["selected_tree_inference"] == "neighbor_joining"
+    assert selected["selected_tree_inference"] == "weighted"
 
 
 def test_selector_applies_dominant_cluster_guard() -> None:
@@ -153,7 +148,7 @@ def test_selector_applies_dominant_cluster_guard() -> None:
             )
     labels = _labels(
         "dominant",
-        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in TREE_CONSENSUS_STRATEGIES},
+        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in SUPPORTED_LINKAGE_METHODS},
     )
 
     tables = build_tree_consensus_tables(pd.DataFrame(rows), labels)
@@ -166,7 +161,7 @@ def test_selector_prefers_weighted_for_equivalent_topology_ties() -> None:
     rows = _baseline_rows("tie")
     labels = _labels(
         "tie",
-        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in TREE_CONSENSUS_STRATEGIES},
+        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in SUPPORTED_LINKAGE_METHODS},
     )
 
     tables = build_tree_consensus_tables(pd.DataFrame(rows), labels)
@@ -179,7 +174,7 @@ def test_selector_is_invariant_to_external_metrics() -> None:
     rows = _baseline_rows("external")
     labels = _labels(
         "external",
-        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in TREE_CONSENSUS_STRATEGIES},
+        {tree: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2] for tree in SUPPORTED_LINKAGE_METHODS},
     )
     baseline = build_tree_consensus_tables(pd.DataFrame(rows), labels).selection
     perturbed = pd.DataFrame(rows)

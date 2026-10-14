@@ -60,7 +60,7 @@ def test_unsupported_run_bypasses_metrics_and_computed_outputs(monkeypatch):
         "requires_precomputed_tbs_distance": False,
     }
 
-    row, computed_result, method_audit = method_execution.run_single_method_once(
+    row, computed_result = method_execution.run_single_method_once(
         method_id="kmeans",
         spec=MethodSpec(name="K-Means", runner=lambda *_a, **_k: _unsupported_result(), param_grid=[]),
         params={"n_clusters": 2},
@@ -75,11 +75,9 @@ def test_unsupported_run_bypasses_metrics_and_computed_outputs(monkeypatch):
         meta=meta,
         distance_matrix=None,
         distance_condensed=None,
-        matrix_audit=False,
     )
 
     assert computed_result is None
-    assert method_audit is None
     assert row.status == "unsupported"
     assert row.found_clusters == 0
     assert row.labels_length == 0

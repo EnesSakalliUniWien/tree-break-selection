@@ -7053,3 +7053,756 @@ version comparison report and wiki source summary. Production code unchanged.
   reports contain 36 interactome pages and 45 Julia pages.
 - Added a 39-mode layout regression case. Eighteen plot tests, four pipeline
   tests, scoped Ruff, and whitespace checks passed. No commit or push.
+
+## 2026-09-26 — Review eigenvalue numbering and subspace grouping
+
+- Verified one-based inclusive mode ranges and zero-based block identifiers;
+  replayed all 27 saved real-analysis blocks and checked the implemented BIC
+  against exhaustive enumeration on 40 small spectra. Six separation tests passed.
+- Reproduced a repeated-eigenvalue boundary defect: rotating a tied eigenspace
+  preserves the operator but changes block distances when segmentation splits it.
+  Rank truncation has the same missing tie protection. Recorded the evidence in
+  [[current-adaptive-diffusion-subspace-tree-pipeline]]. No algorithm changes.
+
+## 2026-09-26 — Preserve repeated eigenvalues in cosine separation
+
+- Added shared numerical-tie detection; segmentation and common-mode isolation
+  respect whole groups, and rank truncation extends through the boundary group.
+  Documented the target-rank behavior in the API and CLI help.
+- Added 12 regression cases covering exact/numerical ties, eigenspace rotations,
+  rank extension and unchanged distinct-spectrum grouping. All 27 saved real
+  block boundaries remain unchanged. Exhaustive constrained BIC enumeration
+  matched 40 tied spectra, including isolated-common-mode offsets.
+- Full `make check` passed: 668 tests, Ruff, dependency/dead-code audits and
+  wiki lint. No commit or push.
+
+## 2026-09-26 — Benchmark the eigenvalue tie fix
+
+- Completed 342 block runs comparing committed `f34f59ca` cosine separation
+  with the fixed working module, using shared downstream diffusion/TBS code.
+  Covered all 42 binary cases, both real GO matrices with both weightings,
+  and one tied-rank stress case. No case preparation or separation failures.
+- All 155 jointly successful ordinary partitions are exactly unchanged,
+  including all 27 real blocks. Both versions retain the same 12 unsupported
+  binary blocks and two binary diffusion failures. The tied-rank fixture
+  extends from 10 to 40 retained modes; both tail partitions have one cluster.
+- Recorded source/input hashes, numerical artifacts, runtimes and stress checks
+  under `results/analyses/eigenvalue_tie_benchmark_20260926/`, summarized in
+  [[current-adaptive-diffusion-subspace-tree-pipeline]]. No commit or push.
+
+## 2026-09-26 — Compare eigenvalue blocks across tree inference methods
+
+- Added a reproducible diagnostic using the existing space-separation and TBS
+  interfaces. Ran all 11 method_proof cases with matched data/seeds over seven
+  linkage methods and neighbor joining, for raw and adaptive-diffusion geometry.
+- Recorded 47 blocks and 752 attempts: 525 completed, 170 nonmonotone-tree
+  failures and 57 unsupported outcomes. Stored spectra, block/distance/tree/
+  partition comparisons, rooted clades, sample assignments and source hashes.
+- Non-common adjacent eigenvalue boundary ratios have median 1.035; between-
+  block normalized rooted tree distance has median 1.000. Of 525 completed
+  outputs, 436 contain one cluster. Raising target rank from 40 to 80 changes
+  grouping within the first 40 modes in 5 of 11 cases.
+- Verified all regenerated input hashes, successful assignment coverage and
+  scores, retained spectra and unchanged source hashes. Eighteen separation
+  tests, 16 construction/rooting tests and analytic metric checks passed.
+  Added the report and figure deck under
+  `reports/eigenvalue_block_comparison_20260926/` and documented limitations in
+  [[eigenvalue-block-tree-comparison]]. No production algorithm changes,
+  commit or push.
+
+## 2026-09-28 — Review eigenvector geometry and mathematical construction
+
+- Completed three coordinated reviews of eigenvectors/subspaces, calibration,
+  and documentation/module reachability; recorded results in
+  [[eigenvector-calibration-construction-review]].
+- Independently reproduced repeated-space truncation in diffusion and local
+  PCA, contrast-selected Wald rank, unequal-rank principal-angle diagnostics,
+  and Hamming self-neighbor behavior. One million independent Gaussian
+  contrasts gave 14,720 adaptive-rank rejections at nominal alpha 0.01; this is
+  a kernel-level experiment, not a whole-pipeline false-split estimate.
+- Verified the dense continuous same-observation whitening identity and
+  distinguished symmetric eigenvectors, paired Markov left/right eigenvectors,
+  sample/feature singular vectors and exact versus numerical multiplicity.
+  Saved all illustrative paired angles, source hashes and reproducible probes
+  under `reports/mathematical_construction_review_20260928/`.
+- Recorded contradictory calibration documentation, stale test/legacy pointers,
+  and one diagnostic helper unused internally. Selected-Gaussian modules remain
+  intentional tested prototypes; historical underflow and narrow-interval
+  regressions now pass. No production code or historical evidence was removed.
+- Agents passed 184 targeted existing tests and the Vulture audit. The report
+  probe, scoped Ruff and wiki lint passed; the generated figure was inspected.
+  Existing benchmark work was preserved. No production fixes, commit or push.
+
+## 2026-09-28 — Check and repair complete-eigenspace rank selection
+
+- Added rotation/permutation regression checks after a green 31-case baseline.
+  The first 21 new cases reproduced 18 failures with three passing controls.
+- Shared the existing cosine numerical-tie rule across diffusion, primal/dual
+  PCA, MP test-dimension metadata and Wald basis selection. Final cutoffs extend
+  through complete groups; diffusion retains a tied leading group instead of
+  removing an arbitrary direction. Positive-rank constraints and raw MP counts
+  retain their previous meanings. PCA now returns actual positive eigenvalues
+  to avoid creating artificial downstream ties through output flooring.
+- All 25 final regressions pass. The six-cycle distance discrepancy is now
+  9.71445e-16, the covariance feature-permutation projector discrepancy is zero,
+  and both Wald rotation cases return p=0.011108997 with rank two.
+- Full `make check` passed 693 tests, Ruff, dependency/dead-code audits and wiki
+  lint. A narrow independent mathematical/integration review found no material
+  defect. Saved source hashes and before/after probes in
+  `reports/mathematical_construction_review_20260928/rank_invariance_repair.json`
+  and updated [[eigenvector-calibration-construction-review]].
+- Rank expansion may increase memory/runtime. No full benchmark or calibration
+  study was rerun; selected-null validity, the separate principal-angle helper
+  and Hamming self-neighbor issue remain open. No commit or push.
+
+## 2026-09-28 — Reassess benchmarks and calibration after the rank repair
+
+- Reran the complete matched 11-case spectral-block panel: 47 blocks, eight
+  tree inference methods, both geometries and 752 attempts. Status counts remain
+  525 successful, 170 failed trees and 57 unsupported; 18 available trees and
+  33 successful partitions change. ARI improves in 15 and worsens in 15 runs.
+- Repeated isolated Wald null experiments with six million generated contrasts,
+  four million held out. Complete groups repair the fully tied example, while
+  current adaptive rank on distinct and partially tied spectra remains
+  anti-conservative at all tested alphas/seeds after the declared multiplicity
+  adjustment. All 2,688 kernel checks and saved-outcome decoding checks pass.
+- Froze and ran six-family, five-method full-pipeline evaluation on 4,200
+  independent datasets, with 500 null and 200 signal replicates per family.
+  Retained all 23,800 method/alpha attempts: 19,595 successful, 4,201 skipped,
+  four unsupported, zero execution errors and zero audit errors. Adaptive NNLS
+  gives false partitions on 316/500 iid Bernoulli and 263/500 categorical null
+  datasets at sibling alpha .01. Signal recovery, exact generator-mixture
+  split truth, root tails and calibration-record contamination remain distinct.
+- Independent verification regenerated all input hashes, checked 1,184,337
+  node rows and 4,140 summary/tail calculations, and passed 39 deterministic
+  production reruns. Source hashes remained fixed; unsupported results were
+  not converted into successful null outcomes. Saved scripts, protocols,
+  manifests, tables and figures under `reports/eigenspace_reassessment_20260928/`
+  and synthesized [[eigenspace-benchmark-calibration-reassessment]].
+- The 47-case current baseline passed, artifact scripts pass Ruff, and figures
+  were inspected. No production rule, default, commit or push was changed.
+
+## 2026-09-28 — Implement the known-branch skew diagnostic
+
+- Used the requested Luna agent to implement a Gaussian diagnostic from
+  Q10/Q17/Q19/Q24–Q25 of the June 4 recursive method plan. Prespecified five
+  known branch patterns, two covariance profiles and 1,000 independent
+  datasets per cell; excluded the 50-dataset pilot from evaluation.
+- Saved 120,000 local rows, 10,000 selected-root rows and 20,000 traversal
+  rows, all successful. At alpha .01, fixed-root oracle rejection counts
+  12/1000 and 15/1000 become 33/1000 and 37/1000 under same-data PCA/MP,
+  and 765/1000 and 762/1000 under same-data average-linkage root selection.
+- Independently regenerated all inputs and oracle quadratic forms, checked
+  exact selected group-composition truth and chi-square arithmetic, and
+  reconstructed all BH/traversal outcomes. Matched 17 saved source hashes;
+  no separate pre-run source snapshot was retained.
+- Recorded matched stage comparisons, pointwise intervals, null-only
+  statistic skew with df references, and actual node recovery. Strong A
+  descendants below a null root are locally detected in all datasets but
+  reached in only 11/1000 and 12/1000 without pass-through; pass-through
+  recovers them in all datasets in this controlled open-edge experiment.
+- Added reports under `reports/known_branch_skew_20260928/` and synthesized
+  [[known-branch-skew-diagnostic]]. Full `make check` passed 697 tests,
+  lint and dependency/dead-code audits; final wiki and figure checks followed.
+  No production method/default changes, commit or push.
+
+## 2026-09-28 — Separate projection data sources and apply Vandermonde decomposition
+
+- Used a GPT-6 Astra agent for the requested independent-data projection
+  control, retaining the original 10,000 evaluation datasets with independent
+  basis/rank training streams. All 486,000 crossed-control rows succeeded.
+  Frozen source hashes were checked before and after execution.
+- With rank fixed at one, same-data PCA gives global-null root counts
+  33/1000 and 37/1000 versus 11/1000 and 10/1000 for independent PCA. Canonical
+  evaluation MP rank is one throughout global-null nodes; three independent
+  training rank-two events do not alter rejections. Separately prespecified
+  variable-rank stress does not show a consistent rank-source effect.
+- Implemented guarded PSD Toeplitz Vandermonde factorization and applied it
+  to exact population covariances and algebraic controls. Different anchors
+  reconstruct the same full-rank covariance; general pooled/oracle-whitened
+  sample matrices fail Toeplitz checks. No Toeplitz fitting or production
+  projection replacement was performed. Captured primary-source notes.
+- Independent checks regenerated 30,000 streams, matched 30,000 original
+  node tests, verified 486,000 chi-square calculations and 486 summary cells,
+  and reproduced 1,944 NumPy projection/rank calculations. All 117 frozen
+  source hashes match. The agent also reviewed Vandermonde mathematics and
+  checked 12 extra nonorthogonal controls without finding actionable defects.
+- Saved reports and inspected figures under
+  `reports/independent_projection_vandermonde_20260928/`; added
+  [[independent-projection-vandermonde-control]] and
+  [[vandermonde-reference-notes]]. `make check` passed 712 tests plus audits;
+  final wiki lint followed. No production changes, installation, commit or push.
+
+## 2026-09-28 — Rerun the matched passthrough benchmark
+
+- Explained passthrough and delegated the requested benchmark to one Luna
+  agent. Reused the existing known-branch runner on 10,000 datasets, holding
+  local tests and deliberately open edge prerequisites fixed while switching
+  passthrough off/on. Preserved original outputs and production sources.
+- Strong signal only below A is reached and split in 11/1000 and 12/1000
+  datasets without passthrough, versus 1000/1000 in each profile with it.
+  All-null any-false-split counts rise from 12/1000 and 15/1000 to 20/1000
+  and 23/1000. `pass_through` decisions are not counted as significant splits.
+- Independent verification reconstructed every one of the 20,000 traversals,
+  confirmed identical local tests within all matched pairs and exact agreement
+  with the prior verified run, and checked 17 pre/post/current source hashes.
+  This rerun adds reproducibility evidence, not new independent replicates.
+- Saved the benchmark under `reports/passthrough_benchmark_20260928/` and
+  updated [[known-branch-skew-diagnostic]]. The targeted 22-test baseline
+  passed; report scripts and final wiki checks followed. No production change,
+  dependency installation, commit or push.
+
+## 2026-09-28 — Separate passthrough reach from p-value and normalisation effects
+
+- Delegated the confirmed normalisation and p-value/clustering audits to two
+  Luna agents. Preserved production code and pre-existing working-tree changes.
+- Reanalysed the existing 10,000 matched Gaussian datasets: 30,000 matched node
+  tests have unchanged raw and reconstructed BH p-values; 3,971 datasets change
+  partition count and 7,942 extra internal-node occurrences become reachable.
+  Added paired upstream covariance/projection/root-selection summaries without
+  counting reused datasets as additional independent evidence.
+- A real-data Hamming/average-linkage probe on the 626-by-456 feature matrix
+  reused one completed annotation bundle. Both decomposers and the shared
+  bundle preserve all 1,251 annotation rows and all nine numeric p-value fields.
+  Passthrough changes 1 cluster to 109, reaching 182 internal nodes and 35 leaves,
+  with 32 splits and 76 pass-throughs. Real-data cluster truth is unavailable.
+- The normalisation audit separates tree geometry from original typed testing
+  features, documents symmetric diffusion versus paired random-walk eigenvectors,
+  and records covariance, ridge, correlated-Bernoulli and same-data projection
+  calibration limits. No new normalization repair was established or applied.
+- Saved artifacts under `reports/passthrough_pvalue_normalisation_20260928/`
+  and indexed [[passthrough-pvalue-normalisation-audit]]. Root baseline passed
+  22 tests; the production agent's overlapping baseline passed six. Independent
+  output checks verified node equalities, traversal counts, input and seven
+  current source hashes. Both report scripts pass Ruff and local links resolve;
+  final wiki lint passed 204 pages. No installation, commit or push.
+
+## 2026-09-28 — Audit lower-dimensional degrees of freedom
+
+- Two requested small-model agents (Luna) independently traced production df
+  bookkeeping and recovered prior projection/rank research. Actual retained
+  dimension is propagated through kernel, edge/sibling records and inflation;
+  no ambient-count substitution was found in the audited paths.
+- The fixed orthonormal projection law remains distinct from adaptive selection.
+  A bounded 100,000-contrast Gaussian check at alpha .01 gives 2,148 rejections
+  under contrast-energy selection at .8, versus 957 for fixed rank one, 1,012
+  for an independent direction, and 985 for full rank eight. Actual selected
+  df is recorded correctly. Checked formulas against 1,024 production-kernel
+  calls and verified target-one tie extension produces statistic and df two.
+- Recovered June locked/rerun fixed-membership CSVs, June statistic-shape and
+  null-law panels, September held-out energy-.90 calibration and the fixed-rank
+  independent-projection control. Historical wiki-only smoke numbers remain
+  labeled as such. Low rank itself is not proof of miscalibration; no universal
+  replacement df or production correction was established.
+- Energy selection defaults to disabled but is enabled at .90 by the pancreas
+  benchmark. Its full application was not rerun. A separate correlated-Gaussian
+  control illustrates why scale and effective df are distinct from retained
+  rank, without promoting Satterthwaite as a selected-test calibration.
+- Saved `reports/lower_dimension_df_audit_20260928/`, captured external primary
+  reference notes, and indexed [[lower-dimension-degrees-of-freedom-audit]].
+  Root baseline passed 30 tests; the implementation agent's overlapping
+  baseline passed 41. Report scripts pass Ruff, local links resolve, and source
+  hashes match before/after/current verification. Wiki lint passes 205 pages.
+  No production change, installation, commit or push.
+
+## 2026-09-28 — Compare distribution equations with Wolfram checks
+
+- Recovered the six selected-hierarchy log-ratio equations and local June 4
+  holdout tables, empirical tail contexts, Satterthwaite fitting and the
+  selected-Gaussian radial integral. Historical ranking results remain
+  descriptive; the cloud raw table was not downloaded or rerun.
+- Used Wolfram Alpha to solve scale/df moment equations and evaluate the
+  adaptive-energy integral. Wolfram Language checked the transformed joint
+  density, moments and ten integration values. Captured actual results in
+  `raw/inbox/wolfram-distribution-fitting-20260928.md`.
+- Created `reports/distribution_equation_comparison_20260928/` with independent
+  100,000-vector training and 200,000-vector evaluation, matched Gaussian
+  examples and four alpha values. At alpha .01, combined energy-.9 rejection
+  is 1.4850% nominal versus 1.0135% exact. Conditional radial selection gives
+  7.4818% nominal, 2.4512% moment fitted, and 1.0369% exact.
+- Derived the exact controlled two-dimensional energy-selection law. Fitting
+  scale and df alone does not cover arbitrary selection support or tails.
+  Full selected-tree/PCA/covariance/inflation calibration remains open.
+- Checked 256 kernel results, four existing radial-tail calls, Wolfram values,
+  and independent quadrature; source hashes match. Baselines passed 8 kernel/
+  reference tests and 15 radial tests. Indexed
+  [[distribution-equation-fitting-comparison]]. No production change,
+  installation, commit or push.
+
+## 2026-09-28 — Implement independent Gaussian discovery/test flow
+
+- User chose changing the data flow to satisfy the new equation's assumptions.
+  Added explicit fit/test production entry points requiring independent paired
+  Gaussian measurements with matching leaves and externally known common
+  covariance. Ordinary single-matrix applications cannot meet this contract
+  automatically and remain unchanged. No same-data inflation is applied here.
+- Extended the conditional energy reference to complete-group ranks using Beta
+  directional shares, with converged quadrature and no nominal fallback on
+  numerical failure. Discovery fits topology/PCA; inference evaluates the new
+  tails before existing Tree-BH, sibling BH and traversal.
+- Ran 900 paired evaluation datasets, eight tree methods, two matched independent
+  references and three matched current single-matrix methods. Each independent
+  reference completed 9,267 runs with 1,533 explicit unsupported centroid/median
+  tree cases; the current comparison completed 2,700 runs. No unexpected errors.
+  Saved 175,677 node records and source hashes. Earlier broad baseline: 1,960
+  completed plus 420 skipped, no runtime/audit errors.
+- Conditional tails change 32 primary-alpha cluster-count outcomes; signal ARI
+  does not uniformly improve. High-dimensional neighbor joining still gives
+  8/250 root rejections at .01. Report retains this deviation and identifies the
+  96-cell Holm analysis as post-evaluation. Independent data/known covariance
+  confound whole-method gains against the current single-matrix dispatcher.
+- 146 focused tests passed; 12 independent quadrature checks agree within
+  7.11e-15. Matched output/status counts and source hashes were verified.
+  Indexed [[independent-gaussian-production-benchmark]] and documented required
+  production inputs. No installation, commit or push; prior changes preserved.
+
+## 2026-09-28 — Fit diffusion and NNLS on independent discovery data
+
+- Extended the existing independent Gaussian API with discovery-only adaptive
+  Euclidean diffusion and fixed-topology NNLS. Topology, lengths, coordinates
+  and PCA are frozen before testing; nonconverged fits and branch/coordinate
+  mutation are rejected. Known covariance has no NNLS branch-time component.
+- Completed 900 paired evaluation datasets and 18,000 runs, with 83,700 node
+  records and no warnings/errors/skips. All 900 branch fits changed, while
+  27,900 matched diffusion/NNLS node tests and 5,400 run pairs were identical.
+  Sources and 2,700 independent fitted contexts remained unchanged.
+- Conditional diffusion/NNLS had zero final false partitions per 250 null
+  datasets in each profile. The identity40 raw root tail remains 6/250 at .01;
+  finite non-rejection after the planned 36-cell Holm correction does not
+  prove calibration. Signal ARI improves over direct geometry in these cases
+  but can decrease against matched nominal tails. Current single-matrix
+  comparisons change data quantity and covariance/rank treatment too.
+- Recorded solver success separately from optimality: 695/900 fits stop on
+  relative cost change, with maximum optimality measure .1517. Preserved the
+  Gaussian/known-covariance scope and existing binary calibration questions.
+- 168 focused tests pass, including six new integration tests. Indexed
+  [[independent-diffusion-nnls-benchmark]] and documented the API. No commit,
+  push or installation; prior worktree changes preserved.
+
+## 2026-09-28 — Review naming and misleading claims with Luna agents
+
+- User requested a set of Luna agents before proceeding. Three read-only
+  reviews covered statistical terminology, geometry/solver names and current
+  documentation claims. The coordinating agent checked all retained findings.
+- Recorded seven actionable issues: overstated data independence, stale
+  validated-reference gating claims, unqualified calibrated p-value wording,
+  invariant/equivariant PCA labels, hidden feature-count target normalization,
+  fitted lengths called time, and incomplete diffusion backend provenance.
+- Preserved properly qualified exact-F, support-status, numerical-tie,
+  retained-rank and NNLS terminology. Revalidated the earlier README/class
+  contradiction rather than claiming it as newly discovered.
+- Added `reports/naming_claims_review_20260928/README.md` and indexed
+  [[naming-and-claims-review]]. Baseline wiki lint passed for 208 pages;
+  post-edit checks validate the new review artifacts. No corrective rename,
+  runtime change, benchmark rerun, commit, push or installation.
+
+## 2026-09-28 — Correct naming and claims using Sol and cavecrew
+
+- User confirmed fixing the seven findings and requested cavecrew. A Sol agent
+  at high effort implemented diffusion/NNLS metadata in a two-file builder
+  task, then reviewed the combined delta. The coordinating agent corrected
+  linked documentation, visible labels and existing tests. The review was not
+  independent of the agent's own implementation.
+- Clarified fixed projection versus independent testing, support availability
+  versus reference-law validity, and plug-in adjustment versus calibration.
+  Existing PCA identifiers are explicitly operational; visible descriptions
+  use leading/following PCA axes. NNLS captions describe fitted lengths.
+- Added NNLS target definition/normalization/divisor and separate adaptive
+  kernel/coordinate/eigensolver provenance. Existing method IDs, formulas and
+  constructors remain compatible; optional unknown metadata remains None.
+- 71 focused tests passed. Two NNLS snapshot comparisons and one adaptive
+  diffusion comparison preserved numerical outputs exactly; execution time
+  was excluded. Saved benchmark results/source hashes remain historical.
+- Recorded corrections in `reports/naming_claims_review_20260928/fixes.md`
+  and updated [[naming-and-claims-review]]. No commit, push, installation or
+  new calibration benchmark.
+
+## 2026-09-28 — Audit dead code, aliases and duplication after tool discovery
+
+- User requested one agent and required repository tool discovery first. One
+  Sol cavecrew investigator verified configured tools/versions, then ran
+  offline no-sync deptry, Vulture and Ruff. All configured checks passed;
+  deptry scanned 480 files. No clone checker is currently configured.
+- Supplemental threshold-60 Vulture output retained 62 candidates, including
+  known false positives. Custom AST analysis covered 623 Python files and
+  found 13 candidate duplicate-body groups, not blanket deletion targets.
+- Verified one repository-unused private helper (`_node_pvalue`), duplicate
+  Git-provenance implementations and four live timestamp renderers. Retained
+  three active assignment aliases, dynamically registered runners and the
+  documented/tested optional bootstrap-consensus API.
+- Saved command records, outputs and candidates in
+  `reports/dead_code_alias_duplication_20260928/`; indexed
+  [[dead-code-alias-duplication-audit]]. No runtime code edits, removals,
+  installs, test/benchmark reruns, commits or pushes. Wiki baseline: 209 pages.
+
+## 2026-09-28 — Remove the three audited aliases
+
+- User explicitly confirmed removing `TOPOLOGIES`, `BASE_CONTEXT_COLUMNS`
+  and `CANDIDATE_METHOD_CONTRAST_COLUMNS`. Replaced executable uses with
+  `TREE_CONSENSUS_STRATEGIES`, `TAIL_LAW_CONTEXT_COLUMNS` and
+  `METHOD_CONTRAST_COLUMNS`; updated the existing CLI-default regression test.
+- Three focused tests passed before/after. Changed-file Ruff passed; import
+  checks verified alias absence and preserved defaults/output columns. AST
+  comparison confirmed only the intended declaration removals and name
+  substitutions in the three implementation files. Executable exact-name
+  search found no remaining references.
+- Marked the audit as pre-removal evidence and recorded the follow-up in
+  [[dead-code-alias-duplication-audit]]. The private unused helper and duplicate
+  implementations remain outside this change. No commit, push or installation.
+
+## 2026-09-28 — Test internal distributions and branch variance together
+
+- User confirmed matched benchmarks of branch-length internal distributions,
+  branch-length variance, their combination and compatibility with the new
+  independent equations. Completed 48,600 runs on 900 existing Gaussian pairs
+  across two diffusion branch sources, three internal contexts and three sibling
+  alpha values, with both edge-variance policies in the current pipeline.
+- Verified 502,200 node records, unchanged fitting contexts and source hashes,
+  and 7,200 baseline rows reproduced from the earlier evaluation. All 49 focused
+  regression tests pass. No evaluation errors or captured warnings. Preserved
+  the first pilot's diagnostic export error; the reviewed 486-run pilot passes.
+- Empirical internal rows can increase null false partitions; branch-length
+  states behave differently. Discovery-only branch-length states allow NNLS to
+  affect the independent PCA and p-values, with mixed signal-recovery changes.
+  Independent rows are not inflated by deterministic internal states.
+- Confirmed that the edge flag does not disable sibling branch variance and
+  that the adaptive diffusion dispatcher does not forward internal-state flags.
+  The report uses the existing distance runner with verified settings. A
+  report-local independent adapter and incompatible variance-scale control
+  leave production unchanged; correcting the reference scale restores p-values.
+- Saved protocol, mathematical argument, runs, node diagnostics and verification
+  in `reports/branch_distribution_variance_20260928/`; indexed
+  [[branch-distribution-variance-benchmark]]. No commit, push or installation.
+
+## 2026-09-28 — Classify generated reports and measure storage
+
+- Added a catalog for 300 new visible report files and four existing ignored
+  logs, with editable sources separated from checksummed results. Added archive,
+  restore and explicit local-retention commands, exact ignore rules, and a
+  generated-file check in `make check`. Historical tracked evidence is unchanged.
+- Measured 558.47 MiB of new visible report content (576.60 MiB allocated).
+  The exact 36 files above 1 MiB contain 547.00 MiB (564.50 MiB allocated), listed
+  in `docs/generated-output-inventory.md`. Their storage decisions remain
+  pending; no files were deleted or archived, and those 36 paths remain visible
+  to Git pending the user's choice. Four already ignored logs remain local-only.
+- Added [[generated-report-files]] and documented catalog resolution of missing
+  generated evidence without claiming local availability. All 22 focused tests
+  passed, changed-file Ruff passed, wiki lint checked 212 pages, and
+  `git diff --check` passed. The artifact checker reports exactly 36 pending
+  storage decisions and no other errors; its integration into `make check`
+  therefore remains blocked on that choice. No commit, push or installation.
+
+## 2026-10-13 — Fix pass-through reachability and three input/runner defects
+
+- `GateEvaluator` pass-through now counts a deeper split only when traversal
+  can reach it: every child on the path must split or pass through. Before,
+  a root with a failed sibling test could pass through to a boundary child and
+  report a split that no sibling test supported. The guard candidate search in
+  `gates/guards.py` uses the same rule.
+- `populate_distributions` rejects duplicate `leaf_data` index labels instead
+  of silently reusing the last matching row.
+- `_block_permutation_null_sample` permutes float rows, so fractional
+  Bernoulli and soft categorical inputs are no longer truncated to zero.
+  Integer one-hot inputs give the same null samples as before.
+- `run_case_isolated` reads the result queue before joining the subprocess, so
+  large result payloads no longer hang until the timeout.
+- Added one focused test per fix; 748 fast tests and Ruff passed. No commit,
+  push or installation.
+
+## 2026-10-13 — Report effective sibling alpha and reject silent configuration
+
+- `TreeDecomposition.decompose_tree` now reports `sibling_alpha_effective`
+  (sibling alpha divided by `sibling_gate_alpha_penalty`) next to the nominal
+  `sibling_alpha`. Profiles with penalty 50 previously reported only 0.05
+  while the gate applied 0.001.
+- `validate_root_selective_permutation_guard_config` rejects a non-root guard
+  scope with zero replicates, which previously recorded the scope but never
+  ran the guard.
+- The distance-tree TBS benchmark dispatcher rejects parameter keys it does not
+  read; a test keeps the allowlist equal to the keys read in source.
+- `map_symbols_to_entrez` keeps mygene `_id` only when numeric, so Ensembl IDs
+  are no longer stored as Entrez IDs.
+- 752 fast and 8 slow tests and Ruff passed. No commit, push or installation.
+
+## 2026-10-13 — Remove duplicate guard helpers and unused bootstrap consensus
+
+- `gates/guards.py` now uses `compute_descendant_leaf_sets` from
+  `tree/topology.py` instead of its own O(n²) descendant-set fallback.
+  `_tree_root_node` stays because guard tests pass plain `networkx.DiGraph`
+  trees, which have no `root()` method.
+- Deleted `tree_break_selection/hierarchy_analysis/bootstrap_consensus.py` and
+  its test: no application, benchmark or script imported it. Removed its
+  README row and its citations in [[tree-construction-method-map]] and
+  [[redundant-and-legacy-code-map-20260623]]. Historical report manifests and
+  the 2026-09-28 dead-code audit summary still name it as of that date.
+- `run_gate_annotation_pipeline` resolves the feature space once instead of
+  inferring it at five call sites.
+- 758 non-optional tests, Ruff, vulture and wiki lint passed. No commit, push
+  or installation.
+
+## 2026-10-13 — Simplify traversal counters and pass-through bottleneck map
+
+- `TreeDecomposition.decompose_tree` now counts live traversal once, in both
+  trace levels; full traces add only the `full_edge_*` counters. Output keys
+  and values are unchanged.
+- The pass-through bottleneck map is built directly from the support map,
+  since its only possible reason is `selected_family_passthrough_guard_blocked`.
+- 758 non-optional tests and Ruff passed. No commit, push or installation.
+
+## 2026-10-13 — Drop statsmodels from core dependencies and cache family support
+
+- Core Benjamini-Hochberg (`multiple_testing/base.py`, Tree-BH helpers) now
+  uses `scipy.stats.false_discovery_control`, rejecting when the adjusted
+  p-value is at most alpha. Across 20,000 random, tied and grid inputs the
+  rejections matched statsmodels exactly; adjusted values differed by at most
+  2.2e-16. `scipy` floor raised to 1.11; `statsmodels` moved from core
+  dependencies to the `viz` and `all` extras (used by an endotypes plot and
+  report scripts). `uv.lock` was re-resolved offline with no version changes.
+- `compute_inflation_adjusted_sibling_tests` caches the family-level
+  calibration support diagnostics per feature family for one pass. Decisions
+  and support dictionaries are unchanged; at 500 samples `_decision_support`
+  time fell from 0.10 s to 0.03 s.
+- 759 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push, installation or environment sync.
+
+## 2026-10-13 — Remove the IQ-TREE 3 tree builder
+
+- Removed `iqtree3_tree_from_alignment` and its FASTA/Newick helpers from
+  `tree/construction/phylogenetic.py`, the `iqtree3` builder from
+  `SUPPORTED_TREE_BUILDERS`, `IQTREE3_TREE_BUILDER`, the `iqtree_*` parameters
+  of `build_tree` and `run_tbs_on_distance`, `TreeBuildResult.iqtree_metadata`,
+  the `tbs_iqtree3` benchmark method and its dispatch branch. The
+  `TBS_RUNNER_METHODS` alias, which existed only to add `tbs_iqtree3`, was
+  folded into `TBS_DISTANCE_TREE_METHODS`.
+- Removed the three IQ-TREE tests and updated the tree README, spectral
+  diagnostics README and comparison script, [[tree-construction-method-map]],
+  [[repository-execution-and-benchmark-map]], [[eigenvalue-block-tree-comparison]],
+  [[poset-tree]] and the index entry. Dated source summaries, the 2026-06-23
+  code map, `raw/` and `reports/` evidence were kept as historical records.
+- Neighbor joining and MAD rooting are unchanged and still use scikit-bio.
+- 756 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Guard reachability, dispatch allowlists, BH and root helper cleanup
+
+- `_passthrough_descendant_guard_candidates` now stops at nodes that neither
+  split nor pass through, so unreachable splits no longer enter the global
+  selected-family minimum or receive per-node permutation runs.
+- `run_clustering_result` rejects unknown parameter keys for every registered
+  method through one per-method allowlist; `benchmark_*` bookkeeping keys stay
+  allowed. A test checks every registry parameter row against it.
+- Endotype analyses and the GO-IC plot use `scipy.stats.false_discovery_control`;
+  the hand-written `_shared.benjamini_hochberg` was deleted. `statsmodels` left
+  the `viz` extra and stays in `all` for retained `reports/` scripts (deptry
+  DEP002 ignore added).
+- `core_utils.tree_utils.tree_root` replaces the root lookups in `PosetTree.root`,
+  the permutation guards and fixed-topology branch-length fitting.
+- `benchmarks/full/run.py` combines per-case results once instead of
+  re-concatenating every case; a three-case graph-suite run produced the same
+  CSV and summary tables.
+- 760 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Resume by case name, diffusion fixes, stopping-edge removal
+
+- Full-benchmark resume (`compute_resume_coverage`, `benchmarks/full/run.py`)
+  now tracks completion by `case_id` instead of suite position, so a reordered
+  suite no longer credits one case's rows to another.
+- `hamming_knn_diffusion_geometry` uses `resolve_neighbor_search_k`; with
+  `k_neighbors=1` it previously kept only self-neighbors and returned all-zero
+  distances.
+- Deleted the unused `multiple_testing/stopping_edge_recovery` package, its
+  exports and its test.
+- `brancharchitect_tree_comparison.py` uses `tree_root`. The scRNA NNLS summary
+  finds its root from an edge table, not a graph, and was left unchanged.
+- Neighbor-joining internal node names skip any sample label, so a sample named
+  `internal_0` no longer merges with an internal node.
+- `compute_diffusion_coordinates` accepts sparse kernels. Above 2000 samples a
+  connected graph's leading modes come from `eigsh`; disconnected graphs and
+  smaller inputs keep the exact dense solver. Distances matched the dense
+  solver within 4e-13 at 2500 and 4000 samples; random binary Hamming diffusion
+  at 4000 samples fell from 4.8 s to 0.4 s. Well-separated clusters usually
+  give disconnected kNN graphs and therefore see no speedup.
+- 762 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Remove all-pairs bandwidth distance cache and unused package
+
+- `run_tbs_on_distance` no longer builds `build_branch_length_distance_cache`
+  for `neighborhood_bandwidth_profile`; it only recorded a status and the pair
+  count `N(N-1)/2`. Measured cache cost was 7 s at 500 samples, 29 s at 1000
+  and 117 s with 1.5 GiB peak at 2000. The profile name and
+  `support_regularizer_only_no_pvalue_rescue` action fields remain.
+- Deleted `sibling_divergence/neighborhood_bandwidth/` (kernel weights, tau
+  regions, support roles, tree-distance cache) and its contract test; nothing
+  outside that test used them.
+- Kept `descendant_leaf_signature` as a sorted tuple. Sorting every signature
+  took 0.01 s at 4000 samples on an average-linkage tree and 0.36 s on a
+  single-linkage chain, while the scRNA trace writer and report rely on the
+  tuple form.
+- 756 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Remove neighbor joining and MAD rooting
+
+- Deleted `tree/construction/phylogenetic.py` (neighbor joining, MAD rooting,
+  unrooted-tree promotion) and its tests. MAD rooting looped over every leaf
+  pair for every edge and took 11 s at 400 samples while scikit-bio `nj` took
+  0.01 s; neighbor joining was not a default method.
+- `build_tree` now supports `linkage` only; `NEIGHBOR_JOINING_TREE_BUILDER`,
+  `DEFAULT_PHYLOGENETIC_TREE_ROOTING` and `TreeBuildResult.phylogenetic_rooting`
+  were removed. `TREE_CONSENSUS_STRATEGIES` equals the seven linkage methods.
+- Removed `tbs_neighbor_joining`, the neighbor-joining cell of the graphtools
+  adaptive-K tree-strategy grid (now seven cells), the tree-consensus parsing
+  of `tree_builder_neighbor_joining`, the family-metric NNLS grid topology, and
+  the neighbor-joining geometries of two diagnostics. Independent Gaussian
+  discovery accepts only linkage.
+- Updated the tree and benchmark READMEs, [[tree-construction-method-map]],
+  [[repository-execution-and-benchmark-map]], [[poset-tree]] and the index;
+  [[phylogenetic-tree-builders-20260614]] is now `deprecated`. Dated source
+  summaries and `reports/` scripts that used neighbor joining were kept as
+  historical records and will not rerun unchanged.
+- 750 non-optional and 6 optional tests, Ruff, deptry, vulture and wiki lint
+  passed. No commit, push or installation.
+
+## 2026-10-13 — Drop single-valued tree builder options, H1 lint, changelog
+
+- `build_tree` no longer takes `builder` or `rooting`, and `TreeBuildResult`
+  no longer carries them; `SUPPORTED_TREE_BUILDERS`, `TreeBuilderName`,
+  `LINKAGE_TREE_BUILDER` and `DEFAULT_LINKAGE_TREE_ROOTING` were removed.
+  `tree_builder`/`tree_rooting` were removed from the TBS and diffusion
+  runners, the dispatcher allowlists, the graphtools registry params, the
+  family-metric sweep, two diagnostics (root replay tokens are now
+  `distance:linkage`), the ASV tree benchmark, the scRNA result rows and
+  `fit_independent_gaussian_tree`.
+- The wiki lint now requires exactly one H1 outside code fences; all 212 pages
+  pass.
+- Added a `CHANGELOG.md` entry for 2026-10-13 covering this session's changed,
+  removed and fixed behavior.
+- 746 non-optional and 6 optional tests, Ruff, deptry, vulture and wiki lint
+  passed. No commit, push or installation.
+
+## 2026-10-13 — Stage new modules, bound subprocess wait, unblock make check
+
+- Staged the untracked modules that tracked code imports
+  (`tree_break_selection/eigenvalue_groups.py`, `scripts/generated_files.py`,
+  `independent_gaussian.py`, `energy_selected_reference.py`), five new
+  diagnostics and seven new tests, and ignored `.serena/`. Nothing was
+  committed.
+- `run_case_isolated` now joins the subprocess only until the case deadline and
+  terminates a child that lingers after sending its result; a test covers it.
+- The dead-code audit report README names the deleted `bootstrap_consensus.py`
+  as plain text, so `generated-files-check` reports only the 36 pending storage
+  decisions.
+- `make check` omits `generated-files-check` until those decisions are made;
+  README and `docs/generated-files.md` say so.
+- 748 non-optional tests, Ruff and wiki lint passed.
+
+## 2026-10-13 — Remove duplicates, aliases and legacy code
+
+- `_passthrough_descendant_guard_candidates` builds a `GateEvaluator` and walks
+  its SPLIT / PASS_THROUGH / BOUNDARY decisions instead of re-deriving the gate
+  rules; the now-unused `node_split_prerequisites` predicate was deleted.
+  `TreeDecomposition` uses `annotation_bool` instead of its own copy.
+- Removed the `matrix_audit` option and TensorFlow matrix export
+  (`audit_utils.py` keeps only the CSV decomposition audit), the unread
+  `TBS_MATRIX_AUDIT_ROOT` variable and its test; `run_single_method_once`
+  returns `(row, computed)`.
+- The sibling inflation diagnostic imports the core `_inflation_mle` and
+  `_effective_sample_size`. Diagnostics share `bool_value` and
+  `parse_csv_list` (`calibration/values.py`), `diagnostic_json_default`
+  (now also handling arrays and frozensets) and `finite_float`; two old copies
+  had treated missing booleans as true. Git provenance lives in
+  `benchmarks/shared/util/provenance.py`, AWS shard checks in
+  `benchmarks/cloud/sharding.py`, and the scRNA timestamp footer in
+  `applications/scrna/_shared.py`. `_node_pvalue` was deleted.
+- Dropped the `TREE_CONSENSUS_STRATEGIES` and `TREE_PRIORITY` aliases, the
+  optional distance/linkage fields left over from neighbor joining, the dead
+  `tree_distribution_kl/js` and `kl_divergence_per_column_*` entries, and the
+  `y_kl` parameter name.
+- Renamed `invariant_equivariant.py` to `leading_axes.py`
+  (`LeadingAxesSpace`, `decompose_leading_axes_space(following_dim=...)`) and
+  the scRNA space-decomposition columns and flag to `leading_*` /
+  `following_*`; two report READMEs now name the old file as plain text, and
+  [[naming-and-claims-review]] and [[redundant-and-legacy-code-map-20260623]]
+  cite the new path.
+- Kept, on purpose: the lenient JSON and infinity-preserving float helpers in
+  `alpha_structure_sweep.py`, the MNIST timestamp footer, the three
+  parse-list wrappers with their own None/empty contracts, the two identical
+  AWS `main` functions, and `fdr_annotation`'s stricter prerequisite check.
+- 746 non-optional and 6 optional tests, Ruff, deptry, vulture, wiki lint and
+  the generated-files reference check passed; all 104 changed modules import.
+
+## 2026-10-14 — Last duplicate helpers, wrappers and invariant labels
+
+- `path_conditioned_traversal_audit.py` imports `_case_summary_from_skip` and
+  `traversal_sibling_fdr_null.py` imports `_projection_inputs` from the modules
+  they already depended on, instead of keeping identical copies.
+- Removed the pass-through wrappers `read_dataframe` (callers use
+  `pd.read_csv`), the annotation-PDF `load_binary_matrix`, `_as_bool` and
+  `_compute_js_divergence`.
+- The endotypes KAK signal page writes `common_axis_score` and
+  `is_common_axis` and labels the axis "Common (leading) axis score".
+- Added tests pinning `bool_value` (missing and "false" are false),
+  `parse_csv_list` and `validate_replicate_coverage`.
+- 757 non-optional and 6 optional tests, Ruff, deptry, vulture and wiki lint
+  passed; all 80 changed benchmark and application modules import.
+
+## 2026-10-14 — Shared small helpers and audit read errors
+
+- `audit_go_annotation_analysis_levels.py` records unreadable
+  `experiment_config.json` and summary CSV files in a new `read_errors` column
+  instead of dropping them; a pipeline-contract test covers both cases.
+- Sixteen small copied helpers now live in one module each and are imported
+  elsewhere: `_select_cases` (two pairs), `_selected_cases` (three copies),
+  `_parse_args`, `_df_bin`, `_rank_bounds`, `_majority_label`,
+  `_branch_length_to_parent`, `_bool_sum`, `_root`, `safe_float`,
+  `sha256_file`, `parse_float_grid` (replacing `parse_alpha_grid` in five
+  modules), `_finite_median` (replacing `_median`), `_load_benchmark_suite`
+  (replacing `_load_cases`), and the pancreas `build_tree_helpers`.
+  `_rank_bounds`, the tie-rank `_select_cases` and `_branch_length_to_parent`
+  are kept in the module the other one already imported, to avoid import
+  cycles.
+- Still duplicated on purpose: the two AWS `main` functions, the fixture
+  miner's `_key` / `_key_from_values`, and the MNIST timestamp footer.
+- 758 non-optional and 6 optional tests, Ruff, deptry and vulture passed; all
+  19 changed modules import.
+
+## 2026-10-14 — Bandwidth label method, test-only API and small copies removed
+
+- `mp_projection_dimension_behavior_sweep.py` has its own `_parse_args`
+  again: the shared copy used `description=__doc__`, so `--help` printed the
+  mixed internal calibration sweep's description.
+- Removed the `tbs_bandwidth_context_v1` benchmark method and its
+  `neighborhood_bandwidth_profile` parameter. Its parameters matched `tbs`
+  once that key was dropped and its labels matched `tbs` exactly; it only added
+  metadata. Older run notes that list it describe plain `tbs` results.
+- Removed the test-only `edge_distributional_action`,
+  `binary_split_distributional_action` and
+  `binary_split_distributional_action_summary`; the contract tests now check
+  the same identities through `edge_distributional_action_summary` and
+  `split_distributional_action_summary`.
+- `benchmarks/cloud/sharding.py` now holds `iter_expected_shard_dirs`,
+  `sync_path_to_s3`, `sync_s3_to_path` and `write_json` for the six AWS
+  drivers. `root/root_values.py` gained `finite_median`, and the two tie-rank
+  modules import `require_columns`. `values.bool_series` replaces two
+  `_coerce_bool_series` copies and reads a 0/1 column with blanks correctly.
+  The spectral profiler imports `_uses_bernoulli_null_whitening` from the core.
+- `RESULT_KINDS` in the GO dataset inventory is a tuple of codes, and the
+  unused `DEFAULT_RESULT_ROOT` constant is gone.
+- 759 non-optional and 6 optional tests, Ruff, deptry and vulture passed; all
+  changed modules import.
+
+## 2026-10-14 — Report output storage decisions and staging
+
+- Archived the 36 pending generated report outputs (547 MB, 34 distinct
+  objects) to `~/kl-te-cluster-archive` with the catalog's copy-and-verify
+  helpers; `reports/artifacts.json` records `storage: archive` and `file://`
+  locations, and `reports/.gitignore` lists each file by exact path. The four
+  run logs keep their earlier `local` decision.
+- `make check` runs `generated-files-check` again; docs, README and
+  [[generated-report-files]] say so.
+- Staged the previously untracked wiki pages, docs, report folders, catalog and
+  `raw/inbox` notes so a commit carries the pages that `wiki/index.md` links to.
+  A tracked-files-only copy now gives the same wiki-lint result as the last
+  commit: no dangling wikilinks, and the same 324 missing local-output sources.

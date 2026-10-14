@@ -20,13 +20,17 @@ import pandas as pd
 from sklearn.metrics import adjusted_rand_score
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.selected.family.selected_candidate_truth_law_panel import (
+    _majority_label,
+)
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
 from benchmarks.diagnostics.calibration.traversal.retained_pass_through_topology_likelihood_panel import (
+    _finite_median,
     build_traversal_network_context_rows,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -296,20 +300,6 @@ def _is_finite(value: object) -> bool:
     return math.isfinite(finite_float(value))
 
 
-def _bool_value(value: object) -> bool:
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes"}
-    return bool(value)
-
-
-def _median(values: pd.Series) -> float:
-    finite = pd.to_numeric(values, errors="coerce").replace([np.inf, -np.inf], np.nan)
-    finite = finite.dropna()
-    if finite.empty:
-        return math.nan
-    return float(finite.median())
-
-
 def _finite_array(values: pd.Series) -> np.ndarray:
     finite = pd.to_numeric(values, errors="coerce").replace([np.inf, -np.inf], np.nan)
     return finite.dropna().to_numpy(dtype=float)
@@ -323,7 +313,7 @@ def _finite_int(value: object, default: int = 0) -> int:
 
 
 def _selected_event_pattern(row: pd.Series) -> str:
-    if _bool_value(row["traversal_decision_agrees"]):
+    if bool_value(row["traversal_decision_agrees"]):
         return "paired_candidate_agreement"
     left_pass = str(row["left_traversal_state"]) == "pass_through"
     right_pass = str(row["right_traversal_state"]) == "pass_through"
@@ -582,15 +572,6 @@ def _purity_from_labels(labels: Sequence[int]) -> float:
     if values.size == 0:
         return math.nan
     return float(np.max(counts) / np.sum(counts))
-
-
-def _majority_label(labels: Sequence[int]) -> int | None:
-    if not labels:
-        return None
-    values, counts = np.unique(np.asarray(labels, dtype=int), return_counts=True)
-    if values.size == 0:
-        return None
-    return int(values[int(np.argmax(counts))])
 
 
 def _truth_label_maps_by_run(
@@ -1098,21 +1079,21 @@ def build_overlap_selected_pass_through_node_rows(
                 "truth_downstream_child_majority_distinct": (
                     False
                     if truth is None
-                    else _bool_value(truth["truth_downstream_child_majority_distinct"])
+                    else bool_value(truth["truth_downstream_child_majority_distinct"])
                 ),
                 "topology_feature_status": _topology_feature_status(finite_topology_count),
                 "left_depth": finite_float(row["left_depth"]),
                 "left_n_descendant_leaves": finite_float(row["left_n_descendant_leaves"]),
                 "left_sibling_p_value": finite_float(row["left_sibling_p_value"]),
-                "left_child_parent_edge_open": _bool_value(row["left_child_parent_edge_open"]),
-                "left_sibling_open": _bool_value(row["left_sibling_open"]),
+                "left_child_parent_edge_open": bool_value(row["left_child_parent_edge_open"]),
+                "left_sibling_open": bool_value(row["left_sibling_open"]),
                 "left_descendant_accepted_split_count": int(
                     row["left_descendant_accepted_split_count"]
                 ),
                 "right_descendant_accepted_split_count": int(
                     row["right_descendant_accepted_split_count"]
                 ),
-                "right_explicit_guard_blocked": _bool_value(row["right_explicit_guard_blocked"]),
+                "right_explicit_guard_blocked": bool_value(row["right_explicit_guard_blocked"]),
                 "left_neighborhood_evidence_family": str(row["left_neighborhood_evidence_family"]),
                 "right_neighborhood_evidence_family": str(
                     row["right_neighborhood_evidence_family"]
@@ -1308,8 +1289,8 @@ def build_overlap_selected_pass_through_case_rows(
                 "finite_traversal_context_row_count": int(finite_context.sum()),
                 "min_depth": finite_float(group["left_depth"].min(skipna=True)),
                 "max_depth": finite_float(group["left_depth"].max(skipna=True)),
-                "median_descendant_leaves": _median(group["left_n_descendant_leaves"]),
-                "median_sibling_p_value": _median(group["left_sibling_p_value"]),
+                "median_descendant_leaves": _finite_median(group["left_n_descendant_leaves"]),
+                "median_sibling_p_value": _finite_median(group["left_sibling_p_value"]),
                 "case_support_status": _case_support_status(group),
             }
         )

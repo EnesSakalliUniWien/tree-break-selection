@@ -1011,3 +1011,39 @@ def test_empirical_local_kernel_p_value_uses_weighted_scale_without_deflation() 
     assert decision.p_value == pytest.approx(chi2.sf(16.0 / expected_scale, 2.0))
     assert decision.p_value >= chi2.sf(16.0, 2.0)
     assert model.reference_law == "unresolved_same_selected_hierarchy"
+
+
+def test_family_support_cache_matches_uncached_decisions() -> None:
+    records = [
+        _make_record(
+            f"{family}{index}",
+            stat=2.0 + index,
+            degrees_of_freedom=2.0,
+            n_parent=16 * (index + 1),
+            feature_family=family,
+        )
+        for family in ("bernoulli", "categorical")
+        for index in range(4)
+    ]
+    targets = [
+        _make_record(
+            f"target_{family}{index}",
+            stat=12.0,
+            degrees_of_freedom=2.0,
+            n_parent=24 * (index + 1),
+            is_null_like=False,
+            feature_family=family,
+        )
+        for family in ("bernoulli", "categorical")
+        for index in range(2)
+    ]
+    model = fit_empirical_null_inflation_model(records)
+    cache: dict[str, dict[str, float | int]] = {}
+
+    for target in targets:
+        cached = decide_empirical_null_calibration(model, target, family_support_cache=cache)
+        uncached = decide_empirical_null_calibration(model, target)
+        assert list(cached.support.items()) == list(uncached.support.items())
+        assert cached.p_value == uncached.p_value
+
+    assert set(cache) == {"bernoulli", "categorical"}

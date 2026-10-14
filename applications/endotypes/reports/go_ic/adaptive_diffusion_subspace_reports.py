@@ -9,7 +9,6 @@ from pathlib import Path
 import matplotlib
 
 from applications.endotypes.io.adaptive_diffusion_dataframe_io import (
-    read_dataframe,
     write_dataframe,
 )
 
@@ -97,8 +96,8 @@ def write_workflow_pdfs(
             assignments_path = Path(str(getattr(row, "cluster_assignments", "")))
             if linkage_path.exists() and assignments_path.exists():
                 fig = create_tree_clusters(
-                    read_dataframe(linkage_path).to_numpy(),
-                    read_dataframe(assignments_path),
+                    pd.read_csv(linkage_path).to_numpy(),
+                    pd.read_csv(assignments_path),
                     f"{title}: tree with cluster assignments",
                     tight_layout=False,
                 )
@@ -134,7 +133,7 @@ def write_workflow_pdfs(
                 images.append(plt.imread(path) if path.is_file() else None)
             terms_path = Path(str(getattr(row, "axis_top_terms", "")))
             term_lines = (
-                axis_term_summary_lines(read_dataframe(terms_path)) if terms_path.is_file() else []
+                axis_term_summary_lines(pd.read_csv(terms_path)) if terms_path.is_file() else []
             )
             fig = create_embedding_comparison(images[0], images[1], title, term_lines)
             page_path = pages_dir / (
@@ -148,7 +147,7 @@ def write_workflow_pdfs(
             loadings_path = Path(str(getattr(row, "axis_term_loadings_all", "")))
             if loadings_path.exists():
                 fig = create_axis_term_heatmap(
-                    read_dataframe(loadings_path),
+                    pd.read_csv(loadings_path),
                     f"{title}: strongest GO-term feature loadings",
                     terms_per_axis=6,
                     max_terms=36,
@@ -229,7 +228,7 @@ def write_ranking_plots(ranking: pd.DataFrame, output_dir: Path) -> None:
                 subspace_id = f"{row.weighting}__{row.block_name}"
                 subspace_safe = safe_name(subspace_id)
                 axis_path = Path(row.subspace_dir) / f"{subspace_safe}__axis_top_terms.csv"
-                top_terms = read_dataframe(axis_path)
+                top_terms = pd.read_csv(axis_path)
                 for axis, frame in top_terms[top_terms["selection"].eq("top_absolute")].groupby(
                     "axis", sort=True
                 ):

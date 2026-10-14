@@ -1,0 +1,11 @@
+pattern,covariance_profile,matched_datasets,changed_partition_count,newly_reached_node_occurrences,mean_clusters_disabled,mean_clusters_enabled
+A_deep_only,ar1_0.6,1000,988,1976,1.024,3.007
+A_deep_only,identity,1000,989,1978,1.022,3.015
+global_null,ar1_0.6,1000,8,16,1.015,1.031
+global_null,identity,1000,8,16,1.012,1.028
+root_only,ar1_0.6,1000,0,0,2.005,2.005
+root_only,identity,1000,0,0,2.009,2.009
+separate_deep_branches,ar1_0.6,1000,987,1974,1.039,4.0
+separate_deep_branches,identity,1000,991,1982,1.027,4.0
+strong_root_weak_A,ar1_0.6,1000,0,0,2.221,2.221
+strong_root_weak_A,identity,1000,0,0,2.055,2.055

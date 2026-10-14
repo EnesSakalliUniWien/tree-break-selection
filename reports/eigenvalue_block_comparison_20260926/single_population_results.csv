@@ -1,0 +1,3 @@
+case,geometry,attempts,completed,multi_cluster_outputs,maximum_clusters
+mp_spike_below_bbp_continuous,adaptive_diffusion,24,18,5,5.0
+mp_spike_below_bbp_continuous,raw,24,18,5,5.0

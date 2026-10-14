@@ -69,10 +69,6 @@ class PreparedGatePathCase:
     oracle_true_k: OracleTreeCutResult
 
 
-def _as_bool(value: Any) -> bool:
-    return bool(value)
-
-
 def _as_float(value: Any) -> float:
     if value is None:
         return float("nan")
@@ -108,28 +104,28 @@ def _edge_prefix_values(
         }
 
     return {
-        f"{prefix}_edge_tested": _as_bool(
+        f"{prefix}_edge_tested": bool(
             _annotation_value(
                 annotations_df,
                 child,
                 "Child_Parent_Divergence_Tested",
             )
         ),
-        f"{prefix}_edge_ancestor_blocked": _as_bool(
+        f"{prefix}_edge_ancestor_blocked": bool(
             _annotation_value(
                 annotations_df,
                 child,
                 "Child_Parent_Divergence_Ancestor_Blocked",
             )
         ),
-        f"{prefix}_edge_significant": _as_bool(
+        f"{prefix}_edge_significant": bool(
             _annotation_value(
                 annotations_df,
                 child,
                 "Child_Parent_Divergence_Significant",
             )
         ),
-        f"{prefix}_edge_invalid": _as_bool(
+        f"{prefix}_edge_invalid": bool(
             _annotation_value(
                 annotations_df,
                 child,
@@ -394,13 +390,13 @@ def build_gate_path_trace_dataframe(
             "split_prerequisites_open": split_prerequisites[node],
             "sibling_gate_open": sibling_gate_open[node],
             "has_descendant_split": has_descendant_split[node],
-            "sibling_skipped": _as_bool(
+            "sibling_skipped": bool(
                 _annotation_value(annotations_df, node, "Sibling_Divergence_Skipped")
             ),
-            "sibling_bh_different": _as_bool(
+            "sibling_bh_different": bool(
                 _annotation_value(annotations_df, node, "Sibling_BH_Different")
             ),
-            "sibling_bh_same": _as_bool(_annotation_value(annotations_df, node, "Sibling_BH_Same")),
+            "sibling_bh_same": bool(_annotation_value(annotations_df, node, "Sibling_BH_Same")),
             "sibling_adjusted_statistic": _as_float(
                 _annotation_value(annotations_df, node, "Sibling_Test_Statistic")
             ),
@@ -417,7 +413,7 @@ def build_gate_path_trace_dataframe(
                     "Sibling_Divergence_P_Value_Corrected",
                 )
             ),
-            "sibling_invalid": _as_bool(
+            "sibling_invalid": bool(
                 _annotation_value(annotations_df, node, "Sibling_Divergence_Invalid")
             ),
             "sibling_test_method": str(

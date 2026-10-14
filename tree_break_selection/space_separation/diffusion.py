@@ -8,8 +8,16 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
 from scipy.linalg import eigh
+from scipy.sparse.csgraph import connected_components
+from scipy.sparse.linalg import eigsh
 from scipy.spatial.distance import pdist
+
+from tree_break_selection.eigenvalue_groups import (
+    extend_rank_through_ties,
+    tied_eigenvalue_neighbors,
+)
 
 
 @dataclass(frozen=True)
@@ -22,6 +30,11 @@ class DiffusionGeometry:
 
 
 PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS = 8
+# shortcut: above this size the leading modes come from ARPACK (eigsh). Disconnected
+# graphs fall back to the dense solver because ARPACK can miss repeated eigenvalue 1;
+# other exact repeated leading eigenvalues are not checked. Compare with the dense
+# solver if a large run depends on such ties.
+DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES = 2000
 PYDIFFMAP_VARIABLE_BANDWIDTH_MIN_POSITIVE_NEIGHBORS = (
     PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS - 1
 )
@@ -154,15 +167,65 @@ def resolve_adaptive_epsilon_from_scaled_sq(
     return float(epsilon_text), "scalar_text"
 
 
+def _leading_diffusion_spectrum(
+    eigenvalues: np.ndarray,
+    n_components: int,
+) -> tuple[int, int]:
+    """Return the retained [start, end) range of a descending spectrum."""
+    start = 0 if tied_eigenvalue_neighbors(eigenvalues)[0] else 1
+    return start, extend_rank_through_ties(eigenvalues, start + int(n_components))
+
+
+def _sparse_leading_eigenpairs(
+    transition: sparse.csr_matrix,
+    n_components: int,
+) -> tuple[np.ndarray, np.ndarray] | None:
+    """Return enough descending eigenpairs to close the retained tie group, or None."""
+    n_samples = transition.shape[0]
+    n_graph_components, _labels = connected_components(transition, directed=False)
+    if n_graph_components > 1:
+        return None
+    k = min(int(n_components) + 10, n_samples - 1)
+    start_vector = np.full(n_samples, 1.0 / math.sqrt(n_samples))
+    while True:
+        eigenvalues, eigenvectors = eigsh(transition, k=k, which="LA", v0=start_vector)
+        order = np.argsort(eigenvalues)[::-1]
+        eigenvalues, eigenvectors = eigenvalues[order], eigenvectors[:, order]
+        _start, end = _leading_diffusion_spectrum(eigenvalues, n_components)
+        if end < len(eigenvalues):
+            return eigenvalues, eigenvectors
+        if k >= n_samples - 1:
+            return None
+        k = min(2 * k, n_samples - 1)
+
+
 def compute_diffusion_coordinates(
-    weights: np.ndarray,
+    weights: np.ndarray | sparse.spmatrix,
     *,
     diffusion_time: int,
     n_components: int,
 ) -> np.ndarray:
-    """Project a symmetric diffusion operator to diffusion coordinates."""
+    """Project a symmetric diffusion operator without cutting numerical ties.
 
-    matrix = np.asarray(weights, dtype=float).copy()
+    ``n_components`` is a target; the final numerical eigenvalue group is
+    retained whole. Drop the leading mode only when its eigenvalue is isolated.
+    A repeated leading group is retained whole, including on disconnected graphs.
+    The operator is ``D^(-1/2) W D^(-1/2)``: zero the weight diagonal,
+    symmetrize by elementwise maximum, and use row sums as degrees, replacing
+    zero degrees by ``1e-10``. SciPy ``eigh`` supplies its eigenvectors up to
+    ``DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES`` rows; larger sparse operators use
+    ``eigsh`` for the leading modes. Negative retained eigenvalues are clipped
+    to zero before taking the ``diffusion_time`` power; at time zero, the
+    resulting ``0**0`` is one.
+    """
+
+    if sparse.issparse(weights):
+        if weights.shape[0] <= DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES:
+            weights = weights.toarray()
+        else:
+            weights = sparse.csr_matrix(weights, dtype=float, copy=True)
+    is_sparse = sparse.issparse(weights)
+    matrix = weights if is_sparse else np.asarray(weights, dtype=float).copy()
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError("Expected a square diffusion weight matrix.")
     if matrix.shape[0] < 2:
@@ -171,21 +234,37 @@ def compute_diffusion_coordinates(
         raise ValueError("diffusion_time must be non-negative.")
     if n_components < 1:
         raise ValueError("n_components must be positive.")
-    if not np.isfinite(matrix).all():
+    if not np.isfinite(matrix.data if is_sparse else matrix).all():
         raise ValueError("Diffusion weights contain non-finite values.")
 
-    np.fill_diagonal(matrix, 0.0)
-    matrix = np.maximum(matrix, matrix.T)
-    degrees = matrix.sum(axis=1)
+    if is_sparse:
+        matrix.setdiag(0.0)
+        matrix.eliminate_zeros()
+        matrix = matrix.maximum(matrix.T).tocsr()
+        degrees = np.asarray(matrix.sum(axis=1)).ravel()
+    else:
+        np.fill_diagonal(matrix, 0.0)
+        matrix = np.maximum(matrix, matrix.T)
+        degrees = matrix.sum(axis=1)
     degrees[degrees == 0] = 1e-10
     inv_sqrt_degrees = 1.0 / np.sqrt(degrees)
-    transition = matrix * inv_sqrt_degrees[:, None] * inv_sqrt_degrees[None, :]
 
-    n_comps = min(int(n_components), transition.shape[0] - 1)
-    eigenvalues, eigenvectors = eigh(transition)
-    order = np.argsort(eigenvalues)[::-1]
-    eigenvalues = np.maximum(eigenvalues[order][1 : n_comps + 1], 0.0)
-    eigenvectors = eigenvectors[:, order][:, 1 : n_comps + 1]
+    leading = None
+    if is_sparse:
+        scaling = sparse.diags(inv_sqrt_degrees)
+        transition = (scaling @ matrix @ scaling).tocsr()
+        leading = _sparse_leading_eigenpairs(transition, n_components)
+        if leading is None:
+            matrix = matrix.toarray()
+    if leading is None:
+        transition = matrix * inv_sqrt_degrees[:, None] * inv_sqrt_degrees[None, :]
+        eigenvalues, eigenvectors = eigh(transition)
+        order = np.argsort(eigenvalues)[::-1]
+        leading = eigenvalues[order], eigenvectors[:, order]
+    eigenvalues, eigenvectors = leading
+    start, end = _leading_diffusion_spectrum(eigenvalues, n_components)
+    eigenvalues = np.maximum(eigenvalues[start:end], 0.0)
+    eigenvectors = eigenvectors[:, start:end]
     return eigenvectors * (eigenvalues[None, :] ** diffusion_time)
 
 
@@ -221,7 +300,8 @@ def hamming_knn_diffusion_geometry(
         raise ValueError("k_neighbors must be positive.")
 
     n_samples = len(values)
-    neighbor_k = min(int(k_neighbors), n_samples - 1)
+    # The search returns each row as its own neighbor; keep at least one other row.
+    neighbor_k = resolve_neighbor_search_k(n_samples, k_neighbors)
     neighbors = NearestNeighbors(n_neighbors=neighbor_k, metric="hamming")
     neighbors.fit(values)
     neighbor_distances, neighbor_indices = neighbors.kneighbors(values)
@@ -242,7 +322,7 @@ def hamming_knn_diffusion_geometry(
             )
 
     diffusion_coordinates = compute_diffusion_coordinates(
-        weights.toarray(),
+        weights,
         diffusion_time=diffusion_time,
         n_components=n_components,
     )
@@ -272,7 +352,12 @@ def adaptive_diffusion_geometry(
     bandwidth_type: str | float | None,
     epsilon: str | float,
 ) -> DiffusionGeometry:
-    """Compute variable-bandwidth pydiffmap diffusion geometry."""
+    """Fit a pydiffmap kernel and compute repository diffusion coordinates.
+
+    ``backend`` retains the kernel backend's compatibility identifier.
+    Separate metadata records the symmetric coordinate operator and eigensolver
+    used by :func:`compute_diffusion_coordinates`.
+    """
 
     from pydiffmap import kernel
 
@@ -307,13 +392,8 @@ def adaptive_diffusion_geometry(
     )
     kernel_object.epsilon_fitted = epsilon_value
     adaptive_kernel = kernel_object.compute()
-    weights = (
-        adaptive_kernel.toarray()
-        if hasattr(adaptive_kernel, "toarray")
-        else np.asarray(adaptive_kernel, dtype=float)
-    )
     coordinates = compute_diffusion_coordinates(
-        weights,
+        adaptive_kernel,
         diffusion_time=diffusion_time,
         n_components=n_components,
     )
@@ -321,6 +401,16 @@ def adaptive_diffusion_geometry(
         coordinates,
         metadata={
             "backend": "pydiffmap",
+            "kernel_backend": "pydiffmap",
+            "coordinate_implementation": (
+                "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates"
+            ),
+            "coordinate_operator": "symmetric_normalized_operator",
+            "coordinate_operator_definition": "D^(-1/2) W D^(-1/2)",
+            "coordinate_eigensolver": "scipy.linalg.eigh",
+            "coordinate_eigenvalue_policy": (
+                "negative_eigenvalues_clipped_to_zero_before_diffusion_time_power"
+            ),
             "metric": metric,
             "requested_neighbor_search_k": int(k_neighbors),
             "neighbor_search_k": int(neighbor_k),
@@ -392,7 +482,7 @@ def block_diffusion_geometry(
             )
 
     diffusion_coordinates = compute_diffusion_coordinates(
-        weights.toarray(),
+        weights,
         diffusion_time=diffusion_time,
         n_components=n_components,
     )

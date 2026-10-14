@@ -29,7 +29,7 @@ from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -213,14 +213,6 @@ class SelectedPassThroughBranchRecoveryConditioningConfig:
     @property
     def generated_support_gene_assignments_path(self) -> Path:
         return self.output_dir / "generated_branch_support_gene_assignments.csv"
-
-
-def _bool_value(value: object) -> bool:
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes"}
-    if pd.isna(value):
-        return False
-    return bool(value)
 
 
 def _finite(values: pd.Series) -> np.ndarray:
@@ -1217,7 +1209,7 @@ def build_branch_recovery_conditioning_rows(node_rows: pd.DataFrame) -> pd.DataF
     records: list[dict[str, object]] = []
     for _, row in node_rows.iterrows():
         truth_class = _truth_geometry_class(row)
-        distinct = _bool_value(row["truth_downstream_child_majority_distinct"])
+        distinct = bool_value(row["truth_downstream_child_majority_distinct"])
         split_ari = finite_float(row["truth_downstream_split_ari"])
         child_purity = finite_float(row["truth_downstream_child_mean_purity"])
         branch_score = (

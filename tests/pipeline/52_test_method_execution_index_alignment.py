@@ -116,7 +116,7 @@ def test_run_single_method_once_aligns_report_rows_by_sample_id(monkeypatch):
     monkeypatch.setattr(method_execution, "run_clustering_result", _fake_run_clustering_result)
 
     spec = MethodSpec(name="TBS", runner=lambda **_kwargs: None, param_grid=[{}])
-    result_row, computed_result, method_audit = method_execution.run_single_method_once(
+    result_row, computed_result = method_execution.run_single_method_once(
         method_id="tbs",
         spec=spec,
         params={"tree_distance_metric": "hamming", "tree_linkage_method": "average"},
@@ -135,7 +135,6 @@ def test_run_single_method_once_aligns_report_rows_by_sample_id(monkeypatch):
         ),
         distance_matrix=None,
         distance_condensed=None,
-        matrix_audit=False,
     )
 
     assert np.isclose(result_row.ari, 1.0)
@@ -180,7 +179,6 @@ def test_run_single_method_once_aligns_report_rows_by_sample_id(monkeypatch):
     assert computed_result.params["edge_alpha"] == 0.007
     assert computed_result.params["sibling_alpha"] == 0.05
     assert computed_result.meta["stage_timings"]["edge_gate_sec"] == 0.03
-    assert method_audit is None
 
 
 def test_run_single_method_once_reuses_prepared_hamming_distance(monkeypatch):
@@ -204,7 +202,7 @@ def test_run_single_method_once_reuses_prepared_hamming_distance(monkeypatch):
     )
 
     spec = MethodSpec(name="TBS", runner=lambda **_kwargs: None, param_grid=[{}])
-    result_row, computed_result, method_audit = method_execution.run_single_method_once(
+    result_row, computed_result = method_execution.run_single_method_once(
         method_id="tbs",
         spec=spec,
         params={"tree_distance_metric": "hamming", "tree_linkage_method": "average"},
@@ -223,13 +221,11 @@ def test_run_single_method_once_reuses_prepared_hamming_distance(monkeypatch):
         ),
         distance_matrix=None,
         distance_condensed=prepared_distance,
-        matrix_audit=False,
     )
 
     assert result_row.status == "ok"
     assert captured_kwargs["distance_condensed"] is prepared_distance
     assert computed_result is not None
-    assert method_audit is None
 
 
 def test_run_single_method_once_records_precomputed_tbs_distance_contract(monkeypatch):
@@ -249,7 +245,7 @@ def test_run_single_method_once_records_precomputed_tbs_distance_contract(monkey
     )
 
     spec = MethodSpec(name="TBS", runner=lambda **_kwargs: None, param_grid=[{}])
-    result_row, computed_result, _method_audit = method_execution.run_single_method_once(
+    result_row, computed_result = method_execution.run_single_method_once(
         method_id="tbs",
         spec=spec,
         params={"tree_distance_metric": "hamming", "tree_linkage_method": "average"},
@@ -270,7 +266,6 @@ def test_run_single_method_once_records_precomputed_tbs_distance_contract(monkey
         ),
         distance_matrix=None,
         distance_condensed=precomputed_distance,
-        matrix_audit=False,
     )
 
     np.testing.assert_allclose(captured_kwargs["distance_condensed"], precomputed_distance)
@@ -287,54 +282,6 @@ def test_run_single_method_once_records_precomputed_tbs_distance_contract(monkey
     assert computed_result.params["tree_distance_source"] == "precomputed"
     assert computed_result.params["edge_alpha"] == DEFAULT_EDGE_ALPHA
     assert computed_result.params["sibling_alpha"] == 0.05
-
-
-def test_run_single_method_once_records_neighbor_joining_tree_contract(monkeypatch):
-    data_t = pd.DataFrame(
-        [[0, 0], [0, 1], [1, 0], [1, 1]],
-        index=["S0", "S1", "S2", "S3"],
-        columns=["F0", "F1"],
-    )
-    y_t = np.array([0, 0, 1, 1], dtype=int)
-    captured_kwargs = {}
-
-    monkeypatch.setattr(
-        method_execution,
-        "run_clustering_result",
-        _capturing_successful_tbs_result(captured_kwargs),
-    )
-
-    spec = MethodSpec(name="TBS (Neighbor Joining)", runner=lambda **_kwargs: None, param_grid=[{}])
-    result_row, computed_result, _method_audit = method_execution.run_single_method_once(
-        method_id="tbs_neighbor_joining",
-        spec=spec,
-        params={
-            "tree_distance_metric": "hamming",
-            "tree_linkage_method": "average",
-            "tree_builder": "neighbor_joining",
-            "tree_rooting": "mad",
-        },
-        case_idx=1,
-        case_name="neighbor_joining_case",
-        tc_seed=42,
-        significance_level=0.05,
-        edge_alpha=DEFAULT_EDGE_ALPHA,
-        data_t=data_t,
-        y_t=y_t,
-        x_original=data_t.values.astype(float),
-        meta=_benchmark_meta(name="neighbor_joining_case"),
-        distance_matrix=None,
-        distance_condensed=None,
-        matrix_audit=False,
-    )
-
-    assert captured_kwargs["distance_condensed"] is not None
-    assert result_row.params_raw["tree_builder"] == "neighbor_joining"
-    assert result_row.params_raw["tree_rooting"] == "mad"
-    assert result_row.params_raw["tree_distance_source"] == "feature_metric"
-    assert computed_result is not None
-    assert computed_result.params["tree_builder"] == "neighbor_joining"
-    assert computed_result.params["tree_rooting"] == "mad"
 
 
 def test_run_single_method_once_requires_metric_name_for_precomputed_tbs_distance(monkeypatch):
@@ -372,7 +319,6 @@ def test_run_single_method_once_requires_metric_name_for_precomputed_tbs_distanc
             ),
             distance_matrix=None,
             distance_condensed=np.ones(6, dtype=float),
-            matrix_audit=False,
         )
 
 
@@ -413,7 +359,6 @@ def test_run_single_method_once_requires_complete_tbs_stage_timings(monkeypatch)
             meta=_benchmark_meta(name="partial_timing_case"),
             distance_matrix=None,
             distance_condensed=None,
-            matrix_audit=False,
         )
 
 
@@ -451,7 +396,6 @@ def test_run_single_method_once_reraises_runner_exception(monkeypatch):
             meta=_benchmark_meta(name="unsupported_calibration_case"),
             distance_matrix=None,
             distance_condensed=None,
-            matrix_audit=False,
         )
 
 
@@ -500,5 +444,4 @@ def test_run_single_method_once_rejects_report_index_not_sample_ids(monkeypatch)
             meta=_benchmark_meta(),
             distance_matrix=None,
             distance_condensed=None,
-            matrix_audit=False,
         )

@@ -18,20 +18,6 @@ class EdgeDistributionalActionSummary:
 
 
 @dataclass(frozen=True)
-class BinarySplitDistributionalActionSummary:
-    left_mass: float
-    right_mass: float
-    parent_mass: float
-    parent_mean: np.ndarray
-    left_parent_mass_fraction: float
-    right_parent_mass_fraction: float
-    squared_child_displacement: float
-    left_edge_action: float
-    right_edge_action: float
-    action: float
-
-
-@dataclass(frozen=True)
 class SplitDistributionalActionSummary:
     child_masses: tuple[float, ...]
     parent_mass: float
@@ -58,21 +44,6 @@ def _as_positive_count(value: int | float, *, name: str) -> float:
     return count
 
 
-def edge_distributional_action(
-    parent_mean: ArrayLike,
-    child_mean: ArrayLike,
-    child_leaf_count: int | float,
-) -> float:
-    """Return child mass times squared child-parent mean displacement."""
-    parent = _as_1d_float_vector(parent_mean, name="parent_mean")
-    child = _as_1d_float_vector(child_mean, name="child_mean")
-    if parent.shape != child.shape:
-        raise ValueError("parent_mean and child_mean must have the same shape.")
-    child_count = _as_positive_count(child_leaf_count, name="child_leaf_count")
-    delta = child - parent
-    return float(child_count * np.dot(delta, delta))
-
-
 def edge_distributional_action_summary(
     parent_mean: ArrayLike,
     child_mean: ArrayLike,
@@ -95,21 +66,6 @@ def edge_distributional_action_summary(
         squared_displacement=squared_displacement,
         action=float(child_count * squared_displacement),
     )
-
-
-def binary_split_distributional_action(
-    left_mean: ArrayLike,
-    right_mean: ArrayLike,
-    left_leaf_count: int | float,
-    right_leaf_count: int | float,
-) -> float:
-    """Return between-child distributional action for a binary split."""
-    return binary_split_distributional_action_summary(
-        left_mean,
-        right_mean,
-        left_leaf_count,
-        right_leaf_count,
-    ).action
 
 
 def split_distributional_action_summary(
@@ -157,35 +113,3 @@ def split_distributional_action_summary(
     )
 
 
-def binary_split_distributional_action_summary(
-    left_mean: ArrayLike,
-    right_mean: ArrayLike,
-    left_leaf_count: int | float,
-    right_leaf_count: int | float,
-) -> BinarySplitDistributionalActionSummary:
-    """Return split action together with child and parent distribution masses."""
-    left = _as_1d_float_vector(left_mean, name="left_mean")
-    right = _as_1d_float_vector(right_mean, name="right_mean")
-    if left.shape != right.shape:
-        raise ValueError("left_mean and right_mean must have the same shape.")
-    left_count = _as_positive_count(left_leaf_count, name="left_leaf_count")
-    right_count = _as_positive_count(right_leaf_count, name="right_leaf_count")
-    total_count = left_count + right_count
-    delta = left - right
-    squared_displacement = float(np.dot(delta, delta))
-    split_summary = split_distributional_action_summary(
-        (left, right),
-        (left_count, right_count),
-    )
-    return BinarySplitDistributionalActionSummary(
-        left_mass=left_count,
-        right_mass=right_count,
-        parent_mass=total_count,
-        parent_mean=split_summary.parent_mean,
-        left_parent_mass_fraction=float(left_count / total_count),
-        right_parent_mass_fraction=float(right_count / total_count),
-        squared_child_displacement=squared_displacement,
-        left_edge_action=split_summary.child_edge_actions[0],
-        right_edge_action=split_summary.child_edge_actions[1],
-        action=float((left_count * right_count / total_count) * squared_displacement),
-    )

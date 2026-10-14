@@ -28,11 +28,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score
+from tree_break_selection.core_utils.tree_utils import tree_root
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
 )
 
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.tree_consensus import (
@@ -119,20 +121,6 @@ class BranchArchitectAdapter:
             and self.tree_interpolation_pipeline is not None
             and self.pipeline_config is not None
         )
-
-
-def _json_default(value: object) -> object:
-    if isinstance(value, Path):
-        return str(value)
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    if isinstance(value, frozenset):
-        return sorted(value)
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 def _finite_or_nan(value: object) -> float:
@@ -286,16 +274,6 @@ def load_brancharchitect_adapter(
         tree_interpolation_pipeline=TreeInterpolationPipeline,
         pipeline_config=PipelineConfig,
     )
-
-
-def _tree_root(tree: Any) -> object:
-    root = getattr(tree, "graph", {}).get("root")
-    if root is not None:
-        return root
-    roots = [node for node, degree in tree.in_degree() if int(degree) == 0]
-    if len(roots) != 1:
-        raise ValueError(f"Expected one tree root, got {roots!r}.")
-    return roots[0]
 
 
 def _raise_recursion_limit_for_tree(tree: Any) -> None:
@@ -536,7 +514,7 @@ def snapshot_from_computed(
         raise ValueError(f"Computed result for {case_id}/{computed.run_id} has no tree.")
     tree = computed.tree
     _raise_recursion_limit_for_tree(tree)
-    root = _tree_root(tree)
+    root = tree_root(tree)
     descendants = _tree_descendants(tree, root)
     leaf_labels = tuple(sorted(descendants[root]))
     root_paths, edge_lengths, missing_count, zero_count = _root_path_edges_by_leaf(
@@ -949,7 +927,7 @@ def rebuild_snapshots(
         case_name = str(case["name"])
         inputs = prepare_case_inputs(case, [TARGET_TREE_CONSENSUS_METHOD])
         for params in spec.param_grid:
-            row, computed, _method_audit = run_single_method_once(
+            row, computed = run_single_method_once(
                 method_id=TARGET_TREE_CONSENSUS_METHOD,
                 spec=spec,
                 params=dict(params),
@@ -964,7 +942,6 @@ def rebuild_snapshots(
                 meta=inputs.metadata,
                 distance_matrix=inputs.distance_matrix,
                 distance_condensed=inputs.distance_condensed,
-                matrix_audit=False,
             )
             if row.status == BenchmarkRunStatus.OK and computed is not None:
                 snapshots.append(
@@ -1277,7 +1254,7 @@ def write_brancharchitect_tree_comparison_artifacts(
         },
     }
     manifest_path.write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, default=_json_default),
+        json.dumps(manifest, indent=2, sort_keys=True, default=diagnostic_json_default),
         encoding="utf-8",
     )
     return {

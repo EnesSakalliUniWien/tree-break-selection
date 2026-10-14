@@ -1,0 +1,21 @@
+{
+  "source_hashes_match": true,
+  "paired_datasets": 900,
+  "run_rows": 18000,
+  "node_rows": 83700,
+  "status_counts": {
+    "ok": 18000
+  },
+  "independent_frozen_contexts": 2700,
+  "unchanged_diffusion_nnls_node_records": 27900,
+  "unchanged_diffusion_nnls_run_pairs": 5400,
+  "changed_nnls_branch_fits": 900,
+  "changed_direct_vs_diffusion_topologies": 900,
+  "matched_equation_pairs": 8100,
+  "primary_alpha_equation_cluster_count_changes": 30,
+  "warnings": [],
+  "nnls_solver_messages": {
+    "The relative change of the cost function is less than `tol`.": 695,
+    "The first-order optimality measure is less than `tol`.": 205
+  }
+}

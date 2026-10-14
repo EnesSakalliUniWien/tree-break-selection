@@ -4,23 +4,30 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
 import pandas as pd
 
+from benchmarks.cloud.sharding import (
+    iter_expected_shard_dirs,
+    sync_path_to_s3,
+    sync_s3_to_path,
+    validate_replicate_coverage,
+    validate_shard_contract,
+    write_json,
+)
 from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     DEFAULT_EDGE_ALPHA_GRID,
     DEFAULT_MODES,
     SelectedEdgeGeometryConfig,
-    parse_alpha_grid,
     parse_names,
     run_selected_edge_geometry_for_replicates,
     validate_modes,
 )
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 
 SHARD_MANIFEST_NAME = "aws_selected_edge_geometry_shard_manifest.json"
 COMBINED_MANIFEST_NAME = "aws_selected_edge_geometry_manifest.json"
@@ -57,16 +64,6 @@ class SelectedEdgeShardSpec:
     replicate_indices: tuple[int, ...]
 
 
-def validate_shard_contract(*, shard_index: int, shard_count: int) -> None:
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    if not 0 <= shard_index < shard_count:
-        raise ValueError(
-            f"shard_index must satisfy 0 <= index < shard_count; got "
-            f"{shard_index!r} with shard_count={shard_count!r}."
-        )
-
-
 def make_shard_spec(
     configured: AwsSelectedEdgeGeometryConfig,
     shard_index: int,
@@ -89,19 +86,6 @@ def make_shard_spec(
         output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
         replicate_indices=replicate_indices,
     )
-
-
-def sync_path_to_s3(local_path: Path, s3_uri: str) -> None:
-    subprocess.run(("aws", "s3", "sync", str(local_path), s3_uri), check=True)
-
-
-def sync_s3_to_path(s3_uri: str, local_path: Path) -> None:
-    local_path.mkdir(parents=True, exist_ok=True)
-    subprocess.run(("aws", "s3", "sync", s3_uri, str(local_path)), check=True)
-
-
-def _write_json(path: Path, payload: dict[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 def _validation_config(
@@ -145,19 +129,13 @@ def run_shard(configured: AwsSelectedEdgeGeometryConfig, shard_index: int) -> di
         "source_manifest": manifest,
         "note": "Shard output is diagnostic evidence only; merge before interpretation.",
     }
-    _write_json(spec.output_dir / SHARD_MANIFEST_NAME, shard_manifest)
+    write_json(spec.output_dir / SHARD_MANIFEST_NAME, shard_manifest)
     if configured.s3_uri is not None:
         sync_path_to_s3(
             spec.output_dir,
             f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}",
         )
     return shard_manifest
-
-
-def iter_expected_shard_dirs(output_dir: Path, shard_count: int) -> tuple[Path, ...]:
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    return tuple(output_dir / "shards" / f"shard_{index:04d}" for index in range(shard_count))
 
 
 def _load_shard_table(shard_dir: Path, filename: str) -> pd.DataFrame:
@@ -174,22 +152,6 @@ def _load_shard_manifest(shard_dir: Path) -> dict[str, object]:
     return json.loads(path.read_text())
 
 
-def _validate_replicate_coverage(
-    manifests: list[dict[str, object]],
-    *,
-    expected_replicates: int,
-) -> None:
-    observed: list[int] = []
-    for manifest in manifests:
-        observed.extend(int(index) for index in manifest["replicate_indices"])
-    duplicated = sorted(index for index in set(observed) if observed.count(index) > 1)
-    if duplicated:
-        raise ValueError(f"Duplicate replicate index assignment after merge: {duplicated!r}")
-    missing = sorted(set(range(expected_replicates)) - set(observed))
-    if missing:
-        raise ValueError(f"Missing replicate index assignment after merge: {missing!r}")
-
-
 def merge_shards(configured: AwsSelectedEdgeGeometryConfig) -> dict[str, pd.DataFrame]:
     """Merge all selected-edge geometry shard outputs."""
     if configured.s3_uri is not None:
@@ -199,7 +161,7 @@ def merge_shards(configured: AwsSelectedEdgeGeometryConfig) -> dict[str, pd.Data
         )
     shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     manifests = [_load_shard_manifest(shard_dir) for shard_dir in shard_dirs]
-    _validate_replicate_coverage(manifests, expected_replicates=configured.replicates)
+    validate_replicate_coverage(manifests, expected_replicates=configured.replicates)
 
     edges = pd.concat(
         [_load_shard_table(shard_dir, EDGE_ROWS_NAME) for shard_dir in shard_dirs],
@@ -235,7 +197,7 @@ def merge_shards(configured: AwsSelectedEdgeGeometryConfig) -> dict[str, pd.Data
         "source_shard_dirs": [str(path) for path in shard_dirs],
         "note": "Merged selected-edge Type-I geometry diagnostic evidence only.",
     }
-    _write_json(merged_dir / COMBINED_MANIFEST_NAME, combined_manifest)
+    write_json(merged_dir / COMBINED_MANIFEST_NAME, combined_manifest)
     if configured.s3_uri is not None:
         sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
     return {"edges": edges, "siblings": siblings, "final": final}
@@ -278,7 +240,7 @@ def _configured_from_args(args: argparse.Namespace) -> AwsSelectedEdgeGeometryCo
         suite=str(args.suite),
         case_names=parse_names(args.case_names),
         modes=validate_modes(parse_names(args.modes)),
-        edge_alphas=parse_alpha_grid(str(args.edge_alphas)),
+        edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alpha=float(args.sibling_alpha),
         replicates=int(args.replicates),
         base_seed=int(args.base_seed),

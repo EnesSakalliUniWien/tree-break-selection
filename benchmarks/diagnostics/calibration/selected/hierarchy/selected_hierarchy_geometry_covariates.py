@@ -57,7 +57,6 @@ from tree_break_selection.tree.feature_space import FeatureSpace
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
     _build_tree,
-    _parse_csv_list,
     _selected_cases,
     _simulate_null_data,
 )
@@ -67,6 +66,7 @@ from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_st
 from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
     effective_rank,
 )
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
 
@@ -1945,7 +1945,7 @@ def main() -> None:
             / f"selected_hierarchy_geometry_covariates_{format_timestamp_utc()}"
         )
     outputs = run_selected_hierarchy_geometry_covariate_study(
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         output_dir=output_dir,
         n_replicates=int(args.n_replicates),
         seed=int(args.seed),

@@ -43,9 +43,7 @@ configure_matplotlib_backend()
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import fisher_exact
-
-from applications.endotypes._shared import benjamini_hochberg as _bh_correct
+from scipy.stats import false_discovery_control, fisher_exact
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -251,7 +249,7 @@ def pathway_enrichment(
             continue
 
         pvals_arr = np.array(pvals)
-        qvals = _bh_correct(pvals_arr)
+        qvals = false_discovery_control(pvals_arr, method="bh")
 
         for pw, p, q, odds in zip(pathways, pvals, qvals, odds_ratios):
             a = int(cluster_data[pw].sum())

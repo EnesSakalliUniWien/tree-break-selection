@@ -33,7 +33,6 @@ DATA_ADAPTIVE_PRODUCTION_BLOCK_REASON = (
     "data_adaptive_refinement_context_not_predeclared_production_contract"
 )
 
-BASE_CONTEXT_COLUMNS = TAIL_LAW_CONTEXT_COLUMNS
 
 BIN_SPECS: tuple[tuple[str, str, int], ...] = (
     ("child_balance", "child_balance_bin", 3),
@@ -89,7 +88,7 @@ REFINEMENT_CONTEXTS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 REQUIRED_RECORD_COLUMNS = {
-    *(column for column in BASE_CONTEXT_COLUMNS if column != "edge_action_bin"),
+    *(column for column in TAIL_LAW_CONTEXT_COLUMNS if column != "edge_action_bin"),
     SIMULATION_ID_COLUMN,
     "selected_hierarchy_ratio",
     "feature_dimension",
@@ -223,7 +222,7 @@ def _bin_finite_values(values: pd.Series, *, n_bins: int) -> pd.Series:
 def add_refinement_bins(
     records: pd.DataFrame,
     *,
-    base_context_columns: Sequence[str] = BASE_CONTEXT_COLUMNS,
+    base_context_columns: Sequence[str] = TAIL_LAW_CONTEXT_COLUMNS,
     bin_specs: Sequence[tuple[str, str, int]] = BIN_SPECS,
 ) -> pd.DataFrame:
     """Add within-base-context bins for topology and geometry variables."""
@@ -287,7 +286,7 @@ def evaluate_topology_refined_tail_laws(
     records: pd.DataFrame,
     *,
     refinement_contexts: Sequence[tuple[str, tuple[str, ...]]] = REFINEMENT_CONTEXTS,
-    base_context_columns: Sequence[str] = BASE_CONTEXT_COLUMNS,
+    base_context_columns: Sequence[str] = TAIL_LAW_CONTEXT_COLUMNS,
     alpha: float = 0.01,
     n_folds: int = 5,
     min_train_simulations: int = 20,
@@ -377,7 +376,7 @@ def _base_context_key(
 def compare_refinements_to_base(
     tail_laws: pd.DataFrame,
     *,
-    base_context_columns: Sequence[str] = BASE_CONTEXT_COLUMNS,
+    base_context_columns: Sequence[str] = TAIL_LAW_CONTEXT_COLUMNS,
 ) -> pd.DataFrame:
     """Compare each refinement family against the corresponding base context."""
     base = tail_laws[tail_laws["context_family"].eq("base")].copy()
@@ -486,7 +485,7 @@ def run_topology_refinement_diagnostic(
     refinement_summary = summarize_refinement_families(refined_tail_law)
     base_context_refinement_comparison = compare_refinements_to_base(
         refined_tail_law,
-        base_context_columns=BASE_CONTEXT_COLUMNS,
+        base_context_columns=TAIL_LAW_CONTEXT_COLUMNS,
     )
     outputs = {
         "refined_tail_law": refined_tail_law,
@@ -502,7 +501,7 @@ def run_topology_refinement_diagnostic(
             {"run_id": records_input.run_id, "path": str(records_input.path)}
             for records_input in records_inputs
         ],
-        "base_context_columns": list(BASE_CONTEXT_COLUMNS),
+        "base_context_columns": list(TAIL_LAW_CONTEXT_COLUMNS),
         "refinement_contexts": {
             context_family: list(additional_columns)
             for context_family, additional_columns in REFINEMENT_CONTEXTS

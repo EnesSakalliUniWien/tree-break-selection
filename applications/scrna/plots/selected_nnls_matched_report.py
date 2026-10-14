@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
 
+from applications.scrna._shared import add_generated_at
 from applications.scrna.plots.report_helpers import artifact_record, plot_cluster_size_bars
 from applications.scrna.plots.selected_nnls_fit_summary import _fit_diagnostic, _plot_fit
 from applications.scrna.plots.selected_nnls_report import (
@@ -21,7 +22,6 @@ from applications.scrna.plots.selected_nnls_report import (
     DATASETS,
     METHOD_TITLE,
     SELECTED,
-    add_generated_at,
     build_full_tree_info,
     cluster_summary,
     make_cluster_palette,

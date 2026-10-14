@@ -2,7 +2,7 @@
 title: Repository Execution and Benchmark Map
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-13
 sources:
   - README.md
   - applications/README.md
@@ -48,7 +48,7 @@ than an apples-to-apples model-selection result.
 | Module or directory | Interface and responsibility | May depend on |
 | --- | --- | --- |
 | `tree_break_selection/tree/` | Tree feature contracts, distances, topology construction, rooting, branch lengths, and `PosetTree` | Core utilities; the current `PosetTree` convenience facade also reaches into hierarchy analysis |
-| `tree_break_selection/space_separation/` | In-memory adaptive-cosine, invariant/equivariant, and diffusion geometry | Scientific Python dependencies, not applications or benchmarks |
+| `tree_break_selection/space_separation/` | In-memory adaptive-cosine, leading/following PCA-axis, and diffusion geometry | Scientific Python dependencies, not applications or benchmarks |
 | `tree_break_selection/hierarchy_analysis/` | Distribution annotation, edge and sibling gates, traversal, and cluster extraction | Tree and core-utility modules |
 | `tree_break_selection/plot/` | Reusable colors, tree rendering, image panels, UMAP overlays, and file-safe backend selection | Reusable tree/result objects, not application paths |
 | `applications/endotypes/` | GO/endotype matrix adaptation, subspace orchestration, annotation, and reports | Public method/plot interfaces and selected public benchmark runner contracts |
@@ -84,11 +84,9 @@ Reusable method modules do not import applications or benchmarks.
 
 ### Tree-construction map
 
-The registered topology builders are explicitly ordered as `linkage`,
-`neighbor_joining`, and `iqtree3`. Direct and diffusion-derived condensed
-distances feed linkage; direct and graphtools distances can feed neighbor
-joining; IQ-TREE consumes encoded feature-state alignments. Rooting and
-fixed-topology branch-length fitting remain separate seams.
+The only registered topology builder is `linkage`. Direct and
+diffusion-derived condensed distances feed it. Rooting and fixed-topology
+branch-length fitting remain separate seams.
 
 The complete geometry-to-topology matrix, including endotype, scRNA, and MNIST
 routes, is maintained in [[tree-construction-method-map]].

@@ -63,8 +63,9 @@ def test_benchmark_graphtools_diffusion_method_smoke(require_optional_dependenci
         "tbs_diffusion_graphtools",
         "tbs_diffusion_graphtools_adaptive_nnls",
     }
-    assert len(df_results) == 9
-    assert df_results["run_id"].nunique() == 9
+    # 1 graphtools row plus the 7-linkage adaptive-K tree-strategy grid.
+    assert len(df_results) == 8
+    assert df_results["run_id"].nunique() == 8
     assert (
         df_results[df_results["method"] == "tbs_diffusion_graphtools_adaptive_nnls"][
             "benchmark_grid"

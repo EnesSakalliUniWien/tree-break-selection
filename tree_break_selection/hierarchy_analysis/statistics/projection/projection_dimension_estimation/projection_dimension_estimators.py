@@ -20,6 +20,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from tree_break_selection.eigenvalue_groups import extend_rank_through_ties
+
 
 @dataclass(frozen=True)
 class MarchenkoPasturDimensionEstimate:
@@ -122,6 +124,10 @@ def estimate_marchenko_pastur_dimension(
     ``mp_threshold_rows`` records the row count actually used in the MP aspect
     ratio. In the production leaf-only spectral contract these counts are the
     same; diagnostics may vary them explicitly.
+
+    The test dimension extends through the complete numerical eigenvalue group
+    at its boundary, within positive available directions. The raw MP count
+    remains the unmodified threshold count.
     """
     independent_row_count = (
         int(n_samples) if effective_independent_rows is None else int(effective_independent_rows)
@@ -160,9 +166,9 @@ def estimate_marchenko_pastur_dimension(
         int(n_features),
         _positive_eigenvalue_count(np.asarray(eigenvalues, dtype=np.float64)),
     )
-    test_projection_dimension = min(
+    test_projection_dimension = extend_rank_through_ties(
+        np.asarray(eigenvalues, dtype=np.float64)[:available_projection_directions],
         test_projection_dimension,
-        int(available_projection_directions),
     )
     return MarchenkoPasturDimensionEstimate(
         raw_mp_signal_count=int(raw_mp_signal_count),

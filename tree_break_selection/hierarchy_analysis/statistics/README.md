@@ -12,12 +12,15 @@ pipeline.
 | `annotate_fixed_subspace_sibling_divergence` | Opt-in sibling gate using fixed covariance-whitened coordinate or feature-block BH aggregation without parent PCA adaptation. |
 | `benjamini_hochberg_correction` | Flat BH correction helper. |
 | `apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
+| `independent_gaussian.fit_independent_gaussian_tree` | Fit topology and PCA on discovery measurements with known Gaussian covariance. |
+| `independent_gaussian.test_independent_gaussian_tree` | Test independent measurements of the same leaves using the conditional energy reference, then existing corrections and traversal. |
 
 ## Directory Map
 
 | Path | Purpose |
 | ---- | ------- |
 | `contrast_covariance.py` | Canonical contrast-covariance object for projected-Wald statistics. |
+| `independent_gaussian.py` | Explicit discovery/test API for independent paired Gaussian measurements and externally known covariance; no same-data empirical inflation. |
 | `projection/projected_wald/` | Shared projected-Wald kernel, projection basis, and reference distribution. |
 | `projection/selected_gaussian_radial.py` | Internal continuous-Gaussian selected radial prototype with a nuisance-derived projection and exact declared selection intervals; not connected to production gates. |
 | `projection/selected_gaussian_hierarchy.py` | Analytic observed merge-sequence interval construction for the internal squared-Euclidean average-linkage Gaussian prototype; not a production tree model. |
@@ -26,7 +29,7 @@ pipeline.
 | `projection/projection_dimension_estimation/` | Projection dimension estimators. |
 | `child_parent_divergence/` | Child-parent projected-Wald tests and tree-level edge annotation. |
 | `sibling_divergence/` | Sibling pair collection, projected-Wald testing, fixed-subspace gates, empirical-null inflation, and sibling FDR. |
-| `multiple_testing/` | Flat BH, tree-BH, and stopping-edge recovery helpers. |
+| `multiple_testing/` | Flat BH and tree-BH helpers. |
 | `branch_length_utils.py` | Branch-length validation and normalized tree-time variance utilities. |
 
 ## Active Method Flow
@@ -66,6 +69,12 @@ pipeline.
   value. With support, `internal_admissible` means the empirical rule is
   available; it does not certify the selected-tail reference law.
 - Projection quantities and raw feature coordinates are separate objects.
+- Spectral rank targets extend through complete numerical eigenvalue groups,
+  using the shared `tree_break_selection/eigenvalue_groups.py` rule. The raw MP
+  signal count is distinct from the extended test dimension, and Wald degrees
+  of freedom use the returned basis dimension. A supplied PCA basis cannot
+  silently omit known tied directions. This geometric requirement does not
+  establish a null reference law for contrast-selected rank or selected trees.
 - The selected Gaussian radial prototype supports a fixed scalar branch-time
   covariance multiplier through radius rescaling. Recomputed linkage/NNLS
   branch lengths and `branch_length_state` projections are not fixed by the
@@ -86,3 +95,46 @@ pipeline.
   over every binary parent in a fully reselected permutation null tree.
 - DataFrame annotations are a transport format for gate columns; statistical
   kernels should use typed records where available.
+
+## Independent Gaussian measurement contract
+
+The independent API requires two measurement matrices with identical leaf and
+feature labels, genuinely independent noise, independent rows, and a common
+externally known positive-definite Gaussian covariance. Distinct observation
+IDs represent distinct measurements of the same leaves. Renaming IDs or copying
+one matrix cannot create independence; neither can splitting leaves into two
+unmatched trees. Covariance estimated from these matrices is not a known input.
+
+Discovery fits tree topology and positive PCA candidate directions. Inference
+uses only the frozen discovery context and the separate measurement matrix.
+`energy_selected_reference.py` conditions on contrast-energy selection through
+complete numerical eigenvalue groups. Fixed full candidate rank uses chi-square;
+adaptive rank uses a conditional mixture, not chi-square at a fitted df.
+Retained rank is recorded separately from the reference-law name. The legacy
+`Sibling_Degrees_of_Freedom` transport column carries retained rank and has an
+explicit semantics column in this path.
+
+Known covariance removes the empirical-inflation stage for this API. Both edge
+and sibling p-values are replaced before existing Tree-BH, sibling BH and
+`TreeDecomposition`. For binary groups with common known covariance, normalized
+child-parent and sibling contrasts coincide up to sign. The API does not treat
+fitted branch lengths as stochastic covariance times.
+
+Ordinary single-matrix callers remain on their existing path because they lack
+these inputs. Bernoulli/categorical data, covariance estimation, dependent paired
+measurements and diffusion on binary data are outside this Gaussian contract.
+Benchmark evidence is in `reports/production_pvalue_replacement_20260928/`.
+
+For discovery-only adaptive Euclidean diffusion with fixed-topology NNLS, pass
+`diffusion=IndependentGaussianDiffusion()` to `fit_independent_gaussian_tree`.
+This reuses the existing pydiffmap geometry and NNLS implementation, requires a
+linkage tree, and fits both only on original discovery measurements. Set
+`fit_nnls=False` on the configuration to compare diffusion without NNLS.
+Topology, branch lengths, diffusion coordinates and PCA are frozen before
+testing. Solver nonconvergence is rejected; solver diagnostics are retained.
+
+Under the independent known-covariance model, NNLS lengths have no covariance
+role, so diffusion and diffusion plus NNLS give identical tests on a fixed
+topology. This differs from the current single-matrix branch-time model.
+The matched 900-pair benchmark, root tails, solver diagnostics and limitations
+are in `reports/independent_diffusion_nnls_20260928/`.

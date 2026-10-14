@@ -93,6 +93,19 @@ def test_audit_distinguishes_go_annotation_analysis_levels(tmp_path: Path) -> No
     assert bool(by_path["canonical"].is_canonical) is True
 
 
+def test_audit_reports_unreadable_config_and_summary_files(tmp_path: Path) -> None:
+    folder = tmp_path / "broken"
+    folder.mkdir()
+    (folder / "experiment_config.json").write_text("{not json", encoding="utf-8")
+    (folder / "method_tree_matrix_summary.csv").write_bytes(b"\xff\xfe\x00bad")
+
+    row = audit_paths([folder]).iloc[0]
+
+    assert "experiment_config.json: JSONDecodeError" in row.read_errors
+    assert "method_tree_matrix_summary.csv" in row.read_errors
+    assert row.method_versions == ""
+
+
 def test_pipeline_plan_uses_canonical_current_stage_and_optional_audit_matrix(
     tmp_path: Path,
 ) -> None:

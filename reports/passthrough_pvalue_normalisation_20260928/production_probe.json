@@ -1,0 +1,116 @@
+{
+  "annotation_comparison": {
+    "all_annotation_fields_equal_after_both_traversals": true,
+    "all_pvalue_fields_equal": {
+      "Child_Parent_Divergence_P_Value": true,
+      "Child_Parent_Divergence_P_Value_BH": true,
+      "Sibling_Dense_Evidence_P_Value": true,
+      "Sibling_Divergence_P_Value": true,
+      "Sibling_Divergence_P_Value_Corrected": true,
+      "Sibling_Fixed_Block_BH_P_Value": true,
+      "Sibling_Fixed_Coordinate_BH_P_Value": true,
+      "Sibling_Fixed_Global_P_Value": true,
+      "Sibling_Gate_P_Value_Calibration": true,
+      "Sibling_Gate_P_Value_Role": true,
+      "Sibling_Sparse_Evidence_P_Value": true
+    },
+    "annotation_fields": 37,
+    "annotation_rows": 1251,
+    "changed_pvalue_fields": [],
+    "edge_BH_p_nonmissing": 718,
+    "edge_raw_p_nonmissing": 1250,
+    "numeric_pvalue_field_count": 9,
+    "numeric_pvalue_fields": [
+      "Child_Parent_Divergence_P_Value",
+      "Child_Parent_Divergence_P_Value_BH",
+      "Sibling_Divergence_P_Value",
+      "Sibling_Divergence_P_Value_Corrected",
+      "Sibling_Fixed_Coordinate_BH_P_Value",
+      "Sibling_Fixed_Block_BH_P_Value",
+      "Sibling_Fixed_Global_P_Value",
+      "Sibling_Sparse_Evidence_P_Value",
+      "Sibling_Dense_Evidence_P_Value"
+    ],
+    "pvalue_named_field_count": 11,
+    "pvalue_named_fields": [
+      "Child_Parent_Divergence_P_Value",
+      "Child_Parent_Divergence_P_Value_BH",
+      "Sibling_Divergence_P_Value",
+      "Sibling_Divergence_P_Value_Corrected",
+      "Sibling_Gate_P_Value_Calibration",
+      "Sibling_Gate_P_Value_Role",
+      "Sibling_Fixed_Coordinate_BH_P_Value",
+      "Sibling_Fixed_Block_BH_P_Value",
+      "Sibling_Fixed_Global_P_Value",
+      "Sibling_Sparse_Evidence_P_Value",
+      "Sibling_Dense_Evidence_P_Value"
+    ],
+    "sibling_BH_adjusted_p_nonmissing": 345,
+    "sibling_calibrated_p_nonmissing": 345,
+    "sibling_calibration_status_counts": {
+      "": 906,
+      "empirical_null_inflation": 345
+    }
+  },
+  "configuration": {
+    "calibration_support_contract_version": 2,
+    "edge_alpha": 0.001,
+    "node_count": 1251,
+    "sibling_alpha": 0.01,
+    "sibling_gate_method": "projected_wald_inflation",
+    "tree_distance_metric": "hamming",
+    "tree_linkage_method": "average",
+    "tree_method": "tbs"
+  },
+  "environment": {
+    "numpy": "2.3.4",
+    "pandas": "2.3.3",
+    "python": "3.11.12"
+  },
+  "input": {
+    "all_binary": true,
+    "path": "data/feature_matrices/feature_matrix.tsv",
+    "sha256": "166aa77daee89373edb577fc992a928619e398815e8e49c93741a107914b1068",
+    "shape": [
+      626,
+      456
+    ]
+  },
+  "node_level_csv": "production_node_pvalues.csv",
+  "purpose": "Compare production p-value annotations and partitions with passthrough disabled/enabled on one real feature matrix.",
+  "reachability": {
+    "nodes_reached_only_with_passthrough": 216,
+    "nodes_reached_only_without_passthrough": 0,
+    "partitions_equal": false
+  },
+  "run_command": ".venv/bin/python reports/passthrough_pvalue_normalisation_20260928/pvalue_probe.py",
+  "source_sha256": {
+    "applications/endotypes/pipelines/run_feature_matrix_with_umap.py": "bed79cfb205a0429f9cc36f09995e19f3b1c5bc50cead5701dad3d33ff80c977",
+    "tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py": "ae568d891f01ad305de453e14284896def43ebd8f3c9ea01a209cce50b9d421d",
+    "tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py": "7f6686e6a89f9386ba9e7e92d63b9342211b0bd763f19af7e1836b9e6934ee96",
+    "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflated_projected_wald_annotation/fdr_annotation.py": "382fc03fc5fa105f64874ed5885537586c428eb7202d341442febba05b2e5ba9",
+    "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflated_projected_wald_annotation/pipeline.py": "273353eebe1fc779a8b44c3b2505583ca64ef441f056ac0c3b63ed10971cd908",
+    "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/inflation_adjusted_sibling_tests.py": "48c4b78412d0b8baea654af464d0a152845370560b7516bb9d0ef93d36cc1457",
+    "tree_break_selection/hierarchy_analysis/tree_decomposition.py": "d33b0c0a16cd40ed40d51ba2b35f5cd9d294f1fae894074c0775cfd2f7a5ff0a"
+  },
+  "traversal": {
+    "false": {
+      "clusters": 1,
+      "pass_through_decisions": 0,
+      "reached_nodes_with_sibling_p": 1,
+      "split_decisions": 0,
+      "visited_internal_nodes": 1,
+      "visited_leaf_nodes": 0,
+      "visited_nodes_all": 1
+    },
+    "true": {
+      "clusters": 109,
+      "pass_through_decisions": 76,
+      "reached_nodes_with_sibling_p": 182,
+      "split_decisions": 32,
+      "visited_internal_nodes": 182,
+      "visited_leaf_nodes": 35,
+      "visited_nodes_all": 217
+    }
+  }
+}

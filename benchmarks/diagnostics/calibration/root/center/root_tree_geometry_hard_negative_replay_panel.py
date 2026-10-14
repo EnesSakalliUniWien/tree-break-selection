@@ -25,7 +25,7 @@ from sklearn.metrics import adjusted_rand_score
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
@@ -39,14 +39,11 @@ STUDY_ROLE = "diagnostic_root_tree_geometry_hard_negative_replay_not_calibration
 GENERATED_BY = (
     "benchmarks.diagnostics.calibration.root.center.root_tree_geometry_hard_negative_replay_panel"
 )
-DEFAULT_RESULT_ROOT = Path("raw/assets/benchmark-results/specific_small_method_benchmark_20260615")
 DEFAULT_TREE_GEOMETRIES = (
-    "linkage:linkage_root:hamming:average",
-    "linkage:linkage_root:hamming:complete",
-    "linkage:linkage_root:jaccard:average",
-    "linkage:linkage_root:rogerstanimoto:average",
-    "neighbor_joining:mad:hamming:average",
-    "neighbor_joining:mad:jaccard:average",
+    "hamming:average",
+    "hamming:complete",
+    "jaccard:average",
+    "rogerstanimoto:average",
 )
 ROWS_OUTPUT = "root_tree_geometry_hard_negative_replay_rows.csv"
 SUMMARY_OUTPUT = "root_tree_geometry_hard_negative_replay_summary.csv"
@@ -57,8 +54,6 @@ MANIFEST_OUTPUT = "manifest.json"
 class TreeGeometrySpec:
     """One selected-tree construction and replay geometry."""
 
-    tree_builder: str
-    tree_rooting: str
     tree_distance_metric: str
     tree_linkage_method: str
 
@@ -104,31 +99,21 @@ class RootTreeGeometryHardNegativeReplayConfig:
 
 
 def parse_tree_geometries(raw: str | None) -> tuple[TreeGeometrySpec, ...]:
-    """Parse ``builder:rooting:distance:linkage`` geometry tokens."""
+    """Parse ``distance:linkage`` geometry tokens."""
     tokens = DEFAULT_TREE_GEOMETRIES if raw is None else parse_names(raw)
     geometries: list[TreeGeometrySpec] = []
     for token in tokens:
         parts = tuple(part.strip() for part in str(token).split(":"))
-        if len(parts) != 4 or any(not part for part in parts):
+        if len(parts) != 2 or any(not part for part in parts):
             raise ValueError(
                 "Tree geometry tokens must have format "
-                "'builder:rooting:distance:linkage'; got "
+                "'distance:linkage'; got "
                 f"{token!r}."
             )
         geometries.append(TreeGeometrySpec(*parts))
     if not geometries:
         raise ValueError("At least one tree geometry is required.")
     return tuple(geometries)
-
-
-def _bool_value(value: object) -> bool:
-    if isinstance(value, bool):
-        return bool(value)
-    if pd.isna(value):
-        return False
-    if isinstance(value, (int, np.integer)):
-        return bool(int(value))
-    return str(value).strip().lower() in {"1", "true", "t", "yes", "y"}
 
 
 def classify_hard_negative_row(
@@ -146,7 +131,7 @@ def classify_hard_negative_row(
         )
 
     mean_ari = finite_float(row.get("root_stability_subsample_mean_ari"))
-    stability_blocked = _bool_value(row.get("root_stability_guard_blocked"))
+    stability_blocked = bool_value(row.get("root_stability_guard_blocked"))
     root_stability_supported = (
         math.isfinite(mean_ari)
         and mean_ari >= float(root_stability_threshold)
@@ -154,8 +139,8 @@ def classify_hard_negative_row(
     )
 
     selective_p_value = finite_float(row.get("root_selective_permutation_p_value"))
-    selective_blocked = _bool_value(row.get("root_selective_permutation_guard_blocked"))
-    selective_would_block = _bool_value(row.get("root_selective_permutation_guard_would_block"))
+    selective_blocked = bool_value(row.get("root_selective_permutation_guard_blocked"))
+    selective_would_block = bool_value(row.get("root_selective_permutation_guard_would_block"))
     root_selective_supported = (
         math.isfinite(selective_p_value)
         and selective_p_value <= float(root_selective_permutation_alpha)
@@ -164,7 +149,7 @@ def classify_hard_negative_row(
     )
 
     root_validity_supported = bool(root_stability_supported and root_selective_supported)
-    root_open = _bool_value(row.get("root_sibling_open"))
+    root_open = bool_value(row.get("root_sibling_open"))
     if root_validity_supported and root_open:
         return (
             "hard_negative_control_leaked_root_validity_supported",
@@ -378,8 +363,6 @@ def _row_for_geometry(
     params = {
         "tree_distance_metric": geometry.tree_distance_metric,
         "tree_linkage_method": geometry.tree_linkage_method,
-        "tree_builder": geometry.tree_builder,
-        "tree_rooting": geometry.tree_rooting,
         "root_stability_tree_distance_metric": geometry.tree_distance_metric,
         "root_stability_tree_linkage_method": geometry.tree_linkage_method,
         "root_selective_permutation_guard_tree_distance_metric": (geometry.tree_distance_metric),
@@ -424,8 +407,6 @@ def _row_for_geometry(
         "profile_id": "",
         "replicate": int(replicate),
         "data_seed": int(data_seed),
-        "tree_builder": geometry.tree_builder,
-        "tree_rooting": geometry.tree_rooting,
         "tree_distance_metric": geometry.tree_distance_metric,
         "tree_linkage_method": geometry.tree_linkage_method,
         "root_replay_distance_metric": geometry.tree_distance_metric,
@@ -508,10 +489,10 @@ def _row_for_geometry(
                     math.nan,
                 )
             ),
-            "root_sibling_open": _bool_value(
+            "root_sibling_open": bool_value(
                 _annotation_value(annotations, root, "Sibling_BH_Different", False)
             ),
-            "root_stability_guard_blocked": _bool_value(
+            "root_stability_guard_blocked": bool_value(
                 _annotation_value(
                     annotations,
                     root,
@@ -551,7 +532,7 @@ def _row_for_geometry(
                     math.nan,
                 )
             ),
-            "root_selective_permutation_guard_blocked": _bool_value(
+            "root_selective_permutation_guard_blocked": bool_value(
                 _annotation_value(
                     annotations,
                     root,
@@ -559,7 +540,7 @@ def _row_for_geometry(
                     False,
                 )
             ),
-            "root_selective_permutation_guard_would_block": _bool_value(
+            "root_selective_permutation_guard_would_block": bool_value(
                 _annotation_value(
                     annotations,
                     root,
@@ -787,7 +768,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--tree-geometries",
         default=None,
         help=(
-            "Comma-separated builder:rooting:distance:linkage tokens. "
+            "Comma-separated distance:linkage tokens. "
             f"Defaults to {','.join(DEFAULT_TREE_GEOMETRIES)}."
         ),
     )

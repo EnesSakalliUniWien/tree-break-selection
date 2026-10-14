@@ -21,12 +21,7 @@ import pandas as pd
 from sklearn.covariance import ledoit_wolf_shrinkage
 from sklearn.metrics import adjusted_rand_score
 from tree_break_selection.tree.construction import (
-    DEFAULT_LINKAGE_TREE_ROOTING,
-    DEFAULT_PHYLOGENETIC_TREE_ROOTING,
-    DEFAULT_TREE_LINKAGE_METHOD,
-    LINKAGE_TREE_BUILDER,
-    NEIGHBOR_JOINING_TREE_BUILDER,
-    TREE_CONSENSUS_STRATEGIES,
+    SUPPORTED_LINKAGE_METHODS,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.optimized_branch_lengths import (
@@ -59,7 +54,6 @@ DEFAULT_CASE_NAMES = (
     "sbm_moderate",
     "cat_clear_3cat_4c",
 )
-TOPOLOGIES = TREE_CONSENSUS_STRATEGIES
 BRANCH_MODES = ("none", "normalized_branch_length")
 
 
@@ -264,24 +258,14 @@ def build_family_geometry(
 
 
 def _topology_parameters(topology: str) -> dict[str, str]:
-    if topology == NEIGHBOR_JOINING_TREE_BUILDER:
-        return {
-            "tree_builder": NEIGHBOR_JOINING_TREE_BUILDER,
-            "tree_rooting": DEFAULT_PHYLOGENETIC_TREE_ROOTING,
-            "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-        }
-    if topology not in TOPOLOGIES:
+    if topology not in SUPPORTED_LINKAGE_METHODS:
         raise ValueError(f"Unknown topology {topology!r}.")
     return {
-        "tree_builder": LINKAGE_TREE_BUILDER,
-        "tree_rooting": DEFAULT_LINKAGE_TREE_ROOTING,
         "tree_linkage_method": topology,
     }
 
 
 def _run_id(topology: str) -> str:
-    if topology == NEIGHBOR_JOINING_TREE_BUILDER:
-        return "family_metric_tree_builder_neighbor_joining"
     return f"family_metric_tree_linkage_method_{topology}"
 
 
@@ -796,11 +780,11 @@ def run_family_metric_nnls_grid(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     suite: str = "full",
     case_names: Sequence[str] = DEFAULT_CASE_NAMES,
-    topologies: Sequence[str] = TOPOLOGIES,
+    topologies: Sequence[str] = SUPPORTED_LINKAGE_METHODS,
     branch_modes: Sequence[str] = BRANCH_MODES,
 ) -> dict[str, Path]:
     """Run the focused metric/topology/branch-time validation grid."""
-    invalid_topologies = sorted(set(topologies).difference(TOPOLOGIES))
+    invalid_topologies = sorted(set(topologies).difference(SUPPORTED_LINKAGE_METHODS))
     invalid_modes = sorted(set(branch_modes).difference(BRANCH_MODES))
     if invalid_topologies or invalid_modes:
         raise ValueError(
@@ -960,7 +944,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--suite", default="full")
     parser.add_argument("--case-names", type=_comma_values, default=DEFAULT_CASE_NAMES)
-    parser.add_argument("--topologies", type=_comma_values, default=TOPOLOGIES)
+    parser.add_argument("--topologies", type=_comma_values, default=SUPPORTED_LINKAGE_METHODS)
     parser.add_argument("--branch-modes", type=_comma_values, default=BRANCH_MODES)
     return parser.parse_args(argv)
 

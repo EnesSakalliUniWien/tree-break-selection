@@ -391,6 +391,26 @@ def test_refined_global_selected_family_guard_refines_floor_p_value(
     assert guarded.loc["B", "Selective_Permutation_Guard_Replicates"] == 999
 
 
+def test_block_permutation_null_sample_keeps_fractional_values() -> None:
+    leaf_data = pd.DataFrame(
+        [[0.7, 0.2, 0.8], [0.9, 0.5, 0.5], [0.2, 1.0, 0.0]],
+        index=["a", "b", "c"],
+        columns=["F0", "F1_c0", "F1_c1"],
+    )
+    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
+    assert [block.family for block in feature_space.blocks] == ["bernoulli", "categorical"]
+
+    null_sample = guard_module._block_permutation_null_sample(
+        leaf_data,
+        feature_space,
+        np.random.default_rng(0),
+    ).to_numpy()
+
+    source = leaf_data.to_numpy()
+    assert sorted(null_sample[:, 0]) == sorted(source[:, 0])
+    assert sorted(map(tuple, null_sample[:, 1:])) == sorted(map(tuple, source[:, 1:]))
+
+
 def test_global_selected_family_p_value_uses_add_one_monte_carlo(
     monkeypatch,
 ) -> None:
@@ -533,3 +553,46 @@ def test_selective_permutation_passthrough_scope_respects_root_guard_outcome(
     )
     assert bool(guarded.loc["B", "Sibling_BH_Different"]) is True
     assert guarded.loc["B", "Selective_Permutation_Guard_Scope"] == ""
+
+
+def test_non_root_guard_scope_requires_replicates() -> None:
+    with pytest.raises(ValueError, match="requires root_selective_permutation_guard_replicates"):
+        guard_module.validate_root_selective_permutation_guard_config(
+            replicates=0,
+            alpha=0.05,
+            scope="passthrough_descendant",
+        )
+
+
+def test_passthrough_guard_candidates_skip_nodes_below_a_boundary() -> None:
+    tree = nx.DiGraph()
+    tree.add_edges_from(
+        [
+            ("R", "A"),
+            ("R", "B"),
+            ("A", "A1"),
+            ("A", "A2"),
+            ("B", "C"),
+            ("B", "b1"),
+            ("C", "D"),
+            ("C", "c1"),
+            ("D", "d1"),
+            ("D", "d2"),
+        ]
+    )
+    edge_divergent = {node: True for node in tree.nodes}
+    edge_divergent["C"] = False
+    edge_divergent["b1"] = False
+    sibling_different = {node: node in {"A", "D"} for node in tree.nodes}
+    annotations = pd.DataFrame(
+        {
+            "Child_Parent_Divergence_Significant": edge_divergent,
+            "Sibling_BH_Different": sibling_different,
+            "Sibling_Divergence_Skipped": {node: False for node in tree.nodes},
+        }
+    )
+
+    # B's edges are closed, so traversal never reaches D.
+    assert guard_module._passthrough_descendant_guard_candidates(
+        tree, annotations, root="R"
+    ) == ["A"]

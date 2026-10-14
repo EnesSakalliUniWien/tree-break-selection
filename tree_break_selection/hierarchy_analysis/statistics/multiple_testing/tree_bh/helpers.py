@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import networkx as nx
 import numpy as np
-from statsmodels.stats.multitest import multipletests
+from scipy.stats import false_discovery_control
 
 from tree_break_selection.core_utils.tree_utils import compute_node_depths
 
@@ -113,16 +113,13 @@ def run_bh_within_sibling_group(
     if len(sibling_group_p_values) == 0 or sibling_group_alpha <= 0:
         return None
 
-    child_hypotheses_rejected_by_bh, child_hypothesis_corrected_p_values_by_bh, _, _ = (
-        multipletests(
-            sibling_group_p_values,
-            alpha=sibling_group_alpha,
-            method="fdr_bh",
-            is_sorted=False,
-            returnsorted=False,
-        )
+    child_hypothesis_corrected_p_values_by_bh = false_discovery_control(
+        sibling_group_p_values, method="bh"
     )
-    return child_hypotheses_rejected_by_bh, child_hypothesis_corrected_p_values_by_bh
+    return (
+        child_hypothesis_corrected_p_values_by_bh <= sibling_group_alpha,
+        child_hypothesis_corrected_p_values_by_bh,
+    )
 
 
 def record_sibling_group_outcome(

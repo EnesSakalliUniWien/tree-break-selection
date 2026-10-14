@@ -7,8 +7,10 @@ non-negative least-squares fit for continuous data:
 
     D_ij ~= sum_{e in path(i, j)} tau_e,  tau_e >= 0
 
-where ``D_ij`` is either a squared standardized continuous distance or a
-squared distance from an already prepared Euclidean geometry.
+where ``D_ij`` is either the mean squared standardized Euclidean distance
+across all input features or the unnormalized squared Euclidean distance
+from an already prepared geometry. The compatibility identifier
+``squared_standardized_euclidean`` denotes the feature-count-normalized target.
 """
 
 from __future__ import annotations
@@ -21,6 +23,8 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 from scipy.optimize import lsq_linear
+
+from tree_break_selection.core_utils.tree_utils import tree_root
 
 BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC = "linkage_ultrametric"
 BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS = "fixed_topology_nnls"
@@ -73,6 +77,9 @@ class BranchLengthOptimizationResult:
     branch_length_min: float
     branch_length_max: float
     solver_message: str
+    target_definition: str | None = None
+    target_normalization: str | None = None
+    target_normalization_divisor: int | None = None
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -122,12 +129,7 @@ def _root_path_edge_sets(
     edge_index_by_pair: dict[tuple[object, object], int],
 ) -> list[frozenset[int]]:
     path_sets: list[frozenset[int]] = []
-    root = tree.graph.get("root")
-    if root is None:
-        roots = [node for node, degree in tree.in_degree() if degree == 0]
-        if len(roots) != 1:
-            raise ValueError(f"Expected one tree root, got {roots!r}.")
-        root = roots[0]
+    root = tree_root(tree)
 
     for leaf in leaf_nodes:
         current = leaf
@@ -184,6 +186,13 @@ def _squared_standardized_targets(
     left: np.ndarray,
     right: np.ndarray,
 ) -> np.ndarray:
+    """Return mean squared standardized Euclidean distances for sample pairs.
+
+    Each feature is centered and scaled by its sample standard deviation
+    (``ddof=1``); non-finite or non-positive scales are replaced by one. Sum
+    the squared standardized differences and divide by the total number of
+    input features, including constant features.
+    """
     matrix = data.to_numpy(dtype=np.float64, copy=True)
     if matrix.ndim != 2 or matrix.shape[0] < 2 or matrix.shape[1] < 1:
         raise ValueError("Branch-length optimization requires a 2-D continuous data matrix.")
@@ -244,7 +253,10 @@ def fit_fixed_topology_nnls_branch_lengths(
     with the fitted value.  The previous value is preserved as
     ``linkage_branch_length`` when present. ``continuous_data`` is interpreted
     as raw continuous observations for the standardized target and as a
-    prepared Euclidean embedding for the unstandardized target.
+    prepared Euclidean embedding for the unstandardized target. The
+    ``squared_standardized_euclidean`` target divides the sum of squared
+    sample-standardized differences by the total input feature count;
+    ``squared_euclidean`` uses the unnormalized sum in the supplied geometry.
     """
     start_sec = perf_counter()
     if target_metric not in BRANCH_LENGTH_TARGET_METRICS:
@@ -271,8 +283,18 @@ def fit_fixed_topology_nnls_branch_lengths(
     )
     if target_metric == BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN:
         targets = _squared_standardized_targets(continuous_data, left, right)
+        target_definition = (
+            "mean squared standardized Euclidean distance "
+            "(sample standard deviation with ddof=1; "
+            "non-finite or non-positive scales replaced by 1)"
+        )
+        target_normalization = "divide_by_total_feature_count"
+        target_normalization_divisor = int(continuous_data.shape[1])
     else:
         targets = _squared_euclidean_targets(continuous_data, left, right)
+        target_definition = "squared Euclidean distance in the supplied geometry"
+        target_normalization = "none"
+        target_normalization_divisor = 1
     design = _path_incidence_matrix(root_path_sets, left, right, n_edges)
     design_nnz = int(design.nnz)
     design_density = float(design_nnz / (design.shape[0] * design.shape[1]))
@@ -308,6 +330,9 @@ def fit_fixed_topology_nnls_branch_lengths(
     tree.graph["branch_length_optimization"] = {
         "method": BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
         "target_metric": target_metric,
+        "target_definition": target_definition,
+        "target_normalization": target_normalization,
+        "target_normalization_divisor": target_normalization_divisor,
         "status": "ok" if solver_converged else "solver_not_converged",
         "pair_sample_size": None if pair_sample_size is None else int(pair_sample_size),
         "random_state": int(random_state),
@@ -361,6 +386,9 @@ def fit_fixed_topology_nnls_branch_lengths(
         branch_length_min=float(np.min(lengths)),
         branch_length_max=float(np.max(lengths)),
         solver_message=str(solution.message),
+        target_definition=target_definition,
+        target_normalization=target_normalization,
+        target_normalization_divisor=target_normalization_divisor,
     )
 
 

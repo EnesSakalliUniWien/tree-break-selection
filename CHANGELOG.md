@@ -2,6 +2,46 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased] - 2026-10-13
+
+### Changed
+- Pass-through traversal counts a deeper split only when every node on the path would split or pass through. Runs with pass-through enabled (the default) can return fewer clusters than before.
+- `build_tree` builds linkage trees only and no longer takes `builder` or `rooting`; `TreeBuildResult` drops `builder`, `rooting` and `phylogenetic_rooting`. Benchmark methods no longer accept `tree_builder` or `tree_rooting`.
+- `run_clustering_result` rejects unknown parameter keys for every registered method; `benchmark_*` bookkeeping keys remain allowed.
+- Decomposition results report `sibling_alpha_effective` (sibling alpha divided by `sibling_gate_alpha_penalty`) next to `sibling_alpha`.
+- Core Benjamini-Hochberg and Tree-BH use `scipy.stats.false_discovery_control`. The scipy floor is 1.11; `statsmodels` is no longer a core dependency and remains only in the `all` extra.
+- Full-benchmark resume tracks completed cases by `case_id` instead of suite position.
+- Diffusion coordinates accept sparse kernels; connected graphs above 2000 samples use `eigsh` for the leading modes.
+- The graphtools adaptive-K tree grid and tree consensus cover the seven linkage methods only, named by `SUPPORTED_LINKAGE_METHODS`; the `TREE_CONSENSUS_STRATEGIES` and `TREE_PRIORITY` aliases were removed.
+- `decompose_invariant_equivariant_space` / `InvariantEquivariantSpace` (`invariant_equivariant.py`) were renamed `decompose_leading_axes_space(following_dim=...)` / `LeadingAxesSpace` (`leading_axes.py`); the scRNA space-decomposition script now uses `leading_*` / `following_*` column names and `--following-dim`.
+- `run_single_method_once` returns `(row, computed)`; `TreeBuildResult.linkage_matrix` and the distance diagnostics are always present.
+- The wiki lint requires exactly one H1 outside code fences.
+- `make check` runs the new `generated-files-check`. The 36 large report outputs are archived outside the repository and git-ignored by exact path; the four run logs stay local-only.
+
+### Removed
+- IQ-TREE 3 tree building (`iqtree3_tree_from_alignment`, `tbs_iqtree3`, `iqtree_*` parameters).
+- Neighbor joining and MAD rooting (`tree/construction/phylogenetic.py`, `tbs_neighbor_joining`, the adaptive-K neighbor-joining cell), and `SUPPORTED_TREE_BUILDERS`, `TreeBuilderName`, `LINKAGE_TREE_BUILDER` and `DEFAULT_LINKAGE_TREE_ROOTING`.
+- Unused modules: `hierarchy_analysis/bootstrap_consensus.py`, `multiple_testing/stopping_edge_recovery/`, and `sibling_divergence/neighborhood_bandwidth/`.
+- The all-pairs tree-distance cache built for `neighborhood_bandwidth_profile`, which only recorded a pair count.
+- The `matrix_audit` option and its TensorFlow matrix export, which no caller enabled and no dependency group could run, plus the unread `TBS_MATRIX_AUDIT_ROOT` variable.
+- Duplicate helpers: the guard's copy of the pass-through rule (now `GateEvaluator`), `TreeDecomposition._annotation_bool_value`, diagnostic copies of the core inflation formulas, `_node_pvalue`, and repeated `bool_value`, `parse_csv_list`, JSON-default, `finite_float`, git-provenance, timestamp and AWS shard helpers; the copied traversal skip summary and projection-input helpers; and the `read_dataframe`, `_as_bool`, `_compute_js_divergence` and annotation-PDF `load_binary_matrix` pass-through wrappers.
+- More copied helpers (`_select_cases`, `_selected_cases`, `_df_bin`, `_rank_bounds`, `_majority_label`, `_branch_length_to_parent`, `_bool_sum`, `_root`, `safe_float`, `sha256_file`, the pancreas `descendant_leaves` tree helper, the renamed copies `parse_alpha_grid`, `_median` and `_load_cases`, the AWS `iter_expected_shard_dirs`, S3 sync and JSON writers (now in `benchmarks/cloud/sharding.py`), the root diagnostics' `_require_columns` and `_finite_median` (now `root_values.finite_median`), `_coerce_bool_series` (now `values.bool_series`), and the spectral profiler's copy of the Bernoulli whitening rule); each module imports the one kept copy.
+- The `tbs_bandwidth_context_v1` benchmark method and its `neighborhood_bandwidth_profile` parameter: since the bandwidth module was removed it ran plain `tbs` and only added metadata. The parameter is now rejected as an unknown key.
+- Test-only distributional-action API: `edge_distributional_action`, `binary_split_distributional_action`, `binary_split_distributional_action_summary` and `BinarySplitDistributionalActionSummary`; use `edge_distributional_action_summary` and `split_distributional_action_summary`.
+- Unread data: the GO dataset inventory's `ResultKind` folder templates and descriptions (`RESULT_KINDS` is now a tuple of codes) and the unused `DEFAULT_RESULT_ROOT` of the root hard-negative replay panel.
+- The endotypes KAK page column `common_invariant_axis_score` is now `common_axis_score` (and `is_common_invariant_axis` is `is_common_axis`).
+
+### Fixed
+- Reject duplicate `leaf_data` sample labels instead of reusing the last matching row.
+- Permutation guards keep fractional Bernoulli and soft categorical values instead of truncating them to zero, and no longer test splits that traversal cannot reach.
+- A non-root permutation-guard scope with zero replicates now raises instead of silently skipping the guard.
+- Isolated benchmark cases read their results before waiting for the subprocess, so large results no longer hit the timeout, and a child that lingers after sending its result is stopped at the deadline.
+- Hamming diffusion with `k_neighbors=1` keeps a non-self neighbor instead of returning all-zero distances.
+- Endotype gene lookups no longer store Ensembl IDs as Entrez IDs.
+- The GO annotation level audit lists unreadable config and summary files in a `read_errors` column instead of skipping them silently.
+- Diagnostic panels read boolean cells the same way: missing values are false (two copies treated them as true) and text such as `"false"` is false.
+- The benchmark relationship analysis and failure debug trace read a 0/1 column that has a blank cell correctly; before, every `1.0` was read as false.
+
 ## [Unreleased] - 2026-09-09
 
 ### Changed

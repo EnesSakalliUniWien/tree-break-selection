@@ -25,9 +25,6 @@ from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.
 from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
 )
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.neighborhood_bandwidth import (
-    build_branch_length_distance_cache,
-)
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 from tree_break_selection.tree.construction import DEFAULT_TREE_LINKAGE_METHOD, build_tree
 from tree_break_selection.tree.distributions import (
@@ -54,13 +51,7 @@ def run_tbs_on_distance(
     distance_condensed: np.ndarray | None,
     sibling_significance_level: float,
     *,
-    tree_builder: str = "linkage",
-    tree_rooting: str = "linkage_root",
     tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
-    iqtree_executable: str = "iqtree3",
-    iqtree_model: str = "JC2",
-    iqtree_threads: int = 1,
-    iqtree_work_dir: str | None = None,
     edge_alpha: float = DEFAULT_EDGE_ALPHA,
     feature_space: FeatureSpace | None = None,
     spectral_minimum_dimension: int = EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION,
@@ -88,7 +79,6 @@ def run_tbs_on_distance(
     root_selective_permutation_guard_scope: str = "root",
     root_selective_permutation_guard_tree_distance_metric: str = "hamming",
     root_selective_permutation_guard_tree_linkage_method: str | None = None,
-    neighborhood_bandwidth_profile: str | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_data_df: pd.DataFrame | None = None,
     branch_length_optimization_target_metric: str = (
@@ -109,8 +99,7 @@ def run_tbs_on_distance(
         branch_length_optimization_method
     )
     if (
-        tree_builder == "linkage"
-        and edge_branch_length_variance_policy != EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE
+        edge_branch_length_variance_policy != EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE
         and branch_length_optimization_method == BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC
         and not allow_linkage_ultrametric_branch_time
     ):
@@ -126,13 +115,7 @@ def run_tbs_on_distance(
     tree_build = build_tree(
         data_df,
         distance_condensed,
-        builder=tree_builder,
-        rooting=tree_rooting,
         linkage_method=tree_linkage_method,
-        iqtree_executable=iqtree_executable,
-        iqtree_model=iqtree_model,
-        iqtree_threads=iqtree_threads,
-        iqtree_work_dir=iqtree_work_dir,
     )
     tree = tree_build.tree
     stage_timings["tree_build_sec"] = elapsed_since(tree_build_start_sec)
@@ -184,15 +167,6 @@ def run_tbs_on_distance(
             f"Unsupported branch_length_optimization_method {branch_length_optimization_method!r}."
         )
 
-    neighborhood_bandwidth_metadata: dict[str, object] = {}
-    if neighborhood_bandwidth_profile is not None:
-        distance_cache = build_branch_length_distance_cache(tree)
-        neighborhood_bandwidth_metadata = {
-            "neighborhood_bandwidth_profile": str(neighborhood_bandwidth_profile),
-            "neighborhood_distance_status": distance_cache.status,
-            "neighborhood_distance_pair_count": len(distance_cache.distances),
-            "neighborhood_bandwidth_action": "support_regularizer_only_no_pvalue_rescue",
-        }
     root_stability_replay_linkage = (
         tree_linkage_method
         if root_stability_tree_linkage_method is None
@@ -269,11 +243,7 @@ def run_tbs_on_distance(
                 "annotations": gate_annotation_bundle.annotated_df,
                 "gate_bundle": gate_annotation_bundle,
                 "linkage_matrix": tree_build.linkage_matrix,
-                "tree_builder": str(tree_builder),
-                "tree_rooting": str(tree_rooting),
                 "tree_build_diagnostics": asdict(tree_build.diagnostics),
-                "phylogenetic_rooting": tree_build.phylogenetic_rooting,
-                "iqtree_metadata": tree_build.iqtree_metadata,
                 "stage_timings": stage_timings,
                 "sibling_gate_method": str(resolved_gate_config.sibling_gate_method),
                 **branch_length_optimization_metadata,
@@ -308,11 +278,7 @@ def run_tbs_on_distance(
         "annotations": tree.annotations_df,
         "gate_bundle": gate_annotation_bundle,
         "linkage_matrix": tree_build.linkage_matrix,
-        "tree_builder": str(tree_builder),
-        "tree_rooting": str(tree_rooting),
         "tree_build_diagnostics": asdict(tree_build.diagnostics),
-        "phylogenetic_rooting": tree_build.phylogenetic_rooting,
-        "iqtree_metadata": tree_build.iqtree_metadata,
         "stage_timings": stage_timings,
         **branch_length_optimization_metadata,
         "spectral_minimum_dimension": int(resolved_gate_config.spectral_minimum_dimension),
@@ -372,7 +338,6 @@ def run_tbs_on_distance(
         "root_selective_permutation_guard_tree_linkage_method": str(
             resolved_gate_config.root_selective_permutation_guard_tree_linkage_method
         ),
-        **neighborhood_bandwidth_metadata,
     }
     if extra:
         duplicate_extra_keys = sorted(set(result_extra).intersection(extra))

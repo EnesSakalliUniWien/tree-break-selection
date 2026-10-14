@@ -1,6 +1,6 @@
-.PHONY: audit check lint test wiki-lint
+.PHONY: audit check lint test wiki-lint generated-files-check
 
-check: lint audit wiki-lint test
+check: lint audit wiki-lint generated-files-check test
 
 lint:
 	uv run --no-sync ruff check .
@@ -14,3 +14,6 @@ test:
 
 wiki-lint:
 	python3 scripts/wiki/lint.py
+
+generated-files-check:
+	uv run --no-sync python scripts/generated_files.py check

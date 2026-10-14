@@ -8,15 +8,13 @@ not rerun clustering and does not change production calibration.
 from __future__ import annotations
 
 import argparse
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
 import pandas as pd
 
-from benchmarks.cloud.aws_alpha_grid_search import sync_path_to_s3, sync_s3_to_path
-from benchmarks.cloud.aws_selected_tail_equation_study import current_git_state
+from benchmarks.cloud.sharding import sync_path_to_s3, sync_s3_to_path, write_json
 from benchmarks.diagnostics.spectral.stability.tree_strategy_semantic_panel import (
     DEFAULT_BLOB_RESULTS_DIR,
     DEFAULT_DIAGNOSTICS_RESULTS_DIR,
@@ -24,6 +22,7 @@ from benchmarks.diagnostics.spectral.stability.tree_strategy_semantic_panel impo
     build_semantic_panel,
     write_report,
 )
+from benchmarks.shared.util.provenance import current_git_state
 
 AWS_TREE_STRATEGY_PANEL_ROLE = "aws_tree_strategy_semantic_panel"
 MANIFEST_NAME = "aws_tree_strategy_semantic_panel_manifest.json"
@@ -48,10 +47,6 @@ def _resolved_path(path: Path, input_work_dir: Path, *, use_synced_input: bool) 
     if path.is_absolute() or not use_synced_input:
         return path
     return input_work_dir / path
-
-
-def _write_json(path: Path, payload: dict[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def run_panel(config: AwsTreeStrategyPanelConfig) -> pd.DataFrame:
@@ -112,7 +107,7 @@ def run_panel(config: AwsTreeStrategyPanelConfig) -> pd.DataFrame:
             "It is not a production tree-selection or calibration rule."
         ),
     }
-    _write_json(config.output_dir / MANIFEST_NAME, manifest)
+    write_json(config.output_dir / MANIFEST_NAME, manifest)
     if config.output_s3_uri is not None:
         sync_path_to_s3(config.output_dir, config.output_s3_uri.rstrip("/"))
     return panel

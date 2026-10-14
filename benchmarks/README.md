@@ -90,7 +90,6 @@ K, and repeat index.
 The `benchmarks/shared/` system provides:
 - `benchmark_runs/` for reusable full/smoke/regression/continuous orchestration
   seams
-- `matrix_audit` parameter for TensorBoard-style matrix exports
 - `evolution.py` for temporal evolution tracking
 - `audit_utils.py` for matrix export infrastructure
 - `linkage_matrix` captured in TBS runner's `extra` dict
@@ -186,9 +185,8 @@ benchmark CSV preserves both fields in every result row.
   `tbs_diffusion_graphtools_nnls`, and
   `tbs_diffusion_graphtools_adaptive_nnls` require the `experimental-gpl` extra:
   `uv sync --extra experimental-gpl`.
-  `tbs_diffusion_graphtools_adaptive_nnls` exposes linkage and
-  neighbor-joining tree strategies as one parameter grid, not as duplicate
-  method IDs.
+  `tbs_diffusion_graphtools_adaptive_nnls` exposes the seven linkage tree
+  strategies as one parameter grid, not as duplicate method IDs.
 - Each case runs in an isolated subprocess (optional), with configurable timeout (default 1800 s) and retry count (default 4).
 - Per-case PDF plots (tree, UMAP embedding, manifold comparison) are generated and merged into `<case_suite>_benchmark_report.pdf`.
 - Set `TBS_CASE_SUITE` to run one mathematical input-contract suite:
@@ -479,7 +477,7 @@ TBS variants, while the default full benchmark uses the method subset in
 | `tbs_diffusion_adaptive_nnls` | TBS (Adaptive pydiffmap Diffusion, NNLS Branch-Time) | pydiffmap adaptive diffusion tree | average | Default adaptive diffusion branch-time candidate; fixed-topology NNLS lengths plus normalized branch-length variance |
 | `tbs_diffusion_graphtools` | TBS (graphtools Kernel Diffusion) | graphtools kernel diffusion tree | average | Optional GPL backend; requires `uv sync --extra experimental-gpl`; linkage-ultrametric branch lengths |
 | `tbs_diffusion_graphtools_nnls` | TBS (graphtools Kernel Diffusion, NNLS Branch-Time) | graphtools kernel diffusion tree | average | Optional GPL backend; fixed-topology NNLS lengths plus normalized branch-length variance |
-| `tbs_diffusion_graphtools_adaptive_nnls` | TBS (graphtools Kernel Diffusion, Adaptive-K NNLS Branch-Time) | graphtools kernel diffusion tree with fragmentation-guard K selection | grid | Optional GPL backend; one tree-strategy grid over average, complete, weighted, single, centroid, median, Ward, and MAD-rooted neighbor joining; fixed-topology NNLS lengths plus normalized branch-length variance |
+| `tbs_diffusion_graphtools_adaptive_nnls` | TBS (graphtools Kernel Diffusion, Adaptive-K NNLS Branch-Time) | graphtools kernel diffusion tree with fragmentation-guard K selection | grid | Optional GPL backend; one tree-strategy grid over average, complete, weighted, single, centroid, median, and Ward linkage; fixed-topology NNLS lengths plus normalized branch-length variance |
 | `leiden`            | Leiden               | KNN graph         | —        | Community detection, resolution=1.0 |
 | `louvain`           | Louvain              | KNN graph         | —        | Community detection, resolution=1.0 |
 | `kmeans`            | K-Means              | —                 | —        | **Oracle**: uses true K             |

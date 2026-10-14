@@ -14,7 +14,7 @@ def test_method_subplot_title_compacts_parameters_and_limits_lines():
     title = embedding._format_method_subplot_title(
         (
             "TBS diffusion tree (edge_alpha=0.001, sibling_alpha=0.01, "
-            "tree_distance_metric=tree_distribution_kl, "
+            "tree_distance_metric=hamming, "
             "tree_linkage_method=average) [K=64, A=0.123, N=0.456]"
         )
     )
@@ -23,7 +23,7 @@ def test_method_subplot_title_compacts_parameters_and_limits_lines():
     assert len(lines) <= 3
     assert "tree_distance_metric" not in title
     assert "sibling_alpha" not in title
-    assert "metric=tree_kl" in title
+    assert "metric=hamming" in title
     assert all(len(line) <= 24 for line in lines)
 
 
@@ -42,7 +42,7 @@ def test_long_titles_use_relaxed_wide_grid(monkeypatch):
         X_original=X,
         labels_dict={
             "Ground Truth": labels,
-            "TBS tree (tree_distance_metric=tree_distribution_kl, tree_linkage_method=average)": labels,
+            "TBS tree (tree_distance_metric=standardized_euclidean, tree_linkage_method=average)": labels,
             "TBS diffusion tree (edge_alpha=0.001, sibling_alpha=0.01)": labels,
             "K-Means": labels,
             "Spectral": labels,

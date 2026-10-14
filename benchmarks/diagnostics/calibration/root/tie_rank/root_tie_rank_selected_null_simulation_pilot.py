@@ -24,6 +24,7 @@ from benchmarks.diagnostics.calibration.reporting import (
     print_diagnostic_output_paths,
     write_diagnostic_bundle,
 )
+from benchmarks.diagnostics.calibration.root.root_values import require_columns
 from benchmarks.diagnostics.calibration.root.selected.root_selected_mixed_region_law import (
     build_root_selected_mixed_region_law_rows,
 )
@@ -41,6 +42,7 @@ from benchmarks.diagnostics.calibration.root.tie_rank.root_tie_rank_calibration_
     summarize_root_tie_rank_calibration_feasibility,
     summarize_root_tie_rank_calibration_strata,
 )
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.cases import get_test_cases_by_suite
 
 SCHEMA_VERSION = "root_tie_rank_selected_null_simulation_pilot/v2"
@@ -158,15 +160,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def _parse_csv_list(raw: str | None) -> tuple[str, ...] | None:
-    if raw is None:
-        return None
-    return tuple(part.strip() for part in raw.split(",") if part.strip())
-
-
-def _require_columns(frame: pd.DataFrame, columns: set[str], label: str) -> None:
-    missing = columns - set(frame.columns)
-    if missing:
-        raise ValueError(f"{label} missing required columns: {sorted(missing)!r}.")
+    return None if raw is None else parse_csv_list(raw)
 
 
 def _select_cases(
@@ -495,7 +489,7 @@ def evaluate_root_tie_rank_selected_null_simulation(
 ) -> dict[str, pd.DataFrame]:
     """Run selected-null simulation and return output tables."""
     observed_mixed = pd.read_csv(config.observed_mixed_region_rows_path)
-    _require_columns(observed_mixed, {"case_id"}, "observed mixed-law rows")
+    require_columns(observed_mixed, {"case_id"}, "observed mixed-law rows")
     observed_case_ids = tuple(observed_mixed["case_id"].astype(str).tolist())
     case_names = tuple(config.case_names) if config.case_names else observed_case_ids
     base_cases = _select_cases(suite=config.suite, case_names=case_names)

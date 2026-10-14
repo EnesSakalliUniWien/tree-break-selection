@@ -41,10 +41,6 @@ TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC = "feature_metric"
 TBS_TREE_DISTANCE_SOURCE_PRECOMPUTED = "precomputed"
 
 
-def _slugify(value: str) -> str:
-    return "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in value)
-
-
 def _require_precomputed_tbs_distance_metric(
     *,
     meta: dict[str, object],
@@ -170,8 +166,7 @@ def run_single_method_once(
     meta: dict[str, object],
     distance_matrix: np.ndarray | None,
     distance_condensed: np.ndarray | None,
-    matrix_audit: bool,
-) -> tuple[BenchmarkResultRow, ComputedResultRecord | None, tuple[str, dict[str, object]] | None]:
+) -> tuple[BenchmarkResultRow, ComputedResultRecord | None]:
     """Execute one method+params run and return typed outputs."""
     benchmark_metadata = benchmark_param_metadata(
         method_id,
@@ -467,20 +462,7 @@ def run_single_method_once(
             annotations=result.extra.get("annotations") if result.extra else None,
         )
 
-    method_audit = None
-    if matrix_audit:
-        method_name = _slugify(method_id)
-        params_slug = _slugify(result_row.params_display)
-        method_tag = method_name if not params_slug else f"{method_name}__{params_slug}"
-        matrices: dict[str, object] = {}
-        if method_id.startswith("tbs"):
-            matrices["distance_condensed"] = distance_condensed_for_run
-        if result.extra and result.extra.get("linkage_matrix") is not None:
-            matrices["linkage_matrix"] = result.extra.get("linkage_matrix")
-        if matrices:
-            method_audit = (method_tag, matrices)
-
-    return result_row, computed_result, method_audit
+    return result_row, computed_result
 
 
 __all__ = ["run_single_method_once"]

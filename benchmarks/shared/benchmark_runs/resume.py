@@ -10,41 +10,36 @@ from benchmarks.shared.benchmark_grid import benchmark_run_id
 def compute_resume_coverage(
     existing_results: pd.DataFrame,
     expected_run_ids: list[str],
-) -> tuple[set[int], dict[int, list[str]], int]:
-    """Compute fully-complete and partial case coverage from an existing CSV."""
-    if existing_results.empty:
-        return set(), {}, 0
+) -> tuple[set[str], dict[str, list[str]], int]:
+    """Compute fully-complete and partial case coverage from an existing CSV.
 
-    if "test_case" not in existing_results.columns:
-        return set(), {}, 0
-
-    if "run_id" not in existing_results.columns:
+    Coverage is keyed by ``case_id`` so a suite whose case order changed between
+    runs does not credit one case's rows to another.
+    """
+    if existing_results.empty or not {"case_id", "run_id"} <= set(existing_results.columns):
         return set(), {}, 0
 
     expected_set = set(expected_run_ids)
-
-    case_keys = pd.to_numeric(existing_results["test_case"], errors="coerce")
-    run_ids_raw = existing_results["run_id"].astype(str)
-    run_ids_norm = run_ids_raw.where(run_ids_raw.isin(expected_set))
-    progress = pd.DataFrame({"case_key": case_keys, "run_id": run_ids_norm})
-    progress = progress.dropna(subset=["case_key", "run_id"])
+    run_ids = existing_results["run_id"].astype(str)
+    progress = pd.DataFrame(
+        {
+            "case_id": existing_results["case_id"],
+            "run_id": run_ids.where(run_ids.isin(expected_set)),
+        }
+    ).dropna()
     if progress.empty:
         return set(), {}, 0
 
-    progress["case_key"] = progress["case_key"].astype(int)
+    run_ids_by_case = progress.groupby(progress["case_id"].astype(str))["run_id"].agg(set).to_dict()
 
-    run_ids_by_case = (
-        progress.groupby("case_key")["run_id"].agg(lambda s: set(s.tolist())).to_dict()
-    )
-
-    completed_cases: set[int] = set()
-    missing_run_ids_by_case: dict[int, list[str]] = {}
-    for case_key, seen_run_ids in run_ids_by_case.items():
+    completed_cases: set[str] = set()
+    missing_run_ids_by_case: dict[str, list[str]] = {}
+    for case_id, seen_run_ids in run_ids_by_case.items():
         missing = [run_id for run_id in expected_run_ids if run_id not in seen_run_ids]
         if not missing:
-            completed_cases.add(int(case_key))
+            completed_cases.add(case_id)
         else:
-            missing_run_ids_by_case[int(case_key)] = missing
+            missing_run_ids_by_case[case_id] = missing
 
     return completed_cases, missing_run_ids_by_case, len(run_ids_by_case)
 

@@ -48,6 +48,7 @@ from tree_break_selection.tree.poset_tree import PosetTree
 from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
     parse_selected_hierarchy_args,
 )
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
@@ -94,10 +95,6 @@ class SiblingRecordSample:
     candidate_records: int
     tested_edges: int
     significant_edges: int
-
-
-def _parse_csv_list(raw: str) -> list[str]:
-    return [part.strip() for part in raw.split(",") if part.strip()]
 
 
 def _selected_cases(case_names: list[str]) -> list[dict[str, object]]:
@@ -655,7 +652,7 @@ def main() -> None:
             / f"selected_hierarchy_null_audit_{format_timestamp_utc()}"
         )
     summary = run_selected_hierarchy_null_audit(
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         output_dir=output_dir,
         n_replicates=int(args.n_replicates),
         seed=int(args.seed),

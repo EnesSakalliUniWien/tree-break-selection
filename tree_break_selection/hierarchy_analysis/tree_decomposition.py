@@ -16,6 +16,7 @@ import pandas as pd
 from ..core_utils.data_utils import extract_bool_column_dict
 from .cluster_assignments import ClusterBoundary, build_cluster_assignments
 from .decomposition.gates.annotation_bundle import GateAnnotationBundle
+from .decomposition.gates.annotation_predicates import annotation_bool
 from .decomposition.gates.column_contracts import (
     validate_edge_gate_columns,
     validate_sibling_gate_columns,
@@ -51,11 +52,13 @@ class TreeDecomposition:
 
     #. **Binary structure prerequisite** - parent must have exactly two children.
     #. **Edge divergence gate** - at least one child must significantly diverge
-       from the parent (projected Wald chi-square test), confirming there is
-       edge-level signal to split on.
-    #. **Sibling divergence gate** - siblings must have significantly different
-       distributions under a validated sibling p-value reference law and
-       sibling FDR correction. Unresolved calibration fails closed.
+       from the parent according to the supplied child-parent test annotation.
+    #. **Sibling divergence gate** - the supplied sibling annotation must report
+       an available, significant result after its configured correction. The
+       default empirical-inflation path allows internally supported plug-in
+       p-values while selected-tail validity remains unproven. Missing internal
+       support closes that focal gate; the decomposer does not validate the
+       reference law itself.
 
     Nodes that do not split become cluster boundaries. Leaves under the same
     boundary node are assigned the same cluster identifier. In pass-through mode,
@@ -111,11 +114,15 @@ class TreeDecomposition:
             )
             self._annotation_edge_alpha = float(gate_annotation_bundle.metadata.edge.alpha)
             self._annotation_sibling_alpha = float(gate_annotation_bundle.metadata.sibling.alpha)
+            self._annotation_effective_sibling_alpha = self._annotation_sibling_alpha / float(
+                gate_config.sibling_gate_alpha_penalty
+            )
         else:
             self.annotations_df = self._validated_annotations(annotations_df)
             self._selected_family_passthrough_guard = bool(selected_family_passthrough_guard)
             self._annotation_edge_alpha = None
             self._annotation_sibling_alpha = None
+            self._annotation_effective_sibling_alpha = None
         self._trace_level = validate_trace_level(str(trace_level))
 
         # ----- root -----
@@ -136,7 +143,14 @@ class TreeDecomposition:
             "Sibling_Divergence_Skipped"
         )
         self._passthrough_supported = self._build_passthrough_support_map()
-        self._passthrough_bottleneck = self._build_passthrough_bottleneck_map()
+        self._passthrough_bottleneck = (
+            None
+            if self._passthrough_supported is None
+            else {
+                node: "" if supported else "selected_family_passthrough_guard_blocked"
+                for node, supported in self._passthrough_supported.items()
+            }
+        )
 
         # Precompute children list (avoids rebuilding generator repeatedly)
         self._children: dict[object, list[object]] = {
@@ -160,12 +174,6 @@ class TreeDecomposition:
     def _uses_selected_family_passthrough_guard(self) -> bool:
         return self._selected_family_passthrough_guard
 
-    def _annotation_bool_value(self, node: object, column: str) -> bool:
-        if column not in self.annotations_df.columns or node not in self.annotations_df.index:
-            return False
-        value = self.annotations_df.loc[node, column]
-        return bool(pd.notna(value) and bool(value))
-
     def _build_passthrough_support_map(self) -> dict[object, bool] | None:
         selected_family_support = None
         if (
@@ -173,27 +181,13 @@ class TreeDecomposition:
             and "Selective_Permutation_Guard_Would_Block" in self.annotations_df.columns
         ):
             selected_family_support = {
-                node: not self._annotation_bool_value(
-                    node, "Selective_Permutation_Guard_Would_Block"
+                node: not annotation_bool(
+                    self.annotations_df, node, "Selective_Permutation_Guard_Would_Block"
                 )
                 for node in self._node_ids
             }
 
         return selected_family_support
-
-    def _build_passthrough_bottleneck_map(self) -> dict[object, str] | None:
-        if self._passthrough_supported is None:
-            return None
-
-        bottlenecks: dict[object, str] = {}
-        for node in self._node_ids:
-            reasons: list[str] = []
-            if self._uses_selected_family_passthrough_guard() and self._annotation_bool_value(
-                node, "Selective_Permutation_Guard_Would_Block"
-            ):
-                reasons.append("selected_family_passthrough_guard_blocked")
-            bottlenecks[node] = ";".join(reason for reason in reasons if reason)
-        return bottlenecks
 
     def _validated_annotations(self, annotations_df: pd.DataFrame | None) -> pd.DataFrame:
         """Validate explicit gate decisions for every tree node."""
@@ -514,29 +508,14 @@ class TreeDecomposition:
         )
 
     @staticmethod
-    def _traversal_counters(
-        *,
-        traversal_trace: list[dict[str, object]],
+    def _full_edge_traversal_counters(
         full_edge_traversal_trace: list[dict[str, object]],
     ) -> dict[str, int]:
-        """Return compact counters for live and edge-reachable traversal."""
-        live_decisions = [str(row["decision"]) for row in traversal_trace]
+        """Return compact counters for edge-reachable traversal."""
         full_stop_reasons = [
             str(row["edge_traversal_stop_reason"]) for row in full_edge_traversal_trace
         ]
         return {
-            "live_nodes_visited": len(traversal_trace),
-            "live_internal_tuples": sum(int(row["n_children"]) == 2 for row in traversal_trace),
-            "live_split_count": live_decisions.count(TraversalDecision.SPLIT.value),
-            "live_pass_through_count": live_decisions.count(TraversalDecision.PASS_THROUGH.value),
-            "live_boundary_count": live_decisions.count(TraversalDecision.BOUNDARY.value),
-            "live_passthrough_candidate_count": sum(
-                bool(row["passthrough_candidate"]) for row in traversal_trace
-            ),
-            "live_passthrough_support_blocked_count": sum(
-                row["passthrough_decision_reason"] == "passthrough_support_blocked"
-                for row in traversal_trace
-            ),
             "full_edge_nodes_visited": len(full_edge_traversal_trace),
             "full_edge_internal_tuples": sum(
                 int(row["n_children"]) == 2 for row in full_edge_traversal_trace
@@ -625,13 +604,12 @@ class TreeDecomposition:
                         **passthrough_audit,
                     }
                 )
-            else:
-                self._update_live_traversal_counters(
-                    traversal_counters,
-                    decision=decision,
-                    n_children=len(children),
-                    passthrough_audit=passthrough_audit,
-                )
+            self._update_live_traversal_counters(
+                traversal_counters,
+                decision=decision,
+                n_children=len(children),
+                passthrough_audit=passthrough_audit,
+            )
             if decision in (TraversalDecision.SPLIT, TraversalDecision.PASS_THROUGH):
                 left_child, right_child = children
                 nodes_to_visit.append(right_child)
@@ -650,6 +628,7 @@ class TreeDecomposition:
             "independence_analysis": {
                 "edge_alpha": self._annotation_edge_alpha,
                 "sibling_alpha": self._annotation_sibling_alpha,
+                "sibling_alpha_effective": self._annotation_effective_sibling_alpha,
                 "decision_mode": "sibling_divergence",
             },
         }
@@ -660,14 +639,11 @@ class TreeDecomposition:
             actual_decision_by_node=actual_decision_by_node,
             actual_visited_nodes=processed,
         )
+        traversal_counters.update(self._full_edge_traversal_counters(full_edge_traversal_trace))
         result.update(
             {
                 "traversal_trace": traversal_trace,
                 "full_edge_traversal_trace": full_edge_traversal_trace,
-                "traversal_counters": self._traversal_counters(
-                    traversal_trace=traversal_trace,
-                    full_edge_traversal_trace=full_edge_traversal_trace,
-                ),
             }
         )
         return result

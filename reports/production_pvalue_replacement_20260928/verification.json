@@ -1,0 +1,11 @@
+{
+  "run_rows": 24300,
+  "matched_variant_rows": 10800,
+  "matched_completed": 9267,
+  "node_rows": 175677,
+  "unexpected_errors": 0,
+  "source_hashes_match": true,
+  "independent_quadrature_checks": 12,
+  "max_absolute_quadrature_error": 7.105427357601002e-15,
+  "focused_tests_passed": 146
+}

@@ -57,7 +57,7 @@ surfaces with their own contracts.
 - Decomposition entrypoint and traversal: `tree_break_selection/hierarchy_analysis/tree_decomposition.py`.
 - Gate orchestration and split/merge evaluation: `tree_break_selection/hierarchy_analysis/decomposition/gates/`.
 - Statistical tests, projection helpers, and FDR correction: `tree_break_selection/hierarchy_analysis/statistics/`.
-- Reusable invariant/equivariant and adaptive-cosine space separation:
+- Reusable leading-axis and adaptive-cosine space separation:
   `tree_break_selection/space_separation/`.
 - Reusable plotting engines and backend selection: `tree_break_selection/plot/`.
 - Benchmark harness and report generation: `benchmarks/`.
@@ -105,8 +105,9 @@ proceeds through four checkpoints:
    in the projected-Wald geometry, then apply tree-aware multiplicity control.
 
 4. **Sibling split tests** – evaluate whether sibling subtrees should remain
-   separated after projected-Wald testing and apply sibling FDR only when the
-   p-value calibration has a validated reference law.
+   separated after projected-Wald testing. The default empirical-inflation
+   path applies plug-in chi-square p-values and traversal-aligned sibling BH
+   when internal support is available. Selected-tail validity remains unproven.
 
 ## Statistical Gates and Traversal
 
@@ -117,11 +118,12 @@ are satisfied.
 - **Binary structure prerequisite**: the node must have exactly two children.
 - **Edge divergence gate**: at least one child-parent edge must have supported
   and significant child-parent divergence evidence.
-- **Sibling divergence gate**: the sibling pair must have a calibrated and
-  significant sibling split after sibling FDR. The current same-data selected-
-  hierarchy calibration has no validated positive-dimensional reference law,
-  so those sibling tests are explicitly unsupported rather than assigned a
-  calibrated p-value.
+- **Sibling divergence gate**: the sibling pair must have an available p-value
+  and a significant sibling split after the configured sibling correction.
+  The default same-data empirical-inflation path computes plug-in p-values
+  when internal support is available; missing support closes the focal gate.
+  Availability does not establish a valid selected-tail reference law or
+  whole-tree error control.
 
 If the split is not supported, the algorithm labels the parent node as a
 cluster boundary and stops there. When the split is supported, it continues the
@@ -240,8 +242,8 @@ performed without cleanup.
 
 - After the full test environment sync above, run the automated tests with
   `uv run pytest`.
-- Run `make check` for Ruff, dependency and dead-code audits, wiki lint, and the
-  purpose-ordered full test suite.
+- Run `make check` for Ruff, dependency and dead-code audits, wiki lint, the
+  generated report files check, and the purpose-ordered full test suite.
 - In the lean development environment, run targeted tests for the code you
   changed. scRNA-only tests are skipped when their optional dependencies are
   absent, but full-suite parity expects the full environment.

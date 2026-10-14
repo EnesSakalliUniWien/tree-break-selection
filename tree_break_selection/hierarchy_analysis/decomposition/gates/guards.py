@@ -11,7 +11,7 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
+from tree_break_selection.core_utils.tree_utils import tree_root
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     build_contrast_covariance,
     compute_whitened_wald_contrast,
@@ -25,12 +25,13 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_
     identify_binary_sibling_children,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
+from tree_break_selection.tree.topology import compute_descendant_leaf_sets
 
 from .annotation_predicates import (
     annotation_bool,
     node_sibling_gate_open,
-    node_split_prerequisites,
 )
+from .gate_evaluator import GateEvaluator, TraversalDecision
 from .profiles import GLOBAL_PASSTHROUGH_REFINED_REPLICATES
 
 
@@ -88,52 +89,21 @@ def validate_root_selective_permutation_guard_config(
             "'global_sibling_min_passthrough_descendant'/'..._refined'; "
             f"got {scope!r}."
         )
-
-
-def _tree_root_node(tree):
-    if hasattr(tree, "root"):
-        return tree.root()
-    if "root" in tree.graph:
-        return tree.graph["root"]
-    roots = [node for node, degree in tree.in_degree() if degree == 0]
-    if len(roots) != 1:
-        raise ValueError(f"Expected one root, got {roots!r}.")
-    return roots[0]
-
-
-def _descendant_leaf_label_sets(tree) -> dict[object, frozenset]:
-    if hasattr(tree, "compute_descendant_sets"):
-        return tree.compute_descendant_sets(use_labels=True)
-
-    labels_by_node: dict[object, frozenset] = {}
-    for node in tree.nodes:
-        leaves: set[object] = set()
-        for descendant in {node, *_nx_descendants(tree, node)}:
-            if tree.out_degree(descendant) == 0:
-                leaves.add(tree.nodes[descendant].get("label", descendant))
-        labels_by_node[node] = frozenset(leaves)
-    return labels_by_node
-
-
-def _nx_descendants(tree, node) -> set[object]:
-    frontier = list(tree.successors(node))
-    seen: set[object] = set()
-    while frontier:
-        current = frontier.pop()
-        if current in seen:
-            continue
-        seen.add(current)
-        frontier.extend(tree.successors(current))
-    return seen
+    if str(scope) != "root" and count == 0:
+        raise ValueError(
+            f"root_selective_permutation_guard_scope={scope!r} requires "
+            "root_selective_permutation_guard_replicates > 0; with zero replicates "
+            "the guard does not run."
+        )
 
 
 def _tree_root_split_labels(tree, data_index: pd.Index) -> np.ndarray | None:
-    root = _tree_root_node(tree)
+    root = tree_root(tree)
     children = list(tree.successors(root))
     if len(children) != 2:
         return None
 
-    descendant_sets = _descendant_leaf_label_sets(tree)
+    descendant_sets = compute_descendant_leaf_sets(tree)
     left = set(descendant_sets[children[0]])
     right = set(descendant_sets[children[1]])
 
@@ -185,7 +155,7 @@ def _fixed_root_sibling_p_value(
     *,
     method: str,
 ) -> float:
-    root = _tree_root_node(tree)
+    root = tree_root(tree)
     children = identify_binary_sibling_children(tree, root)
     if children is None:
         return 1.0
@@ -322,23 +292,18 @@ def _block_permutation_null_sample(
     rng: np.random.Generator,
 ) -> pd.DataFrame:
     """Return a feature/block permutation sample preserving block margins."""
-    source = leaf_data.to_numpy(dtype=int)
+    # Float rows keep fractional Bernoulli and soft categorical values intact.
+    source = leaf_data.to_numpy(dtype=float)
     out = np.zeros_like(source)
     n_rows = int(source.shape[0])
     for block in feature_space.blocks:
+        if block.family not in {"bernoulli", "categorical"}:
+            raise ValueError(
+                "Root selective permutation supports Bernoulli and categorical "
+                f"feature blocks only; got {block.family!r}."
+            )
         indices = np.asarray(block.column_indices, dtype=int)
-        if block.family == "categorical":
-            categories = np.argmax(source[:, indices], axis=1)
-            permuted = rng.permutation(categories)
-            out[np.arange(n_rows), indices[permuted]] = 1
-            continue
-        if block.family == "bernoulli":
-            out[:, indices[0]] = rng.permutation(source[:, indices[0]])
-            continue
-        raise ValueError(
-            "Root selective permutation supports Bernoulli and categorical "
-            f"feature blocks only; got {block.family!r}."
-        )
+        out[:, indices] = source[np.ix_(rng.permutation(n_rows), indices)]
     return pd.DataFrame(
         out,
         index=leaf_data.index,
@@ -584,7 +549,7 @@ def apply_root_stability_guard(
         out[column] = np.nan
     out["Root_Stability_Guard_Blocked"] = False
 
-    root = _tree_root_node(tree)
+    root = tree_root(tree)
     if root not in out.index:
         return out
 
@@ -654,39 +619,42 @@ def _passthrough_descendant_guard_candidates(
     """Return open split nodes reachable only through a closed sibling ancestor."""
     node_ids = tuple(tree.nodes)
     children = {node: list(tree.successors(node)) for node in node_ids}
-    split_prerequisites = {
-        node: node_split_prerequisites(tree, annotations_df, node) for node in node_ids
-    }
-    sibling_open = {node: node_sibling_gate_open(annotations_df, node) for node in node_ids}
-    can_split = {node: bool(split_prerequisites[node] and sibling_open[node]) for node in node_ids}
-    has_descendant_split: dict[object, bool] = {}
-    for node in bottom_up_nodes(tree):
-        has_descendant_split[node] = any(
-            can_split.get(child, False) or has_descendant_split.get(child, False)
-            for child in children[node]
-        )
 
-    closed_passthrough_ancestors = {
-        node
-        for node in node_ids
-        if split_prerequisites[node]
-        and not can_split[node]
-        and has_descendant_split.get(node, False)
-        and not _node_closed_by_explicit_guard(annotations_df, node)
-    }
+    def column(name: str) -> dict[object, bool]:
+        return {node: annotation_bool(annotations_df, node, name) for node in node_ids}
+
+    # Reuse the traversal's own gate rules so the guard and traversal cannot drift apart.
+    gate = GateEvaluator(
+        tree=tree,
+        edge_divergent=column("Child_Parent_Divergence_Significant"),
+        sibling_different=column("Sibling_BH_Different"),
+        sibling_skipped=column("Sibling_Divergence_Skipped"),
+        children_map=children,
+        passthrough=True,
+    )
+    decisions = {node: gate.decision(node) for node in node_ids}
+
     passthrough_reachable: dict[object, bool] = {}
     stack: list[tuple[object, bool]] = [(root, False)]
     while stack:
         node, ancestor_passthrough = stack.pop()
         passthrough_reachable[node] = bool(ancestor_passthrough)
-        child_passthrough = bool(ancestor_passthrough or node in closed_passthrough_ancestors)
+        decision = decisions[node]
+        if decision is TraversalDecision.BOUNDARY:
+            continue
+        opens_passthrough = (
+            decision is TraversalDecision.PASS_THROUGH
+            and not _node_closed_by_explicit_guard(annotations_df, node)
+        )
         for child in children[node]:
-            stack.append((child, child_passthrough))
+            stack.append((child, ancestor_passthrough or opens_passthrough))
 
     return [
         node
         for node in annotations_df.index
-        if node != root and can_split.get(node, False) and passthrough_reachable.get(node, False)
+        if node != root
+        and decisions.get(node) is TraversalDecision.SPLIT
+        and passthrough_reachable.get(node, False)
     ]
 
 
@@ -735,11 +703,11 @@ def apply_root_selective_permutation_guard(
     out["Selective_Permutation_Guard_Would_Block"] = False
     out["Selective_Permutation_Guard_Blocked"] = False
 
-    root = _tree_root_node(tree)
+    root = tree_root(tree)
     if root not in out.index:
         return out
 
-    descendant_sets = _descendant_leaf_label_sets(tree)
+    descendant_sets = compute_descendant_leaf_sets(tree)
     scope_value = str(scope)
     evaluated_nodes: set[object] = set()
     evaluation_index = 0

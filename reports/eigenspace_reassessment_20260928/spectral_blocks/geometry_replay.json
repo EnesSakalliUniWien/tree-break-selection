@@ -1,0 +1,17 @@
+{
+  "historical_manifest": "/Users/berksakalli/Projects/kl-te-cluster/reports/eigenvalue_block_comparison_20260926/manifest.json",
+  "historical_manifest_sha256": "088f2e912239813fedf98350fd348d1b105425676d134fb4dea0021a75e2d9c5",
+  "historical_snapshots_exact_sha256_match": true,
+  "current_source_sha256": {
+    "tree_break_selection/space_separation/adaptive_cosine.py": "3575e4c8b8e653677bf5e789bbe48aea58412c1c279dd3ed5fa2a1e18b1525fa",
+    "tree_break_selection/space_separation/diffusion.py": "7ea41ef2823a907a82ab30325a703f4332b4c6d737f7eb3032c44c723c786d06",
+    "tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303"
+  },
+  "cases": 11,
+  "geometry_rows": 94,
+  "wall_seconds": 7.185117332963273,
+  "closeness": {
+    "relative_tolerance": 1e-10,
+    "absolute_tolerance": 1e-12
+  }
+}

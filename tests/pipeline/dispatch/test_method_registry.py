@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
-from benchmarks.shared.util.method_sets import TBS_RUNNER_METHODS
+from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
 from scipy.spatial.distance import pdist
 
 from .helpers import _toy_dataframe
@@ -45,7 +45,7 @@ def test_method_registry_exposes_fixed_fdr_benchmark_variants():
     for method_id, sibling_gate_method in expected_methods.items():
         spec = METHOD_SPECS[method_id]
         params = spec.param_grid[0]
-        assert method_id in TBS_RUNNER_METHODS
+        assert method_id in TBS_DISTANCE_TREE_METHODS
         assert params["sibling_gate_method"] == sibling_gate_method
         assert params["tree_distance_metric"] == "hamming"
         assert params["tree_linkage_method"] == "average"
@@ -55,7 +55,7 @@ def test_method_registry_exposes_continuous_guarded_covariance_candidate():
     spec = METHOD_SPECS["tbs_continuous_guarded_within_covariance"]
     params = spec.param_grid[0]
 
-    assert "tbs_continuous_guarded_within_covariance" in TBS_RUNNER_METHODS
+    assert "tbs_continuous_guarded_within_covariance" in TBS_DISTANCE_TREE_METHODS
     assert params["tree_distance_metric"] == "hamming"
     assert params["tree_linkage_method"] == "average"
     assert params["continuous_covariance_policy"] == "guarded_within_child"
@@ -160,23 +160,18 @@ def test_method_registry_names_diffusion_methods_and_branch_lengths_explicitly()
     assert graphtools_adaptive_nnls_params["branch_length_optimization_method"] == (
         "fixed_topology_nnls"
     )
-    assert graphtools_adaptive_nnls_params["tree_builder"] == "linkage"
     assert graphtools_adaptive_nnls_params["tree_linkage_method"] == "average"
 
     tree_strategy_grid = graphtools_adaptive_nnls_diffusion.param_grid
-    assert len(tree_strategy_grid) == 8
-    assert len({params["benchmark_run_id"] for params in tree_strategy_grid}) == 8
+    assert len(tree_strategy_grid) == 7
+    assert len({params["benchmark_run_id"] for params in tree_strategy_grid}) == 7
     assert {params["benchmark_class"] for params in tree_strategy_grid} == {"optional_gpl"}
     assert {params["benchmark_grid"] for params in tree_strategy_grid} == {
         "graphtools_adaptive_k_tree_strategy"
     }
     assert {params["benchmark_repeat"] for params in tree_strategy_grid} == {0}
 
-    linkage_methods = {
-        params["tree_linkage_method"]
-        for params in tree_strategy_grid
-        if params["tree_builder"] == "linkage"
-    }
+    linkage_methods = {params["tree_linkage_method"] for params in tree_strategy_grid}
     assert linkage_methods == {
         "average",
         "complete",
@@ -189,34 +184,20 @@ def test_method_registry_names_diffusion_methods_and_branch_lengths_explicitly()
     for params in tree_strategy_grid:
         assert params["branch_length_optimization_method"] == "fixed_topology_nnls"
 
-    graphtools_adaptive_nnls_neighbor_joining_params = next(
-        params for params in tree_strategy_grid if params["tree_builder"] == "neighbor_joining"
-    )
-    assert graphtools_adaptive_nnls_neighbor_joining_params["tree_builder"] == ("neighbor_joining")
-    assert graphtools_adaptive_nnls_neighbor_joining_params["tree_rooting"] == "mad"
-    assert (
-        graphtools_adaptive_nnls_neighbor_joining_params["branch_length_optimization_method"]
-        == "fixed_topology_nnls"
-    )
-
 
 def test_method_registry_exposes_current_support_profiles():
     current_profile_ids = {
         "tbs_internal_filter_v1",
         "tbs_internal_filter_branch_length_v1",
-        "tbs_bandwidth_context_v1",
     }
     internal = METHOD_SPECS["tbs_internal_filter_v1"].param_grid[0]
     branch_length = METHOD_SPECS["tbs_internal_filter_branch_length_v1"].param_grid[0]
-    bandwidth = METHOD_SPECS["tbs_bandwidth_context_v1"].param_grid[0]
 
     assert current_profile_ids.issubset(METHOD_SPECS)
-    assert current_profile_ids.issubset(TBS_RUNNER_METHODS)
+    assert current_profile_ids.issubset(TBS_DISTANCE_TREE_METHODS)
     assert internal["spectral_include_internal_barycenters"] is True
     assert internal["spectral_internal_distribution_mode"] == "empirical_barycenter"
     assert internal["enforce_internal_support_thresholds"] is True
     assert branch_length["spectral_internal_distribution_mode"] == ("branch_length_state")
     assert branch_length["enforce_internal_support_thresholds"] is True
-    assert bandwidth["neighborhood_bandwidth_profile"] == (
-        "regional_tau_branch_length_support_only_v1"
-    )
+

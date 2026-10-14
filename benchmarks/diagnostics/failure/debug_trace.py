@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import bool_series
+
 logger = logging.getLogger(__name__)
 
 AUDIT_CONTRACT_COLUMNS = frozenset(
@@ -126,7 +128,7 @@ def analyze_single_case(csv_path: Path) -> dict:
     root_split_rejected = _root_split_rejected(root_row)
 
     # Significant splits analysis
-    sibling_different = _coerce_bool_series(df["Sibling_BH_Different"])
+    sibling_different = bool_series(df["Sibling_BH_Different"])
     sig_splits = df[sibling_different & (df.index != root_idx)]
 
     # Classification
@@ -145,13 +147,6 @@ def analyze_single_case(csv_path: Path) -> dict:
         return {"mode": "MIXED", "reason": "Root split OK, moderate complexity."}
 
 
-def _coerce_bool_series(series: pd.Series) -> pd.Series:
-    if series.dtype == bool:
-        return series.fillna(False)
-    lowered = series.astype(str).str.strip().str.lower()
-    return lowered.isin({"1", "true", "t", "yes"})
-
-
 def _root_sibling_pvalue(root_row: pd.Series) -> float:
     for column in (
         "Sibling_Divergence_P_Value_Corrected",
@@ -168,4 +163,4 @@ def _root_sibling_pvalue(root_row: pd.Series) -> float:
 def _root_split_rejected(root_row: pd.Series) -> bool:
     if "Sibling_BH_Different" not in root_row.index or pd.isna(root_row["Sibling_BH_Different"]):
         return True
-    return not bool(_coerce_bool_series(pd.Series([root_row["Sibling_BH_Different"]])).iloc[0])
+    return not bool(bool_series(pd.Series([root_row["Sibling_BH_Different"]])).iloc[0])

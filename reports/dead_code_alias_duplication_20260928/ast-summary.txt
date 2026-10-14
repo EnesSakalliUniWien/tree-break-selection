@@ -1,0 +1,5 @@
+Custom Python AST analysis, not configured clone checker.
+623 Python files parsed across applications, benchmarks, scripts, tree_break_selection, tests.
+13 exact duplicate body groups (>=8 body source lines); 1 private no-static-reference candidate; 3 top-level name/attribute aliases.
+See ast_candidates.json for all candidates, paths, line numbers and signatures.
+

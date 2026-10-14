@@ -16,13 +16,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
 )
 
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
 from benchmarks.diagnostics.calibration.traversal.cli import parse_traversal_audit_args
 from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.cases import get_test_cases_by_suite
@@ -74,18 +74,6 @@ class BranchLengthTraversalAuditConfig:
     methods: tuple[str, ...] = DEFAULT_METHODS
     significance_level: float = DEFAULT_SIBLING_ALPHA
     edge_alpha: float = DEFAULT_EDGE_ALPHA
-
-
-def _json_default(value: object) -> object:
-    if isinstance(value, Path):
-        return str(value)
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 def _node_to_str(value: object) -> str:
@@ -289,7 +277,7 @@ def run_branch_length_traversal_audit(
         for method_id in methods:
             spec = METHOD_SPECS[method_id]
             for params in spec.param_grid:
-                row, computed, _method_audit = run_single_method_once(
+                row, computed = run_single_method_once(
                     method_id=method_id,
                     spec=spec,
                     params=params,
@@ -304,7 +292,6 @@ def run_branch_length_traversal_audit(
                     meta=inputs.metadata,
                     distance_matrix=inputs.distance_matrix,
                     distance_condensed=inputs.distance_condensed,
-                    matrix_audit=False,
                 )
                 method_rows.append(row)
                 if computed is None:
@@ -399,7 +386,7 @@ def run_branch_length_traversal_audit(
         },
     }
     outputs["manifest"].write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, default=_json_default) + "\n",
+        json.dumps(manifest, indent=2, sort_keys=True, default=diagnostic_json_default) + "\n",
         encoding="utf-8",
     )
     _log(run_log_path, f"wrote_outputs={outputs}")

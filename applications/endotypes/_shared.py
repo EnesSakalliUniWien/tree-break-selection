@@ -71,20 +71,6 @@ def load_binary_feature_matrix(
     return data.astype(int)
 
 
-def benjamini_hochberg(pvals: np.ndarray) -> np.ndarray:
-    """Benjamini-Hochberg FDR correction."""
-
-    n = len(pvals)
-    if n == 0:
-        return pvals
-    order = np.argsort(pvals)
-    ranked = np.empty(n)
-    ranked[order] = np.arange(1, n + 1)
-    adjusted = pvals * n / ranked
-    adjusted = np.minimum.accumulate(adjusted[np.argsort(ranked)[::-1]])[::-1]
-    return np.clip(adjusted, 0, 1)[np.argsort(np.argsort(ranked))]
-
-
 def parse_reference_endotypes(path: Path) -> dict[str, dict[str, object]]:
     """Index a Julia reference-endotype table by Entrez gene ID."""
 
@@ -154,7 +140,9 @@ def map_symbols_to_entrez(
             query = record.get("query")
             if not query:
                 continue
-            entrez = record.get("entrezgene") or record.get("_id")
+            # mygene's _id is the Entrez ID only when numeric; otherwise it is an Ensembl ID.
+            record_id = str(record.get("_id", ""))
+            entrez = record.get("entrezgene") or (record_id if record_id.isdigit() else None)
             mapped[str(query)] = None if entrez is None else str(entrez)
         for symbol in batch:
             mapped.setdefault(symbol, None)

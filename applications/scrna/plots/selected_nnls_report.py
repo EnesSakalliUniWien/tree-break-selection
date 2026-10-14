@@ -21,6 +21,7 @@ from matplotlib.gridspec import GridSpec
 from PIL import Image
 
 from applications.scrna.plots.report_helpers import plot_cluster_size_bars
+from applications.scrna._shared import add_generated_at
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -184,18 +185,6 @@ def strip_axes(ax):
     ax.set_yticks([])
     for spine in ax.spines.values():
         spine.set_visible(False)
-
-
-def add_generated_at(fig, generated_at):
-    fig.text(
-        0.99,
-        0.01,
-        f"Generated at: {generated_at}",
-        ha="right",
-        va="bottom",
-        fontsize=7,
-        color="#6b7280",
-    )
 
 
 def plot_umap(ax, df, color_col, palette, title, annotate_clusters=False, point_size=5):

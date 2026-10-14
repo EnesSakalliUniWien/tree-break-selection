@@ -2,7 +2,7 @@
 title: Diffusion NNLS Calibration Open Points
 type: question
 status: draft
-updated: 2026-09-10
+updated: 2026-09-28
 sources:
   - reports/calibration_restoration_20260909/false_split_definition.md
   - reports/calibration_restoration_20260909/validation_protocol.md
@@ -10,6 +10,9 @@ sources:
   - reports/calibration_restoration_20260909/external_contract_check.json
   - reports/diffusion_nnls_versions_20260909/README.md
   - reports/diffusion_nnls_versions_20260909/support_review_results.csv
+  - reports/eigenspace_reassessment_20260928/README.md
+  - reports/eigenspace_reassessment_20260928/full_pipeline/protocol.md
+  - reports/independent_diffusion_nnls_20260928/README.md
 tags:
   - calibration
   - diffusion
@@ -26,10 +29,26 @@ calibration while preserving its signal recovery?
 
 ## Current State
 
+The separate [[independent-diffusion-nnls-benchmark]] fits diffusion/NNLS on
+discovery only and tests independent Gaussian measurements with known common
+covariance. Across 900 pairs, NNLS changes branch lengths but not p-values
+because fitted lengths have no role in this covariance model. This supplies
+a restricted independent-data control; it does not close the binary selected-
+tree, fitted-covariance or whole-tree error-control questions below. Its
+40-dimensional conditional root tail still has 6/250 rejections at cutoff .01.
+
 The empirical calibration rule is restored and benchmark recovery is recorded
-in [[calibration-rule-restoration-20260909]]. The held-out full-pipeline
-calibration study has not been run. These open points distinguish study-design
-decisions from findings that require evidence. An item closes only when its
+in [[calibration-rule-restoration-20260909]]. The frozen 2026-09-28 reassessment
+has now run 4,200 independent null/signal datasets through the complete pipeline.
+Adaptive NNLS false-partition counts at sibling alpha .01 are 316/500 for iid
+Bernoulli and 263/500 for categorical nulls; selected-root tails also fail.
+Signal recovery and generator-truth calibration contamination are reported
+alongside these errors in [[eigenspace-benchmark-calibration-reassessment]].
+
+The protocol fixes estimands, seeds, settings, sample sizes, confidence bounds
+and multiplicity for this finite study. This supplies empirical evidence for
+several questions below, but does not close the general reference-law,
+whole-tree-control or correction questions. An item closes only when its
 answer, applicable conditions and supporting artifact are recorded.
 
 - [x] **CAL-01 — Null models and truth: definition recorded.** A local false
@@ -141,3 +160,4 @@ CAL-04 through CAL-07, CAL-10, CAL-11 and the correction decision in CAL-12.
 - [[empirical-null-calibration-reference-law-contract]]
 - [[diffusion-nnls-versions-and-support-review-20260909]]
 - [[open-mathematical-questions]]
+- [[eigenspace-benchmark-calibration-reassessment]]

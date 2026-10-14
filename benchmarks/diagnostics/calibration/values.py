@@ -26,6 +26,25 @@ def finite_float(value: object) -> float:
     return numeric if math.isfinite(numeric) else math.nan
 
 
+def bool_value(value: object) -> bool:
+    """Read one table cell as a boolean: missing is false; text accepts 1/true/t/yes/y."""
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "t", "yes", "y"}
+    if pd.isna(value):
+        return False
+    return bool(value)
+
+
+def bool_series(series: pd.Series) -> pd.Series:
+    """Read a table column cell by cell with the bool_value rules."""
+    return series.map(bool_value).astype(bool)
+
+
+def parse_csv_list(raw: str) -> tuple[str, ...]:
+    """Split a comma-separated CLI value into stripped, non-empty items."""
+    return tuple(part.strip() for part in str(raw).split(",") if part.strip())
+
+
 def string_value(
     row: pd.Series | dict[str, object],
     column: str,
@@ -41,6 +60,9 @@ def string_value(
 
 
 __all__ = [
+    "bool_series",
+    "bool_value",
     "finite_float",
+    "parse_csv_list",
     "string_value",
 ]

@@ -1,0 +1,66 @@
+[
+  {
+    "case": "support_selected_only_fail_closed",
+    "block": "adaptive_modes_02_06",
+    "leading_numerical_group_size": 4,
+    "leading_eigenvalues": [
+      1.0000000000000018,
+      0.9999999999999994,
+      0.9999999999999991,
+      0.9999999999999957,
+      0.7533402312077192
+    ],
+    "positive_weight_connected_components": 4,
+    "old_one_based_modes": [
+      2,
+      31
+    ],
+    "new_one_based_modes": [
+      1,
+      30
+    ]
+  },
+  {
+    "case": "phylo_brownian_null_16taxa",
+    "block": "adaptive_modes_02_05",
+    "leading_numerical_group_size": 2,
+    "leading_eigenvalues": [
+      1.0000000000000029,
+      1.0000000000000007,
+      0.9999609005037342,
+      0.999862762056009,
+      0.9994329617500145
+    ],
+    "positive_weight_connected_components": 2,
+    "old_one_based_modes": [
+      2,
+      31
+    ],
+    "new_one_based_modes": [
+      1,
+      30
+    ]
+  },
+  {
+    "case": "traversal_deep_branch_recovery_stress",
+    "block": "adaptive_modes_02_06",
+    "leading_numerical_group_size": 6,
+    "leading_eigenvalues": [
+      1.000000000000002,
+      1.0000000000000016,
+      1.0000000000000002,
+      1.0000000000000002,
+      0.9999999999999991,
+      0.9999999999999987
+    ],
+    "positive_weight_connected_components": 6,
+    "old_one_based_modes": [
+      2,
+      31
+    ],
+    "new_one_based_modes": [
+      1,
+      30
+    ]
+  }
+]

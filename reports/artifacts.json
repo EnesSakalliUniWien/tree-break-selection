@@ -1,0 +1,2464 @@
+{
+  "schema_version": 1,
+  "max_staged_bytes": 5242880,
+  "studies": {
+    "reports/branch_distribution_variance_20260928": {
+      "description": "branch_distribution_variance_20260928",
+      "reproduction_source": "reports/branch_distribution_variance_20260928/README.md"
+    },
+    "reports/dead_code_alias_duplication_20260928": {
+      "description": "dead_code_alias_duplication_20260928",
+      "reproduction_source": "reports/dead_code_alias_duplication_20260928/README.md"
+    },
+    "reports/distribution_equation_comparison_20260928": {
+      "description": "distribution_equation_comparison_20260928",
+      "reproduction_source": "reports/distribution_equation_comparison_20260928/README.md"
+    },
+    "reports/eigenspace_reassessment_20260928": {
+      "description": "eigenspace_reassessment_20260928",
+      "reproduction_source": "reports/eigenspace_reassessment_20260928/README.md"
+    },
+    "reports/eigenvalue_block_comparison_20260926": {
+      "description": "eigenvalue_block_comparison_20260926",
+      "reproduction_source": "reports/eigenvalue_block_comparison_20260926/README.md"
+    },
+    "reports/independent_diffusion_nnls_20260928": {
+      "description": "independent_diffusion_nnls_20260928",
+      "reproduction_source": "reports/independent_diffusion_nnls_20260928/README.md"
+    },
+    "reports/independent_projection_vandermonde_20260928": {
+      "description": "independent_projection_vandermonde_20260928",
+      "reproduction_source": "reports/independent_projection_vandermonde_20260928/README.md"
+    },
+    "reports/known_branch_skew_20260928": {
+      "description": "known_branch_skew_20260928",
+      "reproduction_source": "reports/known_branch_skew_20260928/README.md"
+    },
+    "reports/lower_dimension_df_audit_20260928": {
+      "description": "lower_dimension_df_audit_20260928",
+      "reproduction_source": "reports/lower_dimension_df_audit_20260928/README.md"
+    },
+    "reports/mathematical_construction_review_20260928": {
+      "description": "mathematical_construction_review_20260928",
+      "reproduction_source": "reports/mathematical_construction_review_20260928/README.md"
+    },
+    "reports/naming_claims_review_20260928": {
+      "description": "naming_claims_review_20260928",
+      "reproduction_source": "reports/naming_claims_review_20260928/README.md"
+    },
+    "reports/passthrough_benchmark_20260928": {
+      "description": "passthrough_benchmark_20260928",
+      "reproduction_source": "reports/passthrough_benchmark_20260928/README.md"
+    },
+    "reports/passthrough_pvalue_normalisation_20260928": {
+      "description": "passthrough_pvalue_normalisation_20260928",
+      "reproduction_source": "reports/passthrough_pvalue_normalisation_20260928/README.md"
+    },
+    "reports/production_pvalue_replacement_20260928": {
+      "description": "production_pvalue_replacement_20260928",
+      "reproduction_source": "reports/production_pvalue_replacement_20260928/README.md"
+    }
+  },
+  "files": [
+    {
+      "path": "reports/branch_distribution_variance_20260928/README.md",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/analyze_results.py",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/compatibility.md",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/contexts.jsonl",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 39014251,
+      "sha256": "76436111387544b8d4ce020eab76966c0e1fd33dd0c903b873cbb3c9ba47d0c4",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/76/76436111387544b8d4ce020eab76966c0e1fd33dd0c903b873cbb3c9ba47d0c4",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/manifest.json",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 34447,
+      "sha256": "133461aad1f5e9656a09273e9966d04ea5f94eb0218bc39474bf7010d5b5b60c"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/node_effects.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5904,
+      "sha256": "bf5cfe10000f0c6406d089430b971ef26ea9baa97d474d6ca9d338378ed694fc"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/node_effects_by_dataset.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 4301941,
+      "sha256": "c15a4adef23f00e35eaf948aa0d5bbbd09fce88487efd25abe50a6f792b710f1",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/c1/c15a4adef23f00e35eaf948aa0d5bbbd09fce88487efd25abe50a6f792b710f1",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/nodes.jsonl.gz",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 118559832,
+      "sha256": "135dae4d75e6e72d67150f7d6f3840c046194f2b6cf67d18f3727baf718af8be",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/13/135dae4d75e6e72d67150f7d6f3840c046194f2b6cf67d18f3727baf718af8be",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/root_nodes.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 28652627,
+      "sha256": "9ce874c93c21fdcc8f189916707ef0f66c5958883b8418895970fc9ea23c7f16",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/9c/9ce874c93c21fdcc8f189916707ef0f66c5958883b8418895970fc9ea23c7f16",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/root_tails.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 62476,
+      "sha256": "9b26df5786f9693b1fefd84b8c004319b03065748e2f0d240504faacd2242e03"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/run_effects.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 10002560,
+      "sha256": "5ed5641c88fab308d918f7bef689de8a17ea427f434b261a3e25fa81b2589f88",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/5e/5ed5641c88fab308d918f7bef689de8a17ea427f434b261a3e25fa81b2589f88",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/runs.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 22807302,
+      "sha256": "c1fe20c1ac20b3866062f4cb188021e993080b09dd6f729ebbaa736e9c046a0c",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/c1/c1fe20c1ac20b3866062f4cb188021e993080b09dd6f729ebbaa736e9c046a0c",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/summary.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 41074,
+      "sha256": "5813a66d822e8e18cbc15aa23bccbf8a132debbe3075671ffabf283f0f0437b9"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/evaluation/verification.json",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1068,
+      "sha256": "73e1fdfb3c4a13c89eb7828738e12246312e4c6fbf40474b3cd7b291e5a97ad2"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot/contexts.jsonl",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 389661,
+      "sha256": "e8a679bac0be6620567bbd0ac790adb248e0068a25648d050bdf08beb7fd3928"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot/manifest.json",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 34434,
+      "sha256": "f53ec4e8c24706723cf7faa1241a7ba29043d5909c0867f23ed938eb39a8ab7a"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot/nodes.jsonl.gz",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 153012,
+      "sha256": "ff965a8477aa7415e584da6163b5e3ddfa772e73a0c6e09369242968254a9ffa"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot/root_nodes.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 24497,
+      "sha256": "518122d50a92401a13ada22730d205c4c661121b68a86e1cdd15e187f2d409b6"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot/runs.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 256415,
+      "sha256": "13c1d366db63ed4eb972a9f62d626439035019b3d39123f36837e6463ad2fe1d"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/contexts.jsonl",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 389657,
+      "sha256": "0358e9e3e83a76dbea599df349cc545d1f5d48b92dd08e5a7e30f863354b4885"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/manifest.json",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 34443,
+      "sha256": "9fe6827d056cd01d51334b0437128165d8e0df4f7e701ac4f8583c0ad74cc2ee"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/node_effects.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5053,
+      "sha256": "90df580817a63706dece43e912dfde0d57890655a2b0733be8a3f2d8f6540df9"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/node_effects_by_dataset.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 43137,
+      "sha256": "1e27735fb43f4d614203648aa9a6fcd6684981528656ecca69729a2790305ab6"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/nodes.jsonl.gz",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 1192439,
+      "sha256": "6c64253a620e4b42b7c78537dddcf48e7d7d45e85ccb31c8b13b2bb7211e1a7a",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/6c/6c64253a620e4b42b7c78537dddcf48e7d7d45e85ccb31c8b13b2bb7211e1a7a",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/root_nodes.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 285577,
+      "sha256": "50c2573b20cc7a699af747e2ef8dfef49f8c8bfcdd823fd98b84374fba8836fe"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/root_tails.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 50153,
+      "sha256": "b333344b6462c6b19f7ff0d1007c826a4994612926f72b5ec31baf258bbf5dfd"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/run_effects.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 98993,
+      "sha256": "9d593ee33f8a097282b789e2007e5a9eca5eeeb374f5d0e51e7d55f3708fa781"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/runs.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 228209,
+      "sha256": "af0472d9b5d326afa9fc719db0568d3bd4fd36fc31d9309975d6778cb8cc6b3d"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/summary.csv",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 36298,
+      "sha256": "4feb6e628b4fa435c688df1ffc5b075e5f94f7961ae31832d3fa8d5c2a8c69e9"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/pilot_reviewed/verification.json",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 592,
+      "sha256": "2ff33aadc535997413d7e956251da71bbfb1f988c073811b8036b517c6442567"
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/protocol.md",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/run_benchmark.py",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/branch_distribution_variance_20260928/verification-tests.txt",
+      "study": "reports/branch_distribution_variance_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 99,
+      "sha256": "c65eeb405fef59db3cb97a78a4d2a136f29941e21359617db7b92929617351d9"
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/README.md",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/ast-summary.txt",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 367,
+      "sha256": "c48fdac0889d265f7cf9ed04f9b10c1306f2e62a641bf422c769f44818c712f9"
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/ast_candidates.json",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 8810,
+      "sha256": "0991cae3ffa2fde17c1917a1cd1c1ef9dcb3cc2778381908eb192459742a9878"
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/audit_commands.json",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3206,
+      "sha256": "2ffeb663c1c0ae3807bca84d4f0fedb201c8c1cb5ddbb56deb7576da6715b97e"
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/deptry.txt",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 73,
+      "sha256": "c691c7a57c1e4efd30cdaef2633fc927484a0fc26f1987a1b2d69d79b730cfca"
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/ruff.txt",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 20,
+      "sha256": "98733c3446b52dc3e6b6943142b19a142025d9727521f6abc3783a20e4b6d3c6"
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/vulture-60.txt",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7517,
+      "sha256": "5e2ca73caa0b8ae7153625065681dc61fa2d2ad49fea11e7dc3dac54c433b04c"
+    },
+    {
+      "path": "reports/dead_code_alias_duplication_20260928/vulture-90.txt",
+      "study": "reports/dead_code_alias_duplication_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/README.md",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/compare_distributions.py",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/distribution_comparison.pdf",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 38432,
+      "sha256": "5be8d90d69445724d4d4022a8b0d2fcee70692cf5e1444d0e9bab47fa61ffbca"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/distribution_comparison.png",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 358245,
+      "sha256": "2852cf5387c0ae4f952fc20cb8b56151c6219141c91cdd10245a6135fde4027a"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/distribution_curves.csv",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 1158691,
+      "sha256": "f810fa6321615e4dd0523c65c774cd98d9bd159fd6424dba65506a9603a01a4f",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/f8/f810fa6321615e4dd0523c65c774cd98d9bd159fd6424dba65506a9603a01a4f",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/fitted_parameters.csv",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3793,
+      "sha256": "5f762cb179c5a58a1a6ba5583b50680092517e0e6dbffe8a96fe1fc342f2dffd"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/heldout_comparison.csv",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 32008,
+      "sha256": "a6ee1c50f37be9ed52915a50637f04f7c5df1c1d56e83c8c6a01f7a7cfd1c340"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/historical_equation_holdout.csv",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3523,
+      "sha256": "7c6c489ca1255180245d3ecfa2a237ec6d2252a0377565fc21ba759464d12e2d"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/manifest.json",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3318,
+      "sha256": "6210850f49783190e280f315a39cea5eb21461515bf6c1893c5a3de54a0a9fbe"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/pre_run_design.json",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1884,
+      "sha256": "f433f6d183eb16d8b7213e4b24ba7b2d3bf6b51a12818c5ad37f3fa6585590a0"
+    },
+    {
+      "path": "reports/distribution_equation_comparison_20260928/rank_mixture_summary.csv",
+      "study": "reports/distribution_equation_comparison_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2704,
+      "sha256": "e05226f6fe4eff7ce37b8963808b9ebc672f62266c355d0428a1540c3b67beb5"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/README.md",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/alpha_sensitivity.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3710,
+      "sha256": "5b1327e63dc5432e1ef303b9438fa3ed1c521a0ce17253b4435d55c108c76185"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/analysis_summary.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1505,
+      "sha256": "31d068f7a9cb1b1e08ef9b7683fdf8d3af113a4873f06f6f71258edfa23943ac"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation/deterministic_rerun_checks.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2197,
+      "sha256": "ebf3e68fc38d52ffa4bcf1c1c5fd23348571579e9b7d5b7549a81087ab190491"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation/manifest.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 39130,
+      "sha256": "5c05c6de25c5a485c8aadcceed51747b3a81495c1c0e9eac08c3a1bf4eaa4b58"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation/nodes.csv.gz",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 35609144,
+      "sha256": "5150a5ac81f2e0c504deeab7f401fb0d3f274ce9f6e268ad0b73d38dcf8dc544",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/51/5150a5ac81f2e0c504deeab7f401fb0d3f274ce9f6e268ad0b73d38dcf8dc544",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation/root_tails.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 29190,
+      "sha256": "d17cdfc1f54f4632891a2e8e61957d57006700b4ea3597ef9a17997f4f3e6a60"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation/runs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 45753541,
+      "sha256": "bf29764c3879980837fa10bc0a8b502c00bdef958c8b34ec36d44e4f19dacf79",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/bf/bf29764c3879980837fa10bc0a8b502c00bdef958c8b34ec36d44e4f19dacf79",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation/summary.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 15563,
+      "sha256": "3304dbc7a372ce6adc95ca770c2343252f161424e7a475894d29d9644fba6028"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation/verification.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1374,
+      "sha256": "3ff60bd6d679514dc4606f2fd8c372385f9a4e297b44abaac5b42ce85f84c9ce"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot/manifest.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 38673,
+      "sha256": "4bd2be8d3fccb0ddf2f1e8f0a373e4ff7fb81292d312ae26d964d4bc1467c9c0"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot/nodes.csv.gz",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 201952,
+      "sha256": "c6589b4ad89cf73d11332bb36954ef9a750a66520d7e2d547db89322f98ac0c5"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot/root_tails.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 21460,
+      "sha256": "9ee8f3b7ff328bd42b6778ee77897f7141ae41203d90bdbcbe9a6f415738adfa"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot/runs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 262147,
+      "sha256": "5356a34f07a7825a84236354c4cfc81432e69f5ef2f99dad0e408e6f3847c73f"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot/summary.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12348,
+      "sha256": "57d81965428befbf0446541b7b545fd9c81cbe6017530e7585c813e05cd0fca6"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot_reviewed/manifest.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 39099,
+      "sha256": "c64bec246f40936a88cf7de2f15885e0fe47cd36477130ceb4e22ccc29efa7f7"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot_reviewed/nodes.csv.gz",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 201259,
+      "sha256": "2822bc9cd34493cb123c2e03957aafc749aa7d62cb8f366c29992db0c53f7fbd"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot_reviewed/root_tails.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 21709,
+      "sha256": "fb613162abe10fecdea19b9780ac551b87cac9281e8f56787b6499e1340099cb"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot_reviewed/runs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 262085,
+      "sha256": "c729f97c8fd7bf43dffa1cd05136e5cc6bc5608f1689cfdd77fb4c79ad71faf8"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot_reviewed/summary.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12411,
+      "sha256": "d43346f3c2228e313c2e2faaa6868282462f68b876a8fc80cb238c32cd8f7cfb"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/protocol.md",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/run_reassessment.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/verify_pipeline_outputs.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/null_partition_rates.pdf",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 36634,
+      "sha256": "66957836a9282cc789aeec28879970e76ddbb4ce918e870e57238f25434679e2"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/null_partition_rates.png",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 197171,
+      "sha256": "6c225ce7a66378bb064a5c81fa50832dbb8980ed90cf9a4db4d57d7351a3094a"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/null_partition_summary.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7479,
+      "sha256": "87798f89a712f0ceb05c11f52682eb264ffc5999f0a5c2acda3a94bdd5e3525a"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/paired_signal_comparisons.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2271,
+      "sha256": "8f134ec7f87e1f5e9ca150169f4e6ba5ce819365eef9240a65b63528032e4689"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/signal_recovery_summary.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 4626,
+      "sha256": "fa1b566e4d7fa25e72dce920910296ec8d813911ef16cd1d3a31ad3b1c12889f"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/README.md",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/assignments.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 8664146,
+      "sha256": "4862e0ec238d01ccd31e5aa804bb338eaadd959321e7748a8d8dc4dc9c6cf863",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/48/4862e0ec238d01ccd31e5aa804bb338eaadd959321e7748a8d8dc4dc9c6cf863",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/block_pairs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12305,
+      "sha256": "34c28a0ce15e22dc3fe7446ed1dc32f868dfa1b188c54c06327037b5649c003e"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/blocks.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 10518,
+      "sha256": "3322b41b310e94c5e6483563ce6bd7d712a2af025151707482557cdbd6c724ee"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/cases.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1631,
+      "sha256": "da03ff9366dc6ea2ec7c47f61a8ff77e5a0d5550bf32a15b8c07aa81f5061dca"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/changed_geometry_leading_modes.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1383,
+      "sha256": "b600b0e934b59ffbfdaf47e019128424ed92d9b487a283093d39ebaa5efc3886"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/changed_runs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 11108,
+      "sha256": "704683ad3b7bfb52c9ce5864c39ef2875264cf9acd06d30817e631abacde3c82"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/compare_before_after.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/comparison_summary.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3326,
+      "sha256": "62a352291adf01d0f4ba766f25aa1b8b6ce7dd8d79d0b23c68256d62578498bf"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/geometries.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12804,
+      "sha256": "b1f9fb41c0170aa58d8475a3214455ea1fc0b46278f75d9de62b6093bf7a035c"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/geometry_comparison.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 29015,
+      "sha256": "571bbe7bfc476e49d287dcfd51aecd65eb8967160d9e79a0fbdbbf560d4dc1b4"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/geometry_pairs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 36783,
+      "sha256": "60d6c762d719d537a118a32b8cf27ee564549fb29c12b30831b372f75da80fd5"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/geometry_replay.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 853,
+      "sha256": "412a6c9eb36cf6c392f9025c901a3175714512412e414dd728cea82b51c8c3f9"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/historical_sources/adaptive_cosine.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 10372,
+      "sha256": "e315014d28a915c61524d1d7b9b7d7026c3a80780216dfdde0479fdc79319a48"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/historical_sources/diffusion.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 16920,
+      "sha256": "19ee963590a0c9fa52dfb7da42db662b20e0e46efb9b88770c70e728afe9cb2f"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/invocation.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1290,
+      "sha256": "98f23ffcf2d14cf27c2c62298913ce931fcbfc01d4e321b7d964dca4b40f9801"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/manifest.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 57984,
+      "sha256": "e5564b45cca33e085a53a1ae7ba2d1062bfbafb038f8b1b47cf862631f4e63bc"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/run_comparison.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 224805,
+      "sha256": "be3db609b04e7efe7982f84ad081b2f82b6fc276479723bbb4a76fa0385f7bd0"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/run_pairs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 642242,
+      "sha256": "c12c473561fad761af46cab240763100c4200794a326b931aebd0c0cdc67d8b6"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/runs.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 119963,
+      "sha256": "40382070978f36a6f7d874987c6600af8ae60ae9ab709faa8be404e034cfdd58"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/source_comparison.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 48429,
+      "sha256": "6374f2f823e91b0b22089a105dea93009bdf5b5358be4bb2d99b7185a6546938"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/spectra.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 25698,
+      "sha256": "fc84d97a03480340697df6e5f38fffdcfcbdcc9bb9583f114228b284c300792a"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/status_transitions.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 98,
+      "sha256": "22dba5f39d2f8b9990565ddc21daff774b9afe1c5d6d75d302e0573e12d05d85"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/summary_by_case_geometry.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1967,
+      "sha256": "ab4cbd808c9925b464fbd1a0561780a9f62b7bd45cd7197ede33261d53ff18f7"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/trees.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 15394350,
+      "sha256": "4398086e811c7b9141acac8a8e59ac45e56318e1d3e01d8f5567806cd33869a4",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/43/4398086e811c7b9141acac8a8e59ac45e56318e1d3e01d8f5567806cd33869a4",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/summarize_and_plot.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/README.md",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/counts.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 49093,
+      "sha256": "41093bfe5f7c9709c0870c18c9adc64efec082f211e20be950551265ab373997"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/design.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5401,
+      "sha256": "46a59a7b145ba45c64bf4faf1048b3a9ee0e55e0bee2b901090e50e568e3782b"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/kernel_checks.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 549009,
+      "sha256": "221235475000745630ae0f713d4d901867c0e99d13530bccfa82611869f24cec"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/manifest.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7192,
+      "sha256": "44527620e7a8b0554e3d7b4fad630fdb5a90c5bae495c3e8062cb29a1c6e27b7"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/outcome_index.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5536,
+      "sha256": "cf6d304f801c862f70d7543be6e73dc4724f854e712f5c45c4516c3bf717659c"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/paired_decisions.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7656,
+      "sha256": "39c355ba95f5ceaca63e7959d38ac722b4265b477cb5ee00fb3ab0b3e3ae384a"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/rank_counts.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 4864,
+      "sha256": "65b415e11a141de882c66b245609d0bfb4d82202f62d219b7c0d0dced2fe1aa7"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/replicate_outcomes_seed_1907.npz",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 2330913,
+      "sha256": "4853ef6ebce54a172dc0c0bb83fb89225ea3b0c7e5d2a400e77f5037c7b7dd8f",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/48/4853ef6ebce54a172dc0c0bb83fb89225ea3b0c7e5d2a400e77f5037c7b7dd8f",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/replicate_outcomes_seed_2026092801.npz",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 2326463,
+      "sha256": "113ab49f5739c46d3cd649052893d43551a99a7bbf2e56c4a01c98a09ee99a37",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/11/113ab49f5739c46d3cd649052893d43551a99a7bbf2e56c4a01c98a09ee99a37",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/replicate_outcomes_seed_2026092802.npz",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 2334464,
+      "sha256": "67550e4288e27c6c52d4ac8f0d5477462b08061ae1e97b22d46dd9bef397d9e7",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/67/67550e4288e27c6c52d4ac8f0d5477462b08061ae1e97b22d46dd9bef397d9e7",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/rotation_audit.csv",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2554,
+      "sha256": "c5af697257a7ea51f1d9eabd2159788f6f16c6687bfad87b5dce9d738a3570c0"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/run_calibration.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/source_snapshot/current_eigenvalue_groups.py.txt",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1202,
+      "sha256": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/source_snapshot/current_projected_wald_kernel.py.txt",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6523,
+      "sha256": "3e2534d0ab7c066a3ca0ab4ad7514598b234a860e74a29b5d53ddca30a7583b2"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/source_snapshot/current_projected_wald_projection_basis.py.txt",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2020,
+      "sha256": "673dfa4322bcb9a6a6ecaafa1af9ae5da79a44f44c9d57bc5940b02a6522bb1d"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/source_snapshot/current_projected_wald_reference_distribution.py.txt",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3522,
+      "sha256": "c1648985583f44e9edf7cfb3b7dad20bf28b6bac38c4f8a294b432648df514d1"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/source_snapshot/legacy_projected_wald_kernel.py.txt",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6222,
+      "sha256": "75cdc4c41ba653df6dbe6f65522ad20b8b484128367911ffb5fb0c93b69ce19a"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/source_snapshot/legacy_projected_wald_projection_basis.py.txt",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1576,
+      "sha256": "b59159ec2cd6ae6c6e96db822c13d15012178a9be6aaef867cb3fdf7d9c1997d"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/verification.json",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 337,
+      "sha256": "1b2f745eff6636e2bc2c3b3a9c02a992727170b25f21e94cba66151c64ce98c2"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank/verify_outputs.py",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank_calibration.pdf",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 19783,
+      "sha256": "40904b8dad2b695976a37ffaffd11b3d83dbbb4dad28386d2191888dfed1889c"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/wald_rank_calibration.png",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 88150,
+      "sha256": "21874582f45dbf8a52d2d3308a25100c83b8f051759126e06d7fac34566e556e"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/README.md",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/adjacent_boundaries.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 4823,
+      "sha256": "88f0a46819a4b64e8a03987e8d7f1e9194d00727522ab92b00d218833dde3fb4"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/assignments.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 8664159,
+      "sha256": "29ad0c76892c39e93227fe1087e37f833c649323234d65846547d0d09efbd372",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/29/29ad0c76892c39e93227fe1087e37f833c649323234d65846547d0d09efbd372",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/benchmark_clusters.pdf",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 161217,
+      "sha256": "83577e8f8209a15d923a2ff86f1c29075bd98b0dad9bd7684e12eb76bfa1242b"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/binary_example.png",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 192277,
+      "sha256": "a5a55dbf409917d557bfc37893b48e7782e24053fb71a4873e5b9eba12569abc"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/block_pairs.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12305,
+      "sha256": "34c28a0ce15e22dc3fe7446ed1dc32f868dfa1b188c54c06327037b5649c003e"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/blocks.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 10518,
+      "sha256": "3322b41b310e94c5e6483563ce6bd7d712a2af025151707482557cdbd6c724ee"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/cases.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1631,
+      "sha256": "da03ff9366dc6ea2ec7c47f61a8ff77e5a0d5550bf32a15b8c07aa81f5061dca"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/eigenvalue_blocks.png",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 328562,
+      "sha256": "3df75db7b9461cab81a540a7f230063ce0b82ae9057f72b4744c9a02919f55dd"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/geometries.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12804,
+      "sha256": "b1f9fb41c0170aa58d8475a3214455ea1fc0b46278f75d9de62b6093bf7a035c"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/geometry_pairs.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 36781,
+      "sha256": "98cbf08f132569bb4a83f32f067a0fa7d174eedcc0b5d047e98e3e0b7a6877f4"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/manifest.json",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 56569,
+      "sha256": "088f2e912239813fedf98350fd348d1b105425676d134fb4dea0021a75e2d9c5"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/rank_sensitivity.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1752,
+      "sha256": "f7b60fa1fb6d634d7411686280f569ac159f6bc5e7a6776c111754827d7b96ac"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/render_figures.py",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/run_pairs.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 642923,
+      "sha256": "bc3deb8d917cccbc0ac2ba61a97bd3fac23e41d3545a03bc8f4f4dbc82ae1a16"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/run_pairs_with_collapse.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 667173,
+      "sha256": "3ab80d2a2fd3d7952613310ea2047fee99be385bcabe8bfa0e6ddb55961ce235"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/runs.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 120506,
+      "sha256": "1a5159c1e3c4f56f62abfd7d8edaafd0b6af2b3d757bb44401e7484f54d3f8b2"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/single_population_results.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 179,
+      "sha256": "3579026d831cf691624f770c0b81b3373343ba2d25a7c9e95d8383615516560d"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/spectra.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 25698,
+      "sha256": "fc84d97a03480340697df6e5f38fffdcfcbdcc9bb9583f114228b284c300792a"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/status_by_method.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 988,
+      "sha256": "7ca0af86ee1fe58b9c45ecd0d47af1c2b8bd2b1d3c4c50a0e1bfd111796cf04b"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/summarize_results.py",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/summary_by_case.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2303,
+      "sha256": "de9d2b8c2840c9bebcffc491b90c43acd21c7012aaaa713f16fb51dfe4cb7543"
+    },
+    {
+      "path": "reports/eigenvalue_block_comparison_20260926/trees.csv",
+      "study": "reports/eigenvalue_block_comparison_20260926",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 15393483,
+      "sha256": "c477cc6a8dd7990a09b2459571f90bf1b31b862f1635e9b2a48e2f1ed3a957ec",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/c4/c477cc6a8dd7990a09b2459571f90bf1b31b862f1635e9b2a48e2f1ed3a957ec",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/README.md",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/analyze_results.py",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/comparison.pdf",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 20572,
+      "sha256": "b133112ae244040cedf729addae306396a1af0b3415d4de2f4dc4eb9165630c1"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/comparison.png",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 88434,
+      "sha256": "1164b4527bc69c4d65cee90af8dc79f0f1e8d94646f8f4adab2b655ff456f795"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/equation_effects.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2624,
+      "sha256": "be1d0fedb7ed3af78688321f1fce3f16fe23e0ce0dcce88b02e44845bd92e214"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/evaluation/fitted_context.jsonl",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 10093916,
+      "sha256": "8588808be796914af42ebb0dac92b1afbad5c340445d7799b3b440b948cba56a",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/85/8588808be796914af42ebb0dac92b1afbad5c340445d7799b3b440b948cba56a",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/evaluation/manifest.json",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 34403,
+      "sha256": "f0b45e3a2df1e7c304323fc143dd880d067dc1eb07e49ec70aa8cff36baef657"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/evaluation/nodes.csv.gz",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 2193909,
+      "sha256": "7e133f3c328729d45fb5a5e47d64ebb460fcba0f8dbf9f00a540210f28696617",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/7e/7e133f3c328729d45fb5a5e47d64ebb460fcba0f8dbf9f00a540210f28696617",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/evaluation/root_tails.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 8060,
+      "sha256": "86d5eaf90ec8eadd4a839b5918da1f00f7af86109ae2182a9cea3919440e5be6"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/evaluation/runs.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 4457148,
+      "sha256": "26000271d105a74aadb4cc9fb4fb1d5d4bdcda693e8c6a3aec234faa24cb1ae7",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/26/26000271d105a74aadb4cc9fb4fb1d5d4bdcda693e8c6a3aec234faa24cb1ae7",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/evaluation/summary.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12514,
+      "sha256": "a2667e4b2f59fbf5b8ed9ec01fd19350402bc2f5c850216a019870bd1c9c7741"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/nnls_diagnostics.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 638,
+      "sha256": "70b832dcd9a4831743d008e40edb11d70ce5e57d15a9e680a0e102dab0ef2651"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/pilot/fitted_context.jsonl",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 100959,
+      "sha256": "c29a8cd590b0fac1f638837097b47eb633d56cbfc860f726a82d62ad71b9a7e9"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/pilot/manifest.json",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 34370,
+      "sha256": "eb047dde9fc618c3e0bf14710bf0b754071ed8040a9c53b9665cdf2067ab5408"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/pilot/nodes.csv.gz",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 22525,
+      "sha256": "507d90a700224fc95d6f198b7f414de8652e94cbfc930ee03d9a811ca6e53cf3"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/pilot/root_tails.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5450,
+      "sha256": "c3539cc2679e5978acaf6897951b3cb6a37143f648f0e6190e87291ad09df44e"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/pilot/runs.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 44438,
+      "sha256": "af9addeeb81eea97be547545511b9c757797ed8e85bd1721d5818a255b693688"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/pilot/summary.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 10225,
+      "sha256": "f24c9d2132a0f8bdf94afda1e7083ea7cc4b174c7a58fab9db52b3164d09e87b"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/primary_comparison.csv",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5127,
+      "sha256": "2e9d6e452b1e50d1ee49a274590842a5e2e971f3a37860eb93ef04f7868bd829"
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/protocol.md",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/run_benchmark.py",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/independent_diffusion_nnls_20260928/verification.json",
+      "study": "reports/independent_diffusion_nnls_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 642,
+      "sha256": "9216ce5bd9751e3f922bf4f1c56f12ba73efe2bc11a81fb7ab128b0e74254e2e"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/README.md",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_evaluation/completion.json",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1173,
+      "sha256": "f6078e05131b0e1500c8be34af2edec892d79b9cef9245d15e7644c6164aaf8c"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_evaluation/control_rows.csv.gz",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 8425250,
+      "sha256": "6273a93a328158f91ec649beebaa827444988156fc86ca9d20c9158c06e51b7e",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/62/6273a93a328158f91ec649beebaa827444988156fc86ca9d20c9158c06e51b7e",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_evaluation/datasets.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 3382753,
+      "sha256": "e7f7c6e95f801a3dda12aaff81ce59131abcf7f53041c83ba49b941554202680",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/e7/e7f7c6e95f801a3dda12aaff81ce59131abcf7f53041c83ba49b941554202680",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_evaluation/frozen_manifest.json",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 22893,
+      "sha256": "4aaf2192bc244cfd46a9f8023ef537611e9c78f27396f2dc946b38572161ef35"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_evaluation/paired_outcomes.csv.gz",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 10283453,
+      "sha256": "97bf5ccb995557e5f5674adb8b1fd81ea5747e6446e93eb9ac90702616859284",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/97/97bf5ccb995557e5f5674adb8b1fd81ea5747e6446e93eb9ac90702616859284",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_evaluation/paired_summary.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 85149,
+      "sha256": "2c8fb6537a87bfd9a82f9ea0c8a1afbb8c75d42da339ebabf6fa2976afcda682"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_evaluation/summary.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 143931,
+      "sha256": "71cf18e0e99c13c128c6fddf8b98f59c7d1164a1bff9d015129d7b416fdf847b"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_pilot/completion.json",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1139,
+      "sha256": "b6cc13d11ee79e7be76d88e5c2a80f5f50a1d13410aa1b07dd16678186ec9e2b"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_pilot/control_rows.csv.gz",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 85348,
+      "sha256": "2fe8d51e5dbf935a43c38369e5ab6e85cf587f194fb47e9a908c829ae47b119d"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_pilot/datasets.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 33223,
+      "sha256": "6d55aa8e29d3c9e40203bbf16a59c6b93b8068635b9df1fb2dd5b015aa051101"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_pilot/frozen_manifest.json",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 22923,
+      "sha256": "588b2c2a2ef092d54408cfab7d0743b67eacd75940d523e9157ccf5aabb69aea"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_pilot/paired_outcomes.csv.gz",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 107763,
+      "sha256": "6d9bde8ac8cb3856ba6b53b1d8f0c7e7c19e36974e12f9b78163951b92f10785"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_pilot/paired_summary.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 75847,
+      "sha256": "7d0a65da301201b38ce93df64401a076f9a79ee96ec3a3911603f4356ad2a8cf"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_pilot/summary.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 126315,
+      "sha256": "ab4477b1e26888cb624782e053ef97311c530e7a9c193f3c419a966f288be867"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/control_protocol.md",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/projection_controls.pdf",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 23738,
+      "sha256": "571ffca7c36dbc962c2e7ca9a4b87204a740b444c7df8c5bd2534393353148da"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/projection_controls.png",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 141208,
+      "sha256": "e0835f5167cfb54363eddb8a774a468dad57c37a39892b26aa3e0614ed628ed1"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde/atoms.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3276,
+      "sha256": "2f6c2e519275eb2eb22f26c89d129e0f880e7a39905e25adc29086d0bee2f662"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde/decompositions.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1865,
+      "sha256": "7e23cfd9c8f804435bc80f57a78e1c25684c8beb69bdbb56f8096241b88e5af9"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde/manifest.json",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2442,
+      "sha256": "a371b8f404ae68de49ce340805f12ecfb5435e5676047b971fa454fd06776220"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde/source_hashes_before.json",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 900,
+      "sha256": "0f30e7fe90a3b799d68f3c181645e49d8e5f7261cf5cbdc9b7cb31c7a36b1f64"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde/structure.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 4240176,
+      "sha256": "4edf28d56ce205c4953d3ce7034fa91ed0652dbba3ac33cde48f9017383f769d",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/4e/4edf28d56ce205c4953d3ce7034fa91ed0652dbba3ac33cde48f9017383f769d",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde/structure_summary.csv",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2786,
+      "sha256": "6b2a63c8245ac3a3c98d2e00815fbf32dc70d4dc0678357f80ccfc309191e8ac"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde_nonuniqueness.pdf",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 18386,
+      "sha256": "7a8eb04b4a309ddd4cf78ba85564033c6d7cd19125432361fb14b0d34aebdd32"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde_nonuniqueness.png",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 54686,
+      "sha256": "2c56944e076b1ba5c36bb257593f75aa57cc02e6b3c3de1fd4fe9aac4ba0ecca"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/vandermonde_protocol.md",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/verification.json",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 273,
+      "sha256": "103e7fe4c6a509b6c02b91dab7ee0ee1ee32f5a12a5926e2b8895512b605edff"
+    },
+    {
+      "path": "reports/independent_projection_vandermonde_20260928/verify_and_plot.py",
+      "study": "reports/independent_projection_vandermonde_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/README.md",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/evaluation/known_branch_local_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 50205046,
+      "sha256": "5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/5b/5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/evaluation/known_branch_selected_root_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 4893739,
+      "sha256": "dbb04472f3cba9a6605c9d72b955badcec8c338c2e5b64f567660c0246b511fa",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/db/dbb04472f3cba9a6605c9d72b955badcec8c338c2e5b64f567660c0246b511fa",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/evaluation/known_branch_summary.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35640,
+      "sha256": "769fbbf74c50d6811804f013414f18f809b10d5b9fb09627a6343cd77bbfeeb2"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/evaluation/known_branch_traversal_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 11798972,
+      "sha256": "80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/80/80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/evaluation/manifest.json",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7976,
+      "sha256": "59c8613416666ab542fd88e956e583b61110968ccbe37c590169cd47d12cf98f"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/evaluation/report.md",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/node_recovery_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 3566480,
+      "sha256": "7c0f4292132138e81486559f5a838c91d6aa3f9c29a58afcc3bf409ad88f7425",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/7c/7c0f4292132138e81486559f5a838c91d6aa3f9c29a58afcc3bf409ad88f7425",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/node_recovery_summary.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6154,
+      "sha256": "4484a7d32acbc312539a07f382556f5c787c6d59b83a4d8e27acc6d73c15888a"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/null_root_comparison.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1041,
+      "sha256": "403a17ca915871815ee1205c7d6bbd9d8cafedd8cc32252c9b486fc064e6497b"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/null_stage_comparison.pdf",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 19529,
+      "sha256": "2fd663641d416560d398f3917175487cfda50cd069428a10cf7ea8bb0a1c4c05"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/null_stage_comparison.png",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 95057,
+      "sha256": "d0e599f0128cdf1d670bcca2d5dffd344b3282275568189bbe7967902eee791d"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/paired_stage_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 12017831,
+      "sha256": "bb0b80deea1e82a569b540636f433f53152d831ba40e7d7c04780cd64359a014",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/bb/bb0b80deea1e82a569b540636f433f53152d831ba40e7d7c04780cd64359a014",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/paired_stage_summary.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9367,
+      "sha256": "6061ebea94e9f14f70b0c195c90cffb94a8bbc53c8678ffaa438f489d944318c"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot/known_branch_local_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 249167,
+      "sha256": "c2c71238aea7851bc689adabc406314a2fd5aed743099301ba48d109688ea8b1"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot/known_branch_selected_root_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 24715,
+      "sha256": "7c432df009cf7fd9cbad5a9d987cd6b8dab9302c0ce6cfbf7a17480f398f7c8f"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot/known_branch_summary.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 32030,
+      "sha256": "73b5f34b8bbc931ad42c054e6309996804396eb5912fa07b54cffc206dc6d1f5"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot/known_branch_traversal_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 58885,
+      "sha256": "eb706a9c09ddb8bcb6905d95052ab99465ce6d86ad13a766890b49bd1d7e71e2"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot/manifest.json",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7107,
+      "sha256": "8442461b2b137f54d444f30dc7a9cdd5bb8561f2b8b99c7c14884c1db31f7352"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot/report.md",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/node_recovery_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 17378,
+      "sha256": "07439606800a8f055f3e644e832b8c45a6fcad3915cbcf768f8eebb38927e117"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/node_recovery_summary.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 4777,
+      "sha256": "b42eab4d2a9ff03125cf8475a1f9b5e201127506afdc744fe15c8188a7a9bd77"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/null_root_comparison.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 839,
+      "sha256": "89cb1aca5071988232faf8e98b06cac67a5740c92391885909acf00545a55f15"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/null_stage_comparison.pdf",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 18416,
+      "sha256": "774b2afa6346689660629d1cf6dce8ad5bba778bff08ad70961e7779fe3364dd"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/null_stage_comparison.png",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 83373,
+      "sha256": "b93e9191fe9fab1686beaa9a16901c9921306424882c93083d0895fac1aff0e0"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/paired_stage_rows.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 59072,
+      "sha256": "7eba9b1cc24c45e10d718308ce35e3ff145c7cc1a01e32b41c62ec550113e9a1"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/paired_stage_summary.csv",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7797,
+      "sha256": "5fbdf518faf4e1534b75668c810d30812b548d361a97cf83271dcb6aa8e45f5b"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/pilot_audit/verification.json",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 646,
+      "sha256": "8998b303281da97deef061fc51d8bd179b189618fe0a08f0b7e90056c35555c3"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/protocol.md",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/source_hashes_post_run.json",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2466,
+      "sha256": "2265103701f1e7d77b8cffde02e62c866246d919b1fe77cc1e782dcddf37f269"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/verification.json",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 673,
+      "sha256": "c00cb5d9b9f78bbb6bd823e1943a7dc30d8d2ea97118bde022e3437934e1359c"
+    },
+    {
+      "path": "reports/known_branch_skew_20260928/verify_and_plot.py",
+      "study": "reports/known_branch_skew_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/lower_dimension_df_audit_20260928/README.md",
+      "study": "reports/lower_dimension_df_audit_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/lower_dimension_df_audit_20260928/check_reference_law.py",
+      "study": "reports/lower_dimension_df_audit_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/lower_dimension_df_audit_20260928/implementation_audit.md",
+      "study": "reports/lower_dimension_df_audit_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/lower_dimension_df_audit_20260928/prior_research_audit.md",
+      "study": "reports/lower_dimension_df_audit_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/lower_dimension_df_audit_20260928/reference_law_summary.csv",
+      "study": "reports/lower_dimension_df_audit_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1308,
+      "sha256": "284767266aca0e64a9ff9f889622ebb1adbeb8fccf8f28d144b3d8a89f2dc471"
+    },
+    {
+      "path": "reports/lower_dimension_df_audit_20260928/reference_law_verification.json",
+      "study": "reports/lower_dimension_df_audit_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1886,
+      "sha256": "ba58fca3ed8baa14e4e17180ce573a512796c4318e096abc6c4759db2bc8ad80"
+    },
+    {
+      "path": "reports/mathematical_construction_review_20260928/README.md",
+      "study": "reports/mathematical_construction_review_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/mathematical_construction_review_20260928/findings.json",
+      "study": "reports/mathematical_construction_review_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12330,
+      "sha256": "012e34f28d317d39f6168b9929f9ef745f0a11aaeedc9f9dde3cfdf062c4b8d0"
+    },
+    {
+      "path": "reports/mathematical_construction_review_20260928/paired_eigenvector_angles.pdf",
+      "study": "reports/mathematical_construction_review_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 21580,
+      "sha256": "1b893b13ea13c15d85e049b585ff963f2e57706c45eca0bdd44f3e5c788e19ae"
+    },
+    {
+      "path": "reports/mathematical_construction_review_20260928/paired_eigenvector_angles.png",
+      "study": "reports/mathematical_construction_review_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 102670,
+      "sha256": "605a9905101ac3b03d03069d4eb1d22bf1c79a23cb4a7ca1b82071fd64c6789b"
+    },
+    {
+      "path": "reports/mathematical_construction_review_20260928/rank_invariance_repair.json",
+      "study": "reports/mathematical_construction_review_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9120,
+      "sha256": "500a32dc98bf8f1699e8170e81941ad92eff90f1dd6b8e8ea52737c44608b779"
+    },
+    {
+      "path": "reports/mathematical_construction_review_20260928/rank_invariance_repair.md",
+      "study": "reports/mathematical_construction_review_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/mathematical_construction_review_20260928/reproduce_findings.py",
+      "study": "reports/mathematical_construction_review_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/naming_claims_review_20260928/README.md",
+      "study": "reports/naming_claims_review_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/naming_claims_review_20260928/fixes.md",
+      "study": "reports/naming_claims_review_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/README.md",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/known_branch_local_rows.csv",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 50205046,
+      "sha256": "5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/5b/5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/known_branch_selected_root_rows.csv",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 4893820,
+      "sha256": "716d7db409268160df9e8d0a56b8b036b177e02758887abf8b285c57dd035e37",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/71/716d7db409268160df9e8d0a56b8b036b177e02758887abf8b285c57dd035e37",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/known_branch_summary.csv",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35640,
+      "sha256": "769fbbf74c50d6811804f013414f18f809b10d5b9fb09627a6343cd77bbfeeb2"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/known_branch_traversal_rows.csv",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 11798972,
+      "sha256": "80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/80/80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/manifest.json",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 8724,
+      "sha256": "d6c6d56e6c49736d9f79231fe82b92febbfa6f70371d3be07d3b8f548f72cf5d"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/passthrough_partition_summary.csv",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1770,
+      "sha256": "89c70c779526b6de61619540dc1d4e92bc6526644a0937a199c596420397e4fe"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/passthrough_pattern_summary.csv",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2648,
+      "sha256": "b10346111cc1cc94f21cc66b8ff39e9b5083743606e0e4fc8544636fb0aa501f"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/passthrough_signal_node_summary.csv",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2459,
+      "sha256": "d8ac1dc78b125cce2961d59c41408853a063e30a0aa28ab2d2bf1355bea919a5"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/evaluation/report.md",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/independent_verification.json",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 394,
+      "sha256": "eb3ac13105683328f272b005e21f7dc4e4184571d23310c5960d4e9a4c2576e5"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/pre_run_manifest.json",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6563,
+      "sha256": "31d4ad01b50cc618b79c3719d0474c3e5d27d04c8a1da0b8623b92b896b77b5f"
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/summarize_passthrough.py",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_benchmark_20260928/verify_traversal.py",
+      "study": "reports/passthrough_benchmark_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/README.md",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/audit_observed_pvalues.py",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/node_reach_pvalue_summary.csv",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7633,
+      "sha256": "77d4eee35b0e94d6c0ed4929729de163d09916a64d40a26c86d35b3a5491c9bc"
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/normalisation_audit.md",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/paired_partition_changes.csv",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 609,
+      "sha256": "ccbfaa660ecd9b8a8d1691b7e73ead7f1cca57c68c594d28f70cf2a76cc9be82"
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/production_node_pvalues.csv",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 350145,
+      "sha256": "8d71aab0367fcfe24e4c02ee5a94050e39380c98108a568dad8fbac566049762"
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/production_probe.json",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 4739,
+      "sha256": "3c8fdf663021a0e4d60e7c983ad5d833edda8a2593c191ff2f8d8d71d54f4a9f"
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/production_verification.json",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 437,
+      "sha256": "3242048d50832e8d608e090325c420ef83c204e52e75e4e887a62f3b445459f3"
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/pvalue_audit.md",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/pvalue_probe.py",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/upstream_null_root_factor_summary.csv",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1268,
+      "sha256": "0a1801f5cd75656c9c1c1814ac737c8f94e5ea13e1daafb2ddd1dee600b3cfd0"
+    },
+    {
+      "path": "reports/passthrough_pvalue_normalisation_20260928/verification.json",
+      "study": "reports/passthrough_pvalue_normalisation_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1033,
+      "sha256": "a66426804896c0b3337625a779be9720c696088d5fd67ae6e6081c50f8918d79"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/README.md",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/baseline/manifest.json",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 40567,
+      "sha256": "deb9eef7196afd8c10143993c5300e43c97ba39acaec44a4a22ee28ab73131e3"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/baseline/nodes.csv.gz",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 3552678,
+      "sha256": "ed75a9ebd2557f8232e34b0f481aa1af3dd25df147650c2f67fccc86047d029a",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/ed/ed75a9ebd2557f8232e34b0f481aa1af3dd25df147650c2f67fccc86047d029a",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/baseline/root_tails.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 28001,
+      "sha256": "41065ac9133af4c16df3c0abbdb78ed3b8ebe760d61d6e9e15a8df72a15ba595"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/baseline/runs.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 4573528,
+      "sha256": "cf655eaa07e1690af6176e8f7eeca15d6d99633afe999512ad20e71a4081cdd8",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/cf/cf655eaa07e1690af6176e8f7eeca15d6d99633afe999512ad20e71a4081cdd8",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/baseline/summary.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 14624,
+      "sha256": "b0f00a5dbc4eea1ddb1afe23109185fe24e9f12ca372f8ab542b81dcd3484690"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/benchmark_comparison.pdf",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 22483,
+      "sha256": "29e58d9c938cac7175918ecc6dfff4c4e1c9910b9d8cc34529ac66f3ad9f0c14"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/benchmark_comparison.png",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 110381,
+      "sha256": "e4e818262fe0523a0963f877bff031b73574a815d90e6945ab0c4250efd5d91f"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/evaluation/manifest.json",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 34428,
+      "sha256": "4caf53693b5daff2aab36829bca26678ea3ccfa215e907569576a4f9e39ee3dc"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/evaluation/nodes.csv.gz",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 4372617,
+      "sha256": "f5990f5d237a601fed17b6d4698d851eb167d76ae14383d9887f8c3f9dedb10b",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/f5/f5990f5d237a601fed17b6d4698d851eb167d76ae14383d9887f8c3f9dedb10b",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/evaluation/root_tails.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 21026,
+      "sha256": "df74b55f61cb670d98fd29810f0c47a5d5036c3daf26880ace72c82e4d9825a4"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/evaluation/runs.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "generated_output",
+      "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
+      "bytes": 6458222,
+      "sha256": "cd07bae2c79e21ca6f91c6e8c7fa518ad9aa2e9a77337d1fe84f769734a1950b",
+      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/cd/cd07bae2c79e21ca6f91c6e8c7fa518ad9aa2e9a77337d1fe84f769734a1950b",
+      "storage": "archive"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/evaluation/summary.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 16368,
+      "sha256": "987f2db5836d2053ee4f5ec63c753ceb50d9dc70dd2ffa1a0dc9f8cea429df7a"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/paired_comparison.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 4552,
+      "sha256": "4413bc9cc3b0908f87c84c7d4d8fb0b3888ac9d085af755c3fc6d6e62d7632cc"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/pilot/manifest.json",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 34385,
+      "sha256": "1e8c5deb175071574c299206a1318aacb20de2bd8defb5af9f4bbf9a70ca2835"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/pilot/nodes.csv.gz",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 44488,
+      "sha256": "173e8b5f956a0aa34042d4265af29f042f447cc5924f87fbc4cc0638c76795a6"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/pilot/root_tails.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 14054,
+      "sha256": "0f1e50363f412a9f0bc88bdcba8c6fb98851bb7e45dd429a2885c76990b2f1fa"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/pilot/runs.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 64286,
+      "sha256": "63449b5bb55c0ce63d2a2d0596a859b4f6b8fdd76d0be4e6d53a0f8999a78ac1"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/pilot/summary.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 13853,
+      "sha256": "6c45cb8991add1a83ac5c5675a04ee4af90de2095a51451125bc694fb242906b"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/protocol.md",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/root_calibration_check.csv",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9980,
+      "sha256": "a87389862e5bf1120a5589735fe1c92c642960d82637ae55b5daeb6172c8600f"
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/run_independent_benchmark.py",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/summarize_results.py",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/production_pvalue_replacement_20260928/verification.json",
+      "study": "reports/production_pvalue_replacement_20260928",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 294,
+      "sha256": "1fc30b52ff3ad7bedbe98f641648cd9534ac7663a70549f51146158cfb71099e"
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/evaluation.log",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "storage": "local",
+      "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
+      "bytes": 56545,
+      "sha256": "70d3099458c55ca02bd3f7475bea16ac99e7f805aa9a8e133154a0b73781da52",
+      "archive_uri": null
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot.log",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "storage": "local",
+      "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
+      "bytes": 49103,
+      "sha256": "a7e3626e19acc810eb56c80e895a51fb8ef6746afcb0d76ea783f9cd7e867b08",
+      "archive_uri": null
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot_reviewed.log",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "storage": "local",
+      "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
+      "bytes": 49724,
+      "sha256": "4a3c372e5f6281f2f852abdd3a536829c384e87b965f198cb09699d216426303",
+      "archive_uri": null
+    },
+    {
+      "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/run.log",
+      "study": "reports/eigenspace_reassessment_20260928",
+      "role": "generated_output",
+      "storage": "local",
+      "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
+      "bytes": 38582,
+      "sha256": "192a9acd198740cc1da49fd076ff599d28e8398682e78dc33cf70344454f53f6",
+      "archive_uri": null
+    }
+  ]
+}

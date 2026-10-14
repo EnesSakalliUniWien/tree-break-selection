@@ -149,6 +149,7 @@ def _read_summary_values(path: Path) -> dict[str, str]:
         "tree_geometries": set(),
         "method_families": set(),
     }
+    read_errors: list[str] = []
     summary_paths = [
         path / "method_tree_matrix_summary.csv",
         path / "allgo_new_quality_aware_go_ic_tree_ranking.csv",
@@ -163,7 +164,8 @@ def _read_summary_values(path: Path) -> dict[str, str]:
     if config_path.exists():
         try:
             config = json.loads(config_path.read_text(encoding="utf-8"))
-        except Exception:
+        except (OSError, ValueError) as exc:
+            read_errors.append(f"{_safe_rel(config_path)}: {type(exc).__name__}: {exc}")
             config = {}
         for config_key, value_key in (
             ("method_version", "method_versions"),
@@ -178,7 +180,8 @@ def _read_summary_values(path: Path) -> dict[str, str]:
             continue
         try:
             frame = pd.read_csv(summary_path, nrows=500)
-        except Exception:
+        except (OSError, ValueError) as exc:
+            read_errors.append(f"{_safe_rel(summary_path)}: {type(exc).__name__}: {exc}")
             continue
         for column, key in (
             ("method_version", "method_versions"),
@@ -189,7 +192,10 @@ def _read_summary_values(path: Path) -> dict[str, str]:
             if column in frame.columns:
                 values[key].update(str(value) for value in frame[column].dropna().unique())
 
-    return {key: ";".join(sorted(value)) for key, value in values.items()}
+    return {
+        **{key: ";".join(sorted(value)) for key, value in values.items()},
+        "read_errors": "; ".join(read_errors),
+    }
 
 
 def infer_level(features: dict[str, object]) -> AnalysisLevel:

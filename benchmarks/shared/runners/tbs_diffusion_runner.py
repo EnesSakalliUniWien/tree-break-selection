@@ -363,16 +363,8 @@ def _build_graphtools_diffusion_geometry(
         verbose=False,
     )
     kernel_matrix = graph.kernel
-    weights = (
-        kernel_matrix.toarray()
-        if hasattr(kernel_matrix, "toarray")
-        else np.asarray(
-            kernel_matrix,
-            dtype=float,
-        )
-    )
     diffusion_coords = _compute_diffusion_coordinates(
-        weights,
+        kernel_matrix,
         diffusion_time=diffusion_time,
         n_components=n_components,
     )
@@ -386,7 +378,11 @@ def _build_graphtools_diffusion_geometry(
         "kernel_symm": str(kernel_symm),
         "random_state": int(random_state),
         "graph_class": graph.__class__.__name__,
-        "kernel_nonzero_entries": int(getattr(kernel_matrix, "nnz", np.count_nonzero(weights))),
+        "kernel_nonzero_entries": int(
+            kernel_matrix.nnz
+            if hasattr(kernel_matrix, "nnz")
+            else np.count_nonzero(kernel_matrix)
+        ),
     }
     metadata.update(neighbor_metadata)
     return DiffusionGeometry(
@@ -467,8 +463,6 @@ def _run_tbs_diffusion_graphtools_method(
     *,
     adaptive_neighbor_profile: str | None = None,
     adaptive_neighbor_grid: Sequence[int] | None = None,
-    tree_builder: str = "linkage",
-    tree_rooting: str = "linkage_root",
     tree_linkage_method: str,
     feature_space: FeatureSpace | None = None,
     graph_data_df: pd.DataFrame | None = None,
@@ -515,8 +509,6 @@ def _run_tbs_diffusion_graphtools_method(
         data_df,
         geometry.distance_condensed,
         sibling_significance_level,
-        tree_builder=tree_builder,
-        tree_rooting=tree_rooting,
         tree_linkage_method=tree_linkage_method,
         feature_space=feature_space,
         branch_length_data_df=branch_length_data_df,

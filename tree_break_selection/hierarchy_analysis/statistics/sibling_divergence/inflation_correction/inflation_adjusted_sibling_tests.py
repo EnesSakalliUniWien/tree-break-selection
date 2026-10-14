@@ -25,6 +25,7 @@ def _compute_inflation_adjusted_sibling_test(
     model: EmpiricalNullInflationModel | None,
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
+    family_support_cache: dict[str, dict[str, float | int]] | None = None,
 ) -> tuple[InflationAdjustedSiblingTestSummary, str]:
     """Return one inflation-adjusted sibling-test summary."""
     if not np.isfinite(sibling_test_record.stat):
@@ -56,6 +57,7 @@ def _compute_inflation_adjusted_sibling_test(
         sibling_test_record,
         enforce_support_thresholds=enforce_support_thresholds,
         support_thresholds=support_thresholds,
+        family_support_cache=family_support_cache,
     )
     admissible_statuses = {
         "internal_admissible",
@@ -109,6 +111,7 @@ def compute_inflation_adjusted_sibling_tests(
     tested_parent_ids: list[str] = []
     inflation_adjusted_test_summaries: list[InflationAdjustedSiblingTestSummary] = []
     inflation_adjustment_method_labels: list[str] = []
+    family_support_cache: dict[str, dict[str, float | int]] = {}
 
     for sibling_test_record in sibling_test_records:
         if sibling_test_record.is_null_like:
@@ -119,6 +122,7 @@ def compute_inflation_adjusted_sibling_tests(
             model=model,
             enforce_support_thresholds=enforce_support_thresholds,
             support_thresholds=support_thresholds,
+            family_support_cache=family_support_cache,
         )
         tested_parent_ids.append(sibling_test_record.parent)
         inflation_adjusted_test_summaries.append(test_summary)

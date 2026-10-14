@@ -125,8 +125,6 @@ class TreeConstructionSuite:
         self.tree_template = build_tree(
             self.data,
             self.distance_condensed,
-            builder="linkage",
-            rooting="linkage_root",
             linkage_method="average",
         ).tree
 
@@ -134,8 +132,6 @@ class TreeConstructionSuite:
         build_tree(
             self.data,
             self.distance_condensed,
-            builder="linkage",
-            rooting="linkage_root",
             linkage_method="average",
         )
 

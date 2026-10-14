@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "matched_dataset_pairs": 10000,
+  "independently_reconstructed_traversals": 20000,
+  "original_rerun_rows_equal": true,
+  "same_injected_tests_within_every_pair": true,
+  "before_after_and_current_source_hashes_verified": 17,
+  "scope": "Fixed known tree, known-covariance Gaussian local tests and deliberately open edges; rerun is not additional independent evidence."
+}

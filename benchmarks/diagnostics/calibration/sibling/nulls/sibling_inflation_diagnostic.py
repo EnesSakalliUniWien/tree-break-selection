@@ -7,12 +7,13 @@ from dataclasses import dataclass
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy.special import logsumexp
 from scipy.stats import chi2
 from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
     GateAnnotationBundle,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.empirical_null_inflation_estimation import (
+    _effective_sample_size,
+    _inflation_mle,
     fit_empirical_null_inflation_model,
     predict_empirical_inflation_factor,
 )
@@ -92,14 +93,6 @@ def _reference_expectation(record: SiblingPairRecord) -> float:
     return float(record.reference_scale * record.degrees_of_freedom)
 
 
-def _weighted_inflation_mle(
-    statistics: np.ndarray,
-    reference_expectations: np.ndarray,
-    weights: np.ndarray,
-) -> float:
-    return float(np.sum(weights * statistics) / np.sum(weights * reference_expectations))
-
-
 def _inflation_adjusted_p_value(record: SiblingPairRecord, inflation_factor: float) -> float:
     if record.degrees_of_freedom == 0:
         return 1.0
@@ -114,14 +107,6 @@ def _inflation_factor_at_alpha(record: SiblingPairRecord, alpha: float) -> float
         return float("nan")
     critical_value = float(chi2.isf(alpha, df=float(record.degrees_of_freedom)))
     return float(record.stat / (record.reference_scale * critical_value))
-
-
-def _effective_sample_size(weights: np.ndarray) -> float:
-    positive_weights = weights[weights > 0.0]
-    if positive_weights.size == 0:
-        raise ValueError("Effective sample size requires positive weights.")
-    log_weights = np.log(positive_weights)
-    return float(np.exp(2.0 * logsumexp(log_weights) - logsumexp(2.0 * log_weights)))
 
 
 def _calibration_records(records: tuple[SiblingPairRecord, ...]) -> tuple[SiblingPairRecord, ...]:
@@ -187,7 +172,7 @@ def _family_baseline_inflation(
     )
     return float(
         max(
-            _weighted_inflation_mle(
+            _inflation_mle(
                 model.sample_statistics[mask],
                 reference_expectations,
                 model.sample_weights[mask],
@@ -244,7 +229,7 @@ def _local_inflation_from_weights(
     )
     return float(
         max(
-            _weighted_inflation_mle(
+            _inflation_mle(
                 model.sample_statistics[mask],
                 reference_expectations,
                 local_weights,
@@ -311,7 +296,7 @@ def _variant_result(
         return _variant_unavailable(prefix, "nonpositive_reference_weight")
 
     inflation_factor = max(
-        _weighted_inflation_mle(statistics, reference_expectations, weights),
+        _inflation_mle(statistics, reference_expectations, weights),
         1.0,
     )
     p_value = _inflation_adjusted_p_value(target_record, inflation_factor)

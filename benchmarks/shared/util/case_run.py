@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
-from benchmarks.shared.audit_utils import (
-    export_case_and_method_matrix_audits,
-    export_decomposition_audit,
-)
+from benchmarks.shared.audit_utils import export_decomposition_audit
 from benchmarks.shared.logging import log_test_case_start
 from benchmarks.shared.result_records import BenchmarkResultRow, ComputedResultRecord
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
@@ -27,7 +23,6 @@ def run_single_case(
     edge_alpha: float,
     output_pdf: Path | None,
     plots_root: Path,
-    matrix_audit: bool,
     verbose: bool,
     tree_consensus_label_dir: Path | str | None = None,
 ) -> tuple[list[BenchmarkResultRow], list[ComputedResultRecord]]:
@@ -43,77 +38,48 @@ def run_single_case(
             audit_root_inc = audit_root_inc.parent
     else:
         audit_root_inc = plots_root.parent if plots_root.name == "plots" else plots_root
-    previous_audit_root = os.environ.get("TBS_MATRIX_AUDIT_ROOT")
-    if matrix_audit:
-        os.environ["TBS_MATRIX_AUDIT_ROOT"] = str(audit_root_inc)
-    try:
-        # Generate and process data/distances.
-        inputs = prepare_case_inputs(tc, selected_methods)
+    # Generate and process data/distances.
+    inputs = prepare_case_inputs(tc, selected_methods)
 
-        method_audits: list[tuple[str, dict[str, object]]] = []
-        case_result_rows: list[BenchmarkResultRow] = []
-        case_computed_results: list[ComputedResultRecord] = []
-        for method_id in selected_methods:
-            spec = METHOD_SPECS[method_id]
-            params_list = param_sets[method_id]
-            for params in params_list:
-                result_row, computed_result, method_audit = run_single_method_once(
-                    method_id=method_id,
-                    spec=spec,
-                    params=params,
-                    case_idx=case_idx,
-                    case_name=case_name,
-                    tc_seed=tc["seed"],
-                    significance_level=significance_level,
-                    edge_alpha=edge_alpha,
-                    data_t=inputs.data,
-                    y_t=inputs.labels,
-                    x_original=inputs.original_features,
-                    meta=inputs.metadata,
-                    distance_matrix=inputs.distance_matrix,
-                    distance_condensed=inputs.distance_condensed,
-                    matrix_audit=matrix_audit,
-                )
-                case_result_rows.append(result_row)
-                if computed_result is not None:
-                    case_computed_results.append(computed_result)
-                if method_audit is not None:
-                    method_audits.append(method_audit)
-
-        # Export detailed audit logs incrementally so each case is durable.
-        if matrix_audit:
-            export_case_and_method_matrix_audits(
+    case_result_rows: list[BenchmarkResultRow] = []
+    case_computed_results: list[ComputedResultRecord] = []
+    for method_id in selected_methods:
+        spec = METHOD_SPECS[method_id]
+        params_list = param_sets[method_id]
+        for params in params_list:
+            result_row, computed_result = run_single_method_once(
+                method_id=method_id,
+                spec=spec,
+                params=params,
                 case_idx=case_idx,
                 case_name=case_name,
-                data_matrix=inputs.data.values,
-                y_true=inputs.labels,
+                tc_seed=tc["seed"],
+                significance_level=significance_level,
+                edge_alpha=edge_alpha,
+                data_t=inputs.data,
+                y_t=inputs.labels,
                 x_original=inputs.original_features,
+                meta=inputs.metadata,
                 distance_matrix=inputs.distance_matrix,
                 distance_condensed=inputs.distance_condensed,
-                meta=inputs.metadata,
-                method_audits=method_audits,
-                output_root=audit_root_inc,
-                verbose=verbose,
             )
+            case_result_rows.append(result_row)
+            if computed_result is not None:
+                case_computed_results.append(computed_result)
 
-        export_decomposition_audit(
-            computed_results=case_computed_results,
-            output_root=audit_root_inc,
-            verbose=verbose,
+    # Export audit logs incrementally so each case is durable.
+    export_decomposition_audit(
+        computed_results=case_computed_results,
+        output_root=audit_root_inc,
+        verbose=verbose,
+    )
+    if tree_consensus_label_dir is not None:
+        export_tree_consensus_label_files(
+            case_computed_results,
+            tree_consensus_label_dir,
         )
-        if tree_consensus_label_dir is not None:
-            export_tree_consensus_label_files(
-                case_computed_results,
-                tree_consensus_label_dir,
-            )
 
-        return case_result_rows, case_computed_results
-    finally:
-        if matrix_audit:
-            if previous_audit_root is None:
-                os.environ.pop("TBS_MATRIX_AUDIT_ROOT", None)
-            else:
-                os.environ["TBS_MATRIX_AUDIT_ROOT"] = previous_audit_root
+    return case_result_rows, case_computed_results
 
 
 __all__ = ["run_single_case"]

@@ -53,7 +53,7 @@ def test_map_symbols_to_entrez_batches_and_marks_unresolved(monkeypatch) -> None
     requests = []
     payloads = iter(
         [
-            [{"query": "A", "entrezgene": 101}],
+            [{"query": "A", "entrezgene": 101}, {"query": "B", "_id": "ENSG00000000001"}],
             {"query": "C", "_id": "303"},
         ]
     )

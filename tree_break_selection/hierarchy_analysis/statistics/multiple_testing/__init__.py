@@ -12,10 +12,6 @@ tree_bh/
 """
 
 from .base import benjamini_hochberg_correction
-from .stopping_edge_recovery.signals import recover_signal_neighbors
-from .stopping_edge_recovery.stopping_edges import recover_stopping_edge_info
-from .stopping_edge_recovery.types.signal_neighbor_info import SignalNeighborInfo
-from .stopping_edge_recovery.types.stopping_edge_info import StoppingEdgeInfo
 from .tree_bh import (
     ChildParentEdgeTreeBHResult,
     TreeBHSiblingGroupOutcome,
@@ -29,9 +25,4 @@ __all__ = [
     "apply_tree_bh_correction",
     "TreeBHSiblingGroupOutcome",
     "ChildParentEdgeTreeBHResult",
-    # Stopping-edge recovery
-    "SignalNeighborInfo",
-    "recover_signal_neighbors",
-    "recover_stopping_edge_info",
-    "StoppingEdgeInfo",
 ]

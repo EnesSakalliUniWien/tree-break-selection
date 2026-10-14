@@ -110,6 +110,14 @@ def test_fixed_topology_nnls_recovers_additive_tree_distances() -> None:
     assert result.residual_rmse < 1e-8
     assert result.residual_rmse_to_target_mean < 1e-8
     assert result.branch_length_min >= -1e-10
+    assert result.target_normalization == "divide_by_total_feature_count"
+    assert result.target_normalization_divisor == data.shape[1]
+    # Each nonconstant column has sample variance one after standardization:
+    # the all-pair mean squared difference is two, also after feature averaging.
+    assert result.target_mean == pytest.approx(2.0)
+    assert result.target_definition.startswith("mean squared standardized Euclidean distance")
+    for key in ("target_definition", "target_normalization", "target_normalization_divisor"):
+        assert tree.graph["branch_length_optimization"][key] == result.to_dict()[key]
     assert {
         tree.edges[parent, child]["branch_length_source"] for parent, child in tree.edges()
     } == {BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS}
@@ -136,6 +144,10 @@ def test_fixed_topology_nnls_uses_prepared_geometry_without_restandardizing() ->
 
     assert result.status == "ok"
     assert result.target_metric == BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN
+    assert result.target_normalization == "none"
+    assert result.target_normalization_divisor == 1
+    assert result.to_dict()["target_definition"] == "squared Euclidean distance in the supplied geometry"
+    assert tree.graph["branch_length_optimization"]["target_normalization_divisor"] == 1
     assert result.residual_rmse < 1e-8
     assert np.isclose(result.target_mean, 10.0 / 3.0)
 

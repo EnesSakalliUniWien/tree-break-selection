@@ -13,7 +13,6 @@ from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_terms import
     build_term_metadata,
 )
 from applications.endotypes.io.adaptive_diffusion_dataframe_io import (
-    read_dataframe,
     write_dataframe,
 )
 from applications.endotypes.plots.embeddings.diffusion_embedding_plot import (
@@ -150,7 +149,7 @@ def test_dataframe_io_roundtrip(tmp_path):
     frame = pd.DataFrame({"gene": ["A", "B"], "cluster_id": [0, 1]})
     path = tmp_path / "assignments.csv"
     write_dataframe(frame, path)
-    pd.testing.assert_frame_equal(read_dataframe(path), frame)
+    pd.testing.assert_frame_equal(pd.read_csv(path), frame)
 
 
 def test_figure_export_closes_figure_when_write_fails(monkeypatch, tmp_path):

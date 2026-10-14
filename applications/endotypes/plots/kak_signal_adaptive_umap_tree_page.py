@@ -8,7 +8,7 @@ coordinates needed to inspect:
 
 * global embedding position,
 * within-block embedding position,
-* radius relative to the common/invariant cosine axis,
+* radius relative to the common (leading) cosine axis,
 * angle to the leading block axis,
 * independent/orthogonal radius inside the selected block,
 * tree leaf order and TreeDecomposition cluster labels.
@@ -680,7 +680,7 @@ def compute_block_geometry(
             "block_name": row["block_name"],
             "cluster_id": assignment["cluster_id"].astype(int).to_numpy(),
             "cluster_size": assignment["cluster_size"].astype(int).to_numpy(),
-            "common_invariant_axis_score": common_axis_score,
+            "common_axis_score": common_axis_score,
             "block_radius": radius,
             "leading_axis_coordinate": leading_coord,
             "signed_cosine_to_leading_axis": signed_cos_to_axis,
@@ -804,7 +804,7 @@ def build_artifacts(
                     "fraction_of_kept_operator_energy": (
                         float(eigval / total_energy) if total_energy > 0 else math.nan
                     ),
-                    "is_common_invariant_axis": component == 1,
+                    "is_common_axis": component == 1,
                 }
             )
 
@@ -1074,7 +1074,7 @@ def draw_consolidated_page(
 
         geom = artifact.sample_geometry
         ax_geom.scatter(
-            geom["common_invariant_axis_score"],
+            geom["common_axis_score"],
             geom["block_radius"],
             c=colors,
             cmap=cmap,
@@ -1082,8 +1082,8 @@ def draw_consolidated_page(
             alpha=0.78,
             linewidths=0,
         )
-        ax_geom.set_title("Invariant axis vs radius", fontsize=9)
-        ax_geom.set_xlabel("Common/invariant axis score", fontsize=8)
+        ax_geom.set_title("Common axis vs radius", fontsize=9)
+        ax_geom.set_xlabel("Common (leading) axis score", fontsize=8)
         ax_geom.set_ylabel("Block radius", fontsize=8)
         ax_geom.tick_params(labelsize=7)
 
@@ -1198,15 +1198,15 @@ def draw_per_block_pages(
         axes[1].set_ylabel("Block embedding axis 2")
 
         axes[2].scatter(
-            geom["common_invariant_axis_score"],
+            geom["common_axis_score"],
             geom["block_radius"],
             c=colors,
             cmap=cmap,
             s=16,
             alpha=0.80,
         )
-        axes[2].set_title("Radius against common/invariant axis")
-        axes[2].set_xlabel("Common/invariant axis score")
+        axes[2].set_title("Radius against common (leading) axis")
+        axes[2].set_xlabel("Common (leading) axis score")
         axes[2].set_ylabel("Block radius")
 
         ax_angle.scatter(
@@ -1287,7 +1287,7 @@ def write_interactive_html(
                     geom.loc[row_indices, "block_radius"].to_numpy(),
                     geom.loc[row_indices, "angle_to_leading_axis_deg"].to_numpy(),
                     geom.loc[row_indices, "independent_radius_fraction"].to_numpy(),
-                    geom.loc[row_indices, "common_invariant_axis_score"].to_numpy(),
+                    geom.loc[row_indices, "common_axis_score"].to_numpy(),
                 ],
                 axis=1,
             )
@@ -1310,7 +1310,7 @@ def write_interactive_html(
                         "radius=%{customdata[3]:.4f}<br>"
                         "angle=%{customdata[4]:.2f} deg<br>"
                         "indep radius frac=%{customdata[5]:.3f}<br>"
-                        "invariant score=%{customdata[6]:.4f}<br>"
+                        "common axis score=%{customdata[6]:.4f}<br>"
                         "x=%{x:.3f}<br>y=%{y:.3f}<br>z=%{z:.3f}"
                         "<extra></extra>"
                     ),
@@ -1514,7 +1514,7 @@ def main() -> None:
         "- `kak_signal_adaptive_umap_tree_page.png/pdf`: consolidated visual page.",
         "- `kak_signal_adaptive_per_block_pages.pdf`: one detailed page per block.",
         "- `kak_signal_adaptive_subembedding_3d.html`: interactive block embedding.",
-        "- `kak_signal_adaptive_block_geometry_summary.csv`: radius/angle/invariant-axis diagnostics.",
+        "- `kak_signal_adaptive_block_geometry_summary.csv`: radius/angle/common-axis diagnostics.",
         "- `kak_signal_adaptive_sample_geometry_long.csv`: per-gene geometry diagnostics.",
         "- `kak_signal_adaptive_internal_tree_geometry.csv`: per-merge internal tree geometry.",
         "- `kak_signal_adaptive_reference_nmi_metrics.csv`: optional reference NMI ordering metrics.",

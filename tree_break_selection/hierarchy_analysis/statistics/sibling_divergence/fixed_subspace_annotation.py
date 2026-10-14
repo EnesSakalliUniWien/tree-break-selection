@@ -1,9 +1,14 @@
-"""Data-independent fixed-subspace sibling gate annotation.
+"""Sibling gate annotation with fixed projection coordinates and rank.
 
 This module provides an opt-in sibling gate that avoids learning parent PCA
 projection rows and projection dimension from the same sample being tested.
-It evaluates fixed covariance-whitened sibling contrasts with predeclared
-coordinate-wise or feature-block BH aggregation.
+It evaluates covariance-whitened sibling contrasts with predeclared global,
+coordinate-wise or feature-block tests. Fixed coordinates and rank do not make
+the complete test data-independent: continuous covariance can be estimated
+from the same observations, and the tested groups can come from a selected
+tree. Chi-square tails here are nominal unless the full reference-law
+assumptions are established; this module does not establish selected-tail or
+whole-tree error control.
 """
 
 from __future__ import annotations

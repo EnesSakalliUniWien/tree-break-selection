@@ -303,7 +303,6 @@ METHOD_CONTRAST_COLUMNS = (
     "contrast_status",
 )
 
-CANDIDATE_METHOD_CONTRAST_COLUMNS = METHOD_CONTRAST_COLUMNS
 
 CANDIDATE_METHOD_CONTRAST_ROW_COLUMNS = (
     "schema_version",
@@ -1445,10 +1444,10 @@ def summarize_selected_neighborhood_candidate_method_contrast(
 ) -> pd.DataFrame:
     """Compare methods only on paired nodes that are traversal candidates."""
     if rows.empty:
-        return pd.DataFrame(columns=CANDIDATE_METHOD_CONTRAST_COLUMNS)
+        return pd.DataFrame(columns=METHOD_CONTRAST_COLUMNS)
     paired_rows = _paired_method_rows(rows)
     if not paired_rows:
-        return pd.DataFrame(columns=CANDIDATE_METHOD_CONTRAST_COLUMNS)
+        return pd.DataFrame(columns=METHOD_CONTRAST_COLUMNS)
     records: list[dict[str, object]] = []
     for left_method, right_method, paired in paired_rows:
         candidates = paired.loc[_candidate_paired_nodes(paired)].copy()
@@ -1461,7 +1460,7 @@ def summarize_selected_neighborhood_candidate_method_contrast(
                 right_method=right_method,
             )
         )
-    return pd.DataFrame.from_records(records, columns=CANDIDATE_METHOD_CONTRAST_COLUMNS)
+    return pd.DataFrame.from_records(records, columns=METHOD_CONTRAST_COLUMNS)
 
 
 def build_selected_neighborhood_candidate_method_contrast_rows(

@@ -2,14 +2,13 @@
 title: Redundant and Legacy Code Map 2026-06-23
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-13
 sources:
   - tree_break_selection/space_separation/diffusion.py
   - tree_break_selection/space_separation/adaptive_cosine.py
-  - tree_break_selection/space_separation/invariant_equivariant.py
+  - tree_break_selection/space_separation/leading_axes.py
   - tree_break_selection/tree/construction/build.py
   - tree_break_selection/tree/construction/hierarchical.py
-  - tree_break_selection/hierarchy_analysis/bootstrap_consensus.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/guards.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/child_parent_divergence_annotation.py

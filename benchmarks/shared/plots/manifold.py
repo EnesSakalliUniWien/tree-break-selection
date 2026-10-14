@@ -34,7 +34,7 @@ def _require_finite(name: str, values: np.ndarray) -> np.ndarray:
 
 def create_manifold_alignment_plot(
     X_original: np.ndarray,
-    y_kl: np.ndarray,
+    y_tbs: np.ndarray,
     test_case_num: int,
     meta: dict,
     y_true: np.ndarray | None = None,
@@ -42,7 +42,7 @@ def create_manifold_alignment_plot(
     title: str | None = None,
 ):
     """Compare UMAP and Isomap manifolds with TBS cluster coloring."""
-    labels_array = np.asarray(y_kl)
+    labels_array = np.asarray(y_tbs)
     X = np.asarray(X_original, dtype=float)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)

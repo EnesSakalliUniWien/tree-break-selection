@@ -34,13 +34,14 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
 
+from benchmarks.shared.benchmark_grid import BENCHMARK_METADATA_KEYS
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.types import BenchmarkRunStatus, MethodRunResult
 from benchmarks.shared.util.decomposition import _create_report_dataframe_from_labels
 from benchmarks.shared.util.execution_mode import coerce_bool_param
 from benchmarks.shared.util.method_sets import (
+    TBS_DISTANCE_TREE_METHODS,
     TBS_DISTANCE_TREE_NNLS_METHODS,
-    TBS_RUNNER_METHODS,
 )
 
 
@@ -216,6 +217,107 @@ def _optional_int_sequence(value: Any) -> tuple[int, ...] | None:
     return tuple(int(item) for item in value)
 
 
+# Keys read by _tbs_branch_length_optimization_kwargs.
+_BRANCH_LENGTH_PARAM_KEYS = frozenset(
+    {
+        "branch_length_optimization_apply_nonconverged",
+        "branch_length_optimization_max_iterations",
+        "branch_length_optimization_method",
+        "branch_length_optimization_pair_sample_size",
+        "branch_length_optimization_random_state",
+        "branch_length_optimization_solver_tolerance",
+        "branch_length_optimization_target_metric",
+    }
+)
+
+# Every key read by _run_tbs_distance_tree_method and its helpers; update together.
+_TBS_DISTANCE_TREE_PARAM_KEYS = _BRANCH_LENGTH_PARAM_KEYS | frozenset(
+    {
+        "adaptive_projection_dimension_energy_fraction",
+        "allow_linkage_ultrametric_branch_time",
+        "continuous_covariance_min_child_leaf_count",
+        "continuous_covariance_policy",
+        "continuous_sibling_gate_method",
+        "edge_branch_length_variance_policy",
+        "enforce_internal_support_thresholds",
+        "passthrough",
+        "root_selective_permutation_guard_alpha",
+        "root_selective_permutation_guard_replicates",
+        "root_selective_permutation_guard_scope",
+        "root_selective_permutation_guard_seed",
+        "root_selective_permutation_guard_tree_distance_metric",
+        "root_selective_permutation_guard_tree_linkage_method",
+        "root_stability_feature_fraction",
+        "root_stability_guard_threshold",
+        "root_stability_seed",
+        "root_stability_subsample_replicates",
+        "root_stability_tree_distance_metric",
+        "root_stability_tree_linkage_method",
+        "sibling_gate_alpha_penalty",
+        "sibling_gate_method",
+        "sibling_gate_profile",
+        "spectral_include_internal_barycenters",
+        "spectral_internal_distribution_mode",
+        "spectral_minimum_dimension",
+        "tree_distance_metric",
+        "tree_linkage_method",
+    }
+)
+
+# Keys read by the diffusion branches of run_clustering_result. ``diffusion_method``
+# is a registry label that no runner reads.
+_DIFFUSION_PARAM_KEYS = _BRANCH_LENGTH_PARAM_KEYS | frozenset(
+    {
+        "diffusion_method",
+        "diffusion_time",
+        "edge_branch_length_variance_policy",
+        "k_neighbors",
+        "tree_linkage_method",
+    }
+)
+_ADAPTIVE_DIFFUSION_PARAM_KEYS = _DIFFUSION_PARAM_KEYS | frozenset(
+    {"bandwidth_type", "epsilon", "metric", "n_components"}
+)
+_GRAPHTOOLS_DIFFUSION_PARAM_KEYS = _DIFFUSION_PARAM_KEYS | frozenset(
+    {
+        "adaptive_neighbor_grid",
+        "adaptive_neighbor_profile",
+        "anisotropy",
+        "decay",
+        "kernel_symm",
+        "metric",
+        "n_components",
+        "random_state",
+    }
+)
+
+# Allowed runner parameters per method; benchmark bookkeeping keys are always allowed.
+_PARAM_KEYS_BY_METHOD: dict[str, frozenset[str]] = {
+    **dict.fromkeys(TBS_DISTANCE_TREE_METHODS, _TBS_DISTANCE_TREE_PARAM_KEYS),
+    "tbs_diffusion": _DIFFUSION_PARAM_KEYS,
+    "tbs_diffusion_adaptive": _ADAPTIVE_DIFFUSION_PARAM_KEYS,
+    "tbs_diffusion_adaptive_nnls": _ADAPTIVE_DIFFUSION_PARAM_KEYS,
+    "tbs_diffusion_graphtools": _GRAPHTOOLS_DIFFUSION_PARAM_KEYS,
+    "tbs_diffusion_graphtools_nnls": _GRAPHTOOLS_DIFFUSION_PARAM_KEYS,
+    "tbs_diffusion_graphtools_adaptive_nnls": _GRAPHTOOLS_DIFFUSION_PARAM_KEYS,
+    "kmeans": frozenset({"n_clusters", "n_init"}),
+    "spectral": frozenset({"affinity", "assign_labels", "n_clusters", "n_neighbors"}),
+    "leiden": frozenset({"n_neighbors", "resolution"}),
+    "louvain": frozenset({"n_neighbors", "resolution"}),
+    "dbscan": frozenset({"eps", "min_samples"}),
+    "optics": frozenset({"min_cluster_size", "min_samples", "xi"}),
+    "hdbscan": frozenset({"cluster_selection_epsilon", "min_cluster_size", "min_samples"}),
+}
+
+
+def _reject_unknown_params(method_id: str, params: Dict[str, Any]) -> None:
+    unknown_keys = sorted(
+        set(params) - _PARAM_KEYS_BY_METHOD[method_id] - BENCHMARK_METADATA_KEYS
+    )
+    if unknown_keys:
+        raise ValueError(f"Unknown parameter(s) for {method_id!r}: {unknown_keys}.")
+
+
 def _run_tbs_distance_tree_method(
     *,
     data_df: pd.DataFrame,
@@ -237,9 +339,7 @@ def _run_tbs_distance_tree_method(
     distributional feature matrix.
     """
     metric = str(params["tree_distance_metric"])
-    if method_id == "tbs_iqtree3":
-        tbs_distance_condensed = None
-    elif distance_condensed is not None:
+    if distance_condensed is not None:
         # Use precomputed distance (e.g. SBM modularity distance).
         tbs_distance_condensed = np.asarray(distance_condensed, dtype=float)
     elif metric == CONTINUOUS_TREE_DISTANCE_METRIC:
@@ -267,12 +367,6 @@ def _run_tbs_distance_tree_method(
         tbs_distance_condensed,
         alpha,
         tree_linkage_method=str(params["tree_linkage_method"]),
-        tree_builder=str(params.get("tree_builder", "linkage")),
-        tree_rooting=str(params.get("tree_rooting", "linkage_root")),
-        iqtree_executable=str(params.get("iqtree_executable", "iqtree3")),
-        iqtree_model=str(params.get("iqtree_model", "JC2")),
-        iqtree_threads=int(params.get("iqtree_threads", 1)),
-        iqtree_work_dir=params.get("iqtree_work_dir"),
         edge_alpha=resolved_edge_alpha,
         feature_space=feature_space,
         branch_length_data_df=branch_length_data_df,
@@ -355,7 +449,6 @@ def _run_tbs_distance_tree_method(
         root_selective_permutation_guard_tree_linkage_method=params.get(
             "root_selective_permutation_guard_tree_linkage_method"
         ),
-        neighborhood_bandwidth_profile=params.get("neighborhood_bandwidth_profile"),
         **_tbs_branch_length_optimization_kwargs(params),
         allow_linkage_ultrametric_branch_time=coerce_bool_param(
             params.get("allow_linkage_ultrametric_branch_time", False),
@@ -387,6 +480,7 @@ def run_clustering_result(
     This is the canonical method dispatcher used by pipeline and benchmark helpers.
     """
     spec = METHOD_SPECS[method_id]
+    _reject_unknown_params(method_id, params)
     alpha = DEFAULT_SIBLING_ALPHA if significance_level is None else float(significance_level)
     resolved_edge_alpha = DEFAULT_EDGE_ALPHA if edge_alpha is None else float(edge_alpha)
     if method_id == "tbs_diffusion":
@@ -459,8 +553,6 @@ def run_clustering_result(
             random_state=int(params.get("random_state", 0)),
             adaptive_neighbor_profile=params.get("adaptive_neighbor_profile"),
             adaptive_neighbor_grid=_optional_int_sequence(params.get("adaptive_neighbor_grid")),
-            tree_builder=str(params["tree_builder"]),
-            tree_rooting=str(params["tree_rooting"]),
             tree_linkage_method=str(params["tree_linkage_method"]),
             feature_space=feature_space,
             branch_length_data_df=data_df,
@@ -484,7 +576,7 @@ def run_clustering_result(
             branch_length_data_df=data_df,
         )
 
-    if method_id in TBS_RUNNER_METHODS:
+    if method_id in TBS_DISTANCE_TREE_METHODS:
         return _run_tbs_distance_tree_method(
             data_df=data_df,
             method_id=method_id,

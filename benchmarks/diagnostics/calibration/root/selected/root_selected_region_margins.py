@@ -58,6 +58,7 @@ from benchmarks.diagnostics.calibration.reporting import (
 from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
     effective_rank,
 )
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.tbs_tree_context import TbsTreeContext, build_tbs_tree_context
 
@@ -1443,10 +1444,6 @@ def collect_observed_root_selected_region_row(
     return row, merge_margins
 
 
-def _parse_csv_list(raw: str) -> list[str]:
-    return [part.strip() for part in raw.split(",") if part.strip()]
-
-
 def _select_cases(
     *,
     suite: str,
@@ -1628,7 +1625,7 @@ def main() -> None:
     args = _parse_args()
     outputs = run_root_selected_region_margin_diagnostic(
         suite=args.suite,
-        case_names=_parse_csv_list(args.case_names),
+        case_names=parse_csv_list(args.case_names),
         output_dir=args.output_dir,
         near_active_absolute_tolerance=args.near_active_absolute_tolerance,
     )

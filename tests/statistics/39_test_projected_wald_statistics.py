@@ -65,7 +65,7 @@ def test_projected_wald_kernel_adapts_dimension_by_local_contrast_energy() -> No
         np.array([3.0, 4.0, 0.0, 0.0], dtype=np.float64),
         spectral_k=1,
         pca_projection=np.eye(4, dtype=np.float64),
-        pca_eigenvalues=np.ones(4, dtype=np.float64),
+        pca_eigenvalues=np.array([4.0, 3.0, 2.0, 1.0]),
         adaptive_dimension_energy_fraction=0.90,
     )
 
@@ -79,7 +79,7 @@ def test_projected_wald_kernel_keeps_nominal_dimension_when_adaptive_fraction_is
         np.array([3.0, 4.0, 0.0, 0.0], dtype=np.float64),
         spectral_k=1,
         pca_projection=np.eye(4, dtype=np.float64),
-        pca_eigenvalues=np.ones(4, dtype=np.float64),
+        pca_eigenvalues=np.array([4.0, 3.0, 2.0, 1.0]),
     )
 
     assert result.projection_dimension == 1

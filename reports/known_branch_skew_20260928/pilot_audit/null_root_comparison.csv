@@ -1,0 +1,11 @@
+covariance_profile,variant,rejects,n_ok,n_unavailable,rate,wilson_low,wilson_high
+identity,Known covariance / full,0,5,0,0.0,0.0,0.43448246478317476
+identity,Sample pooled covariance / full,0,5,0,0.0,0.0,0.43448246478317476
+identity,Known covariance / PCA–MP,0,5,0,0.0,0.0,0.43448246478317476
+identity,Sample pooled covariance / PCA–MP,0,5,0,0.0,0.0,0.43448246478317476
+identity,Selected root / known covariance,3,5,0,0.6,0.2307242812760128,0.882379225767352
+ar1_0.6,Known covariance / full,0,5,0,0.0,0.0,0.43448246478317476
+ar1_0.6,Sample pooled covariance / full,0,5,0,0.0,0.0,0.43448246478317476
+ar1_0.6,Known covariance / PCA–MP,0,5,0,0.0,0.0,0.43448246478317476
+ar1_0.6,Sample pooled covariance / PCA–MP,0,5,0,0.0,0.0,0.43448246478317476
+ar1_0.6,Selected root / known covariance,3,5,0,0.6,0.2307242812760128,0.882379225767352

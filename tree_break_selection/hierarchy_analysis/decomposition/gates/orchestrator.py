@@ -264,19 +264,25 @@ def _resolve_sibling_gate_inputs(
     )
 
 
-def _resolve_fixed_sibling_gate_feature_space(
+def _resolve_feature_space(
     *,
     feature_space: FeatureSpace | None,
     leaf_data: pd.DataFrame | None,
-) -> FeatureSpace:
+) -> FeatureSpace | None:
     if feature_space is not None:
         return feature_space
     if leaf_data is None:
+        return None
+    return infer_feature_space_from_columns(tuple(leaf_data.columns))
+
+
+def _require_feature_space(feature_space: FeatureSpace | None) -> FeatureSpace:
+    if feature_space is None:
         raise ValueError(
             "Fixed-subspace sibling gates require feature_space metadata or leaf_data "
             "columns for feature-space inference."
         )
-    return infer_feature_space_from_columns(tuple(leaf_data.columns))
+    return feature_space
 
 
 def _resolve_edge_spectral_minimum_dimension(
@@ -437,13 +443,15 @@ def run_gate_annotation_pipeline(
             "adaptive_projection_dimension_energy_fraction must lie in (0, 1] "
             f"when set; got {adaptive_projection_dimension_energy_fraction!r}."
         )
+    resolved_feature_space = _resolve_feature_space(
+        feature_space=feature_space,
+        leaf_data=leaf_data,
+    )
     adaptive_projection_basis_dimension = None
     if adaptive_projection_fraction is not None:
-        adaptive_feature_space = _resolve_fixed_sibling_gate_feature_space(
-            feature_space=feature_space,
-            leaf_data=leaf_data,
+        adaptive_projection_basis_dimension = int(
+            _require_feature_space(resolved_feature_space).contrast_dimension
         )
-        adaptive_projection_basis_dimension = int(adaptive_feature_space.contrast_dimension)
 
     # Run edge-divergence gate: child-parent edge tests
     edge_gate_start_sec = perf_counter()
@@ -504,28 +512,17 @@ def run_gate_annotation_pipeline(
             stage_timings=stage_timings,
         )
     else:
-        fixed_feature_space = _resolve_fixed_sibling_gate_feature_space(
-            feature_space=feature_space,
-            leaf_data=leaf_data,
-        )
         annotated_df = annotate_fixed_subspace_sibling_divergence(
             tree,
             edge_annotated_df,
             significance_level_alpha=effective_sibling_alpha,
-            feature_space=fixed_feature_space,
+            feature_space=_require_feature_space(resolved_feature_space),
             method=sibling_gate_method,
             continuous_covariance_policy=continuous_covariance_policy,
             continuous_covariance_min_child_leaf_count=(continuous_covariance_min_child_leaf_count),
         )
     sibling_gate_sec = float(perf_counter() - sibling_gate_start_sec)
-    channel_feature_space = (
-        feature_space
-        if feature_space is not None
-        else infer_feature_space_from_columns(tuple(leaf_data.columns))
-        if leaf_data is not None
-        else None
-    )
-    if channel_feature_space is not None:
+    if resolved_feature_space is not None:
         sparse_channel_method = (
             sibling_gate_method
             if sibling_gate_method in {"fixed_coordinate_bh", "fixed_block_bh"}
@@ -534,7 +531,7 @@ def run_gate_annotation_pipeline(
         annotated_df = annotate_fixed_subspace_sibling_evidence_channels(
             tree,
             annotated_df,
-            feature_space=channel_feature_space,
+            feature_space=resolved_feature_space,
             sparse_method=sparse_channel_method,  # type: ignore[arg-type]
             dense_method="fixed_global_chi_square",
             continuous_covariance_policy=continuous_covariance_policy,
@@ -544,15 +541,10 @@ def run_gate_annotation_pipeline(
         root_guard_start_sec = perf_counter()
         if leaf_data is None:
             raise ValueError("Root stability guard requires leaf_data.")
-        guard_feature_space = (
-            feature_space
-            if feature_space is not None
-            else infer_feature_space_from_columns(tuple(leaf_data.columns))
-        )
         root_stability = compute_root_feature_subsample_stability(
             tree,
             leaf_data,
-            guard_feature_space,
+            resolved_feature_space,
             subsample_replicates=root_stability_subsample_replicates,
             feature_fraction=root_stability_feature_fraction,
             seed=root_stability_seed,
@@ -570,16 +562,11 @@ def run_gate_annotation_pipeline(
         root_selective_start_sec = perf_counter()
         if leaf_data is None:
             raise ValueError("Selected-root permutation guard requires leaf_data.")
-        guard_feature_space = (
-            feature_space
-            if feature_space is not None
-            else infer_feature_space_from_columns(tuple(leaf_data.columns))
-        )
         annotated_df = apply_root_selective_permutation_guard(
             tree,
             annotated_df,
             leaf_data,
-            guard_feature_space,
+            resolved_feature_space,
             method=sibling_gate_method,
             bootstrap_replicates=int(root_selective_permutation_guard_replicates),
             seed=int(root_selective_permutation_guard_seed),

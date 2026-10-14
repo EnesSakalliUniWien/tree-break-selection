@@ -406,12 +406,57 @@ def fit_independent_unweighted_common_scale_inflation_model(
     )
 
 
+def _family_support(
+    model: EmpiricalNullInflationModel,
+    family_mask: np.ndarray,
+) -> dict[str, float | int]:
+    """Return support diagnostics that depend only on the model and feature family."""
+    support: dict[str, float | int] = {"n_family_supported_records": int(np.sum(family_mask))}
+    if not np.any(family_mask):
+        return support
+    family_weights = model.sample_weights[family_mask]
+    family_group_weights = _dependency_group_support_weights(
+        model,
+        family_mask=family_mask,
+    )
+    support["n_family_supported_groups"] = int(family_group_weights.size)
+    support["family_effective_sample_size"] = _effective_sample_size(family_group_weights)
+    family_dependency_group_ids = tuple(
+        group_id
+        for group_id, include in zip(
+            model.sample.dependency_group_ids,
+            family_mask,
+            strict=True,
+        )
+        if include
+    )
+    family_reference_expectations = (
+        model.sample_reference_scales[family_mask] * model.sample_degrees_of_freedom[family_mask]
+    )
+    support["leave_one_group_max_delta_log_c"] = _leave_one_group_max_delta_log_c(
+        model.sample_statistics[family_mask],
+        family_reference_expectations,
+        family_weights,
+        family_dependency_group_ids,
+        max(
+            _inflation_mle(
+                model.sample_statistics[family_mask],
+                family_reference_expectations,
+                family_weights,
+            ),
+            1.0,
+        ),
+    )
+    return support
+
+
 def _decision_support(
     *,
     model: EmpiricalNullInflationModel,
     record: SiblingPairRecord,
     family_mask: np.ndarray | None = None,
     local_weights: np.ndarray | None = None,
+    family_support_cache: dict[str, dict[str, float | int]] | None = None,
 ) -> dict[str, float | int | str | bool]:
     support: dict[str, float | int | str | bool] = {
         "n_positive_weight_records": int(model.n_positive_weight_records),
@@ -429,46 +474,17 @@ def _decision_support(
         "feature_family": str(record.feature_family),
     }
     if family_mask is not None:
-        support["n_family_supported_records"] = int(np.sum(family_mask))
-        if np.any(family_mask):
-            family_weights = model.sample_weights[family_mask]
-            family_group_weights = _dependency_group_support_weights(
-                model,
-                family_mask=family_mask,
-            )
-            support["n_family_supported_groups"] = int(family_group_weights.size)
-            support["family_effective_sample_size"] = _effective_sample_size(
-                family_group_weights
-            )
-            family_dependency_group_ids = tuple(
-                group_id
-                for group_id, include in zip(
-                    model.sample.dependency_group_ids,
-                    family_mask,
-                    strict=True,
-                )
-                if include
-            )
-            support["leave_one_group_max_delta_log_c"] = _leave_one_group_max_delta_log_c(
-                model.sample_statistics[family_mask],
-                (
-                    model.sample_reference_scales[family_mask]
-                    * model.sample_degrees_of_freedom[family_mask]
-                ),
-                family_weights,
-                family_dependency_group_ids,
-                max(
-                    _inflation_mle(
-                        model.sample_statistics[family_mask],
-                        (
-                            model.sample_reference_scales[family_mask]
-                            * model.sample_degrees_of_freedom[family_mask]
-                        ),
-                        family_weights,
-                    ),
-                    1.0,
-                ),
-            )
+        # Family diagnostics are identical for every record of one family under one model.
+        family_support = (
+            family_support_cache.get(record.feature_family)
+            if family_support_cache is not None
+            else None
+        )
+        if family_support is None:
+            family_support = _family_support(model, family_mask)
+            if family_support_cache is not None:
+                family_support_cache[record.feature_family] = family_support
+        support.update(family_support)
     if local_weights is not None:
         local_group_weights = _dependency_group_support_weights(
             model,
@@ -638,6 +654,7 @@ def decide_empirical_null_calibration(
     *,
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
+    family_support_cache: dict[str, dict[str, float | int]] | None = None,
 ) -> CalibrationDecision:
     """Return the historical empirical rule, without claiming selected-tail validity.
 
@@ -703,6 +720,7 @@ def decide_empirical_null_calibration(
                 model=model,
                 record=record,
                 family_mask=family_mask,
+                family_support_cache=family_support_cache,
             ),
             exact_context=exact_context,
             descriptive_strata={"reason": "no_matching_feature_family"},
@@ -740,6 +758,7 @@ def decide_empirical_null_calibration(
                 record=record,
                 family_mask=family_mask,
                 local_weights=local_weights,
+                family_support_cache=family_support_cache,
             ),
             thresholds=support_thresholds,
         )
@@ -801,6 +820,7 @@ def decide_empirical_null_calibration(
                 record=record,
                 family_mask=family_mask,
                 local_weights=local_weights,
+                family_support_cache=family_support_cache,
             ),
             exact_context=exact_context,
             descriptive_strata={
@@ -822,6 +842,7 @@ def decide_empirical_null_calibration(
             record=record,
             family_mask=family_mask,
             local_weights=local_weights,
+            family_support_cache=family_support_cache,
         ),
         thresholds=support_thresholds,
     )

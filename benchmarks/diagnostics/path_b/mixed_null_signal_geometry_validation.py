@@ -19,6 +19,7 @@ from typing import Any, Sequence
 import numpy as np
 import pandas as pd
 from benchmarks.diagnostics.path_b.recursive_pvalue_geometry import (
+    _root,
     build_recursive_pvalue_geometry_panels,
 )
 from benchmarks.shared.cases import (
@@ -118,15 +119,6 @@ def _parent_size_bin(parent_fraction: float) -> str:
     if parent_fraction <= 0.50:
         return "parent_0.25_0.50"
     return "parent_0.50_1.00"
-
-
-def _root(tree: Any) -> object:
-    if hasattr(tree, "root"):
-        return tree.root()
-    roots = [node for node in tree.nodes if tree.in_degree(node) == 0]
-    if len(roots) != 1:
-        raise ValueError(f"Expected exactly one root, got {roots!r}.")
-    return roots[0]
 
 
 def _vector_norm(values: np.ndarray) -> float:

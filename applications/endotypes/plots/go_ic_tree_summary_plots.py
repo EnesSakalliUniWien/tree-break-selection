@@ -21,11 +21,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
-from scipy.stats import hypergeom
+from scipy.stats import false_discovery_control, hypergeom
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.manifold import MDS
-from statsmodels.stats.multitest import multipletests
 from tree_break_selection.space_separation import (
     SpectralBlock,
     adaptive_diffusion_geometry,
@@ -442,7 +441,7 @@ def cluster_coherence(data: pd.DataFrame, labels: np.ndarray) -> dict[str, objec
         cluster_counts = presence[idx].sum(axis=0)
         rest_counts = totals - cluster_counts
         p_values = hypergeom.sf(cluster_counts - 1, n, totals, size)
-        q_values = multipletests(p_values, method="fdr_bh")[1]
+        q_values = false_discovery_control(p_values, method="bh")
         cluster_prev = cluster_counts / max(size, 1)
         rest_prev = rest_counts / max(rest_size, 1)
         delta = cluster_prev - rest_prev

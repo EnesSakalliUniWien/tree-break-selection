@@ -13,12 +13,7 @@ from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils impo
 )
 from tree_break_selection.tree.construction import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-    DEFAULT_LINKAGE_TREE_ROOTING,
-    DEFAULT_PHYLOGENETIC_TREE_ROOTING,
     DEFAULT_TREE_LINKAGE_METHOD,
-    IQTREE3_TREE_BUILDER,
-    LINKAGE_TREE_BUILDER,
-    NEIGHBOR_JOINING_TREE_BUILDER,
     SUPPORTED_LINKAGE_METHODS,
 )
 from tree_break_selection.tree.distributions import (
@@ -61,8 +56,6 @@ GRAPHTOOLS_KERNEL_DIFFUSION_PARAMS = {
     "anisotropy": 0.0,
     "kernel_symm": "+",
     "random_state": 0,
-    "tree_builder": LINKAGE_TREE_BUILDER,
-    "tree_rooting": DEFAULT_LINKAGE_TREE_ROOTING,
     "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
 }
 
@@ -99,15 +92,6 @@ GRAPHTOOLS_ADAPTIVE_K_TREE_STRATEGY_PARAMS = benchmark_grid(
     axes={
         "tree_linkage_method": SUPPORTED_LINKAGE_METHODS,
     },
-) + benchmark_grid(
-    benchmark_class=OPTIONAL_GPL_BENCHMARK_CLASS,
-    grid_name=GRAPHTOOLS_TREE_STRATEGY_GRID,
-    base_params={
-        **GRAPHTOOLS_ADAPTIVE_K_DIFFUSION_PARAMS,
-        "tree_rooting": DEFAULT_PHYLOGENETIC_TREE_ROOTING,
-        **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
-    },
-    axes={"tree_builder": (NEIGHBOR_JOINING_TREE_BUILDER,)},
 )
 
 
@@ -344,44 +328,6 @@ METHOD_SPECS: dict[str, MethodSpec] = {
                 "spectral_include_internal_barycenters": True,
                 "spectral_internal_distribution_mode": "branch_length_state",
                 "enforce_internal_support_thresholds": True,
-            },
-        ],
-    ),
-    "tbs_bandwidth_context_v1": MethodSpec(
-        name="TBS Regional Bandwidth Context",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "neighborhood_bandwidth_profile": ("regional_tau_branch_length_support_only_v1"),
-            },
-        ],
-    ),
-    "tbs_neighbor_joining": MethodSpec(
-        name="TBS (Neighbor Joining, MAD Root)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "tree_builder": NEIGHBOR_JOINING_TREE_BUILDER,
-                "tree_rooting": DEFAULT_PHYLOGENETIC_TREE_ROOTING,
-            },
-        ],
-    ),
-    "tbs_iqtree3": MethodSpec(
-        name="TBS (IQ-TREE 3, MAD Root)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "tree_builder": IQTREE3_TREE_BUILDER,
-                "tree_rooting": DEFAULT_PHYLOGENETIC_TREE_ROOTING,
-                "iqtree_executable": "iqtree3",
-                "iqtree_model": "JC2",
-                "iqtree_threads": 1,
             },
         ],
     ),

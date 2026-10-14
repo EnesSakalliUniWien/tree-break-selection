@@ -57,6 +57,7 @@ from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_
 )
 from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
 from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 
 SCHEMA_VERSION = "selected_edge_type1_geometry/v1"
 GENERATED_BY = "benchmarks.validation.statistics.selected_edge_type1_geometry"
@@ -110,17 +111,6 @@ class SelectedEdgeGeometryConfig:
     @property
     def manifest_path(self) -> Path:
         return self.output_dir / "selected_edge_geometry_manifest.json"
-
-
-def parse_alpha_grid(raw: str) -> tuple[float, ...]:
-    """Parse a comma-separated alpha grid."""
-    values = tuple(float(item.strip()) for item in raw.split(",") if item.strip())
-    if not values:
-        raise ValueError("Alpha grid must contain at least one value.")
-    invalid = [value for value in values if not 0.0 < value < 1.0]
-    if invalid:
-        raise ValueError(f"Alpha values must lie in (0, 1): {invalid!r}")
-    return values
 
 
 def parse_names(raw: str | None) -> tuple[str, ...]:
@@ -1212,7 +1202,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         suite=str(args.suite),
         case_names=parse_names(args.case_names),
         modes=validate_modes(parse_names(args.modes)),
-        edge_alphas=parse_alpha_grid(str(args.edge_alphas)),
+        edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alpha=float(args.sibling_alpha),
         replicates=int(args.replicates),
         base_seed=int(args.base_seed),

@@ -12,21 +12,8 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import squareform
 
-from tree_break_selection.tree.construction.defaults import (
-    DEFAULT_LINKAGE_TREE_ROOTING,
-    DEFAULT_PHYLOGENETIC_TREE_ROOTING,
-    LINKAGE_TREE_BUILDER,
-    NEIGHBOR_JOINING_TREE_BUILDER,
-    SUPPORTED_TREE_BUILDERS,
-    TreeBuilderName,
-)
 from tree_break_selection.tree.construction.hierarchical import (
     tree_from_linkage,
-)
-from tree_break_selection.tree.construction.phylogenetic import (
-    MadRootResult,
-    iqtree3_tree_from_alignment,
-    neighbor_joining_tree_from_distance,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
 
@@ -40,11 +27,11 @@ class TreeBuildDiagnostics:
     edge_count: int
     root_child_count: int
     zero_branch_length_count: int
-    distance_pair_count: int | None
-    zero_distance_pair_count: int | None
-    repeated_distance_pair_count: int | None
-    repeated_distance_value_count: int | None
-    repeated_linkage_height_count: int | None
+    distance_pair_count: int
+    zero_distance_pair_count: int
+    repeated_distance_pair_count: int
+    repeated_distance_value_count: int
+    repeated_linkage_height_count: int
 
 
 @dataclass(frozen=True)
@@ -52,12 +39,8 @@ class TreeBuildResult:
     """Tree plus construction evidence needed by runners and reports."""
 
     tree: PosetTree
-    builder: TreeBuilderName
-    rooting: str
     diagnostics: TreeBuildDiagnostics
-    linkage_matrix: np.ndarray | None = None
-    phylogenetic_rooting: MadRootResult | None = None
-    iqtree_metadata: dict[str, object] | None = None
+    linkage_matrix: np.ndarray
 
 
 def _validate_condensed_distance(
@@ -170,8 +153,8 @@ def _validate_decomposition_tree(
 def _build_diagnostics(
     tree: PosetTree,
     *,
-    distances: np.ndarray | None,
-    linkage_matrix: np.ndarray | None,
+    distances: np.ndarray,
+    linkage_matrix: np.ndarray,
 ) -> TreeBuildDiagnostics:
     """Summarize tree shape and exact tie burden without another tree fit."""
     leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
@@ -180,22 +163,9 @@ def _build_diagnostics(
         for _parent, _child, attrs in tree.edges(data=True)
     )
 
-    distance_pair_count: int | None = None
-    zero_distance_pair_count: int | None = None
-    repeated_distance_pair_count: int | None = None
-    repeated_distance_value_count: int | None = None
-    if distances is not None:
-        _values, counts = np.unique(distances, return_counts=True)
-        repeated = counts > 1
-        distance_pair_count = int(len(distances))
-        zero_distance_pair_count = int(np.count_nonzero(distances == 0.0))
-        repeated_distance_pair_count = int(counts[repeated].sum())
-        repeated_distance_value_count = int(np.count_nonzero(repeated))
-
-    repeated_linkage_height_count: int | None = None
-    if linkage_matrix is not None:
-        _heights, height_counts = np.unique(linkage_matrix[:, 2], return_counts=True)
-        repeated_linkage_height_count = int(height_counts[height_counts > 1].sum())
+    _values, counts = np.unique(distances, return_counts=True)
+    repeated = counts > 1
+    _heights, height_counts = np.unique(linkage_matrix[:, 2], return_counts=True)
 
     return TreeBuildDiagnostics(
         leaf_count=len(leaves),
@@ -203,97 +173,39 @@ def _build_diagnostics(
         edge_count=tree.number_of_edges(),
         root_child_count=tree.out_degree(tree.root()),
         zero_branch_length_count=zero_branch_length_count,
-        distance_pair_count=distance_pair_count,
-        zero_distance_pair_count=zero_distance_pair_count,
-        repeated_distance_pair_count=repeated_distance_pair_count,
-        repeated_distance_value_count=repeated_distance_value_count,
-        repeated_linkage_height_count=repeated_linkage_height_count,
+        distance_pair_count=int(len(distances)),
+        zero_distance_pair_count=int(np.count_nonzero(distances == 0.0)),
+        repeated_distance_pair_count=int(counts[repeated].sum()),
+        repeated_distance_value_count=int(np.count_nonzero(repeated)),
+        repeated_linkage_height_count=int(height_counts[height_counts > 1].sum()),
     )
 
 
 def build_tree(
     data: pd.DataFrame,
-    distance_condensed: np.ndarray | None,
+    distance_condensed: np.ndarray,
     *,
-    builder: str,
-    rooting: str,
     linkage_method: str,
-    iqtree_executable: str = "iqtree3",
-    iqtree_model: str = "JC2",
-    iqtree_threads: int = 1,
-    iqtree_work_dir: str | None = None,
 ) -> TreeBuildResult:
-    """Build one supported topology through an explicit methodological seam.
-
-    Builder selection is based only on ``builder``. Package layout, filesystem
-    ordering, and import discovery never participate in method selection.
-    """
+    """Build a rooted linkage tree, rooted at the final merge, from condensed distances."""
     if len(data) < 2:
         raise ValueError("Tree construction requires at least two samples.")
     if not data.index.is_unique:
         raise ValueError("Tree construction requires unique sample labels.")
-    if builder not in SUPPORTED_TREE_BUILDERS:
-        supported = ", ".join(SUPPORTED_TREE_BUILDERS)
-        raise ValueError(f"Unsupported tree builder {builder!r}; expected one of: {supported}.")
 
-    distances: np.ndarray | None = None
-    linkage_matrix: np.ndarray | None = None
-    phylogenetic_rooting: MadRootResult | None = None
-    iqtree_metadata: dict[str, object] | None = None
-    expected_leaf_labels: list[object]
-    original_labels = data.index.tolist()
-    canonical_order = _canonical_sample_order(original_labels)
+    canonical_order = _canonical_sample_order(data.index.tolist())
     canonical_data = data.iloc[canonical_order]
-
-    if builder == LINKAGE_TREE_BUILDER:
-        if rooting != DEFAULT_LINKAGE_TREE_ROOTING:
-            raise ValueError("Linkage trees require rooting='linkage_root'.")
-        if distance_condensed is None:
-            raise ValueError("Linkage tree construction requires distance_condensed.")
-
-        distances = _validate_condensed_distance(
-            distance_condensed,
-            sample_count=len(data),
-        )
-        distances = _reorder_condensed_distance(distances, canonical_order)
-        linkage_matrix = linkage(distances, method=linkage_method)
-        tree = tree_from_linkage(
-            linkage_matrix,
-            leaf_names=canonical_data.index.tolist(),
-        )
-        expected_leaf_labels = canonical_data.index.tolist()
-    else:
-        if rooting != DEFAULT_PHYLOGENETIC_TREE_ROOTING:
-            raise ValueError(f"{builder} trees require rooting='mad'.")
-
-        expected_leaf_labels = canonical_data.index.astype(str).tolist()
-        if len(set(expected_leaf_labels)) != len(expected_leaf_labels):
-            raise ValueError(
-                "Phylogenetic tree construction requires sample labels that remain unique "
-                "after string conversion."
-            )
-        if builder == NEIGHBOR_JOINING_TREE_BUILDER:
-            if distance_condensed is None:
-                raise ValueError("Neighbor-joining tree construction requires distance_condensed.")
-            distances = _validate_condensed_distance(
-                distance_condensed,
-                sample_count=len(data),
-            )
-            distances = _reorder_condensed_distance(distances, canonical_order)
-            tree, phylogenetic_rooting = neighbor_joining_tree_from_distance(
-                distances,
-                expected_leaf_labels,
-                rooting=rooting,
-            )
-        else:
-            tree, phylogenetic_rooting, iqtree_metadata = iqtree3_tree_from_alignment(
-                canonical_data,
-                executable=iqtree_executable,
-                model=iqtree_model,
-                threads=iqtree_threads,
-                rooting=rooting,
-                work_dir=iqtree_work_dir,
-            )
+    distances = _validate_condensed_distance(
+        distance_condensed,
+        sample_count=len(data),
+    )
+    distances = _reorder_condensed_distance(distances, canonical_order)
+    linkage_matrix = linkage(distances, method=linkage_method)
+    tree = tree_from_linkage(
+        linkage_matrix,
+        leaf_names=canonical_data.index.tolist(),
+    )
+    expected_leaf_labels = canonical_data.index.tolist()
 
     _validate_decomposition_tree(
         tree,
@@ -306,19 +218,13 @@ def build_tree(
     )
     return TreeBuildResult(
         tree=tree,
-        builder=builder,
-        rooting=rooting,
         diagnostics=diagnostics,
         linkage_matrix=linkage_matrix,
-        phylogenetic_rooting=phylogenetic_rooting,
-        iqtree_metadata=iqtree_metadata,
     )
 
 
 __all__ = [
-    "SUPPORTED_TREE_BUILDERS",
     "TreeBuildDiagnostics",
     "TreeBuildResult",
-    "TreeBuilderName",
     "build_tree",
 ]

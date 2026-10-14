@@ -13,8 +13,9 @@ import math
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.values import finite_float
 
 SCHEMA_VERSION = "tree_strategy_semantic_panel/v1"
 
@@ -80,11 +81,6 @@ def read_table(path: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame()
     return pd.read_csv(path)
-
-
-def finite_float(value: object) -> float:
-    parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
-    return float(parsed) if np.isfinite(parsed) else math.nan
 
 
 def format_float(value: object, digits: int = 6) -> str:

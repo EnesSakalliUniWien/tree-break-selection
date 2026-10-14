@@ -18,8 +18,7 @@ from benchmarks.diagnostics.oracle.oracle_tree_recoverability import (
     classify_tree_recoverability_failure,
     oracle_subtree_cut,
 )
-from benchmarks.shared.cases import get_default_test_cases
-from benchmarks.shared.cases.regression_gate import get_regression_gate_test_cases
+from benchmarks.diagnostics.runner_support import _load_benchmark_suite
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 
 _THREAD_ENV_VARS = (
@@ -92,14 +91,6 @@ def _configure_runtime_defaults() -> None:
     for env_var in _THREAD_ENV_VARS:
         os.environ.setdefault(env_var, "1")
     os.environ.setdefault("TBS_N_JOBS", "1")
-
-
-def _load_cases(suite: str) -> list[dict]:
-    if suite == "regression_gate":
-        return get_regression_gate_test_cases()
-    if suite == "full":
-        return get_default_test_cases()
-    raise ValueError(f"Unknown suite {suite!r}.")
 
 
 def _filter_cases(cases: list[dict], raw_case_names: str) -> list[dict]:
@@ -217,7 +208,7 @@ def main() -> None:
     args = _parse_args()
     _configure_runtime_defaults()
 
-    cases = _filter_cases(_load_cases(args.suite), args.case_names)
+    cases = _filter_cases(_load_benchmark_suite(args.suite), args.case_names)
     output_dir = _make_output_dir(args.output_dir)
     output_csv = output_dir / "oracle_tree_recoverability.csv"
     metadata_json = output_dir / "oracle_tree_recoverability_metadata.json"

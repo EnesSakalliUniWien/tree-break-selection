@@ -21,7 +21,11 @@ import numpy as np
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
-from benchmarks.diagnostics.calibration.root.root_values import finite_float, require_columns
+from benchmarks.diagnostics.calibration.root.root_values import (
+    finite_float,
+    finite_median,
+    require_columns,
+)
 from benchmarks.diagnostics.calibration.values import string_value
 
 SCHEMA_VERSION = "root_tie_rank_calibration_feasibility/v2"
@@ -126,12 +130,6 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_RELATIVE_SE_TARGET,
     )
     return parser.parse_args()
-
-
-def _finite_median(values: pd.Series) -> float:
-    numeric = pd.to_numeric(values, errors="coerce")
-    numeric = numeric[np.isfinite(numeric)]
-    return float(numeric.median()) if not numeric.empty else math.nan
 
 
 def alpha_resolution_required_null_count(target_alpha: float) -> int:
@@ -428,7 +426,7 @@ def summarize_root_tie_rank_calibration_strata(rows: pd.DataFrame) -> pd.DataFra
                     precision_required - null_count,
                     0,
                 ),
-                "median_root_sibling_selected_ratio": _finite_median(
+                "median_root_sibling_selected_ratio": finite_median(
                     group["root_sibling_selected_ratio"]
                 ),
                 "max_root_sibling_selected_ratio": float(

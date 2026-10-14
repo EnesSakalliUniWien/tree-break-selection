@@ -51,16 +51,13 @@ from benchmarks.diagnostics.calibration.statistics.internal_support_threshold_va
     evaluate_internal_support_threshold_rows,
     summarize_internal_support_threshold_rows,
 )
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_mixed_internal_calibration_sweep_not_calibration"
 SCHEMA_VERSION = "mixed_internal_calibration_sweep/v3"
-
-
-def _parse_csv_list(raw: str) -> tuple[str, ...]:
-    return tuple(part.strip() for part in str(raw).split(",") if part.strip())
 
 
 def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, object]]:
@@ -448,7 +445,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     started = perf_counter()
     outputs = run_mixed_internal_calibration_sweep(
         suite=str(args.suite),
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         n_replicates=int(args.n_replicates),
         output_dir=args.output_dir,
         edge_alpha=float(args.edge_alpha),

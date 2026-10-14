@@ -24,6 +24,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_
 from tree_break_selection.tree.feature_space import FeatureSpace
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.statistics.null_law_decomposition_panel import _df_bin
 from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
     evaluate_production_admissibility_components,
     summarize_production_admissibility_contracts,
@@ -34,10 +35,10 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _prepare_tree_for_mode,
     _projection_inputs,
     _select_cases,
-    parse_alpha_grid,
     parse_names,
     validate_modes,
 )
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 
 STUDY_ROLE = "diagnostic_regularized_wald_statistic_not_calibration"
 SCHEMA_VERSION = "regularized_wald_statistic_panel/v1"
@@ -258,18 +259,6 @@ def compute_regularized_sibling_wald_variant(
         "boundary_status": boundary_status,
         "z_norm": float(np.linalg.norm(z)),
     }
-
-
-def _df_bin(value: float) -> str:
-    if value <= 1.0:
-        return "df_0_1"
-    if value <= 2.0:
-        return "df_1_2"
-    if value <= 4.0:
-        return "df_2_4"
-    if value <= 8.0:
-        return "df_4_8"
-    return "df_ge8"
 
 
 def _regularized_status(group: pd.DataFrame, *, alpha: float, min_rows: int) -> str:
@@ -546,7 +535,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             suite=str(args.suite),
             case_names=parse_names(args.case_names),
             modes=validate_modes(parse_names(args.modes)),
-            edge_alphas=parse_alpha_grid(str(args.edge_alphas)),
+            edge_alphas=parse_float_grid(str(args.edge_alphas)),
             sibling_alpha=float(args.sibling_alpha),
             replicates=int(args.replicates),
             base_seed=int(args.base_seed),

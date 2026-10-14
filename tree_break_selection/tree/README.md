@@ -21,10 +21,8 @@ features -> geometry/distance -> topology builder -> rooting -> PosetTree
 | Topology route | Input geometry | Builder | Root | Active use |
 | --- | --- | --- | --- | --- |
 | Linkage | Any valid condensed distance | SciPy `linkage`; average, complete, weighted, single, centroid, median, or Ward | Final linkage merge | Canonical TBS, diffusion TBS, applications, and the adaptive-K tree grid |
-| Neighbor joining | Any valid condensed distance | scikit-bio `nj` | Minimum ancestor deviation (MAD) | Opt-in `tbs_neighbor_joining` and the adaptive-K tree grid |
-| IQ-TREE 3 | Encoded feature-state alignment, not a condensed distance | External IQ-TREE 3, default model `JC2` | MAD after Newick import | Opt-in `tbs_iqtree3` |
 
-The registered geometry routes feeding those topology builders are direct
+The registered geometry routes feeding the linkage builder are direct
 feature/precomputed distance, fixed Hamming-neighbor diffusion, adaptive
 pydiffmap diffusion, and optional graphtools kernel diffusion. Adaptive-cosine
 subspace applications add block-coordinate Euclidean or adaptive-diffusion
@@ -43,18 +41,16 @@ The durable, cross-application audit is in
 
 | Module | Responsibility |
 | --- | --- |
-| `construction/build.py` | Explicit dispatch over linkage, neighbor joining, and IQ-TREE; validates builder/rooting combinations and returns construction evidence |
+| `construction/build.py` | Validates linkage inputs, builds the tree rooted at the final merge, and returns construction evidence |
 | `construction/defaults.py` | Immutable canonical binary-distance and linkage defaults; callers pass alternatives explicitly |
 | `construction/hierarchical.py` | Promote monotone linkage merge output into `PosetTree`; non-monotone heights fail closed |
-| `construction/phylogenetic.py` | Neighbor joining, IQ-TREE execution/Newick import, MAD rooting, and promotion of unrooted metric trees |
 | `poset_tree.py` | Stable rooted-tree representation and hierarchy operations |
 | `branch_lengths.py` | Convert monotone linkage heights to normalized ultrametric edge lengths |
 | `optimized_branch_lengths.py` | Refit non-negative edge lengths on an already fixed topology |
 
-`SUPPORTED_TREE_BUILDERS` defines the method order explicitly as `linkage`,
-`neighbor_joining`, and `iqtree3`. No directory scan or import-discovery order
-selects an algorithm. The unused sklearn-agglomerative and arbitrary edge-list
-adapters and the pass-through `PosetTree.from_*` constructors were removed;
+`build_tree` builds linkage trees only and takes no builder or rooting
+argument. Neighbor joining, MAD rooting and IQ-TREE were removed, as were the unused sklearn-agglomerative and arbitrary
+edge-list adapters and the pass-through `PosetTree.from_*` constructors;
 live callers use the construction interface directly.
 
 ## poset_tree.py — `PosetTree`

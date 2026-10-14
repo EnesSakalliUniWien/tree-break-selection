@@ -21,7 +21,11 @@ import pandas as pd
 from scipy import stats
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
-from benchmarks.diagnostics.calibration.root.root_values import finite_float, require_columns
+from benchmarks.diagnostics.calibration.root.root_values import (
+    finite_float,
+    finite_median,
+    require_columns,
+)
 
 SCHEMA_VERSION = "root_selected_mixed_region_law/v2"
 STUDY_ROLE = "diagnostic_root_selected_mixed_region_law_not_calibration"
@@ -156,12 +160,6 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_MARGIN_TOLERANCE,
     )
     return parser.parse_args()
-
-
-def _finite_median(values: pd.Series) -> float:
-    numeric = pd.to_numeric(values, errors="coerce")
-    numeric = numeric[np.isfinite(numeric)]
-    return float(numeric.median()) if not numeric.empty else math.nan
 
 
 def _safe_nonnegative_log1p(value: float) -> float:
@@ -520,10 +518,10 @@ def summarize_mixed_region_law_rows(rows: pd.DataFrame) -> pd.DataFrame:
                 "root_mixed_region_component": str(component),
                 "root_calibration_status": str(calibration_status),
                 "row_count": int(group.shape[0]),
-                "median_root_sibling_selected_ratio": _finite_median(
+                "median_root_sibling_selected_ratio": finite_median(
                     group["root_sibling_selected_ratio"]
                 ),
-                "median_tie_rank_fraction": _finite_median(group["root_tie_rank_median_fraction"]),
+                "median_tie_rank_fraction": finite_median(group["root_tie_rank_median_fraction"]),
                 "summary_status": "diagnostic_only_not_calibrated",
             }
         )

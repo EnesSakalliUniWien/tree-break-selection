@@ -18,11 +18,7 @@ from time import perf_counter
 
 import pandas as pd
 
-from benchmarks.cloud.aws_alpha_grid_search import (
-    sync_path_to_s3,
-    sync_s3_to_path,
-)
-from benchmarks.cloud.aws_selected_tail_equation_study import current_git_state
+from benchmarks.cloud import sharding
 from benchmarks.diagnostics.spectral.adaptive_cosine.kak_lens_alpha_sweep import (
     DEFAULT_LENSES,
     LensSpec,
@@ -31,6 +27,7 @@ from benchmarks.diagnostics.spectral.adaptive_cosine.kak_lens_alpha_sweep import
     parse_linkage_methods,
 )
 from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
+from benchmarks.shared.util.provenance import current_git_state
 
 AWS_KAK_LENS_SWEEP_ROLE = "aws_distributed_kak_lens_linkage_alpha_sweep"
 SHARD_MANIFEST_NAME = "aws_kak_lens_linkage_alpha_sweep_shard_manifest.json"
@@ -115,13 +112,7 @@ def build_groups(configured: AwsKakLensSweepConfig) -> tuple[LensLinkageGroup, .
 
 
 def validate_shard_contract(*, shard_index: int, shard_count: int, n_groups: int) -> None:
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    if not 0 <= shard_index < shard_count:
-        raise ValueError(
-            f"shard_index must satisfy 0 <= index < shard_count; got "
-            f"{shard_index!r} with shard_count={shard_count!r}."
-        )
+    sharding.validate_shard_contract(shard_index=shard_index, shard_count=shard_count)
     if shard_count > n_groups:
         raise ValueError(
             f"shard_count={shard_count} exceeds number of lens/linkage groups {n_groups}."
@@ -151,10 +142,6 @@ def make_shard_spec(
     )
 
 
-def _write_json(path: Path, payload: dict[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-
-
 def _resolved_path(path: Path, input_work_dir: Path, *, use_synced_input: bool) -> Path:
     if path.is_absolute() or not use_synced_input:
         return path
@@ -166,7 +153,7 @@ def resolve_synced_input_config(configured: AwsKakLensSweepConfig) -> AwsKakLens
 
     if configured.input_s3_uri is None:
         return configured
-    sync_s3_to_path(configured.input_s3_uri.rstrip("/"), configured.input_work_dir)
+    sharding.sync_s3_to_path(configured.input_s3_uri.rstrip("/"), configured.input_work_dir)
     return replace(
         configured,
         input_path=_resolved_path(
@@ -275,19 +262,13 @@ def run_shard(configured: AwsKakLensSweepConfig, shard_index: int) -> pd.DataFra
             "shards before interpreting average-complete-ward linkage behavior."
         ),
     }
-    _write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
+    sharding.write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(
+        sharding.sync_path_to_s3(
             spec.output_dir,
             f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}",
         )
     return summary
-
-
-def iter_expected_shard_dirs(output_dir: Path, shard_count: int) -> tuple[Path, ...]:
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    return tuple(output_dir / "shards" / f"shard_{index:04d}" for index in range(shard_count))
 
 
 def load_shard_summary(shard_dir: Path) -> pd.DataFrame:
@@ -305,12 +286,12 @@ def load_shard_summary(shard_dir: Path) -> pd.DataFrame:
 
 def merge_shards(configured: AwsKakLensSweepConfig) -> pd.DataFrame:
     if configured.s3_uri is not None:
-        sync_s3_to_path(
+        sharding.sync_s3_to_path(
             f"{configured.s3_uri.rstrip('/')}/shards",
             configured.output_dir / "shards",
         )
 
-    shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
+    shard_dirs = sharding.iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     summary = pd.concat(
         [load_shard_summary(shard_dir) for shard_dir in shard_dirs],
         ignore_index=True,
@@ -349,9 +330,9 @@ def merge_shards(configured: AwsKakLensSweepConfig) -> pd.DataFrame:
             "alpha behavior. It is not a selected-subspace calibration proof."
         ),
     }
-    _write_json(merged_dir / COMBINED_MANIFEST_NAME, manifest)
+    sharding.write_json(merged_dir / COMBINED_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
+        sharding.sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
     return summary
 
 
@@ -470,7 +451,6 @@ __all__ = [
     "SHARD_MANIFEST_NAME",
     "SUMMARY_NAME",
     "build_groups",
-    "iter_expected_shard_dirs",
     "lens_to_arg",
     "load_shard_summary",
     "make_shard_spec",

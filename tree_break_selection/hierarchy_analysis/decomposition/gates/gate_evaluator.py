@@ -79,7 +79,10 @@ class GateEvaluator:
             self._can_split_by_node = self._compute_can_split_by_node(
                 self._split_prerequisites_by_node
             )
-            self._has_descendant_split = self._compute_has_descendant_split(self._can_split_by_node)
+            self._has_descendant_split = self._compute_has_descendant_split(
+                self._split_prerequisites_by_node,
+                self._can_split_by_node,
+            )
         else:
             self._split_prerequisites_by_node = {}
             self._can_split_by_node = {}
@@ -152,13 +155,24 @@ class GateEvaluator:
 
     def _compute_has_descendant_split(
         self,
+        split_prerequisites_by_node: dict[object, bool],
         can_split_by_node: dict[object, bool],
     ) -> dict[object, bool]:
-        """Return whether each node has a descendant that can split under all gates."""
+        """Return whether traversal can reach a descendant that splits under all gates.
+
+        A deeper split counts only when every node on the path would itself
+        split or pass through; a boundary child hides its subtree.
+        """
         has_split: dict[object, bool] = {}
         for node in bottom_up_nodes(self.tree):
             has_split[node] = any(
-                can_split_by_node[child] or has_split[child] for child in self._children_map[node]
+                can_split_by_node[child]
+                or (
+                    split_prerequisites_by_node[child]
+                    and has_split[child]
+                    and self._passthrough_support_is_open(child)
+                )
+                for child in self._children_map[node]
             )
         return has_split
 

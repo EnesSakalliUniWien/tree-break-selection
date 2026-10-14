@@ -1,0 +1,72 @@
+{
+  "workdir": "/Users/berksakalli/Projects/kl-te-cluster",
+  "versions": {
+    "python": "3.11.12",
+    "uv": "0.9.5",
+    "ruff": "0.15.14",
+    "deptry": "0.25.1",
+    "vulture": "2.16",
+    "rg": "15.2.0"
+  },
+  "versions_verified_against": "Current executables; auditor versions matched uv.lock",
+  "commands": [
+    {
+      "command": "UV_OFFLINE=true uv run --no-sync deptry applications tree_break_selection benchmarks",
+      "exit_code": 0,
+      "stdout_file": "deptry.txt",
+      "result": "480 files; no dependency issues"
+    },
+    {
+      "command": "UV_OFFLINE=true uv run --no-sync vulture applications benchmarks scripts tree_break_selection --min-confidence 90",
+      "exit_code": 0,
+      "stdout_file": "vulture-90.txt",
+      "result": "No findings"
+    },
+    {
+      "command": "UV_OFFLINE=true uv run --no-sync ruff check --no-cache .",
+      "exit_code": 0,
+      "stdout_file": "ruff.txt",
+      "result": "All configured E/F/I checks passed"
+    },
+    {
+      "command": "UV_OFFLINE=true uv run --no-sync vulture applications benchmarks scripts tree_break_selection tests --min-confidence 60",
+      "exit_code": 3,
+      "stdout_file": "vulture-60.txt",
+      "result": "62 candidate lines; include registry, serialized field, pytest hook false positives; not 62 confirmed dead items"
+    },
+    {
+      "command": ".venv/bin/python - < custom AST analysis heredoc",
+      "exit_code": 0,
+      "stdout_file": "ast-summary.txt",
+      "result": "623 Python files parsed; 13 exact function-body groups >=8 body lines; 1 private no-static-reference candidate; 3 top-level name/attribute aliases"
+    }
+  ],
+  "custom_ast_analysis": {
+    "roots": [
+      "applications",
+      "benchmarks",
+      "scripts",
+      "tree_break_selection",
+      "tests"
+    ],
+    "path_discovery": "rg --files applications benchmarks scripts tree_break_selection tests; retain .py",
+    "includes": "Tracked and dirty/untracked non-ignored files",
+    "parser": "stdlib ast.parse; ast.dump(include_attributes=False)",
+    "duplicate_rule": "Non-test top-level functions and direct class methods; strip leading docstring; compare exact function body AST; minimum 8 body source lines; at least 2 different paths; no identifier renaming; signatures not matched",
+    "private_rule": "Module-private top-level function; non-dunder; no AST Name load, Attribute, ImportFrom name, or exact string reference across all 623 files; later manually trace decorators, exports, CLI, tests, dynamic hooks",
+    "alias_rule": "Top-level ast.Assign value Name/Attribute and Name target; does not enumerate every import-as alias, forwarding wrapper, conditional alias, or method id",
+    "limits": "Bounded supplemental static analysis, not installed clone checker, whole-program reachability proof, or exhaustive alias census"
+  },
+  "exclusions": [
+    ".venv",
+    "vendor",
+    "manuscript",
+    "reports and raw provenance for AST duplicate counting",
+    "ignored analysis workspace",
+    "dynamic runtime graphs not executed",
+    "external consumers unavailable",
+    "mirrored test fixtures not counted as production duplicates"
+  ],
+  "modifications": "None to repository; temporary evidence only"
+}
+

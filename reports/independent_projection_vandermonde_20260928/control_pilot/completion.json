@@ -1,0 +1,18 @@
+{
+  "started_utc": "2026-09-28T14:45:20.657174+00:00",
+  "completed_utc": "2026-09-28T14:45:21.537644+00:00",
+  "run_command": "/Users/berksakalli/Projects/kl-te-cluster/.venv/bin/python -m benchmarks.diagnostics.calibration.sibling.independent_projection_control run --output-dir reports/independent_projection_vandermonde_20260928/control_pilot --protocol reports/independent_projection_vandermonde_20260928/control_protocol.md --replicates 10 --base-seed 20260929",
+  "dataset_count": 100,
+  "row_count": 4860,
+  "status_counts": {
+    "ok": 4860
+  },
+  "output_sha256": {
+    "summary.csv": "ab4477b1e26888cb624782e053ef97311c530e7a9c193f3c419a966f288be867",
+    "datasets.csv": "6d55aa8e29d3c9e40203bbf16a59c6b93b8068635b9df1fb2dd5b015aa051101",
+    "paired_outcomes.csv.gz": "6d9bde8ac8cb3856ba6b53b1d8f0c7e7c19e36974e12f9b78163951b92f10785",
+    "paired_summary.csv": "7d0a65da301201b38ce93df64401a076f9a79ee96ec3a3911603f4356ad2a8cf",
+    "frozen_manifest.json": "588b2c2a2ef092d54408cfab7d0743b67eacd75940d523e9157ccf5aabb69aea",
+    "control_rows.csv.gz": "2fe8d51e5dbf935a43c38369e5ab6e85cf587f194fb47e9a908c829ae47b119d"
+  }
+}

@@ -314,7 +314,7 @@ def _run_benchmark_sweep(
             )
             if key in completed:
                 continue
-            row, _computed, _audit = run_single_method_once(
+            row, _computed = run_single_method_once(
                 method_id="tbs",
                 spec=METHOD_SPECS["tbs"],
                 params=params,
@@ -329,7 +329,6 @@ def _run_benchmark_sweep(
                 meta=inputs.metadata,
                 distance_matrix=inputs.distance_matrix,
                 distance_condensed=inputs.distance_condensed,
-                matrix_audit=False,
             )
             row_df = benchmark_rows_to_dataframe([row])
             row_df.to_csv(

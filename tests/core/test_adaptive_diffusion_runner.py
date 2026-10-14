@@ -12,6 +12,7 @@ from benchmarks.shared.runners.tbs_diffusion_runner import (
 from tree_break_selection.space_separation import adaptive_diffusion_geometry
 from tree_break_selection.space_separation.diffusion import (
     _resolve_pydiffmap_neighbor_search_k,
+    compute_diffusion_coordinates,
 )
 from tree_break_selection.tree.feature_space import (
     continuous_feature_space_from_columns,
@@ -19,7 +20,18 @@ from tree_break_selection.tree.feature_space import (
 )
 
 
-def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix():
+def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix(monkeypatch):
+    calls = []
+
+    def record_coordinate_call(weights, **kwargs):
+        coordinates = compute_diffusion_coordinates(weights, **kwargs)
+        calls.append(coordinates.copy())
+        return coordinates
+
+    monkeypatch.setattr(
+        "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates",
+        record_coordinate_call,
+    )
     rng = np.random.default_rng(42)
     data = pd.DataFrame(
         rng.integers(0, 2, size=(12, 18)),
@@ -42,6 +54,15 @@ def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix():
     assert geometry.coordinates.shape == (12, 5)
     assert np.isfinite(geometry.distance_condensed).all()
     assert geometry.metadata["backend"] == "pydiffmap"
+    assert geometry.metadata["kernel_backend"] == "pydiffmap"
+    assert geometry.metadata["coordinate_implementation"] == (
+        "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates"
+    )
+    assert geometry.metadata["coordinate_operator"] == "symmetric_normalized_operator"
+    assert geometry.metadata["coordinate_operator_definition"] == "D^(-1/2) W D^(-1/2)"
+    assert geometry.metadata["coordinate_eigensolver"] == "scipy.linalg.eigh"
+    assert len(calls) == 1
+    np.testing.assert_array_equal(geometry.coordinates, calls[0])
     assert 2 <= geometry.metadata["neighbor_search_k"] < data.shape[0]
     assert geometry.metadata["epsilon"] > 0
 

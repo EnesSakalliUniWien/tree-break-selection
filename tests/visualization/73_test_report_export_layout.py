@@ -17,7 +17,7 @@ def _record() -> ComputedResultRecord:
         test_case_num=1,
         method="tbs",
         method_name="TBS Tree",
-        params={"tree_distance_metric": "tree_distribution_kl"},
+        params={"tree_distance_metric": "hamming"},
         ari=1.0,
         nmi=1.0,
         purity=1.0,

@@ -40,9 +40,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import fisher_exact
-
-from applications.endotypes._shared import benjamini_hochberg as _bh_correct
+from scipy.stats import false_discovery_control, fisher_exact
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Constants
@@ -171,7 +169,7 @@ def _cluster_has_enrichment(
     if not pvals:
         return False, 0, 1.0
 
-    qvals = _bh_correct(np.array(pvals))
+    qvals = false_discovery_control(np.array(pvals), method="bh")
     n_sig = int((qvals < q_threshold).sum())
     return n_sig > 0, n_sig, float(qvals.min())
 

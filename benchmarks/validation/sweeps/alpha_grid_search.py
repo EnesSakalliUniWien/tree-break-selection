@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -23,6 +21,7 @@ import pandas as pd
 
 from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
 from benchmarks.shared.pipeline import benchmark_cluster_algorithm
+from benchmarks.shared.util.provenance import current_git_state
 
 SCHEMA_VERSION = "alpha_grid_search/v1"
 GENERATED_BY = "benchmarks.validation.sweeps.alpha_grid_search"
@@ -229,34 +228,6 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     )
     return {"summary": summary_df, "manifest": manifest}
-
-
-def current_git_state() -> dict[str, object]:
-    """Return git provenance without hiding command failures."""
-    state: dict[str, object] = {
-        "build_commit": os.environ.get("TBS_GIT_COMMIT", "unknown"),
-        "build_branch": os.environ.get("TBS_GIT_BRANCH", "unknown"),
-        "build_dirty": os.environ.get("TBS_GIT_DIRTY", "unknown"),
-    }
-    commands = {
-        "commit": ("git", "rev-parse", "HEAD"),
-        "branch": ("git", "branch", "--show-current"),
-        "status_short": ("git", "status", "--short"),
-    }
-    for key, command in commands.items():
-        try:
-            completed = subprocess.run(command, capture_output=True, text=True)
-        except OSError as exc:
-            state[key] = f"unavailable:{exc}"
-            continue
-        if completed.returncode != 0:
-            state[key] = {
-                "returncode": completed.returncode,
-                "stderr": completed.stderr.strip(),
-            }
-        else:
-            state[key] = completed.stdout.strip()
-    return state
 
 
 def _parse_case_names(raw_case_names: str | None) -> tuple[str, ...]:

@@ -26,7 +26,7 @@ import pandas as pd
 import requests
 from scipy import sparse
 
-from applications.scrna._shared import json_default, top_counts_text
+from applications.scrna._shared import add_generated_at, json_default, top_counts_text
 
 DEFAULT_OUTPUT_DIR = (
     Path(__file__).resolve().parents[3]
@@ -274,18 +274,6 @@ def depth_from_root(node: str, parent_of: dict[str, str]) -> int:
         depth += 1
         node = parent_of[node]
     return depth
-
-
-def add_generated_at(fig: plt.Figure, generated_at: str) -> None:
-    fig.text(
-        0.99,
-        0.01,
-        f"Generated at: {generated_at}",
-        ha="right",
-        va="bottom",
-        fontsize=7,
-        color="#6b7280",
-    )
 
 
 def save_timestamped_figure(

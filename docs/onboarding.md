@@ -50,7 +50,7 @@ short: follow it before opening deep implementation directories.
 | Tree structure and feature-space data contracts | `tree_break_selection/tree/` |
 | Decomposition traversal and gate orchestration | `tree_break_selection/hierarchy_analysis/` |
 | Statistical kernels, projection, inflation, and FDR | `tree_break_selection/hierarchy_analysis/statistics/` |
-| Invariant/equivariant and adaptive-cosine separation | `tree_break_selection/space_separation/` |
+| Leading-axis and adaptive-cosine separation | `tree_break_selection/space_separation/` |
 | Reusable plotting engines | `tree_break_selection/plot/` |
 | Full, smoke, and regression benchmark execution | `benchmarks/full/`, `benchmarks/smoke/`, `benchmarks/regression/` |
 | Standalone benchmark experiments | `benchmarks/experiments/` |
@@ -65,7 +65,8 @@ short: follow it before opening deep implementation directories.
 | Durable project memory and open questions | `wiki/` |
 | Paper draft and derivation notes | `manuscript/` |
 | Manuscript-specific figure generators | `manuscript/tools/figures/` |
-| Local-only/generated work | `local_data/`, root `analysis/`, `benchmarks/results/`, `reports/` |
+| Local-only/generated work | `local_data/`, root `analysis/`, `benchmarks/results/`, `reports/<study>/generated/` |
+| Retained reports and generated-file classifications | `reports/`, `reports/artifacts.json`, `docs/generated-files.md` |
 
 ## Do Not Start Here
 

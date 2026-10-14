@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.overlap.overlap_context_negative_bayesian_topology_law import (
+    _rank_bounds,
     beta_log_likelihood_ratio,
 )
 from benchmarks.diagnostics.calibration.values import finite_float
@@ -1099,17 +1100,6 @@ def build_conditional_topology_law_rows(
         out.loc[position, "conditional_rank"] = int(ranked.loc[idx])
         out.loc[position, "conditional_probability"] = float(probabilities.loc[idx])
     return out
-
-
-def _rank_bounds(values: pd.Series, roles: pd.Series) -> tuple[int, int, int]:
-    truth = roles.eq("truth_recovery")
-    if not bool(truth.any()):
-        return 0, 0, 0
-    ranks = values.rank(method="first", ascending=False).astype(int)
-    truth_ranks = ranks[truth]
-    truth_min = float(values[truth].min())
-    negative_above = int((values[~truth] > truth_min).sum())
-    return int(truth_ranks.min()), int(truth_ranks.max()), negative_above
 
 
 def summarize_conditional_topology_components(rows: pd.DataFrame) -> pd.DataFrame:

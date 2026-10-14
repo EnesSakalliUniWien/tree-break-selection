@@ -72,6 +72,17 @@ def test_populate_node_divergences_requires_explicit_leaf_flags():
         G.populate_node_divergences(leaf_data)
 
 
+def test_populate_node_divergences_rejects_duplicate_sample_labels():
+    leaf_data = pd.DataFrame([[1, 0], [0, 1], [1, 1]], index=["S1", "S1", "S2"])
+    G = tree_from_linkage(
+        np.array([[0, 1, 1.0, 2], [2, 3, 2.0, 3]]),
+        leaf_names=leaf_data.index.tolist(),
+    )
+
+    with pytest.raises(ValueError, match="duplicated labels: \\['S1'\\]"):
+        G.populate_node_divergences(leaf_data)
+
+
 def test_compute_ultrametric_branch_lengths_requires_merge_distances():
     children = np.array([[0, 1]], dtype=int)
 
@@ -130,3 +141,15 @@ def test_from_scipy_linkage_binary_data():
     assert nx.is_tree(G.to_undirected())
 
     _assert_laminar_and_inner_nodes_consistent(G)
+
+
+def test_tree_root_prefers_cached_root_and_rejects_forests():
+    from tree_break_selection.core_utils.tree_utils import tree_root
+
+    forest = nx.DiGraph([("a", "b"), ("c", "d")])
+    with pytest.raises(ValueError, match="Expected one root"):
+        tree_root(forest)
+
+    forest.graph["root"] = "a"
+    assert tree_root(forest) == "a"
+    assert tree_root(nx.DiGraph([("r", "x"), ("r", "y")])) == "r"

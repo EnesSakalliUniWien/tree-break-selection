@@ -74,3 +74,16 @@ def test_lookup_finds_core_method_elements() -> None:
     for query, expected_path in expected.items():
         hits = _lookup(query)
         assert expected_path in hits[:5], f"{query!r} returned {hits[:10]}"
+
+
+def test_wiki_lint_counts_only_h1_headings_outside_code_fences() -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("wiki_lint", ROOT / "scripts/wiki/lint.py")
+    lint = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lint)
+
+    assert lint.h1_count("# Title\n\n## Section\n") == 1
+    assert lint.h1_count("# Title\n```bash\n# a shell comment\n```\n") == 1
+    assert lint.h1_count("# One\n# Two\n") == 2
+    assert lint.h1_count("## Only a section\n") == 0

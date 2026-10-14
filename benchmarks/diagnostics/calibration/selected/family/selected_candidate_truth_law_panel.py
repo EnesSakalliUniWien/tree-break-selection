@@ -28,7 +28,7 @@ from benchmarks.diagnostics.calibration.selected.family.selected_pass_through_br
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -739,14 +739,6 @@ def _negative_log10(value: object) -> float:
     return float(-math.log10(max(number, np.finfo(float).tiny)))
 
 
-def _bool_value(value: object) -> bool:
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes"}
-    if pd.isna(value):
-        return False
-    return bool(value)
-
-
 def _optional_finite(row: pd.Series, column: str) -> float:
     return finite_float(row[column]) if column in row.index else math.nan
 
@@ -1266,7 +1258,7 @@ def _classify_own_split(
         return "own_split_unavailable"
     ari = finite_float(metrics.get("own_split_ari"))
     purity = finite_float(metrics.get("own_split_child_mean_purity"))
-    distinct = _bool_value(metrics.get("own_split_child_majority_distinct"))
+    distinct = bool_value(metrics.get("own_split_child_majority_distinct"))
     if not math.isfinite(ari) or not math.isfinite(purity):
         return "own_split_unavailable"
     if distinct and ari >= branch_ari_floor and purity >= child_purity_floor:
@@ -1396,9 +1388,9 @@ def build_selected_candidate_truth_law_rows(
                 "right_traversal_state": str(row["right_traversal_state"]),
                 "left_traversal_decision": str(row["left_traversal_decision"]),
                 "right_traversal_decision": str(row["right_traversal_decision"]),
-                "left_sibling_open": _bool_value(row["left_sibling_open"]),
-                "right_sibling_open": _bool_value(row["right_sibling_open"]),
-                "right_explicit_guard_blocked": _bool_value(row["right_explicit_guard_blocked"]),
+                "left_sibling_open": bool_value(row["left_sibling_open"]),
+                "right_sibling_open": bool_value(row["right_sibling_open"]),
+                "right_explicit_guard_blocked": bool_value(row["right_explicit_guard_blocked"]),
                 **context_metrics,
                 **metrics,
                 "own_split_truth_class": truth_class,
@@ -1721,7 +1713,7 @@ def _candidate_ambiguity_bucket(row: pd.Series) -> str:
 def _candidate_stop_rule_pattern(row: pd.Series) -> str:
     left_state = str(row["left_traversal_state"])
     right_decision = str(row["right_traversal_decision"])
-    right_blocked = _bool_value(row["right_explicit_guard_blocked"])
+    right_blocked = bool_value(row["right_explicit_guard_blocked"])
     left_descendant_splits = _optional_int(
         row,
         "left_descendant_accepted_split_count",

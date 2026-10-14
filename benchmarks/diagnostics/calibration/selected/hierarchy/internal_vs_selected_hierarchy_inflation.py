@@ -51,10 +51,11 @@ from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_nu
     SiblingRecordSample,
     _choose_observed_target,
     _run_edge_and_sibling_records,
+    _selected_cases,
     _selected_hierarchy_summary,
     _simulate_null_data,
 )
-from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
 
@@ -79,18 +80,6 @@ class ObservedSiblingTarget:
     tree_distance_metric: str
     tree_distance_source: str
     feature_family: str
-
-
-def _parse_csv_list(raw: str) -> list[str]:
-    return [part.strip() for part in raw.split(",") if part.strip()]
-
-
-def _selected_cases(case_names: list[str]) -> list[dict[str, object]]:
-    case_by_name = {str(case["name"]): case for case in get_default_test_cases()}
-    missing = [case_name for case_name in case_names if case_name not in case_by_name]
-    if missing:
-        raise ValueError(f"Unknown benchmark case name(s): {missing!r}.")
-    return [case_by_name[case_name].copy() for case_name in case_names]
 
 
 def required_inflation_to_block(record: SiblingPairRecord, *, alpha: float) -> float:
@@ -492,7 +481,7 @@ def main() -> None:
             / f"internal_vs_selected_hierarchy_inflation_{format_timestamp_utc()}"
         )
     summary = run_internal_vs_selected_hierarchy_inflation_study(
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         output_dir=output_dir,
         n_replicates=int(args.n_replicates),
         seed=int(args.seed),

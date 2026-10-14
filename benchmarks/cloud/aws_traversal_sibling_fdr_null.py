@@ -4,13 +4,20 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
 import pandas as pd
 
+from benchmarks.cloud.sharding import (
+    iter_expected_shard_dirs,
+    sync_path_to_s3,
+    sync_s3_to_path,
+    validate_replicate_coverage,
+    validate_shard_contract,
+    write_json,
+)
 from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
 from benchmarks.validation.statistics.traversal_sibling_fdr_null import (
     SIMULATION_OUTPUT_NAME,
@@ -54,17 +61,6 @@ class TraversalSiblingFdrShardSpec:
     replicate_indices: tuple[int, ...]
 
 
-def validate_shard_contract(*, shard_index: int, shard_count: int) -> None:
-    """Validate shard dimensions before launching compute."""
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    if not 0 <= shard_index < shard_count:
-        raise ValueError(
-            f"shard_index must satisfy 0 <= index < shard_count; got "
-            f"{shard_index!r} with shard_count={shard_count!r}."
-        )
-
-
 def make_shard_spec(
     configured: AwsTraversalSiblingFdrConfig,
     shard_index: int,
@@ -87,21 +83,6 @@ def make_shard_spec(
         output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
         replicate_indices=replicate_indices,
     )
-
-
-def sync_path_to_s3(local_path: Path, s3_uri: str) -> None:
-    """Sync a local output directory to S3 with the AWS CLI."""
-    subprocess.run(("aws", "s3", "sync", str(local_path), s3_uri), check=True)
-
-
-def sync_s3_to_path(s3_uri: str, local_path: Path) -> None:
-    """Sync S3 outputs into the local filesystem."""
-    local_path.mkdir(parents=True, exist_ok=True)
-    subprocess.run(("aws", "s3", "sync", s3_uri, str(local_path)), check=True)
-
-
-def _write_json(path: Path, payload: dict[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 def _validation_config(configured: AwsTraversalSiblingFdrConfig) -> TraversalSiblingFdrConfig:
@@ -142,20 +123,13 @@ def run_shard(configured: AwsTraversalSiblingFdrConfig, shard_index: int) -> dic
         "source_manifest": source_manifest,
         "note": "Shard output is diagnostic evidence only; merge before interpretation.",
     }
-    _write_json(spec.output_dir / SHARD_MANIFEST_NAME, shard_manifest)
+    write_json(spec.output_dir / SHARD_MANIFEST_NAME, shard_manifest)
     if configured.s3_uri is not None:
         sync_path_to_s3(
             spec.output_dir,
             f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}",
         )
     return shard_manifest
-
-
-def iter_expected_shard_dirs(output_dir: Path, shard_count: int) -> tuple[Path, ...]:
-    """Return canonical shard directories for a completed array job."""
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    return tuple(output_dir / "shards" / f"shard_{index:04d}" for index in range(shard_count))
 
 
 def _load_shard_manifest(shard_dir: Path) -> dict[str, object]:
@@ -170,22 +144,6 @@ def _load_shard_table(shard_dir: Path, filename: str) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Missing traversal sibling FDR shard table: {path}")
     return pd.read_csv(path)
-
-
-def _validate_replicate_coverage(
-    manifests: list[dict[str, object]],
-    *,
-    expected_replicates: int,
-) -> None:
-    observed: list[int] = []
-    for manifest in manifests:
-        observed.extend(int(index) for index in manifest["replicate_indices"])
-    duplicated = sorted(index for index in set(observed) if observed.count(index) > 1)
-    if duplicated:
-        raise ValueError(f"Duplicate replicate index assignment after merge: {duplicated!r}")
-    missing = sorted(set(range(expected_replicates)) - set(observed))
-    if missing:
-        raise ValueError(f"Missing replicate index assignment after merge: {missing!r}")
 
 
 def _validate_simulation_coverage(
@@ -255,7 +213,7 @@ def merge_shards(configured: AwsTraversalSiblingFdrConfig) -> dict[str, pd.DataF
         )
     shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     manifests = [_load_shard_manifest(shard_dir) for shard_dir in shard_dirs]
-    _validate_replicate_coverage(manifests, expected_replicates=configured.replicates)
+    validate_replicate_coverage(manifests, expected_replicates=configured.replicates)
     simulations = pd.concat(
         [_load_shard_table(shard_dir, SIMULATION_OUTPUT_NAME) for shard_dir in shard_dirs],
         ignore_index=True,
@@ -283,7 +241,7 @@ def merge_shards(configured: AwsTraversalSiblingFdrConfig) -> dict[str, pd.DataF
         "source_shard_dirs": [str(path) for path in shard_dirs],
         "note": "Merged traversal sibling FDR null diagnostic evidence only.",
     }
-    _write_json(merged_dir / COMBINED_MANIFEST_NAME, combined_manifest)
+    write_json(merged_dir / COMBINED_MANIFEST_NAME, combined_manifest)
     if configured.s3_uri is not None:
         sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
     return {"simulations": simulations, "summary": summary}

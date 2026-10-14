@@ -106,45 +106,6 @@ def test_run_clustering_result_builds_continuous_standardized_euclidean_distance
     )
 
 
-def test_run_clustering_result_dispatches_iqtree_without_condensed_distance(monkeypatch):
-    captured = {}
-    capture_runner = _capturing_runner(captured)
-
-    monkeypatch.setitem(
-        METHOD_SPECS,
-        "tbs_iqtree3",
-        MethodSpec(
-            name="TBS (IQ-TREE 3, MAD Root)",
-            runner=capture_runner,
-            param_grid=[
-                {
-                    "tree_distance_metric": "hamming",
-                    "tree_linkage_method": "average",
-                    "tree_builder": "iqtree3",
-                    "tree_rooting": "mad",
-                }
-            ],
-        ),
-    )
-
-    run_clustering_result(
-        data_df=_toy_dataframe(),
-        method_id="tbs_iqtree3",
-        params={
-            "tree_distance_metric": "hamming",
-            "tree_linkage_method": "average",
-            "tree_builder": "iqtree3",
-            "tree_rooting": "mad",
-        },
-        seed=42,
-        distance_condensed=pdist(_toy_dataframe().values, metric="euclidean"),
-    )
-
-    assert captured["args"][1] is None
-    assert captured["kwargs"]["tree_builder"] == "iqtree3"
-    assert captured["kwargs"]["tree_rooting"] == "mad"
-
-
 def test_run_clustering_result_uses_provided_graph_distance_matrix():
     df = _toy_dataframe()
     dist_condensed = pdist(df.values, metric="euclidean")
@@ -173,7 +134,7 @@ def test_run_clustering_result_gives_distance_tree_nnls_methods_their_own_geomet
 ):
     """Distance-tree NNLS methods must get their own constructor that supplies
     branch_length_data_df explicitly, mirroring tbs_diffusion_graphtools_nnls,
-    rather than falling through the generic TBS_RUNNER_METHODS dispatch branch
+    rather than falling through the generic TBS_DISTANCE_TREE_METHODS dispatch branch
     that never wires branch_length_data_df through."""
     captured = {}
     capture_runner = _capturing_runner(captured, include_args=False)

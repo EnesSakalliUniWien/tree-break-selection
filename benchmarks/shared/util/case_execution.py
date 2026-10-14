@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import multiprocessing as mp
 import os
+import time
+from queue import Empty
 
 import pandas as pd
 from tree_break_selection.plot.backend import configure_matplotlib_backend
@@ -49,7 +51,6 @@ def _run_case_worker(
             plot_manifold=case_plot_manifold,
             concat_plots_pdf=enable_plots,
             concat_output=pdf_path,
-            matrix_audit=False,
             include_cover_pages=False,
             include_validation_page=include_validation_page,
             tree_consensus_label_dir=tree_consensus_label_dir,
@@ -94,18 +95,31 @@ def run_case_isolated(
         ),
     )
     proc.start()
-    proc.join(timeout=timeout_sec)
 
+    # Read before join: a child with a large payload cannot exit until the queue is drained.
+    deadline = time.monotonic() + timeout_sec
+    payload = None
+    while payload is None:
+        try:
+            payload = queue.get(timeout=1.0)
+        except Empty:
+            if not proc.is_alive():
+                try:
+                    payload = queue.get(timeout=1.0)
+                except Empty:
+                    break
+            elif time.monotonic() > deadline:
+                proc.terminate()
+                proc.join()
+                raise RuntimeError(
+                    f"Case subprocess timed out after {timeout_sec}s "
+                    "(likely plotting memory pressure)."
+                ) from None
+    # A child that lingers after sending its result is stopped at the deadline.
+    proc.join(timeout=max(deadline - time.monotonic(), 1.0))
     if proc.is_alive():
         proc.terminate()
         proc.join()
-        raise RuntimeError(
-            f"Case subprocess timed out after {timeout_sec}s (likely plotting memory pressure)."
-        )
-
-    payload = None
-    if not queue.empty():
-        payload = queue.get()
 
     if proc.exitcode != 0 and payload is None:
         raise RuntimeError(f"Case subprocess exited with code {proc.exitcode}.")
@@ -158,7 +172,6 @@ def run_case_with_optional_isolation(
         plot_manifold=case_plot_manifold,
         concat_plots_pdf=enable_plots,
         concat_output=pdf_path,
-        matrix_audit=False,  # Disable heavy TensorBoard exports to prevent memory crashes
         include_cover_pages=False,
         include_validation_page=include_validation_page,
         tree_consensus_label_dir=tree_consensus_label_dir,
