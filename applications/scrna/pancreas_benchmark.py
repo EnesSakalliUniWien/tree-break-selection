@@ -783,14 +783,6 @@ def _write_tbs_tree_diagnostics(
             for column in EDGE_GATE_COLUMNS:
                 if column in annotations_df.columns:
                     row[column] = annotations_df.loc[child, column]
-            for column in annotations_df.columns:
-                if (
-                    column == "Distributional_Action"
-                    or column.startswith("Distributional_Action_")
-                    or column == "Distributional_Split_Action"
-                    or column.startswith("Distributional_Split_Action_")
-                ):
-                    row[column] = annotations_df.loc[child, column]
         rows.append(row)
 
     edge_df = pd.DataFrame(rows)

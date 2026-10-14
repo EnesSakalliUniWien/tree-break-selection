@@ -7806,3 +7806,26 @@ version comparison report and wiki source summary. Production code unchanged.
   `raw/inbox` notes so a commit carries the pages that `wiki/index.md` links to.
   A tracked-files-only copy now gives the same wiki-lint result as the last
   commit: no dangling wikilinks, and the same 324 missing local-output sources.
+
+## 2026-10-14 — Hygiene removals after the repository audit
+
+- Removed the second `is_leaf` rule from the spectral tree helpers; the
+  spectral estimator now uses `tree_break_selection.tree.topology.is_leaf`,
+  which reads the explicit node flag.
+- Removed the unreachable 3D-UMAP benchmark plot chain (`plot_umap_3d` was
+  never enabled) and the `TBS_EMBEDDING_BACKEND_3D` variable only it read.
+- Removed `benchmarks/diagnostics/analysis/distributional_action.py`, which no
+  code invoked, together with the scRNA edge-export loop that copied the
+  columns only it wrote; [[scrna-distributional-action-audit-20260624]] records
+  the removal.
+- Removed three tests that could not fail or tested a feature that does not
+  exist, and the orphan `skills-lock.json`.
+- Removed BranchArchitect entirely: the `vendor/BranchArchitect` submodule,
+  the `brancharchitect` extra (biopython, orjson), and
+  `benchmarks/validation/tree/brancharchitect_tree_comparison.py`. The
+  retained 2026-07-09 comparison report under `reports/` is unchanged.
+- Also changed: five diagnostics read boolean cells through `bool_series`/
+  `bool_value`; the selected-hierarchy null audit picks the root target by
+  `parent_depth == 0`; the manifold plot raises instead of falling back to
+  PCA; `plotly` moved to the `viz` extra and the unused `diffusion` and
+  `trajectory` extras are gone. `CHANGELOG.md` lists every item.

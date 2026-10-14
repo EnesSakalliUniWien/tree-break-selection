@@ -2,7 +2,7 @@
 title: Tree Construction Method Map
 type: analysis
 status: reviewed
-updated: 2026-10-13
+updated: 2026-10-14
 sources:
   - tree_break_selection/tree/README.md
   - tree_break_selection/tree/construction/build.py
@@ -194,8 +194,8 @@ modules or aliases remain at the old paths.
   passthrough rules, and traversal settings consume a tree after construction.
 - `benchmarks/shared/tree_consensus.py` ranks and selects among eight completed
   candidate clusterings. It does not merge them into a consensus topology.
-- BranchArchitect consumes exported Newick trees for RF-distance and optional
-  interpolation diagnostics. It is not a production topology estimator here.
+- The BranchArchitect comparison adapter, its submodule and its extra were
+  removed on 2026-10-14; the retained 2026-07-09 report keeps the RF evidence.
 - Plotting engines either consume saved trees or reconstruct a known selected
   linkage for display; they do not define a new inference route.
 

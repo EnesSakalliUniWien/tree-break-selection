@@ -547,9 +547,9 @@ renamed, or promoted.
   and can only inflate test variance. The primary repair is therefore a
   feature-family-aware graph metric plus aligned branch target and fit gate,
   not a stronger linkage method or unconditional branch-time use.
-  BranchArchitect is now reproducibly pinned as a git submodule with an
-  isolated optional runtime extra; this MIT-licensed comparison layer does not
-  change the experimental status of the GPL graphtools backend.
+  BranchArchitect was pinned as a git submodule with an isolated optional
+  runtime extra until 2026-10-14, when the submodule, the extra and the
+  comparison benchmark were removed.
 - [[adaptive-nnls-regression-skip-analysis-20260628]] - focused analysis of
   the adaptive NNLS benchmark regressions and skips across ARI, NMI, AMI,
   V-measure, macro F1, cluster-count errors, fragmentation, and unsupervised
@@ -691,7 +691,7 @@ renamed, or promoted.
 - [[tree-construction-method-map]] - exact map from feature geometry through
   linkage topology, rooting, `PosetTree`
   promotion, branch-length fitting, and application-specific use; also marks
-  consensus, gates, plotting, and BranchArchitect as downstream consumers.
+  consensus, gates, and plotting as downstream consumers.
 - [[adaptive-alpha-gate-design-20260628]] - adaptive-resolution design for TBS
   alpha gates, keeping edge alpha conservative while using a no-perturbation
   sibling-alpha ladder, test-context guards, and explicit

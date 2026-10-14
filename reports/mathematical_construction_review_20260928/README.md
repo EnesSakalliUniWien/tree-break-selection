@@ -143,7 +143,7 @@ The common cause is incomplete propagation of behavior changes among README sect
 
 | Candidate | Reachability evidence | Assessment |
 |---|---|---|
-| [Diagnostic distributional-action enrichment](/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/analysis/distributional_action.py:23) | No incoming static import, symbol call, registry entry, CLI or test found; wiki advertises an opt-in helper | Unused internally; decide public retention before deletion |
+| Diagnostic distributional-action enrichment (`benchmarks/diagnostics/analysis/distributional_action.py`, removed 2026-10-14) | No incoming static import, symbol call, registry entry, CLI or test found; wiki advertises an opt-in helper | Unused internally; removed 2026-10-14 |
 | `selected_gaussian_radial.py`, `selected_gaussian_hierarchy.py`, `selected_gaussian_diffusion.py` | Focused tests, mutual imports, explicit non-production status | Intentional tested prototypes |
 | `bootstrap_consensus.py` | Documented public API and focused tests; no application/benchmark consumer found | Optional API, not proven dead |
 | `invariant_equivariant.py`, core `distributional_action.py` | Application and test consumers | Live |

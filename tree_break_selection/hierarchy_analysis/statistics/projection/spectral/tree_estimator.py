@@ -40,13 +40,13 @@ from tree_break_selection.tree.feature_space import (
     resolve_feature_space,
     validate_feature_matrix,
 )
+from tree_break_selection.tree.topology import is_leaf
 
 from .marchenko_pastur import _get_n_jobs, _process_node
 from .node_spectral_result import NodeSpectralResult
 from .node_spectral_task import NodeSpectralTask
 from .spectral_decomposition_result import SpectralDecompositionResult
 from .tree_helpers import (
-    is_leaf,
     precompute_descendant_internal_nodes,
     precompute_descendants,
 )

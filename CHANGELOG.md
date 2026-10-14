@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [Unreleased] - 2026-10-13
+## [Unreleased] - 2026-10-14
 
 ### Changed
 - Pass-through traversal counts a deeper split only when every node on the path would split or pass through. Runs with pass-through enabled (the default) can return fewer clusters than before.
@@ -17,8 +17,18 @@ All notable changes to this project are documented in this file.
 - `run_single_method_once` returns `(row, computed)`; `TreeBuildResult.linkage_matrix` and the distance diagnostics are always present.
 - The wiki lint requires exactly one H1 outside code fences.
 - `make check` runs the new `generated-files-check`. The 36 large report outputs are archived outside the repository and git-ignored by exact path; the four run logs stay local-only.
+- `plotly` moved from the core dependencies to the `viz` extra.
+- Benchmark diagnostics read boolean cells through `bool_series`/`bool_value` only (`root_split`, `false_split`, guard flags, `required_for_production`, edge flags); `1.0`, `t` and `y` now count as true everywhere.
+- The selected-hierarchy null audit picks the root target by `parent_depth == 0` and non-root targets by `parent_depth > 0`; a case whose root record is not selected raises instead of substituting the largest open parent.
+- The manifold comparison plot raises `ImportError` when `umap` is missing instead of plotting PCA under a UMAP label.
 
 ### Removed
+- The `diffusion`, `trajectory` and `brancharchitect` extras with deeptime, PyGSP, PHATE, kaleido, biopython and orjson; none was imported.
+- BranchArchitect: the `vendor/BranchArchitect` submodule, `.gitmodules`, and `benchmarks/validation/tree/brancharchitect_tree_comparison.py`. Existing clones should delete the leftover `vendor/BranchArchitect` folder and `.git/modules/vendor`.
+- The unreachable 3D-UMAP plot chain (`plot_umap_3d`, `create_umap_3d_plots_from_results`, `create_clustering_comparison_plot_3d`, `concat_umap_3d_plots`, the `umap3d` category) and the `TBS_EMBEDDING_BACKEND_3D` variable only it read.
+- `benchmarks/diagnostics/analysis/distributional_action.py` and the scRNA edge-export loop that copied the `Distributional_*` columns only it wrote.
+- The second `is_leaf` (`projection.spectral.tree_helpers.is_leaf`, re-exported as `projection.is_leaf`); the spectral estimator uses `tree.topology.is_leaf`.
+- Three tests that could not fail on their own (the near-threshold decomposer test and two `REPO_ROOT` checks) and the orphan `skills-lock.json`.
 - IQ-TREE 3 tree building (`iqtree3_tree_from_alignment`, `tbs_iqtree3`, `iqtree_*` parameters).
 - Neighbor joining and MAD rooting (`tree/construction/phylogenetic.py`, `tbs_neighbor_joining`, the adaptive-K neighbor-joining cell), and `SUPPORTED_TREE_BUILDERS`, `TreeBuilderName`, `LINKAGE_TREE_BUILDER` and `DEFAULT_LINKAGE_TREE_ROOTING`.
 - Unused modules: `hierarchy_analysis/bootstrap_consensus.py`, `multiple_testing/stopping_edge_recovery/`, and `sibling_divergence/neighborhood_bandwidth/`.

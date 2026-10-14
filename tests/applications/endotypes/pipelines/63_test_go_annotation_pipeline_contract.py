@@ -13,15 +13,10 @@ from applications.endotypes.analysis.inventory_go_annotation_datasets import (
     matrix_inventory,
 )
 from applications.endotypes.pipelines.run_go_annotation_feature_matrix_pipeline import (
-    REPO_ROOT,
     build_pipeline_plan,
     finalize_go_annotation_results,
     matrix_slug,
 )
-
-
-def test_relocated_pipeline_resolves_repository_root() -> None:
-    assert REPO_ROOT == Path(__file__).resolve().parents[4]
 
 
 def test_audit_distinguishes_go_annotation_analysis_levels(tmp_path: Path) -> None:

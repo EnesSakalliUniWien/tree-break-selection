@@ -2,7 +2,7 @@
 title: Barycentric Split Action Formula 2026-06-24
 type: analysis
 status: draft
-updated: 2026-08-08
+updated: 2026-10-14
 sources:
   - tree_break_selection/hierarchy_analysis/statistics/distributional_action.py
   - tests/statistics/47_test_distributional_action_contract.py
@@ -116,9 +116,10 @@ total inertia is \(131\). This matches \(2+8+121\).
 - `tree_break_selection/hierarchy_analysis/statistics/distributional_action.py`
   now exposes `split_distributional_action_summary`, which computes
   \(\sum_i m_i\lVert\mu_i-\mu_p\rVert^2\) from child masses and child means.
-- `applications/scrna/pancreas_benchmark.py` copies
+- `applications/scrna/pancreas_benchmark.py` copied
   `Distributional_Split_Action_*` annotation columns into tree-edge CSV outputs
-  as diagnostics; non-`none` split-action filtering is rejected until calibrated
+  until 2026-10-14, when the unused enrichment helper that wrote them was
+  removed; non-`none` split-action filtering is rejected until calibrated
   against the projected-Wald edge/sibling gates.
 ## Links
 

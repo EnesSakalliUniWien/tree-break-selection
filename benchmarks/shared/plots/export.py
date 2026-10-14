@@ -21,10 +21,7 @@ from benchmarks.shared.util.pdf.layout import (
     set_pdf_page_size,
 )
 
-from .embedding import (
-    create_clustering_comparison_plot_3d,
-    create_clustering_comparison_plots,
-)
+from .embedding import create_clustering_comparison_plots
 
 logger = logging.getLogger(__name__)
 
@@ -318,67 +315,6 @@ def create_case_report_pages_from_results(
     return figs
 
 
-def create_umap_3d_plots_from_results(
-    test_results: list[ComputedResultRecord],
-    output_dir: Path,
-    timestamp: str | None = None,
-    verbose: bool = True,
-    save: bool = True,
-    collect: bool = False,
-    collected: list | None = None,
-    *,
-    pdf: PdfPages | None = None,
-) -> list:
-    figs: list = collected if collected is not None else []
-    if save:
-        output_dir.mkdir(exist_ok=True)
-
-    for result in test_results:
-        if result.labels is None:
-            continue
-
-        i = result.test_case_num
-        method_name = result.method_name
-        params = result.params
-        param_str_display = format_params_for_display(params)
-        metrics_text = _format_ari_nmi(result)
-
-        method_name_safe = method_name.replace(" ", "_")
-        param_str_safe = _format_params_for_filename(params)
-        filename = (
-            f"umap3d_case_{i}_{method_name_safe}_{param_str_safe}_{timestamp}.png"
-            if timestamp
-            else f"umap3d_case_{i}_{method_name_safe}_{param_str_safe}.png"
-        )
-
-        title = f"3D UMAP - {method_name} ({param_str_display})\nTest Case {i}"
-        if metrics_text:
-            title = f"{title}\n{metrics_text}"
-
-        if verbose:
-            print(f"  Creating 3D UMAP plot for {filename}...")
-        fig = create_clustering_comparison_plot_3d(
-            result.x_original,
-            result.y_true,
-            np.asarray(result.labels),
-            test_case_num=i,
-            meta=result.meta,
-            title=title,
-        )
-        _save_or_collect_figure(
-            fig,
-            pdf=pdf,
-            save=save,
-            collect=collect,
-            figs=figs,
-            output_path=(output_dir / filename) if save else None,
-            test_case_num=i,
-        )
-        if not collect:
-            plt.close("all")
-    return figs
-
-
 def create_manifold_plots_from_results(
     test_results: list[ComputedResultRecord],
     output_dir: Path,
@@ -497,7 +433,6 @@ def create_tree_plots_from_results(
 
 __all__ = [
     "create_case_report_pages_from_results",
-    "create_umap_3d_plots_from_results",
     "create_manifold_plots_from_results",
     "create_tree_plots_from_results",
     "DEFAULT_BENCHMARK_TREE_LAYOUT",

@@ -2,10 +2,9 @@
 title: scRNA Distributional Action Audit 2026-06-24
 type: analysis
 status: draft
-updated: 2026-08-10
+updated: 2026-10-14
 sources:
   - tree_break_selection/hierarchy_analysis/statistics/distributional_action.py
-  - benchmarks/diagnostics/analysis/distributional_action.py
   - tests/statistics/47_test_distributional_action_contract.py
   - tests/pipeline/dispatch/test_parameter_forwarding.py
   - tests/pipeline/65_test_scrna_benchmark_branch_time_config.py
@@ -105,9 +104,9 @@ separate audit script.
 
 The former runner-level distributional-action filter surface has been removed.
 `tree_break_selection/hierarchy_analysis/statistics/distributional_action.py`
-now owns only the mass-weighted formulas. Optional DataFrame enrichment lives
-at `benchmarks/diagnostics/analysis/distributional_action.py` and must be
-invoked explicitly by diagnostic work. No distributional-action policy,
+now owns only the mass-weighted formulas. The optional DataFrame enrichment
+helper that lived under `benchmarks/diagnostics/analysis/` was removed on
+2026-10-14 because nothing invoked it. No distributional-action policy,
 quantile, threshold, or filtered-state variable remains in clustering
 configuration or traversal.
 

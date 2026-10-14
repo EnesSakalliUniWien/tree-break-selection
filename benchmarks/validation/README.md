@@ -10,7 +10,6 @@ Programs are grouped by responsibility:
   `calibration_support.py` module owns shared synthetic covariance and p-value
   summary primitives.
 - `sweeps/` explores alpha and method-family parameter grids.
-- `tree/` compares construction methods, topology, and literature policies.
 - `manifests/` stores the validation manifest data consumed by the contracts.
 
 The method-constant manifest is deliberately strict:

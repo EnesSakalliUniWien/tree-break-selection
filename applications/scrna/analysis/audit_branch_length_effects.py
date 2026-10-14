@@ -14,6 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from benchmarks.diagnostics.calibration.values import bool_series
 from scipy.stats import spearmanr
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
@@ -146,12 +147,6 @@ VARIANT_LABELS = {
 }
 
 
-def _bool_series(values: pd.Series) -> pd.Series:
-    if values.dtype == bool:
-        return values
-    return values.astype(str).str.lower().isin({"true", "1", "yes"})
-
-
 def _metric_row(metrics: pd.DataFrame, method_label: str) -> pd.Series:
     matches = metrics.loc[metrics["method"] == method_label]
     if len(matches) != 1:
@@ -171,9 +166,9 @@ def _tree_summary_row(tree_summary: pd.DataFrame, method_label: str) -> pd.Serie
 def _edge_summary(path: Path) -> dict[str, object]:
     edges = pd.read_csv(path)
     branch = pd.to_numeric(edges["branch_length"], errors="coerce")
-    significant = _bool_series(edges["Child_Parent_Divergence_Significant"])
-    tested = _bool_series(edges["Child_Parent_Divergence_Tested"])
-    blocked = _bool_series(edges["Child_Parent_Divergence_Ancestor_Blocked"])
+    significant = bool_series(edges["Child_Parent_Divergence_Significant"])
+    tested = bool_series(edges["Child_Parent_Divergence_Tested"])
+    blocked = bool_series(edges["Child_Parent_Divergence_Ancestor_Blocked"])
     valid = branch.notna()
     corr = np.nan
     if valid.sum() > 2 and significant.nunique() > 1:

@@ -5,7 +5,6 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 from skbio.stats.distance import mantel
-from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import StandardScaler
@@ -47,21 +46,18 @@ def create_manifold_alignment_plot(
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    try:
-        import umap
-    except ImportError:
-        pca = PCA(n_components=min(3, X_scaled.shape[1], len(X_scaled)))
-        embedding_umap = pca.fit_transform(X_scaled)
-    else:
-        n_neighbors = min(15, len(X_scaled) - 1) if len(X_scaled) > 1 else 1
-        reducer = umap.UMAP(
-            n_components=3,
-            random_state=42,
-            n_neighbors=max(2, n_neighbors),
-            min_dist=0.05,
-            metric="euclidean",
-        )
-        embedding_umap = reducer.fit_transform(X_scaled)
+    # umap ships with the viz extra; a missing install must fail here, not silently become PCA.
+    import umap
+
+    n_neighbors = min(15, len(X_scaled) - 1) if len(X_scaled) > 1 else 1
+    reducer = umap.UMAP(
+        n_components=3,
+        random_state=42,
+        n_neighbors=max(2, n_neighbors),
+        min_dist=0.05,
+        metric="euclidean",
+    )
+    embedding_umap = reducer.fit_transform(X_scaled)
 
     embedding_umap = _require_finite("UMAP embedding", _pad_to_three_dims(embedding_umap))
 

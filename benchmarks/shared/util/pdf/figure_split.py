@@ -31,8 +31,6 @@ def _classify_figure(fig) -> str:
 
     text = " ".join(p for p in parts if p).lower()
 
-    if "umap3d" in text or ("3d" in text and "umap" in text):
-        return "umap3d"
     if "umap" in text:
         return "umap"
     if "manifold" in text:

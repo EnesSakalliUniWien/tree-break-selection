@@ -23,7 +23,7 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator im
 )
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.diagnostics.calibration.values import bool_series, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_selected_neighborhood_distribution_not_calibration"
@@ -656,16 +656,10 @@ def _string_series(rows: pd.DataFrame, column: str, default: str = "") -> pd.Ser
     return rows[column].fillna(default).astype(str)
 
 
-def _bool_series(rows: pd.DataFrame, column: str, default: bool = False) -> pd.Series:
+def _bool_series(rows: pd.DataFrame, column: str) -> pd.Series:
     if column not in rows:
-        return pd.Series(default, index=rows.index, dtype=bool)
-    values = rows[column]
-    if values.dtype == bool:
-        return values.fillna(default).astype(bool)
-    normalized = values.astype("object")
-    normalized = normalized.where(pd.notna(normalized), str(default).lower())
-    normalized = normalized.astype(str).str.strip().str.lower()
-    return normalized.isin({"1", "true", "yes"})
+        return pd.Series(False, index=rows.index, dtype=bool)
+    return bool_series(rows[column])
 
 
 def _dedupe_for_join(rows: pd.DataFrame, value_columns: Sequence[str]) -> pd.DataFrame:

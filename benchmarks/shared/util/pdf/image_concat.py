@@ -100,16 +100,9 @@ def concat_manifold_plots(plots_root: Path, **kwargs):
     )
 
 
-def concat_umap_3d_plots(plots_root: Path, **kwargs):
-    return concat_plots_to_pdf(
-        plots_root, "umap3d_case_*.png", plots_root / "umap3d_plots.pdf", **kwargs
-    )
-
-
 __all__ = [
     "concat_plots_to_pdf",
     "concat_tree_plots",
     "concat_umap_plots",
     "concat_manifold_plots",
-    "concat_umap_3d_plots",
 ]

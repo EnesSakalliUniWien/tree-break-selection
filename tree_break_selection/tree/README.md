@@ -31,8 +31,7 @@ distance before using average linkage.
 `linkage_ultrametric` and `fixed_topology_nnls` are branch-length strategies;
 they do not construct different topologies. Sibling gates, edge gates,
 traversal profiles, and the benchmark consensus selector are also downstream
-of tree construction. BranchArchitect is a validation/comparison adapter, not
-a production tree estimator.
+of tree construction.
 
 The durable, cross-application audit is in
 `wiki/analyses/tree-construction-method-map.md`.

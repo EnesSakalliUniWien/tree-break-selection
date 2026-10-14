@@ -65,6 +65,7 @@ from benchmarks.diagnostics.calibration.traversal.production_admissibility_contr
     evaluate_production_admissibility_components,
     summarize_production_admissibility_contracts,
 )
+from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.generators.generate_case_data import generate_case_data
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -1149,15 +1150,15 @@ def summarize_root_stability_threshold_sensitivity(
         return pd.DataFrame()
     records: list[dict[str, object]] = []
     base = rows.copy()
-    root_split = base["root_split"].astype(str).str.lower().isin({"true", "1"})
-    root_blocked = base["root_stability_guard_blocked"].astype(str).str.lower().isin({"true", "1"})
+    root_split = bool_series(base["root_split"])
+    root_blocked = bool_series(base["root_stability_guard_blocked"])
     root_was_open = root_split | root_blocked
     stability = pd.to_numeric(
         base["root_stability_subsample_mean_ari"],
         errors="coerce",
     )
     original_ari = pd.to_numeric(base["ari"], errors="coerce")
-    original_false = base["false_split"].astype(str).str.lower().isin({"true", "1"})
+    original_false = bool_series(base["false_split"])
     group_columns = (
         "case_id",
         "source_family",
@@ -1289,11 +1290,11 @@ def summarize_root_selective_guard_sensitivity(
     if not bool(root_selective_p.notna().any()):
         return pd.DataFrame()
 
-    root_split = base["root_split"].astype(str).str.lower().isin({"true", "1"})
-    root_blocked = base["root_stability_guard_blocked"].astype(str).str.lower().isin({"true", "1"})
+    root_split = bool_series(base["root_split"])
+    root_blocked = bool_series(base["root_stability_guard_blocked"])
     root_was_open = root_split | root_blocked
     sibling_alpha = pd.to_numeric(base["sibling_alpha"], errors="coerce")
-    original_false = base["false_split"].astype(str).str.lower().isin({"true", "1"})
+    original_false = bool_series(base["false_split"])
     original_ari = pd.to_numeric(base["ari"], errors="coerce")
     selected_root_blocked = (
         root_was_open

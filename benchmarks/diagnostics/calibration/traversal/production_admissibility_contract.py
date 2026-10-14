@@ -16,6 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_production_admissibility_contract_not_calibration"
@@ -126,13 +127,6 @@ DIAGNOSTIC_ONLY_STATUSES = frozenset(
 )
 
 
-def _bool_series(values: pd.Series) -> pd.Series:
-    if values.dtype == bool:
-        return values.fillna(False)
-    lowered = values.astype(str).str.strip().str.lower()
-    return lowered.isin({"1", "true", "t", "yes"})
-
-
 def evaluate_production_admissibility_components(components: pd.DataFrame) -> pd.DataFrame:
     """Normalize component statuses for production-admissibility decisions."""
     missing = REQUIRED_COLUMNS - set(components.columns)
@@ -146,7 +140,7 @@ def evaluate_production_admissibility_components(components: pd.DataFrame) -> pd
     unknown_statuses = sorted(set(status) - known)
     if unknown_statuses:
         raise ValueError(f"component_status contains unknown statuses: {unknown_statuses!r}.")
-    required = _bool_series(table["required_for_production"])
+    required = bool_series(table["required_for_production"])
     normalized = pd.DataFrame(
         {
             "contract_id": table["contract_id"].astype(str),

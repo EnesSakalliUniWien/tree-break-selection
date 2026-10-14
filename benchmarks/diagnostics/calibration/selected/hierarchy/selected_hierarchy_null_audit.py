@@ -191,12 +191,11 @@ def _choose_observed_target(
         raise ValueError(f"Case {case_id!r} has no sibling records selected by the edge path.")
 
     if target_mode == "root":
-        max_parent_sample_size = max(record.record.n_parent for record in focal_records)
-        candidates = [
-            record for record in focal_records if record.record.n_parent == max_parent_sample_size
-        ]
+        candidates = [record for record in focal_records if record.parent_depth == 0]
         if not candidates:
-            raise ValueError(f"Case {case_id!r} has no focal root-like sibling record.")
+            raise ValueError(
+                f"Case {case_id!r} has no root sibling record selected by the edge path."
+            )
         target = candidates[0]
     elif target_mode == "strongest":
         target = min(focal_records, key=lambda item: item.record.p_value)
@@ -204,20 +203,14 @@ def _choose_observed_target(
         ordered = sorted(focal_records, key=lambda item: item.record.n_parent)
         target = ordered[len(ordered) // 2]
     elif target_mode == "non_root_strongest":
-        max_parent_sample_size = max(record.record.n_parent for record in focal_records)
-        non_root_records = [
-            record for record in focal_records if record.record.n_parent < max_parent_sample_size
-        ]
+        non_root_records = [record for record in focal_records if record.parent_depth > 0]
         if not non_root_records:
             raise ValueError(
                 f"Case {case_id!r} has no non-root sibling record selected by the edge path."
             )
         target = min(non_root_records, key=lambda item: item.record.p_value)
     elif target_mode == "non_root_median_parent_size":
-        max_parent_sample_size = max(record.record.n_parent for record in focal_records)
-        non_root_records = [
-            record for record in focal_records if record.record.n_parent < max_parent_sample_size
-        ]
+        non_root_records = [record for record in focal_records if record.parent_depth > 0]
         if not non_root_records:
             raise ValueError(
                 f"Case {case_id!r} has no non-root sibling record selected by the edge path."

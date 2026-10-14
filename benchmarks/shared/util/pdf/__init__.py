@@ -9,7 +9,6 @@ from .image_concat import (
     concat_manifold_plots,
     concat_plots_to_pdf,
     concat_tree_plots,
-    concat_umap_3d_plots,
     concat_umap_plots,
 )
 from .layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
@@ -26,6 +25,5 @@ __all__ = [
     "concat_tree_plots",
     "concat_umap_plots",
     "concat_manifold_plots",
-    "concat_umap_3d_plots",
     "split_collected_figs_to_pdfs",
 ]

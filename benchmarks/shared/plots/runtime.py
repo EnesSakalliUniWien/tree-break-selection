@@ -20,7 +20,6 @@ from .export import (
     create_case_report_pages_from_results,
     create_manifold_plots_from_results,
     create_tree_plots_from_results,
-    create_umap_3d_plots_from_results,
 )
 from .summary import create_validation_plot
 
@@ -34,7 +33,6 @@ def generate_benchmark_plots(
     verbose: bool,
     plot_umap: bool,
     plot_manifold: bool,
-    plot_umap_3d: bool = False,
     save_png: bool = True,
     collect_figs: bool = False,
     include_cover_pages: bool = True,
@@ -49,7 +47,6 @@ def generate_benchmark_plots(
         "trees": [],
         "umap": [],
         "manifold": [],
-        "umap3d": [],
     }
     if df_results.empty:
         return None, collected_by_category
@@ -122,20 +119,6 @@ def generate_benchmark_plots(
             save=False,
             collect=False,
             collected=collected_by_category["manifold"],
-            pdf=pdf,
-        )
-
-    if plot_umap_3d:
-        if verbose:
-            logger.info("Generating 3D UMAP visualizations...")
-        create_umap_3d_plots_from_results(
-            computed_results,
-            plots_root,
-            timestamp=None,
-            verbose=verbose,
-            save=False,
-            collect=False,
-            collected=collected_by_category["umap3d"],
             pdf=pdf,
         )
 

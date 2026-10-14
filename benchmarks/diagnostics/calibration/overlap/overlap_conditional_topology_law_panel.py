@@ -27,7 +27,7 @@ from benchmarks.diagnostics.calibration.overlap.overlap_context_negative_bayesia
     _rank_bounds,
     beta_log_likelihood_ratio,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_overlap_conditional_topology_law_not_calibration"
@@ -798,12 +798,7 @@ def _conditional_status(
 
 
 def _bool_column_value(row: pd.Series, column: str) -> bool:
-    value = row[column] if column in row else False
-    if pd.isna(value):
-        return False
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes"}
-    return bool(value)
+    return bool_value(row[column]) if column in row else False
 
 
 def _guarded_recovery_fields(

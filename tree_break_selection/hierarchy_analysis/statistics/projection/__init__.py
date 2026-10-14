@@ -23,10 +23,7 @@ from .projection_dimension_estimation import (
 )
 from .spectral.spectral_decomposition_result import SpectralDecompositionResult
 from .spectral.tree_estimator import compute_spectral_decomposition
-from .spectral.tree_helpers import (
-    is_leaf,
-    precompute_descendants,
-)
+from .spectral.tree_helpers import precompute_descendants
 
 __all__ = [
     # projection_dimension_estimation
@@ -40,7 +37,6 @@ __all__ = [
     # projected_wald
     "build_pca_projection_basis",
     # tree_helpers
-    "is_leaf",
     "precompute_descendants",
     # projected_wald_reference
     "compute_projected_pvalue",
