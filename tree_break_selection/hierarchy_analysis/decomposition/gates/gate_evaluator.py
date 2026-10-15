@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tree_break_selection.tree.poset_tree import PosetTree
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
+from tree_break_selection.tree.topology import bottom_up_nodes
 
 
 class TraversalDecision(Enum):

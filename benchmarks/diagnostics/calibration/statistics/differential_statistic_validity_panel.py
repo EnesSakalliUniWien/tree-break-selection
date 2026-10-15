@@ -184,20 +184,6 @@ def projected_quadratic_statistic(z: np.ndarray, projection: np.ndarray) -> floa
     return float(np.sum((matrix @ vector) ** 2))
 
 
-def projected_quadratic_directional_derivative(
-    z: np.ndarray,
-    projection: np.ndarray,
-    direction: np.ndarray,
-) -> float:
-    """Return the analytic directional derivative of ``||Pz||^2``."""
-    vector = np.asarray(z, dtype=float)
-    matrix = np.asarray(projection, dtype=float)
-    tangent = np.asarray(direction, dtype=float)
-    if tangent.shape != vector.shape:
-        raise ValueError(f"direction shape {tangent.shape} does not match z {vector.shape}.")
-    return float(2.0 * np.dot(matrix @ vector, matrix @ tangent))
-
-
 def finite_difference_projected_quadratic_derivative(
     z: np.ndarray,
     projection: np.ndarray,
@@ -789,7 +775,6 @@ __all__ = [
     "build_differential_validity_production_components",
     "compute_fisher_geometry_summary",
     "finite_difference_projected_quadratic_derivative",
-    "projected_quadratic_directional_derivative",
     "projected_quadratic_statistic",
     "run_differential_statistic_validity_panel",
     "summarize_differential_statistic_validity",

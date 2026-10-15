@@ -27,27 +27,6 @@ def _load_clustbench_module() -> Any:
         ) from exc
 
 
-def list_clustbench_batteries(*, path: Path | str | None = None) -> list[str]:
-    """List available clustbench benchmark batteries from a local suite path."""
-    clustbench = _load_clustbench_module()
-    return list(clustbench.get_battery_names(path=str(path) if path is not None else None))
-
-
-def list_clustbench_datasets(
-    battery: str,
-    *,
-    path: Path | str | None = None,
-) -> list[str]:
-    """List datasets in one clustbench battery from a local suite path."""
-    clustbench = _load_clustbench_module()
-    return list(
-        clustbench.get_dataset_names(
-            battery,
-            path=str(path) if path is not None else None,
-        )
-    )
-
-
 def load_clustbench_dataset(
     battery: str,
     dataset: str,
@@ -102,7 +81,5 @@ def load_clustbench_dataset(
 
 __all__ = [
     "CLUSTBENCH_DATA_URL",
-    "list_clustbench_batteries",
-    "list_clustbench_datasets",
     "load_clustbench_dataset",
 ]

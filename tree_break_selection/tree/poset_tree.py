@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 
 import networkx as nx
 
-from tree_break_selection.core_utils.tree_utils import tree_root
 from tree_break_selection.tree.distributions import populate_distributions
 from tree_break_selection.tree.topology import (
     compute_descendant_leaf_sets,
     get_leaf_values,
     lowest_common_ancestor_for_set,
+    tree_root,
 )
 
 if TYPE_CHECKING:

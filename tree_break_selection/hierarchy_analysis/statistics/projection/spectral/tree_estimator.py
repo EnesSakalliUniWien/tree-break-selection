@@ -31,7 +31,6 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
 from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
@@ -40,7 +39,7 @@ from tree_break_selection.tree.feature_space import (
     resolve_feature_space,
     validate_feature_matrix,
 )
-from tree_break_selection.tree.topology import is_leaf
+from tree_break_selection.tree.topology import bottom_up_nodes, is_leaf
 
 from .marchenko_pastur import _get_n_jobs, _process_node
 from .node_spectral_result import NodeSpectralResult

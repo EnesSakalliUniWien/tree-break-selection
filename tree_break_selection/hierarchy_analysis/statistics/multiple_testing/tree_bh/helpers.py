@@ -8,7 +8,7 @@ import networkx as nx
 import numpy as np
 from scipy.stats import false_discovery_control
 
-from tree_break_selection.core_utils.tree_utils import compute_node_depths
+from tree_break_selection.tree.topology import compute_node_depths
 
 from .models import TreeBHSiblingGroupOutcome
 

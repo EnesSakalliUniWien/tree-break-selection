@@ -145,7 +145,7 @@ def test_from_scipy_linkage_binary_data():
 
 
 def test_tree_root_prefers_cached_root_and_rejects_forests():
-    from tree_break_selection.core_utils.tree_utils import tree_root
+    from tree_break_selection.tree.topology import tree_root
 
     forest = nx.DiGraph([("a", "b"), ("c", "d")])
     with pytest.raises(ValueError, match="Expected one root"):

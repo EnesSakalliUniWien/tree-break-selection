@@ -31,7 +31,11 @@ from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
-from tree_break_selection.tree.construction import DEFAULT_TREE_LINKAGE_METHOD, build_tree
+from tree_break_selection.tree.construction import (
+    DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    DEFAULT_TREE_LINKAGE_METHOD,
+    build_tree,
+)
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
     DEFAULT_CONTINUOUS_COVARIANCE_POLICY,
@@ -71,13 +75,13 @@ def run_tbs_on_distance(
     root_stability_subsample_replicates: int = 0,
     root_stability_feature_fraction: float = 0.8,
     root_stability_seed: int = 0,
-    root_stability_tree_distance_metric: str = "hamming",
+    root_stability_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     root_stability_tree_linkage_method: str | None = None,
     root_selective_permutation_guard_replicates: int = 0,
     root_selective_permutation_guard_seed: int = 0,
     root_selective_permutation_guard_alpha: float | None = None,
     root_selective_permutation_guard_scope: str = "root",
-    root_selective_permutation_guard_tree_distance_metric: str = "hamming",
+    root_selective_permutation_guard_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     root_selective_permutation_guard_tree_linkage_method: str | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_data_df: pd.DataFrame | None = None,

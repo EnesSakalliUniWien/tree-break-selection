@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
 from benchmarks.shared.result_records import BenchmarkResultRow, benchmark_rows_to_dataframe
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
@@ -174,11 +175,6 @@ def _json_default(value: Any) -> Any:
     return str(value)
 
 
-def _finite_float(value: Any) -> float:
-    numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
-    return float(numeric) if pd.notna(numeric) else math.nan
-
-
 def _bool_sum(series: pd.Series) -> int:
     if series.empty:
         return 0
@@ -186,7 +182,7 @@ def _bool_sum(series: pd.Series) -> int:
 
 
 def _pvalue_margin(p_value: Any, alpha: float) -> float:
-    p = _finite_float(p_value)
+    p = finite_float(p_value)
     if not math.isfinite(p) or p < 0.0:
         return math.nan
     if p == 0.0:

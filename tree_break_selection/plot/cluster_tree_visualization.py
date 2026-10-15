@@ -18,6 +18,8 @@ import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
+from tree_break_selection.tree.topology import tree_root
+
 from .cluster_color_mapping import build_cluster_color_spec, present_cluster_ids
 
 CHILD_PARENT_SIGNIFICANT_COL = "Child_Parent_Divergence_Significant"
@@ -93,11 +95,10 @@ def _group_internal_nodes_for_halo(
     significant: list[object] = []
     tested_not_significant: list[object] = []
 
+    root = tree_root(G)
     for node in G.nodes():
-        if node in leaves:
-            continue
         # Root has no parent; child-parent test is undefined there.
-        if G.in_degree(node) == 0:
+        if node in leaves or node == root:
             continue
 
         flag = bool(_lookup_annotation_value(annotations_df, node, CHILD_PARENT_SIGNIFICANT_COL))
@@ -190,7 +191,7 @@ def _rectangular_tree_layout(
     x_gap: float = 1.0,
     y_gap: float = 1.0,
 ) -> Dict[object, Tuple[float, float]]:
-    """Deterministic rectangular layout for a rooted directed tree (or forest).
+    """Deterministic rectangular layout for a rooted directed tree.
 
     Invariant
     ---------
@@ -200,69 +201,44 @@ def _rectangular_tree_layout(
     Notes
     -----
     - Works without Graphviz and is deterministic by construction.
-    - If ``G`` is a forest, each root is laid out left-to-right with spacing.
     """
-    if not isinstance(G, nx.DiGraph):
-        G = nx.DiGraph(G)
+    root = tree_root(G)
 
-    roots = [n for n in G.nodes if G.in_degree(n) == 0]
-    if not roots:
-        roots = [sorted(G.nodes, key=str)[0]] if G.nodes else []
-    else:
-        roots = sorted(roots, key=str)
+    depth: Dict[object, int] = {root: 0}
+    queue = deque([root])
+    while queue:
+        node = queue.popleft()
+        for child in _sorted_children(G, node):
+            if child not in depth:
+                depth[child] = depth[node] + 1
+                queue.append(child)
 
-    pos: Dict[object, Tuple[float, float]] = {}
-    x_offset = 0.0
+    postorder: list[object] = []
+    stack: list[tuple[object, bool]] = [(root, False)]
+    seen: set[object] = set()
+    while stack:
+        node, expanded = stack.pop()
+        if expanded:
+            postorder.append(node)
+            continue
+        if node in seen:
+            continue
+        seen.add(node)
+        stack.append((node, True))
+        for child in reversed(_sorted_children(G, node)):
+            stack.append((child, False))
 
-    for root in roots:
-        component_nodes = {root} | nx.descendants(G, root)
+    x_by_node: Dict[object, float] = {}
+    leaf_cursor = 0.0
+    for node in postorder:
+        children = _sorted_children(G, node)
+        if not children:
+            x_by_node[node] = leaf_cursor
+            leaf_cursor += x_gap
+        else:
+            x_by_node[node] = float(np.mean([x_by_node[c] for c in children]))
 
-        depth: Dict[object, int] = {root: 0}
-        queue = deque([root])
-        while queue:
-            node = queue.popleft()
-            d0 = depth[node]
-            for child in _sorted_children(G, node):
-                if child in component_nodes and child not in depth:
-                    depth[child] = d0 + 1
-                    queue.append(child)
-
-        postorder: list[object] = []
-        stack: list[tuple[object, bool]] = [(root, False)]
-        seen: set[object] = set()
-        while stack:
-            node, expanded = stack.pop()
-            if node not in component_nodes:
-                continue
-            if expanded:
-                postorder.append(node)
-                continue
-            if node in seen:
-                continue
-            seen.add(node)
-            stack.append((node, True))
-            for child in reversed(_sorted_children(G, node)):
-                stack.append((child, False))
-
-        x_by_node: Dict[object, float] = {}
-        leaf_cursor = x_offset
-        for node in postorder:
-            children = [c for c in _sorted_children(G, node) if c in component_nodes]
-            if not children:
-                x_by_node[node] = leaf_cursor
-                leaf_cursor += x_gap
-            else:
-                x_by_node[node] = float(np.mean([x_by_node[c] for c in children]))
-
-        for node in component_nodes:
-            pos[node] = (
-                x_by_node[node],
-                -float(depth[node]) * y_gap,
-            )
-
-        x_offset = leaf_cursor + x_gap
-
-    return pos
+    return {node: (x_by_node[node], -float(depth[node]) * y_gap) for node in depth}
 
 
 def _graphviz_twopi_layout(G: nx.Graph, args: str = "") -> Dict:

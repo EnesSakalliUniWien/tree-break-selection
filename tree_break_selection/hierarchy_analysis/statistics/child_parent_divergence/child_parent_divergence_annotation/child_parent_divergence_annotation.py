@@ -9,15 +9,15 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from tree_break_selection.core_utils.data_utils import (
-    assign_divergence_results,
-    extract_leaf_counts,
-)
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
 )
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
+)
+from tree_break_selection.hierarchy_analysis.statistics.data_utils import (
+    assign_divergence_results,
+    extract_leaf_counts,
 )
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,

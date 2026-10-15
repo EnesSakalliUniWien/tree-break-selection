@@ -82,8 +82,8 @@ duplicate `run_id` values fail during method selection.
 
 Use separate method IDs only for genuinely different runner families, for
 example `tbs_diffusion_graphtools` versus `tbs_diffusion_graphtools_nnls`.
-Use grid axes for settings such as linkage, tree builder, alpha, nearest-neighbor
-K, and repeat index.
+Use grid axes for settings such as linkage, alpha, nearest-neighbor K, and
+repeat index.
 
 ### Shared Features
 
@@ -91,7 +91,7 @@ The `benchmarks/shared/` system provides:
 - `benchmark_runs/` for reusable full/smoke/regression/continuous orchestration
   seams
 - `evolution.py` for temporal evolution tracking
-- `audit_utils.py` for matrix export infrastructure
+- `audit_utils.py` for per-case decomposition audit CSV export
 - `linkage_matrix` captured in TBS runner's `extra` dict
 
 The `benchmarks/diagnostics/` system provides failure diagnosis, oracle
@@ -136,6 +136,31 @@ uv run python -m benchmarks.full.run
 cd benchmarks/full && python run.py
 ```
 
+### Environment Variables
+
+Every `TBS_*` variable the code reads. Booleans accept `1/true/yes/on` and
+`0/false/no/off`; an invalid value raises.
+
+| Variable | Default | Consumer |
+| --- | --- | --- |
+| `TBS_CASE_SUITE` | `full` | `full/run.py`: case suite (`binary`, `categorical`, `continuous`, `discretized_gaussian`, `graph`, `full`) |
+| `TBS_METHODS` | `DEFAULT_METHODS` | `shared/util/method_selection.py::resolve_methods_from_env`: comma-separated method ids or `all` |
+| `TBS_N_JOBS` | `1` in benchmark entrypoints; otherwise all cores for large trees | `tree_break_selection/.../spectral/marchenko_pastur.py`: spectral worker count; set to `1` by `shared/benchmark_runs/runtime.py` |
+| `TBS_ENABLE_PLOTS` | `true` | `full/run.py`: per-case PDFs and UMAP pages |
+| `TBS_ENABLE_MANIFOLD` | `false` | `full/run.py`: manifold comparison pages (needs plots) |
+| `TBS_UMAP_ISOLATE_CASES` | value of `TBS_ENABLE_PLOTS` | `full/run.py`: run each case in its own subprocess |
+| `TBS_CASE_TIMEOUT_SEC` | `1800` | `full/run.py`: per-case subprocess timeout |
+| `TBS_RUN_RELATIONSHIP_ANALYSIS` | `true` | `full/run.py`: benchmark-factor relationship report |
+| `TBS_ENABLE_RELATIONSHIP_PLOTS` | value of `TBS_ENABLE_PLOTS` | `full/run.py`: relationship-report PDF |
+| `TBS_RUN_TREE_CONSENSUS` | `false` | `full/run.py`: tree-consensus labels, report, and summary |
+| `TBS_RUN_DIR` | `benchmarks/results/run_<timestamp>_<suite>/` | `full/run.py`: output directory |
+| `TBS_EMBEDDING_BACKEND` | `umap` | `shared/plots/embedding.py`: `umap`, `auto`, or `tsne` |
+| `TBS_EMBEDDING_CACHE_DIR` | unset (no cache); `full/run.py` sets `benchmarks/results/.embedding_cache` when plotting | `shared/plots/embedding.py` |
+| `TBS_BENCHMARK_TREE_LAYOUT` | `radial` | `shared/plots/export.py`: `radial` or `rectangular` |
+| `TBS_GIT_COMMIT`, `TBS_GIT_BRANCH`, `TBS_GIT_DIRTY` | `unknown` | `shared/util/provenance.py`: build provenance fields |
+| `TBS_MAX_EXACT_CONTINUOUS_COVARIANCE_BLOCK_DIMENSION` | `4096` | `tree_break_selection/tree/distributions.py`: largest block that gets a dense covariance |
+| `TBS_MAX_EXACT_CONTINUOUS_COVARIANCE_WORK_MIB` | `512` | `tree_break_selection/tree/distributions.py`: dense covariance memory budget |
+
 ### Output Structure
 
 Results saved to timestamped directories under each benchmark's `results/` folder:
@@ -150,7 +175,7 @@ benchmarks/results/run_YYYYMMDD_HHMMSSZ_<case_suite>/
 ├── benchmark_relationship_report.md   # Factor/method relationship summary
 ├── benchmark_relationship_*.csv       # Method/section summaries + modeled effects
 ├── benchmark_relationship_plots.pdf   # Relationship plots (if enabled)
-├── audit/                         # Matrix exports (if enabled)
+├── audit/                         # Per-case decomposition audit CSVs
 └── plots/
     └── case_N.pdf                 # Per-case visualizations
 ```
@@ -187,7 +212,7 @@ benchmark CSV preserves both fields in every result row.
   `uv sync --extra experimental-gpl`.
   `tbs_diffusion_graphtools_adaptive_nnls` exposes the seven linkage tree
   strategies as one parameter grid, not as duplicate method IDs.
-- Each case runs in an isolated subprocess (optional), with configurable timeout (default 1800 s) and retry count (default 4).
+- With plotting on, each case runs in an isolated subprocess (`TBS_UMAP_ISOLATE_CASES`) with a `TBS_CASE_TIMEOUT_SEC` timeout (default 1800 s); failed cases are not retried.
 - Per-case PDF plots (tree, UMAP embedding, manifold comparison) are generated and merged into `<case_suite>_benchmark_report.pdf`.
 - Set `TBS_CASE_SUITE` to run one mathematical input-contract suite:
   `binary`, `categorical`, `continuous`, `discretized_gaussian`, `graph`, or

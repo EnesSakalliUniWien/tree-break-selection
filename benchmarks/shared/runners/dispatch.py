@@ -319,7 +319,6 @@ def _reject_unknown_params(method_id: str, params: Dict[str, Any]) -> None:
 def _run_tbs_distance_tree_method(
     *,
     data_df: pd.DataFrame,
-    method_id: str,
     params: Dict[str, Any],
     spec: Any,
     alpha: float,
@@ -421,7 +420,7 @@ def _run_tbs_distance_tree_method(
         root_stability_feature_fraction=float(params.get("root_stability_feature_fraction", 0.8)),
         root_stability_seed=int(params.get("root_stability_seed", 0)),
         root_stability_tree_distance_metric=str(
-            params.get("root_stability_tree_distance_metric", "hamming")
+            params.get("root_stability_tree_distance_metric", DEFAULT_BINARY_TREE_DISTANCE_METRIC)
         ),
         root_stability_tree_linkage_method=params.get("root_stability_tree_linkage_method"),
         root_selective_permutation_guard_replicates=int(
@@ -437,7 +436,7 @@ def _run_tbs_distance_tree_method(
         root_selective_permutation_guard_tree_distance_metric=str(
             params.get(
                 "root_selective_permutation_guard_tree_distance_metric",
-                "hamming",
+                DEFAULT_BINARY_TREE_DISTANCE_METRIC,
             )
         ),
         root_selective_permutation_guard_tree_linkage_method=params.get(
@@ -560,7 +559,6 @@ def run_clustering_result(
     if method_id in TBS_DISTANCE_TREE_NNLS_METHODS:
         return _run_tbs_distance_tree_method(
             data_df=data_df,
-            method_id=method_id,
             params=params,
             spec=spec,
             alpha=alpha,
@@ -573,7 +571,6 @@ def run_clustering_result(
     if method_id in TBS_DISTANCE_TREE_METHODS:
         return _run_tbs_distance_tree_method(
             data_df=data_df,
-            method_id=method_id,
             params=params,
             spec=spec,
             alpha=alpha,

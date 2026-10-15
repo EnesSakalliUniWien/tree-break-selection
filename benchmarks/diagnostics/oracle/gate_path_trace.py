@@ -13,12 +13,12 @@ import pandas as pd
 from benchmarks.diagnostics.calibration.sibling.nulls.sibling_inflation_diagnostic import (
     collect_sibling_inflation_inputs,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.diagnostics.oracle.oracle_tree_recoverability import (
     OracleTreeCutResult,
     oracle_subtree_cut,
 )
 from benchmarks.shared.tbs_tree_context import TbsTreeContext, build_tbs_tree_context
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes, compute_node_depths
 from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
     GateAnnotationBundle,
 )
@@ -37,6 +37,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 from tree_break_selection.tree.feature_space import FeatureSpace
+from tree_break_selection.tree.topology import bottom_up_nodes, compute_node_depths
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,6 @@ class SiblingInflationTrace:
     parent: object
     raw_sibling_statistic: float
     raw_reference_scale: float
-    raw_degrees_of_freedom: float
     raw_p_value: float
     empirical_inflation_factor: float
     inflation_applied: bool
@@ -67,15 +67,6 @@ class PreparedGatePathCase:
     decomposition: dict[str, object]
     oracle_any: OracleTreeCutResult
     oracle_true_k: OracleTreeCutResult
-
-
-def _as_float(value: Any) -> float:
-    if value is None:
-        return float("nan")
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return float("nan")
 
 
 def _annotation_value(annotations_df: pd.DataFrame, node: object, column: str) -> Any:
@@ -132,21 +123,21 @@ def _edge_prefix_values(
                 "Child_Parent_Divergence_Invalid",
             )
         ),
-        f"{prefix}_edge_p_value": _as_float(
+        f"{prefix}_edge_p_value": finite_float(
             _annotation_value(
                 annotations_df,
                 child,
                 "Child_Parent_Divergence_P_Value",
             )
         ),
-        f"{prefix}_edge_p_value_bh": _as_float(
+        f"{prefix}_edge_p_value_bh": finite_float(
             _annotation_value(
                 annotations_df,
                 child,
                 "Child_Parent_Divergence_P_Value_BH",
             )
         ),
-        f"{prefix}_edge_degrees_of_freedom": _as_float(
+        f"{prefix}_edge_degrees_of_freedom": finite_float(
             _annotation_value(
                 annotations_df,
                 child,
@@ -306,7 +297,6 @@ def collect_sibling_inflation_trace(
             parent=record.parent,
             raw_sibling_statistic=float(record.stat),
             raw_reference_scale=float(record.reference_scale),
-            raw_degrees_of_freedom=float(record.degrees_of_freedom),
             raw_p_value=float(record.p_value),
             empirical_inflation_factor=float(inflation_factor),
             inflation_applied=inflation_applied,
@@ -397,16 +387,16 @@ def build_gate_path_trace_dataframe(
                 _annotation_value(annotations_df, node, "Sibling_BH_Different")
             ),
             "sibling_bh_same": bool(_annotation_value(annotations_df, node, "Sibling_BH_Same")),
-            "sibling_adjusted_statistic": _as_float(
+            "sibling_adjusted_statistic": finite_float(
                 _annotation_value(annotations_df, node, "Sibling_Test_Statistic")
             ),
-            "sibling_degrees_of_freedom": _as_float(
+            "sibling_degrees_of_freedom": finite_float(
                 _annotation_value(annotations_df, node, "Sibling_Degrees_of_Freedom")
             ),
-            "sibling_adjusted_p_value": _as_float(
+            "sibling_adjusted_p_value": finite_float(
                 _annotation_value(annotations_df, node, "Sibling_Divergence_P_Value")
             ),
-            "sibling_corrected_p_value": _as_float(
+            "sibling_corrected_p_value": finite_float(
                 _annotation_value(
                     annotations_df,
                     node,
@@ -419,7 +409,7 @@ def build_gate_path_trace_dataframe(
             "sibling_test_method": str(
                 _annotation_value(annotations_df, node, "Sibling_Test_Method")
             ),
-            "sibling_projection_dimension": _as_float(
+            "sibling_projection_dimension": finite_float(
                 _annotation_value(annotations_df, node, "Sibling_Projection_Dimension")
             ),
             "raw_sibling_statistic": (

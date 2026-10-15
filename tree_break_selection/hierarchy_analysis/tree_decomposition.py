@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-from ..core_utils.data_utils import extract_bool_column_dict
 from .cluster_assignments import ClusterBoundary, build_cluster_assignments
 from .decomposition.gates.annotation_bundle import GateAnnotationBundle
 from .decomposition.gates.annotation_predicates import annotation_bool
@@ -22,6 +21,7 @@ from .decomposition.gates.column_contracts import (
     validate_sibling_gate_columns,
 )
 from .decomposition.gates.gate_evaluator import GateEvaluator, TraversalDecision
+from .statistics.data_utils import extract_bool_column_dict
 
 TraceLevel = Literal["compact", "full"]
 

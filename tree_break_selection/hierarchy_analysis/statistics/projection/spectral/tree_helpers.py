@@ -6,8 +6,7 @@ from typing import Dict
 
 import networkx as nx
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
-from tree_break_selection.tree.topology import is_leaf
+from tree_break_selection.tree.topology import bottom_up_nodes, is_leaf
 
 
 def precompute_descendants(

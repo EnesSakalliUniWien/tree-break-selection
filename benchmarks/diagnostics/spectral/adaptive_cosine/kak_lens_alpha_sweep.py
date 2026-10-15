@@ -342,7 +342,6 @@ def block_adaptive_diffusion_coordinates(
 
 def build_lens_coordinates(
     *,
-    data: pd.DataFrame,
     eigvals: np.ndarray,
     eigvecs: np.ndarray,
     block: SpectralBlock,
@@ -665,7 +664,6 @@ def main() -> None:
         block = find_block(blocks, spec.block_name)
         try:
             lens_coordinates, coordinate_metadata = build_lens_coordinates(
-                data=data,
                 eigvals=eigvals,
                 eigvecs=eigvecs,
                 block=block,

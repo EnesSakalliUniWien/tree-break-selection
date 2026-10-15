@@ -8,7 +8,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from tree_break_selection.core_utils.data_utils import initialize_sibling_divergence_columns
+from tree_break_selection.hierarchy_analysis.statistics.data_utils import (
+    initialize_sibling_divergence_columns,
+)
 
 from ...multiple_testing import benjamini_hochberg_correction
 

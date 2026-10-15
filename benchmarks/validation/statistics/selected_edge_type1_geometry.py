@@ -27,6 +27,7 @@ from benchmarks.diagnostics.calibration.statistics.covariance_laplacian_panel im
 from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
     infer_satterthwaite_reference_from_eigenvalues,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
 from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
 from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
@@ -58,6 +59,7 @@ from tree_break_selection.tree.feature_space import (
     bernoulli_feature_space_from_columns,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
+from tree_break_selection.tree.topology import tree_root
 
 SCHEMA_VERSION = "selected_edge_type1_geometry/v1"
 GENERATED_BY = "benchmarks.validation.statistics.selected_edge_type1_geometry"
@@ -210,19 +212,11 @@ def _require_columns(df: pd.DataFrame, columns: Sequence[str], *, context: str) 
 
 
 def _node_depth_map(tree: nx.DiGraph) -> dict[object, int]:
-    roots = [node for node in tree.nodes if tree.in_degree(node) == 0]
-    if len(roots) != 1:
-        raise ValueError(f"Expected exactly one root; got {roots!r}.")
-    return dict(nx.single_source_shortest_path_length(tree, roots[0]))
-
-
-def _finite_or_nan(value: object) -> float:
-    numeric = float(value)
-    return numeric if np.isfinite(numeric) else float("nan")
+    return dict(nx.single_source_shortest_path_length(tree, tree_root(tree)))
 
 
 def _positive_p_or_nan(value: object) -> float:
-    numeric = _finite_or_nan(value)
+    numeric = finite_float(value)
     if not np.isfinite(numeric):
         return float("nan")
     if numeric <= 0.0:
@@ -379,8 +373,8 @@ def extract_edge_geometry_rows(
     for parent, child in tree.edges():
         if child not in annotations_df.index or parent not in annotations_df.index:
             raise ValueError(f"Annotations must contain edge endpoints {parent!r}->{child!r}.")
-        stat = _finite_or_nan(annotations_df.at[child, "Child_Parent_Divergence_Test_Statistic"])
-        df_value = _finite_or_nan(annotations_df.at[child, "Child_Parent_Divergence_df"])
+        stat = finite_float(annotations_df.at[child, "Child_Parent_Divergence_Test_Statistic"])
+        df_value = finite_float(annotations_df.at[child, "Child_Parent_Divergence_df"])
         raw_p = _positive_p_or_nan(annotations_df.at[child, "Child_Parent_Divergence_P_Value"])
         bh_p = _positive_p_or_nan(annotations_df.at[child, "Child_Parent_Divergence_P_Value_BH"])
         n_child = int(annotations_df.at[child, "leaf_count"])
@@ -742,7 +736,7 @@ def extract_sibling_geometry_rows(
             float(raw_record.degrees_of_freedom)
             if raw_record is not None and np.isfinite(raw_record.degrees_of_freedom)
             else (
-                _finite_or_nan(annotations_df.at[parent, "Sibling_Degrees_of_Freedom"])
+                finite_float(annotations_df.at[parent, "Sibling_Degrees_of_Freedom"])
                 if has_sibling_annotations
                 else float("nan")
             )
@@ -757,7 +751,7 @@ def extract_sibling_geometry_rows(
             )
         )
         adjusted_stat = (
-            _finite_or_nan(annotations_df.at[parent, "Sibling_Test_Statistic"])
+            finite_float(annotations_df.at[parent, "Sibling_Test_Statistic"])
             if has_sibling_annotations
             else float("nan")
         )
@@ -775,7 +769,7 @@ def extract_sibling_geometry_rows(
             float(raw_record.sibling_projection_dimension)
             if raw_record is not None and np.isfinite(raw_record.sibling_projection_dimension)
             else (
-                _finite_or_nan(annotations_df.at[parent, "Sibling_Projection_Dimension"])
+                finite_float(annotations_df.at[parent, "Sibling_Projection_Dimension"])
                 if has_sibling_annotations
                 else float("nan")
             )

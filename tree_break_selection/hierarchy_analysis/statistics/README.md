@@ -5,13 +5,15 @@ pipeline.
 
 ## Public Entrypoints
 
+Import each entrypoint from its module; the package `__init__.py` files do not re-export.
+
 | Entrypoint | Purpose |
 | ---------- | ------- |
-| `annotate_child_parent_divergence` | Annotate child-parent edge evidence for tree traversal. |
-| `annotate_sibling_divergence` | Annotate projected-Wald sibling evidence using empirical inflation and traversal-aligned BH; selected-tail validity remains open. |
-| `annotate_fixed_subspace_sibling_divergence` | Opt-in sibling gate using fixed covariance-whitened coordinate or feature-block BH aggregation without parent PCA adaptation. |
-| `benjamini_hochberg_correction` | Flat BH correction helper. |
-| `apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
+| `child_parent_divergence.annotate_child_parent_divergence` | Annotate child-parent edge evidence for tree traversal. |
+| `sibling_divergence.inflated_projected_wald_annotation.pipeline.annotate_sibling_divergence` | Annotate projected-Wald sibling evidence using empirical inflation and traversal-aligned BH; selected-tail validity remains open. |
+| `sibling_divergence.fixed_subspace_annotation.annotate_fixed_subspace_sibling_divergence` | Opt-in sibling gate using fixed covariance-whitened coordinate or feature-block BH aggregation without parent PCA adaptation. |
+| `multiple_testing.benjamini_hochberg_correction` | Flat BH correction helper. |
+| `multiple_testing.apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
 | `independent_gaussian.fit_independent_gaussian_tree` | Fit topology and PCA on discovery measurements with known Gaussian covariance. |
 | `independent_gaussian.test_independent_gaussian_tree` | Test independent measurements of the same leaves using the conditional energy reference, then existing corrections and traversal. |
 
@@ -31,6 +33,7 @@ pipeline.
 | `sibling_divergence/` | Sibling pair collection, projected-Wald testing, fixed-subspace gates, empirical-null inflation, and sibling FDR. |
 | `multiple_testing/` | Flat BH and tree-BH helpers. |
 | `branch_length_utils.py` | Branch-length validation and normalized tree-time variance utilities. |
+| `data_utils.py` | Node-attribute extraction and edge/sibling gate annotation-column initialization shared by the gate statistics. |
 
 ## Active Method Flow
 

@@ -26,7 +26,6 @@ class ClusterColorSpec:
 
     n_clusters: int
     colors: List[str]
-    unassigned_color: str
     cmap: ListedColormap
     norm: BoundaryNorm
     id_to_color: Dict[int, str]
@@ -118,7 +117,6 @@ def build_cluster_color_spec(
     return ClusterColorSpec(
         n_clusters=n_clusters,
         colors=colors,
-        unassigned_color=unassigned_color,
         cmap=cmap,
         norm=norm,
         id_to_color=id_to_color,

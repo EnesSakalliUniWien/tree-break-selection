@@ -19,7 +19,7 @@ from scipy.stats import false_discovery_control
 
 
 def benjamini_hochberg_correction(
-    p_values: np.ndarray, alpha: float = 0.05
+    p_values: np.ndarray, alpha: float
 ) -> Tuple[np.ndarray, np.ndarray, float]:
     """Apply Benjamini-Hochberg FDR correction to p-values.
 
@@ -27,7 +27,7 @@ def benjamini_hochberg_correction(
     ----------
     p_values : np.ndarray
         Array of p-values to correct
-    alpha : float, default=0.05
+    alpha : float
         Significance level for FDR control
 
     Returns
@@ -48,7 +48,7 @@ def benjamini_hochberg_correction(
     --------
     >>> import numpy as np
     >>> p_values = np.array([0.001, 0.01, 0.03, 0.05, 0.1])
-    >>> rejected, adjusted, alpha = benjamini_hochberg_correction(p_values)
+    >>> rejected, adjusted, alpha = benjamini_hochberg_correction(p_values, alpha=0.05)
     >>> rejected
     array([ True,  True,  True, False, False])
     """

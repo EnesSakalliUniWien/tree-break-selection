@@ -31,7 +31,6 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from applications.endotypes._shared import load_binary_feature_matrix
-from applications.endotypes.analysis.audit_go_cluster_meaningfulness import safe_float
 from applications.endotypes.reports.artifact_index import load_artifact_index
 from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
     gene_annotation_blurbs,
@@ -40,6 +39,7 @@ from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
     protein_label,
     representative_genes_for_cluster,
 )
+from benchmarks.diagnostics.calibration.values import finite_float
 
 GO_ID_RE = re.compile(r"(GO:\d{7})")
 COPY_ARTIFACTS = {
@@ -759,13 +759,13 @@ def build_rosters(
                 "recorded_cluster_size": recorded_size,
                 "coherent_by_rule": coherence_row.get("coherent_by_rule", ""),
                 "n_significant_terms_q05": safe_int(coherence_row.get("n_significant_terms_q05")),
-                "min_q_value": safe_float(coherence_row.get("min_q_value")),
+                "min_q_value": finite_float(coherence_row.get("min_q_value")),
                 "top_term": top_term,
                 "top_go_id": top_go_id,
-                "top_term_prevalence_delta": safe_float(
+                "top_term_prevalence_delta": finite_float(
                     coherence_row.get("top_term_prevalence_delta")
                 ),
-                "mean_within_tfidf_cosine": safe_float(tfidf_row.get("mean_within_tfidf_cosine")),
+                "mean_within_tfidf_cosine": finite_float(tfidf_row.get("mean_within_tfidf_cosine")),
                 **annotation,
             }
             cluster_record = {**base, "member_genes": ";".join(genes)}

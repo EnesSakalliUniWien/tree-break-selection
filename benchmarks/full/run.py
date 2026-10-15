@@ -106,8 +106,6 @@ def run_benchmarks():
     case_timeout_sec = get_env_int("TBS_CASE_TIMEOUT_SEC", 1800)
     if enable_umap and "TBS_EMBEDDING_BACKEND" not in os.environ:
         os.environ["TBS_EMBEDDING_BACKEND"] = "umap"
-    if enable_umap and "TBS_FORCE_UMAP_FOR_LARGE" not in os.environ:
-        os.environ["TBS_FORCE_UMAP_FOR_LARGE"] = "1"
     run_relationship_analysis = get_env_bool("TBS_RUN_RELATIONSHIP_ANALYSIS", default=True)
     run_tree_consensus = get_env_bool("TBS_RUN_TREE_CONSENSUS", default=False)
     enable_relationship_plots = get_env_bool(

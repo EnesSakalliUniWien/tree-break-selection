@@ -8,6 +8,7 @@ import numpy as np
 
 from tree_break_selection.tree.branch_lengths import compute_ultrametric_branch_lengths, node_id
 from tree_break_selection.tree.poset_tree import PosetTree
+from tree_break_selection.tree.topology import tree_root
 
 # ---------------------------------------------------------------------------
 # Shared builder
@@ -60,10 +61,7 @@ def _tree_from_merges(
         tree.add_edge(nid, right_id, branch_length=right_length)
 
     # Discover & cache root.
-    roots = [u for u, degree in tree.in_degree() if degree == 0]
-    if len(roots) != 1:
-        raise ValueError(f"Expected one root, got {roots}")
-    tree.graph["root"] = roots[0]
+    tree.graph["root"] = tree_root(tree)
 
     return tree
 

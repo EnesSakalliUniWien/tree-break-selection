@@ -7834,3 +7834,33 @@ version comparison report and wiki source summary. Production code unchanged.
   failed on every fresh clone; the page now cites this log only.
 - The last three hand-written boolean cell readers (scRNA distributional-action
   audit, family-metric NNLS grid) use `bool_value`/`bool_series`.
+
+## 2026-10-15 — Re-export, root-lookup and helper consolidation
+
+- Reduced the `hierarchy_analysis`, `statistics`, `statistics.projection` and
+  `statistics.sibling_divergence` `__init__.py` files to docstrings; they had
+  no consumers.
+- Dissolved `core_utils/`: `tree_root`, `bottom_up_nodes` and
+  `compute_node_depths` moved into `tree/topology.py`; `data_utils.py` moved
+  to `hierarchy_analysis/statistics/data_utils.py` next to the edge and sibling
+  gate code that uses it.
+- Five root-detection copies (the cluster-tree plot, the linkage builder,
+  recursive p-value geometry, the NNLS null sweep and the selected-edge
+  geometry panel) call `tree.topology.tree_root`; forests now raise there.
+  Tree-BH `find_root_nodes` and sibling-FDR `_root_nodes` stay: they return
+  every parentless node, and the gate test fixtures attach a detached
+  calibration component that Tree-BH must treat as a root.
+- Removed the dead symbols, unread parameters and write-only fields that
+  `CHANGELOG.md` lists, and the unread `TBS_FORCE_UMAP_FOR_LARGE` setter.
+- Seven `finite_float`/`finite_median` copies import the
+  `benchmarks/diagnostics/calibration` owners; callers pass finite-or-NaN
+  annotation and table cells, so the `inf` and raise-on-bad-cell differences
+  do not change current outputs.
+- Gate, guard, independent-Gaussian and runner defaults reference
+  `tree/construction/defaults.py`; the two `alpha=0.05` defaults were removed
+  because every caller passes `alpha`.
+- `benchmarks/README.md` gained a `TBS_*` table and lost the tree-builder axis,
+  matrix-export and retry claims; `tests/README.md` counts were re-collected
+  (766 cases); `docs/onboarding.md` lists the hidden directories that exist;
+  the two dated repository audits moved to `raw/inbox/` and
+  [[repository-hygiene-and-completion-audit-20260727]] cites the new path.

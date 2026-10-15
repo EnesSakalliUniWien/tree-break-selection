@@ -31,6 +31,7 @@ from benchmarks.diagnostics.calibration.traversal.branch_length_traversal_audit 
     _validate_methods,
 )
 from benchmarks.diagnostics.calibration.traversal.cli import parse_traversal_audit_args
+from benchmarks.diagnostics.calibration.values import finite_float
 from benchmarks.shared.result_records import benchmark_rows_to_dataframe
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
@@ -87,16 +88,6 @@ def _is_true(value: object) -> bool:
     return bool(value)
 
 
-def _finite_or_nan(value: object) -> float:
-    if value is None or pd.isna(value):
-        return math.nan
-    try:
-        out = float(value)
-    except (TypeError, ValueError):
-        return math.nan
-    return out if math.isfinite(out) else math.nan
-
-
 def _path_prefix(path: object) -> str:
     nodes = _path_nodes(path)
     if not nodes:
@@ -138,9 +129,9 @@ def add_path_covariates(tuple_rows: pd.DataFrame) -> pd.DataFrame:
             if parent_row is None:
                 continue
             if str(parent_row.left_child) == child:
-                branch_length = _finite_or_nan(parent_row.left_branch_length)
+                branch_length = finite_float(parent_row.left_branch_length)
             elif str(parent_row.right_child) == child:
-                branch_length = _finite_or_nan(parent_row.right_branch_length)
+                branch_length = finite_float(parent_row.right_branch_length)
             else:
                 branch_length = math.nan
             if math.isfinite(branch_length):
@@ -163,11 +154,11 @@ def add_path_covariates(tuple_rows: pd.DataFrame) -> pd.DataFrame:
             incoming_parent_sibling_gate_open = _is_true(incoming_parent_row.sibling_gate_open)
             if str(incoming_parent_row.left_child) == row.node_id:
                 incoming_child_side = "left"
-                incoming_branch_length = _finite_or_nan(incoming_parent_row.left_branch_length)
+                incoming_branch_length = finite_float(incoming_parent_row.left_branch_length)
                 incoming_edge_open = _is_true(incoming_parent_row.left_edge_open)
             elif str(incoming_parent_row.right_child) == row.node_id:
                 incoming_child_side = "right"
-                incoming_branch_length = _finite_or_nan(incoming_parent_row.right_branch_length)
+                incoming_branch_length = finite_float(incoming_parent_row.right_branch_length)
                 incoming_edge_open = _is_true(incoming_parent_row.right_edge_open)
 
         records.append(

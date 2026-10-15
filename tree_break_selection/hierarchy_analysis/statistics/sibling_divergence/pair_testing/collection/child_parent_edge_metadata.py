@@ -6,10 +6,10 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from tree_break_selection.core_utils.data_utils import extract_bool_column_dict
 from tree_break_selection.hierarchy_analysis.decomposition.gates.column_contracts import (
     EDGE_GATE_COLUMNS,
 )
+from tree_break_selection.hierarchy_analysis.statistics.data_utils import extract_bool_column_dict
 
 
 def validate_child_parent_edge_annotation_requirements(

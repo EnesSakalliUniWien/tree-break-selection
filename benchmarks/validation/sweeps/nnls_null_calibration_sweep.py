@@ -56,6 +56,7 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
 )
+from tree_break_selection.tree.topology import tree_root
 
 SCHEMA_VERSION = "nnls_null_calibration_sweep/v5"
 GENERATED_BY = "benchmarks.validation.sweeps.nnls_null_calibration_sweep"
@@ -171,27 +172,18 @@ def _finite_min(values: pd.Series | np.ndarray | list[object]) -> float:
     return float(series.min()) if not series.empty else math.nan
 
 
-def _tree_root(tree: object) -> object | None:
-    if hasattr(tree, "root"):
-        return tree.root()
-    roots = [node for node, degree in tree.in_degree() if int(degree) == 0]
-    if len(roots) == 1:
-        return roots[0]
-    return None
-
-
 def _tree_shape_summary(tree: object) -> dict[str, object]:
     if tree is None or not hasattr(tree, "nodes") or not hasattr(tree, "out_degree"):
         return {}
     nodes = list(tree.nodes)
     leaf_nodes = [node for node in nodes if int(tree.out_degree(node)) == 0]
     internal_nodes = [node for node in nodes if int(tree.out_degree(node)) > 0]
-    root = _tree_root(tree)
+    root = tree_root(tree)
     return {
         "tree_n_leaves": int(len(leaf_nodes)),
         "tree_n_internal_nodes": int(len(internal_nodes)),
         "tree_n_nodes": int(len(nodes)),
-        "tree_root": "" if root is None else str(root),
+        "tree_root": str(root),
     }
 
 
@@ -223,7 +215,7 @@ def _spectral_frame_summary_from_result(result_extra: dict[str, object]) -> dict
         ]
         return max(values) if values else 0
 
-    root = _tree_root(tree) if tree is not None else None
+    root = tree_root(tree) if tree is not None else None
 
     def _root_value(values_by_node: dict[object, object]) -> int:
         if root is None:

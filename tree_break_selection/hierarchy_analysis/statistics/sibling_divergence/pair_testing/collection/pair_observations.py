@@ -5,13 +5,13 @@ from __future__ import annotations
 import networkx as nx
 import numpy as np
 
-from tree_break_selection.core_utils.data_utils import (
-    extract_node_distribution,
-    extract_node_sample_size,
-)
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     compute_sibling_branch_length_sum,
     extract_branch_length_observation,
+)
+from tree_break_selection.hierarchy_analysis.statistics.data_utils import (
+    extract_node_distribution,
+    extract_node_sample_size,
 )
 
 SiblingPairObservations = tuple[

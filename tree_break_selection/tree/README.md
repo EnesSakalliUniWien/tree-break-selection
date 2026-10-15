@@ -68,7 +68,7 @@ NetworkX `DiGraph` subclass. Central data structure for the entire pipeline.
 
 ## topology.py
 
-Strict rooted-tree topology helpers used by `PosetTree`.
+Strict rooted-tree topology helpers used by `PosetTree`, the gates, and Tree-BH.
 
 | Function                             | What it does                                                                 |
 | ------------------------------------ | ---------------------------------------------------------------------------- |
@@ -77,6 +77,9 @@ Strict rooted-tree topology helpers used by `PosetTree`.
 | `compute_descendant_leaf_sets(tree)` | Bottom-up descendant leaf-set aggregation.                                    |
 | `lowest_common_ancestor(tree, a, b)` | Depth-based LCA for nodes in the same rooted tree.                            |
 | `lowest_common_ancestor_for_set(...)` | LCA for a non-empty node collection.                                          |
+| `tree_root(tree)`                    | Cached `graph["root"]` or the single parentless node; raises otherwise.      |
+| `bottom_up_nodes(tree)`              | Deterministic leaves-first, root-last traversal order.                        |
+| `compute_node_depths(tree)`          | BFS depth from the root(s), used by Tree-BH and LCA.                          |
 
 ## distributions.py
 

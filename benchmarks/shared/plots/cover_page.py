@@ -597,34 +597,6 @@ def write_case_manifest_pages_to_pdf(
     return str(pdf_path)
 
 
-def write_cover_pages_to_pdf(
-    pdf_path: str | None = None,
-    *,
-    n_cases: int = 110,
-    timestamp: str | None = None,
-) -> str | None:
-    """Write the cover pages to a standalone PDF file.
-
-    Returns the path written, or None if *pdf_path* was None.
-    """
-    if pdf_path is None:
-        return None
-
-    from matplotlib.backends.backend_pdf import PdfPages
-
-    with PdfPages(pdf_path) as pp:
-        fig = generate_overview_page(n_cases=n_cases, timestamp=timestamp)
-        pp.savefig(fig)
-        plt.close(fig)
-        for group in GROUP_ORDER:
-            fig = generate_section_page(group)
-            if fig is None:
-                continue
-            pp.savefig(fig)
-            plt.close(fig)
-    return pdf_path
-
-
 def write_section_page_to_pdf(group: str, pdf_path: str) -> str | None:
     """Write a single section page to a standalone PDF.
 
@@ -648,7 +620,6 @@ __all__ = [
     "generate_section_page",
     "generate_case_manifest_pages",
     "write_case_manifest_pages_to_pdf",
-    "write_cover_pages_to_pdf",
     "write_section_page_to_pdf",
     "GROUP_ORDER",
 ]

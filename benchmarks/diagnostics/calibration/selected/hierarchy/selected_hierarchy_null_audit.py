@@ -30,7 +30,6 @@ from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
-from tree_break_selection.core_utils.tree_utils import compute_node_depths
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -53,6 +52,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.poset_tree import PosetTree
+from tree_break_selection.tree.topology import compute_node_depths
 
 DEFAULT_CASE_NAMES = (
     "gauss_null_large",

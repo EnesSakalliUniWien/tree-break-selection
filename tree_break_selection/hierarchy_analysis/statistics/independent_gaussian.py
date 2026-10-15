@@ -45,7 +45,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 from tree_break_selection.space_separation import adaptive_diffusion_geometry
-from tree_break_selection.tree.construction import build_tree
+from tree_break_selection.tree.construction import DEFAULT_TREE_LINKAGE_METHOD, build_tree
 from tree_break_selection.tree.optimized_branch_lengths import (
     fit_fixed_topology_nnls_branch_lengths,
 )
@@ -144,7 +144,7 @@ def fit_independent_gaussian_tree(
     *,
     known_covariance: np.ndarray,
     observation_ids,
-    linkage_method: str = "average",
+    linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
     energy_fraction: float | None = 0.9,
     diffusion: IndependentGaussianDiffusion | None = None,
 ) -> IndependentGaussianTree:

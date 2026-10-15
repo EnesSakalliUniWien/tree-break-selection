@@ -6,10 +6,10 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from tree_break_selection.core_utils.data_utils import extract_node_sample_size
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     compute_mean_branch_length,
 )
+from tree_break_selection.hierarchy_analysis.statistics.data_utils import extract_node_sample_size
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
     DEFAULT_CONTINUOUS_COVARIANCE_POLICY,

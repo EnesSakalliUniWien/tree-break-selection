@@ -26,7 +26,6 @@ class TreeBuildDiagnostics:
     internal_node_count: int
     edge_count: int
     root_child_count: int
-    zero_branch_length_count: int
     distance_pair_count: int
     zero_distance_pair_count: int
     repeated_distance_pair_count: int
@@ -155,10 +154,6 @@ def _build_diagnostics(
 ) -> TreeBuildDiagnostics:
     """Summarize tree shape and exact tie burden without another tree fit."""
     leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
-    zero_branch_length_count = sum(
-        float(attrs["branch_length"]) == 0.0 for _parent, _child, attrs in tree.edges(data=True)
-    )
-
     _values, counts = np.unique(distances, return_counts=True)
     repeated = counts > 1
     _heights, height_counts = np.unique(linkage_matrix[:, 2], return_counts=True)
@@ -168,7 +163,6 @@ def _build_diagnostics(
         internal_node_count=tree.number_of_nodes() - len(leaves),
         edge_count=tree.number_of_edges(),
         root_child_count=tree.out_degree(tree.root()),
-        zero_branch_length_count=zero_branch_length_count,
         distance_pair_count=int(len(distances)),
         zero_distance_pair_count=int(np.count_nonzero(distances == 0.0)),
         repeated_distance_pair_count=int(counts[repeated].sum()),

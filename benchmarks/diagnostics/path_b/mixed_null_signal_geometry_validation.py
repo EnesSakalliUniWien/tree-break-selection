@@ -586,7 +586,7 @@ def build_mixed_null_signal_geometry_panel(
     return table
 
 
-def geometry_model_specs(table: pd.DataFrame | None = None) -> tuple[GeometryModelSpec, ...]:
+def geometry_model_specs() -> tuple[GeometryModelSpec, ...]:
     """Return predeclared covariate sets for mixed null/signal validation."""
     base_context = (
         "log_parent_leaf_count",
@@ -970,7 +970,7 @@ def evaluate_geometry_models(
     rows: list[dict[str, object]] = []
     for split_strategy in split_strategies:
         folds = _fold_ids(table, split_strategy)
-        for spec in geometry_model_specs(table):
+        for spec in geometry_model_specs():
             missing_kak = _missing_row_aligned_kak_columns(table, spec)
             if missing_kak:
                 rows.append(

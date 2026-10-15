@@ -19,6 +19,10 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
     DEFAULT_INTERNAL_SUPPORT_POLICY,
     CalibrationSupportPolicySnapshot,
 )
+from tree_break_selection.tree.construction.defaults import (
+    DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    DEFAULT_TREE_LINKAGE_METHOD,
+)
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
     DEFAULT_CONTINUOUS_COVARIANCE_POLICY,
@@ -53,14 +57,14 @@ class GateAnnotationConfigMetadata:
     root_stability_subsample_replicates: int = 0
     root_stability_feature_fraction: float = 0.8
     root_stability_seed: int = 0
-    root_stability_tree_distance_metric: str = "hamming"
-    root_stability_tree_linkage_method: str = "average"
+    root_stability_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC
+    root_stability_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD
     root_selective_permutation_guard_replicates: int = 0
     root_selective_permutation_guard_seed: int = 0
     root_selective_permutation_guard_alpha: float | None = None
     root_selective_permutation_guard_scope: str = "root"
-    root_selective_permutation_guard_tree_distance_metric: str = "hamming"
-    root_selective_permutation_guard_tree_linkage_method: str = "average"
+    root_selective_permutation_guard_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC
+    root_selective_permutation_guard_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD
     enforce_internal_support_thresholds: bool = False
     internal_support_policy: CalibrationSupportPolicySnapshot = DEFAULT_INTERNAL_SUPPORT_POLICY
 

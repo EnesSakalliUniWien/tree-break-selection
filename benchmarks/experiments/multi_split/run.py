@@ -328,9 +328,7 @@ def plot_multi_split_results(df: pd.DataFrame) -> plt.Figure:
     return fig
 
 
-def plot_multi_split_heatmap(
-    df: pd.DataFrame, branch_lengths: List[float], n_groups_list: List[int]
-) -> plt.Figure:
+def plot_multi_split_heatmap(df: pd.DataFrame) -> plt.Figure:
     """Plot heatmap of ARI across branch lengths and group counts."""
     # Pivot to create grid
     pivot_ari = df.pivot_table(
@@ -491,7 +489,7 @@ def main():
     print(f"Saved: {output_dir / 'multi_split_results.png'}")
 
     # Create heatmap across all branch lengths
-    fig2 = plot_multi_split_heatmap(combined, branch_lengths, n_groups_list)
+    fig2 = plot_multi_split_heatmap(combined)
     fig2.savefig(output_dir / "multi_split_heatmap.png", dpi=150, bbox_inches="tight")
     print(f"Saved: {output_dir / 'multi_split_heatmap.png'}")
 

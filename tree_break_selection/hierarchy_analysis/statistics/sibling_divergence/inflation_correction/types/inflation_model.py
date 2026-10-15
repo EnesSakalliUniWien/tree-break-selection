@@ -374,10 +374,6 @@ class EmpiricalNullInflationModel:
         return self.sample.weights
 
     @property
-    def sample_parent_ids(self) -> tuple[object, ...]:
-        return self.sample.parent_ids
-
-    @property
     def sample_is_strict_null(self) -> np.ndarray:
         return self.sample.is_strict_null
 

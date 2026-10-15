@@ -41,7 +41,6 @@ class SiblingInflationInputs:
     """Sibling records and fitted empirical-null inflation model for one tree."""
 
     records: tuple[SiblingPairRecord, ...]
-    non_binary_nodes: tuple[object, ...]
     model: EmpiricalNullInflationModel | None
 
 
@@ -73,7 +72,7 @@ def collect_sibling_inflation_inputs(
             spectral_context=edge_gate_result.spectral_context,
         )
     )
-    records, non_binary_nodes = collect_sibling_pair_records(
+    records, _non_binary_nodes = collect_sibling_pair_records(
         tree,
         edge_gate_result.annotated_df,
         sibling_projection_dimensions_from_edge_comparisons=projection_dimensions,
@@ -85,7 +84,6 @@ def collect_sibling_inflation_inputs(
     model = fit_empirical_null_inflation_model(records) if n_focal > 0 else None
     return SiblingInflationInputs(
         records=tuple(records),
-        non_binary_nodes=tuple(non_binary_nodes),
         model=model,
     )
 

@@ -24,7 +24,7 @@ import pandas as pd
 from scipy import sparse
 from scipy.optimize import lsq_linear
 
-from tree_break_selection.core_utils.tree_utils import tree_root
+from tree_break_selection.tree.topology import tree_root
 
 BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC = "linkage_ultrametric"
 BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS = "fixed_topology_nnls"

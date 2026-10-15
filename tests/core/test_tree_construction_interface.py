@@ -6,9 +6,9 @@ import pandas as pd
 import pytest
 from scipy.spatial.distance import pdist
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
 from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.poset_tree import PosetTree
+from tree_break_selection.tree.topology import bottom_up_nodes
 
 
 def _data() -> pd.DataFrame:

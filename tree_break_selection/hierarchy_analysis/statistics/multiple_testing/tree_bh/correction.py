@@ -48,7 +48,7 @@ def apply_tree_bh_correction(
     tree: nx.DiGraph,
     p_values: np.ndarray,
     child_ids: list[str],
-    alpha: float = 0.05,
+    alpha: float,
 ) -> ChildParentEdgeTreeBHResult:
     """Apply Tree-BH hierarchical FDR correction.
 

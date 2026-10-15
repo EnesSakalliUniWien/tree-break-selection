@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.root.root_values import finite_median
 from benchmarks.diagnostics.calibration.values import bool_value, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
 
@@ -214,10 +215,7 @@ def _numeric(rows: pd.DataFrame, column: str) -> pd.Series:
 
 
 def _is_finite(value: object) -> bool:
-    try:
-        return math.isfinite(float(value))
-    except (TypeError, ValueError):
-        return False
+    return math.isfinite(finite_float(value))
 
 
 def _empty_parent_id(value: object) -> bool:
@@ -680,14 +678,6 @@ def build_retained_pass_through_topology_match_rows(
     return pd.DataFrame.from_records(records, columns=MATCH_ROW_COLUMNS)
 
 
-def _finite_median(values: pd.Series) -> float:
-    finite = pd.to_numeric(values, errors="coerce").replace([np.inf, -np.inf], np.nan)
-    finite = finite.dropna()
-    if finite.empty:
-        return math.nan
-    return float(finite.median())
-
-
 def summarize_retained_pass_through_topology_likelihood(
     likelihood_rows: pd.DataFrame,
     match_rows: pd.DataFrame,
@@ -828,15 +818,15 @@ def summarize_retained_pass_through_topology_likelihood(
                 "control_traversal_only_count": int(
                     controls["traversal_only_pair"].astype(bool).sum()
                 ),
-                "median_signal_depth": _finite_median(signal["left_depth"]),
-                "median_control_depth": _finite_median(controls["left_depth"]),
-                "median_signal_log_descendant_leaves": _finite_median(
+                "median_signal_depth": finite_median(signal["left_depth"]),
+                "median_control_depth": finite_median(controls["left_depth"]),
+                "median_signal_log_descendant_leaves": finite_median(
                     signal["left_log_descendant_leaves"]
                 ),
-                "median_control_log_descendant_leaves": _finite_median(
+                "median_control_log_descendant_leaves": finite_median(
                     controls["left_log_descendant_leaves"]
                 ),
-                "median_match_distance": _finite_median(match_rows["match_distance"]),
+                "median_match_distance": finite_median(match_rows["match_distance"]),
                 "finite_signal_pass_through_context_count": (finite_signal_pass_context),
                 "finite_control_pass_through_context_count": (finite_control_pass_context),
                 "finite_signal_downstream_split_distance_count": (finite_signal_downstream_split),

@@ -14,12 +14,12 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     resolve_feature_space,
     validate_feature_matrix,
 )
+from tree_break_selection.tree.topology import bottom_up_nodes
 
 CONTINUOUS_COVARIANCE_BY_BLOCK = "continuous_covariance_by_block"
 ContinuousCovariancePolicy = Literal["parent_total", "guarded_within_child"]

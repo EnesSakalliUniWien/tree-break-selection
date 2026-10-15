@@ -23,6 +23,13 @@ All notable changes to this project are documented in this file.
 - The manifold comparison plot raises `ImportError` when `umap` is missing instead of plotting PCA under a UMAP label.
 - The artifact catalog no longer stores archive locations; `check --verify-archive` and `restore` use `~/kl-te-cluster-archive` unless `--archive-root` is given.
 - `make lint` also runs `ruff format --check .`; the `[tool.ruff] src` entry that hid first-party import ordering is gone, and imports are sorted project-wide.
+- `tree_break_selection/core_utils/` is gone: `tree_root`, `bottom_up_nodes` and `compute_node_depths` live in `tree/topology.py`, and `data_utils.py` moved to `hierarchy_analysis/statistics/data_utils.py`.
+- `hierarchy_analysis`, `hierarchy_analysis.statistics`, `statistics.projection` and `statistics.sibling_divergence` no longer re-export names; import from the defining module. Importing one statistics module no longer loads the whole statistics stack.
+- The rectangular tree layout, the internal-node halo, the linkage tree builder and three diagnostics find the root with `tree.topology.tree_root`. The layout no longer lays out forests, and the NNLS null-calibration sweep raises instead of reporting an empty `tree_root`. Tree-BH `find_root_nodes` and sibling-FDR `_root_nodes` keep returning every parentless node: the gate fixtures use a detached calibration component.
+- `benjamini_hochberg_correction` and `apply_tree_bh_correction` require `alpha`; the unused `0.05` defaults are gone.
+- Gate and guard root-stability and permutation-guard defaults, `fit_independent_gaussian_tree(linkage_method=...)` and the TBS runner mirrors use `DEFAULT_BINARY_TREE_DISTANCE_METRIC` and `DEFAULT_TREE_LINKAGE_METHOD` instead of retyped `"hamming"`/`"average"`.
+- Seven scalar coercion copies use `values.finite_float` or `root_values.finite_median`: the alpha-structure sweep and gate-path trace map `inf` to NaN, and the selected-edge geometry panel maps unparseable cells to NaN instead of raising.
+- `benchmarks/README.md` documents every `TBS_*` variable; the dated 2026-04-27 and 2026-07-27 repository audits moved from `docs/` to `raw/inbox/`.
 
 
 ### Removed
@@ -44,6 +51,10 @@ All notable changes to this project are documented in this file.
 - Test-only distributional-action API: `edge_distributional_action`, `binary_split_distributional_action`, `binary_split_distributional_action_summary` and `BinarySplitDistributionalActionSummary`; use `edge_distributional_action_summary` and `split_distributional_action_summary`.
 - Unread data: the GO dataset inventory's `ResultKind` folder templates and descriptions (`RESULT_KINDS` is now a tuple of codes) and the unused `DEFAULT_RESULT_ROOT` of the root hard-negative replay panel.
 - The endotypes KAK page column `common_invariant_axis_score` is now `common_axis_score` (and `is_common_invariant_axis` is `is_common_axis`).
+- Dead symbols: `write_cover_pages_to_pdf`, `list_clustbench_batteries`, `list_clustbench_datasets`, `projected_quadratic_directional_derivative` and `EmpiricalNullInflationModel.sample_parent_ids`.
+- Unread parameters: `plot_multi_split_heatmap(branch_lengths, n_groups_list)`, `_run_tbs_distance_tree_method(method_id)`, `build_lens_coordinates(data)` and `geometry_model_specs(table)`.
+- Write-only fields: `TreeBuildDiagnostics.zero_branch_length_count`, `ClusterColorSpec.unassigned_color`, `SiblingInflationInputs.non_binary_nodes` and `SiblingInflationTrace.raw_degrees_of_freedom`.
+- The `TBS_FORCE_UMAP_FOR_LARGE` variable, which the full runner set and nothing read.
 
 ### Fixed
 - The full benchmark's relationship analysis no longer fails with `KeyError: 'gaussian_sparse_signal_highd_noise'`; the category is registered in the cover-page group map, and a test checks every default case category.

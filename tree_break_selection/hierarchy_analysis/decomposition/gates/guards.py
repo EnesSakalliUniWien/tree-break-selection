@@ -11,7 +11,6 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
 
-from tree_break_selection.core_utils.tree_utils import tree_root
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     build_contrast_covariance,
     compute_whitened_wald_contrast,
@@ -24,8 +23,12 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     identify_binary_sibling_children,
 )
+from tree_break_selection.tree.construction.defaults import (
+    DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    DEFAULT_TREE_LINKAGE_METHOD,
+)
 from tree_break_selection.tree.feature_space import FeatureSpace
-from tree_break_selection.tree.topology import compute_descendant_leaf_sets
+from tree_break_selection.tree.topology import compute_descendant_leaf_sets, tree_root
 
 from .annotation_predicates import (
     annotation_bool,
@@ -318,8 +321,8 @@ def _selected_permutation_p_value(
     method: str,
     bootstrap_replicates: int,
     seed: int,
-    tree_distance_metric: str = "hamming",
-    tree_linkage_method: str = "average",
+    tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
     observed_p_value: float | None = None,
     statistic: Callable[..., float],
     guard_name: str,
@@ -381,8 +384,8 @@ def selected_root_permutation_p_value(
     method: str,
     bootstrap_replicates: int,
     seed: int,
-    tree_distance_metric: str = "hamming",
-    tree_linkage_method: str = "average",
+    tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
     observed_p_value: float | None = None,
 ) -> dict[str, float]:
     """Estimate the selected-root p-value by feature/block permutation."""
@@ -407,8 +410,8 @@ def selected_global_sibling_min_permutation_p_value(
     method: str,
     bootstrap_replicates: int,
     seed: int,
-    tree_distance_metric: str = "hamming",
-    tree_linkage_method: str = "average",
+    tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
     observed_p_value: float | None = None,
 ) -> dict[str, float]:
     """Estimate a whole selected-family minimum sibling p-value.
@@ -472,8 +475,8 @@ def compute_root_feature_subsample_stability(
     subsample_replicates: int,
     feature_fraction: float,
     seed: int,
-    tree_distance_metric: str = "hamming",
-    tree_linkage_method: str = "average",
+    tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
 ) -> dict[str, float]:
     """Measure supplied-root stability under deterministic feature-block subsampling."""
     validate_root_stability_guard_config(
@@ -669,8 +672,8 @@ def apply_root_selective_permutation_guard(
     seed: int,
     alpha: float,
     scope: str = "root",
-    tree_distance_metric: str = "hamming",
-    tree_linkage_method: str = "average",
+    tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
 ) -> pd.DataFrame:
     """Close selected-root or selected-subtree splits failing permutation evidence."""
     validate_root_selective_permutation_guard_config(

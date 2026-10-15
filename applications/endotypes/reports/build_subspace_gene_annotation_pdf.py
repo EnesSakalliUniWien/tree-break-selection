@@ -25,6 +25,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from applications.endotypes._shared import load_binary_feature_matrix, safe_name
 from applications.endotypes.reports.artifact_index import load_artifact_index
+from benchmarks.diagnostics.calibration.values import finite_float
 from tree_break_selection.plot.image_panel import draw_image_panel
 
 GO_ID_RE = re.compile(r"(GO:\d{7})")
@@ -497,15 +498,6 @@ def to_int(value: object, default: int = 0) -> int:
         return default
 
 
-def to_float(value: object, default: float = math.nan) -> float:
-    try:
-        if value is None or pd.isna(value):
-            return default
-        return float(value)
-    except (TypeError, ValueError):
-        return default
-
-
 def load_cluster_annotations_from_roster(
     roster_path: Path,
     *,
@@ -544,12 +536,14 @@ def load_cluster_annotations_from_roster(
                 cluster_size=to_int(row.get("cluster_size", 0)),
                 coherent_by_rule=str(row.get("coherent_by_rule", "")).lower() == "true",
                 n_significant_terms_q05=to_int(row.get("n_significant_terms_q05", 0)),
-                min_q_value=to_float(row.get("min_q_value", math.nan)),
+                min_q_value=finite_float(row.get("min_q_value", math.nan)),
                 top_term=str(row.get("top_term", "")) if pd.notna(row.get("top_term", "")) else "",
                 top_go_id=str(row.get("top_go_id", ""))
                 if pd.notna(row.get("top_go_id", ""))
                 else "",
-                top_term_prevalence_delta=to_float(row.get("top_term_prevalence_delta", math.nan)),
+                top_term_prevalence_delta=finite_float(
+                    row.get("top_term_prevalence_delta", math.nan)
+                ),
                 representative_genes=split_semicolon(row.get("representative_genes", "")),
                 representative_gene_proteins=split_semicolon(
                     row.get("representative_gene_proteins", "")
