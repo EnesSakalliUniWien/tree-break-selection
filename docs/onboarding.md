@@ -77,8 +77,7 @@ short: follow it before opening deep implementation directories.
 - `manuscript/build/`: build output.
 - root `analysis/`: ignored local analysis workspace if present.
 - hidden tool directories such as `.venv/`, `.pytest_cache/`, `.ruff_cache/`,
-  `.asv/`, and `.serena/`. `.mex/` is a thin router into `wiki/`; read
-  `AGENTS.md` instead.
+  `.asv/`, and `.serena/`.
 
 ## Main Code Route
 

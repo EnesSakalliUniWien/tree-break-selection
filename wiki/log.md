@@ -7942,3 +7942,14 @@ version comparison report and wiki source summary. Production code unchanged.
   `--strict-markers`. Noted only: `.serena/` is fully git-ignored, and the
   method-constant manifest cites a `benchmarks/results/` run that is not
   retained.
+
+## 2026-10-15 — One memory system
+
+- Removed `.mex/`, the `mex-agent` compatibility bridge. Its router, setup,
+  sync and context notes only pointed back into `wiki/`, and its pattern
+  index was empty, so no project knowledge moved. `wiki/` is the only memory
+  system: root `AGENTS.md` replaces its "Mex Compatibility" section with that
+  rule, `docs/onboarding.md` drops the `.mex/` note, and
+  `tests/wiki/test_memory_contract.py` replaces the two `.mex` checks with one
+  that requires `AGENTS.md` to route to `wiki/index.md` and `wiki/log.md` and
+  fails if `.mex/` reappears.

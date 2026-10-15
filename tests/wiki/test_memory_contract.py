@@ -10,31 +10,12 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def test_mex_bootstrap_delegates_to_wiki_memory_contract() -> None:
+def test_root_guide_routes_memory_to_the_wiki() -> None:
     root_agents = read("AGENTS.md")
-    agents = read(".mex/AGENTS.md")
-    router = read(".mex/ROUTER.md")
 
-    assert ".mex/" in root_agents
-    assert "compatibility" in root_agents.lower()
+    assert "wiki/index.md" in root_agents
     assert "wiki/log.md" in root_agents
-
-    combined = agents + "\n" + router
-    assert "[Project Name]" not in combined
-    assert "[YYYY-MM-DD]" not in combined
-    assert "wiki/index.md" in combined
-    assert "wiki/log.md" in combined
-    assert "make wiki-lint" in combined
-    assert "mex log" not in combined
-
-
-def test_mex_pattern_index_has_no_placeholder_links() -> None:
-    index = read(".mex/patterns/INDEX.md")
-
-    assert "filename.md" not in index
-    assert "add-api-client.md" not in index
-    assert "debug-pipeline.md" not in index
-    assert "crud-operations.md" not in index
+    assert not (ROOT / ".mex").exists(), "wiki/ is the only project memory system."
 
 
 def _wiki_title(path: Path) -> str:
