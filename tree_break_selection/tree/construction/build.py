@@ -66,6 +66,7 @@ def _validate_condensed_distance(
 def _canonical_sample_order(labels: list[object]) -> list[int]:
     """Return a row-order-independent sample order for deterministic tie breaks."""
     if all(isinstance(label, str) for label in labels):
+
         def natural_string_key(position: int) -> tuple[tuple[tuple[int, object], ...], str]:
             label = labels[position]
             assert isinstance(label, str)
@@ -114,9 +115,7 @@ def _validate_decomposition_tree(
             f"roots={roots!r}, cached_root={tree.root()!r}."
         )
 
-    invalid_internal_nodes = [
-        node for node in tree.nodes if tree.out_degree(node) not in {0, 2}
-    ]
+    invalid_internal_nodes = [node for node in tree.nodes if tree.out_degree(node) not in {0, 2}]
     if invalid_internal_nodes:
         raise ValueError(
             "TBS tree construction requires every internal node to have exactly two children; "
@@ -124,9 +123,7 @@ def _validate_decomposition_tree(
         )
 
     observed_leaf_labels = [
-        tree.nodes[node].get("label")
-        for node in tree.nodes
-        if tree.out_degree(node) == 0
+        tree.nodes[node].get("label") for node in tree.nodes if tree.out_degree(node) == 0
     ]
     if Counter(observed_leaf_labels) != Counter(expected_leaf_labels):
         raise ValueError(
@@ -159,8 +156,7 @@ def _build_diagnostics(
     """Summarize tree shape and exact tie burden without another tree fit."""
     leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
     zero_branch_length_count = sum(
-        float(attrs["branch_length"]) == 0.0
-        for _parent, _child, attrs in tree.edges(data=True)
+        float(attrs["branch_length"]) == 0.0 for _parent, _child, attrs in tree.edges(data=True)
     )
 
     _values, counts = np.unique(distances, return_counts=True)

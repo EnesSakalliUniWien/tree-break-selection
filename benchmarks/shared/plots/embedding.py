@@ -18,15 +18,14 @@ from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
-from tree_break_selection.plot.cluster_color_mapping import (
-    build_cluster_color_spec,
-    present_cluster_ids,
-)
-
 from benchmarks.shared.util.pdf.layout import (
     PDF_PAGE_SIZE_INCHES,
     PDF_WIDE_PAGE_SIZE_INCHES,
     set_pdf_page_size,
+)
+from tree_break_selection.plot.cluster_color_mapping import (
+    build_cluster_color_spec,
+    present_cluster_ids,
 )
 
 # Reduce noisy but expected warnings emitted during visualization

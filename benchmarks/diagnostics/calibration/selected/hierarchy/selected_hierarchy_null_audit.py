@@ -21,6 +21,15 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
+    parse_selected_hierarchy_args,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.core_utils.tree_utils import compute_node_depths
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
@@ -44,15 +53,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
-    parse_selected_hierarchy_args,
-)
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.cases import get_default_test_cases
-from benchmarks.shared.runners.method_registry import METHOD_SPECS
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
-from benchmarks.shared.util.time import format_timestamp_utc
 
 DEFAULT_CASE_NAMES = (
     "gauss_null_large",

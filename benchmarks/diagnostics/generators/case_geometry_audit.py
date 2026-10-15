@@ -16,10 +16,10 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist, squareform
-from tree_break_selection.tree.feature_space import resolve_feature_space, validate_feature_matrix
 
 from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.generators import generate_case_data
+from tree_break_selection.tree.feature_space import resolve_feature_space, validate_feature_matrix
 
 LOW_SIGNAL_NEAREST_NEIGHBOR_THRESHOLD = 0.55
 LOW_SIGNAL_SEPARATION_RATIO_THRESHOLD = 1.05
@@ -80,7 +80,9 @@ def _pairwise_signal(
     return _distance_signal(distances, labels)
 
 
-def _distance_signal(distances: np.ndarray, labels: np.ndarray) -> tuple[float, float, float, float]:
+def _distance_signal(
+    distances: np.ndarray, labels: np.ndarray
+) -> tuple[float, float, float, float]:
     same_label = labels[:, None] == labels[None, :]
     upper = np.triu(np.ones_like(distances, dtype=bool), k=1)
     within = distances[upper & same_label]
@@ -98,7 +100,9 @@ def _distance_signal(distances: np.ndarray, labels: np.ndarray) -> tuple[float, 
 
 
 def _duplicate_evidence(values: np.ndarray, labels: np.ndarray) -> tuple[int, int, int, int]:
-    unique_rows, inverse, counts = np.unique(values, axis=0, return_inverse=True, return_counts=True)
+    unique_rows, inverse, counts = np.unique(
+        values, axis=0, return_inverse=True, return_counts=True
+    )
     mixed_label_blocks = 0
     for block_id, count in enumerate(counts):
         if int(count) <= 1:
@@ -189,7 +193,9 @@ def audit_case(case: dict[str, object]) -> GeneratorGeometryAuditRow:
         values,
         labels,
     )
-    default_metric = "euclidean" if resolved_feature_space.family_label == "continuous" else "hamming"
+    default_metric = (
+        "euclidean" if resolved_feature_space.family_label == "continuous" else "hamming"
+    )
     within, between, ratio, nearest_same = _pairwise_signal(
         values,
         labels,
@@ -249,7 +255,8 @@ def audit_case(case: dict[str, object]) -> GeneratorGeometryAuditRow:
         geometry_flags=flags,
         scientific_assessment=assessment,
         recommended_simulation_family=str(
-            metadata.get("recommended_simulation_family") or _recommended_simulation_family(metadata)
+            metadata.get("recommended_simulation_family")
+            or _recommended_simulation_family(metadata)
         ),
     )
 
@@ -270,9 +277,9 @@ def _summary(frame: pd.DataFrame) -> dict[str, object]:
         "flag_counts": dict(sorted(flag_counts.items())),
         "intent_counts": frame["benchmark_intent"].value_counts().to_dict(),
         "representation_counts": frame["feature_representation"].value_counts().to_dict(),
-        "recommended_simulation_counts": frame[
-            "recommended_simulation_family"
-        ].value_counts().to_dict(),
+        "recommended_simulation_counts": frame["recommended_simulation_family"]
+        .value_counts()
+        .to_dict(),
     }
 
 

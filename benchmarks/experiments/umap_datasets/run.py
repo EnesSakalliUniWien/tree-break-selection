@@ -25,6 +25,7 @@ from scipy.spatial.distance import pdist
 from sklearn.datasets import load_digits
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 from sklearn.preprocessing import KBinsDiscretizer, StandardScaler
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -32,6 +33,7 @@ from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecom
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
 from tree_break_selection.tree.construction import tree_from_linkage
 
 

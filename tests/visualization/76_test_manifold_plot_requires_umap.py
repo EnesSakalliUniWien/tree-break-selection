@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 import pytest
+
 from benchmarks.shared.plots.manifold import create_manifold_alignment_plot
 
 

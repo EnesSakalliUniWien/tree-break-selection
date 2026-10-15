@@ -15,12 +15,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from applications.scrna._shared import artifact_record
 from benchmarks.diagnostics.calibration.values import bool_value
 from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
     edge_distributional_action_summary,
 )
-
-from applications.scrna._shared import artifact_record
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BENCHMARK_ROOT = PROJECT_ROOT / "raw/assets/benchmark-results"

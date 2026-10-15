@@ -38,18 +38,18 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
-from tree_break_selection.space_separation import (
-    SpectralBlock,
-    coordinates_for_block,
-    cosine_eigendecomposition,
-    weight_feature_matrix,
-)
 
 from applications.endotypes._shared import (
     load_feature_matrix,
     map_symbols_to_entrez,
     parse_reference_endotypes,
     safe_name,
+)
+from tree_break_selection.space_separation import (
+    SpectralBlock,
+    coordinates_for_block,
+    cosine_eigendecomposition,
+    weight_feature_matrix,
 )
 
 EmbeddingMethod = Literal["umap", "svd"]

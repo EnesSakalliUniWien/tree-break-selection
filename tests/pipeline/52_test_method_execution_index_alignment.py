@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import benchmarks.shared.util.method_execution as method_execution
 import numpy as np
 import pandas as pd
 import pytest
+
+import benchmarks.shared.util.method_execution as method_execution
 from benchmarks.shared.generators.case_data_contracts import methodological_contract_metadata
 from benchmarks.shared.types import MethodRunResult, MethodSpec
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (

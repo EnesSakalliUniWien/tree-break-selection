@@ -24,6 +24,17 @@ import numpy as np
 import pandas as pd
 from scipy import integrate, stats
 from scipy.spatial.distance import squareform
+
+from benchmarks.diagnostics.calibration.reporting import (
+    print_diagnostic_output_paths,
+    write_diagnostic_bundle,
+)
+from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
+    effective_rank,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.shared.tbs_tree_context import TbsTreeContext, build_tbs_tree_context
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -50,17 +61,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
-
-from benchmarks.diagnostics.calibration.reporting import (
-    print_diagnostic_output_paths,
-    write_diagnostic_bundle,
-)
-from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
-    effective_rank,
-)
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.tbs_tree_context import TbsTreeContext, build_tbs_tree_context
 
 SCHEMA_VERSION = "root_selected_region_margins/v6"
 GENERATED_BY = "benchmarks.diagnostics.calibration.root.selected.root_selected_region_margins"

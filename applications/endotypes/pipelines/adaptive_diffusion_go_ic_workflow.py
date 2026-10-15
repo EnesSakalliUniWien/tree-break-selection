@@ -9,15 +9,7 @@ from dataclasses import asdict
 
 import numpy as np
 import pandas as pd
-from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from scipy.cluster.hierarchy import linkage
-from tree_break_selection.space_separation import (
-    adaptive_spectral_blocks,
-    block_adaptive_diffusion_geometry,
-    coordinates_for_block,
-    cosine_eigendecomposition,
-    weight_feature_matrix,
-)
 
 from applications.endotypes._shared import matrix_slug, safe_name
 from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_ranking import (
@@ -59,6 +51,14 @@ from applications.endotypes.reports.go_ic.adaptive_diffusion_subspace_artifacts 
 from applications.endotypes.reports.go_ic.adaptive_diffusion_subspace_reports import (
     write_ranking_plots,
     write_workflow_pdfs,
+)
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from tree_break_selection.space_separation import (
+    adaptive_spectral_blocks,
+    block_adaptive_diffusion_geometry,
+    coordinates_for_block,
+    cosine_eigendecomposition,
+    weight_feature_matrix,
 )
 
 

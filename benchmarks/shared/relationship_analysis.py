@@ -665,9 +665,7 @@ def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
     else:
         sig_edge_fraction = np.nan
 
-    is_leaf = (
-        bool_series(df["is_leaf"]) if "is_leaf" in df.columns else df["leaf_count"].eq(1)
-    )
+    is_leaf = bool_series(df["is_leaf"]) if "is_leaf" in df.columns else df["leaf_count"].eq(1)
     internal_nodes = float((~is_leaf).sum())
     if "branch_length" in df.columns:
         branch_lengths = pd.to_numeric(df["branch_length"], errors="coerce")

@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from scipy.optimize import nnls
+
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
@@ -64,9 +65,7 @@ def _dense_path_design(tree: PosetTree, leaf_labels: list[str]) -> np.ndarray:
             path = nx.shortest_path(undirected_tree, left_label, right_label)
             for parent, child in zip(path[:-1], path[1:], strict=True):
                 directed_edge = (
-                    (parent, child)
-                    if (parent, child) in edge_index_by_pair
-                    else (child, parent)
+                    (parent, child) if (parent, child) in edge_index_by_pair else (child, parent)
                 )
                 row[edge_index_by_pair[directed_edge]] = 1.0
             rows.append(row)
@@ -146,7 +145,10 @@ def test_fixed_topology_nnls_uses_prepared_geometry_without_restandardizing() ->
     assert result.target_metric == BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN
     assert result.target_normalization == "none"
     assert result.target_normalization_divisor == 1
-    assert result.to_dict()["target_definition"] == "squared Euclidean distance in the supplied geometry"
+    assert (
+        result.to_dict()["target_definition"]
+        == "squared Euclidean distance in the supplied geometry"
+    )
     assert tree.graph["branch_length_optimization"]["target_normalization_divisor"] == 1
     assert result.residual_rmse < 1e-8
     assert np.isclose(result.target_mean, 10.0 / 3.0)

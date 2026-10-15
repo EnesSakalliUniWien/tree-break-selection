@@ -18,13 +18,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
-    SIBLING_GATE_PROFILES,
-)
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.values import bool_series, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
+from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+    SIBLING_GATE_PROFILES,
+)
 
 STUDY_ROLE = "diagnostic_selected_neighborhood_distribution_not_calibration"
 SCHEMA_VERSION = "selected_neighborhood_distribution_panel/v1"

@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+
 from benchmarks.diagnostics.calibration.sibling.known_branch_skew_diagnostic import (
     KnownBranchConfig,
     _fixed_tree,
@@ -37,12 +38,8 @@ def test_fixed_tree_traversal_counts_only_reached_splits() -> None:
         "A": {"statistic": 15.0, "degrees_of_freedom": 2, "p_value": 0.001},
         "B": {"statistic": 0.3, "degrees_of_freedom": 2, "p_value": 0.7},
     }
-    no_passthrough = _traversal_row(
-        _fixed_tree(), tests, truths, alpha=0.01, passthrough=False
-    )
-    with_passthrough = _traversal_row(
-        _fixed_tree(), tests, truths, alpha=0.01, passthrough=True
-    )
+    no_passthrough = _traversal_row(_fixed_tree(), tests, truths, alpha=0.01, passthrough=False)
+    with_passthrough = _traversal_row(_fixed_tree(), tests, truths, alpha=0.01, passthrough=True)
 
     assert no_passthrough["n_reached_splits"] == 0
     assert no_passthrough["n_reached_false_splits"] == 0
@@ -91,7 +88,9 @@ def test_writer_refuses_to_overwrite_nonempty_output_directory(tmp_path) -> None
     config = KnownBranchConfig(output_dir=tmp_path, replicates=1)
     (tmp_path / "keep.txt").write_text("existing", encoding="utf-8")
     try:
-        write_diagnostic(config, {"local": None, "selected_root": None, "traversal": None}, run_command="test")
+        write_diagnostic(
+            config, {"local": None, "selected_root": None, "traversal": None}, run_command="test"
+        )
     except FileExistsError:
         pass
     else:

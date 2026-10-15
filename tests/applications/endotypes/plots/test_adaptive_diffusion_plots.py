@@ -8,6 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+from matplotlib.figure import Figure
+from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.spatial.distance import pdist
+
 from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_terms import (
     build_axis_loadings,
     build_term_metadata,
@@ -30,9 +34,6 @@ from applications.endotypes.plots.terms.axis_term_heatmap import create_axis_ter
 from applications.endotypes.plots.trees.dendrogram_plot import create_dendrogram
 from applications.endotypes.plots.trees.tree_cluster_plot import create_tree_clusters
 from applications.endotypes.reports.go_ic.adaptive_diffusion_plot_exports import write_figure
-from matplotlib.figure import Figure
-from scipy.cluster.hierarchy import dendrogram, linkage
-from scipy.spatial.distance import pdist
 
 
 @pytest.fixture
@@ -193,7 +194,8 @@ def test_comparison_preserves_long_terms_as_readable_native_text(monkeypatch, mo
     monkeypatch.setattr(pd, "read_csv", no_io)
     monkeypatch.setattr(plt, "imread", no_io)
     lines = [
-        f"mode {i:02d}: " + "regulation of cellular metabolic process " * (5 if mode_count == 6 else 1)
+        f"mode {i:02d}: "
+        + "regulation of cellular metabolic process " * (5 if mode_count == 6 else 1)
         for i in range(mode_count)
     ]
     lines[-1] = (
@@ -220,14 +222,30 @@ def test_comparison_preserves_long_terms_as_readable_native_text(monkeypatch, mo
 
 
 def test_ranking_shows_tiers_and_specificity_without_reordering_by_bic():
-    ranking = pd.DataFrame([
-        dict(status="ok", display_rank=2, weighting="tfidf", block_name="b",
-             quality_tier=1, quality_tier_label="broad_coherent",
-             specificity_score=0.8, go_bic_active_per_gene=4.0),
-        dict(status="ok", display_rank=1, weighting="binary", block_name="a",
-             quality_tier=0, quality_tier_label="quality_plausible",
-             specificity_score=0.5, go_bic_active_per_gene=8.0),
-    ])
+    ranking = pd.DataFrame(
+        [
+            dict(
+                status="ok",
+                display_rank=2,
+                weighting="tfidf",
+                block_name="b",
+                quality_tier=1,
+                quality_tier_label="broad_coherent",
+                specificity_score=0.8,
+                go_bic_active_per_gene=4.0,
+            ),
+            dict(
+                status="ok",
+                display_rank=1,
+                weighting="binary",
+                block_name="a",
+                quality_tier=0,
+                quality_tier_label="quality_plausible",
+                specificity_score=0.5,
+                go_bic_active_per_gene=8.0,
+            ),
+        ]
+    )
     original = ranking.copy(deep=True)
     fig = create_subspace_ranking(ranking)
     try:

@@ -9,6 +9,15 @@ from typing import Any
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.sibling.nulls.sibling_inflation_diagnostic import (
+    collect_sibling_inflation_inputs,
+)
+from benchmarks.diagnostics.oracle.oracle_tree_recoverability import (
+    OracleTreeCutResult,
+    oracle_subtree_cut,
+)
+from benchmarks.shared.tbs_tree_context import TbsTreeContext, build_tbs_tree_context
 from tree_break_selection.core_utils.tree_utils import bottom_up_nodes, compute_node_depths
 from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
     GateAnnotationBundle,
@@ -28,15 +37,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 from tree_break_selection.tree.feature_space import FeatureSpace
-
-from benchmarks.diagnostics.calibration.sibling.nulls.sibling_inflation_diagnostic import (
-    collect_sibling_inflation_inputs,
-)
-from benchmarks.diagnostics.oracle.oracle_tree_recoverability import (
-    OracleTreeCutResult,
-    oracle_subtree_cut,
-)
-from benchmarks.shared.tbs_tree_context import TbsTreeContext, build_tbs_tree_context
 
 
 @dataclass(frozen=True)

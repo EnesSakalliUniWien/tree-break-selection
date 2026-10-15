@@ -15,13 +15,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.types.inflation_model import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     CalibrationSupportThresholds,
 )
-
-from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
-from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_internal_support_threshold_validation_not_calibration"
 SCHEMA_VERSION = "internal_support_threshold_validation/v2"
@@ -120,10 +120,7 @@ def _threshold_failures(
         failures.append("local_effective_sample_size_below_threshold")
     if float(row["local_max_group_weight_share"]) > thresholds.max_weight_share:
         failures.append("local_max_group_weight_share_above_threshold")
-    if (
-        float(row["leave_one_group_max_delta_log_c"])
-        > thresholds.max_leave_one_group_delta_log_c
-    ):
+    if float(row["leave_one_group_max_delta_log_c"]) > thresholds.max_leave_one_group_delta_log_c:
         failures.append("leave_one_group_delta_log_c_above_threshold")
     return tuple(failures)
 
@@ -229,9 +226,7 @@ def summarize_internal_support_threshold_rows(rows: pd.DataFrame) -> pd.DataFram
                 "n_admissible_null_contexts": int(admissible_null.sum()),
                 "n_admissible_signal_contexts": int(admissible_signal.sum()),
                 "n_outcome_available_contexts": int(outcome_available.sum()),
-                "n_admissible_null_contexts_with_outcome": int(
-                    admissible_null_with_outcome.sum()
-                ),
+                "n_admissible_null_contexts_with_outcome": int(admissible_null_with_outcome.sum()),
                 "n_admissible_signal_contexts_with_outcome": int(
                     admissible_signal_with_outcome.sum()
                 ),

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from scipy.spatial.distance import pdist
+
 from tree_break_selection.space_separation import (
     SpectralBlock,
     adaptive_spectral_blocks,
@@ -20,12 +21,8 @@ from tree_break_selection.space_separation import (
 def test_spectral_blocks_keep_repeated_eigenspace_whole(perturbation: float) -> None:
     eigenvalues = np.array([10, 9, 8, 7, 6, 6, 6, 6, 6, 6, 2, 1], dtype=float)
     eigenvalues[4:10] += np.linspace(perturbation, 0, 6)
-    blocks, _ = adaptive_spectral_blocks(
-        eigenvalues, min_segment_length=4, max_segments=8
-    )
-    assert [i for b in blocks for i in range(b.block_start, b.block_end + 1)] == list(
-        range(1, 13)
-    )
+    blocks, _ = adaptive_spectral_blocks(eigenvalues, min_segment_length=4, max_segments=8)
+    assert [i for b in blocks for i in range(b.block_start, b.block_end + 1)] == list(range(1, 13))
     assert all(b.block_end - b.block_start + 1 >= 4 for b in blocks)
     assert any(b.block_start <= 5 and b.block_end >= 10 for b in blocks)
     eigenvectors = np.eye(12)

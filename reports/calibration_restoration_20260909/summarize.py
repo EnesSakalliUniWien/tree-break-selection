@@ -9,8 +9,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from reports.diffusion_nnls_versions_20260909.summarize import parse_params
 from sklearn.metrics import adjusted_rand_score
+
+from reports.diffusion_nnls_versions_20260909.summarize import parse_params
 
 
 def main() -> None:

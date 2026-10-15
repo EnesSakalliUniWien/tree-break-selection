@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from benchmarks.shared.performance_grid import write_benchmark_performance_grid
 
 
@@ -190,8 +191,7 @@ def test_write_benchmark_performance_grid_outputs_case_grids(tmp_path: Path):
 
     coverage = pd.read_csv(artifacts.support_coverage_csv)
     continuous_tbs = coverage[
-        coverage["method"].eq("tbs")
-        & coverage["case_category"].eq("continuous")
+        coverage["method"].eq("tbs") & coverage["case_category"].eq("continuous")
     ].iloc[0]
     assert continuous_tbs["attempted_count"] == 1
     assert continuous_tbs["unsupported_count"] == 1

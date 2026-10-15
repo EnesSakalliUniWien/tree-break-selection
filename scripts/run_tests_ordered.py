@@ -35,23 +35,17 @@ STAGES: tuple[Stage, ...] = (
     Stage(
         2,
         "Statistical engines + calibration",
-        (
-            "tests/statistics",
-        ),
+        ("tests/statistics",),
     ),
     Stage(
         3,
         "Localization + post-hoc merge behavior",
-        (
-            "tests/localization",
-        ),
+        ("tests/localization",),
     ),
     Stage(
         4,
         "Validation artifact contracts",
-        (
-            "tests/validation",
-        ),
+        ("tests/validation",),
     ),
     Stage(
         5,
@@ -72,9 +66,7 @@ STAGES: tuple[Stage, ...] = (
     Stage(
         7,
         "Wiki memory contracts",
-        (
-            "tests/wiki",
-        ),
+        ("tests/wiki",),
     ),
 )
 

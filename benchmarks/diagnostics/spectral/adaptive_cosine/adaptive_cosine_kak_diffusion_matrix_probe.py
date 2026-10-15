@@ -27,6 +27,15 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
+    SCHEMA_VERSION,
+    sibling_method_counts,
+)
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
+    load_matrix,
+    safe_name,
+)
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -51,15 +60,6 @@ from tree_break_selection.space_separation import (
     weight_feature_matrix,
 )
 from tree_break_selection.tree.construction import tree_from_linkage
-
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
-    SCHEMA_VERSION,
-    sibling_method_counts,
-)
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
-    load_matrix,
-    safe_name,
-)
 
 DIFFUSION_SCHEMA_VERSION = f"{SCHEMA_VERSION}/matrix_block_diffusion"
 

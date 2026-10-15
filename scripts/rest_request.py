@@ -256,7 +256,9 @@ def execute(payload: Any) -> dict[str, Any]:
             "status_code": response.status_code,
             "content_type": content_type,
             "text_head": None if raw_output_path else text_head,
-            "text_head_truncated": False if raw_output_path else len(text_head) < len(response.text),
+            "text_head_truncated": False
+            if raw_output_path
+            else len(text_head) < len(response.text),
             "raw_output_path": raw_output_path,
             "warnings": [],
         }

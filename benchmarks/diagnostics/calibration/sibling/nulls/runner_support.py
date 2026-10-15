@@ -6,12 +6,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
-    GateAnnotationBundle,
-)
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_SIBLING_ALPHA,
-)
 
 from benchmarks.diagnostics.calibration.sibling.nulls.sibling_inflation_diagnostic import (
     SiblingInflationDiagnosticTables,
@@ -23,6 +17,12 @@ from benchmarks.diagnostics.oracle.gate_path_trace import (
     prepare_gate_path_case,
 )
 from benchmarks.shared.tbs_tree_context import TbsTreeContext
+from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
+    GateAnnotationBundle,
+)
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_SIBLING_ALPHA,
+)
 
 
 @dataclass(frozen=True)

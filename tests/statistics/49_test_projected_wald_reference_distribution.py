@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from scipy.stats import chi2
+
 from tree_break_selection.hierarchy_analysis.statistics.projection.projected_wald.projected_wald_reference_distribution import (
     compute_projected_pvalue,
 )
@@ -38,9 +39,6 @@ def test_projected_chi_square_uses_orthonormal_dimension() -> None:
     assert reference.reference_scale == 1.0
     assert abs(reference.degrees_of_freedom - expected_degrees_of_freedom) < 1e-10
     assert (
-        abs(
-            reference.p_value
-            - float(chi2.sf(expected_statistic, df=expected_degrees_of_freedom))
-        )
+        abs(reference.p_value - float(chi2.sf(expected_statistic, df=expected_degrees_of_freedom)))
         < 1e-10
     )

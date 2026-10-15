@@ -137,9 +137,7 @@ def build_sibling_pair_record(
             parent_spectral_gap_at_projection_dimension
         ),
         parent_spectral_pseudodeterminant=float(parent_spectral_pseudodeterminant),
-        parent_spectral_log_pseudodeterminant=float(
-            parent_spectral_log_pseudodeterminant
-        ),
+        parent_spectral_log_pseudodeterminant=float(parent_spectral_log_pseudodeterminant),
         parent_spectral_geometric_mean=float(parent_spectral_geometric_mean),
         feature_family=feature_family,
     )

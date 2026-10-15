@@ -5,6 +5,7 @@ from __future__ import annotations
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from tree_break_selection.tree.poset_tree import PosetTree
 
 

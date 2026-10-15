@@ -27,14 +27,14 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutual_info_score
 from sklearn.mixture import BayesianGaussianMixture
+
+from benchmarks.experiments.mnist.run import load_mnist_subset, run_tbs_clustering
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 from tree_break_selection.space_separation import hamming_knn_diffusion_geometry
 from tree_break_selection.tree.construction import tree_from_linkage
-
-from benchmarks.experiments.mnist.run import load_mnist_subset, run_tbs_clustering
 
 HIGHER_CATEGORY_SCHEMES: dict[str, dict[int, str]] = {
     "shape_3": {

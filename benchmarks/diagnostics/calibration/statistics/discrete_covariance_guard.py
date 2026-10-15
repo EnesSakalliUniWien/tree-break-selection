@@ -19,6 +19,10 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
+
+from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     compute_mean_branch_length,
     compute_sibling_branch_length_sum,
@@ -39,10 +43,6 @@ from tree_break_selection.tree.feature_space import (
     bernoulli_feature_space_from_columns,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
 
 DEFAULT_CASES = (
     "binary_null_small",

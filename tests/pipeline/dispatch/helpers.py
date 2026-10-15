@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+
 from benchmarks.shared.types import MethodRunResult
 
 
@@ -39,6 +40,7 @@ def _capturing_runner(captured: dict[str, object], *, include_args: bool = True)
         return _successful_method_result()
 
     return runner
+
 
 def _appending_runner(captured_calls: list[dict[str, object]]):
     def runner(*args, **kwargs):

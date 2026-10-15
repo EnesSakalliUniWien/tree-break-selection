@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
@@ -28,6 +29,7 @@ def test_hamming_diffusion_dispatch_skips_continuous_feature_space() -> None:
         "method_compatibility_status": "unsupported_feature_space",
         "method_compatibility_reason": "hamming_diffusion_requires_discrete_features",
     }
+
 
 def test_adaptive_hamming_diffusion_dispatch_skips_continuous_feature_space() -> None:
     df = _toy_dataframe()

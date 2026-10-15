@@ -6,17 +6,28 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
-from sklearn.metrics import adjusted_rand_score
 from tree_break_selection.space_separation import separate_adaptive_cosine_space
 
 ROOT = Path(__file__).resolve().parent
 manifest = json.loads((ROOT / "manifest.json").read_text())
 assert manifest["complete"]
-tables = {name: pd.read_csv(ROOT / f"{name}.csv") for name in (
-    "cases", "spectra", "blocks", "block_pairs", "geometries", "runs", "assignments", "run_pairs",
-)}
+tables = {
+    name: pd.read_csv(ROOT / f"{name}.csv")
+    for name in (
+        "cases",
+        "spectra",
+        "blocks",
+        "block_pairs",
+        "geometries",
+        "runs",
+        "assignments",
+        "run_pairs",
+    )
+}
 cases, spectra, blocks, pairs, geometries, runs, assignments, run_pairs = tables.values()
 assert len(cases) == manifest["completed_cases"] == 11
 assert len(runs) == len(blocks) * 16
@@ -24,7 +35,7 @@ assert not runs.duplicated(["case", "block", "geometry", "method"]).any()
 for key, a in assignments.groupby(["case", "block", "geometry", "method"]):
     row = runs.set_index(["case", "block", "geometry", "method"]).loc[key]
     assert row.status == "ok"
-    assert not a['sample'].duplicated().any()
+    assert not a["sample"].duplicated().any()
     assert len(a) == int(cases.set_index("case").loc[key[0], "n_samples"])
     assert a.cluster.ge(0).all()
     assert a.cluster.nunique() == row.n_clusters
@@ -38,25 +49,35 @@ for case in get_test_cases_by_suite("method_proof"):
     old = blocks[blocks.case.eq(case["name"])]
     record = cases.set_index("case").loc[case["name"]]
     assert hashlib.sha256(data.to_csv().encode()).hexdigest() == record.data_sha256
-    new = separate_adaptive_cosine_space(data, weighting="binary", max_rank=80,
-                                        min_segment_length=4, max_segments=8)
+    new = separate_adaptive_cosine_space(
+        data, weighting="binary", max_rank=80, min_segment_length=4, max_segments=8
+    )
     old_eigenvalues = spectra[spectra.case.eq(case["name"])].eigenvalue.to_numpy()
-    np.testing.assert_allclose(new.eigenvalues[:len(old_eigenvalues)], old_eigenvalues, rtol=1e-12)
+    np.testing.assert_allclose(new.eigenvalues[: len(old_eigenvalues)], old_eigenvalues, rtol=1e-12)
     old_groups = np.empty(len(old_eigenvalues), dtype=int)
     new_groups = np.empty(len(new.eigenvalues), dtype=int)
     for row in old.itertuples():
-        old_groups[row.block_start - 1:row.block_end] = row.block_id
+        old_groups[row.block_start - 1 : row.block_end] = row.block_id
     for block in new.blocks:
-        new_groups[block.block_start - 1:block.block_end] = block.block_id
-    rank_rows.append({
-        "case": case["name"], "rank_40": len(old_groups), "rank_80": len(new_groups),
-        "blocks_40": len(old), "blocks_80": len(new.blocks),
-        "mode_grouping_ari_on_shared_modes": adjusted_rand_score(old_groups, new_groups[:len(old_groups)]),
-        "block_ranges_40": "; ".join(f"{x.block_start}-{x.block_end}" for x in old.itertuples()),
-        "block_ranges_80": "; ".join(f"{x.block_start}-{x.block_end}" for x in new.blocks),
-        "energy_fraction_40": old.retained_energy_fraction.iloc[0],
-        "energy_fraction_80": new.eigenvalues.sum() / len(data),
-    })
+        new_groups[block.block_start - 1 : block.block_end] = block.block_id
+    rank_rows.append(
+        {
+            "case": case["name"],
+            "rank_40": len(old_groups),
+            "rank_80": len(new_groups),
+            "blocks_40": len(old),
+            "blocks_80": len(new.blocks),
+            "mode_grouping_ari_on_shared_modes": adjusted_rand_score(
+                old_groups, new_groups[: len(old_groups)]
+            ),
+            "block_ranges_40": "; ".join(
+                f"{x.block_start}-{x.block_end}" for x in old.itertuples()
+            ),
+            "block_ranges_80": "; ".join(f"{x.block_start}-{x.block_end}" for x in new.blocks),
+            "energy_fraction_40": old.retained_energy_fraction.iloc[0],
+            "energy_fraction_80": new.eigenvalues.sum() / len(data),
+        }
+    )
 rank = pd.DataFrame(rank_rows)
 rank.to_csv(ROOT / "rank_sensitivity.csv", index=False)
 
@@ -66,12 +87,17 @@ for case, b in blocks.groupby("case", sort=False):
     b = b.sort_values("block_start")
     for i in range(len(b) - 1):
         left, right = b.iloc[i], b.iloc[i + 1]
-        boundaries.append({"case": case, "left_block": left.block_name,
-                           "right_block": right.block_name,
-                           "boundary_ratio": left.eigenvalue_min / right.eigenvalue_max,
-                           "left_width_ratio": left.eigenvalue_max / left.eigenvalue_min,
-                           "right_width_ratio": right.eigenvalue_max / right.eigenvalue_min,
-                           "common_boundary": left.block_type == "common_mode"})
+        boundaries.append(
+            {
+                "case": case,
+                "left_block": left.block_name,
+                "right_block": right.block_name,
+                "boundary_ratio": left.eigenvalue_min / right.eigenvalue_max,
+                "left_width_ratio": left.eigenvalue_max / left.eigenvalue_min,
+                "right_width_ratio": right.eigenvalue_max / right.eigenvalue_min,
+                "common_boundary": left.block_type == "common_mode",
+            }
+        )
 boundaries = pd.DataFrame(boundaries)
 boundaries.to_csv(ROOT / "adjacent_boundaries.csv", index=False)
 
@@ -91,42 +117,62 @@ for case in cases.case:
         rr = r[r.geometry.eq(geometry)]
         pp = p[p.comparison.eq("blocks") & p.left_geometry.eq(geometry)]
         active = pp[~pp.both_single_cluster & pp.ari_between_partitions.notna()]
-        summary_rows.append({
-            "case": case, "geometry": geometry,
-            "blocks": len(blocks[blocks.case.eq(case)]),
-            "median_noncommon_boundary_ratio": bb.boundary_ratio.median(),
-            "ok_runs": rr.status.eq("ok").sum(), "total_runs": len(rr),
-            "one_cluster_runs": rr.n_clusters.eq(1).sum(),
-            "tree_pairs": pp.normalized_rooted_rf.count(),
-            "median_between_block_rooted_rf": pp.normalized_rooted_rf.median(),
-            "partition_pairs": pp.ari_between_partitions.count(),
-            "median_between_block_partition_ari": pp.ari_between_partitions.median(),
-            "pairs_with_at_least_one_multicluster_output": len(active),
-            "median_ari_excluding_both_single_cluster": active.ari_between_partitions.median(),
-        })
+        summary_rows.append(
+            {
+                "case": case,
+                "geometry": geometry,
+                "blocks": len(blocks[blocks.case.eq(case)]),
+                "median_noncommon_boundary_ratio": bb.boundary_ratio.median(),
+                "ok_runs": rr.status.eq("ok").sum(),
+                "total_runs": len(rr),
+                "one_cluster_runs": rr.n_clusters.eq(1).sum(),
+                "tree_pairs": pp.normalized_rooted_rf.count(),
+                "median_between_block_rooted_rf": pp.normalized_rooted_rf.median(),
+                "partition_pairs": pp.ari_between_partitions.count(),
+                "median_between_block_partition_ari": pp.ari_between_partitions.median(),
+                "pairs_with_at_least_one_multicluster_output": len(active),
+                "median_ari_excluding_both_single_cluster": active.ari_between_partitions.median(),
+            }
+        )
 summary = pd.DataFrame(summary_rows)
 summary.to_csv(ROOT / "summary_by_case.csv", index=False)
-runs.groupby(["geometry", "method", "status"]).size().rename("runs").reset_index().to_csv(ROOT / "status_by_method.csv", index=False)
+runs.groupby(["geometry", "method", "status"]).size().rename("runs").reset_index().to_csv(
+    ROOT / "status_by_method.csv", index=False
+)
+
 
 def table(frame):
     def cell(value):
         if isinstance(value, (float, np.floating)):
             return "—" if np.isnan(value) else f"{value:.3f}"
         return str(value)
+
     header = "| " + " | ".join(frame.columns) + " |"
     rule = "| " + " | ".join("---" for _ in frame.columns) + " |"
-    return "\n".join([header, rule] + ["| " + " | ".join(map(cell, row)) + " |" for row in frame.itertuples(index=False, name=None)])
+    return "\n".join(
+        [header, rule]
+        + [
+            "| " + " | ".join(map(cell, row)) + " |"
+            for row in frame.itertuples(index=False, name=None)
+        ]
+    )
+
 
 ordinary = boundaries[~boundaries.common_boundary]
 bp = run_pairs[run_pairs.comparison.eq("blocks")]
 tp = run_pairs[run_pairs.comparison.eq("tree_methods")]
 ok = runs[runs.status.eq("ok")]
 null_runs = runs[runs.case.isin(cases.loc[cases.true_clusters.eq(1), "case"])]
-null_summary = null_runs.groupby(["case", "geometry"]).agg(
-    attempts=("status", "size"), completed=("status", lambda v: v.eq("ok").sum()),
-    multi_cluster_outputs=("n_clusters", lambda v: v.gt(1).sum()),
-    maximum_clusters=("n_clusters", "max"),
-).reset_index()
+null_summary = (
+    null_runs.groupby(["case", "geometry"])
+    .agg(
+        attempts=("status", "size"),
+        completed=("status", lambda v: v.eq("ok").sum()),
+        multi_cluster_outputs=("n_clusters", lambda v: v.gt(1).sum()),
+        maximum_clusters=("n_clusters", "max"),
+    )
+    .reset_index()
+)
 null_summary.to_csv(ROOT / "single_population_results.csv", index=False)
 changed_rank = int((rank.mode_grouping_ari_on_shared_modes < 1 - 1e-12).sum())
 body = f"""# Eigenvalue block and tree inference comparison
@@ -152,7 +198,7 @@ coordinates and adaptive diffusion. There are {len(blocks)} blocks and {len(runs
   Status counts: `{runs.status.value_counts().to_dict()}`. Failure and unsupported rows are
   excluded from partition comparisons, never converted to one-cluster assignments.
 - Single-population examples produced more than one cluster in
-  {int(null_runs.n_clusters.gt(1).sum())}/{int(null_runs.status.eq('ok').sum())} completed
+  {int(null_runs.n_clusters.gt(1).sum())}/{int(null_runs.status.eq("ok").sum())} completed
   runs. These are dependent method/block evaluations, not an estimated false-positive rate.
 - Raising the target rank from 40 to 80 changes grouping among the already-retained modes
   in {changed_rank}/11 cases. Rank-80 tree inference was not run. See `rank_sensitivity.csv`.
@@ -175,7 +221,7 @@ The tree distance is zero for identical rooted clades and one for no shared nont
 Partition agreement is adjusted Rand index: one means identical partitions. All medians below
 are descriptive; multiple pairs from one dataset are not independent observations.
 
-{table(summary[['case', 'geometry', 'ok_runs', 'total_runs', 'median_between_block_rooted_rf', 'pairs_with_at_least_one_multicluster_output', 'median_ari_excluding_both_single_cluster']])}
+{table(summary[["case", "geometry", "ok_runs", "total_runs", "median_between_block_rooted_rf", "pairs_with_at_least_one_multicluster_output", "median_ari_excluding_both_single_cluster"]])}
 
 ### Single-population examples
 

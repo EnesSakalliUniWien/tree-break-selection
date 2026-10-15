@@ -8,9 +8,6 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from tree_break_selection.tree.construction import tree_from_linkage
-from tree_break_selection.tree.feature_space import FeatureSpace
-from tree_break_selection.tree.poset_tree import PosetTree
 
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
@@ -19,6 +16,9 @@ from benchmarks.shared.util.method_execution import (
     TBS_TREE_DISTANCE_SOURCE_PRECOMPUTED,
     _require_precomputed_tbs_distance_metric,
 )
+from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.feature_space import FeatureSpace
+from tree_break_selection.tree.poset_tree import PosetTree
 
 
 @dataclass(frozen=True)

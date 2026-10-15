@@ -1,5 +1,4 @@
 """Render all-method pancreas UMAP panels with every cluster colored."""
-# ruff: noqa: I001
 
 from __future__ import annotations
 
@@ -14,7 +13,6 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 
 METADATA_COLUMNS = {"cell_id", "celltype", "umap1", "umap2"}
 METHOD_LABELS = {

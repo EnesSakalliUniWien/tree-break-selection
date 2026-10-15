@@ -19,10 +19,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
 
 from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
 from benchmarks.diagnostics.calibration.traversal.branch_length_traversal_audit import (
@@ -40,6 +36,10 @@ from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.method_execution import run_single_method_once
 from benchmarks.shared.util.time import format_timestamp_utc
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
+)
 
 SCHEMA_VERSION = "path_conditioned_traversal_audit/v1"
 STUDY_ROLE = "diagnostic_path_conditioned_traversal_audit_not_policy"

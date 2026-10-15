@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     SelectedSiblingRecord,
     _choose_observed_target,

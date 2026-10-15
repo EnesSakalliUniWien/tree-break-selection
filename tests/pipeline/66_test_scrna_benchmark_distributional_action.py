@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 from tree_break_selection.tree.poset_tree import PosetTree
 

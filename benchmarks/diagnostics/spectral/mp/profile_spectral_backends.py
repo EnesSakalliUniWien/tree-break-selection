@@ -26,6 +26,8 @@ from scipy import linalg
 
 os.environ.setdefault("TBS_N_JOBS", "1")
 
+from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
     eigendecompose_covariance,
 )
@@ -69,9 +71,6 @@ from tree_break_selection.tree.feature_space import (
     resolve_feature_space,
     validate_feature_matrix,
 )
-
-from benchmarks.shared.cases import get_default_test_cases
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 
 DEFAULT_CASE_NAMES = (
     "binary_many_features",

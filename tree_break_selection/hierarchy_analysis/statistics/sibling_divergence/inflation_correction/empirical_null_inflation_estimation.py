@@ -183,8 +183,7 @@ def _fit_empirical_null_inflation_model(
     for record in records:
         _validate_calibration_record(record)
     if _require_unit_reference_scale and any(
-        not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12)
-        for record in records
+        not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12) for record in records
     ):
         first_non_unit = next(
             record
@@ -241,10 +240,7 @@ def _fit_empirical_null_inflation_model(
         dtype=float,
     )
     is_strict_null = np.array(
-        [
-            record.is_null_like and not record.is_edge_blocked
-            for record in supported_records
-        ],
+        [record.is_null_like and not record.is_edge_blocked for record in supported_records],
         dtype=bool,
     )
     is_edge_blocked = np.array(
@@ -347,7 +343,9 @@ def fit_independent_unweighted_common_scale_inflation_model(
     if any(not record.has_empirical_null_support for record in records):
         raise ValueError("Independent exact calibration records must all have a null role.")
     if any(record.degrees_of_freedom <= 0.0 for record in records):
-        raise ValueError("Independent exact calibration records must have positive degrees of freedom.")
+        raise ValueError(
+            "Independent exact calibration records must have positive degrees of freedom."
+        )
     if any(
         record.sibling_null_weight != 1.0
         or (
@@ -364,7 +362,9 @@ def fit_independent_unweighted_common_scale_inflation_model(
         for record in records
     )
     if len(set(dependency_group_ids)) != len(dependency_group_ids):
-        raise ValueError("Independent exact calibration records must have distinct dependency groups.")
+        raise ValueError(
+            "Independent exact calibration records must have distinct dependency groups."
+        )
     reference_scales = np.asarray([record.reference_scale for record in records], dtype=float)
     if reference_scales.size == 0:
         raise ValueError("Independent exact calibration requires calibration records.")
@@ -508,9 +508,7 @@ def _support_contract_failures(
     failures: list[str] = []
     if int(support.get("n_supported_groups", 0)) < thresholds.min_supported_groups:
         failures.append("supported_groups_below_threshold")
-    if int(support.get("n_family_supported_groups", 0)) < (
-        thresholds.min_family_supported_groups
-    ):
+    if int(support.get("n_family_supported_groups", 0)) < (thresholds.min_family_supported_groups):
         failures.append("family_supported_groups_below_threshold")
     if float(support.get("family_effective_sample_size", 0.0)) < (
         thresholds.min_family_effective_sample_size
@@ -596,12 +594,7 @@ def decide_independent_unweighted_common_scale_calibration(
         float("inf")
         if scale_estimate <= 0.0
         else float(
-            record.stat
-            / (
-                record.reference_scale
-                * record.degrees_of_freedom
-                * scale_estimate
-            )
+            record.stat / (record.reference_scale * record.degrees_of_freedom * scale_estimate)
         )
     )
     exact_p_value = float(
@@ -627,9 +620,7 @@ def decide_independent_unweighted_common_scale_calibration(
         descriptive_strata={
             "f_statistic": f_statistic,
             "unadjusted_p_value": expected_unadjusted_p_value,
-            "one_sided_p_value_floor_applied": bool(
-                expected_unadjusted_p_value > exact_p_value
-            ),
+            "one_sided_p_value_floor_applied": bool(expected_unadjusted_p_value > exact_p_value),
         },
     )
 

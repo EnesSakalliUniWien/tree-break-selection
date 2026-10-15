@@ -21,11 +21,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from applications.scrna._shared import json_default
 from tree_break_selection.space_separation import (
     decompose_leading_axes_space,
 )
-
-from applications.scrna._shared import json_default
 
 SCHEMA_VERSION = "scrna_space_decomposition/v1"
 STUDY_ROLE = "diagnostic_scrna_leading_following_axis_decomposition"

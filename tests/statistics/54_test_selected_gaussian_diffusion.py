@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+
 from tree_break_selection.hierarchy_analysis.statistics.projection.selected_gaussian_diffusion import (
     replay_adaptive_pydiffmap_average_linkage,
     replay_hamming_knn_average_linkage,

@@ -6,6 +6,8 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.spatial.distance import pdist
+
 from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_ranking import (
     add_specificity_aware_rank,
     rank_go_ic_results,
@@ -13,10 +15,8 @@ from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_ranking impo
 from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_terms import (
     component_feature_loadings,
 )
-from scipy.spatial.distance import pdist
-from tree_break_selection.space_separation import SpectralBlock
-
 from applications.endotypes.pipelines import adaptive_diffusion_go_ic_workflow as workflow
+from tree_break_selection.space_separation import SpectralBlock
 
 
 def test_feature_loadings_reconstruct_normalized_features():

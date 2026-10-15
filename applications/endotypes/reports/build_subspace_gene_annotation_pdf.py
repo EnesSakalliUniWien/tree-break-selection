@@ -22,10 +22,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
-from tree_break_selection.plot.image_panel import draw_image_panel
 
 from applications.endotypes._shared import load_binary_feature_matrix, safe_name
 from applications.endotypes.reports.artifact_index import load_artifact_index
+from tree_break_selection.plot.image_panel import draw_image_panel
 
 GO_ID_RE = re.compile(r"(GO:\d{7})")
 

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
+
 from benchmarks.external.clustbench_adapter import load_clustbench_dataset
 from benchmarks.external.openml_adapter import (
     list_openml_suite_task_ids,

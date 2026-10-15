@@ -63,19 +63,13 @@ def unsupported_empirical_null_reason(
         return None
 
     invalid_record_count = int(
-        annotations.loc[focal_mask, "Sibling_Divergence_Invalid"]
-        .fillna(False)
-        .astype(bool)
-        .sum()
+        annotations.loc[focal_mask, "Sibling_Divergence_Invalid"].fillna(False).astype(bool).sum()
     )
     upstream_tested_count = int(
         annotations["Child_Parent_Divergence_Tested"].fillna(False).astype(bool).sum()
     )
     upstream_rejected_count = int(
-        annotations["Child_Parent_Divergence_Significant"]
-        .fillna(False)
-        .astype(bool)
-        .sum()
+        annotations["Child_Parent_Divergence_Significant"].fillna(False).astype(bool).sum()
     )
     reason_code = (
         UnsupportedReasonCode.EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW

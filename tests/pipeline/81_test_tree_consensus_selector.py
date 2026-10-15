@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+
 from benchmarks.shared.tree_consensus import (
     build_tree_consensus_tables,
     tree_inference_from_run_id,

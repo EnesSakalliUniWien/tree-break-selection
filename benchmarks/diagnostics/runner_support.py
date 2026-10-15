@@ -95,14 +95,11 @@ def resolve_classified_cases(
 
     case_by_name = {str(case["name"]): case for case in cases}
     missing_cases = [
-        case_id
-        for case_id in selected["case_id"].astype(str)
-        if case_id not in case_by_name
+        case_id for case_id in selected["case_id"].astype(str) if case_id not in case_by_name
     ]
     if missing_cases:
         raise ValueError(
-            f"Selected cases are not present in the {len(cases)}-case suite: "
-            f"{missing_cases}."
+            f"Selected cases are not present in the {len(cases)}-case suite: {missing_cases}."
         )
 
     selected_cases = tuple(

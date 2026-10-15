@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from benchmarks.shared.relationship_analysis import (
     analyze_benchmark_relationships,
     normalize_results_dataframe,

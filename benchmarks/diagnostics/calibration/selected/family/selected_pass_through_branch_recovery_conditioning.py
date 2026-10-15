@@ -1264,9 +1264,7 @@ def build_branch_recovery_conditioning_rows(node_rows: pd.DataFrame) -> pd.DataF
                 "feature_geometry_status": feature_status,
                 "feature_geometry_node_sample_count": int(
                     finite_float(row.get("feature_geometry_node_sample_count", 0))
-                    if math.isfinite(
-                        finite_float(row.get("feature_geometry_node_sample_count", 0))
-                    )
+                    if math.isfinite(finite_float(row.get("feature_geometry_node_sample_count", 0)))
                     else 0
                 ),
                 "feature_geometry_left_child_count": int(
@@ -1276,9 +1274,7 @@ def build_branch_recovery_conditioning_rows(node_rows: pd.DataFrame) -> pd.DataF
                 ),
                 "feature_geometry_right_child_count": int(
                     finite_float(row.get("feature_geometry_right_child_count", 0))
-                    if math.isfinite(
-                        finite_float(row.get("feature_geometry_right_child_count", 0))
-                    )
+                    if math.isfinite(finite_float(row.get("feature_geometry_right_child_count", 0)))
                     else 0
                 ),
                 "feature_node_pairwise_jaccard": finite_float(

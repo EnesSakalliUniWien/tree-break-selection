@@ -25,6 +25,8 @@ from scipy.stats import false_discovery_control, hypergeom
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.manifold import MDS
+
+from applications.endotypes._shared import load_binary_feature_matrix, safe_name
 from tree_break_selection.space_separation import (
     SpectralBlock,
     adaptive_diffusion_geometry,
@@ -34,8 +36,6 @@ from tree_break_selection.space_separation import (
     cosine_eigendecomposition,
     weight_feature_matrix,
 )
-
-from applications.endotypes._shared import load_binary_feature_matrix, safe_name
 
 RESULT_PREFIX = "allgo_new_quality_aware_go_ic"
 

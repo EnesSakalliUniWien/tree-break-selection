@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from benchmarks.shared.runners.dispatch import (
     _tbs_branch_length_optimization_kwargs,
     run_clustering_result,

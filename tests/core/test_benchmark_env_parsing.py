@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from benchmarks.shared.env import get_env_bool, get_env_int
 
 

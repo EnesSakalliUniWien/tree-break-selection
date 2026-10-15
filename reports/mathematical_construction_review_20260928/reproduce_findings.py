@@ -26,6 +26,7 @@ OUTPUT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
 from benchmarks.diagnostics.path_b.recursive_pvalue_geometry import principal_subspace_alignment
 from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
     eigendecompose_covariance,
@@ -57,8 +58,11 @@ def adaptive_wald() -> dict:
     for angle in (0.0, np.pi / 4):
         basis = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
         result = run_projected_wald_kernel(
-            np.array([3.0, 0.0]), spectral_k=2, pca_projection=basis,
-            pca_eigenvalues=np.ones(2), adaptive_dimension_energy_fraction=0.9,
+            np.array([3.0, 0.0]),
+            spectral_k=2,
+            pca_projection=basis,
+            pca_eigenvalues=np.ones(2),
+            adaptive_dimension_energy_fraction=0.9,
         )
         rotations.append({"angle_degrees": float(np.degrees(angle)), **asdict(result)})
 
@@ -72,8 +76,11 @@ def adaptive_wald() -> dict:
     # Verify the vectorized experiment against the real kernel before using it.
     for index in range(128):
         actual = run_projected_wald_kernel(
-            z[index], spectral_k=2, pca_projection=np.eye(2),
-            pca_eigenvalues=np.ones(2), adaptive_dimension_energy_fraction=0.9,
+            z[index],
+            spectral_k=2,
+            pca_projection=np.eye(2),
+            pca_eigenvalues=np.ones(2),
+            adaptive_dimension_energy_fraction=0.9,
         )
         assert actual.projection_dimension == rank[index]
         np.testing.assert_allclose(actual.p_value, adaptive_p[index], rtol=1e-12)
@@ -81,13 +88,22 @@ def adaptive_wald() -> dict:
     for alpha in (0.001, 0.01, 0.05):
         count = int(np.count_nonzero(adaptive_p <= alpha))
         rate = count / len(z)
-        rates.append({
-            "alpha": alpha, "adaptive_rejections": count, "adaptive_rate": rate,
-            "monte_carlo_standard_error": float(np.sqrt(rate * (1.0 - rate) / len(z))),
-            "fixed_rank_two_rejections": int(np.count_nonzero(fixed_p <= alpha)),
-        })
-    return {"rotations": rotations, "seed": 1907, "independent_contrasts": len(z),
-            "kernel_cross_checks": 128, "null_rates": rates}
+        rates.append(
+            {
+                "alpha": alpha,
+                "adaptive_rejections": count,
+                "adaptive_rate": rate,
+                "monte_carlo_standard_error": float(np.sqrt(rate * (1.0 - rate) / len(z))),
+                "fixed_rank_two_rejections": int(np.count_nonzero(fixed_p <= alpha)),
+            }
+        )
+    return {
+        "rotations": rotations,
+        "seed": 1907,
+        "independent_contrasts": len(z),
+        "kernel_cross_checks": 128,
+        "null_rates": rates,
+    }
 
 
 def diffusion_probes() -> dict:
@@ -99,17 +115,22 @@ def diffusion_probes() -> dict:
     for rank in (1, 2):
         before = compute_diffusion_coordinates(weights, diffusion_time=2, n_components=rank)
         after = compute_diffusion_coordinates(
-            weights[np.ix_(permutation, permutation)], diffusion_time=2, n_components=rank,
+            weights[np.ix_(permutation, permutation)],
+            diffusion_time=2,
+            n_components=rank,
         )[np.argsort(permutation)]
         errors[str(rank)] = float(np.max(np.abs(pdist(before) - pdist(after))))
     binary = np.array([[1, 0, 0], [1, 1, 0], [0, 1, 1], [0, 0, 1]], dtype=float)
-    hamming = hamming_knn_diffusion_geometry(binary, k_neighbors=1, diffusion_time=2, n_components=3)
+    hamming = hamming_knn_diffusion_geometry(
+        binary, k_neighbors=1, diffusion_time=2, n_components=3
+    )
     path = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 0.0]])
     markov = path / path.sum(axis=1)[:, None]
     path_coordinates = compute_diffusion_coordinates(path, diffusion_time=2, n_components=2)
     return {
         "six_cycle_normalized_spectrum": np.linalg.eigvalsh(weights / 2.0).tolist(),
-        "permutation": permutation.tolist(), "permutation_distance_errors": errors,
+        "permutation": permutation.tolist(),
+        "permutation_distance_errors": errors,
         "hamming_k_one_distances": hamming.distance_condensed.tolist(),
         "path_three_clipped_symmetric_distances": pdist(path_coordinates).tolist(),
         "path_three_markov_power_row_distances": pdist(markov @ markov).tolist(),
@@ -123,12 +144,19 @@ def pca_probes() -> dict:
         eig = eigendecompose_covariance(data[:, permutation], compute_eigenvectors=True)
         dimension = estimate_marchenko_pastur_dimension(eig.eigenvalues, n_samples=4, n_features=2)
         basis, _ = build_pca_projection(
-            eig, projection_dimension=dimension.test_projection_dimension, n_features_total=2,
+            eig,
+            projection_dimension=dimension.test_projection_dimension,
+            n_features_total=2,
         )
         basis = basis[:, np.argsort(permutation)]
-        cases.append({"feature_permutation": permutation.tolist(),
-                      "eigenvalues": eig.eigenvalues.tolist(), "dimension": asdict(dimension),
-                      "physical_projector": (basis.T @ basis).tolist()})
+        cases.append(
+            {
+                "feature_permutation": permutation.tolist(),
+                "eigenvalues": eig.eigenvalues.tolist(),
+                "dimension": asdict(dimension),
+                "physical_projector": (basis.T @ basis).tolist(),
+            }
+        )
     difference = np.linalg.norm(
         np.asarray(cases[0]["physical_projector"]) - cases[1]["physical_projector"],
     )
@@ -142,19 +170,29 @@ def pca_probes() -> dict:
         values[10:, 0] += separation
         covariance = np.cov(values, rowvar=False, ddof=1)
         task = NodeSpectralTask(
-            node_id="root", row_indices=tuple(range(20)), internal_distributions=(),
-            null_distribution=values.mean(axis=0), feature_space=space,
+            node_id="root",
+            row_indices=tuple(range(20)),
+            internal_distributions=(),
+            null_distribution=values.mean(axis=0),
+            feature_space=space,
             continuous_covariance_by_block={block_name: covariance},
         )
         result = _process_node(task, values, 1, None, 2, True)
-        whitening.append({
-            "separation": separation, "raw_eigenvalues": np.linalg.eigvalsh(covariance).tolist(),
-            "whitened_eigenvalues": result.full_eigenvalues.tolist(),
-            "raw_mp_signal_count": result.raw_mp_signal_count,
-            "test_projection_dimension": result.test_projection_dimension,
-        })
-    return {"tied_covariance": cases, "projector_difference_frobenius": float(difference),
-            "continuous_whitening_seed": 104, "continuous_whitening": whitening}
+        whitening.append(
+            {
+                "separation": separation,
+                "raw_eigenvalues": np.linalg.eigvalsh(covariance).tolist(),
+                "whitened_eigenvalues": result.full_eigenvalues.tolist(),
+                "raw_mp_signal_count": result.raw_mp_signal_count,
+                "test_projection_dimension": result.test_projection_dimension,
+            }
+        )
+    return {
+        "tied_covariance": cases,
+        "projector_difference_frobenius": float(difference),
+        "continuous_whitening_seed": 104,
+        "continuous_whitening": whitening,
+    }
 
 
 def principal_angle_probe() -> dict:
@@ -162,8 +200,12 @@ def principal_angle_probe() -> dict:
     return {
         "original_basis": principal_subspace_alignment(parent, child),
         "reordered_parent_basis": principal_subspace_alignment(parent[::-1], child),
-        "full_rectangular_cross_gram_singular_values": np.linalg.svd(parent @ child.T, compute_uv=False).tolist(),
-        "scipy_full_subspace_angles_degrees": np.degrees(subspace_angles(parent.T, child.T)).tolist(),
+        "full_rectangular_cross_gram_singular_values": np.linalg.svd(
+            parent @ child.T, compute_uv=False
+        ).tolist(),
+        "scipy_full_subspace_angles_degrees": np.degrees(
+            subspace_angles(parent.T, child.T)
+        ).tolist(),
     }
 
 
@@ -192,8 +234,15 @@ def paired_eigenvectors() -> dict:
         ax.set_xlabel("Eigenvector index")
         for row in range(4):
             for column in range(4):
-                ax.text(column, row, f"{angles[row, column]:.1f}°", ha="center", va="center",
-                        color="white" if angles[row, column] < 45 else "black", fontsize=10)
+                ax.text(
+                    column,
+                    row,
+                    f"{angles[row, column]:.1f}°",
+                    ha="center",
+                    va="center",
+                    color="white" if angles[row, column] < 45 else "black",
+                    fontsize=10,
+                )
     axes[0].set_ylabel("Eigenvector index")
     fig.colorbar(graphic, ax=axes, label="Acute angle between vector lines (degrees)", shrink=0.8)
     fig.suptitle("Paired eigenvectors of P = D⁻¹W: Euclidean angles", fontsize=14)
@@ -201,10 +250,14 @@ def paired_eigenvectors() -> dict:
     fig.savefig(OUTPUT / "paired_eigenvector_angles.pdf")
     plt.close(fig)
     return {
-        "illustrative_operator_not_benchmark_data": True, "weights": weights.tolist(),
-        "degrees": degrees.tolist(), "eigenvalues_ascending": eigenvalues.tolist(),
-        "right_vectors": right.tolist(), "left_vectors": left.tolist(),
-        "left_right_gram": (left.T @ right).tolist(), "left_left_gram": (left.T @ left).tolist(),
+        "illustrative_operator_not_benchmark_data": True,
+        "weights": weights.tolist(),
+        "degrees": degrees.tolist(),
+        "eigenvalues_ascending": eigenvalues.tolist(),
+        "right_vectors": right.tolist(),
+        "left_vectors": left.tolist(),
+        "left_right_gram": (left.T @ right).tolist(),
+        "left_left_gram": (left.T @ left).tolist(),
         "right_right_gram": (right.T @ right).tolist(),
         "right_right_line_angles_degrees": panels[0].tolist(),
         "left_left_line_angles_degrees": panels[1].tolist(),
@@ -212,9 +265,15 @@ def paired_eigenvectors() -> dict:
         "right_residual": float(np.linalg.norm(markov @ right - right * eigenvalues)),
         "left_residual": float(np.linalg.norm(markov.T @ left - left * eigenvalues)),
         "biorthogonality_residual": float(np.linalg.norm(left.T @ right - np.eye(4))),
-        "right_degree_metric_residual": float(np.linalg.norm(right.T @ (degrees[:, None] * right) - np.eye(4))),
-        "left_inverse_degree_metric_residual": float(np.linalg.norm(left.T @ (left / degrees[:, None]) - np.eye(4))),
-        "paired_middle_subspaces_angles_degrees": np.degrees(subspace_angles(left[:, 1:3], right[:, 1:3])).tolist(),
+        "right_degree_metric_residual": float(
+            np.linalg.norm(right.T @ (degrees[:, None] * right) - np.eye(4))
+        ),
+        "left_inverse_degree_metric_residual": float(
+            np.linalg.norm(left.T @ (left / degrees[:, None]) - np.eye(4))
+        ),
+        "paired_middle_subspaces_angles_degrees": np.degrees(
+            subspace_angles(left[:, 1:3], right[:, 1:3])
+        ).tolist(),
     }
 
 
@@ -229,27 +288,59 @@ def main() -> None:
         sys.modules[principal_subspace_alignment.__module__],
     ]
     source_paths = [Path(module.__file__).resolve() for module in modules]
-    source_paths.extend(ROOT / name for name in [
-        "README.md", "pyproject.toml", "uv.lock", "Makefile",
-        "tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py",
-        "tree_break_selection/tree/distributions.py",
-        "tree_break_selection/space_separation/adaptive_cosine.py",
-        "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py",
-        "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py",
-    ])
+    source_paths.extend(
+        ROOT / name
+        for name in [
+            "README.md",
+            "pyproject.toml",
+            "uv.lock",
+            "Makefile",
+            "tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py",
+            "tree_break_selection/tree/distributions.py",
+            "tree_break_selection/space_separation/adaptive_cosine.py",
+            "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py",
+            "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py",
+        ]
+    )
     source_paths.append(Path(__file__).resolve())
     result = {
-        "review_date": "2026-09-28", "python": sys.version,
+        "review_date": "2026-09-28",
+        "python": sys.version,
         "platform": platform.platform(),
-        "packages": {name: version(name) for name in ("numpy", "scipy", "pandas", "matplotlib", "pytest", "scikit-learn", "pydiffmap")},
-        "source_sha256": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in source_paths},
-        "adaptive_wald": adaptive_wald(), "diffusion": diffusion_probes(),
-        "pca": pca_probes(), "principal_angles": principal_angle_probe(),
+        "packages": {
+            name: version(name)
+            for name in (
+                "numpy",
+                "scipy",
+                "pandas",
+                "matplotlib",
+                "pytest",
+                "scikit-learn",
+                "pydiffmap",
+            )
+        },
+        "source_sha256": {
+            str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in source_paths
+        },
+        "adaptive_wald": adaptive_wald(),
+        "diffusion": diffusion_probes(),
+        "pca": pca_probes(),
+        "principal_angles": principal_angle_probe(),
         "paired_eigenvectors": paired_eigenvectors(),
     }
     (OUTPUT / "findings.json").write_text(json.dumps(result, indent=2, allow_nan=False) + "\n")
-    print(json.dumps({"output": str(OUTPUT), "null_contrasts": 1_000_000,
-                      "kernel_cross_checks": 128, "source_hashes": len(result["source_sha256"])}, indent=2))
+    print(
+        json.dumps(
+            {
+                "output": str(OUTPUT),
+                "null_contrasts": 1_000_000,
+                "kernel_cross_checks": 128,
+                "source_hashes": len(result["source_sha256"]),
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

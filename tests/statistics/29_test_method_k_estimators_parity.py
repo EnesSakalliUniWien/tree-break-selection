@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+
 from tree_break_selection.hierarchy_analysis.statistics.projection.projection_dimension_estimation.projection_dimension_estimators import (
     estimate_marchenko_pastur_dimension,
     marchenko_pastur_signal_count,

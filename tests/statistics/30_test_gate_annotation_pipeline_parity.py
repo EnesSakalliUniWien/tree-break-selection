@@ -3,6 +3,7 @@ from __future__ import annotations
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -106,15 +107,21 @@ def test_gate_annotation_pipeline_matches_sequential_gate_annotations() -> None:
     )
 
     fail_closed_nodes = ["root", "cal"]
-    assert sequential_df.loc[
-        fail_closed_nodes, "Sibling_Test_Method"
-    ].eq("empirical_null_no_internal_support").all()
-    assert sequential_df.loc[
-        fail_closed_nodes, "Sibling_Gate_P_Value_Calibration"
-    ].eq("undefined_no_internal_support").all()
-    assert sequential_df.loc[
-        fail_closed_nodes, "Sibling_Gate_P_Value_Role"
-    ].eq("fail_closed_sibling_gate").all()
+    assert (
+        sequential_df.loc[fail_closed_nodes, "Sibling_Test_Method"]
+        .eq("empirical_null_no_internal_support")
+        .all()
+    )
+    assert (
+        sequential_df.loc[fail_closed_nodes, "Sibling_Gate_P_Value_Calibration"]
+        .eq("undefined_no_internal_support")
+        .all()
+    )
+    assert (
+        sequential_df.loc[fail_closed_nodes, "Sibling_Gate_P_Value_Role"]
+        .eq("fail_closed_sibling_gate")
+        .all()
+    )
     assert sequential_df.loc[fail_closed_nodes, "Sibling_Divergence_Skipped"].eq(True).all()
     assert sequential_df.loc[fail_closed_nodes, "Sibling_Divergence_Invalid"].eq(True).all()
     assert sequential_df.loc[fail_closed_nodes, "Sibling_BH_Different"].eq(False).all()

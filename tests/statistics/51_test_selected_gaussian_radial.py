@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from scipy.special import log_ndtr
+
 from tree_break_selection.hierarchy_analysis.statistics.projection.selected_gaussian_radial import (
     RadialSelectionInterval,
     build_gaussian_selected_projection_path,
@@ -176,9 +177,7 @@ def test_selected_gaussian_tail_integrates_a_disconnected_radial_region() -> Non
     assert result.statistic == 9.0
     assert result.degrees_of_freedom == 2
     assert result.selection_probability == pytest.approx(expected_selection_probability)
-    assert result.selected_tail_probability == pytest.approx(
-        expected_selected_tail_probability
-    )
+    assert result.selected_tail_probability == pytest.approx(expected_selected_tail_probability)
     assert result.p_value == pytest.approx(
         expected_selected_tail_probability / expected_selection_probability
     )
@@ -240,9 +239,7 @@ def test_selected_tail_handles_disconnected_underflowed_intervals() -> None:
             -np.expm1(-0.5 * (upper - lower) * (upper + lower))
         )
 
-    expected = scaled_mass(40.015, 40.02) / (
-        scaled_mass(40.0, 40.01) + scaled_mass(40.012, 40.02)
-    )
+    expected = scaled_mass(40.015, 40.02) / (scaled_mass(40.0, 40.01) + scaled_mass(40.012, 40.02))
     assert result.p_value == pytest.approx(expected, rel=1e-11)
 
 

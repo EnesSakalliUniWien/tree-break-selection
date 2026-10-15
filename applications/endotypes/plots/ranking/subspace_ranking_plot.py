@@ -10,7 +10,10 @@ import pandas as pd
 def create_subspace_ranking(ranking: pd.DataFrame) -> plt.Figure:
     top = ranking[ranking["status"].eq("ok")].sort_values("display_rank").head(20)
     fig, axes = plt.subplots(
-        1, 3, figsize=(18, max(5.5, 0.55 * len(top) + 2.5)), sharey=True,
+        1,
+        3,
+        figsize=(18, max(5.5, 0.55 * len(top) + 2.5)),
+        sharey=True,
         gridspec_kw={"width_ratios": [1.1, 1.0, 1.4]},
     )
     y = np.arange(len(top))
@@ -25,8 +28,11 @@ def create_subspace_ranking(ranking: pd.DataFrame) -> plt.Figure:
     tier_ax.set_title("Quality tier (lower first)", fontsize=12)
     for pos, row in enumerate(top.itertuples(index=False)):
         tier_ax.text(
-            0.04, pos, f"{int(row.quality_tier)}  {row.quality_tier_label}",
-            va="center", fontsize=11,
+            0.04,
+            pos,
+            f"{int(row.quality_tier)}  {row.quality_tier_label}",
+            va="center",
+            fontsize=11,
         )
     for ax, column, title, color in [
         (specificity_ax, "specificity_score", "Specificity score (higher first)", "#278577"),
@@ -48,7 +54,8 @@ def create_subspace_ranking(ranking: pd.DataFrame) -> plt.Figure:
         ax.spines[["top", "right"]].set_visible(False)
     fig.suptitle("Adaptive diffusion subspaces: specificity-aware ranking", fontsize=15)
     fig.text(
-        0.02, 0.025,
+        0.02,
+        0.025,
         "Order: quality tier → specificity score → specific-cluster fraction → weighted specificity delta → GO-BIC/gene.\n"
         "GO-BIC values are comparable within quality tier; lower GO-BIC alone does not determine rank.",
         fontsize=10,

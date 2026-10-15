@@ -19,6 +19,22 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
+    DEFAULT_CASE_NAMES,
+    _build_tree,
+    _selected_cases,
+    _simulate_null_data,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_stratification_diagnostic import (
+    _parent_size_bin,
+)
+from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
+    effective_rank,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.core_utils.tree_utils import compute_node_depths
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
@@ -53,22 +69,6 @@ from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
-
-from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
-    DEFAULT_CASE_NAMES,
-    _build_tree,
-    _selected_cases,
-    _simulate_null_data,
-)
-from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_stratification_diagnostic import (
-    _parent_size_bin,
-)
-from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
-    effective_rank,
-)
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
-from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "descriptive_selected_hierarchy_geometry_not_calibration"
 RESPONSE_COLUMN = "log_selected_hierarchy_ratio"

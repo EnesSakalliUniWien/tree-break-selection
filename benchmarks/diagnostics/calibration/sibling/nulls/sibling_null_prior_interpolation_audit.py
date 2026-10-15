@@ -20,6 +20,13 @@ from typing import Callable, Iterable, Sequence
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
+    _selected_cases,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
+from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.hierarchy_analysis.decomposition.gates.column_contracts import (
     EDGE_GATE_COLUMNS,
 )
@@ -41,13 +48,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
-
-from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
-    _selected_cases,
-)
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-from benchmarks.shared.util.time import format_timestamp_utc
 
 EPS = 1e-12
 DISTANCE_INF = 1e12

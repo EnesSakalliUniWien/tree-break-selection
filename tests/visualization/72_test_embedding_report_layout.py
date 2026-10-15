@@ -6,6 +6,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 from benchmarks.shared.plots import embedding
 from benchmarks.shared.util.pdf.layout import PDF_WIDE_PAGE_SIZE_INCHES
 

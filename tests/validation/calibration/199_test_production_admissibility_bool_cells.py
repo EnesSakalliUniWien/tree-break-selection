@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+
 from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
     evaluate_production_admissibility_components,
 )

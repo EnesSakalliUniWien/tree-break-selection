@@ -48,8 +48,7 @@ class _HierarchyRun:
 def _validate_path(path: GaussianSelectedProjectionPath) -> int:
     if not isinstance(path, GaussianSelectedProjectionPath):
         raise TypeError(
-            "Squared-Euclidean average-linkage replay requires a "
-            "GaussianSelectedProjectionPath."
+            "Squared-Euclidean average-linkage replay requires a GaussianSelectedProjectionPath."
         )
     n_leaves = int(path.nuisance_matrix.shape[0])
     if n_leaves < 2:
@@ -93,9 +92,7 @@ def _initial_squared_distance_polynomials(
                 [
                     intercept_difference @ intercept_difference,
                     2 * (intercept_difference @ slope_difference),
-                    contrast_difference
-                    * contrast_difference
-                    * radial_direction_squared_norm,
+                    contrast_difference * contrast_difference * radial_direction_squared_norm,
                 ],
                 dtype=object,
             )
@@ -126,22 +123,17 @@ def _run_squared_euclidean_average_linkage(
     radius_value = float(radius)
     if not np.isfinite(radius_value) or radius_value < 0.0:
         raise ValueError(
-            "Hierarchy replay radius must be finite and non-negative; "
-            f"got {radius!r}."
+            f"Hierarchy replay radius must be finite and non-negative; got {radius!r}."
         )
 
-    active_clusters: dict[int, LeafCluster] = {
-        leaf_id: (leaf_id,) for leaf_id in range(n_leaves)
-    }
+    active_clusters: dict[int, LeafCluster] = {leaf_id: (leaf_id,) for leaf_id in range(n_leaves)}
     distances = _initial_squared_distance_polynomials(path)
     merge_signature: list[HierarchyMerge] = []
     constraints: list[DistancePolynomial] = []
 
     for step_index in range(n_leaves - 1):
         candidate_pairs = sorted(
-            pair
-            for pair in distances
-            if pair[0] in active_clusters and pair[1] in active_clusters
+            pair for pair in distances if pair[0] in active_clusters and pair[1] in active_clusters
         )
         if not candidate_pairs:
             raise ValueError(f"Hierarchy replay has no active pair at step {step_index}.")
@@ -310,8 +302,7 @@ def construct_squared_euclidean_average_linkage_region(
         boundary_radii,
     )
     if not intervals or not any(
-        interval.lower <= path.observed_radius <= interval.upper
-        for interval in intervals
+        interval.lower <= path.observed_radius <= interval.upper for interval in intervals
     ):
         raise ValueError(
             "Observed hierarchy selection event has no positive-probability radial "

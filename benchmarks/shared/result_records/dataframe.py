@@ -196,9 +196,7 @@ def benchmark_rows_to_dataframe(rows: Iterable[BenchmarkResultRow]) -> pd.DataFr
             "unsupported_stage": row.unsupported_stage,
             "unsupported_reason": row.unsupported_reason,
             "unsupported_focal_record_count": row.unsupported_focal_record_count,
-            "unsupported_admissible_support_count": (
-                row.unsupported_admissible_support_count
-            ),
+            "unsupported_admissible_support_count": (row.unsupported_admissible_support_count),
             "unsupported_invalid_record_count": row.unsupported_invalid_record_count,
             "unsupported_upstream_tested_count": row.unsupported_upstream_tested_count,
             "unsupported_upstream_rejected_count": row.unsupported_upstream_rejected_count,

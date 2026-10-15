@@ -16,7 +16,9 @@ def add_tree_analysis_arguments(
     parser.add_argument("--edge-alpha", type=float, default=edge_alpha_default)
     parser.add_argument("--sibling-alpha", type=float, default=sibling_alpha_default)
     parser.add_argument(
-        "--max-rank", type=int, default=80,
+        "--max-rank",
+        type=int,
+        default=80,
         help="Target cosine rank; extended when needed to retain a complete numerical tie group.",
     )
     parser.add_argument("--min-segment-length", type=int, default=4)
@@ -24,7 +26,9 @@ def add_tree_analysis_arguments(
     parser.add_argument("--diffusion-k-neighbors", type=int, default=15)
     parser.add_argument("--diffusion-time", type=int, default=3)
     parser.add_argument(
-        "--diffusion-components", type=int, default=30,
+        "--diffusion-components",
+        type=int,
+        default=30,
         help="Target diffusion rank; extended when needed to retain a complete numerical tie group.",
     )
     parser.add_argument("--adaptive-bandwidth-type", default="-1/(d+2)")

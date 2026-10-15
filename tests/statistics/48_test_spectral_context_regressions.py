@@ -6,6 +6,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
     SpectralDecompositionResult,
 )
@@ -159,6 +160,7 @@ class TestSpectralContextRegressions:
     def test_single_active_feature_spectral_path_returns_coordinate_projection(self):
         """A one-active-feature node is already a valid 1D spectral problem."""
         import networkx as nx
+
         from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
             compute_spectral_decomposition,
         )
@@ -200,6 +202,7 @@ class TestSpectralContextRegressions:
     def test_branch_length_internal_state_changes_internal_spectral_rows(self):
         """Branch-length state rows are a separate diagnostic from empirical barycenters."""
         import networkx as nx
+
         from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
             INTERNAL_DISTRIBUTION_BRANCH_LENGTH_STATE,
             compute_spectral_decomposition,
@@ -264,6 +267,7 @@ class TestSpectralContextRegressions:
     def test_spectral_decomposition_requires_leaf_data_for_every_leaf_label(self):
         """Missing leaf rows must fail instead of silently shrinking a subtree."""
         import networkx as nx
+
         from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
             compute_spectral_decomposition,
         )

@@ -3,8 +3,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from scipy.spatial.distance import pdist
+
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 from tree_break_selection.tree.optimized_branch_lengths import BranchLengthOptimizationResult
 

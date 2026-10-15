@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
+
 from tree_break_selection.hierarchy_analysis.statistics.projection.selected_gaussian_hierarchy import (
     construct_squared_euclidean_average_linkage_region,
     replay_squared_euclidean_average_linkage,
@@ -23,7 +24,9 @@ def test_nearly_coincident_leaves_preserve_selected_interval_and_tail(epsilon) -
     a = 1.0 - 0.2 * epsilon
     matrix = np.array([[a], [-a], [-1.0], [-1.0 + epsilon]])
     path = build_gaussian_selected_projection_path(
-        matrix, np.array([1.0, -1.0, 0.0, 0.0]), np.ones((1, 1)),
+        matrix,
+        np.array([1.0, -1.0, 0.0, 0.0]),
+        np.ones((1, 1)),
         projection_dimension=1,
     )
     region = construct_squared_euclidean_average_linkage_region(path)
@@ -42,7 +45,8 @@ def test_nearly_coincident_leaves_preserve_selected_interval_and_tail(epsilon) -
         region.observed_merge_signature
     )
     result = compute_selected_gaussian_tail(
-        observed_radius=path.observed_radius, projection_dimension=1,
+        observed_radius=path.observed_radius,
+        projection_dimension=1,
         selection_intervals=region.selection_intervals,
     )
     assert result.p_value == pytest.approx(0.8, abs=5e-6)
@@ -74,10 +78,13 @@ def test_squared_euclidean_average_linkage_replays_the_full_merge_signature() ->
     )
 
     assert path.observed_radius == pytest.approx(1.0)
-    assert replay_squared_euclidean_average_linkage(
-        path,
-        radius=path.observed_radius,
-    ) == observed_signature
+    assert (
+        replay_squared_euclidean_average_linkage(
+            path,
+            radius=path.observed_radius,
+        )
+        == observed_signature
+    )
     assert replay_squared_euclidean_average_linkage(path, radius=2.0)[0] == (
         (0,),
         (2,),
@@ -109,9 +116,7 @@ def test_squared_euclidean_average_linkage_constructs_exact_observed_region() ->
         projection_dimension=path.projection_dimension,
         selection_intervals=region.selection_intervals,
     )
-    expected_p_value = (
-        math.erf(1.0) - math.erf(1.0 / np.sqrt(2.0))
-    ) / math.erf(1.0)
+    expected_p_value = (math.erf(1.0) - math.erf(1.0 / np.sqrt(2.0))) / math.erf(1.0)
     assert selected_tail.p_value == pytest.approx(expected_p_value)
 
 
@@ -156,18 +161,24 @@ def test_hierarchy_region_preserves_a_narrow_unselected_gap() -> None:
     zero_competitor_radius = 5.0 * root_two
     reselected_radius = 8.0
 
-    assert replay_squared_euclidean_average_linkage(
-        path,
-        radius=zero_competitor_radius,
-    ) != region.observed_merge_signature
+    assert (
+        replay_squared_euclidean_average_linkage(
+            path,
+            radius=zero_competitor_radius,
+        )
+        != region.observed_merge_signature
+    )
     assert not any(
         interval.lower <= zero_competitor_radius <= interval.upper
         for interval in region.selection_intervals
     )
-    assert replay_squared_euclidean_average_linkage(
-        path,
-        radius=reselected_radius,
-    ) == region.observed_merge_signature
+    assert (
+        replay_squared_euclidean_average_linkage(
+            path,
+            radius=reselected_radius,
+        )
+        == region.observed_merge_signature
+    )
     assert any(
         interval.lower <= reselected_radius <= interval.upper
         for interval in region.selection_intervals

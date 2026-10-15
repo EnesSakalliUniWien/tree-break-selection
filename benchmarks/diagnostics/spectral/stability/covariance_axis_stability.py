@@ -23,11 +23,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.utils.extmath import randomized_svd
-from tree_break_selection.space_separation import weight_feature_matrix
 
 from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
     load_matrix,
 )
+from tree_break_selection.space_separation import weight_feature_matrix
 
 SCHEMA_VERSION = "covariance_axis_stability/v1"
 

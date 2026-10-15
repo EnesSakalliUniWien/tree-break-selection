@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
+
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     build_contrast_covariance,
 )
@@ -176,9 +177,7 @@ def test_fixed_branch_time_covariance_rescales_the_exact_radial_region() -> None
     adjusted_region = construct_squared_euclidean_average_linkage_region(adjusted_path)
     radius_scale = float(np.sqrt(branch_time_multiplier))
 
-    assert adjusted_path.observed_radius == pytest.approx(
-        base_path.observed_radius / radius_scale
-    )
+    assert adjusted_path.observed_radius == pytest.approx(base_path.observed_radius / radius_scale)
     for base_radius in (0.0, 0.5, 1.0, np.sqrt(2.0)):
         np.testing.assert_allclose(
             adjusted_path.reconstruct(base_radius / radius_scale),
@@ -197,9 +196,9 @@ def test_fixed_branch_time_covariance_rescales_the_exact_radial_region() -> None
         projection_dimension=adjusted_path.projection_dimension,
         selection_intervals=adjusted_region.selection_intervals,
     )
-    expected_p_value = (
-        math.erf(1.0 / np.sqrt(3.0)) - math.erf(1.0 / np.sqrt(6.0))
-    ) / math.erf(1.0 / np.sqrt(3.0))
+    expected_p_value = (math.erf(1.0 / np.sqrt(3.0)) - math.erf(1.0 / np.sqrt(6.0))) / math.erf(
+        1.0 / np.sqrt(3.0)
+    )
     assert adjusted_tail.p_value == pytest.approx(expected_p_value)
 
 
@@ -320,14 +319,20 @@ def test_branch_length_internal_projection_changes_inside_one_hierarchy_region(
         any(interval.lower < radius < interval.upper for interval in region.selection_intervals)
         for radius in (first_radius, second_radius)
     )
-    assert replay_squared_euclidean_average_linkage(
-        path,
-        radius=first_radius,
-    ) == region.observed_merge_signature
-    assert replay_squared_euclidean_average_linkage(
-        path,
-        radius=second_radius,
-    ) == region.observed_merge_signature
+    assert (
+        replay_squared_euclidean_average_linkage(
+            path,
+            radius=first_radius,
+        )
+        == region.observed_merge_signature
+    )
+    assert (
+        replay_squared_euclidean_average_linkage(
+            path,
+            radius=second_radius,
+        )
+        == region.observed_merge_signature
+    )
 
     first_projection, first_branch_lengths = _branch_length_state_projection(
         path.reconstruct(first_radius),

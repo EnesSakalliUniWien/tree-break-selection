@@ -14,11 +14,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from benchmarks.diagnostics.calibration.values import bool_series
 from scipy.stats import spearmanr
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 from applications.scrna._shared import artifact_record
+from benchmarks.diagnostics.calibration.values import bool_series
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 OUTPUT_ROOT = (

@@ -12,11 +12,6 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
-
 from benchmarks.shared.cases import get_default_test_cases
 
 # Logging helpers extracted to a small utility module to keep the pipeline
@@ -37,6 +32,10 @@ from benchmarks.shared.util.case_run import run_single_case
 from benchmarks.shared.util.method_selection import resolve_selected_methods_and_param_sets
 from benchmarks.shared.util.method_sets import DEFAULT_METHODS
 from benchmarks.shared.util.pdf.session import open_pdf_pages, resolve_pdf_output_path
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
+)
 
 # Configure logger (library-friendly: leave handlers/levels to callers)
 logger = logging.getLogger(__name__)

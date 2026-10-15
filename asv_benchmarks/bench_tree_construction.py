@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
+
 from tree_break_selection.tree.construction.build import build_tree
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,

@@ -38,15 +38,15 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
-    eigendecompose_covariance,
-)
 
 from benchmarks.diagnostics.spectral.mp.profile_spectral_backends import (
     SpectralMatrixRecord,
     _build_matrix_records,
 )
 from benchmarks.shared.cases import get_default_test_cases
+from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
+    eigendecompose_covariance,
+)
 
 SCHEMA_VERSION = "local_mp_identity_law_diagnostic/v1"
 GENERATED_BY = "benchmarks.diagnostics.spectral.mp.local_mp_identity_law_diagnostic"

@@ -25,6 +25,8 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.stats import chi2
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+from benchmarks.diagnostics.calibration.values import finite_float
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -38,8 +40,6 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 from tree_break_selection.space_separation import hamming_knn_diffusion_geometry
 from tree_break_selection.tree.construction import tree_from_linkage
-
-from benchmarks.diagnostics.calibration.values import finite_float
 
 DEFAULT_GRID: tuple[tuple[int, int], ...] = ((15, 3), (15, 5), (30, 3))
 SCHEMA_VERSION = "selected_sibling_lrt_diagnostic/v1"

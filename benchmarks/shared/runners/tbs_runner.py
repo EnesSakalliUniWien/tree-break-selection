@@ -10,6 +10,11 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.shared.runners.tbs_support import unsupported_empirical_null_reason
+from benchmarks.shared.types import MethodRunResult
+from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
+from benchmarks.shared.util.time import elapsed_since
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -39,11 +44,6 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     fit_fixed_topology_nnls_branch_lengths,
     validate_branch_length_optimization_method,
 )
-
-from benchmarks.shared.runners.tbs_support import unsupported_empirical_null_reason
-from benchmarks.shared.types import MethodRunResult
-from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
-from benchmarks.shared.util.time import elapsed_since
 
 
 def run_tbs_on_distance(

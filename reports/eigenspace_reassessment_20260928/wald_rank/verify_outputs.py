@@ -17,15 +17,17 @@ verified_counts = verified_pairs = verified_rank_counts = 0
 
 for seed in sorted(counts.seed.unique()):
     archive = directory / f"replicate_outcomes_seed_{seed}.npz"
-    assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest[
-        "outcome_archive_sha256"
-    ][archive.name]
+    assert (
+        hashlib.sha256(archive.read_bytes()).hexdigest()
+        == manifest["outcome_archive_sha256"][archive.name]
+    )
     with np.load(archive) as arrays:
         for row in counts[counts.seed == seed].itertuples():
             prefix = f"{row.spectrum}__{row.selection}__{row.version}"
             rejected = np.unpackbits(
-                arrays[prefix + "__alpha_" + str(row.alpha)], bitorder="little",
-            )[:row.n_contrasts]
+                arrays[prefix + "__alpha_" + str(row.alpha)],
+                bitorder="little",
+            )[: row.n_contrasts]
             assert int(rejected.sum()) == row.rejections
             assert arrays[prefix + "__rank"].shape == (row.n_contrasts,)
             verified_counts += 1
@@ -35,20 +37,26 @@ for seed in sorted(counts.seed.unique()):
                 np.unpackbits(
                     arrays[prefix + version + "__alpha_" + str(row.alpha)],
                     bitorder="little",
-                )[:row.n_contrasts].astype(bool)
+                )[: row.n_contrasts].astype(bool)
                 for version in ("legacy_prefix", "current_complete_groups")
             ]
             assert (
-                int((old & ~new).sum()), int((new & ~old).sum()),
-                int((old & new).sum()), int((~old & ~new).sum()),
+                int((old & ~new).sum()),
+                int((new & ~old).sum()),
+                int((old & new).sum()),
+                int((~old & ~new).sum()),
             ) == (
-                row.old_only_rejected, row.new_only_rejected,
-                row.both_rejected, row.neither_rejected,
+                row.old_only_rejected,
+                row.new_only_rejected,
+                row.both_rejected,
+                row.neither_rejected,
             )
-            assert row.rank_changed == int(np.sum(
-                arrays[prefix + "legacy_prefix__rank"]
-                != arrays[prefix + "current_complete_groups__rank"],
-            ))
+            assert row.rank_changed == int(
+                np.sum(
+                    arrays[prefix + "legacy_prefix__rank"]
+                    != arrays[prefix + "current_complete_groups__rank"],
+                )
+            )
             verified_pairs += 1
         for row in ranks[ranks.seed == seed].itertuples():
             key = f"{row.spectrum}__{row.selection}__{row.version}__rank"

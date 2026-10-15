@@ -7,6 +7,7 @@ from dataclasses import FrozenInstanceError, asdict
 
 import numpy as np
 import pytest
+
 import tree_break_selection.hierarchy_analysis.decomposition.gates.guards as guard_module
 from tree_break_selection.hierarchy_analysis.decomposition.gates.column_contracts import (
     EDGE_GATE_COLUMNS,

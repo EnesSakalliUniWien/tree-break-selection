@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from applications.endotypes.analysis.audit_go_annotation_analysis_levels import audit_paths
 from applications.endotypes.analysis.feature_matrix_quality_analysis import packed_pattern_groups
 from applications.endotypes.analysis.inventory_go_annotation_datasets import (

@@ -8,6 +8,7 @@ from skbio.stats.distance import mantel
 from sklearn.manifold import Isomap
 from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import StandardScaler
+
 from tree_break_selection.plot.cluster_color_mapping import build_cluster_color_spec
 
 from .embedding import (

@@ -26,14 +26,6 @@ from typing import Any, Literal
 
 import numpy as np
 from scipy.stats import chi2
-from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
-    compute_whitened_wald_contrast,
-)
-from tree_break_selection.tree.feature_space import (
-    FeatureSpace,
-    continuous_feature_space_from_columns,
-    infer_feature_space_from_columns,
-)
 
 from benchmarks.validation.contracts.report_contract import (
     completed_target_entry as _completed_target_entry,
@@ -52,6 +44,14 @@ from benchmarks.validation.contracts.report_contract import (
 from benchmarks.validation.statistics.calibration_support import (
     continuous_covariance,
     summarize_p_value_calibration,
+)
+from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
+    compute_whitened_wald_contrast,
+)
+from tree_break_selection.tree.feature_space import (
+    FeatureSpace,
+    continuous_feature_space_from_columns,
+    infer_feature_space_from_columns,
 )
 
 SCHEMA_VERSION = "feature_covariance_calibration/v1"

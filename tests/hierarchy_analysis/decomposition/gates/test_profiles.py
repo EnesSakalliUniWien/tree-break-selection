@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.profiles import (
     SIBLING_GATE_PROFILES,
     resolve_sibling_gate_profile_config,

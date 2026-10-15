@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+
 import tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator as orchestrator
 from tree_break_selection.hierarchy_analysis.decomposition.gates.column_contracts import (
     EDGE_GATE_COLUMNS,

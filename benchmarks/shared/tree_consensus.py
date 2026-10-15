@@ -10,6 +10,7 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score
+
 from tree_break_selection.tree.construction import (
     SUPPORTED_LINKAGE_METHODS,
     TREE_CONSENSUS_STRATEGY_PRIORITY,
@@ -124,7 +125,9 @@ def _target_results(results: pd.DataFrame) -> pd.DataFrame:
         )
 
     target["tree_inference"] = target["run_id"].map(tree_inference_from_run_id)
-    target["tree_priority"] = target["tree_inference"].map(TREE_CONSENSUS_STRATEGY_PRIORITY).astype(int)
+    target["tree_priority"] = (
+        target["tree_inference"].map(TREE_CONSENSUS_STRATEGY_PRIORITY).astype(int)
+    )
     for column in [
         "test_case",
         "true_clusters",
@@ -575,15 +578,9 @@ def _summary(
         "metric_median_pass": bool(all(median_passes.values())),
         "category_loss_count": int(category_loss_count),
         "category_gate_pass": bool(category_loss_count == 0),
-        "mean_selected_ari": float(selected_ari.mean())
-        if not selected_ari.empty
-        else np.nan,
-        "median_selected_ari": float(selected_ari.median())
-        if not selected_ari.empty
-        else np.nan,
-        "mean_selected_nmi": float(selected_nmi.mean())
-        if not selected_nmi.empty
-        else np.nan,
+        "mean_selected_ari": float(selected_ari.mean()) if not selected_ari.empty else np.nan,
+        "median_selected_ari": float(selected_ari.median()) if not selected_ari.empty else np.nan,
+        "mean_selected_nmi": float(selected_nmi.mean()) if not selected_nmi.empty else np.nan,
         "mean_selected_macro_f1": float(selected_macro_f1.mean())
         if not selected_macro_f1.empty
         else np.nan,

@@ -3,7 +3,6 @@
 Every final TBS cluster is colored. Labels are restricted to larger clusters so
 the plot remains readable, but small clusters are not greyed out or hidden.
 """
-# ruff: noqa: I001
 
 from __future__ import annotations
 
@@ -17,7 +16,6 @@ matplotlib.use("Agg")
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import pandas as pd
-
 
 METHODS = [
     (

@@ -31,6 +31,7 @@ OUT_PDF = OUT_DIR / "mnist_tbs_analysis_one_plot_per_page.pdf"
 OUT_MAIN = OUT_DIR / "mnist_tbs_analysis_summary.png"
 OUT_CSV = OUT_DIR / "mnist_tbs_analysis_summary.csv"
 
+
 def _add_generated_at(fig: plt.Figure, generated_at: str) -> None:
     fig.text(
         0.99,

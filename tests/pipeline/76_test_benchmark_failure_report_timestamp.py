@@ -1,6 +1,7 @@
 """Tests for benchmark failure-report timestamps."""
 
 import pandas as pd
+
 from benchmarks.diagnostics.failure.debug_trace import diagnose_benchmark_failures
 
 

@@ -7,6 +7,16 @@ from typing import Any, Dict, Optional
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist, squareform
+
+from benchmarks.shared.benchmark_grid import BENCHMARK_METADATA_KEYS
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.types import BenchmarkRunStatus, MethodRunResult
+from benchmarks.shared.util.decomposition import _create_report_dataframe_from_labels
+from benchmarks.shared.util.execution_mode import coerce_bool_param
+from benchmarks.shared.util.method_sets import (
+    TBS_DISTANCE_TREE_METHODS,
+    TBS_DISTANCE_TREE_NNLS_METHODS,
+)
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -32,16 +42,6 @@ from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
-)
-
-from benchmarks.shared.benchmark_grid import BENCHMARK_METADATA_KEYS
-from benchmarks.shared.runners.method_registry import METHOD_SPECS
-from benchmarks.shared.types import BenchmarkRunStatus, MethodRunResult
-from benchmarks.shared.util.decomposition import _create_report_dataframe_from_labels
-from benchmarks.shared.util.execution_mode import coerce_bool_param
-from benchmarks.shared.util.method_sets import (
-    TBS_DISTANCE_TREE_METHODS,
-    TBS_DISTANCE_TREE_NNLS_METHODS,
 )
 
 
@@ -311,9 +311,7 @@ _PARAM_KEYS_BY_METHOD: dict[str, frozenset[str]] = {
 
 
 def _reject_unknown_params(method_id: str, params: Dict[str, Any]) -> None:
-    unknown_keys = sorted(
-        set(params) - _PARAM_KEYS_BY_METHOD[method_id] - BENCHMARK_METADATA_KEYS
-    )
+    unknown_keys = sorted(set(params) - _PARAM_KEYS_BY_METHOD[method_id] - BENCHMARK_METADATA_KEYS)
     if unknown_keys:
         raise ValueError(f"Unknown parameter(s) for {method_id!r}: {unknown_keys}.")
 
@@ -420,9 +418,7 @@ def _run_tbs_distance_tree_method(
         root_stability_subsample_replicates=int(
             params.get("root_stability_subsample_replicates", 0)
         ),
-        root_stability_feature_fraction=float(
-            params.get("root_stability_feature_fraction", 0.8)
-        ),
+        root_stability_feature_fraction=float(params.get("root_stability_feature_fraction", 0.8)),
         root_stability_seed=int(params.get("root_stability_seed", 0)),
         root_stability_tree_distance_metric=str(
             params.get("root_stability_tree_distance_metric", "hamming")
@@ -434,9 +430,7 @@ def _run_tbs_distance_tree_method(
         root_selective_permutation_guard_seed=int(
             params.get("root_selective_permutation_guard_seed", 0)
         ),
-        root_selective_permutation_guard_alpha=params.get(
-            "root_selective_permutation_guard_alpha"
-        ),
+        root_selective_permutation_guard_alpha=params.get("root_selective_permutation_guard_alpha"),
         root_selective_permutation_guard_scope=str(
             params.get("root_selective_permutation_guard_scope", "root")
         ),

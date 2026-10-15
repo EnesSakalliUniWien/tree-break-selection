@@ -1067,9 +1067,7 @@ def build_overlap_selected_pass_through_node_rows(
                     else finite_float(truth["truth_downstream_split_distance"])
                 ),
                 "truth_downstream_split_ari": (
-                    math.nan
-                    if truth is None
-                    else finite_float(truth["truth_downstream_split_ari"])
+                    math.nan if truth is None else finite_float(truth["truth_downstream_split_ari"])
                 ),
                 "truth_downstream_child_mean_purity": (
                     math.nan

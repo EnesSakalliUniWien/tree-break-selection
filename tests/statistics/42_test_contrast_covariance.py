@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+
 import tree_break_selection.hierarchy_analysis.statistics.contrast_covariance as contrast_covariance_module
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     build_contrast_covariance,

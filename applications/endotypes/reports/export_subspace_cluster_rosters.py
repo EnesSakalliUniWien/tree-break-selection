@@ -659,9 +659,7 @@ def build_rosters(
 
         rendered_artifact_paths = {
             "radial_tree_clusters_png": str(radial_path) if radial_rendered else "",
-            "radial_tree_clusters_compact_png": str(radial_compact_path)
-            if radial_rendered
-            else "",
+            "radial_tree_clusters_compact_png": str(radial_compact_path) if radial_rendered else "",
             "full_space_embedding_clusters_png": str(full_space_path)
             if full_space_rendered
             else "",

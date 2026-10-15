@@ -4,6 +4,7 @@ This law requires an isotropic Gaussian contrast independent of the candidate
 basis. It corrects contrast-energy rank selection, not same-data tree/PCA fitting
 or estimated covariance. Numerical eigenvalue groups must be retained whole.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -22,11 +23,19 @@ def _conditional_shares(m: int, k: int, previous: int, q: float, order: int):
     nodes, weights = roots_jacobi(order, b - 1, 1)
     u = (nodes + 1) / 2
     c = q + (1 - q) * u**2
-    selection = np.ones_like(c) if previous == 0 else betainc(
-        previous / 2, (k - previous) / 2, q / c,
+    selection = (
+        np.ones_like(c)
+        if previous == 0
+        else betainc(
+            previous / 2,
+            (k - previous) / 2,
+            q / c,
+        )
     )
     with np.errstate(divide="ignore"):
-        log_weights = np.log(weights) + (b - 1) * np.log1p(u) + (a - 1) * np.log(c) + np.log(selection)
+        log_weights = (
+            np.log(weights) + (b - 1) * np.log1p(u) + (a - 1) * np.log(c) + np.log(selection)
+        )
     normalizer = logsumexp(log_weights)
     if not np.isfinite(normalizer):
         raise ValueError("Energy-selection event has numerically unresolved probability.")

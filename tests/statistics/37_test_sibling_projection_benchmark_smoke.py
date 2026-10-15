@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import pytest
+from scipy.cluster.hierarchy import linkage
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.cases.binary import BINARY_CASES
 from benchmarks.shared.cases.gaussian import GAUSSIAN_CASES
 from benchmarks.shared.generators.generate_case_data import generate_case_data
-from scipy.cluster.hierarchy import linkage
-from scipy.spatial.distance import pdist
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )

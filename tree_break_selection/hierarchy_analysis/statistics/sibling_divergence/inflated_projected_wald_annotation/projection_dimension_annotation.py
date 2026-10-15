@@ -38,9 +38,9 @@ def write_record_calibration_evidence(
     annotations_dataframe.loc[record_parents, "Sibling_Null_Weight"] = [
         float(record.sibling_null_weight) for record in records
     ]
-    annotations_dataframe.loc[
-        record_parents, "Sibling_Parent_Positive_Eigenvalue_Count"
-    ] = [float(record.parent_positive_eigenvalue_count) for record in records]
+    annotations_dataframe.loc[record_parents, "Sibling_Parent_Positive_Eigenvalue_Count"] = [
+        float(record.parent_positive_eigenvalue_count) for record in records
+    ]
 
 
 __all__ = [

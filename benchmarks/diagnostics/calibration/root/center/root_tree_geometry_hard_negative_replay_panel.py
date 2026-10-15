@@ -106,9 +106,7 @@ def parse_tree_geometries(raw: str | None) -> tuple[TreeGeometrySpec, ...]:
         parts = tuple(part.strip() for part in str(token).split(":"))
         if len(parts) != 2 or any(not part for part in parts):
             raise ValueError(
-                "Tree geometry tokens must have format "
-                "'distance:linkage'; got "
-                f"{token!r}."
+                f"Tree geometry tokens must have format 'distance:linkage'; got {token!r}."
             )
         geometries.append(TreeGeometrySpec(*parts))
     if not geometries:

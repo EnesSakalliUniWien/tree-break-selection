@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import networkx as nx
 import pytest
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.gate_evaluator import (
     GateEvaluator,
     TraversalDecision,

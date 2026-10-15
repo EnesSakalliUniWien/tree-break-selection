@@ -16,6 +16,13 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.statistics.mixed_internal_calibration_sweep import (
+    _select_cases,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
+from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -36,13 +43,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
-
-from benchmarks.diagnostics.calibration.statistics.mixed_internal_calibration_sweep import (
-    _select_cases,
-)
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-from benchmarks.shared.util.time import format_timestamp_utc
 
 SCHEMA_VERSION = "mp_projection_dimension_behavior_sweep/v1"
 STUDY_ROLE = "diagnostic_mp_projection_dimension_behavior_sweep_not_calibration"

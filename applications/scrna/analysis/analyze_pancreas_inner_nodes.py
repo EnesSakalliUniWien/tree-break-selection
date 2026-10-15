@@ -1,5 +1,4 @@
 """Compare pancreas inner nodes with progenitor-style lineage expectations."""
-# ruff: noqa: I001
 
 from __future__ import annotations
 
@@ -11,8 +10,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-import matplotlib.pyplot as plt
 import anndata as ad
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import sparse

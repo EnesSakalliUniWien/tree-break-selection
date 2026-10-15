@@ -133,7 +133,9 @@ def h1_count(body: str) -> int:
     return count
 
 
-def check_page(path: Path, stems: set[str], index_text: str, catalogued_outputs: set[str] | None = None) -> list[str]:
+def check_page(
+    path: Path, stems: set[str], index_text: str, catalogued_outputs: set[str] | None = None
+) -> list[str]:
     rel = path.relative_to(ROOT)
     errors: list[str] = []
 
@@ -230,7 +232,7 @@ def main() -> int:
         try:
             catalogued_outputs = declared_outputs(load_catalog(ROOT))
         except (ValueError, KeyError, OSError) as exc:
-            errors.append(f'Invalid generated-file catalog: {exc}')
+            errors.append(f"Invalid generated-file catalog: {exc}")
     for stem, paths in stems.items():
         if len(paths) > 1:
             rel_paths = ", ".join(str(path.relative_to(ROOT)) for path in paths)

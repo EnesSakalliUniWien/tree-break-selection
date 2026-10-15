@@ -111,5 +111,3 @@ def split_distributional_action_summary(
         child_edge_actions=edge_actions,
         action=float(sum(edge_actions)),
     )
-
-

@@ -13,13 +13,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import umap
-from benchmarks.experiments.mnist.run import load_mnist_subset
-from benchmarks.experiments.mnist.run_higher_categories import (
-    create_plotly_higher_category_plot_3d,
-)
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from tree_break_selection.tree.construction import tree_from_linkage
 
 from applications.mnist._shared import (
     DIGIT_COLORS,
@@ -28,6 +23,11 @@ from applications.mnist._shared import (
     best_rows,
     parse_digit_counts,
 )
+from benchmarks.experiments.mnist.run import load_mnist_subset
+from benchmarks.experiments.mnist.run_higher_categories import (
+    create_plotly_higher_category_plot_3d,
+)
+from tree_break_selection.tree.construction import tree_from_linkage
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = ROOT / "benchmarks/results/experiments/mnist"
@@ -43,6 +43,7 @@ OUT_UMAP3D_DIGIT_LABELS_HTML = OUT_DIR / "00c_mnist_umap3d_visible_digit_labels.
 OUT_UMAP3D_DOCSTYLE_HTML = OUT_DIR / "00d_mnist_umap3d_docstyle_digit_colorbar.html"
 OUT_UMAP_IMAGE_INSPECTOR_HTML = OUT_DIR / "00e_mnist_umap_point_image_inspector.html"
 OUT_UMAP3D_IMAGE_INSPECTOR_HTML = OUT_DIR / "00f_mnist_umap3d_point_image_inspector.html"
+
 
 def _base_layout(fig: go.Figure, title: str) -> go.Figure:
     fig.update_layout(

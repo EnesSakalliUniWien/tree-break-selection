@@ -167,10 +167,15 @@ def _chi_radial_interval_log_probability(
         lambda fraction: np.exp(
             chi.logpdf(interval.lower + fraction * width, df=degrees_of_freedom) - log_scale
         ),
-        0.0, 1.0, epsabs=1e-12, epsrel=1e-12,
+        0.0,
+        1.0,
+        epsabs=1e-12,
+        epsrel=1e-12,
     )
     if not np.isfinite(log_scale) or mass <= 0.0:
-        raise ValueError("Selected Gaussian interval probability could not be resolved numerically.")
+        raise ValueError(
+            "Selected Gaussian interval probability could not be resolved numerically."
+        )
     return float(log_scale + np.log(width) + np.log(mass))
 
 
@@ -217,13 +222,15 @@ def compute_selected_gaussian_tail(
         )
 
     log_selection_probability = float(
-        logsumexp([
-            _chi_radial_interval_log_probability(
-                interval,
-                degrees_of_freedom=degrees_of_freedom,
-            )
-            for interval in intervals
-        ])
+        logsumexp(
+            [
+                _chi_radial_interval_log_probability(
+                    interval,
+                    degrees_of_freedom=degrees_of_freedom,
+                )
+                for interval in intervals
+            ]
+        )
     )
     if not np.isfinite(log_selection_probability):
         raise ValueError(
@@ -236,10 +243,12 @@ def compute_selected_gaussian_tail(
         tail_lower = max(interval.lower, radius)
         if tail_lower >= interval.upper:
             continue
-        log_tail_masses.append(_chi_radial_interval_log_probability(
-            RadialSelectionInterval(tail_lower, interval.upper),
-            degrees_of_freedom=degrees_of_freedom,
-        ))
+        log_tail_masses.append(
+            _chi_radial_interval_log_probability(
+                RadialSelectionInterval(tail_lower, interval.upper),
+                degrees_of_freedom=degrees_of_freedom,
+            )
+        )
     log_tail_probability = min(float(logsumexp(log_tail_masses)), log_selection_probability)
     selection_probability = float(np.exp(log_selection_probability))
     selected_tail_probability = float(np.exp(log_tail_probability))
@@ -338,9 +347,7 @@ def build_gaussian_selected_projection_path(
     try:
         covariance_factor = np.linalg.cholesky(covariance_matrix)
     except np.linalg.LinAlgError as exc:
-        raise ValueError(
-            "Gaussian selected radial covariance must be positive-definite."
-        ) from exc
+        raise ValueError("Gaussian selected radial covariance must be positive-definite.") from exc
 
     contrast_norm = float(linalg.norm(contrast_vector))
     if not np.isfinite(contrast_norm) or contrast_norm <= 0.0:
@@ -397,13 +404,10 @@ def build_gaussian_selected_projection_path(
     observed_radius = float(np.linalg.norm(projected_contrast))
     if not np.isfinite(observed_radius) or observed_radius <= 0.0:
         raise ValueError(
-            "Gaussian selected radial conditioning requires a non-zero observed "
-            "projected radius."
+            "Gaussian selected radial conditioning requires a non-zero observed projected radius."
         )
     projected_direction = projected_contrast / observed_radius
-    orthogonal_whitened_contrast = (
-        whitened_contrast - projection.T @ projected_contrast
-    )
+    orthogonal_whitened_contrast = whitened_contrast - projection.T @ projected_contrast
 
     return GaussianSelectedProjectionPath(
         nuisance_matrix=np.asarray(nuisance_matrix, dtype=np.float64),

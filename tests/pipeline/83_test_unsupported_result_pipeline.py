@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pandas as pd
+
 from benchmarks.shared.result_records import benchmark_rows_to_dataframe
 from benchmarks.shared.types import (
     MethodRunResult,
@@ -62,7 +63,9 @@ def test_unsupported_run_bypasses_metrics_and_computed_outputs(monkeypatch):
 
     row, computed_result = method_execution.run_single_method_once(
         method_id="kmeans",
-        spec=MethodSpec(name="K-Means", runner=lambda *_a, **_k: _unsupported_result(), param_grid=[]),
+        spec=MethodSpec(
+            name="K-Means", runner=lambda *_a, **_k: _unsupported_result(), param_grid=[]
+        ),
         params={"n_clusters": 2},
         case_idx=1,
         case_name="toy",
@@ -95,7 +98,5 @@ def test_unsupported_run_bypasses_metrics_and_computed_outputs(monkeypatch):
 
     frame = benchmark_rows_to_dataframe([row])
     assert frame.loc[0, "status"] == "unsupported"
-    assert frame.loc[0, "unsupported_reason_code"] == (
-        "empirical_null_no_internal_support"
-    )
+    assert frame.loc[0, "unsupported_reason_code"] == ("empirical_null_no_internal_support")
     assert math.isnan(frame.loc[0, "ari"])

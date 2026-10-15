@@ -21,8 +21,12 @@ All notable changes to this project are documented in this file.
 - Benchmark diagnostics read boolean cells through `bool_series`/`bool_value` only (`root_split`, `false_split`, guard flags, `required_for_production`, edge flags); `1.0`, `t` and `y` now count as true everywhere.
 - The selected-hierarchy null audit picks the root target by `parent_depth == 0` and non-root targets by `parent_depth > 0`; a case whose root record is not selected raises instead of substituting the largest open parent.
 - The manifold comparison plot raises `ImportError` when `umap` is missing instead of plotting PCA under a UMAP label.
+- The artifact catalog no longer stores archive locations; `check --verify-archive` and `restore` use `~/kl-te-cluster-archive` unless `--archive-root` is given.
+- `make lint` also runs `ruff format --check .`; the `[tool.ruff] src` entry that hid first-party import ordering is gone, and imports are sorted project-wide.
+
 
 ### Removed
+- `benchmarks/shared/util/pdf/image_concat.py` and `figure_split.py` (`concat_*_plots`, `split_collected_figs_to_pdfs`): no caller; the pipeline writes to `PdfPages` directly.
 - The `diffusion`, `trajectory` and `brancharchitect` extras with deeptime, PyGSP, PHATE, kaleido, biopython and orjson; none was imported.
 - BranchArchitect: the `vendor/BranchArchitect` submodule, `.gitmodules`, and `benchmarks/validation/tree/brancharchitect_tree_comparison.py`. Existing clones should delete the leftover `vendor/BranchArchitect` folder and `.git/modules/vendor`.
 - The unreachable 3D-UMAP plot chain (`plot_umap_3d`, `create_umap_3d_plots_from_results`, `create_clustering_comparison_plot_3d`, `concat_umap_3d_plots`, the `umap3d` category) and the `TBS_EMBEDDING_BACKEND_3D` variable only it read.

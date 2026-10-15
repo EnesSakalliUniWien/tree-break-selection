@@ -91,9 +91,7 @@ def _mark_empirical_calibration_as_fail_closed(
     ]
     annotations_df.loc[focal_parents, "Sibling_Test_Method"] = method
     annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Calibration"] = calibration_status
-    annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Role"] = (
-        "fail_closed_sibling_gate"
-    )
+    annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Role"] = "fail_closed_sibling_gate"
     return annotations_df
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
 from benchmarks.shared.cases.geometry import case_recipe_geometry
 from benchmarks.shared.generators.case_data_contracts import case_metadata
@@ -258,8 +259,7 @@ def test_gaussian_source_cases_name_discretized_or_continuous_representation() -
     assert binary_metadata["feature_representation"] == "median_binary"
     assert binary_metadata["simulation_model"] == "isotropic_gaussian_mixture"
     assert (
-        binary_metadata["observation_model"]
-        == "per_feature_median_thresholded_continuous_matrix"
+        binary_metadata["observation_model"] == "per_feature_median_thresholded_continuous_matrix"
     )
     assert binary_metadata["benchmark_intent"] == "discretized_continuous_stress"
     assert "not as raw Gaussian clustering" in binary_metadata["scientific_caution"]
@@ -351,8 +351,7 @@ def test_sbm_case_data_names_precomputed_tbs_distance_metric() -> None:
     assert metadata["benchmark_intent"] == "graph_community_detection_stress"
     assert "not independent feature measurements" in metadata["scientific_caution"]
     assert (
-        metadata["recommended_simulation_family"]
-        == "graph_sbm_or_lfr_with_graph_native_distances"
+        metadata["recommended_simulation_family"] == "graph_sbm_or_lfr_with_graph_native_distances"
     )
     assert metadata["precomputed_distance_condensed"].shape[0] == (
         data_df.shape[0] * (data_df.shape[0] - 1) // 2

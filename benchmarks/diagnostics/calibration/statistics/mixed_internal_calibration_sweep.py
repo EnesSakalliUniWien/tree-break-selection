@@ -16,6 +16,19 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.sibling.nulls.sibling_null_weight_rule_validation import (
+    evaluate_sibling_null_weight_rules,
+)
+from benchmarks.diagnostics.calibration.statistics.internal_support_threshold_validation import (
+    evaluate_internal_support_threshold_rows,
+    summarize_internal_support_threshold_rows,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
+from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -42,19 +55,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
-
-from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
-from benchmarks.diagnostics.calibration.sibling.nulls.sibling_null_weight_rule_validation import (
-    evaluate_sibling_null_weight_rules,
-)
-from benchmarks.diagnostics.calibration.statistics.internal_support_threshold_validation import (
-    evaluate_internal_support_threshold_rows,
-    summarize_internal_support_threshold_rows,
-)
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_mixed_internal_calibration_sweep_not_calibration"
 SCHEMA_VERSION = "mixed_internal_calibration_sweep/v3"
@@ -232,18 +232,13 @@ def _collect_case_replicate(
                     ),
                     "split_rejected_at_alpha": (
                         bool(decision.p_value <= sibling_alpha)
-                        if decision.status == "internal_admissible"
-                        and decision.p_value is not None
+                        if decision.status == "internal_admissible" and decision.p_value is not None
                         else None
                     ),
                     "n_supported_records": int(support.get("n_supported_records", 0)),
                     "n_supported_groups": int(support.get("n_supported_groups", 0)),
-                    "n_family_supported_records": int(
-                        support.get("n_family_supported_records", 0)
-                    ),
-                    "n_family_supported_groups": int(
-                        support.get("n_family_supported_groups", 0)
-                    ),
+                    "n_family_supported_records": int(support.get("n_family_supported_records", 0)),
+                    "n_family_supported_groups": int(support.get("n_family_supported_groups", 0)),
                     "family_effective_sample_size": float(
                         support.get("family_effective_sample_size", 0.0)
                     ),

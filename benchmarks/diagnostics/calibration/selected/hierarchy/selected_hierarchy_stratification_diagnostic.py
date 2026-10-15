@@ -15,11 +15,6 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
-from tree_break_selection.tree.feature_space import FeatureSpace
 
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
@@ -30,6 +25,11 @@ from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_nu
 from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
+)
+from tree_break_selection.tree.feature_space import FeatureSpace
 
 SIZE_BIN_EDGES = (0.0, 0.25, 0.5, 0.75, 1.0)
 SIZE_BIN_LABELS = ("small_0_0.25", "medium_0.25_0.5", "large_0.5_0.75", "root_0.75_1")

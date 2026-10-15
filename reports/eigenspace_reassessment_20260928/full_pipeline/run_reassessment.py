@@ -29,6 +29,10 @@ sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import pandas as pd
+from scipy.stats import binomtest
+from sklearn.metrics import adjusted_rand_score
+from statsmodels.stats.multitest import multipletests
+
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
 from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
 from benchmarks.shared.runners.dispatch import run_clustering_result
@@ -36,9 +40,6 @@ from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from benchmarks.validation.contracts.report_contract import wilson_interval
 from benchmarks.validation.statistics.calibration_support import continuous_covariance
-from scipy.stats import binomtest
-from sklearn.metrics import adjusted_rand_score
-from statsmodels.stats.multitest import multipletests
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection import (
     collect_sibling_pair_records,
 )
@@ -55,12 +56,19 @@ from tree_break_selection.tree.feature_space import (
 )
 
 METHODS = (
-    "tbs", "tbs_complete", "tbs_neighbor_joining", "tbs_diffusion",
+    "tbs",
+    "tbs_complete",
+    "tbs_neighbor_joining",
+    "tbs_diffusion",
     "tbs_diffusion_adaptive_nnls",
 )
 FAMILIES = (
-    "bernoulli_iid", "bernoulli_dependent", "categorical",
-    "gaussian_identity", "gaussian_ar1", "gaussian_highdim",
+    "bernoulli_iid",
+    "bernoulli_dependent",
+    "categorical",
+    "gaussian_identity",
+    "gaussian_ar1",
+    "gaussian_highdim",
 )
 TAILS = (0.001, 0.005, 0.01, 0.05)
 EDGE_ALPHA = 0.001
@@ -125,26 +133,48 @@ def method_run(data, truth, space, key, method, alpha):
     if key["family"].startswith("gaussian") and method in METHODS[:3]:
         params["tree_distance_metric"] = "standardized_euclidean"
     row = {
-        **key, "method": method, "sibling_alpha": alpha,
-        "status": "runtime_error", "reason": "", "audit_error": "",
-        "found_clusters": np.nan, "ari": np.nan, "false_partition": np.nan,
-        "n_splits": np.nan, "n_false_splits": np.nan, "split_fdp": np.nan,
-        "root_false_split": np.nan, "descendant_false_split": np.nan,
-        "pass_throughs": np.nan, "root_p": np.nan, "root_true_null": np.nan,
-        "root_test_rank": np.nan, "max_test_rank": np.nan,
+        **key,
+        "method": method,
+        "sibling_alpha": alpha,
+        "status": "runtime_error",
+        "reason": "",
+        "audit_error": "",
+        "found_clusters": np.nan,
+        "ari": np.nan,
+        "false_partition": np.nan,
+        "n_splits": np.nan,
+        "n_false_splits": np.nan,
+        "split_fdp": np.nan,
+        "root_false_split": np.nan,
+        "descendant_false_split": np.nan,
+        "pass_throughs": np.nan,
+        "root_p": np.nan,
+        "root_true_null": np.nan,
+        "root_test_rank": np.nan,
+        "max_test_rank": np.nan,
         "n_rank_above_mp_floor": np.nan,
-        "calibration_records": np.nan, "nonnull_calibration_records": np.nan,
-        "calibration_base_weight": np.nan, "nonnull_calibration_base_weight": np.nan,
-        "actual_config": "", "requested_params": json.dumps(params, sort_keys=True),
-        "diffusion_metadata": "", "warnings": "", "elapsed_seconds": np.nan,
+        "calibration_records": np.nan,
+        "nonnull_calibration_records": np.nan,
+        "calibration_base_weight": np.nan,
+        "nonnull_calibration_base_weight": np.nan,
+        "actual_config": "",
+        "requested_params": json.dumps(params, sort_keys=True),
+        "diffusion_metadata": "",
+        "warnings": "",
+        "elapsed_seconds": np.nan,
     }
     nodes = []
     try:
         with warnings.catch_warnings(record=True) as warning_records:
             warnings.simplefilter("always")
             result = run_clustering_result(
-                data, method, params, seed=key["seed"], significance_level=alpha,
-                edge_alpha=EDGE_ALPHA, feature_space=space,
+                data,
+                method,
+                params,
+                seed=key["seed"],
+                significance_level=alpha,
+                edge_alpha=EDGE_ALPHA,
+                feature_space=space,
             )
         row["warnings"] = json.dumps(sorted({str(w.message) for w in warning_records}))
         row["status"] = str(result.status)
@@ -162,7 +192,9 @@ def method_run(data, truth, space, key, method, alpha):
         if bundle.metadata.edge.alpha != EDGE_ALPHA or bundle.metadata.sibling.alpha != alpha:
             raise AssertionError("Requested and executed alpha differ")
         if bundle.metadata.config.adaptive_projection_dimension_energy_fraction is not None:
-            raise AssertionError("This fixed production-default study must not select adaptive rank")
+            raise AssertionError(
+                "This fixed production-default study must not select adaptive rank"
+            )
         for metadata_name in ("adaptive_diffusion", "hamming_nn_diffusion"):
             if metadata_name in result.extra:
                 row["diffusion_metadata"] = json.dumps(result.extra[metadata_name], sort_keys=True)
@@ -176,11 +208,16 @@ def method_run(data, truth, space, key, method, alpha):
         trace = {}
         if result.status == "ok":
             replay = TreeDecomposition(
-                tree=tree, gate_annotation_bundle=bundle, passthrough=True, trace_level="full",
+                tree=tree,
+                gate_annotation_bundle=bundle,
+                passthrough=True,
+                trace_level="full",
             ).decompose_tree()
             replay_labels, _ = labels_and_report_from_decomposition(replay, data.index.tolist())
             if adjusted_rand_score(result.labels, replay_labels) != 1:
-                raise AssertionError("Full traversal replay disagrees with actual dispatcher labels")
+                raise AssertionError(
+                    "Full traversal replay disagrees with actual dispatcher labels"
+                )
             trace = {r["node_id"]: r for r in replay["traversal_trace"]}
         annotations = result.extra["annotations"]
         spectral = bundle.edge_gate_result.spectral_context
@@ -193,14 +230,17 @@ def method_run(data, truth, space, key, method, alpha):
         )
         # Reconstruct raw statistics for audit using the same default covariance/rank.
         sibling_dimensions = derive_sibling_projection_dimensions_from_child_edge_comparisons(
-            tree, spectral_context=spectral,
+            tree,
+            spectral_context=spectral,
         )
         projections, eigenvalues = collect_parent_principal_component_inputs_for_sibling_tests(
-            sibling_dimensions, spectral_context=spectral,
+            sibling_dimensions,
+            spectral_context=spectral,
         )
         config = bundle.metadata.config
         raw_records, _ = collect_sibling_pair_records(
-            tree, bundle.edge_gate_result.annotated_df,
+            tree,
+            bundle.edge_gate_result.annotated_df,
             sibling_projection_dimensions_from_edge_comparisons=sibling_dimensions,
             parent_principal_component_projections=projections,
             parent_principal_component_eigenvalues=eigenvalues,
@@ -225,19 +265,29 @@ def method_run(data, truth, space, key, method, alpha):
             raw = raw_by_parent.get(parent)
             action = trace.get(parent, {}).get("decision", "not_reached")
             node_row = {
-                **key, "method": method, "sibling_alpha": alpha, "status": row["status"],
-                "node": str(parent), "is_root": parent == root, "decision": action,
-                "left_n": len(li), "right_n": len(ri),
-                "left_population1": int(truth[li].sum()), "right_population1": int(truth[ri].sum()),
-                "true_null": is_null, "pure_parent": len(np.unique(truth[li + ri])) == 1,
+                **key,
+                "method": method,
+                "sibling_alpha": alpha,
+                "status": row["status"],
+                "node": str(parent),
+                "is_root": parent == root,
+                "decision": action,
+                "left_n": len(li),
+                "right_n": len(ri),
+                "left_population1": int(truth[li].sum()),
+                "right_population1": int(truth[ri].sum()),
+                "true_null": is_null,
+                "pure_parent": len(np.unique(truth[li + ri])) == 1,
                 "raw_statistic": raw.stat if raw else np.nan,
                 "raw_p": raw.p_value if raw else np.nan,
                 "reference_scale": raw.reference_scale if raw else np.nan,
                 "adjusted_statistic": number(annotation.get("Sibling_Test_Statistic")),
                 "adjusted_p": number(annotation.get("Sibling_Divergence_P_Value")),
                 "bh_p": number(annotation.get("Sibling_Divergence_P_Value_Corrected")),
-                "df": df, "projection_dimension": number(annotation.get("Sibling_Projection_Dimension")),
-                "calibration_record": calibration, "calibration_base_weight": weight,
+                "df": df,
+                "projection_dimension": number(annotation.get("Sibling_Projection_Dimension")),
+                "calibration_record": calibration,
+                "calibration_base_weight": weight,
                 "calibration_status": str(annotation.get("Sibling_Gate_P_Value_Calibration", "")),
                 "calibration_role": str(annotation.get("Sibling_Gate_P_Value_Role", "")),
             }
@@ -260,7 +310,8 @@ def method_run(data, truth, space, key, method, alpha):
             splits = [node for node in nodes if node["decision"] == "split"]
             false_splits = [node for node in splits if node["true_null"]]
             row.update(
-                n_splits=len(splits), n_false_splits=len(false_splits),
+                n_splits=len(splits),
+                n_false_splits=len(false_splits),
                 split_fdp=len(false_splits) / max(1, len(splits)),
                 root_false_split=int(any(node["is_root"] for node in false_splits)),
                 descendant_false_split=int(any(not node["is_root"] for node in false_splits)),
@@ -278,21 +329,36 @@ def method_run(data, truth, space, key, method, alpha):
 
 def run_dataset(job):
     family, signal, replicate, phase = job
-    seed = int(np.random.SeedSequence([
-        20260928, 17 if phase == "evaluation" else 91,
-        FAMILIES.index(family), int(signal), replicate,
-    ]).generate_state(1, dtype=np.uint64)[0])
+    seed = int(
+        np.random.SeedSequence(
+            [
+                20260928,
+                17 if phase == "evaluation" else 91,
+                FAMILIES.index(family),
+                int(signal),
+                replicate,
+            ]
+        ).generate_state(1, dtype=np.uint64)[0]
+    )
     data, truth, space = dataset(family, signal, seed)
     key = {
-        "family": family, "signal": signal, "replicate": replicate, "seed": seed,
-        "n_samples": len(data), "n_features": data.shape[1],
-        "data_sha256": hashlib.sha256(np.ascontiguousarray(data, dtype=np.float64).tobytes()).hexdigest(),
+        "family": family,
+        "signal": signal,
+        "replicate": replicate,
+        "seed": seed,
+        "n_samples": len(data),
+        "n_features": data.shape[1],
+        "data_sha256": hashlib.sha256(
+            np.ascontiguousarray(data, dtype=np.float64).tobytes()
+        ).hexdigest(),
     }
     rows, nodes = [], []
     for method in METHODS:
-        alphas = (0.005, 0.01, 0.05) if (
-            family == "bernoulli_iid" and method in {"tbs", "tbs_diffusion_adaptive_nnls"}
-        ) else (PRIMARY_ALPHA,)
+        alphas = (
+            (0.005, 0.01, 0.05)
+            if (family == "bernoulli_iid" and method in {"tbs", "tbs_diffusion_adaptive_nnls"})
+            else (PRIMARY_ALPHA,)
+        )
         for alpha in alphas:
             row, node_rows = method_run(data, truth, space, key, method, alpha)
             rows.append(row)
@@ -311,21 +377,27 @@ def summarize(runs: pd.DataFrame):
         event_count = int((ok.n_false_splits > 0).sum())
         ci = wilson_interval(event_count, len(ok)) if len(ok) else (np.nan, np.nan)
         summary = {
-            **base, "attempts": len(frame), "completed": len(pipeline_ok), "audited": len(ok),
+            **base,
+            "attempts": len(frame),
+            "completed": len(pipeline_ok),
+            "audited": len(ok),
             "unsupported": int((frame.status == "unsupported").sum()),
             "skipped": int((frame.status == "skip").sum()),
             "runtime_errors": int((frame.status == "runtime_error").sum()),
             "audit_errors": int(frame.audit_error.fillna("").ne("").sum()),
             "any_false_split_count": event_count,
             "any_false_split_rate": event_count / len(ok) if len(ok) else np.nan,
-            "any_false_split_wilson_low": ci[0], "any_false_split_wilson_high": ci[1],
+            "any_false_split_wilson_low": ci[0],
+            "any_false_split_wilson_high": ci[1],
             "mean_split_fdp": ok.split_fdp.mean(),
             "mean_ari": pipeline_ok.ari.mean() if signal else np.nan,
             "mean_clusters": pipeline_ok.found_clusters.mean(),
             "mean_pass_throughs": ok.pass_throughs.mean(),
             "mean_root_test_rank": ok.root_test_rank.mean(),
             "mean_max_test_rank": ok.max_test_rank.mean(),
-            "datasets_with_nonnull_calibration_records": int((ok.nonnull_calibration_records > 0).sum()),
+            "datasets_with_nonnull_calibration_records": int(
+                (ok.nonnull_calibration_records > 0).sum()
+            ),
             "calibration_records": int(ok.calibration_records.sum()),
             "nonnull_calibration_records": int(ok.nonnull_calibration_records.sum()),
             "sum_calibration_base_weight": ok.calibration_base_weight.sum(),
@@ -335,25 +407,40 @@ def summarize(runs: pd.DataFrame):
             count = int(pipeline_ok.false_partition.sum())
             low, high = wilson_interval(count, len(pipeline_ok))
             summary.update(
-                false_partition_count=count, false_partition_rate=count / len(pipeline_ok),
-                false_partition_wilson_low=low, false_partition_wilson_high=high,
+                false_partition_count=count,
+                false_partition_rate=count / len(pipeline_ok),
+                false_partition_wilson_low=low,
+                false_partition_wilson_high=high,
                 observed_false_partition_per_attempt=count / len(frame),
-                unavailable_outcome_bound_upper=(count + len(frame) - len(pipeline_ok)) / len(frame),
-                binomial_inflation_p=binomtest(count, len(pipeline_ok), alpha, alternative="greater").pvalue,
+                unavailable_outcome_bound_upper=(count + len(frame) - len(pipeline_ok))
+                / len(frame),
+                binomial_inflation_p=binomtest(
+                    count, len(pipeline_ok), alpha, alternative="greater"
+                ).pvalue,
             )
         summaries.append(summary)
         for cutoff in TAILS:
             count = int((eligible.root_p <= cutoff).sum())
             low, high = wilson_interval(count, len(eligible)) if len(eligible) else (np.nan, np.nan)
-            tails.append({
-                **base, "cutoff": cutoff, "attempts": len(frame),
-                "completed": len(pipeline_ok), "audited": len(ok),
-                "eligible_root_nulls": len(eligible), "rejections": count,
-                "rate": count / len(eligible) if len(eligible) else np.nan,
-                "wilson_low": low, "wilson_high": high,
-                "binomial_inflation_p": binomtest(count, len(eligible), cutoff, alternative="greater").pvalue
-                if len(eligible) else np.nan,
-            })
+            tails.append(
+                {
+                    **base,
+                    "cutoff": cutoff,
+                    "attempts": len(frame),
+                    "completed": len(pipeline_ok),
+                    "audited": len(ok),
+                    "eligible_root_nulls": len(eligible),
+                    "rejections": count,
+                    "rate": count / len(eligible) if len(eligible) else np.nan,
+                    "wilson_low": low,
+                    "wilson_high": high,
+                    "binomial_inflation_p": binomtest(
+                        count, len(eligible), cutoff, alternative="greater"
+                    ).pvalue
+                    if len(eligible)
+                    else np.nan,
+                }
+            )
     summary_df, tail_df = pd.DataFrame(summaries), pd.DataFrame(tails)
     # Separate prespecified families: global-null partition endpoints and root tails.
     for table in (summary_df, tail_df):
@@ -361,7 +448,8 @@ def summarize(runs: pd.DataFrame):
         valid = family & table.binomial_inflation_p.notna()
         adjusted = pd.Series(np.nan, index=table.index)
         adjusted.loc[family] = multipletests(
-            table.loc[family, "binomial_inflation_p"].fillna(1.0), method="holm",
+            table.loc[family, "binomial_inflation_p"].fillna(1.0),
+            method="holm",
         )[1]
         table["holm_p"] = np.nan
         table.loc[valid, "holm_p"] = adjusted.loc[valid]
@@ -380,7 +468,8 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=False)
     jobs = [
         (family, signal, replicate, args.phase)
-        for family in FAMILIES for signal in (False, True)
+        for family in FAMILIES
+        for signal in (False, True)
         for replicate in range(args.signal_replicates if signal else args.null_replicates)
     ]
     sources = [Path(__file__), ROOT / "pyproject.toml", ROOT / "uv.lock"]
@@ -392,21 +481,43 @@ def main():
         Path(__file__).with_name("protocol.md"),
     ]
     manifest = {
-        "schema": "eigenspace_pipeline_reassessment/v1", "arguments": vars(args),
-        "started_utc": datetime.now(UTC).isoformat(), "command": sys.argv,
+        "schema": "eigenspace_pipeline_reassessment/v1",
+        "arguments": vars(args),
+        "started_utc": datetime.now(UTC).isoformat(),
+        "command": sys.argv,
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "git_status": subprocess.check_output(["git", "status", "--short"], text=True),
-        "source_sha256": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
-        "python": sys.version, "platform": platform.platform(),
-        "packages": {p: importlib.metadata.version(p) for p in (
-            "numpy", "scipy", "pandas", "scikit-learn", "pydiffmap", "statsmodels", "scikit-bio",
-        )},
-        "thread_environment": {k: os.environ.get(k) for k in (
-            "OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "TBS_N_JOBS",
-        )},
-        "protocol": "../protocol.md", "planned_datasets": len(jobs),
+        "source_sha256": {
+            str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources
+        },
+        "python": sys.version,
+        "platform": platform.platform(),
+        "packages": {
+            p: importlib.metadata.version(p)
+            for p in (
+                "numpy",
+                "scipy",
+                "pandas",
+                "scikit-learn",
+                "pydiffmap",
+                "statsmodels",
+                "scikit-bio",
+            )
+        },
+        "thread_environment": {
+            k: os.environ.get(k)
+            for k in (
+                "OPENBLAS_NUM_THREADS",
+                "OMP_NUM_THREADS",
+                "VECLIB_MAXIMUM_THREADS",
+                "TBS_N_JOBS",
+            )
+        },
+        "protocol": "../protocol.md",
+        "planned_datasets": len(jobs),
         "method_parameters": {m: METHOD_SPECS[m].param_grid[0] for m in METHODS},
-        "primary_alpha": PRIMARY_ALPHA, "edge_alpha": EDGE_ALPHA,
+        "primary_alpha": PRIMARY_ALPHA,
+        "edge_alpha": EDGE_ALPHA,
         "complete": False,
     }
     manifest_path = args.output_dir / "manifest.json"
@@ -434,18 +545,31 @@ def main():
             if completed % 50 == 0 or completed == len(jobs):
                 run_file.flush()
                 node_file.flush()
-                print(f"{completed}/{len(jobs)} datasets; {len(rows)} method/alpha runs; {perf_counter()-start:.1f}s", flush=True)
+                print(
+                    f"{completed}/{len(jobs)} datasets; {len(rows)} method/alpha runs; {perf_counter() - start:.1f}s",
+                    flush=True,
+                )
     runs = pd.DataFrame(rows)
     summary, tails = summarize(runs)
-    final_sources = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
+    final_sources = {
+        str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources
+    }
     if final_sources != manifest["source_sha256"]:
-        raise RuntimeError("Source changed during evaluation; do not pool different implementations")
+        raise RuntimeError(
+            "Source changed during evaluation; do not pool different implementations"
+        )
     write_diagnostic_bundle(
-        output_dir=args.output_dir, tables={"summary": summary, "root_tails": tails},
+        output_dir=args.output_dir,
+        tables={"summary": summary, "root_tails": tails},
         filenames={"summary": "summary.csv", "root_tails": "root_tails.csv"},
-        manifest={**manifest, "complete": True, "completed_datasets": len(jobs),
-                  "method_alpha_runs": len(rows), "elapsed_seconds": perf_counter() - start,
-                  "raw_outputs": {"runs": "runs.csv", "nodes": "nodes.csv.gz"}},
+        manifest={
+            **manifest,
+            "complete": True,
+            "completed_datasets": len(jobs),
+            "method_alpha_runs": len(rows),
+            "elapsed_seconds": perf_counter() - start,
+            "raw_outputs": {"runs": "runs.csv", "nodes": "nodes.csv.gz"},
+        },
     )
     print(summary.to_string(index=False), flush=True)
 

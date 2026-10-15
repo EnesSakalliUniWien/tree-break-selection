@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
+
 from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
     eigendecompose_covariance,
 )
@@ -43,11 +44,14 @@ def test_diffusion_tied_cutoff_is_sample_permutation_invariant(diffusion_time: i
     weights = _six_cycle()
     permutation = np.array([2, 5, 0, 4, 1, 3])
     coordinates = diffusion.compute_diffusion_coordinates(
-        weights, diffusion_time=diffusion_time, n_components=1,
+        weights,
+        diffusion_time=diffusion_time,
+        n_components=1,
     )
     permuted = diffusion.compute_diffusion_coordinates(
         weights[np.ix_(permutation, permutation)],
-        diffusion_time=diffusion_time, n_components=1,
+        diffusion_time=diffusion_time,
+        n_components=1,
     )[np.argsort(permutation)]
 
     assert coordinates.shape == (6, 2)
@@ -96,7 +100,9 @@ def test_diffusion_distinct_cutoff_preserves_existing_coordinates() -> None:
 
 @pytest.mark.parametrize("use_dual", [False, True])
 @pytest.mark.parametrize("perturbation", [0.0, 1e-12])
-def test_pca_tied_cutoff_is_feature_permutation_invariant(use_dual: bool, perturbation: float) -> None:
+def test_pca_tied_cutoff_is_feature_permutation_invariant(
+    use_dual: bool, perturbation: float
+) -> None:
     if use_dual:
         centered_identity = np.eye(4) - np.ones((4, 4)) / 4.0
         values = np.column_stack([centered_identity, centered_identity])
@@ -111,7 +117,9 @@ def test_pca_tied_cutoff_is_feature_permutation_invariant(use_dual: bool, pertur
         eig = eigendecompose_covariance(values[:, order], compute_eigenvectors=True)
         assert eig.use_dual is use_dual
         basis, eigenvalues = build_pca_projection(
-            eig, projection_dimension=1, n_features_total=values.shape[1],
+            eig,
+            projection_dimension=1,
+            n_features_total=values.shape[1],
         )
         assert basis.shape == (expected_rank, values.shape[1])
         assert len(eigenvalues) == expected_rank
@@ -129,7 +137,9 @@ def test_pca_projection_does_not_depend_on_tied_eigenvector_rotation() -> None:
     rotated_vectors[:, 1:3] = rotated_vectors[:, 1:3] @ rotation
     original, _ = build_pca_projection(eig, projection_dimension=2, n_features_total=4)
     rotated, _ = build_pca_projection(
-        replace(eig, eigenvectors_active=rotated_vectors), projection_dimension=2, n_features_total=4,
+        replace(eig, eigenvectors_active=rotated_vectors),
+        projection_dimension=2,
+        n_features_total=4,
     )
     np.testing.assert_allclose(original.T @ original, rotated.T @ rotated, atol=1e-12)
     np.testing.assert_allclose(original.T @ original, np.diag([1.0, 1.0, 1.0, 0.0]), atol=1e-12)
@@ -142,7 +152,9 @@ def test_small_positive_eigenvalues_do_not_become_artificial_wald_ties() -> None
     basis, eigenvalues = build_pca_projection(eig, projection_dimension=3, n_features_total=3)
     np.testing.assert_allclose(eigenvalues, expected_eigenvalues, rtol=1e-12, atol=0)
     selected_basis, selected_eigenvalues = build_pca_projection_basis(
-        k=2, pca_projection=basis, pca_eigenvalues=eigenvalues,
+        k=2,
+        pca_projection=basis,
+        pca_eigenvalues=eigenvalues,
     )
     assert selected_basis.shape == (2, 3)
     np.testing.assert_allclose(selected_eigenvalues, expected_eigenvalues[:2], rtol=1e-12, atol=0)
@@ -153,10 +165,14 @@ def test_small_positive_eigenvalues_do_not_become_artificial_wald_ties() -> None
     [([0.5, 0.5], 1, 2), ([1.0, 1.0, 0.0], 1, 2), ([0.5, 0.5], 0, 0), ([0.5, 0.1], 1, 1)],
 )
 def test_mp_dimension_floor_keeps_ties_without_adding_null_directions(
-    eigenvalues, minimum_dimension, expected_dimension,
+    eigenvalues,
+    minimum_dimension,
+    expected_dimension,
 ) -> None:
     result = estimate_marchenko_pastur_dimension(
-        np.array(eigenvalues), n_samples=10, n_features=len(eigenvalues),
+        np.array(eigenvalues),
+        n_samples=10,
+        n_features=len(eigenvalues),
         minimum_projection_dimension=minimum_dimension,
     )
     assert result.raw_mp_signal_count == 0
@@ -167,22 +183,31 @@ def test_node_metadata_matches_the_complete_whitened_eigenspace() -> None:
     values = np.random.default_rng(104).normal(size=(20, 3))
     space = continuous_feature_space_from_columns(["x", "y", "z"])
     task = NodeSpectralTask(
-        node_id="root", row_indices=tuple(range(20)), internal_distributions=(),
-        null_distribution=values.mean(axis=0), feature_space=space,
-        continuous_covariance_by_block={space.continuous_blocks[0].name: np.cov(values, rowvar=False)},
+        node_id="root",
+        row_indices=tuple(range(20)),
+        internal_distributions=(),
+        null_distribution=values.mean(axis=0),
+        feature_space=space,
+        continuous_covariance_by_block={
+            space.continuous_blocks[0].name: np.cov(values, rowvar=False)
+        },
     )
     result = _process_node(task, values, 1, None, 3, True)
     assert result.raw_mp_signal_count == 0
     assert result.test_projection_dimension == result.projection_matrix.shape[0] == 3
     assert len(result.eigenvalues) == 3
-    np.testing.assert_allclose(result.projection_matrix.T @ result.projection_matrix, np.eye(3), atol=1e-12)
+    np.testing.assert_allclose(
+        result.projection_matrix.T @ result.projection_matrix, np.eye(3), atol=1e-12
+    )
 
 
 def test_mp_boundary_tie_extends_test_dimension_but_preserves_raw_count() -> None:
     threshold = (1.0 + np.sqrt(3.0 / 100.0)) ** 2
     result = estimate_marchenko_pastur_dimension(
         np.array([threshold + 1e-12, threshold - 1e-12, 0.1]),
-        n_samples=100, n_features=3, minimum_projection_dimension=0,
+        n_samples=100,
+        n_features=3,
+        minimum_projection_dimension=0,
     )
     assert result.raw_mp_signal_count == 1
     assert result.test_projection_dimension == 2
@@ -190,7 +215,9 @@ def test_mp_boundary_tie_extends_test_dimension_but_preserves_raw_count() -> Non
 
 def test_wald_basis_extends_through_transitively_tied_values() -> None:
     eigenvalues = np.array([2.0, 1.0 + 1.5e-10, 1.0 + 0.8e-10, 1.0])
-    basis, selected = build_pca_projection_basis(k=2, pca_projection=np.eye(4), pca_eigenvalues=eigenvalues)
+    basis, selected = build_pca_projection_basis(
+        k=2, pca_projection=np.eye(4), pca_eigenvalues=eigenvalues
+    )
     assert basis.shape == (4, 4)
     np.testing.assert_array_equal(selected, eigenvalues)
 
@@ -202,12 +229,17 @@ def test_wald_basis_rejects_known_tied_directions_missing_from_parent_basis() ->
 
 @pytest.mark.parametrize("adaptive_fraction", [None, 0.9])
 @pytest.mark.parametrize("angle", [np.pi / 4, np.pi / 2])
-def test_wald_statistic_rank_and_rejection_are_tied_basis_invariant(adaptive_fraction, angle) -> None:
+def test_wald_statistic_rank_and_rejection_are_tied_basis_invariant(
+    adaptive_fraction, angle
+) -> None:
     z = np.array([3.0, 0.0])
     rotation = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
     outputs = [
         run_projected_wald_kernel(
-            z, spectral_k=1, pca_projection=basis, pca_eigenvalues=np.ones(2),
+            z,
+            spectral_k=1,
+            pca_projection=basis,
+            pca_eigenvalues=np.ones(2),
             adaptive_dimension_energy_fraction=adaptive_fraction,
         )
         for basis in (np.eye(2), rotation)
@@ -227,7 +259,10 @@ def test_adaptive_wald_selects_complete_blocks_with_distinct_surrounding_values(
     rotation[1:3, 1:3] = np.array([[1.0, -1.0], [1.0, 1.0]]) / np.sqrt(2.0)
     for candidate in (basis, rotation):
         output = run_projected_wald_kernel(
-            z, spectral_k=1, pca_projection=candidate, pca_eigenvalues=np.array([4.0, 1.0, 1.0, 0.25]),
+            z,
+            spectral_k=1,
+            pca_projection=candidate,
+            pca_eigenvalues=np.array([4.0, 1.0, 1.0, 0.25]),
             adaptive_dimension_energy_fraction=0.9,
         )
         assert output.projection_dimension == 3

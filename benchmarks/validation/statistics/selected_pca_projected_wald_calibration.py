@@ -25,6 +25,25 @@ from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
+
+from benchmarks.validation.contracts.report_contract import (
+    completed_target_entry as _completed_target_entry,
+)
+from benchmarks.validation.contracts.report_contract import (
+    read_git_commit,
+    read_git_worktree_status,
+    utc_now,
+)
+from benchmarks.validation.contracts.report_contract import (
+    validate_common_run_inputs as _validate_run_inputs,
+)
+from benchmarks.validation.contracts.report_contract import (
+    validate_complete_report_context as _validate_complete_report_context,
+)
+from benchmarks.validation.statistics.calibration_support import (
+    continuous_covariance,
+    summarize_p_value_calibration,
+)
 from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
     eigendecompose_covariance,
 )
@@ -44,25 +63,6 @@ from tree_break_selection.hierarchy_analysis.statistics.projection.projection_di
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     continuous_feature_space_from_columns,
-)
-
-from benchmarks.validation.contracts.report_contract import (
-    completed_target_entry as _completed_target_entry,
-)
-from benchmarks.validation.contracts.report_contract import (
-    read_git_commit,
-    read_git_worktree_status,
-    utc_now,
-)
-from benchmarks.validation.contracts.report_contract import (
-    validate_common_run_inputs as _validate_run_inputs,
-)
-from benchmarks.validation.contracts.report_contract import (
-    validate_complete_report_context as _validate_complete_report_context,
-)
-from benchmarks.validation.statistics.calibration_support import (
-    continuous_covariance,
-    summarize_p_value_calibration,
 )
 
 SCHEMA_VERSION = "selected_pca_projected_wald_calibration/v1"

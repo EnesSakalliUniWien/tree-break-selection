@@ -4,10 +4,11 @@ import inspect
 import re
 
 import pytest
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.types.method_spec import MethodSpec
-from scipy.spatial.distance import pdist
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 
 from .helpers import _appending_runner, _capturing_runner, _toy_dataframe
@@ -218,9 +219,7 @@ def test_run_clustering_result_forwards_graphtools_tree_strategy_params(
     captured = {}
     original_spec = METHOD_SPECS["tbs_diffusion_graphtools_adaptive_nnls"]
     ward_params = next(
-        params
-        for params in original_spec.param_grid
-        if params.get("tree_linkage_method") == "ward"
+        params for params in original_spec.param_grid if params.get("tree_linkage_method") == "ward"
     )
     capture_runner = _capturing_runner(captured)
 

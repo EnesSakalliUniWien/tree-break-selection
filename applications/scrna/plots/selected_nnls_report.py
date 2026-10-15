@@ -1,12 +1,11 @@
 """Build the selected scRNA NNLS report with shared UMAP/tree colors."""
-# ruff: noqa: I001
 
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import datetime
 import json
 import math
+from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib
@@ -20,8 +19,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
 from PIL import Image
 
-from applications.scrna.plots.report_helpers import plot_cluster_size_bars
 from applications.scrna._shared import add_generated_at
+from applications.scrna.plots.report_helpers import plot_cluster_size_bars
 
 Image.MAX_IMAGE_PIXELS = None
 

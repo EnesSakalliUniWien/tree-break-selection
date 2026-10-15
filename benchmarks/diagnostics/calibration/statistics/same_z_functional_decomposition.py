@@ -17,19 +17,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
-from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
-    compute_whitened_wald_contrast,
-)
-from tree_break_selection.hierarchy_analysis.statistics.projection.projected_wald.projected_wald_kernel import (
-    run_projected_wald_kernel,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
-    fixed_subspace_sibling_p_value,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
-    derive_sibling_projection_dimensions_from_child_edge_comparisons,
-)
-from tree_break_selection.tree.feature_space import FeatureSpace
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.selected.family.selected_family_traversal_panel import (
@@ -45,6 +32,19 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _select_cases,
     parse_names,
 )
+from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
+    compute_whitened_wald_contrast,
+)
+from tree_break_selection.hierarchy_analysis.statistics.projection.projected_wald.projected_wald_kernel import (
+    run_projected_wald_kernel,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
+    fixed_subspace_sibling_p_value,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
+    derive_sibling_projection_dimensions_from_child_edge_comparisons,
+)
+from tree_break_selection.tree.feature_space import FeatureSpace
 
 SCHEMA_VERSION = "same_z_functional_decomposition/v1"
 STUDY_ROLE = "diagnostic_same_z_functional_decomposition_not_calibration"

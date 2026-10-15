@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+
 from benchmarks.diagnostics.analysis.selected_edge_geometry_analysis import (
     analyze_selected_edge_geometry,
 )

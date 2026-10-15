@@ -17,7 +17,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
-from tree_break_selection.plot.image_panel import draw_image_panel
 
 from applications.endotypes._shared import safe_name
 from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_terms import (
@@ -32,6 +31,7 @@ from applications.endotypes.plots.terms.axis_term_heatmap import create_axis_ter
 from applications.endotypes.plots.trees.tree_cluster_plot import create_tree_clusters
 from applications.endotypes.reports.go_ic.adaptive_diffusion_plot_exports import write_figure
 from applications.endotypes.reports.go_ic.adaptive_diffusion_subspace_artifacts import RESULT_PREFIX
+from tree_break_selection.plot.image_panel import draw_image_panel
 
 
 def write_combined_axis_terms_pdf(ranking: pd.DataFrame, output_dir: Path) -> Path | None:

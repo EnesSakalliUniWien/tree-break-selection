@@ -3,12 +3,13 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.generators import generate_case_data
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.runners.tbs_support import unsupported_empirical_null_reason
 from benchmarks.shared.types import UnsupportedReasonCode
-from scipy.spatial.distance import pdist
 
 
 def _unsupported_annotations() -> pd.DataFrame:
@@ -28,9 +29,7 @@ def _unsupported_annotations() -> pd.DataFrame:
 @pytest.fixture(scope="module")
 def dense_highd_case_data() -> tuple[pd.DataFrame, np.ndarray]:
     case = next(
-        case
-        for case in get_default_test_cases()
-        if case["name"] == "gauss_dense_signal_highd"
+        case for case in get_default_test_cases() if case["name"] == "gauss_dense_signal_highd"
     )
     data, _truth, _original, _metadata = generate_case_data(case)
     return data, pdist(data.to_numpy(), metric="hamming")

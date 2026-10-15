@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+
 from benchmarks.shared.benchmark_grid import benchmark_grid, benchmark_run_id
 from benchmarks.shared.benchmark_runs.resume import (
     compute_resume_coverage,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+
 from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
     edge_distributional_action_summary,
     split_distributional_action_summary,

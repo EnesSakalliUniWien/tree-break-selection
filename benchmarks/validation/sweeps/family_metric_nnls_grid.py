@@ -20,14 +20,6 @@ import numpy as np
 import pandas as pd
 from sklearn.covariance import ledoit_wolf_shrinkage
 from sklearn.metrics import adjusted_rand_score
-from tree_break_selection.tree.construction import (
-    SUPPORTED_LINKAGE_METHODS,
-)
-from tree_break_selection.tree.feature_space import FeatureSpace
-from tree_break_selection.tree.optimized_branch_lengths import (
-    BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
-    BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
-)
 
 from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.cases import get_test_cases_by_suite
@@ -42,6 +34,14 @@ from benchmarks.shared.tree_consensus import (
 )
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
+from tree_break_selection.tree.construction import (
+    SUPPORTED_LINKAGE_METHODS,
+)
+from tree_break_selection.tree.feature_space import FeatureSpace
+from tree_break_selection.tree.optimized_branch_lengths import (
+    BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
+    BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+)
 
 SCHEMA_VERSION = "family_metric_nnls_grid/v1"
 GENERATED_BY = "benchmarks.validation.sweeps.family_metric_nnls_grid"

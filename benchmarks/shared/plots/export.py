@@ -10,7 +10,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from tree_break_selection.plot.cluster_tree_visualization import plot_tree_with_clusters
 
 from benchmarks.shared.result_records import ComputedResultRecord
 from benchmarks.shared.util.params import format_params_for_display
@@ -20,6 +19,7 @@ from benchmarks.shared.util.pdf.layout import (
     prepare_pdf_figure,
     set_pdf_page_size,
 )
+from tree_break_selection.plot.cluster_tree_visualization import plot_tree_with_clusters
 
 from .embedding import create_clustering_comparison_plots
 

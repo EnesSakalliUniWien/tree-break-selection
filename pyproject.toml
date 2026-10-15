@@ -105,10 +105,10 @@ markers = [
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["applications", "benchmarks", "tree_break_selection", "scripts", "tests"]
 force-exclude = true
 extend-exclude = [
     "manuscript",
+    "reports/eigenspace_reassessment_20260928/spectral_blocks/historical_sources",
 ]
 
 [tool.ruff.lint]

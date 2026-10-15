@@ -18,10 +18,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
-    identify_binary_sibling_children,
-)
-from tree_break_selection.tree.feature_space import FeatureSpace
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.statistics.null_law_decomposition_panel import _df_bin
@@ -39,6 +35,10 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     validate_modes,
 )
 from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
+    identify_binary_sibling_children,
+)
+from tree_break_selection.tree.feature_space import FeatureSpace
 
 STUDY_ROLE = "diagnostic_regularized_wald_statistic_not_calibration"
 SCHEMA_VERSION = "regularized_wald_statistic_panel/v1"

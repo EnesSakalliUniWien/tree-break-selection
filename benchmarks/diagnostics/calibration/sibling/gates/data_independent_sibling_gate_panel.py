@@ -20,20 +20,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2
-from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
-    build_contrast_covariance,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
-    fixed_coordinate_bh_p_value,
-    fixed_subspace_sibling_p_value,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
-    identify_binary_sibling_children,
-)
-from tree_break_selection.tree.feature_space import (
-    FeatureSpace,
-    bernoulli_feature_space_from_columns,
-)
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
@@ -47,6 +33,20 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _select_cases,
     parse_names,
     regenerate_null_case,
+)
+from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
+    build_contrast_covariance,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
+    fixed_coordinate_bh_p_value,
+    fixed_subspace_sibling_p_value,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
+    identify_binary_sibling_children,
+)
+from tree_break_selection.tree.feature_space import (
+    FeatureSpace,
+    bernoulli_feature_space_from_columns,
 )
 
 STUDY_ROLE = "diagnostic_data_independent_sibling_gate_not_calibration"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import networkx as nx
 import pandas as pd
+
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 
 from .gate_support import (

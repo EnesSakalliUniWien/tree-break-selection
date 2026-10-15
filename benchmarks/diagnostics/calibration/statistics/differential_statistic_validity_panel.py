@@ -19,14 +19,6 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
-    build_contrast_covariance,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection import (
-    collect_sibling_pair_records,
-)
-from tree_break_selection.tree.feature_space import FeatureSpace
-from tree_break_selection.tree.poset_tree import PosetTree
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
@@ -44,6 +36,14 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     validate_modes,
 )
 from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
+from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
+    build_contrast_covariance,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection import (
+    collect_sibling_pair_records,
+)
+from tree_break_selection.tree.feature_space import FeatureSpace
+from tree_break_selection.tree.poset_tree import PosetTree
 
 STUDY_ROLE = "diagnostic_differential_statistic_validity_not_calibration"
 SCHEMA_VERSION = "differential_statistic_validity_panel/v1"

@@ -287,10 +287,7 @@ def run_benchmarks():
         )
         print(f"Performance grid report written: {performance_grid_outputs.report_md}")
         print(f"Performance grid summary written: {performance_grid_outputs.summary_csv}")
-        print(
-            "Support coverage written: "
-            f"{performance_grid_outputs.support_coverage_csv}"
-        )
+        print(f"Support coverage written: {performance_grid_outputs.support_coverage_csv}")
 
         if run_tree_consensus:
             if tree_consensus_label_dir is None:

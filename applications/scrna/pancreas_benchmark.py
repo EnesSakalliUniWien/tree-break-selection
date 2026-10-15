@@ -25,8 +25,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from benchmarks.shared.runners.dispatch import run_clustering_result
-from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from scipy.cluster.hierarchy import dendrogram
 from scipy.spatial.distance import pdist, squareform
 from scipy.stats import chi2
@@ -39,6 +37,10 @@ from sklearn.metrics import (
     silhouette_score,
     v_measure_score,
 )
+
+from applications.scrna._shared import json_default
+from benchmarks.shared.runners.dispatch import run_clustering_result
+from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
     GateAnnotationBundle,
 )
@@ -57,8 +59,6 @@ from tree_break_selection.tree.continuous_distance import (
     CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
 )
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
-
-from applications.scrna._shared import json_default
 
 DATA_URL = "https://www.dropbox.com/s/qj1jlm9w10wmt0u/pancreas.h5ad?dl=1"
 AMBIGUOUS_LABELS = {

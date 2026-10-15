@@ -130,8 +130,7 @@ def main() -> None:
         case = selected_case.case
         classification = selected_case.classification
         print(
-            f"[{index}/{len(selection.cases)}] "
-            f"{case['name']} ({classification['failure_class']})",
+            f"[{index}/{len(selection.cases)}] {case['name']} ({classification['failure_class']})",
             flush=True,
         )
         traces.append(_trace_case(case, dict(classification)))

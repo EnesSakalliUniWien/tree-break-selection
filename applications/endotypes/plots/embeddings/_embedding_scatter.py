@@ -14,7 +14,8 @@ from applications.endotypes.plots.shared._plot_text import wrap_annotation_lines
 
 
 def embedding_figure(
-    axis_term_lines: list[str] | None, labels: np.ndarray | None = None,
+    axis_term_lines: list[str] | None,
+    labels: np.ndarray | None = None,
 ) -> tuple[plt.Figure, plt.Axes]:
     annotation = wrap_annotation_lines(axis_term_lines or [])
     plot_height = max(6.0, 0.2 * len(annotation.splitlines()) + 0.8)
@@ -31,8 +32,14 @@ def embedding_figure(
         text_ax.axis("off")
         text_ax.set_title("Highest GO-term loadings by eigenmode", loc="left", fontsize=12)
         text_ax.text(
-            0.0, 0.98, annotation, va="top", ha="left", fontsize=11,
-            linespacing=1.2, transform=text_ax.transAxes,
+            0.0,
+            0.98,
+            annotation,
+            va="top",
+            ha="left",
+            fontsize=11,
+            linespacing=1.2,
+            transform=text_ax.transAxes,
         )
     if labels is not None:
         draw_cluster_legend(fig.add_subplot(grid[1, :]), labels, columns=8)
@@ -56,8 +63,13 @@ def draw_embedding(
     else:
         spec = cluster_color_spec(labels)
         ax.scatter(
-            embedding[:, 0], embedding[:, 1], c=labels, cmap=spec.cmap, norm=spec.norm,
-            s=18, linewidths=0,
+            embedding[:, 0],
+            embedding[:, 1],
+            c=labels,
+            cmap=spec.cmap,
+            norm=spec.norm,
+            s=18,
+            linewidths=0,
         )
     ax.set_title(title)
     ax.set_xlabel(xlabel)

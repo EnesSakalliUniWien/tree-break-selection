@@ -16,6 +16,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
+    SCHEMA_VERSION,
+    run_block_tree,
+    sibling_method_counts,
+)
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -24,12 +30,6 @@ from tree_break_selection.space_separation import (
     adaptive_spectral_blocks,
     cosine_eigendecomposition,
     weight_feature_matrix,
-)
-
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
-    SCHEMA_VERSION,
-    run_block_tree,
-    sibling_method_counts,
 )
 
 MATRIX_SCHEMA_VERSION = f"{SCHEMA_VERSION}/matrix"

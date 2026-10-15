@@ -5,9 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.datasets import make_blobs
-from tree_break_selection.tree.continuous_distance import (
-    CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
-)
 
 from benchmarks.shared.generators.case_data_contracts import (
     CaseDataResult,
@@ -23,6 +20,9 @@ from benchmarks.shared.generators.generate_dimensional_gaussian import (
 from benchmarks.shared.generators.generate_gaussian_outliers import (
     GaussianOutlierConfig,
     generate_gaussian_outliers,
+)
+from tree_break_selection.tree.continuous_distance import (
+    CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
 )
 
 

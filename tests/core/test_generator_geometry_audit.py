@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
 from benchmarks.diagnostics.generators.case_geometry_audit import (
     audit_case,
     build_generator_geometry_audit,
@@ -29,7 +30,9 @@ def test_generator_geometry_audit_records_low_signal_dimensional_case() -> None:
     assert row.benchmark_intent == "discretized_continuous_stress"
 
 
-def test_generator_geometry_audit_records_sparse_high_dimensional_case_without_promising_recovery() -> None:
+def test_generator_geometry_audit_records_sparse_high_dimensional_case_without_promising_recovery() -> (
+    None
+):
     row = audit_case(_case("gauss_sparse_signal_highd_noise"))
 
     assert row.n_samples == 40

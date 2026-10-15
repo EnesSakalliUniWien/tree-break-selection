@@ -5,18 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
-from tree_break_selection.tree.construction import DEFAULT_BINARY_TREE_DISTANCE_METRIC
-from tree_break_selection.tree.continuous_distance import (
-    CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
-    CONTINUOUS_TREE_DISTANCE_METRIC,
-    continuous_time_distance_condensed,
-    standardized_euclidean_distance_condensed,
-)
-from tree_break_selection.tree.optimized_branch_lengths import (
-    BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
-    BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
-)
 
 from benchmarks.shared.benchmark_grid import (
     benchmark_param_metadata,
@@ -35,6 +23,18 @@ from benchmarks.shared.util.decomposition import _create_report_dataframe_from_l
 from benchmarks.shared.util.execution_mode import coerce_bool_param
 from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
 from benchmarks.shared.util.time import BENCHMARK_STAGE_TIMING_KEYS
+from tree_break_selection.tree.construction import DEFAULT_BINARY_TREE_DISTANCE_METRIC
+from tree_break_selection.tree.continuous_distance import (
+    CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
+    CONTINUOUS_TREE_DISTANCE_METRIC,
+    continuous_time_distance_condensed,
+    standardized_euclidean_distance_condensed,
+)
+from tree_break_selection.tree.optimized_branch_lengths import (
+    BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
+    BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
+    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+)
 
 TBS_TREE_DISTANCE_SOURCE_KEY = "tree_distance_source"
 TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC = "feature_metric"

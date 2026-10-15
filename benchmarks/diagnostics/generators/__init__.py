@@ -1,2 +1,1 @@
 """Generator-level benchmark diagnostics."""
-

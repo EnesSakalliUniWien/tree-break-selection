@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+
 from tree_break_selection.tree.continuous_distance import (
     CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
     CONTINUOUS_TREE_DISTANCE_METRIC,

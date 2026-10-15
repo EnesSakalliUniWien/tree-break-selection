@@ -31,6 +31,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import normalize
+
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
+    sibling_method_counts,
+)
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
+    load_matrix,
+)
+from benchmarks.diagnostics.spectral.adaptive_cosine.kak_lens_alpha_sweep import (
+    LensSpec,
+    build_lens_tree,
+    find_block,
+    parse_lens,
+)
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -47,19 +60,6 @@ from tree_break_selection.space_separation import (
     coordinates_for_block,
     cosine_eigendecomposition,
     weight_feature_matrix,
-)
-
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
-    sibling_method_counts,
-)
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
-    load_matrix,
-)
-from benchmarks.diagnostics.spectral.adaptive_cosine.kak_lens_alpha_sweep import (
-    LensSpec,
-    build_lens_tree,
-    find_block,
-    parse_lens,
 )
 
 SCHEMA_VERSION = "kak_lens_feature_axis_clustering/v1"

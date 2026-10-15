@@ -9,6 +9,22 @@ import time
 from pathlib import Path
 
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.sibling.nulls.runner_support import (
+    standardized_contrast_dimension,
+)
+from benchmarks.diagnostics.calibration.sibling.nulls.selection_conditioned_sibling_null import (
+    SelectionConditionedSiblingNullContext,
+    simulate_local_edge_selection_conditioned_null,
+)
+from benchmarks.diagnostics.oracle.oracle_tree_recoverability import FAILURE_CLASS_GATE_UNDER_SPLIT
+from benchmarks.diagnostics.runner_support import (
+    configure_serial_runtime,
+    create_result_directory,
+    parse_csv_values,
+    resolve_classified_cases,
+)
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -28,22 +44,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
-
-from benchmarks.diagnostics.calibration.sibling.nulls.runner_support import (
-    standardized_contrast_dimension,
-)
-from benchmarks.diagnostics.calibration.sibling.nulls.selection_conditioned_sibling_null import (
-    SelectionConditionedSiblingNullContext,
-    simulate_local_edge_selection_conditioned_null,
-)
-from benchmarks.diagnostics.oracle.oracle_tree_recoverability import FAILURE_CLASS_GATE_UNDER_SPLIT
-from benchmarks.diagnostics.runner_support import (
-    configure_serial_runtime,
-    create_result_directory,
-    parse_csv_values,
-    resolve_classified_cases,
-)
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 
 _DEFAULT_GAUSSIAN_BLOCKERS = (
     "gauss_dense_signal_highd",

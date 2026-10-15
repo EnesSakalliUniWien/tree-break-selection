@@ -4,6 +4,7 @@ check: lint audit wiki-lint generated-files-check test
 
 lint:
 	uv run --no-sync ruff check .
+	uv run --no-sync ruff format --check .
 
 audit:
 	uv run --no-sync deptry applications tree_break_selection benchmarks

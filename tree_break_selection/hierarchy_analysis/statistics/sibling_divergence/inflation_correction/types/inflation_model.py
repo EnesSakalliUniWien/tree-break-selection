@@ -71,8 +71,7 @@ class CalibrationSupportThresholds:
 
         if not np.isfinite(self.max_weight_share) or not 0.0 < self.max_weight_share <= 1.0:
             raise ValueError(
-                "max_weight_share must be finite and lie in (0, 1]; "
-                f"got {self.max_weight_share!r}."
+                f"max_weight_share must be finite and lie in (0, 1]; got {self.max_weight_share!r}."
             )
         if (
             not np.isfinite(self.max_leave_one_group_delta_log_c)
@@ -153,7 +152,9 @@ class CalibrationSample:
         if len(self.feature_families) != n_records:
             raise ValueError("CalibrationSample.feature_families must be aligned to parent_ids.")
         if len(self.dependency_group_ids) != n_records:
-            raise ValueError("CalibrationSample.dependency_group_ids must be aligned to parent_ids.")
+            raise ValueError(
+                "CalibrationSample.dependency_group_ids must be aligned to parent_ids."
+            )
         try:
             unique_parent_count = len(set(self.parent_ids))
             set(self.dependency_group_ids)
@@ -228,8 +229,7 @@ class CalibrationFitDiagnostics:
         value = self.n_positive_weight_records
         if isinstance(value, bool) or not isinstance(value, Integral) or value < 0:
             raise ValueError(
-                "n_positive_weight_records must be a non-negative integer; "
-                f"got {value!r}."
+                f"n_positive_weight_records must be a non-negative integer; got {value!r}."
             )
 
 
@@ -255,7 +255,9 @@ class IndependentUnweightedCommonScaleContract:
                     f"parent={parent_id!r}."
                 )
             if seen_observation_ids.intersection(observation_ids):
-                raise ValueError("Independent calibration record observation IDs must be pairwise disjoint.")
+                raise ValueError(
+                    "Independent calibration record observation IDs must be pairwise disjoint."
+                )
             seen_observation_ids.update(observation_ids)
         if not np.isfinite(self.common_reference_scale) or self.common_reference_scale <= 0.0:
             raise ValueError("Independent calibration common_reference_scale must be positive.")
@@ -279,10 +281,7 @@ class IndependentUnweightedCommonScaleContract:
 def _effective_sample_size_from_weights(weights: np.ndarray) -> float:
     log_weights = np.log(weights)
     return float(
-        np.exp(
-            2.0 * np.logaddexp.reduce(log_weights)
-            - np.logaddexp.reduce(2.0 * log_weights)
-        )
+        np.exp(2.0 * np.logaddexp.reduce(log_weights) - np.logaddexp.reduce(2.0 * log_weights))
     )
 
 

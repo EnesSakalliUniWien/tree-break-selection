@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import importlib
 
+from benchmarks.shared.benchmark_grid import benchmark_grid
+from benchmarks.shared.types import MethodSpec
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
 )
@@ -25,9 +27,6 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
-
-from benchmarks.shared.benchmark_grid import benchmark_grid
-from benchmarks.shared.types import MethodSpec
 
 
 def _import_runner(module: str, attr: str):

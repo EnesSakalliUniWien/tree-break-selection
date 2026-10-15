@@ -12,6 +12,9 @@ from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
+
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from benchmarks.shared.types import MethodRunResult
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
 )
@@ -33,9 +36,6 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
-
-from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
-from benchmarks.shared.types import MethodRunResult
 
 GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_CONNECTIVITY_MINIMUM = "connectivity_minimum"
 GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_FRAGMENTATION_GUARD = "fragmentation_guard"
@@ -304,8 +304,7 @@ def _require_adaptive_diffusion_family_contract(
     if family == "continuous":
         if metric != "euclidean":
             raise ValueError(
-                "Continuous adaptive diffusion requires metric='euclidean'; "
-                f"got metric={metric!r}."
+                f"Continuous adaptive diffusion requires metric='euclidean'; got metric={metric!r}."
             )
         return family
     if family in {"bernoulli", "categorical"}:
@@ -379,9 +378,7 @@ def _build_graphtools_diffusion_geometry(
         "random_state": int(random_state),
         "graph_class": graph.__class__.__name__,
         "kernel_nonzero_entries": int(
-            kernel_matrix.nnz
-            if hasattr(kernel_matrix, "nnz")
-            else np.count_nonzero(kernel_matrix)
+            kernel_matrix.nnz if hasattr(kernel_matrix, "nnz") else np.count_nonzero(kernel_matrix)
         ),
     }
     metadata.update(neighbor_metadata)
@@ -486,9 +483,7 @@ def _run_tbs_diffusion_graphtools_method(
         branch_length_optimization_method != BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC
         and branch_length_data_df is None
     ):
-        raise ValueError(
-            "Graphtools NNLS requires explicit branch_length_data_df geometry."
-        )
+        raise ValueError("Graphtools NNLS requires explicit branch_length_data_df geometry.")
     if branch_length_data_df is not None and not branch_length_data_df.index.equals(data_df.index):
         raise ValueError("branch_length_data_df index must exactly match the original data index.")
     geometry = _build_graphtools_diffusion_geometry(

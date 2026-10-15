@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 from tree_break_selection.tree.poset_tree import PosetTree
 

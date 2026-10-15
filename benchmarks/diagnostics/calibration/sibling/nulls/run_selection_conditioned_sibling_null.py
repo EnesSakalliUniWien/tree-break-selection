@@ -9,10 +9,6 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
 
 from benchmarks.diagnostics.calibration.sibling.nulls.runner_support import (
     prepare_sibling_diagnostic,
@@ -33,6 +29,10 @@ from benchmarks.diagnostics.runner_support import (
     create_result_directory,
     parse_csv_values,
     resolve_classified_cases,
+)
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
 )
 
 _DEFAULT_GAUSSIAN_BLOCKERS = (
@@ -179,10 +179,7 @@ def _diagnose_case(
         target_mode=target_mode,
     )
 
-    spectral_dimensions = (
-        prepared.gate_annotation_bundle.edge_gate_result.spectral_context
-        .test_projection_dimensions_by_node
-    )
+    spectral_dimensions = prepared.gate_annotation_bundle.edge_gate_result.spectral_context.test_projection_dimensions_by_node
     result_rows: list[dict[str, object]] = []
     for row_index, (_target_index, row) in enumerate(targets.iterrows(), start=1):
         parent = row["parent"]
@@ -263,8 +260,7 @@ def main() -> None:
         case = selected_case.case
         classification = selected_case.classification
         print(
-            f"[{index}/{len(selection.cases)}] "
-            f"{case['name']} ({classification['failure_class']})",
+            f"[{index}/{len(selection.cases)}] {case['name']} ({classification['failure_class']})",
             flush=True,
         )
         targets, sibling_summary = _diagnose_case(

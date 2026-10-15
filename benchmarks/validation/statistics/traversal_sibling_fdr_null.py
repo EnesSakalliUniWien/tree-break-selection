@@ -19,6 +19,15 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+from benchmarks.shared.util.provenance import current_git_state
+from benchmarks.validation.statistics.selected_edge_type1_geometry import (
+    _annotate_edges,
+    _case_contract,
+    _prepare_tree_for_mode,
+    _projection_inputs,
+    _select_cases,
+)
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -36,15 +45,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection import (
     collect_sibling_pair_records,
-)
-
-from benchmarks.shared.util.provenance import current_git_state
-from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _annotate_edges,
-    _case_contract,
-    _prepare_tree_for_mode,
-    _projection_inputs,
-    _select_cases,
 )
 
 SCHEMA_VERSION = "traversal_sibling_fdr_null/v1"

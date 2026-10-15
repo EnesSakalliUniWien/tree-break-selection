@@ -2,6 +2,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.tree.branch_lengths import compute_ultrametric_branch_lengths
 from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.poset_tree import PosetTree

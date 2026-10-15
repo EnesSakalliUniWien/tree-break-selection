@@ -70,7 +70,8 @@ def _resolve_effective_dimension(
         available_dimensions = min(available_dimensions, max(n_samples - 1, 0))
 
     return extend_rank_through_ties(
-        eig.eigenvalues[:available_dimensions], projection_dimension,
+        eig.eigenvalues[:available_dimensions],
+        projection_dimension,
     )
 
 

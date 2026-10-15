@@ -8,6 +8,7 @@ import time
 from queue import Empty
 
 import pandas as pd
+
 from tree_break_selection.plot.backend import configure_matplotlib_backend
 
 

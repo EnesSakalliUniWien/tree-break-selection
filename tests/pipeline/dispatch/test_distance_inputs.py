@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
+
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.types.method_spec import MethodSpec
-from scipy.spatial.distance import pdist, squareform
 from tree_break_selection.tree.continuous_distance import (
     continuous_time_distance_condensed,
     standardized_euclidean_distance_condensed,

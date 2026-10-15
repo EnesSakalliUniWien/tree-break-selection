@@ -17,10 +17,6 @@ from pathlib import Path
 from time import perf_counter
 
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
 
 from benchmarks.cloud import sharding
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_geometry_covariates import (
@@ -46,6 +42,10 @@ from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_nu
 )
 from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
 from benchmarks.shared.util.provenance import current_git_state
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
+)
 
 AWS_SELECTED_TAIL_STUDY_ROLE = "aws_distributed_selected_tail_equation_diagnostic"
 SHARD_RECORDS_NAME = "selected_geometry_records.csv"

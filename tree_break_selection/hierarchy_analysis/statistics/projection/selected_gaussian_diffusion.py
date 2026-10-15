@@ -59,8 +59,7 @@ def _require_binary_radial_candidate(
     rounded = np.rint(feature_matrix)
     if (
         not np.isin(rounded, (0.0, 1.0)).all()
-        or float(np.abs(feature_matrix - rounded).max())
-        > _BINARY_SUPPORT_ABSOLUTE_TOLERANCE
+        or float(np.abs(feature_matrix - rounded).max()) > _BINARY_SUPPORT_ABSOLUTE_TOLERANCE
     ):
         raise ValueError(
             "Hamming diffusion radial replay requires binary or one-hot reconstructed "
@@ -85,9 +84,7 @@ def _merge_signature_from_linkage(
             (members_by_cluster[left_id], members_by_cluster[right_id])
         )
         signature.append((left_members, right_members))
-        members_by_cluster[n_leaves + step_index] = tuple(
-            sorted((*left_members, *right_members))
-        )
+        members_by_cluster[n_leaves + step_index] = tuple(sorted((*left_members, *right_members)))
     return tuple(signature)
 
 

@@ -22,6 +22,12 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
+
+from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.validation.sweeps.family_metric_nnls_grid import _bool_sum
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -50,12 +56,6 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
 )
-
-from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
-from benchmarks.shared.util.time import format_timestamp_utc
-from benchmarks.validation.sweeps.family_metric_nnls_grid import _bool_sum
 
 SCHEMA_VERSION = "nnls_null_calibration_sweep/v5"
 GENERATED_BY = "benchmarks.validation.sweeps.nnls_null_calibration_sweep"
@@ -124,9 +124,7 @@ def _record_row(
         "parent_spectral_gap_at_projection_dimension": float(
             record.parent_spectral_gap_at_projection_dimension
         ),
-        "parent_spectral_pseudodeterminant": float(
-            record.parent_spectral_pseudodeterminant
-        ),
+        "parent_spectral_pseudodeterminant": float(record.parent_spectral_pseudodeterminant),
         "parent_spectral_log_pseudodeterminant": float(
             record.parent_spectral_log_pseudodeterminant
         ),

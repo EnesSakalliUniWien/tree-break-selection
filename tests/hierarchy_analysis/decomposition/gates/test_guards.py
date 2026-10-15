@@ -6,6 +6,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
 import tree_break_selection.hierarchy_analysis.decomposition.gates.guards as guard_module
 from tree_break_selection.hierarchy_analysis.decomposition.gates.guards import (
     apply_root_selective_permutation_guard,
@@ -82,7 +83,7 @@ def _passthrough_guard_inputs(
     annotated["Sibling_BH_Same"] = True
     annotated["Sibling_Divergence_Skipped"] = False
     annotated["Sibling_Divergence_P_Value"] = 1.0
-    for node in (("root", "B") if root_open else ("B",)):
+    for node in ("root", "B") if root_open else ("B",):
         annotated.loc[node, "Sibling_BH_Different"] = True
         annotated.loc[node, "Sibling_BH_Same"] = False
         annotated.loc[node, "Sibling_Divergence_P_Value"] = 0.001
@@ -593,6 +594,6 @@ def test_passthrough_guard_candidates_skip_nodes_below_a_boundary() -> None:
     )
 
     # B's edges are closed, so traversal never reaches D.
-    assert guard_module._passthrough_descendant_guard_candidates(
-        tree, annotations, root="R"
-    ) == ["A"]
+    assert guard_module._passthrough_descendant_guard_candidates(tree, annotations, root="R") == [
+        "A"
+    ]

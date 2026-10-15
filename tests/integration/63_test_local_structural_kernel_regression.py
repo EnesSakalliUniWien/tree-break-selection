@@ -3,10 +3,11 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-from scipy.spatial.distance import pdist
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_SIBLING_ALPHA,
 )
@@ -161,7 +162,11 @@ def test_tbs_runner_accepts_explicit_fixed_sibling_gate_config() -> None:
     assert result.extra["root_stability_tree_linkage_method"] == "average"
     assert result.extra["root_selective_permutation_guard_tree_distance_metric"] == ("hamming")
     assert result.extra["root_selective_permutation_guard_tree_linkage_method"] == ("average")
+
+
 def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() -> None:
+    from sklearn.metrics import adjusted_rand_score
+
     from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
         _generate_data_with_truth,
     )
@@ -169,7 +174,6 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
         _case_contract,
         _select_cases,
     )
-    from sklearn.metrics import adjusted_rand_score
 
     case = next(case for case in _select_cases(suite="full", case_names=("cat_clear_3cat_4c",)))
     (

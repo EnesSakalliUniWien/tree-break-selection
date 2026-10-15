@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
     GateAnnotationBundle,
 )

@@ -28,6 +28,12 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.stats import chi2
+
+from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
+from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
+    _expected_chi_square_mixture_skew,
+)
+from benchmarks.validation.contracts.report_contract import wilson_interval
 from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
     eigendecompose_covariance,
 )
@@ -52,12 +58,6 @@ from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecom
 from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
-from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
-    _expected_chi_square_mixture_skew,
-)
-from benchmarks.validation.contracts.report_contract import wilson_interval
 
 SCHEMA_VERSION = "known_branch_skew_diagnostic/v1"
 GENERATED_BY = "benchmarks.diagnostics.calibration.sibling.known_branch_skew_diagnostic"
@@ -98,7 +98,9 @@ class KnownBranchConfig:
 
     def __post_init__(self) -> None:
         if self.replicates < 1 or self.n_per_group < 4 or self.dimension < 2:
-            raise ValueError("replicates, n_per_group, or dimension is below its supported minimum.")
+            raise ValueError(
+                "replicates, n_per_group, or dimension is below its supported minimum."
+            )
         if not 0.0 < self.alpha < 1.0:
             raise ValueError("alpha must lie in (0, 1).")
         if not math.isfinite(self.ridge) or self.ridge < 0.0:
@@ -199,7 +201,9 @@ def _local_test(
         if covariance_estimator == "oracle_covariance"
         else np.cov(pooled, rowvar=False, ddof=1)
     )
-    feature_space = continuous_feature_space_from_columns(tuple(f"x{i}" for i in range(left.shape[1])))
+    feature_space = continuous_feature_space_from_columns(
+        tuple(f"x{i}" for i in range(left.shape[1]))
+    )
     covariance_by_block = {"continuous": covariance}
     z = compute_whitened_wald_contrast(
         left_mean,
@@ -276,7 +280,9 @@ def _selected_root_test(
     # Average-linkage Euclidean hierarchy is selected from these same rows.
     from scipy.spatial.distance import pdist
 
-    tree = tree_from_linkage(linkage(pdist(z, metric="euclidean"), method="average"), leaf_names=names)
+    tree = tree_from_linkage(
+        linkage(pdist(z, metric="euclidean"), method="average"), leaf_names=names
+    )
     root = tree.root()
     children = list(tree.successors(root))
     if len(children) != 2:
@@ -284,7 +290,9 @@ def _selected_root_test(
     descendants = tree.compute_descendant_sets(use_labels=True)
     name_to_index = {name: i for i, name in enumerate(names)}
     node_data = [z[[name_to_index[name] for name in descendants[child]]] for child in children]
-    node_labels = [labels[[name_to_index[name] for name in descendants[child]]] for child in children]
+    node_labels = [
+        labels[[name_to_index[name] for name in descendants[child]]] for child in children
+    ]
     child_mean_pairs = [
         _population_mean([str(label) for label in subset], means) for subset in node_labels
     ]
@@ -387,7 +395,11 @@ def run_diagnostic(config: KnownBranchConfig) -> dict[str, pd.DataFrame]:
     selected_rows: list[dict[str, object]] = []
     traversal_rows: list[dict[str, object]] = []
     seed_sequence = np.random.SeedSequence(config.base_seed)
-    child_seeds = iter(seed_sequence.spawn(len(config.patterns) * len(config.covariance_profiles) * config.replicates))
+    child_seeds = iter(
+        seed_sequence.spawn(
+            len(config.patterns) * len(config.covariance_profiles) * config.replicates
+        )
+    )
     for profile in config.covariance_profiles:
         sigma = covariance_matrix(profile, config.dimension)
         tree = _fixed_tree()
@@ -434,7 +446,10 @@ def run_diagnostic(config: KnownBranchConfig) -> dict[str, pd.DataFrame]:
                                 projection_kind=projection_kind,
                                 ridge=config.ridge,
                             )
-                            status, reason = str(result["status"]), str(result.get("failure_reason", ""))
+                            status, reason = (
+                                str(result["status"]),
+                                str(result.get("failure_reason", "")),
+                            )
                         except (ValueError, np.linalg.LinAlgError, FloatingPointError) as exc:
                             result, status, reason = {}, "runtime_error", str(exc)
                         local_rows.append(
@@ -444,7 +459,9 @@ def run_diagnostic(config: KnownBranchConfig) -> dict[str, pd.DataFrame]:
                                 "replicate": replicate,
                                 "dataset_seed": dataset_seed,
                                 "dataset_sha256": dataset_hash,
-                                "seed_spawn_key": ".".join(map(str, rng.bit_generator._seed_seq.spawn_key)),
+                                "seed_spawn_key": ".".join(
+                                    map(str, rng.bit_generator._seed_seq.spawn_key)
+                                ),
                                 "focal_node": node,
                                 "left_child": left_name,
                                 "right_child": right_name,
@@ -459,20 +476,30 @@ def run_diagnostic(config: KnownBranchConfig) -> dict[str, pd.DataFrame]:
                                 "failure_reason": reason,
                                 "population_null": is_null,
                                 "left_population_mean": json.dumps(
-                                    _population_mean(NODE_POPULATION_CHILD_LEAVES[node][0], means)[0].tolist()
+                                    _population_mean(NODE_POPULATION_CHILD_LEAVES[node][0], means)[
+                                        0
+                                    ].tolist()
                                 ),
                                 "right_population_mean": json.dumps(
-                                    _population_mean(NODE_POPULATION_CHILD_LEAVES[node][1], means)[0].tolist()
+                                    _population_mean(NODE_POPULATION_CHILD_LEAVES[node][1], means)[
+                                        0
+                                    ].tolist()
                                 ),
                                 "population_contrast": json.dumps(population_contrast.tolist()),
-                                "population_contrast_norm": float(np.linalg.norm(population_contrast)),
+                                "population_contrast_norm": float(
+                                    np.linalg.norm(population_contrast)
+                                ),
                                 "degrees_of_freedom": result.get("degrees_of_freedom", math.nan),
                                 "statistic": result.get("statistic", math.nan),
                                 "statistic_per_df": result.get("statistic_per_df", math.nan),
                                 "p_value": result.get("p_value", math.nan),
-                                "projection_dimension": result.get("projection_dimension", math.nan),
+                                "projection_dimension": result.get(
+                                    "projection_dimension", math.nan
+                                ),
                                 "raw_mp_signal_count": result.get("raw_mp_signal_count", math.nan),
-                                "covariance_condition": result.get("covariance_condition", math.nan),
+                                "covariance_condition": result.get(
+                                    "covariance_condition", math.nan
+                                ),
                             }
                         )
                     exact_tests[node] = _local_test(
@@ -502,7 +529,9 @@ def run_diagnostic(config: KnownBranchConfig) -> dict[str, pd.DataFrame]:
                             "replicate": replicate,
                             "dataset_seed": dataset_seed,
                             "dataset_sha256": dataset_hash,
-                            "seed_spawn_key": ".".join(map(str, rng.bit_generator._seed_seq.spawn_key)),
+                            "seed_spawn_key": ".".join(
+                                map(str, rng.bit_generator._seed_seq.spawn_key)
+                            ),
                             "injected_p_value_source": "oracle_covariance_fixed_full_basis_exact_gaussian_null",
                             "edge_prerequisite_regime": "all_edges_deliberately_open",
                             "alpha": config.alpha,
@@ -533,7 +562,9 @@ def run_diagnostic(config: KnownBranchConfig) -> dict[str, pd.DataFrame]:
                         "left_population_mean": selected.get("left_population_mean", ""),
                         "right_population_mean": selected.get("right_population_mean", ""),
                         "population_contrast": selected.get("population_contrast", ""),
-                        "population_contrast_norm": selected.get("population_contrast_norm", math.nan),
+                        "population_contrast_norm": selected.get(
+                            "population_contrast_norm", math.nan
+                        ),
                         "degrees_of_freedom": selected.get("degrees_of_freedom", math.nan),
                         "statistic": selected.get("statistic", math.nan),
                         "statistic_per_df": selected.get("statistic_per_df", math.nan),
@@ -565,7 +596,9 @@ def summarize_tables(tables: dict[str, pd.DataFrame], *, alpha: float) -> pd.Dat
         null_rejections = int((null["p_value"] <= alpha).sum())
         signal_rejections = int((signal["p_value"] <= alpha).sum())
         null_ci = wilson_interval(null_rejections, len(null)) if len(null) else (math.nan, math.nan)
-        signal_ci = wilson_interval(signal_rejections, len(signal)) if len(signal) else (math.nan, math.nan)
+        signal_ci = (
+            wilson_interval(signal_rejections, len(signal)) if len(signal) else (math.nan, math.nan)
+        )
         rows.append(
             {
                 **dict(zip(group_columns, key)),
@@ -580,26 +613,38 @@ def summarize_tables(tables: dict[str, pd.DataFrame], *, alpha: float) -> pd.Dat
                 "null_rejection_ci95_high": null_ci[1],
                 "signal_n": len(signal),
                 "signal_rejections": signal_rejections,
-                "signal_rejection_rate": signal_rejections / len(signal) if len(signal) else math.nan,
+                "signal_rejection_rate": signal_rejections / len(signal)
+                if len(signal)
+                else math.nan,
                 "signal_rejection_ci95_low": signal_ci[0],
                 "signal_rejection_ci95_high": signal_ci[1],
-                "mean_statistic_per_df": float(ok["statistic_per_df"].mean()) if len(ok) else math.nan,
+                "mean_statistic_per_df": float(ok["statistic_per_df"].mean())
+                if len(ok)
+                else math.nan,
                 "p_value_q05": float(ok["p_value"].quantile(0.05)) if len(ok) else math.nan,
                 "p_value_median": float(ok["p_value"].median()) if len(ok) else math.nan,
                 "p_value_q95": float(ok["p_value"].quantile(0.95)) if len(ok) else math.nan,
-                "null_statistic_skew": float(null["statistic"].skew()) if len(null) >= 3 else math.nan,
+                "null_statistic_skew": float(null["statistic"].skew())
+                if len(null) >= 3
+                else math.nan,
                 "expected_null_chi_square_mixture_skew": (
                     _expected_chi_square_mixture_skew(null["degrees_of_freedom"])
                     if len(null)
                     else math.nan
                 ),
-                "mean_projection_dimension": float(ok["projection_dimension"].mean()) if len(ok) else math.nan,
-                "mean_raw_mp_signal_count": float(ok["raw_mp_signal_count"].mean()) if len(ok) else math.nan,
+                "mean_projection_dimension": float(ok["projection_dimension"].mean())
+                if len(ok)
+                else math.nan,
+                "mean_raw_mp_signal_count": float(ok["raw_mp_signal_count"].mean())
+                if len(ok)
+                else math.nan,
             }
         )
     for table_name in ("selected_root", "traversal"):
         frame = tables[table_name]
-        by = ["pattern", "covariance_profile"] + (["passthrough"] if table_name == "traversal" else [])
+        by = ["pattern", "covariance_profile"] + (
+            ["passthrough"] if table_name == "traversal" else []
+        )
         for key, group in frame.groupby(by, dropna=False, sort=True):
             valid = group[group["status"] == "ok"]
             row = dict(zip(by, key if isinstance(key, tuple) else (key,)))
@@ -627,8 +672,7 @@ def summarize_tables(tables: dict[str, pd.DataFrame], *, alpha: float) -> pd.Dat
                     "selected_root_null_rejections": (
                         int(
                             (
-                                valid.loc[valid["population_null"].astype(bool), "p_value"]
-                                <= alpha
+                                valid.loc[valid["population_null"].astype(bool), "p_value"] <= alpha
                             ).sum()
                         )
                         if table_name == "selected_root" and len(valid)
@@ -681,19 +725,22 @@ def _write_protocol_report(
         ("root_only", "R signal; A and B null", "A0=A1=+mu; B0=B1=-mu"),
         ("A_deep_only", "R and B null; A signal", "A0=+mu; A1=-mu; B0=B1=0"),
         ("separate_deep_branches", "R null; A and B signal", "A0=+mu; A1=-mu; B0=+nu; B1=-nu"),
-        ("strong_root_weak_A", "R strong; A weak; B null", "A0/A1 average +mu with contrast 0.5 nu; B0=B1=-mu"),
+        (
+            "strong_root_weak_A",
+            "R strong; A weak; B null",
+            "A0/A1 average +mu with contrast 0.5 nu; B0=B1=-mu",
+        ),
     ]
     pattern_table = "| Pattern | True sibling nodes | Leaf population means |\n|---|---|---|\n"
     pattern_table += "\n".join(f"| `{a}` | {b} | {c} |" for a, b, c in pattern_rows)
     global_null = summaries[
-        (summaries.get("table") == "traversal")
-        & (summaries.get("pattern") == "global_null")
+        (summaries.get("table") == "traversal") & (summaries.get("pattern") == "global_null")
     ]
     traversal_lines = "\n".join(
         f"- `{row.covariance_profile}`, passthrough={bool(row.passthrough)}: "
         f"observed any reached false split {row.reached_false_split_rate:.4f} "
         f"(n={int(row.n_ok)}); global-null ideal reference "
-        f"{config.alpha if not row.passthrough else 1.0 - (1.0-config.alpha)**2:.4f}."
+        f"{config.alpha if not row.passthrough else 1.0 - (1.0 - config.alpha) ** 2:.4f}."
         for row in global_null.itertuples()
         if pd.notna(row.reached_false_split_rate)
     )
@@ -737,9 +784,13 @@ For the ideal global-null traversal reference, known-covariance full-basis sibli
     path.write_text(text, encoding="utf-8")
 
 
-def write_diagnostic(config: KnownBranchConfig, tables: dict[str, pd.DataFrame], *, run_command: str) -> dict[str, Path]:
+def write_diagnostic(
+    config: KnownBranchConfig, tables: dict[str, pd.DataFrame], *, run_command: str
+) -> dict[str, Path]:
     if config.output_dir.exists() and any(config.output_dir.iterdir()):
-        raise FileExistsError(f"Refusing to overwrite populated output directory: {config.output_dir}")
+        raise FileExistsError(
+            f"Refusing to overwrite populated output directory: {config.output_dir}"
+        )
     summaries = summarize_tables(tables, alpha=config.alpha)
     try:
         from benchmarks.validation.contracts.report_contract import (
@@ -754,20 +805,28 @@ def write_diagnostic(config: KnownBranchConfig, tables: dict[str, pd.DataFrame],
     repository_root = Path(__file__).resolve().parents[4]
     source_paths = (
         Path(__file__).resolve(),
-        repository_root / "tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py",
-        repository_root / "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflated_projected_wald_annotation/fdr_annotation.py",
-        repository_root / "tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py",
+        repository_root
+        / "tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py",
+        repository_root
+        / "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflated_projected_wald_annotation/fdr_annotation.py",
+        repository_root
+        / "tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py",
         repository_root / "tree_break_selection/hierarchy_analysis/tree_decomposition.py",
-        repository_root / "tree_break_selection/hierarchy_analysis/statistics/projection/projection_dimension_estimation/projection_dimension_estimators.py",
-        repository_root / "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/decomposition.py",
-        repository_root / "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/projection.py",
-        repository_root / "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py",
+        repository_root
+        / "tree_break_selection/hierarchy_analysis/statistics/projection/projection_dimension_estimation/projection_dimension_estimators.py",
+        repository_root
+        / "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/decomposition.py",
+        repository_root
+        / "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/projection.py",
+        repository_root
+        / "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py",
         repository_root / "tree_break_selection/eigenvalue_groups.py",
         repository_root / "tree_break_selection/tree/feature_space.py",
         repository_root / "tree_break_selection/tree/construction/hierarchical.py",
         repository_root / "tree_break_selection/tree/poset_tree.py",
         repository_root / "benchmarks/diagnostics/calibration/reporting.py",
-        repository_root / "benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py",
+        repository_root
+        / "benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py",
         repository_root / "benchmarks/validation/contracts/report_contract.py",
     )
     protocol_path = repository_root / "reports/known_branch_skew_20260928/protocol.md"
@@ -821,7 +880,9 @@ def write_diagnostic(config: KnownBranchConfig, tables: dict[str, pd.DataFrame],
             ],
         },
     )
-    _write_protocol_report(config.output_dir / "report.md", config=config, summaries=summaries, git_commit=commit)
+    _write_protocol_report(
+        config.output_dir / "report.md", config=config, summaries=summaries, git_commit=commit
+    )
     output["report"] = config.output_dir / "report.md"
     return output
 
@@ -847,7 +908,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     outputs = write_diagnostic(
         config,
         tables,
-        run_command=" ".join(shlex.quote(part) for part in [sys.executable, "-m", GENERATED_BY, *sys.argv[1:]]),
+        run_command=" ".join(
+            shlex.quote(part) for part in [sys.executable, "-m", GENERATED_BY, *sys.argv[1:]]
+        ),
     )
     print(json.dumps({key: str(path) for key, path in outputs.items()}, indent=2))
     return 0

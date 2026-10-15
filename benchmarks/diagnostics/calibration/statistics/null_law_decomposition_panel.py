@@ -22,12 +22,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2
-from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
-    build_contrast_covariance,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
-    identify_binary_sibling_children,
-)
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
@@ -47,6 +41,12 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     regenerate_null_case,
 )
 from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
+from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
+    build_contrast_covariance,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
+    identify_binary_sibling_children,
+)
 
 STUDY_ROLE = "diagnostic_null_law_decomposition_not_calibration"
 SCHEMA_VERSION = "null_law_decomposition_panel/v1"

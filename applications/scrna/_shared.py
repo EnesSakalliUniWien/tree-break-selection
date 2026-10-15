@@ -75,7 +75,5 @@ def artifact_record(
         if generated_at is not None:
             record["generated_at"] = generated_at
         if "generated_at" in table.columns:
-            record["generated_at_values"] = sorted(
-                table["generated_at"].dropna().unique().tolist()
-            )
+            record["generated_at_values"] = sorted(table["generated_at"].dropna().unique().tolist())
     return record

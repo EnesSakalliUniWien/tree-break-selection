@@ -7,6 +7,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from benchmarks.shared.plots import export
 from benchmarks.shared.result_records import ComputedResultRecord
 

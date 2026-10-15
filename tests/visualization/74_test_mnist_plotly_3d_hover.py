@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
+
 from benchmarks.experiments.mnist.run_higher_categories import (
     create_plotly_higher_category_plot_3d,
 )

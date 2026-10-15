@@ -139,9 +139,7 @@ def _summary(frame: pd.DataFrame) -> pd.DataFrame:
     working["unsupported"] = working["status"].eq("unsupported")
     working["skip"] = working["status"].eq("skip")
     working["exact_k"] = np.where(
-        working["ok"]
-        & working["true_clusters"].notna()
-        & working["found_clusters"].notna(),
+        working["ok"] & working["true_clusters"].notna() & working["found_clusters"].notna(),
         (working["true_clusters"] == working["found_clusters"]).astype(float),
         np.nan,
     )
@@ -165,9 +163,7 @@ def _summary(frame: pd.DataFrame) -> pd.DataFrame:
         mean_cluster_count_abs_error=("cluster_count_abs_error", "mean"),
     )
     summary = summary.reset_index()
-    summary["attempted_count"] = (
-        summary["successful_count"] + summary["unsupported_count"]
-    )
+    summary["attempted_count"] = summary["successful_count"] + summary["unsupported_count"]
     summary["unsupported_rate"] = np.where(
         summary["attempted_count"] > 0,
         summary["unsupported_count"] / summary["attempted_count"],
@@ -198,9 +194,7 @@ def _support_coverage(frame: pd.DataFrame) -> pd.DataFrame:
         )
         .reset_index()
     )
-    coverage["attempted_count"] = (
-        coverage["successful_count"] + coverage["unsupported_count"]
-    )
+    coverage["attempted_count"] = coverage["successful_count"] + coverage["unsupported_count"]
     coverage["unsupported_rate"] = np.where(
         coverage["attempted_count"] > 0,
         coverage["unsupported_count"] / coverage["attempted_count"],

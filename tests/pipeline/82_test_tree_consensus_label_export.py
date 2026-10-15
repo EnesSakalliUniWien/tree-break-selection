@@ -3,10 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-import benchmarks.shared.util.case_execution as case_execution
 import numpy as np
 import pandas as pd
 import pytest
+
+import benchmarks.shared.util.case_execution as case_execution
 from benchmarks.shared.result_records import ComputedResultRecord
 from benchmarks.shared.result_records.factory import build_benchmark_result_row
 from benchmarks.shared.tree_consensus import (

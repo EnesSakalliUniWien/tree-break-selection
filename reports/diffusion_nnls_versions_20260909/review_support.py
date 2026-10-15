@@ -31,12 +31,13 @@ def main() -> None:
 
     import numpy as np
     import pandas as pd
+    from sklearn.metrics import adjusted_rand_score
+
     from benchmarks.shared.benchmark_grid import strip_benchmark_metadata
     from benchmarks.shared.cases import get_test_cases_by_suite
     from benchmarks.shared.runners import tbs_diffusion_runner, tbs_runner
     from benchmarks.shared.runners.dispatch import run_clustering_result
     from benchmarks.shared.util.case_inputs import prepare_case_inputs
-    from sklearn.metrics import adjusted_rand_score
 
     out = run / "support_review"
     out.mkdir(exist_ok=True)

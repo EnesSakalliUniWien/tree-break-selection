@@ -116,9 +116,7 @@ def build_benchmark_result_row(
         if unsupported_reason is None:
             raise ValueError("status=unsupported requires unsupported_reason.")
 
-    unsupported_evidence = (
-        unsupported_reason.evidence if unsupported_reason is not None else None
-    )
+    unsupported_evidence = unsupported_reason.evidence if unsupported_reason is not None else None
     normalized_stage_timings = normalize_stage_timings(stage_timings)
     return BenchmarkResultRow(
         test_case=int(test_case),

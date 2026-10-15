@@ -32,6 +32,8 @@ import pandas as pd
 from scipy.cluster.hierarchy import cut_tree, dendrogram, linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+from applications.endotypes._shared import map_symbols_to_entrez, parse_reference_endotypes
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -58,8 +60,6 @@ from tree_break_selection.tree.construction import (
     tree_from_linkage,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from applications.endotypes._shared import map_symbols_to_entrez, parse_reference_endotypes
 
 
 def parse_args() -> argparse.Namespace:

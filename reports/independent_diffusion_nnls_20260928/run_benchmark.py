@@ -17,14 +17,15 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
+from scipy.stats import binomtest
+from sklearn.metrics import adjusted_rand_score
+from statsmodels.stats.multitest import multipletests
+
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from benchmarks.validation.contracts.report_contract import wilson_interval
-from scipy.stats import binomtest
-from sklearn.metrics import adjusted_rand_score
-from statsmodels.stats.multitest import multipletests
 from tree_break_selection.hierarchy_analysis.statistics.independent_gaussian import (
     IndependentGaussianDiffusion,
     _annotate_tests,

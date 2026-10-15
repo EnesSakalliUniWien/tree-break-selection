@@ -12,6 +12,9 @@ from pathlib import Path
 from textwrap import dedent
 
 import matplotlib.pyplot as plt
+
+from benchmarks.shared.cases.geometry import case_recipe_cluster_count, case_recipe_geometry
+from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -20,9 +23,6 @@ from tree_break_selection.tree.construction import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     DEFAULT_TREE_LINKAGE_METHOD,
 )
-
-from benchmarks.shared.cases.geometry import case_recipe_cluster_count, case_recipe_geometry
-from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
 
 # ---------------------------------------------------------------------------
 # Category key → parent group mapping

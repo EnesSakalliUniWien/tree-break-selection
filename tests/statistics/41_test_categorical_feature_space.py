@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+
 from benchmarks.shared.cases.categorical import CATEGORICAL_CASES
 from benchmarks.shared.generators.generate_case_data import generate_case_data
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_projected_wald.child_parent_standardized_z_scores import (

@@ -33,7 +33,11 @@ def toeplitz_residual(matrix: np.ndarray) -> float:
     """Relative distance from the matrix fixed by its first column and row."""
     matrix = np.asarray(matrix)
     scale = float(np.linalg.norm(matrix))
-    return float(np.linalg.norm(matrix - toeplitz(matrix[:, 0], matrix[0, :])) / scale) if scale else 0.0
+    return (
+        float(np.linalg.norm(matrix - toeplitz(matrix[:, 0], matrix[0, :])) / scale)
+        if scale
+        else 0.0
+    )
 
 
 def _rank_deficient_frequencies(matrix: np.ndarray, rank: int) -> np.ndarray:
@@ -76,7 +80,9 @@ def decompose_psd_toeplitz(
     n = len(matrix)
     scale = float(np.linalg.norm(matrix))
     if scale == 0:
-        return VandermondeResult(np.empty(0), np.empty(0), np.empty((n, 0), complex), 0, True, 0.0, 0.0)
+        return VandermondeResult(
+            np.empty(0), np.empty(0), np.empty((n, 0), complex), 0, True, 0.0, 0.0
+        )
     normalized = matrix / scale
     if np.linalg.norm(normalized - normalized.conj().T) > structure_rtol:
         raise ValueError("not_hermitian")
@@ -93,7 +99,10 @@ def decompose_psd_toeplitz(
         weight = 1.0 / float(np.vdot(atom, np.linalg.solve(normalized, atom)).real)
         reduced = normalized - weight * np.outer(atom, atom.conj())
         reduced_values = np.linalg.eigvalsh(reduced)
-        if np.count_nonzero(reduced_values > tolerance) != n - 1 or reduced_values[0] < -10*tolerance:
+        if (
+            np.count_nonzero(reduced_values > tolerance) != n - 1
+            or reduced_values[0] < -10 * tolerance
+        ):
             raise ValueError("numerically_unresolved_rank_reduction")
         frequencies = np.append(_rank_deficient_frequencies(reduced, n - 1), anchor)
     else:
@@ -101,7 +110,7 @@ def decompose_psd_toeplitz(
     frequencies = np.sort(frequencies)
     atoms = sinusoidal_atoms(n, frequencies)
     # Real nonnegative weights are fitted against every complex matrix entry.
-    outer_columns = np.einsum("ik,jk->ijk", atoms, atoms.conj()).reshape(n*n, rank)
+    outer_columns = np.einsum("ik,jk->ijk", atoms, atoms.conj()).reshape(n * n, rank)
     design = np.vstack((outer_columns.real, outer_columns.imag))
     target = np.concatenate((normalized.real.ravel(), normalized.imag.ravel()))
     weights = np.linalg.lstsq(design, target, rcond=None)[0]

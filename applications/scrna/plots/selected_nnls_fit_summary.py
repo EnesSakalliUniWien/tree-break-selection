@@ -13,10 +13,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
-from tree_break_selection.tree.optimized_branch_lengths import (
-    _sample_leaf_pairs,
-    _squared_standardized_targets,
-)
 
 from applications.scrna._shared import add_generated_at
 from applications.scrna.plots.selected_nnls_report import (
@@ -28,6 +24,10 @@ from applications.scrna.plots.selected_nnls_report import (
     make_cluster_palette,
     plot_full_radial_tree,
     plot_umap,
+)
+from tree_break_selection.tree.optimized_branch_lengths import (
+    _sample_leaf_pairs,
+    _squared_standardized_targets,
 )
 
 OUT_FIG = BASE / "scrna_selected_adaptive_diffusion_nnls_fit_summary.png"

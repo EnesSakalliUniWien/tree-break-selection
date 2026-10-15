@@ -20,6 +20,16 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
+
+from benchmarks.diagnostics.calibration.statistics.covariance_laplacian_panel import (
+    analyze_covariance_laplacian,
+)
+from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
+    infer_satterthwaite_reference_from_eigenvalues,
+)
+from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
+from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -48,16 +58,6 @@ from tree_break_selection.tree.feature_space import (
     bernoulli_feature_space_from_columns,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.diagnostics.calibration.statistics.covariance_laplacian_panel import (
-    analyze_covariance_laplacian,
-)
-from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
-    infer_satterthwaite_reference_from_eigenvalues,
-)
-from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
-from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
-from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 
 SCHEMA_VERSION = "selected_edge_type1_geometry/v1"
 GENERATED_BY = "benchmarks.validation.statistics.selected_edge_type1_geometry"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
+
 from benchmarks.cloud.aws_selected_edge_type1_geometry import (
     _build_parser as build_selected_edge_geometry_parser,
 )

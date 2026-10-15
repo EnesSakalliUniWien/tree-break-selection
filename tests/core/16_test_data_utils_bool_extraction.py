@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.core_utils.data_utils import (
     extract_bool_column_dict,
     extract_node_distribution,

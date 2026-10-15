@@ -208,7 +208,10 @@ def build_pipeline_plan(
                 output_dir=root / "05_matrix_quality",
                 command=[
                     args.python,
-                    str(REPO_ROOT / "applications/endotypes/analysis/feature_matrix_quality_analysis.py"),
+                    str(
+                        REPO_ROOT
+                        / "applications/endotypes/analysis/feature_matrix_quality_analysis.py"
+                    ),
                     "--input",
                     str(args.input),
                     "--output-dir",
@@ -243,7 +246,8 @@ def build_pipeline_plan(
     if args.include_method_matrix:
         command = _tree_analysis_command(
             args,
-            script=REPO_ROOT / "applications/endotypes/pipelines/run_allgo_method_version_tree_matrix.py",
+            script=REPO_ROOT
+            / "applications/endotypes/pipelines/run_allgo_method_version_tree_matrix.py",
             output_dir=root / "20_method_tree_matrix_audit",
         )
         _append_many(command, "--method-versions", args.method_versions)
@@ -273,7 +277,10 @@ def build_pipeline_plan(
                 output_dir=annotation_dir,
                 command=[
                     args.python,
-                    str(REPO_ROOT / "applications/endotypes/reports/export_subspace_cluster_rosters.py"),
+                    str(
+                        REPO_ROOT
+                        / "applications/endotypes/reports/export_subspace_cluster_rosters.py"
+                    ),
                     "--experiment-dir",
                     str(experiment_dir),
                     "--feature-matrix",
@@ -312,7 +319,10 @@ def build_pipeline_plan(
                 output_dir=annotation_dir / "cluster_meaningfulness_audit",
                 command=[
                     args.python,
-                    str(REPO_ROOT / "applications/endotypes/analysis/audit_go_cluster_meaningfulness.py"),
+                    str(
+                        REPO_ROOT
+                        / "applications/endotypes/analysis/audit_go_cluster_meaningfulness.py"
+                    ),
                     "--dataset-label",
                     artifact_prefix,
                     "--feature-matrix",

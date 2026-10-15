@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence import (
     annotate_child_parent_divergence,
 )

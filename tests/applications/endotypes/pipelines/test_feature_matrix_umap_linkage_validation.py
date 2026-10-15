@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
+
 from applications.endotypes.pipelines.run_feature_matrix_with_umap import _build_linkage_tree
 
 

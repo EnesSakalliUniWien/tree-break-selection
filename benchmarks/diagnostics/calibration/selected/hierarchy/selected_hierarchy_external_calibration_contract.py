@@ -20,10 +20,6 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2, kstest
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
 
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
@@ -34,6 +30,10 @@ from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_st
 )
 from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.util.time import format_timestamp_utc
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
+)
 
 CONDITIONING_SCOPE = "same_data_selected_hierarchy_edge_path_open"
 STRATUM_ROLE = "external_selected_hierarchy_contract_diagnostic_only"

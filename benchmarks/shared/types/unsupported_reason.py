@@ -10,9 +10,7 @@ class UnsupportedReasonCode(str, Enum):
     """Registered machine-readable unsupported outcome reasons."""
 
     EMPIRICAL_NULL_NO_INTERNAL_SUPPORT = "empirical_null_no_internal_support"
-    EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW = (
-        "empirical_null_unvalidated_reference_law"
-    )
+    EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW = "empirical_null_unvalidated_reference_law"
 
 
 @dataclass(frozen=True)
@@ -60,21 +58,17 @@ class UnsupportedReason:
         if code in empirical_null_codes:
             if self.stage != "sibling_calibration":
                 raise ValueError(
-                    "Empirical-null unsupported reasons require "
-                    "stage='sibling_calibration'."
+                    "Empirical-null unsupported reasons require stage='sibling_calibration'."
                 )
             evidence_values = [
                 getattr(self.evidence, field.name) for field in fields(self.evidence)
             ]
             if any(value is None for value in evidence_values):
-                raise ValueError(
-                    "Empirical-null unsupported reasons require all evidence counts."
-                )
+                raise ValueError("Empirical-null unsupported reasons require all evidence counts.")
         if code is UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT:
             if self.evidence.admissible_support_count != 0:
                 raise ValueError(
-                    "empirical_null_no_internal_support requires "
-                    "admissible_support_count=0."
+                    "empirical_null_no_internal_support requires admissible_support_count=0."
                 )
 
         normalized_message = self.message.strip()

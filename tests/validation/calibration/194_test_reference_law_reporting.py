@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
 from benchmarks.diagnostics.calibration.statistics.internal_support_threshold_validation import (
     evaluate_internal_support_threshold_rows,
     summarize_internal_support_threshold_rows,
@@ -25,9 +26,7 @@ from benchmarks.validation.sweeps.nnls_null_calibration_sweep import (
 
 def test_mixed_sweep_reports_restored_empirical_p_values() -> None:
     case = next(
-        case
-        for case in get_test_cases_by_suite("binary")
-        if case["name"] == "binary_low_noise_2c"
+        case for case in get_test_cases_by_suite("binary") if case["name"] == "binary_low_noise_2c"
     )
 
     _q10_rows, threshold_rows, status = _collect_case_replicate(
@@ -39,9 +38,7 @@ def test_mixed_sweep_reports_restored_empirical_p_values() -> None:
 
     assert status["model_status"] == "fit"
     assert not threshold_rows.empty
-    unresolved = threshold_rows[
-        threshold_rows["calibration_status"].eq("internal_admissible")
-    ]
+    unresolved = threshold_rows[threshold_rows["calibration_status"].eq("internal_admissible")]
     assert not unresolved.empty
     assert unresolved["calibration_p_value"].between(0.0, 1.0).all()
     assert unresolved["split_rejected_at_alpha"].notna().all()
@@ -120,9 +117,7 @@ def test_mixed_sweep_resume_rejects_stale_withheld_p_values(tmp_path: Path) -> N
 
     regenerated = pd.read_csv(outputs["threshold_contexts"])
     assert "stale_false_outcome" not in set(regenerated["context_id"])
-    unresolved = regenerated[
-        regenerated["calibration_status"].eq("internal_admissible")
-    ]
+    unresolved = regenerated[regenerated["calibration_status"].eq("internal_admissible")]
     assert not unresolved.empty
     assert unresolved["split_rejected_at_alpha"].notna().all()
 
@@ -130,9 +125,7 @@ def test_mixed_sweep_resume_rejects_stale_withheld_p_values(tmp_path: Path) -> N
 @pytest.fixture(scope="module")
 def nnls_linkage_row() -> dict[str, object]:
     case = next(
-        case
-        for case in get_test_cases_by_suite("binary")
-        if case["name"] == "binary_low_noise_2c"
+        case for case in get_test_cases_by_suite("binary") if case["name"] == "binary_low_noise_2c"
     )
     inputs = prepare_case_inputs(case, ["tbs"])
 

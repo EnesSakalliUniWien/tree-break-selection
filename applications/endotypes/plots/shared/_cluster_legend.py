@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Patch
+
 from tree_break_selection.plot.cluster_color_mapping import (
     ClusterColorSpec,
     build_cluster_color_spec,

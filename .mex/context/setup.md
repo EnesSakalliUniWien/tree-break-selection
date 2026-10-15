@@ -30,7 +30,7 @@ last_updated: 2026-06-23
 - `pytest` - full test suite.
 - `pytest tests/wiki/test_memory_contract.py -q` - memory and lookup contract tests.
 - `make wiki-lint` - structural wiki validation.
-- `ruff check benchmarks tree_break_selection scripts tests` - configured lint target.
+- `make lint` - `ruff check .` and `ruff format --check .`.
 
 ## Common Issues
 

@@ -25,6 +25,17 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
+
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
+    sibling_method_counts,
+)
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
+    load_matrix,
+)
+from benchmarks.diagnostics.spectral.adaptive_cosine.kak_lens_feature_axis_clustering import (
+    feature_axes_from_cosine_eigenvectors,
+    row_normalized_weighted_matrix,
+)
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -45,17 +56,6 @@ from tree_break_selection.space_separation import (
 from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
-    sibling_method_counts,
-)
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
-    load_matrix,
-)
-from benchmarks.diagnostics.spectral.adaptive_cosine.kak_lens_feature_axis_clustering import (
-    feature_axes_from_cosine_eigenvectors,
-    row_normalized_weighted_matrix,
-)
 
 SCHEMA_VERSION = "kak_feature_subspace_clustering/v1"
 

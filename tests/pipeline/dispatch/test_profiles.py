@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pytest
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.types.method_spec import MethodSpec
-from scipy.spatial.distance import pdist
 
 from .helpers import _capturing_runner, _toy_dataframe
 

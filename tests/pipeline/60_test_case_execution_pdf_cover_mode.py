@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import benchmarks.shared.util.case_execution as case_execution
 import pandas as pd
+
+import benchmarks.shared.util.case_execution as case_execution
 
 
 def _successful_benchmark():

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+
 from benchmarks.shared.util.decomposition import (
     _ok_result_from_labels,
     labels_and_report_from_decomposition,

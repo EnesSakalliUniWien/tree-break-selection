@@ -26,10 +26,15 @@ from sklearn.metrics import adjusted_rand_score
 
 os.environ.setdefault("TBS_N_JOBS", "1")
 
+from scipy.cluster.hierarchy import linkage
+
 import tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator as gate_orchestrator
 import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_context_module
 import tree_break_selection.hierarchy_analysis.statistics.projection.spectral.marchenko_pastur as mp_worker
-from scipy.cluster.hierarchy import linkage
+from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
+from benchmarks.shared.types import MethodRunResult
+from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
     eigendecompose_covariance,
 )
@@ -50,11 +55,6 @@ from tree_break_selection.tree.construction import (
     tree_from_linkage,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
-
-from benchmarks.shared.cases import get_default_test_cases
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-from benchmarks.shared.types import MethodRunResult
-from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 
 
 @dataclass(frozen=True)

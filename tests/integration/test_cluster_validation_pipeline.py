@@ -8,11 +8,12 @@ Tests the full pipeline with:
 
 import numpy as np
 import pandas as pd
-from benchmarks.shared.generators import generate_random_feature_matrix
-from benchmarks.shared.util.decomposition import _labels_from_decomposition
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
+
+from benchmarks.shared.generators import generate_random_feature_matrix
+from benchmarks.shared.util.decomposition import _labels_from_decomposition
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )

@@ -9,11 +9,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from pandas.testing import assert_frame_equal
+
 from applications.endotypes.pipelines.run_feature_matrix_with_umap import (
     _build_linkage_tree,
     _load_binary_matrix,
 )
-from pandas.testing import assert_frame_equal
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -109,13 +110,8 @@ def main() -> None:
             check_exact=True,
         )
 
-    traces = {
-        flag: result["traversal_trace"] for flag, result in results.items()
-    }
-    visited = {
-        flag: {row["node_id"] for row in trace}
-        for flag, trace in traces.items()
-    }
+    traces = {flag: result["traversal_trace"] for flag, result in results.items()}
+    visited = {flag: {row["node_id"] for row in trace} for flag, trace in traces.items()}
     internal_nodes = {node for node in tree.nodes if tree.out_degree(node) > 0}
     leaf_nodes = set(tree.nodes) - internal_nodes
     fields_equal = {
@@ -158,9 +154,9 @@ def main() -> None:
     corrected_tested = annotations_before["Sibling_Divergence_P_Value_Corrected"].notna()
     calibration_counts = {
         str(key): int(value)
-        for key, value in annotations_before[
-            "Sibling_Gate_P_Value_Calibration"
-        ].value_counts(dropna=False).items()
+        for key, value in annotations_before["Sibling_Gate_P_Value_Calibration"]
+        .value_counts(dropna=False)
+        .items()
     }
     mode_summary: dict[str, object] = {}
     for flag, result in results.items():
@@ -188,9 +184,7 @@ def main() -> None:
             "shape": [int(value) for value in data.shape],
             "all_binary": bool(np.isin(data.to_numpy(), [0, 1]).all()),
         },
-        "source_sha256": {
-            source: _sha256(ROOT / source) for source in SOURCE_PATHS
-        },
+        "source_sha256": {source: _sha256(ROOT / source) for source in SOURCE_PATHS},
         "environment": {
             "python": platform.python_version(),
             "numpy": np.__version__,
@@ -220,9 +214,7 @@ def main() -> None:
                 and annotations_before.equals(snapshots[True])
             ),
             "all_pvalue_fields_equal": fields_equal,
-            "changed_pvalue_fields": [
-                field for field, equal in fields_equal.items() if not equal
-            ],
+            "changed_pvalue_fields": [field for field, equal in fields_equal.items() if not equal],
             "sibling_calibrated_p_nonmissing": int(sibling_tested.sum()),
             "sibling_BH_adjusted_p_nonmissing": int(corrected_tested.sum()),
             "sibling_calibration_status_counts": calibration_counts,

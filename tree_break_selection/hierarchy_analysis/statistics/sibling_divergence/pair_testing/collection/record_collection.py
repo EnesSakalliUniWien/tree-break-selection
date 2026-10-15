@@ -252,9 +252,7 @@ def collect_sibling_pair_records(
             child_parent_edge_p_values_by_node=child_parent_edge_p_values_by_node,
             child_parent_edge_significance_by_node=child_parent_edge_significance_by_node,
             child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
-            child_parent_edge_ancestor_blocked_by_node=(
-                child_parent_edge_ancestor_blocked_by_node
-            ),
+            child_parent_edge_ancestor_blocked_by_node=(child_parent_edge_ancestor_blocked_by_node),
         )
         records.append(
             build_sibling_pair_record(

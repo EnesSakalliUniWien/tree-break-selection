@@ -4,6 +4,7 @@ import importlib
 
 import numpy as np
 import pytest
+
 from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.generators.generate_case_data import generate_case_data
 from benchmarks.shared.generators.generate_dimensional_gaussian import (
@@ -100,7 +101,9 @@ def test_zero_correlated_high_dimensional_noise_uses_independent_fast_path(
 
     def reject_dense_noise_covariance(n_dims: int, std: float, corr: float) -> np.ndarray:
         if n_dims == 19_988:
-            raise AssertionError("independent nuisance dimensions must not allocate dense covariance")
+            raise AssertionError(
+                "independent nuisance dimensions must not allocate dense covariance"
+            )
         return real_covariance(n_dims, std, corr)
 
     monkeypatch.setattr(

@@ -16,6 +16,23 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
+    parse_selected_hierarchy_args,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
+    SelectedSiblingContext,
+    SelectedSiblingRecord,
+    SiblingRecordSample,
+    _choose_observed_target,
+    _run_edge_and_sibling_records,
+    _selected_cases,
+    _selected_hierarchy_summary,
+    _simulate_null_data,
+)
+from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
+from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.core_utils.tree_utils import compute_node_depths
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
@@ -41,23 +58,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
-
-from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
-    parse_selected_hierarchy_args,
-)
-from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
-    SelectedSiblingContext,
-    SelectedSiblingRecord,
-    SiblingRecordSample,
-    _choose_observed_target,
-    _run_edge_and_sibling_records,
-    _selected_cases,
-    _selected_hierarchy_summary,
-    _simulate_null_data,
-)
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_internal_vs_selected_hierarchy_inflation_not_calibration"
 

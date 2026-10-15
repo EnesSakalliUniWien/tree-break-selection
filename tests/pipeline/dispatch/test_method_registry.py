@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pytest
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
-from scipy.spatial.distance import pdist
 
 from .helpers import _toy_dataframe
 
@@ -200,4 +201,3 @@ def test_method_registry_exposes_current_support_profiles():
     assert internal["enforce_internal_support_thresholds"] is True
     assert branch_length["spectral_internal_distribution_mode"] == ("branch_length_state")
     assert branch_length["enforce_internal_support_thresholds"] is True
-

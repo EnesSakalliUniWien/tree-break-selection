@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
+
 from benchmarks.diagnostics.calibration.cli import parse_null_calibration_panel_args
 from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
     parse_selected_hierarchy_args,

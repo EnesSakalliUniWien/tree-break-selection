@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     ClusterBoundary,
     build_cluster_assignments,

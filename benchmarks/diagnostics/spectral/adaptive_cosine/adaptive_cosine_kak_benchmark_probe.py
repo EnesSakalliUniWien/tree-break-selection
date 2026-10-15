@@ -25,6 +25,9 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -47,9 +50,6 @@ from tree_break_selection.space_separation import (
 )
 from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.feature_space import FeatureSpace
-
-from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
 
 SCHEMA_VERSION = "adaptive_cosine_kak_benchmark_probe/v1"
 

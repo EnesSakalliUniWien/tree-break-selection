@@ -23,13 +23,12 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from applications.endotypes.pipelines.adaptive_diffusion_go_ic_workflow import run_analysis
+from applications.endotypes.pipelines.tree_analysis_args import add_tree_analysis_arguments
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
 )
-
-from applications.endotypes.pipelines.adaptive_diffusion_go_ic_workflow import run_analysis
-from applications.endotypes.pipelines.tree_analysis_args import add_tree_analysis_arguments
 
 
 def parse_args() -> argparse.Namespace:

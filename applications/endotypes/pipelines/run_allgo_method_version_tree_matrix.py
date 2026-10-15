@@ -16,9 +16,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.spatial.distance import pdist
+
+from applications.endotypes._shared import load_feature_matrix, safe_name
+from applications.endotypes.pipelines.spectral_records import spectral_block_record
+from applications.endotypes.pipelines.tree_analysis_args import add_tree_analysis_arguments
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.types.method_run_result import MethodRunResult
-from scipy.spatial.distance import pdist
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -31,10 +35,6 @@ from tree_break_selection.space_separation import (
     cosine_eigendecomposition,
     weight_feature_matrix,
 )
-
-from applications.endotypes._shared import load_feature_matrix, safe_name
-from applications.endotypes.pipelines.spectral_records import spectral_block_record
-from applications.endotypes.pipelines.tree_analysis_args import add_tree_analysis_arguments
 
 METHOD_VERSIONS = ("current",)
 TREE_GEOMETRIES = (

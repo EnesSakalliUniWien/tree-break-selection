@@ -21,6 +21,29 @@ from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import norm, t
 from sklearn.metrics import adjusted_rand_score
+
+from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
+    DEFAULT_CANDIDATE_METHODS,
+    DEFAULT_DATA_ROLES,
+    DEFAULT_SELECTED_TOPOLOGY_PENALTIES,
+    data_independent_gate_p_value,
+    validate_candidate_methods,
+    validate_data_roles,
+    validate_selected_topology_penalties,
+)
+from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
+    evaluate_production_admissibility_components,
+    summarize_production_admissibility_contracts,
+)
+from benchmarks.diagnostics.calibration.values import bool_series
+from benchmarks.shared.generators.generate_case_data import generate_case_data
+from benchmarks.validation.statistics.selected_edge_type1_geometry import (
+    _case_contract,
+    _select_cases,
+    parse_names,
+    regenerate_null_case,
+)
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     ClusterBoundary,
     build_cluster_assignments,
@@ -50,29 +73,6 @@ from tree_break_selection.tree.feature_space import (
     bernoulli_feature_space_from_columns,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
-from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
-    DEFAULT_CANDIDATE_METHODS,
-    DEFAULT_DATA_ROLES,
-    DEFAULT_SELECTED_TOPOLOGY_PENALTIES,
-    data_independent_gate_p_value,
-    validate_candidate_methods,
-    validate_data_roles,
-    validate_selected_topology_penalties,
-)
-from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
-    evaluate_production_admissibility_components,
-    summarize_production_admissibility_contracts,
-)
-from benchmarks.diagnostics.calibration.values import bool_series
-from benchmarks.shared.generators.generate_case_data import generate_case_data
-from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _case_contract,
-    _select_cases,
-    parse_names,
-    regenerate_null_case,
-)
 
 STUDY_ROLE = "diagnostic_data_independent_sibling_gate_traversal_not_calibration"
 SCHEMA_VERSION = "data_independent_sibling_gate_traversal_panel/v1"
