@@ -52,7 +52,9 @@ Archive to a user-chosen directory **outside** the repository:
 
 The first command verifies original checksums, copies into
 `sha256/<first-two-characters>/<full-hash>`, verifies each copy, then records
-`file://` locations and exact ignore rules. Identical bytes share one object.
+`storage: archive` and exact ignore rules. The archive location itself is not
+stored: `check --verify-archive` and `restore` look in `~/kl-te-cluster-archive`
+unless `--archive-root` points elsewhere. Identical bytes share one object.
 Existing archive objects are never overwritten. Original outputs remain in
 place. A local archive on the same disk is not an off-machine backup.
 

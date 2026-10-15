@@ -85,7 +85,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 39014251,
       "sha256": "76436111387544b8d4ce020eab76966c0e1fd33dd0c903b873cbb3c9ba47d0c4",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/76/76436111387544b8d4ce020eab76966c0e1fd33dd0c903b873cbb3c9ba47d0c4",
       "storage": "archive"
     },
     {
@@ -111,7 +110,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 4301941,
       "sha256": "c15a4adef23f00e35eaf948aa0d5bbbd09fce88487efd25abe50a6f792b710f1",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/c1/c15a4adef23f00e35eaf948aa0d5bbbd09fce88487efd25abe50a6f792b710f1",
       "storage": "archive"
     },
     {
@@ -121,7 +119,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 118559832,
       "sha256": "135dae4d75e6e72d67150f7d6f3840c046194f2b6cf67d18f3727baf718af8be",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/13/135dae4d75e6e72d67150f7d6f3840c046194f2b6cf67d18f3727baf718af8be",
       "storage": "archive"
     },
     {
@@ -131,7 +128,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 28652627,
       "sha256": "9ce874c93c21fdcc8f189916707ef0f66c5958883b8418895970fc9ea23c7f16",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/9c/9ce874c93c21fdcc8f189916707ef0f66c5958883b8418895970fc9ea23c7f16",
       "storage": "archive"
     },
     {
@@ -149,7 +145,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 10002560,
       "sha256": "5ed5641c88fab308d918f7bef689de8a17ea427f434b261a3e25fa81b2589f88",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/5e/5ed5641c88fab308d918f7bef689de8a17ea427f434b261a3e25fa81b2589f88",
       "storage": "archive"
     },
     {
@@ -159,7 +154,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 22807302,
       "sha256": "c1fe20c1ac20b3866062f4cb188021e993080b09dd6f729ebbaa736e9c046a0c",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/c1/c1fe20c1ac20b3866062f4cb188021e993080b09dd6f729ebbaa736e9c046a0c",
       "storage": "archive"
     },
     {
@@ -257,7 +251,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 1192439,
       "sha256": "6c64253a620e4b42b7c78537dddcf48e7d7d45e85ccb31c8b13b2bb7211e1a7a",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/6c/6c64253a620e4b42b7c78537dddcf48e7d7d45e85ccb31c8b13b2bb7211e1a7a",
       "storage": "archive"
     },
     {
@@ -425,7 +418,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 1158691,
       "sha256": "f810fa6321615e4dd0523c65c774cd98d9bd159fd6424dba65506a9603a01a4f",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/f8/f810fa6321615e4dd0523c65c774cd98d9bd159fd6424dba65506a9603a01a4f",
       "storage": "archive"
     },
     {
@@ -521,7 +513,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 35609144,
       "sha256": "5150a5ac81f2e0c504deeab7f401fb0d3f274ce9f6e268ad0b73d38dcf8dc544",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/51/5150a5ac81f2e0c504deeab7f401fb0d3f274ce9f6e268ad0b73d38dcf8dc544",
       "storage": "archive"
     },
     {
@@ -539,7 +530,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 45753541,
       "sha256": "bf29764c3879980837fa10bc0a8b502c00bdef958c8b34ec36d44e4f19dacf79",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/bf/bf29764c3879980837fa10bc0a8b502c00bdef958c8b34ec36d44e4f19dacf79",
       "storage": "archive"
     },
     {
@@ -709,7 +699,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 8664146,
       "sha256": "4862e0ec238d01ccd31e5aa804bb338eaadd959321e7748a8d8dc4dc9c6cf863",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/48/4862e0ec238d01ccd31e5aa804bb338eaadd959321e7748a8d8dc4dc9c6cf863",
       "storage": "archive"
     },
     {
@@ -893,7 +882,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 15394350,
       "sha256": "4398086e811c7b9141acac8a8e59ac45e56318e1d3e01d8f5567806cd33869a4",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/43/4398086e811c7b9141acac8a8e59ac45e56318e1d3e01d8f5567806cd33869a4",
       "storage": "archive"
     },
     {
@@ -971,7 +959,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 2330913,
       "sha256": "4853ef6ebce54a172dc0c0bb83fb89225ea3b0c7e5d2a400e77f5037c7b7dd8f",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/48/4853ef6ebce54a172dc0c0bb83fb89225ea3b0c7e5d2a400e77f5037c7b7dd8f",
       "storage": "archive"
     },
     {
@@ -981,7 +968,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 2326463,
       "sha256": "113ab49f5739c46d3cd649052893d43551a99a7bbf2e56c4a01c98a09ee99a37",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/11/113ab49f5739c46d3cd649052893d43551a99a7bbf2e56c4a01c98a09ee99a37",
       "storage": "archive"
     },
     {
@@ -991,7 +977,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 2334464,
       "sha256": "67550e4288e27c6c52d4ac8f0d5477462b08061ae1e97b22d46dd9bef397d9e7",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/67/67550e4288e27c6c52d4ac8f0d5477462b08061ae1e97b22d46dd9bef397d9e7",
       "storage": "archive"
     },
     {
@@ -1107,7 +1092,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 8664159,
       "sha256": "29ad0c76892c39e93227fe1087e37f833c649323234d65846547d0d09efbd372",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/29/29ad0c76892c39e93227fe1087e37f833c649323234d65846547d0d09efbd372",
       "storage": "archive"
     },
     {
@@ -1265,7 +1249,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 15393483,
       "sha256": "c477cc6a8dd7990a09b2459571f90bf1b31b862f1635e9b2a48e2f1ed3a957ec",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/c4/c477cc6a8dd7990a09b2459571f90bf1b31b862f1635e9b2a48e2f1ed3a957ec",
       "storage": "archive"
     },
     {
@@ -1311,7 +1294,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 10093916,
       "sha256": "8588808be796914af42ebb0dac92b1afbad5c340445d7799b3b440b948cba56a",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/85/8588808be796914af42ebb0dac92b1afbad5c340445d7799b3b440b948cba56a",
       "storage": "archive"
     },
     {
@@ -1329,7 +1311,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 2193909,
       "sha256": "7e133f3c328729d45fb5a5e47d64ebb460fcba0f8dbf9f00a540210f28696617",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/7e/7e133f3c328729d45fb5a5e47d64ebb460fcba0f8dbf9f00a540210f28696617",
       "storage": "archive"
     },
     {
@@ -1347,7 +1328,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 4457148,
       "sha256": "26000271d105a74aadb4cc9fb4fb1d5d4bdcda693e8c6a3aec234faa24cb1ae7",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/26/26000271d105a74aadb4cc9fb4fb1d5d4bdcda693e8c6a3aec234faa24cb1ae7",
       "storage": "archive"
     },
     {
@@ -1463,7 +1443,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 8425250,
       "sha256": "6273a93a328158f91ec649beebaa827444988156fc86ca9d20c9158c06e51b7e",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/62/6273a93a328158f91ec649beebaa827444988156fc86ca9d20c9158c06e51b7e",
       "storage": "archive"
     },
     {
@@ -1473,7 +1452,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 3382753,
       "sha256": "e7f7c6e95f801a3dda12aaff81ce59131abcf7f53041c83ba49b941554202680",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/e7/e7f7c6e95f801a3dda12aaff81ce59131abcf7f53041c83ba49b941554202680",
       "storage": "archive"
     },
     {
@@ -1491,7 +1469,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 10283453,
       "sha256": "97bf5ccb995557e5f5674adb8b1fd81ea5747e6446e93eb9ac90702616859284",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/97/97bf5ccb995557e5f5674adb8b1fd81ea5747e6446e93eb9ac90702616859284",
       "storage": "archive"
     },
     {
@@ -1627,7 +1604,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 4240176,
       "sha256": "4edf28d56ce205c4953d3ce7034fa91ed0652dbba3ac33cde48f9017383f769d",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/4e/4edf28d56ce205c4953d3ce7034fa91ed0652dbba3ac33cde48f9017383f769d",
       "storage": "archive"
     },
     {
@@ -1687,7 +1663,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 50205046,
       "sha256": "5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/5b/5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
       "storage": "archive"
     },
     {
@@ -1697,7 +1672,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 4893739,
       "sha256": "dbb04472f3cba9a6605c9d72b955badcec8c338c2e5b64f567660c0246b511fa",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/db/dbb04472f3cba9a6605c9d72b955badcec8c338c2e5b64f567660c0246b511fa",
       "storage": "archive"
     },
     {
@@ -1715,7 +1689,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 11798972,
       "sha256": "80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/80/80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
       "storage": "archive"
     },
     {
@@ -1739,7 +1712,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 3566480,
       "sha256": "7c0f4292132138e81486559f5a838c91d6aa3f9c29a58afcc3bf409ad88f7425",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/7c/7c0f4292132138e81486559f5a838c91d6aa3f9c29a58afcc3bf409ad88f7425",
       "storage": "archive"
     },
     {
@@ -1781,7 +1753,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 12017831,
       "sha256": "bb0b80deea1e82a569b540636f433f53152d831ba40e7d7c04780cd64359a014",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/bb/bb0b80deea1e82a569b540636f433f53152d831ba40e7d7c04780cd64359a014",
       "storage": "archive"
     },
     {
@@ -2045,7 +2016,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 50205046,
       "sha256": "5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/5b/5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
       "storage": "archive"
     },
     {
@@ -2055,7 +2025,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 4893820,
       "sha256": "716d7db409268160df9e8d0a56b8b036b177e02758887abf8b285c57dd035e37",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/71/716d7db409268160df9e8d0a56b8b036b177e02758887abf8b285c57dd035e37",
       "storage": "archive"
     },
     {
@@ -2073,7 +2042,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 11798972,
       "sha256": "80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/80/80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
       "storage": "archive"
     },
     {
@@ -2249,7 +2217,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 3552678,
       "sha256": "ed75a9ebd2557f8232e34b0f481aa1af3dd25df147650c2f67fccc86047d029a",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/ed/ed75a9ebd2557f8232e34b0f481aa1af3dd25df147650c2f67fccc86047d029a",
       "storage": "archive"
     },
     {
@@ -2267,7 +2234,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 4573528,
       "sha256": "cf655eaa07e1690af6176e8f7eeca15d6d99633afe999512ad20e71a4081cdd8",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/cf/cf655eaa07e1690af6176e8f7eeca15d6d99633afe999512ad20e71a4081cdd8",
       "storage": "archive"
     },
     {
@@ -2309,7 +2275,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 4372617,
       "sha256": "f5990f5d237a601fed17b6d4698d851eb167d76ae14383d9887f8c3f9dedb10b",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/f5/f5990f5d237a601fed17b6d4698d851eb167d76ae14383d9887f8c3f9dedb10b",
       "storage": "archive"
     },
     {
@@ -2327,7 +2292,6 @@
       "reason": "Bulk generated numerical evidence; preserve bytes and record retrieval before ignoring.",
       "bytes": 6458222,
       "sha256": "cd07bae2c79e21ca6f91c6e8c7fa518ad9aa2e9a77337d1fe84f769734a1950b",
-      "archive_uri": "file:///Users/berksakalli/kl-te-cluster-archive/sha256/cd/cd07bae2c79e21ca6f91c6e8c7fa518ad9aa2e9a77337d1fe84f769734a1950b",
       "storage": "archive"
     },
     {
@@ -2427,8 +2391,7 @@
       "storage": "local",
       "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
       "bytes": 56545,
-      "sha256": "70d3099458c55ca02bd3f7475bea16ac99e7f805aa9a8e133154a0b73781da52",
-      "archive_uri": null
+      "sha256": "70d3099458c55ca02bd3f7475bea16ac99e7f805aa9a8e133154a0b73781da52"
     },
     {
       "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot.log",
@@ -2437,8 +2400,7 @@
       "storage": "local",
       "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
       "bytes": 49103,
-      "sha256": "a7e3626e19acc810eb56c80e895a51fb8ef6746afcb0d76ea783f9cd7e867b08",
-      "archive_uri": null
+      "sha256": "a7e3626e19acc810eb56c80e895a51fb8ef6746afcb0d76ea783f9cd7e867b08"
     },
     {
       "path": "reports/eigenspace_reassessment_20260928/full_pipeline/pilot_reviewed.log",
@@ -2447,8 +2409,7 @@
       "storage": "local",
       "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
       "bytes": 49724,
-      "sha256": "4a3c372e5f6281f2f852abdd3a536829c384e87b965f198cb09699d216426303",
-      "archive_uri": null
+      "sha256": "4a3c372e5f6281f2f852abdd3a536829c384e87b965f198cb09699d216426303"
     },
     {
       "path": "reports/eigenspace_reassessment_20260928/spectral_blocks/run.log",
@@ -2457,8 +2418,7 @@
       "storage": "local",
       "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
       "bytes": 38582,
-      "sha256": "192a9acd198740cc1da49fd076ff599d28e8398682e78dc33cf70344454f53f6",
-      "archive_uri": null
+      "sha256": "192a9acd198740cc1da49fd076ff599d28e8398682e78dc33cf70344454f53f6"
     }
   ]
 }
