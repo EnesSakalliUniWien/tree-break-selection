@@ -46,6 +46,7 @@ All notable changes to this project are documented in this file.
 - The endotypes KAK page column `common_invariant_axis_score` is now `common_axis_score` (and `is_common_invariant_axis` is `is_common_axis`).
 
 ### Fixed
+- The full benchmark's relationship analysis no longer fails with `KeyError: 'gaussian_sparse_signal_highd_noise'`; the category is registered in the cover-page group map, and a test checks every default case category.
 - Reject duplicate `leaf_data` sample labels instead of reusing the last matching row.
 - Permutation guards keep fractional Bernoulli and soft categorical values instead of truncating them to zero, and no longer test splits that traversal cannot reach.
 - A non-root permutation-guard scope with zero replicates now raises instead of silently skipping the guard.

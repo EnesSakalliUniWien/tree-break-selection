@@ -48,6 +48,7 @@ _register(
     "continuous_gaussian_examples",
     "gaussian_dimensionality_consolidated",
     "gaussian_dimensionality_diffuse",
+    "gaussian_sparse_signal_highd_noise",
     "continuous_dimensional_gaussian_examples",
     "gaussian_outlier_singleton",
     "gaussian_outlier_contamination",
