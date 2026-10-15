@@ -48,9 +48,11 @@ All notable changes to this project are documented in this file.
 - Config cleanup: the `all` extra is `tree-break-selection[dev,benchmark,benchmark-infra,viz,scrna]` plus `statsmodels` (same resolved packages); `make wiki-lint` runs through `uv run --no-sync`; `asv.conf.json` points `project_url` at the real repository; the `.mex/` setup notes use the locked `uv sync` and `make check`; the AWS image no longer installs the unused `statsmodels`; the Batch job role no longer grants `s3:DeleteObject`; six `.gitignore` entries for paths nothing creates are gone.
 - `decompose_leading_axes_space` always standardizes columns; the `standardize` option is gone. `build_cluster_color_spec` loses `base_cmap` and `plot_tree_with_clusters` loses `colormap` and `figsize`.
 - Diagnostics share `finite_int`, `is_finite`, `finite_min` (finite values only), `numeric_column`, `split_path`, `input_data_role` and `output_data_role` from `calibration/values.py`, `case_with_replicate_seed` from `runner_support.py`, and `load_shard_table`, `load_shard_manifest` and `resolve_synced_input` from `cloud/sharding.py`.
+- `sibling_divergence_test` requires keyword-only `branch_length_sum` and `mean_branch_length` (pass `0.0` and `None` for a tree without branch lengths). The sibling test always scales its contrast variance by `1 + (L_left + L_right) / (2 * mean positive branch length)`; `edge_branch_length_variance_policy` governs only the edge test. This is now documented and pinned by a test.
 
 
 ### Removed
+- `sibling_z_scores.py` (`_compute_sibling_z_scores`): a pass-through to `compute_whitened_wald_contrast`, now called directly by `sibling_divergence_test`.
 - `benchmarks/shared/util/pdf/image_concat.py` and `figure_split.py` (`concat_*_plots`, `split_collected_figs_to_pdfs`): no caller; the pipeline writes to `PdfPages` directly.
 - The `diffusion`, `trajectory` and `brancharchitect` extras with deeptime, PyGSP, PHATE, kaleido, biopython and orjson; none was imported.
 - BranchArchitect: the `vendor/BranchArchitect` submodule, `.gitmodules`, and `benchmarks/validation/tree/brancharchitect_tree_comparison.py`. Existing clones should delete the leftover `vendor/BranchArchitect` folder and `.git/modules/vendor`.
@@ -81,6 +83,7 @@ All notable changes to this project are documented in this file.
 - Dead code: `applications/endotypes/analysis/assess_method_correctness.py`, `benchmarks/diagnostics/calibration/statistics/same_z_functional_decomposition.py`, `benchmarks/diagnostics/calibration/cli.py`, the unused `strict` flag of `benchmark_cluster_algorithm` and the case runners, the always-true `compute_eigendecomposition_outputs` spectral flag, `FeatureBlock.signature`/`FeatureSpace.signature`, the `TREE_CONSENSUS_PRIORITY_ORDER` export, the `--progress` pytest plugin, and local copies of `parse_csv_values`, `parse_names`, `dataset_slug`, `select_cases` and the oracle runner's runtime and output-directory setup.
 
 ### Fixed
+- The MP projection-dimension sweep passes each sibling pair's branch-length sum and the tree's mean branch length, so its sibling statistics match production instead of omitting the branch-time factor.
 - `build_cluster_color_spec(0)`, `overlap_selected_pass_through_fixture_miner` and `mixed_null_signal_geometry_validation` no longer crash; the previous cleanup left a removed field and two removed helpers referenced. A test now imports every `benchmarks/` module.
 - The tree plot maps sample labels to leaves only, so a sample named like an internal node no longer breaks colouring; `lowest_common_ancestor_for_set` works on trees without a cached root.
 - The GO-IC tree pages seed their subspace UMAP from a CRC32 of the run id instead of the per-process salted `hash()`, so layouts repeat across runs.

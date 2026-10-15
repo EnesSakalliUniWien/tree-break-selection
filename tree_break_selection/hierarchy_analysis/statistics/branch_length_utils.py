@@ -5,6 +5,10 @@ These helpers define a single, consistent policy:
 - present branch-length attributes must be finite and non-negative
 - only strictly positive observations contribute to the tree mean
 - positive branch time is used as a dimensionless variance multiplier
+
+The sibling test always applies ``1 + (L_left + L_right) / (2 * mean)``; the
+edge test applies its branch time only under
+``edge_branch_length_variance_policy="normalized_branch_length"``.
 """
 
 from __future__ import annotations

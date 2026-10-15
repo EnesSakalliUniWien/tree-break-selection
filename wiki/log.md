@@ -7953,3 +7953,21 @@ version comparison report and wiki source summary. Production code unchanged.
   `tests/wiki/test_memory_contract.py` replaces the two `.mex` checks with one
   that requires `AGENTS.md` to route to `wiki/index.md` and `wiki/log.md` and
   fails if `.mex/` reappears.
+
+## 2026-10-15 — Sibling test always uses branch length
+
+- Resolved audit finding 5 on the user's decision: the sibling test keeps
+  scaling its contrast variance by
+  `1 + (L_left + L_right) / (2 * mean positive branch length)` whatever
+  `edge_branch_length_variance_policy` says; that policy governs only the
+  edge test. Documented in the statistics README contracts,
+  `branch_length_utils.py` and [[projected-wald-statistic]].
+- `sibling_divergence_test` now requires keyword-only `branch_length_sum` and
+  `mean_branch_length`; the `sibling_z_scores.py` pass-through is gone. The
+  MP projection-dimension sweep, which had dropped the branch-time factor,
+  now passes both.
+- Pinned by
+  `tests/statistics/36_test_sibling_projection_tree_paths.py::test_sibling_test_uses_branch_length_when_edge_policy_ignores_it`:
+  under the default `none` policy, lengthening one sibling pair leaves every
+  edge statistic unchanged and scales that sibling statistic by the
+  multiplier ratio. The test fails when the sibling branch time is dropped.

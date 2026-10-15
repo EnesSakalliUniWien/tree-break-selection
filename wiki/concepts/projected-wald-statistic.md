@@ -2,11 +2,13 @@
 title: Projected-Wald Statistic
 type: concept
 status: reviewed
-updated: 2026-08-10
+updated: 2026-10-15
 sources:
   - manuscript/guides/full_method_logic_map.md
   - manuscript/sections/method/edge_test.tex
   - manuscript/sections/method/sibling_test.tex
+  - tree_break_selection/hierarchy_analysis/statistics/branch_length_utils.py
+  - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/pair_testing/wald_statistic/sibling_divergence_test.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py
   - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
@@ -34,10 +36,13 @@ with a chi-square reference under the fixed-subspace approximation.
 ## Details
 
 For edge tests, the raw child-parent contrast is standardized coordinatewise
-with the nested variance model, multiplied by a normalized branch-time variance
-factor. For sibling tests, the left-right contrast is standardized with the
-two-sample Bernoulli variance model multiplied by the sibling branch-time
-factor. In both cases, the standardized vector is projected into parent-local
+with the nested variance model; a normalized branch-time variance factor is
+applied only when `edge_branch_length_variance_policy` is
+`normalized_branch_length` (the default is `none`). For sibling tests, the
+left-right contrast is standardized with the two-sample Bernoulli variance
+model and always multiplied by the sibling branch-time factor
+`1 + (L_left + L_right) / (2 * mean positive branch length)`, independent of
+the edge policy. In both cases, the standardized vector is projected into parent-local
 spectral directions before summing squared projected coordinates.
 
 The manuscript terminology distinguishes the implemented orthonormal

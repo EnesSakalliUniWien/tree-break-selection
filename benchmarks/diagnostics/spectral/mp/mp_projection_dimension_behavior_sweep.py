@@ -28,6 +28,10 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
 )
+from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
+    compute_mean_branch_length,
+    compute_sibling_branch_length_sum,
+)
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.child_parent_divergence_annotation import (
     annotate_child_parent_divergence,
 )
@@ -124,6 +128,8 @@ def _run_sibling_test_for_dimension(
     right_distribution: np.ndarray,
     left_sample_size: float,
     right_sample_size: float,
+    branch_length_sum: float,
+    mean_branch_length: float | None,
     parent_projection: np.ndarray | None,
     parent_eigenvalues: np.ndarray | None,
     feature_space,
@@ -138,6 +144,8 @@ def _run_sibling_test_for_dimension(
             right_distribution,
             float(left_sample_size),
             float(right_sample_size),
+            branch_length_sum=branch_length_sum,
+            mean_branch_length=mean_branch_length,
             projection_dimension_from_edge_comparisons=int(projection_dimension),
             parent_principal_component_projection=parent_projection,
             parent_principal_component_eigenvalues=parent_eigenvalues,
@@ -240,6 +248,7 @@ def _collect_case_replicate(
     )
     rows: list[dict[str, object]] = []
     non_binary_nodes = 0
+    mean_branch_length = compute_mean_branch_length(context.tree)
     for parent in context.tree.nodes:
         sibling_children = identify_binary_sibling_children(context.tree, parent)
         if sibling_children is None:
@@ -251,13 +260,16 @@ def _collect_case_replicate(
             right_distribution,
             left_sample_size,
             right_sample_size,
-            _branch_length_left,
-            _branch_length_right,
+            branch_length_left,
+            branch_length_right,
         ) = extract_sibling_pair_observations(
             context.tree,
             parent,
             left_child,
             right_child,
+        )
+        branch_length_sum = compute_sibling_branch_length_sum(
+            branch_length_left, branch_length_right
         )
         current_dimension = int(projection_dimensions[parent])
         parent_dimension = int(spectral_context.test_projection_dimensions_by_node[parent])
@@ -290,6 +302,8 @@ def _collect_case_replicate(
                 right_distribution=right_distribution,
                 left_sample_size=float(left_sample_size),
                 right_sample_size=float(right_sample_size),
+                branch_length_sum=branch_length_sum,
+                mean_branch_length=mean_branch_length,
                 parent_projection=parent_projection,
                 parent_eigenvalues=parent_eigenvalues,
                 feature_space=context.feature_space,

@@ -237,7 +237,7 @@ def test_sibling_divergence_nonfinite_z_raises(monkeypatch) -> None:
         return np.array([np.nan, 0.0], dtype=float)
 
     monkeypatch.setattr(
-        "tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.wald_statistic.sibling_z_scores.compute_whitened_wald_contrast",
+        "tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.wald_statistic.sibling_divergence_test.compute_whitened_wald_contrast",
         _fake_compute_whitened_wald_contrast,
     )
 
@@ -247,6 +247,8 @@ def test_sibling_divergence_nonfinite_z_raises(monkeypatch) -> None:
             right_distribution=np.array([0.5, 0.5], dtype=float),
             left_sample_size=10.0,
             right_sample_size=10.0,
+            branch_length_sum=0.0,
+            mean_branch_length=None,
             projection_dimension_from_edge_comparisons=2,
             parent_principal_component_projection=np.eye(2, dtype=float),
             parent_principal_component_eigenvalues=np.ones(2, dtype=float),

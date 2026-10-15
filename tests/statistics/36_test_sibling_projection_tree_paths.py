@@ -332,3 +332,32 @@ def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions()
             tree,
             spectral_context=spectral_context,
         )
+
+
+def test_sibling_test_uses_branch_length_when_edge_policy_ignores_it() -> None:
+    def annotate(root_pair_scale: float) -> tuple[pd.DataFrame, float]:
+        tree, annotations_df, leaf_data = _build_cherry_tree()
+        for child in ("A", "B"):
+            tree.edges["root", child]["branch_length"] *= root_pair_scale
+        lengths = [length for *_, length in tree.edges(data="branch_length")]
+        multiplier = 1.0 + (
+            tree.edges["root", "A"]["branch_length"] + tree.edges["root", "B"]["branch_length"]
+        ) / (2.0 * float(np.mean(lengths)))
+        bundle = run_gate_annotation_pipeline(tree, annotations_df.copy(), leaf_data=leaf_data)
+        assert bundle.metadata.config.edge_branch_length_variance_policy == "none"
+        return bundle.annotated_df, multiplier
+
+    base_df, base_multiplier = annotate(1.0)
+    long_df, long_multiplier = annotate(4.0)
+
+    pd.testing.assert_series_equal(
+        base_df["Child_Parent_Divergence_Test_Statistic"],
+        long_df["Child_Parent_Divergence_Test_Statistic"],
+    )
+    assert (
+        long_df.loc["root", "Sibling_Test_Statistic"]
+        < base_df.loc["root", "Sibling_Test_Statistic"]
+    )
+    assert long_df.loc["root", "Sibling_Test_Statistic"] * long_multiplier == pytest.approx(
+        base_df.loc["root", "Sibling_Test_Statistic"] * base_multiplier
+    )

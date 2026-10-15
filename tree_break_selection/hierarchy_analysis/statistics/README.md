@@ -74,6 +74,11 @@ Import each entrypoint from the path shown. `child_parent_divergence`, `multiple
   value. With support, `internal_admissible` means the empirical rule is
   available; it does not certify the selected-tail reference law.
 - Projection quantities and raw feature coordinates are separate objects.
+- The sibling test always scales its contrast variance by the sibling branch
+  time, `1 + (L_left + L_right) / (2 * mean positive branch length)`.
+  `edge_branch_length_variance_policy` (default `none`) governs only the
+  child-parent edge test. A tree without branch lengths gives the sibling test
+  a multiplier of 1.
 - Spectral rank targets extend through complete numerical eigenvalue groups,
   using the shared `tree_break_selection/eigenvalue_groups.py` rule. The raw MP
   signal count is distinct from the extended test dimension, and Wald degrees
