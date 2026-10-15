@@ -15,6 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from benchmarks.diagnostics.calibration.values import bool_value
 from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
     edge_distributional_action_summary,
 )
@@ -204,14 +205,6 @@ def _spearman(left: pd.Series, right: pd.Series) -> float:
     return float(data["left"].rank().corr(data["right"].rank()))
 
 
-def _safe_bool(value: object) -> bool:
-    if isinstance(value, bool | np.bool_):
-        return bool(value)
-    if pd.isna(value):
-        return False
-    return str(value).strip().lower() in {"true", "1", "yes"}
-
-
 def _load_goncalves_progenitor_tables(output_dir: Path) -> dict[str, dict[str, object]]:
     node_info: dict[str, dict[str, object]] = {}
     inner_path = output_dir / "goncalves_tbs_inner_node_progenitor_signature_scores.csv"
@@ -340,9 +333,9 @@ def _edge_records_for_method(
                 ),
                 "edge_test_statistic": float(edge.get(EDGE_STAT_COLUMN, np.nan)),
                 "edge_p_value": float(edge.get(EDGE_P_COLUMN, np.nan)),
-                "edge_significant": _safe_bool(edge.get(EDGE_SIGNIFICANT_COLUMN, False)),
-                "edge_tested": _safe_bool(edge.get(EDGE_TESTED_COLUMN, False)),
-                "edge_ancestor_blocked": _safe_bool(edge.get(EDGE_ANCESTOR_BLOCKED_COLUMN, False)),
+                "edge_significant": bool_value(edge.get(EDGE_SIGNIFICANT_COLUMN, False)),
+                "edge_tested": bool_value(edge.get(EDGE_TESTED_COLUMN, False)),
+                "edge_ancestor_blocked": bool_value(edge.get(EDGE_ANCESTOR_BLOCKED_COLUMN, False)),
                 "split_filter_policy": edge.get("Distributional_Split_Action_Filter_Policy"),
                 "split_filter_quantile": float(
                     edge.get("Distributional_Split_Action_Filter_Quantile", np.nan)
@@ -350,10 +343,10 @@ def _edge_records_for_method(
                 "split_filter_threshold": float(
                     edge.get("Distributional_Split_Action_Filter_Threshold", np.nan)
                 ),
-                "split_filter_passes": _safe_bool(
+                "split_filter_passes": bool_value(
                     edge.get("Distributional_Split_Action_Filter_Passes", True)
                 ),
-                "split_filter_filtered": _safe_bool(
+                "split_filter_filtered": bool_value(
                     edge.get("Distributional_Split_Action_Filtered", False)
                 ),
                 "child_progenitor_interpretation": child_info.get("progenitor_interpretation"),

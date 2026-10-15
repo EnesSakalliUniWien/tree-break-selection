@@ -29,6 +29,7 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
 )
 
+from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.metrics import _calculate_ari_nmi_purity_metrics
 from benchmarks.shared.runners.tbs_diffusion_runner import (
@@ -272,9 +273,7 @@ def _run_id(topology: str) -> str:
 def _bool_sum(frame: pd.DataFrame, column: str) -> int:
     if column not in frame.columns:
         return 0
-    return int(
-        frame[column].map(lambda value: str(value).strip().lower() in {"true", "1", "yes"}).sum()
-    )
+    return int(bool_series(frame[column]).sum())
 
 
 def _root_child_fraction(tree: object) -> float:
@@ -496,9 +495,7 @@ def _result_row(
         ).eq(0)
     ]
     edge_open_trace = trace[
-        trace.get("edge_gate_open", pd.Series(False, index=trace.index)).map(
-            lambda value: str(value).strip().lower() in {"true", "1", "yes"}
-        )
+        bool_series(trace.get("edge_gate_open", pd.Series(False, index=trace.index)))
     ]
     base.update(
         {

@@ -7829,3 +7829,8 @@ version comparison report and wiki source summary. Production code unchanged.
   `parent_depth == 0`; the manifold plot raises instead of falling back to
   PCA; `plotly` moved to the `viz` extra and the unused `diffusion` and
   `trajectory` extras are gone. `CHANGELOG.md` lists every item.
+- Deprecated [[ad-hoc-sibling-gate-selected-null-diffusion-comparison-20260617]]:
+  its three cited output directories were never committed, so `make wiki-lint`
+  failed on every fresh clone; the page now cites this log only.
+- The last three hand-written boolean cell readers (scRNA distributional-action
+  audit, family-metric NNLS grid) use `bool_value`/`bool_series`.

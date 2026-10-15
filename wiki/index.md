@@ -333,6 +333,7 @@ renamed, or promoted.
   sibling gates, guarded coordinate profiles, and diffusion tree construction;
   legacy is cleanest on the tiny selected-null smoke, while diffusion improves
   signal behavior but still leaks selected-null rows.
+  Deprecated 2026-10-14: the cited outputs were never committed.
 - [[old-current-method-difference-ledger-20260617]] - normalized component
   ledger for old-versus-current method changes; tracks removed/replaced
   components, added current guards, diagnostic-retained evidence, selected-null

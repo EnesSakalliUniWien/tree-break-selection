@@ -152,6 +152,7 @@ def test_pipeline_plan_uses_canonical_current_stage_and_optional_audit_matrix(
     assert "--adaptive-bandwidth-type=-1/(d+2)" in stages[3].command
     assert stages[3].optional is True
     assert "export_subspace_cluster_rosters.py" in stages[4].command[1]
+    assert Path(stages[4].command[1]).is_file()
     assert "build_subspace_gene_annotation_pdf.py" in stages[5].command[1]
     assert "--skip-life-science-lookups" in stages[5].command
     assert "audit_go_cluster_meaningfulness.py" in stages[6].command[1]

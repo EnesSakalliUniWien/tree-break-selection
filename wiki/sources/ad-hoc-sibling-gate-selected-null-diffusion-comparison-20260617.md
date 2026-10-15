@@ -1,12 +1,10 @@
 ---
 title: Ad Hoc Sibling Gate Selected Null Diffusion Comparison 2026-06-17
 type: source
-status: reviewed
-updated: 2026-06-17
+status: deprecated
+updated: 2026-10-14
 sources:
-  - raw/assets/benchmark-results/ad_hoc_sibling_gate_selected_null_legacy_comparison_20260617
-  - raw/assets/benchmark-results/ad_hoc_kl_diffusion_tree_comparison_20260617
-  - raw/assets/benchmark-results/ad_hoc_kl_diffusion_selected_null_legacy_comparison_20260617
+  - wiki/log.md
 tags:
   - source
   - diagnostics
@@ -19,6 +17,11 @@ tags:
 # Ad Hoc Sibling Gate Selected Null Diffusion Comparison 2026-06-17
 
 ## Summary
+
+Deprecated: the three output directories this page cited under
+`raw/assets/benchmark-results/` were never committed, so the numbers below
+cannot be reproduced from the repository. The only surviving record is the
+2026-06-17 entry in `wiki/log.md`. The page is kept as a historical note.
 
 This ad hoc smoke compares sibling-gate and tree-construction variants on small
 signal and selected-null cases. The first user-run panel covers
