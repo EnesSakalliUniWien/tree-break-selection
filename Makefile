@@ -14,7 +14,7 @@ test:
 	uv run --no-sync python scripts/run_tests_ordered.py
 
 wiki-lint:
-	python3 scripts/wiki/lint.py
+	uv run --no-sync python scripts/wiki/lint.py
 
 generated-files-check:
 	uv run --no-sync python scripts/generated_files.py check

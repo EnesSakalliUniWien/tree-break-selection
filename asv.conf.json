@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "tree-break-selection",
-  "project_url": "https://github.com/berksakalli/kl-te-cluster",
+  "project_url": "https://github.com/EnesSakalliUniWien/tree-break-selection",
   "repo": ".",
   "branches": ["dev"],
   "environment_type": "virtualenv",

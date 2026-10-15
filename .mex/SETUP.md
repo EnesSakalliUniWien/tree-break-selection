@@ -16,5 +16,5 @@ After memory edits, run:
 
 ```bash
 make wiki-lint
-pytest tests/wiki/test_memory_contract.py -q
+uv run pytest tests/wiki/test_memory_contract.py -q
 ```

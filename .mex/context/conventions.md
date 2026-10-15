@@ -36,5 +36,5 @@ last_updated: 2026-06-23
 - Read `wiki/index.md` before project-memory work.
 - Check raw/source evidence before updating synthesis.
 - After wiki edits, run `make wiki-lint`.
-- For memory routing changes, run `pytest tests/wiki/test_memory_contract.py -q`.
+- For memory routing changes, run `uv run pytest tests/wiki/test_memory_contract.py -q`.
 - Record durable memory changes in `wiki/log.md`.

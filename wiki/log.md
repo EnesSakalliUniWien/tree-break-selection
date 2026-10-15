@@ -7925,3 +7925,20 @@ version comparison report and wiki source summary. Production code unchanged.
   and scripts that read and write one benchmark run in place require
   `--output-dir`. Refreshing retained evidence now means passing its
   `raw/assets/benchmark-results/` folder explicitly.
+
+## 2026-10-15 — Config file check
+
+- Checked the project configs (`pyproject.toml`, `Makefile`, `.gitignore`,
+  `.dockerignore`, the AWS `Dockerfile` and `batch-stack.yml`, the validation
+  manifests) and the tool configs (`.mex/`, `.serena/`, `asv.conf.json`).
+  The mex routing targets exist and the ASV suite runs on the current API.
+- Fixed: the `asv.conf.json` repository URL, the `.mex/` setup commands (now
+  locked `uv sync` and `make check`), the unused `statsmodels` in the AWS
+  image, the unneeded `s3:DeleteObject` grant, six stale `.gitignore`
+  entries, `make wiki-lint` running outside `uv`, and the hand-copied `all`
+  extra (now a self-reference with an identical resolved package set).
+- Left for later on the user's decision: removing the unused
+  `jupyter`/`notebook`/`ipython` dev dependencies, and adding pytest
+  `--strict-markers`. Noted only: `.serena/` is fully git-ignored, and the
+  method-constant manifest cites a `benchmarks/results/` run that is not
+  retained.

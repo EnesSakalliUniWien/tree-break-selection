@@ -10,10 +10,10 @@ edges:
   - target: ../pyproject.toml
     condition: dependencies, optional groups, pytest, and ruff config
   - target: ../Makefile
-    condition: wiki lint command
+    condition: check, lint, audit, test and wiki-lint targets
   - target: ../README.md
     condition: project overview and implementation map
-last_updated: 2026-06-23
+last_updated: 2026-10-15
 ---
 
 # Setup
@@ -21,14 +21,14 @@ last_updated: 2026-06-23
 ## Prerequisites
 
 - Python 3.11 or newer.
-- Project dependencies from `pyproject.toml`.
-- `pytest` and `ruff` from the `dev` optional dependency group.
+- `uv`; dependencies come from `pyproject.toml` and the locked `uv.lock`.
 
 ## Common Commands
 
-- `python -m pip install -e '.[dev]'` - editable install with development tools.
-- `pytest` - full test suite.
-- `pytest tests/wiki/test_memory_contract.py -q` - memory and lookup contract tests.
+- `uv sync --extra dev --extra benchmark --extra viz --locked` - locked development environment.
+- `make check` - lint, dependency and dead-code audit, wiki lint, generated-file check and the staged test suite.
+- `make test` - staged test suite (`scripts/run_tests_ordered.py`).
+- `uv run pytest tests/wiki/test_memory_contract.py -q` - memory and lookup contract tests.
 - `make wiki-lint` - structural wiki validation.
 - `make lint` - `ruff check .` and `ruff format --check .`.
 

@@ -99,8 +99,6 @@ $RECYCLE.BIN/
 # =============================================================================
 # Results and output directories
 results/
-cluster_tree_plots/
-cluster_validation_failures/
 reports/audits/generated/
 # New report runs keep bulk outputs here; the artifact check still inventories them.
 /reports/*/generated/
@@ -112,11 +110,7 @@ raw/assets/benchmark-results/**/selected_geometry_records.csv
 .asv/
 
 # Debug output
-debug_output/
 *.log
-debug_scripts/diagnostics/results/enhancement_lab/
-debug_scripts/enhancement_lab/_oracle_policy_fourier_plots/
-debug_scripts/enhancement_lab/_oracle_policy_fourier_plots_one_active_1d/
 
 # Node modules (if any frontend tooling)
 node_modules/
