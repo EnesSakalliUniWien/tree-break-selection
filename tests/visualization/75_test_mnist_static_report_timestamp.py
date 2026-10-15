@@ -69,13 +69,9 @@ def test_static_mnist_report_records_generated_timestamp(monkeypatch, tmp_path):
 
     monkeypatch.setattr(report, "SOURCE_DIR", source_dir)
     monkeypatch.setattr(report, "SWEEP_DIR", sweep_dir)
-    monkeypatch.setattr(report, "OUT_PDF", out_dir / "report.pdf")
-    monkeypatch.setattr(report, "OUT_MAIN", out_dir / "summary.png")
-    monkeypatch.setattr(report, "OUT_CSV", out_dir / "summary.csv")
+    report.main(out_dir)
 
-    report.main()
-
-    summary = pd.read_csv(out_dir / "summary.csv")
+    summary = pd.read_csv(out_dir / report.OUT_CSV)
     assert "generated_at" in summary.columns
     assert (
         summary["generated_at"]
@@ -83,6 +79,6 @@ def test_static_mnist_report_records_generated_timestamp(monkeypatch, tmp_path):
         .str.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}")
         .all()
     )
-    assert (out_dir / "summary.png").exists()
-    pdf_bytes = (out_dir / "report.pdf").read_bytes()
+    assert (out_dir / report.OUT_MAIN).exists()
+    pdf_bytes = (out_dir / report.OUT_PDF).read_bytes()
     assert re.search(rb"Generated at", pdf_bytes)

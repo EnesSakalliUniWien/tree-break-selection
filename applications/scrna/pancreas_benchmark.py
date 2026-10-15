@@ -38,6 +38,7 @@ from sklearn.metrics import (
     v_measure_score,
 )
 
+from applications.output_dirs import timestamped_results_dir
 from applications.scrna._shared import json_default
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
@@ -1575,15 +1576,13 @@ def main() -> None:
         "--output-dir",
         type=Path,
         default=None,
-        help="Output directory for benchmark artifacts.",
+        help="Output directory (default: a new results/analyses/ folder).",
     )
     args = parser.parse_args()
 
     root = _project_root()
     input_h5ad = root / "raw" / "inbox" / "pancreas.h5ad"
-    output_dir = args.output_dir or (
-        root / "raw" / "assets" / "benchmark-results" / "pancreas_scrna_cluster_benchmark_20260623"
-    )
+    output_dir = args.output_dir or timestamped_results_dir("pancreas_scrna_cluster_benchmark")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")

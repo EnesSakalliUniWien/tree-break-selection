@@ -86,13 +86,8 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=(
-            project_root()
-            / "raw"
-            / "assets"
-            / "benchmark-results"
-            / "pancreas_scrna_cluster_benchmark_20260623"
-        ),
+        required=True,
+        help="Benchmark run directory to read and write; pass a raw/assets/ path explicitly.",
     )
     args = parser.parse_args()
 

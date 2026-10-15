@@ -173,6 +173,7 @@ def run_benchmarks():
 
     result_columns = list(all_results.columns)
     result_frames: list[pd.DataFrame] = []
+    failed_cases: dict[str, str] = {}
     for i, case in enumerate(test_cases):
         case_key = i + 1
         case_id = case["name"]
@@ -216,21 +217,28 @@ def run_benchmarks():
         case_plot_umap = enable_umap
         case_plot_manifold = enable_manifold and not is_large
 
-        df_res = run_case_with_optional_isolation(
-            case=case,
-            methods_to_test=methods_for_case,
-            method_params=method_params_for_case,
-            case_plot_umap=case_plot_umap,
-            case_plot_manifold=case_plot_manifold,
-            enable_plots=enable_plots,
-            pdf_path=pdf_path,
-            isolate_umap_cases=isolate_umap_cases,
-            timeout_sec=case_timeout_sec,
-            include_validation_page=False,
-            tree_consensus_label_dir=(
-                None if tree_consensus_label_dir is None else str(tree_consensus_label_dir)
-            ),
-        )
+        try:
+            df_res = run_case_with_optional_isolation(
+                case=case,
+                methods_to_test=methods_for_case,
+                method_params=method_params_for_case,
+                case_plot_umap=case_plot_umap,
+                case_plot_manifold=case_plot_manifold,
+                enable_plots=enable_plots,
+                pdf_path=pdf_path,
+                isolate_umap_cases=isolate_umap_cases,
+                timeout_sec=case_timeout_sec,
+                include_validation_page=False,
+                tree_consensus_label_dir=(
+                    None if tree_consensus_label_dir is None else str(tree_consensus_label_dir)
+                ),
+            )
+        except Exception as exc:
+            # A timed-out or crashed case is skipped, not recorded, so a resumed run retries it.
+            failed_cases[str(case_id)] = f"{type(exc).__name__}: {exc}"
+            print(f"  Case failed and was skipped: {failed_cases[str(case_id)]}", flush=True)
+            gc.collect()
+            continue
         df_res = _stamp_full_run_case_identity(
             df_res,
             case_key=case_key,
@@ -369,6 +377,13 @@ def run_benchmarks():
             ordered_case_pdfs.append(relationship_pdf)
             print(f"Appending relationship plots to full report: {relationship_pdf}")
         merge_existing_pdfs(ordered_case_pdfs, report_pdf, verbose=True)
+
+    if failed_cases:
+        details = "; ".join(f"{case_id}: {error}" for case_id, error in failed_cases.items())
+        raise SystemExit(
+            f"{len(failed_cases)} case(s) failed and were not recorded; rerun with the same "
+            f"TBS_RUN_DIR to retry them. {details}"
+        )
 
 
 if __name__ == "__main__":

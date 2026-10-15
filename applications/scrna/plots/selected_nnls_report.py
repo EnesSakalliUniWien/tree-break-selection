@@ -19,6 +19,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
 from PIL import Image
 
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import add_generated_at
 from applications.scrna.plots.report_helpers import plot_cluster_size_bars
 
@@ -46,21 +47,16 @@ DATASETS = [
     },
 ]
 
-OUT_PDF = BASE / "scrna_selected_adaptive_diffusion_nnls_full_report.pdf"
-OUT_ADULT = BASE / "scrna_selected_adaptive_diffusion_nnls_adult_colored_tree_page.png"
-OUT_GONCALVES = BASE / "scrna_selected_adaptive_diffusion_nnls_goncalves_colored_tree_page.png"
-OUT_ADULT_RADIAL = BASE / "scrna_selected_adaptive_diffusion_nnls_adult_radial_tree_page.png"
-OUT_GONCALVES_RADIAL = (
-    BASE / "scrna_selected_adaptive_diffusion_nnls_goncalves_radial_tree_page.png"
-)
-OUT_ADULT_FULL_RADIAL = (
-    BASE / "scrna_selected_adaptive_diffusion_nnls_adult_full_radial_tree_page.png"
-)
+OUT_PDF = "scrna_selected_adaptive_diffusion_nnls_full_report.pdf"
+OUT_ADULT = "scrna_selected_adaptive_diffusion_nnls_adult_colored_tree_page.png"
+OUT_GONCALVES = "scrna_selected_adaptive_diffusion_nnls_goncalves_colored_tree_page.png"
+OUT_ADULT_RADIAL = "scrna_selected_adaptive_diffusion_nnls_adult_radial_tree_page.png"
+OUT_GONCALVES_RADIAL = "scrna_selected_adaptive_diffusion_nnls_goncalves_radial_tree_page.png"
+OUT_ADULT_FULL_RADIAL = "scrna_selected_adaptive_diffusion_nnls_adult_full_radial_tree_page.png"
 OUT_GONCALVES_FULL_RADIAL = (
-    BASE / "scrna_selected_adaptive_diffusion_nnls_goncalves_full_radial_tree_page.png"
+    "scrna_selected_adaptive_diffusion_nnls_goncalves_full_radial_tree_page.png"
 )
-OUT_SUMMARY = BASE / "scrna_selected_adaptive_diffusion_nnls_cluster_boundary_summary.csv"
-
+OUT_SUMMARY = "scrna_selected_adaptive_diffusion_nnls_cluster_boundary_summary.csv"
 PALETTE = [
     "#4e79a7",
     "#f28e2b",
@@ -855,11 +851,15 @@ def add_image_grid_page(pdf, title, items, ncols=2, generated_at=None):
     plt.close(fig)
 
 
-def main():
+def main(output_dir: Path | None = None) -> None:
+    output_dir = output_dir or timestamped_results_dir(
+        "scrna_selected_adaptive_diffusion_nnls_report"
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     summaries = []
     with PdfPages(
-        OUT_PDF,
+        output_dir / OUT_PDF,
         metadata={
             "Title": "Selected scRNA NNLS-TBS report",
             "Subject": f"Generated at: {generated_at}",
@@ -867,9 +867,9 @@ def main():
     ) as pdf:
         for cfg, png_path, radial_path, full_radial_path in zip(
             DATASETS,
-            [OUT_ADULT, OUT_GONCALVES],
-            [OUT_ADULT_RADIAL, OUT_GONCALVES_RADIAL],
-            [OUT_ADULT_FULL_RADIAL, OUT_GONCALVES_FULL_RADIAL],
+            [output_dir / OUT_ADULT, output_dir / OUT_GONCALVES],
+            [output_dir / OUT_ADULT_RADIAL, output_dir / OUT_GONCALVES_RADIAL],
+            [output_dir / OUT_ADULT_FULL_RADIAL, output_dir / OUT_GONCALVES_FULL_RADIAL],
         ):
             fig, summary = selected_dataset_page(cfg, save_path=png_path, generated_at=generated_at)
             pdf.savefig(fig, bbox_inches="tight")
@@ -1008,19 +1008,19 @@ def main():
 
     combined_summary = pd.concat(summaries, ignore_index=True)
     combined_summary.insert(0, "generated_at", generated_at)
-    combined_summary.to_csv(OUT_SUMMARY, index=False)
+    combined_summary.to_csv(output_dir / OUT_SUMMARY, index=False)
     for path in [
-        OUT_PDF,
-        OUT_ADULT,
-        OUT_GONCALVES,
-        OUT_ADULT_RADIAL,
-        OUT_GONCALVES_RADIAL,
-        OUT_ADULT_FULL_RADIAL,
-        OUT_GONCALVES_FULL_RADIAL,
-        OUT_SUMMARY,
+        output_dir / OUT_PDF,
+        output_dir / OUT_ADULT,
+        output_dir / OUT_GONCALVES,
+        output_dir / OUT_ADULT_RADIAL,
+        output_dir / OUT_GONCALVES_RADIAL,
+        output_dir / OUT_ADULT_FULL_RADIAL,
+        output_dir / OUT_GONCALVES_FULL_RADIAL,
+        output_dir / OUT_SUMMARY,
     ]:
         print(path)
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_output_dir(__doc__))

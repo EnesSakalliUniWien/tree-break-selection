@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import html
 import json
@@ -23,6 +22,7 @@ from applications.mnist._shared import (
     best_rows,
     parse_digit_counts,
 )
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from benchmarks.experiments.mnist.run import load_mnist_subset
 from benchmarks.experiments.mnist.run_higher_categories import (
     create_plotly_higher_category_plot_3d,
@@ -32,17 +32,34 @@ from tree_break_selection.tree.construction import tree_from_linkage
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = ROOT / "benchmarks/results/experiments/mnist"
 SWEEP_DIR = SOURCE_DIR / "alpha_sweep_continuous_pca50_20260605"
-OUT_DIR = ROOT / "raw/assets/benchmark-results/mnist_tbs_analysis_20260624_plotly"
 
-OUT_INDEX = OUT_DIR / "index.html"
-OUT_CSV = OUT_DIR / "mnist_tbs_analysis_summary.csv"
-OUT_UMAP_COORDS = OUT_DIR / "mnist_pca50_umap_coordinates.csv"
-OUT_MANIFEST = OUT_DIR / "manifest.json"
-OUT_UMAP3D_HTML = OUT_DIR / "00b_mnist_umap3d_true_digit_best_tbs_cluster.html"
-OUT_UMAP3D_DIGIT_LABELS_HTML = OUT_DIR / "00c_mnist_umap3d_visible_digit_labels.html"
-OUT_UMAP3D_DOCSTYLE_HTML = OUT_DIR / "00d_mnist_umap3d_docstyle_digit_colorbar.html"
-OUT_UMAP_IMAGE_INSPECTOR_HTML = OUT_DIR / "00e_mnist_umap_point_image_inspector.html"
-OUT_UMAP3D_IMAGE_INSPECTOR_HTML = OUT_DIR / "00f_mnist_umap3d_point_image_inspector.html"
+
+def _set_output_dir(output_dir: Path) -> None:
+    """Point every report path at ``output_dir`` (module paths that tests can patch)."""
+    global \
+        OUT_DIR, \
+        OUT_INDEX, \
+        OUT_CSV, \
+        OUT_UMAP_COORDS, \
+        OUT_MANIFEST, \
+        OUT_UMAP3D_HTML, \
+        OUT_UMAP3D_DIGIT_LABELS_HTML, \
+        OUT_UMAP3D_DOCSTYLE_HTML, \
+        OUT_UMAP_IMAGE_INSPECTOR_HTML, \
+        OUT_UMAP3D_IMAGE_INSPECTOR_HTML
+    OUT_DIR = output_dir
+    OUT_INDEX = output_dir / "index.html"
+    OUT_CSV = output_dir / "mnist_tbs_analysis_summary.csv"
+    OUT_UMAP_COORDS = output_dir / "mnist_pca50_umap_coordinates.csv"
+    OUT_MANIFEST = output_dir / "manifest.json"
+    OUT_UMAP3D_HTML = output_dir / "00b_mnist_umap3d_true_digit_best_tbs_cluster.html"
+    OUT_UMAP3D_DIGIT_LABELS_HTML = output_dir / "00c_mnist_umap3d_visible_digit_labels.html"
+    OUT_UMAP3D_DOCSTYLE_HTML = output_dir / "00d_mnist_umap3d_docstyle_digit_colorbar.html"
+    OUT_UMAP_IMAGE_INSPECTOR_HTML = output_dir / "00e_mnist_umap_point_image_inspector.html"
+    OUT_UMAP3D_IMAGE_INSPECTOR_HTML = output_dir / "00f_mnist_umap3d_point_image_inspector.html"
+
+
+_set_output_dir(timestamped_results_dir("mnist_tbs_analysis_plotly"))
 
 
 def _base_layout(fig: go.Figure, title: str) -> go.Figure:
@@ -1456,9 +1473,11 @@ def main() -> None:
 
 
 def run_cli() -> None:
-    """Validate command-line arguments before generating retained figures."""
+    """Parse ``--output-dir`` and generate the interactive report."""
 
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    output_dir = parse_output_dir(__doc__)
+    if output_dir is not None:
+        _set_output_dir(output_dir)
     main()
 
 

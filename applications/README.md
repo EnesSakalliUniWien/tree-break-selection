@@ -16,6 +16,14 @@ benchmark orchestration contracts in `benchmarks/shared/`.
 | scRNA report generators | `applications/scrna/plots/` | Dataset-specific Python/R report and figure composition |
 | MNIST figures | `python applications/mnist/plot_interactive.py` | Interactive digit/tree inspection using saved benchmark outputs |
 
+## Output locations
+
+Scripts that create new results write to `results/analyses/<report>_<YYYYMMDD_HHMMSS>/`
+by default (`applications/output_dirs.py`). Scripts that read and write one benchmark run
+in place (`applications/scrna/plot_pipeline.py`, its plot generators, the R tree renderers
+and the scRNA follow-up analyses) require `--output-dir`. Retained evidence under
+`raw/assets/benchmark-results/` is written only when that path is passed explicitly.
+
 Benchmark cases, calibration panels, and method-comparison experiments remain
 under `benchmarks/`; they validate the method rather than adapt one application.
 Reusable separation belongs in `tree_break_selection/space_separation/` and

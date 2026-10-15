@@ -370,14 +370,12 @@ def write_pipeline_files(
     input_path: Path,
     stages: Sequence[PipelineStage],
     stage_results: Sequence[dict[str, object]],
-    dry_run: bool,
     audit_outputs: dict[str, str] | None = None,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest = {
         "input": str(input_path),
         "output_dir": str(output_dir),
-        "dry_run": dry_run,
         "canonical_level": "30_canonical_current_subspace_pipeline",
         "stages": [asdict(stage) for stage in stages],
         "stage_results": list(stage_results),
@@ -391,7 +389,6 @@ def write_pipeline_files(
         "# GO Annotation Feature-Matrix Pipeline",
         "",
         f"Input: `{input_path}`",
-        f"Dry run: `{dry_run}`",
         "",
         "Canonical interpretation level:",
         "- `30_canonical_current_subspace_pipeline`: current TBS gates on adaptive-diffusion cosine subspace trees.",
@@ -731,17 +728,9 @@ def _parse_internal_finalize_command(command: Sequence[str]) -> tuple[Path, Path
     return Path(values["--input"]), Path(values["--output-dir"]), values["--dataset-label"]
 
 
-def run_stage(stage: PipelineStage, *, repo_root: Path, dry_run: bool) -> dict[str, object]:
+def run_stage(stage: PipelineStage, *, repo_root: Path) -> dict[str, object]:
     stage.output_dir.mkdir(parents=True, exist_ok=True)
     log_path = stage.output_dir / f"{stage.stage_id}.log"
-    if dry_run:
-        log_path.write_text(_command_to_text(stage.command) + "\n", encoding="utf-8")
-        return {
-            "stage_id": stage.stage_id,
-            "status": "planned",
-            "returncode": 0,
-            "log_path": str(log_path),
-        }
     if stage.command and stage.command[0] == "internal:finalize_go_annotation_results":
         with log_path.open("w", encoding="utf-8") as log_file:
             try:
@@ -794,12 +783,17 @@ def main() -> None:
     args = parse_args()
     output_dir = args.output_dir or default_output_dir(args.input, args.dataset_label)
     stages = build_pipeline_plan(args, output_dir)
+    if args.dry_run:
+        # Print the plan only; a dry run must not touch an existing run's logs or manifest.
+        for stage in stages:
+            print(f"[{stage.stage_id}] {stage.description}\n  {_command_to_text(stage.command)}")
+        return
     output_dir.mkdir(parents=True, exist_ok=True)
 
     stage_results = []
     for stage in stages:
         print(f"[{stage.stage_id}] {stage.description}", flush=True)
-        result = run_stage(stage, repo_root=REPO_ROOT, dry_run=args.dry_run)
+        result = run_stage(stage, repo_root=REPO_ROOT)
         stage_results.append(result)
         if result["status"] == "failed":
             write_pipeline_files(
@@ -807,16 +801,11 @@ def main() -> None:
                 input_path=args.input,
                 stages=stages,
                 stage_results=stage_results,
-                dry_run=args.dry_run,
             )
             raise SystemExit(int(result["returncode"]))
 
     audit_dir = output_dir / "30_analysis_level_audit"
-    audit_targets = (
-        []
-        if args.dry_run
-        else [stage.output_dir for stage in stages if not _is_packaging_stage(stage)]
-    )
+    audit_targets = [stage.output_dir for stage in stages if not _is_packaging_stage(stage)]
     audit_targets.extend(args.audit_paths)
     audit_frame = audit_paths(audit_targets)
     audit_outputs = write_audit_outputs(audit_frame, audit_dir)
@@ -825,7 +814,6 @@ def main() -> None:
         input_path=args.input,
         stages=stages,
         stage_results=stage_results,
-        dry_run=args.dry_run,
         audit_outputs=audit_outputs,
     )
     print(json.dumps({"output_dir": str(output_dir), "audit_outputs": audit_outputs}, indent=2))

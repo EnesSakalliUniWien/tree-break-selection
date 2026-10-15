@@ -29,6 +29,20 @@ def test_feature_loadings_reconstruct_normalized_features():
     )
 
 
+def test_ranking_keeps_failures_when_every_subspace_failed():
+    rows = [dict(run_id="a", status="failed_gate"), dict(run_id="b", status="failed_diffusion")]
+
+    result = add_specificity_aware_rank(rank_go_ic_results(rows), None)
+
+    assert set(result["run_id"]) == {"a", "b"}
+    assert result["display_rank"].isna().all()
+
+
+def test_ranking_rejects_an_empty_block_selection():
+    with pytest.raises(ValueError, match="No subspace results"):
+        rank_go_ic_results([])
+
+
 def test_specificity_order_preserves_raw_go_ic_rank_and_failed_rows():
     rows = [
         dict(

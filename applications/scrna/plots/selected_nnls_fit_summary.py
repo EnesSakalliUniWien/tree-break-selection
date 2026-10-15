@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
 
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import add_generated_at
 from applications.scrna.plots.selected_nnls_report import (
-    BASE,
     DATASETS,
     METHOD_TITLE,
     SELECTED,
@@ -30,9 +30,9 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     _squared_standardized_targets,
 )
 
-OUT_FIG = BASE / "scrna_selected_adaptive_diffusion_nnls_fit_summary.png"
-OUT_PDF = BASE / "scrna_selected_adaptive_diffusion_nnls_fit_summary_one_plot_per_page.pdf"
-OUT_CSV = BASE / "scrna_selected_adaptive_diffusion_nnls_fit_summary.csv"
+OUT_FIG = "scrna_selected_adaptive_diffusion_nnls_fit_summary.png"
+OUT_PDF = "scrna_selected_adaptive_diffusion_nnls_fit_summary_one_plot_per_page.pdf"
+OUT_CSV = "scrna_selected_adaptive_diffusion_nnls_fit_summary.csv"
 
 
 def _root_depths(edges: pd.DataFrame) -> tuple[dict[str, str], dict[str, float], str]:
@@ -196,9 +196,11 @@ def _plot_metrics(ax, diagnostic: dict[str, object]) -> None:
     )
 
 
-def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: str) -> None:
+def _save_single_plot_pages(
+    diagnostics: list[dict[str, object]], generated_at: str, output_dir: Path
+) -> None:
     with PdfPages(
-        OUT_PDF,
+        output_dir / OUT_PDF,
         metadata={
             "Title": "Selected scRNA NNLS-TBS fitting results",
             "Subject": f"Generated at: {generated_at}",
@@ -269,7 +271,11 @@ def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: 
             plt.close(fig)
 
 
-def main() -> None:
+def main(output_dir: Path | None = None) -> None:
+    output_dir = output_dir or timestamped_results_dir(
+        "scrna_selected_adaptive_diffusion_nnls_fit_summary"
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     diagnostics = [_fit_diagnostic(cfg) for cfg in DATASETS]
     summary = pd.DataFrame(
@@ -283,7 +289,7 @@ def main() -> None:
         ]
     )
     summary.insert(0, "generated_at", generated_at)
-    summary.to_csv(OUT_CSV, index=False)
+    summary.to_csv(output_dir / OUT_CSV, index=False)
 
     fig = plt.figure(figsize=(18, 13), facecolor="white")
     gs = GridSpec(
@@ -334,12 +340,12 @@ def main() -> None:
         fontsize=9,
         color="#374151",
     )
-    fig.savefig(OUT_FIG, dpi=220, bbox_inches="tight")
-    _save_single_plot_pages(diagnostics, generated_at)
-    print(OUT_FIG)
-    print(OUT_PDF)
-    print(OUT_CSV)
+    fig.savefig(output_dir / OUT_FIG, dpi=220, bbox_inches="tight")
+    _save_single_plot_pages(diagnostics, generated_at, output_dir)
+    print(output_dir / OUT_FIG)
+    print(output_dir / OUT_PDF)
+    print(output_dir / OUT_CSV)
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_output_dir(__doc__))

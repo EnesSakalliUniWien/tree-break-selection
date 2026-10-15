@@ -16,22 +16,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLOT_SUFFIXES = {".png", ".pdf"}
 METADATA_COLUMNS = {"cell_id", "celltype", "umap1", "umap2"}
-DATASET_OUTPUT_DIRS = {
-    "pancreas": (
-        PROJECT_ROOT
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623"
-    ),
-    "goncalves": (
-        PROJECT_ROOT
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "goncalves_fetal_pancreas_progenitor_benchmark_20260624"
-    ),
-}
+DATASETS = ("goncalves", "pancreas")
 
 MANIFEST_FIELDS = [
     "dataset",
@@ -546,14 +531,19 @@ def strict_failures(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", choices=sorted(DATASET_OUTPUT_DIRS), required=True)
-    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--dataset", choices=DATASETS, required=True)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Benchmark run directory to read and write; pass a raw/assets/ path explicitly.",
+    )
     parser.add_argument("--run-generators", action="store_true")
     parser.add_argument("--print-commands", action="store_true")
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
 
-    output_dir = args.output_dir or DATASET_OUTPUT_DIRS[args.dataset]
+    output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     commands = pipeline_commands(args.dataset, output_dir)
 

@@ -330,3 +330,29 @@ def test_dataset_inventory_accepts_feature_matrix_prefix_and_flags_download_dupl
         "outside_feature_root"
     )
     assert bool(by_name["feature_matrix_allGO_new_interactome.tsv"].has_duplicate_copy) is True
+
+
+def test_dry_run_leaves_an_existing_run_untouched(tmp_path: Path, monkeypatch, capsys) -> None:
+    import sys
+
+    from applications.endotypes.pipelines import (
+        run_go_annotation_feature_matrix_pipeline as pipeline,
+    )
+
+    input_path = tmp_path / "feature_matrix_demo.tsv"
+    input_path.write_text("gene\tGO:1\nA\t1\n")
+    run_dir = tmp_path / "finished_run"
+    run_dir.mkdir()
+    (run_dir / "pipeline_manifest.json").write_text("finished")
+    before = sorted(path.relative_to(run_dir) for path in run_dir.rglob("*"))
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["pipeline", "--input", str(input_path), "--output-dir", str(run_dir), "--dry-run"],
+    )
+    pipeline.main()
+
+    assert sorted(path.relative_to(run_dir) for path in run_dir.rglob("*")) == before
+    assert (run_dir / "pipeline_manifest.json").read_text() == "finished"
+    assert "00_dataset_inventory" in capsys.readouterr().out

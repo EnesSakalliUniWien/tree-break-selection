@@ -986,14 +986,15 @@ def main() -> None:
     args = parse_args()
     experiment_dir = args.experiment_dir
     output_dir = args.output_dir or experiment_dir / "systematic_subspace_gene_annotations"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    if (output_dir / "subspaces").exists():
-        shutil.rmtree(output_dir / "subspaces")
     dataset_label = args.dataset_label or experiment_dir.name
 
     artifact_index = load_artifact_index(experiment_dir)
     data = load_binary_feature_matrix(args.feature_matrix)
     full_space_coordinates = compute_full_space_embedding(data)
+    # Replace earlier rosters only once every input has loaded.
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if (output_dir / "subspaces").exists():
+        shutil.rmtree(output_dir / "subspaces")
     full_space_coordinates.to_csv(output_dir / "full_space_embedding_coordinates.csv", index=False)
     cache = load_cache(output_dir / "life_science_lookup_cache.json")
     clusters, genes, status = build_rosters(

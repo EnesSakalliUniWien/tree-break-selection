@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
+from applications.output_dirs import timestamped_results_dir
 from applications.scrna._shared import json_default
 from applications.scrna.pancreas_benchmark import (
     _run_benchmarks,
@@ -394,15 +395,13 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=(
-            _project_root()
-            / "raw"
-            / "assets"
-            / "benchmark-results"
-            / "goncalves_fetal_pancreas_progenitor_benchmark_20260624"
-        ),
+        default=None,
+        help="Output directory (default: a new results/analyses/ folder).",
     )
     args = parser.parse_args()
+    args.output_dir = args.output_dir or timestamped_results_dir(
+        "goncalves_fetal_pancreas_progenitor_benchmark"
+    )
 
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     start = time.perf_counter()

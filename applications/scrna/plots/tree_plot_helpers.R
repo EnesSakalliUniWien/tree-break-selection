@@ -23,30 +23,22 @@ scrna_arg_value <- function(args, name, default = NULL, normalize = FALSE, numer
   value
 }
 
-scrna_tree_plot_context <- function(script_path, benchmark_dir, packages) {
+scrna_tree_plot_context <- function(script_path, packages) {
   suppressPackageStartupMessages({
     for (package in packages) {
       library(package, character.only = TRUE)
     }
   })
-  project_root <- scrna_project_root(script_path)
-  default_output_dir <- file.path(
-    project_root,
-    "raw",
-    "assets",
-    "benchmark-results",
-    benchmark_dir
-  )
   trailing_args <- commandArgs(trailingOnly = TRUE)
+  # The benchmark run directory is read and written in place, so it is never defaulted.
+  output_dir <- scrna_arg_value(trailing_args, "--output-dir", normalize = TRUE)
+  if (is.null(output_dir)) {
+    stop("--output-dir=<benchmark run directory> is required.")
+  }
   list(
-    project_root = project_root,
+    project_root = scrna_project_root(script_path),
     trailing_args = trailing_args,
-    output_dir = scrna_arg_value(
-      trailing_args,
-      "--output-dir",
-      default = default_output_dir,
-      normalize = TRUE
-    )
+    output_dir = output_dir
   )
 }
 

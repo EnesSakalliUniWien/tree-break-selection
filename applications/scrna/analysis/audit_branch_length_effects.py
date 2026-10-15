@@ -17,17 +17,11 @@ import pandas as pd
 from scipy.stats import spearmanr
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import artifact_record
 from benchmarks.diagnostics.calibration.values import bool_series
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-OUTPUT_ROOT = (
-    PROJECT_ROOT
-    / "raw"
-    / "assets"
-    / "benchmark-results"
-    / "scrna_branch_length_effect_audit_20260624"
-)
 
 
 @dataclass(frozen=True)
@@ -313,7 +307,7 @@ def _collect_dataset(spec: DatasetSpec) -> tuple[pd.DataFrame, pd.DataFrame, pd.
     return effects, pd.DataFrame(pair_rows), sensitivity
 
 
-def _write_effect_plot(effects: pd.DataFrame) -> None:
+def _write_effect_plot(output_root: Path, effects: pd.DataFrame) -> None:
     variant_order = ["topology_only", "branch_time_nnls", "branch_time_raw_linkage"]
     metric_specs = [
         ("n_clusters", "Clusters"),
@@ -333,11 +327,11 @@ def _write_effect_plot(effects: pd.DataFrame) -> None:
     axes[0, 0].legend(fontsize=7)
     fig.suptitle("Branch-length policy changes TBS split/merge pattern", fontweight="bold")
     fig.tight_layout()
-    fig.savefig(OUTPUT_ROOT / "branch_length_cluster_effects.png", dpi=220)
+    fig.savefig(output_root / "branch_length_cluster_effects.png", dpi=220)
     plt.close(fig)
 
 
-def _write_similarity_plot(pairwise: pd.DataFrame) -> None:
+def _write_similarity_plot(output_root: Path, pairwise: pd.DataFrame) -> None:
     datasets = list(pairwise["dataset"].unique())
     fig, axes = plt.subplots(1, len(datasets), figsize=(7.2 * len(datasets), 5.8))
     axes = np.atleast_1d(axes)
@@ -364,11 +358,11 @@ def _write_similarity_plot(pairwise: pd.DataFrame) -> None:
                 ax.text(j, i, f"{matrix.iloc[i, j]:.2f}", ha="center", va="center", fontsize=6)
     fig.colorbar(image, ax=axes.ravel().tolist(), shrink=0.72, label="Assignment ARI")
     fig.suptitle("Pairwise similarity among TBS branch-length variants", fontweight="bold")
-    fig.savefig(OUTPUT_ROOT / "branch_length_assignment_similarity_heatmap.png", dpi=220)
+    fig.savefig(output_root / "branch_length_assignment_similarity_heatmap.png", dpi=220)
     plt.close(fig)
 
 
-def _write_sensitivity_plot(sensitivity: pd.DataFrame) -> None:
+def _write_sensitivity_plot(output_root: Path, sensitivity: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(13, 5))
     for ax, metric in zip(axes, ["n_clusters", "v_measure"], strict=True):
         for (dataset_label, geometry), group in sensitivity.groupby(["dataset_label", "geometry"]):
@@ -387,19 +381,19 @@ def _write_sensitivity_plot(sensitivity: pd.DataFrame) -> None:
     axes[0].legend(fontsize=7)
     fig.suptitle("Fixed-topology branch-time sensitivity scan", fontweight="bold")
     fig.tight_layout()
-    fig.savefig(OUTPUT_ROOT / "branch_time_sensitivity_effects.png", dpi=220)
+    fig.savefig(output_root / "branch_time_sensitivity_effects.png", dpi=220)
     plt.close(fig)
 
 
-def _write_manifest(generated_at: str) -> None:
+def _write_manifest(output_root: Path, generated_at: str) -> None:
     artifact_paths = [
-        OUTPUT_ROOT / "branch_length_method_effects.csv",
-        OUTPUT_ROOT / "branch_length_assignment_similarity.csv",
-        OUTPUT_ROOT / "branch_time_sensitivity_combined.csv",
-        OUTPUT_ROOT / "branch_length_cluster_effects.png",
-        OUTPUT_ROOT / "branch_length_assignment_similarity_heatmap.png",
-        OUTPUT_ROOT / "branch_time_sensitivity_effects.png",
-        OUTPUT_ROOT / "scrna_branch_length_effect_audit.md",
+        output_root / "branch_length_method_effects.csv",
+        output_root / "branch_length_assignment_similarity.csv",
+        output_root / "branch_time_sensitivity_combined.csv",
+        output_root / "branch_length_cluster_effects.png",
+        output_root / "branch_length_assignment_similarity_heatmap.png",
+        output_root / "branch_time_sensitivity_effects.png",
+        output_root / "scrna_branch_length_effect_audit.md",
     ]
     manifest = {
         "manifest_schema_version": "static_artifact_provenance/v1",
@@ -411,13 +405,14 @@ def _write_manifest(generated_at: str) -> None:
         ],
         "artifacts": [artifact_record(path, relative_to=PROJECT_ROOT) for path in artifact_paths],
     }
-    (OUTPUT_ROOT / "manifest.json").write_text(
+    (output_root / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n",
         encoding="utf-8",
     )
 
 
 def _write_report(
+    output_root: Path,
     effects: pd.DataFrame,
     sensitivity: pd.DataFrame,
     manifests: dict[str, dict[str, object]],
@@ -537,12 +532,13 @@ we can justify a real stochastic-time model.
 - Goncalves fetal pancreas:
   `raw/assets/benchmark-results/goncalves_fetal_pancreas_progenitor_benchmark_20260624/`
 """
-    (OUTPUT_ROOT / "scrna_branch_length_effect_audit.md").write_text(report)
+    (output_root / "scrna_branch_length_effect_audit.md").write_text(report)
     return generated_at
 
 
-def main() -> None:
-    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+def main(output_dir: Path | None = None) -> None:
+    output_root = output_dir or timestamped_results_dir("scrna_branch_length_effect_audit")
+    output_root.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     effect_frames = []
     pairwise_frames = []
@@ -559,17 +555,17 @@ def main() -> None:
     pairwise = pd.concat(pairwise_frames, ignore_index=True)
     sensitivity = pd.concat(sensitivity_frames, ignore_index=True)
 
-    effects.to_csv(OUTPUT_ROOT / "branch_length_method_effects.csv", index=False)
-    pairwise.to_csv(OUTPUT_ROOT / "branch_length_assignment_similarity.csv", index=False)
-    sensitivity.to_csv(OUTPUT_ROOT / "branch_time_sensitivity_combined.csv", index=False)
+    effects.to_csv(output_root / "branch_length_method_effects.csv", index=False)
+    pairwise.to_csv(output_root / "branch_length_assignment_similarity.csv", index=False)
+    sensitivity.to_csv(output_root / "branch_time_sensitivity_combined.csv", index=False)
 
-    _write_effect_plot(effects)
-    _write_similarity_plot(pairwise)
-    _write_sensitivity_plot(sensitivity)
-    _write_report(effects, sensitivity, manifests, generated_at)
-    _write_manifest(generated_at)
-    print(f"Wrote branch-length audit outputs to {OUTPUT_ROOT}")
+    _write_effect_plot(output_root, effects)
+    _write_similarity_plot(output_root, pairwise)
+    _write_sensitivity_plot(output_root, sensitivity)
+    _write_report(output_root, effects, sensitivity, manifests, generated_at)
+    _write_manifest(output_root, generated_at)
+    print(f"Wrote branch-length audit outputs to {output_root}")
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_output_dir(__doc__))

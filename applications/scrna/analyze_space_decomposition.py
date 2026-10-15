@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from applications.output_dirs import timestamped_results_dir
 from applications.scrna._shared import json_default
 from tree_break_selection.space_separation import (
     decompose_leading_axes_space,
@@ -30,7 +31,6 @@ from tree_break_selection.space_separation import (
 SCHEMA_VERSION = "scrna_space_decomposition/v1"
 STUDY_ROLE = "diagnostic_scrna_leading_following_axis_decomposition"
 GENERATED_BY = "applications/scrna/analyze_space_decomposition.py"
-DEFAULT_OUTPUT_DIR = Path("raw/assets/benchmark-results/scrna_space_decomposition_20260627")
 DEFAULT_DATASETS = (
     (
         "adult_pancreas",
@@ -61,8 +61,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=DEFAULT_OUTPUT_DIR,
-        help="Directory for CSV, PNG, and manifest outputs.",
+        default=None,
+        help="Directory for CSV, PNG, and manifest outputs (default: a new results/analyses/ folder).",
     )
     parser.add_argument(
         "--datasets",
@@ -549,7 +549,7 @@ def analyze_dataset(
 
 def main() -> None:
     args = parse_args()
-    output_dir: Path = args.output_dir
+    output_dir: Path = args.output_dir or timestamped_results_dir("scrna_space_decomposition")
     output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now(UTC).isoformat()
     dataset_summaries = [

@@ -266,10 +266,10 @@ def _run_decomposition(
         sibling_alpha=sibling_alpha,
         leaf_data=data_df,
     )
-    decomposition = TreeDecomposition(
-        tree=tree,
-        gate_annotation_bundle=gate_bundle,
-    ).decompose_tree()
+    decomposer = TreeDecomposition(tree=tree, gate_annotation_bundle=gate_bundle)
+    decomposition = decomposer.decompose_tree()
+    # The tree plot reads the gate columns, so keep the annotated frame on the tree.
+    tree.annotations_df = decomposer.annotations_df
 
     assignments = build_sample_cluster_assignments(decomposition)
     if assignments.empty:

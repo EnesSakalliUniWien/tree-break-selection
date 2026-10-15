@@ -32,6 +32,8 @@ def _make_two_edge_tree() -> tuple[nx.DiGraph, pd.DataFrame]:
     tree.nodes["B"]["distribution"] = np.array([0.6, 0.4], dtype=float)
     tree.nodes["A"]["label"] = "A"
     tree.nodes["B"]["label"] = "B"
+    for node in tree.nodes:
+        tree.nodes[node]["is_leaf"] = tree.out_degree(node) == 0
 
     nodes_df = pd.DataFrame(
         {

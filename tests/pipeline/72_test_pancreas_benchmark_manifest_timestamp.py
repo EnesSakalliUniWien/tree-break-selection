@@ -29,13 +29,7 @@ def _load_benchmark_module():
 
 def test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp(monkeypatch, tmp_path):
     module = _load_benchmark_module()
-    output_dir = (
-        tmp_path
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623"
-    )
+    output_dir = tmp_path / "out"
     fake_adata = _FakeAdata()
     qc_summary = {
         "batches": 2,
@@ -91,6 +85,8 @@ def test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp(monk
             "2",
             "--seed",
             "0",
+            "--output-dir",
+            str(output_dir),
         ],
     )
 

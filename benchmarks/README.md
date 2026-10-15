@@ -212,7 +212,7 @@ benchmark CSV preserves both fields in every result row.
   `uv sync --extra experimental-gpl`.
   `tbs_diffusion_graphtools_adaptive_nnls` exposes the seven linkage tree
   strategies as one parameter grid, not as duplicate method IDs.
-- With plotting on, each case runs in an isolated subprocess (`TBS_UMAP_ISOLATE_CASES`) with a `TBS_CASE_TIMEOUT_SEC` timeout (default 1800 s); failed cases are not retried.
+- With plotting on, each case runs in an isolated subprocess (`TBS_UMAP_ISOLATE_CASES`) with a `TBS_CASE_TIMEOUT_SEC` timeout (default 1800 s). A case that times out or crashes is skipped and not recorded; the run finishes the remaining cases and reports, then exits non-zero listing the failed cases. Rerunning with the same `TBS_RUN_DIR` retries only those.
 - Per-case PDF plots (tree, UMAP embedding, manifold comparison) are generated and merged into `<case_suite>_benchmark_report.pdf`.
 - Set `TBS_CASE_SUITE` to run one mathematical input-contract suite:
   `binary`, `categorical`, `continuous`, `discretized_gaussian`, `graph`, or

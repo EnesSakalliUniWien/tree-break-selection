@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import artifact_record
 from benchmarks.diagnostics.calibration.values import bool_value
 from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
@@ -24,7 +25,6 @@ from tree_break_selection.hierarchy_analysis.statistics.distributional_action im
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BENCHMARK_ROOT = PROJECT_ROOT / "raw/assets/benchmark-results"
-OUTPUT_ROOT = BENCHMARK_ROOT / "scrna_distributional_action_audit_20260624"
 
 
 @dataclass(frozen=True)
@@ -439,7 +439,7 @@ def _summarize_method(group: pd.DataFrame) -> dict[str, object]:
     }
 
 
-def _plot_action_vs_branch_length(edges: pd.DataFrame) -> None:
+def _plot_action_vs_branch_length(output_root: Path, edges: pd.DataFrame) -> None:
     plot_data = edges[
         (edges["variant"] == "topology_only")
         & (edges["geometry"].isin(["pca_linkage", "adaptive_diffusion"]))
@@ -471,11 +471,11 @@ def _plot_action_vs_branch_length(edges: pd.DataFrame) -> None:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.95))
-    fig.savefig(OUTPUT_ROOT / "distributional_action_vs_branch_length.png", dpi=220)
+    fig.savefig(output_root / "distributional_action_vs_branch_length.png", dpi=220)
     plt.close(fig)
 
 
-def _plot_top_internal_edges(edges: pd.DataFrame) -> None:
+def _plot_top_internal_edges(output_root: Path, edges: pd.DataFrame) -> None:
     focus = edges[
         (edges["geometry"] == "adaptive_diffusion")
         & (edges["variant"] == "topology_only")
@@ -509,11 +509,11 @@ def _plot_top_internal_edges(edges: pd.DataFrame) -> None:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
-    fig.savefig(OUTPUT_ROOT / "top_internal_distributional_action_edges.png", dpi=220)
+    fig.savefig(output_root / "top_internal_distributional_action_edges.png", dpi=220)
     plt.close(fig)
 
 
-def _plot_action_vs_edge_statistic(edges: pd.DataFrame) -> None:
+def _plot_action_vs_edge_statistic(output_root: Path, edges: pd.DataFrame) -> None:
     focus = edges[
         (edges["geometry"] == "adaptive_diffusion")
         & (edges["variant"] == "topology_only")
@@ -544,7 +544,7 @@ def _plot_action_vs_edge_statistic(edges: pd.DataFrame) -> None:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.93))
-    fig.savefig(OUTPUT_ROOT / "distributional_action_vs_edge_statistic.png", dpi=220)
+    fig.savefig(output_root / "distributional_action_vs_edge_statistic.png", dpi=220)
     plt.close(fig)
 
 
@@ -572,14 +572,14 @@ def _format_top_table(edges: pd.DataFrame, dataset: str, geometry: str) -> str:
     return rows[available].to_markdown(index=False, floatfmt=".4f")
 
 
-def _write_manifest(generated_at: str) -> None:
+def _write_manifest(output_root: Path, generated_at: str) -> None:
     artifact_paths = [
-        OUTPUT_ROOT / "scrna_distributional_action_edges.csv",
-        OUTPUT_ROOT / "scrna_distributional_action_method_summary.csv",
-        OUTPUT_ROOT / "distributional_action_vs_branch_length.png",
-        OUTPUT_ROOT / "top_internal_distributional_action_edges.png",
-        OUTPUT_ROOT / "distributional_action_vs_edge_statistic.png",
-        OUTPUT_ROOT / "scrna_distributional_action_audit.md",
+        output_root / "scrna_distributional_action_edges.csv",
+        output_root / "scrna_distributional_action_method_summary.csv",
+        output_root / "distributional_action_vs_branch_length.png",
+        output_root / "top_internal_distributional_action_edges.png",
+        output_root / "distributional_action_vs_edge_statistic.png",
+        output_root / "scrna_distributional_action_audit.md",
     ]
     manifest = {
         "manifest_schema_version": "static_artifact_provenance/v1",
@@ -591,13 +591,14 @@ def _write_manifest(generated_at: str) -> None:
         ],
         "artifacts": [artifact_record(path, relative_to=PROJECT_ROOT) for path in artifact_paths],
     }
-    (OUTPUT_ROOT / "manifest.json").write_text(
+    (output_root / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n",
         encoding="utf-8",
     )
 
 
 def _write_report(
+    output_root: Path,
     edges: pd.DataFrame,
     summary: pd.DataFrame,
     generated_at: str | None = None,
@@ -683,12 +684,13 @@ over current benchmark artifacts.
 - `top_internal_distributional_action_edges.png`
 - `distributional_action_vs_edge_statistic.png`
 """
-    (OUTPUT_ROOT / "scrna_distributional_action_audit.md").write_text(report)
+    (output_root / "scrna_distributional_action_audit.md").write_text(report)
     return generated_at
 
 
-def main() -> None:
-    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+def main(output_dir: Path | None = None) -> None:
+    output_root = output_dir or timestamped_results_dir("scrna_distributional_action_audit")
+    output_root.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     edge_tables = []
     for dataset in DATASETS:
@@ -719,18 +721,18 @@ def main() -> None:
         ]
     )
 
-    edges.to_csv(OUTPUT_ROOT / "scrna_distributional_action_edges.csv", index=False)
+    edges.to_csv(output_root / "scrna_distributional_action_edges.csv", index=False)
     summary.to_csv(
-        OUTPUT_ROOT / "scrna_distributional_action_method_summary.csv",
+        output_root / "scrna_distributional_action_method_summary.csv",
         index=False,
     )
-    _plot_action_vs_branch_length(edges)
-    _plot_top_internal_edges(edges)
-    _plot_action_vs_edge_statistic(edges)
-    _write_report(edges, summary, generated_at)
-    _write_manifest(generated_at)
-    print(f"Wrote distributional-action audit outputs to {OUTPUT_ROOT}")
+    _plot_action_vs_branch_length(output_root, edges)
+    _plot_top_internal_edges(output_root, edges)
+    _plot_action_vs_edge_statistic(output_root, edges)
+    _write_report(output_root, edges, summary, generated_at)
+    _write_manifest(output_root, generated_at)
+    print(f"Wrote distributional-action audit outputs to {output_root}")
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_output_dir(__doc__))

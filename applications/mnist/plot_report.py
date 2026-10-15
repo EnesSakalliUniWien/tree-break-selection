@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 from datetime import datetime
 from pathlib import Path
 
@@ -21,15 +20,14 @@ from applications.mnist._shared import (
     best_rows,
     parse_digit_counts,
 )
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = ROOT / "benchmarks/results/experiments/mnist"
 SWEEP_DIR = SOURCE_DIR / "alpha_sweep_continuous_pca50_20260605"
-OUT_DIR = ROOT / "raw/assets/benchmark-results/mnist_tbs_analysis_20260624"
-
-OUT_PDF = OUT_DIR / "mnist_tbs_analysis_one_plot_per_page.pdf"
-OUT_MAIN = OUT_DIR / "mnist_tbs_analysis_summary.png"
-OUT_CSV = OUT_DIR / "mnist_tbs_analysis_summary.csv"
+OUT_PDF = "mnist_tbs_analysis_one_plot_per_page.pdf"
+OUT_MAIN = "mnist_tbs_analysis_summary.png"
+OUT_CSV = "mnist_tbs_analysis_summary.csv"
 
 
 def _add_generated_at(fig: plt.Figure, generated_at: str) -> None:
@@ -172,8 +170,9 @@ def _plot_failure_baseline(
     ax.spines["right"].set_visible(False)
 
 
-def main() -> None:
-    OUT_PDF.parent.mkdir(parents=True, exist_ok=True)
+def main(output_dir: Path | None = None) -> None:
+    output_dir = output_dir or timestamped_results_dir("mnist_tbs_analysis")
+    output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     summary = pd.read_csv(SWEEP_DIR / "alpha_sweep_summary.csv")
     binary = pd.read_csv(SOURCE_DIR / "mnist_benchmark_summary.csv")
@@ -186,7 +185,7 @@ def main() -> None:
 
     analysis_summary = best_rows(summary)
     analysis_summary.insert(0, "generated_at", generated_at)
-    analysis_summary.to_csv(OUT_CSV, index=False)
+    analysis_summary.to_csv(output_dir / OUT_CSV, index=False)
 
     fig, ax = plt.subplots(figsize=(9, 6.2), facecolor="white")
     _plot_best_summary(ax, summary)
@@ -198,11 +197,11 @@ def main() -> None:
         color="#374151",
     )
     _add_generated_at(fig, generated_at)
-    fig.savefig(OUT_MAIN, dpi=220, bbox_inches="tight")
+    fig.savefig(output_dir / OUT_MAIN, dpi=220, bbox_inches="tight")
     plt.close(fig)
 
     with PdfPages(
-        OUT_PDF,
+        output_dir / OUT_PDF,
         metadata={
             "Title": "MNIST TBS static analysis report",
             "Subject": f"Generated at: {generated_at}",
@@ -231,16 +230,15 @@ def main() -> None:
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
-    print(OUT_PDF)
-    print(OUT_MAIN)
-    print(OUT_CSV)
+    print(output_dir / OUT_PDF)
+    print(output_dir / OUT_MAIN)
+    print(output_dir / OUT_CSV)
 
 
 def run_cli() -> None:
-    """Validate command-line arguments before generating retained figures."""
+    """Parse ``--output-dir`` and generate the report."""
 
-    argparse.ArgumentParser(description=__doc__).parse_args()
-    main()
+    main(parse_output_dir(__doc__))
 
 
 if __name__ == "__main__":

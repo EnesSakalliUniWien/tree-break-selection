@@ -83,8 +83,15 @@ def add_specificity_aware_rank(
 
 
 def rank_go_ic_results(summary_rows: list[dict[str, object]]) -> pd.DataFrame:
+    if not summary_rows:
+        raise ValueError("No subspace results to rank; check that --block-names matches a block.")
     ranking = pd.DataFrame.from_records(summary_rows)
     ok_mask = ranking["status"].eq("ok")
+    if not ok_mask.any():
+        # Every subspace failed: keep the rank columns so reports still list the failures.
+        for column in ("quality_tier", "raw_go_ic_rank", "display_rank"):
+            ranking[column] = np.nan
+        ranking["quality_tier_label"] = ""
     if ok_mask.any():
         raw_order = ranking.loc[ok_mask].sort_values(
             [

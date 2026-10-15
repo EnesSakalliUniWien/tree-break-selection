@@ -760,9 +760,6 @@ def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     pages_dir = args.output_dir / "tree_pages"
-    pages_dir.mkdir(parents=True, exist_ok=True)
-    for stale_page in pages_dir.glob("*.png"):
-        stale_page.unlink()
 
     data = load_binary_matrix(args.input)
     global_embedding, global_x, global_y = load_global_embedding(args.global_embedding, data)
@@ -772,6 +769,10 @@ def main() -> None:
     candidates = add_candidates_from_method_matrix(args.method_matrix_summary)
     if not candidates:
         raise ValueError("No candidate tree assignments were found.")
+    # Clear earlier pages only once the inputs and candidates are known to load.
+    pages_dir.mkdir(parents=True, exist_ok=True)
+    for stale_page in pages_dir.glob("*.png"):
+        stale_page.unlink()
 
     artifacts: list[CandidateArtifact] = []
     ranking_rows: list[dict[str, object]] = []

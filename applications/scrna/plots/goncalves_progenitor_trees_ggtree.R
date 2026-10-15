@@ -9,7 +9,6 @@ script_path <- normalizePath(sub("^--file=", "", script_arg[[1]]))
 source(file.path(dirname(script_path), "tree_plot_helpers.R"), local = TRUE)
 context <- scrna_tree_plot_context(
   script_path,
-  "goncalves_fetal_pancreas_progenitor_benchmark_20260624",
   c("ape", "ggplot2", "ggtree", "patchwork")
 )
 project_root <- context$project_root

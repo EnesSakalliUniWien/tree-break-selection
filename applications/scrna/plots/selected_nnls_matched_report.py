@@ -14,11 +14,11 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
 
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import add_generated_at
 from applications.scrna.plots.report_helpers import artifact_record, plot_cluster_size_bars
 from applications.scrna.plots.selected_nnls_fit_summary import _fit_diagnostic, _plot_fit
 from applications.scrna.plots.selected_nnls_report import (
-    BASE,
     DATASETS,
     METHOD_TITLE,
     SELECTED,
@@ -29,11 +29,11 @@ from applications.scrna.plots.selected_nnls_report import (
     plot_umap,
 )
 
-OUT_PDF = BASE / "scrna_selected_adaptive_diffusion_nnls_matched_report.pdf"
-OUT_ADULT_PAGE = BASE / "scrna_selected_adaptive_diffusion_nnls_matched_adult_page.png"
-OUT_GONCALVES_PAGE = BASE / "scrna_selected_adaptive_diffusion_nnls_matched_goncalves_page.png"
-OUT_SUMMARY = BASE / "scrna_selected_adaptive_diffusion_nnls_matched_summary.csv"
-OUT_MANIFEST = BASE / "scrna_selected_adaptive_diffusion_nnls_matched_manifest.json"
+OUT_PDF = "scrna_selected_adaptive_diffusion_nnls_matched_report.pdf"
+OUT_ADULT_PAGE = "scrna_selected_adaptive_diffusion_nnls_matched_adult_page.png"
+OUT_GONCALVES_PAGE = "scrna_selected_adaptive_diffusion_nnls_matched_goncalves_page.png"
+OUT_SUMMARY = "scrna_selected_adaptive_diffusion_nnls_matched_summary.csv"
+OUT_MANIFEST = "scrna_selected_adaptive_diffusion_nnls_matched_manifest.json"
 
 
 def _selected_metric_row(cfg: dict[str, object]) -> pd.Series:
@@ -203,24 +203,24 @@ def _fit_page(
     return fig
 
 
-def _write_manifest(generated_at: str) -> None:
+def _write_manifest(generated_at: str, output_dir: Path) -> None:
     artifacts = []
     for path, role in [
-        (OUT_PDF, "matched adult/Goncalves report PDF"),
-        (OUT_ADULT_PAGE, "matched adult report page PNG"),
-        (OUT_GONCALVES_PAGE, "matched Goncalves report page PNG"),
-        (OUT_SUMMARY, "matched adult/Goncalves summary table"),
+        (output_dir / OUT_PDF, "matched adult/Goncalves report PDF"),
+        (output_dir / OUT_ADULT_PAGE, "matched adult report page PNG"),
+        (output_dir / OUT_GONCALVES_PAGE, "matched Goncalves report page PNG"),
+        (output_dir / OUT_SUMMARY, "matched adult/Goncalves summary table"),
     ]:
         artifacts.append(
-            artifact_record(path, role=role, relative_to=BASE, generated_at=generated_at)
+            artifact_record(path, role=role, relative_to=output_dir, generated_at=generated_at)
         )
 
-    OUT_MANIFEST.write_text(
+    (output_dir / OUT_MANIFEST).write_text(
         json.dumps(
             {
                 "manifest_schema_version": "static_artifact_provenance/v1",
                 "generated_at": generated_at,
-                "output_dir": str(BASE.relative_to(BASE.parents[1])),
+                "output_dir": str(output_dir),
                 "source_scripts": [
                     "applications/scrna/plots/selected_nnls_matched_report.py",
                     "applications/scrna/plots/selected_nnls_report.py",
@@ -236,7 +236,11 @@ def _write_manifest(generated_at: str) -> None:
     )
 
 
-def main() -> None:
+def main(output_dir: Path | None = None) -> None:
+    output_dir = output_dir or timestamped_results_dir(
+        "scrna_selected_adaptive_diffusion_nnls_matched_report"
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     dataset_records = []
     summary_rows = []
@@ -260,16 +264,18 @@ def main() -> None:
         )
         summary_rows.append(summary_row)
 
-    pd.DataFrame(summary_rows).to_csv(OUT_SUMMARY, index=False)
+    pd.DataFrame(summary_rows).to_csv(output_dir / OUT_SUMMARY, index=False)
     with PdfPages(
-        OUT_PDF,
+        output_dir / OUT_PDF,
         metadata={
             "Title": "Matched adult/Goncalves scRNA NNLS-TBS report",
             "Subject": f"Generated at: {generated_at}",
         },
     ) as pdf:
         for record, save_path in zip(
-            dataset_records, [OUT_ADULT_PAGE, OUT_GONCALVES_PAGE], strict=True
+            dataset_records,
+            [output_dir / OUT_ADULT_PAGE, output_dir / OUT_GONCALVES_PAGE],
+            strict=True,
         ):
             page = _dataset_page(generated_at=generated_at, record=record, save_path=save_path)
             pdf.savefig(page, bbox_inches="tight")
@@ -279,13 +285,13 @@ def main() -> None:
         pdf.savefig(fit_page, bbox_inches="tight")
         plt.close(fit_page)
 
-    _write_manifest(generated_at)
-    print(OUT_PDF)
-    print(OUT_ADULT_PAGE)
-    print(OUT_GONCALVES_PAGE)
-    print(OUT_SUMMARY)
-    print(OUT_MANIFEST)
+    _write_manifest(generated_at, output_dir)
+    print(output_dir / OUT_PDF)
+    print(output_dir / OUT_ADULT_PAGE)
+    print(output_dir / OUT_GONCALVES_PAGE)
+    print(output_dir / OUT_SUMMARY)
+    print(output_dir / OUT_MANIFEST)
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_output_dir(__doc__))

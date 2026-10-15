@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
+from applications.output_dirs import parse_run_dir
 from applications.scrna._shared import top_counts_text
 
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
@@ -86,16 +87,6 @@ KEY_MARKERS = [
 
 def project_root() -> Path:
     return Path(__file__).resolve().parents[3]
-
-
-def output_dir() -> Path:
-    return (
-        project_root()
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623"
-    )
 
 
 def read_expression(adata_path: Path) -> tuple[pd.DataFrame, pd.Series]:
@@ -332,7 +323,7 @@ def write_umap(scored_subset: pd.DataFrame, output_path: Path) -> None:
 
 
 def main() -> None:
-    out = output_dir()
+    out = parse_run_dir(__doc__)
     assignments = pd.read_csv(out / "method_assignments.csv")
     edges = pd.read_csv(out / f"{METHOD_KEY}_tree_edges.csv")
     meeting_review = pd.read_csv(out / "tbs_adaptive_monophyletic_subtree_meeting_review.csv")

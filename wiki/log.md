@@ -7909,3 +7909,19 @@ version comparison report and wiki source summary. Production code unchanged.
   `_numeric` copies, two `_select_cases` variants that return no cases for an
   empty filter, and the unused `jupyter`/`notebook`/`ipython` dev extras
   (dependency removal needs a separate decision).
+
+## 2026-10-15 — Audit findings 2, 3, 4, 9 and 11
+
+- Fixed the stage-2 fixture (`is_leaf`), so `make check` runs all seven test
+  stages; the full benchmark skips a failed case and exits non-zero at the end;
+  the endotype pipeline's tree plot gets the gate-annotated frame; the GO-IC
+  ranking survives an all-failed run.
+- Finding 9, partly: two diagnostics no longer default into `raw/assets/`;
+  three endotype report scripts delete old outputs only after loading inputs;
+  the GO annotation pipeline's `--dry-run` writes nothing.
+- On the user's decision, the scRNA and MNIST scripts stopped defaulting into
+  retained `raw/assets/` evidence: producers write to a new
+  `results/analyses/<report>_<timestamp>/` folder (`applications/output_dirs.py`),
+  and scripts that read and write one benchmark run in place require
+  `--output-dir`. Refreshing retained evidence now means passing its
+  `raw/assets/benchmark-results/` folder explicitly.

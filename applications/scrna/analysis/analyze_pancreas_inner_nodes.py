@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
+from applications.output_dirs import parse_run_dir
 from applications.scrna.analysis.compare_pancreas_progenitor_signatures import build_tree_helpers
 
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
@@ -193,13 +194,7 @@ def read_marker_frame(output_dir: Path, assignments: pd.DataFrame) -> pd.DataFra
 
 
 def main() -> None:
-    output_dir = (
-        project_root()
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623"
-    )
+    output_dir = parse_run_dir(__doc__)
     assignments = pd.read_csv(output_dir / "method_assignments.csv")
     edges = pd.read_csv(output_dir / f"{METHOD_KEY}_tree_edges.csv")
 

@@ -508,11 +508,7 @@ def _summarize(rows: pd.DataFrame) -> pd.DataFrame:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path("raw/assets/benchmark-results/discrete_covariance_guard_check_20260623"),
-    )
+    parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--cases",
         nargs="*",

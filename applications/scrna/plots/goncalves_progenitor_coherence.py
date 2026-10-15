@@ -12,21 +12,15 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from applications.output_dirs import parse_run_dir
 from applications.scrna.plots.report_helpers import artifact_record
 
 ROOT = Path(__file__).resolve().parents[3]
-OUT_DIR = (
-    ROOT / "raw/assets/benchmark-results/goncalves_fetal_pancreas_progenitor_benchmark_20260624"
-)
-OUT_PNG = OUT_DIR / "goncalves_progenitor_coherence_score.png"
-OUT_PDF = OUT_DIR / "goncalves_progenitor_coherence_score.pdf"
-OUT_CSV = OUT_DIR / "goncalves_progenitor_coherence_score.csv"
-OUT_MANIFEST = OUT_DIR / "goncalves_progenitor_coherence_score_manifest.json"
-
+OUTPUT_STEM = "goncalves_progenitor_coherence_score"
 SOURCES = {
-    "cluster": OUT_DIR / "goncalves_tbs_cluster_progenitor_signature_scores.csv",
-    "inner_node": OUT_DIR / "goncalves_tbs_inner_node_progenitor_signature_scores.csv",
-    "meeting_node": OUT_DIR / "goncalves_tbs_monophyletic_meeting_progenitor_signature_scores.csv",
+    "cluster": "goncalves_tbs_cluster_progenitor_signature_scores.csv",
+    "inner_node": "goncalves_tbs_inner_node_progenitor_signature_scores.csv",
+    "meeting_node": "goncalves_tbs_monophyletic_meeting_progenitor_signature_scores.csv",
 }
 
 SELECTED = [
@@ -40,8 +34,8 @@ SELECTED = [
 ]
 
 
-def _load_rows(generated_at: str) -> pd.DataFrame:
-    tables = {key: pd.read_csv(path) for key, path in SOURCES.items()}
+def _load_rows(run_dir: Path, generated_at: str) -> pd.DataFrame:
+    tables = {key: pd.read_csv(run_dir / name) for key, name in SOURCES.items()}
     records = []
     for label, source_key, class_name in SELECTED:
         table = tables[source_key]
@@ -68,7 +62,7 @@ def _load_rows(generated_at: str) -> pd.DataFrame:
     return pd.DataFrame(records)
 
 
-def _plot(score_table: pd.DataFrame, generated_at: str) -> None:
+def _plot(score_table: pd.DataFrame, generated_at: str, run_dir: Path) -> None:
     ordered = score_table.sort_values("coherence_score", ascending=True).reset_index(drop=True)
     colors = ordered["class"].map(
         {
@@ -158,29 +152,32 @@ def _plot(score_table: pd.DataFrame, generated_at: str) -> None:
         color="#4b5563",
     )
     fig.tight_layout(rect=(0.0, 0.12, 1.0, 1.0))
-    fig.savefig(OUT_PNG, dpi=220)
-    fig.savefig(OUT_PDF)
+    fig.savefig(run_dir / f"{OUTPUT_STEM}.png", dpi=220)
+    fig.savefig(run_dir / f"{OUTPUT_STEM}.pdf")
     plt.close(fig)
 
 
-def _write_manifest(generated_at: str) -> None:
+def _write_manifest(run_dir: Path, generated_at: str) -> None:
     artifacts = []
-    for path, role in [
-        (OUT_PNG, "Goncalves progenitor coherence score PNG"),
-        (OUT_PDF, "Goncalves progenitor coherence score PDF"),
-        (OUT_CSV, "Goncalves progenitor coherence score table"),
+    for suffix, role in [
+        ("png", "Goncalves progenitor coherence score PNG"),
+        ("pdf", "Goncalves progenitor coherence score PDF"),
+        ("csv", "Goncalves progenitor coherence score table"),
     ]:
+        path = run_dir / f"{OUTPUT_STEM}.{suffix}"
         artifacts.append(
             artifact_record(path, role=role, relative_to=ROOT, generated_at=generated_at)
         )
-    OUT_MANIFEST.write_text(
+    (run_dir / f"{OUTPUT_STEM}_manifest.json").write_text(
         json.dumps(
             {
                 "manifest_schema_version": "static_artifact_provenance/v1",
                 "generated_at": generated_at,
                 "source_script": "applications/scrna/plots/goncalves_progenitor_coherence.py",
                 "score_definition": "mean(dominant_population_fraction, progenitor_population_fraction)",
-                "source_tables": [str(path.relative_to(ROOT)) for path in SOURCES.values()],
+                "source_tables": [
+                    str((run_dir / name).relative_to(ROOT)) for name in SOURCES.values()
+                ],
                 "artifacts": artifacts,
             },
             indent=2,
@@ -191,15 +188,13 @@ def _write_manifest(generated_at: str) -> None:
 
 
 def main() -> None:
+    run_dir = parse_run_dir(__doc__)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
-    score_table = _load_rows(generated_at)
-    score_table.to_csv(OUT_CSV, index=False)
-    _plot(score_table, generated_at)
-    _write_manifest(generated_at)
-    print(OUT_PNG)
-    print(OUT_PDF)
-    print(OUT_CSV)
-    print(OUT_MANIFEST)
+    score_table = _load_rows(run_dir, generated_at)
+    score_table.to_csv(run_dir / f"{OUTPUT_STEM}.csv", index=False)
+    _plot(score_table, generated_at, run_dir)
+    _write_manifest(run_dir, generated_at)
+    print(run_dir)
 
 
 if __name__ == "__main__":

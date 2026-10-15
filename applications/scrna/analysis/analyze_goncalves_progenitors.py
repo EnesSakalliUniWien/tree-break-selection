@@ -28,13 +28,6 @@ from scipy import sparse
 
 from applications.scrna._shared import add_generated_at, json_default, top_counts_text
 
-DEFAULT_OUTPUT_DIR = (
-    Path(__file__).resolve().parents[3]
-    / "raw"
-    / "assets"
-    / "benchmark-results"
-    / "goncalves_fetal_pancreas_progenitor_benchmark_20260624"
-)
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
 PROGENITOR_POPULATIONS = {"trunk", "tip", "proliferating"}
 SIGNATURES: dict[str, list[str]] = {
@@ -418,7 +411,12 @@ def write_meeting_plot(meetings: pd.DataFrame, output_path: Path, generated_at: 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Benchmark run directory to read and write; pass a raw/assets/ path explicitly.",
+    )
     parser.add_argument("--refresh-marker-mapping", action="store_true")
     args = parser.parse_args()
     output_dir = args.output_dir

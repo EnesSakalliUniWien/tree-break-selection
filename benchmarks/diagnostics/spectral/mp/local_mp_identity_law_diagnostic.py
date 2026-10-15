@@ -39,6 +39,7 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from benchmarks.diagnostics.runner_support import create_result_directory
 from benchmarks.diagnostics.spectral.mp.profile_spectral_backends import (
     SpectralMatrixRecord,
     _build_matrix_records,
@@ -917,11 +918,6 @@ def _parse_case_names(raw_names: str) -> tuple[str, ...]:
     return names
 
 
-def _default_output_dir() -> Path:
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    return Path("raw/assets/benchmark-results") / f"local_mp_identity_law_{stamp}"
-
-
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -980,7 +976,9 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = _parse_args()
-    output_dir = Path(args.output_dir) if args.output_dir else _default_output_dir()
+    output_dir = create_result_directory(
+        Path(args.output_dir) if args.output_dir else None, study_slug="local_mp_identity_law"
+    )
     case_summary, node_spectrum = run_local_mp_identity_law_diagnostic(
         case_names=_parse_case_names(args.case_names),
         max_cases=args.max_cases,
