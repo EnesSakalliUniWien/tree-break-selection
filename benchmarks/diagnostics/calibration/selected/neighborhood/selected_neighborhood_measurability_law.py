@@ -23,7 +23,12 @@ from pathlib import Path
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
-from benchmarks.diagnostics.calibration.values import bool_value, finite_float, string_value
+from benchmarks.diagnostics.calibration.values import (
+    bool_value,
+    finite_float,
+    finite_int,
+    string_value,
+)
 
 SCHEMA_VERSION = "selected_neighborhood_measurability_law/v2"
 STUDY_ROLE = "diagnostic_selected_neighborhood_measurability_law_not_calibration"
@@ -206,13 +211,6 @@ def _probability_or_nan(value: object, *, tolerance: float = PROBABILITY_TOLERAN
     return numeric
 
 
-def _finite_int(value: object, default: int = 0) -> int:
-    numeric = finite_float(value)
-    if not math.isfinite(numeric):
-        return int(default)
-    return int(numeric)
-
-
 def _safe_ratio(numerator: float, denominator: float) -> float:
     if not math.isfinite(numerator) or not math.isfinite(denominator) or denominator <= 0.0:
         return math.nan
@@ -300,16 +298,16 @@ def _interpolation_contract_status(
     min_support: int,
 ) -> tuple[bool, str, float, int, int, int]:
     pair_prior, prior_status = _pair_prior_from_row(row)
-    topology_support_count = _finite_int(row.get("topology_neighborhood_support_count", 0.0))
-    support_anchor_count = _finite_int(row.get("support_anchor_count", 0.0))
+    topology_support_count = finite_int(row.get("topology_neighborhood_support_count", 0.0))
+    support_anchor_count = finite_int(row.get("support_anchor_count", 0.0))
     support_count = topology_support_count if topology_support_count > 0 else support_anchor_count
-    topology_signal_count = _finite_int(row.get("topology_neighborhood_signal_count", 0.0))
-    signal_anchor_count = _finite_int(row.get("signal_anchor_count", 0.0))
+    topology_signal_count = finite_int(row.get("topology_neighborhood_signal_count", 0.0))
+    signal_anchor_count = finite_int(row.get("signal_anchor_count", 0.0))
     signal_count = topology_signal_count if topology_signal_count > 0 else signal_anchor_count
-    topology_excluded_count = _finite_int(
+    topology_excluded_count = finite_int(
         row.get("topology_neighborhood_selected_nonnull_excluded_count", 0.0)
     )
-    anchor_excluded_count = _finite_int(row.get("selected_nonnull_excluded_count", 0.0))
+    anchor_excluded_count = finite_int(row.get("selected_nonnull_excluded_count", 0.0))
     excluded_count = (
         topology_excluded_count if topology_excluded_count > 0 else anchor_excluded_count
     )
@@ -569,7 +567,7 @@ def build_measurability_law_rows(
             "structural_balance_product": finite_float(
                 row.get("structural_balance_product", math.nan)
             ),
-            "structural_topology_feature_count": _finite_int(
+            "structural_topology_feature_count": finite_int(
                 row.get("structural_topology_feature_count", 0)
             ),
             "structural_topology_context_status": string_value(

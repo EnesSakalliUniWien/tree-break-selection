@@ -10,6 +10,7 @@ from time import perf_counter
 
 import pandas as pd
 
+from benchmarks.cloud import sharding
 from benchmarks.cloud.sharding import (
     iter_expected_shard_dirs,
     sync_path_to_s3,
@@ -137,20 +138,6 @@ def run_shard(configured: AwsSelectedEdgeGeometryConfig, shard_index: int) -> di
     return shard_manifest
 
 
-def _load_shard_table(shard_dir: Path, filename: str) -> pd.DataFrame:
-    path = shard_dir / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Missing selected-edge shard table: {path}")
-    return pd.read_csv(path)
-
-
-def _load_shard_manifest(shard_dir: Path) -> dict[str, object]:
-    path = shard_dir / SHARD_MANIFEST_NAME
-    if not path.exists():
-        raise FileNotFoundError(f"Missing selected-edge shard manifest: {path}")
-    return json.loads(path.read_text())
-
-
 def merge_shards(configured: AwsSelectedEdgeGeometryConfig) -> dict[str, pd.DataFrame]:
     """Merge all selected-edge geometry shard outputs."""
     if configured.s3_uri is not None:
@@ -159,19 +146,21 @@ def merge_shards(configured: AwsSelectedEdgeGeometryConfig) -> dict[str, pd.Data
             configured.output_dir / "shards",
         )
     shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
-    manifests = [_load_shard_manifest(shard_dir) for shard_dir in shard_dirs]
+    manifests = [
+        sharding.load_shard_manifest(shard_dir, SHARD_MANIFEST_NAME) for shard_dir in shard_dirs
+    ]
     validate_replicate_coverage(manifests, expected_replicates=configured.replicates)
 
     edges = pd.concat(
-        [_load_shard_table(shard_dir, EDGE_ROWS_NAME) for shard_dir in shard_dirs],
+        [sharding.load_shard_table(shard_dir, EDGE_ROWS_NAME) for shard_dir in shard_dirs],
         ignore_index=True,
     )
     siblings = pd.concat(
-        [_load_shard_table(shard_dir, SIBLING_ROWS_NAME) for shard_dir in shard_dirs],
+        [sharding.load_shard_table(shard_dir, SIBLING_ROWS_NAME) for shard_dir in shard_dirs],
         ignore_index=True,
     )
     final = pd.concat(
-        [_load_shard_table(shard_dir, FINAL_ROWS_NAME) for shard_dir in shard_dirs],
+        [sharding.load_shard_table(shard_dir, FINAL_ROWS_NAME) for shard_dir in shard_dirs],
         ignore_index=True,
     )
     merged_dir = configured.output_dir / "merged"

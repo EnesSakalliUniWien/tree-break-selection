@@ -30,7 +30,16 @@ from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_g
 from benchmarks.diagnostics.calibration.traversal.retained_pass_through_topology_likelihood_panel import (
     build_traversal_network_context_rows,
 )
-from benchmarks.diagnostics.calibration.values import bool_value, finite_float
+from benchmarks.diagnostics.calibration.values import (
+    bool_value,
+    finite_float,
+    finite_int,
+    input_data_role,
+    is_finite,
+    numeric_column,
+    output_data_role,
+    split_path,
+)
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -292,24 +301,9 @@ def _validate_candidate_columns(rows: pd.DataFrame) -> None:
         raise ValueError(f"candidate rows are missing columns: {missing!r}")
 
 
-def _numeric(rows: pd.DataFrame, column: str) -> pd.Series:
-    return pd.to_numeric(rows[column], errors="coerce")
-
-
-def _is_finite(value: object) -> bool:
-    return math.isfinite(finite_float(value))
-
-
 def _finite_array(values: pd.Series) -> np.ndarray:
     finite = pd.to_numeric(values, errors="coerce").replace([np.inf, -np.inf], np.nan)
     return finite.dropna().to_numpy(dtype=float)
-
-
-def _finite_int(value: object, default: int = 0) -> int:
-    number = finite_float(value)
-    if not math.isfinite(number):
-        return int(default)
-    return int(number)
 
 
 def _selected_event_pattern(row: pd.Series) -> str:
@@ -317,8 +311,8 @@ def _selected_event_pattern(row: pd.Series) -> str:
         return "paired_candidate_agreement"
     left_pass = str(row["left_traversal_state"]) == "pass_through"
     right_pass = str(row["right_traversal_state"]) == "pass_through"
-    left_desc = _finite_int(row["left_descendant_accepted_split_count"])
-    right_desc = _finite_int(row["right_descendant_accepted_split_count"])
+    left_desc = finite_int(row["left_descendant_accepted_split_count"])
+    right_desc = finite_int(row["right_descendant_accepted_split_count"])
     if left_pass and not right_pass and left_desc > right_desc:
         return SELECTED_EVENT
     return "other_candidate_pattern"
@@ -451,8 +445,8 @@ def build_structural_topology_context_rows(
         raise ValueError(f"selected-neighborhood rows are missing columns: {missing!r}")
 
     rows = selected_neighborhood_rows.copy()
-    rows["replicate"] = _numeric(rows, "replicate").fillna(-1).astype(int)
-    rows["n_descendant_leaves"] = _numeric(rows, "n_descendant_leaves")
+    rows["replicate"] = numeric_column(rows, "replicate").fillna(-1).astype(int)
+    rows["n_descendant_leaves"] = numeric_column(rows, "n_descendant_leaves")
     records: list[dict[str, object]] = []
     for group_key, group in rows.groupby(
         ["case_id", "data_role", "method_id", "replicate"],
@@ -551,20 +545,6 @@ def build_structural_topology_context_rows(
     return pd.DataFrame.from_records(records, columns=STRUCTURAL_TOPOLOGY_COLUMNS)
 
 
-def _output_data_role(data_role: object) -> str:
-    return "selected_null" if str(data_role) == "null" else str(data_role)
-
-
-def _input_data_role(data_role: object) -> str:
-    return "null" if str(data_role) == "selected_null" else str(data_role)
-
-
-def _split_path(value: object) -> list[str]:
-    if pd.isna(value):
-        return []
-    return [part for part in str(value).split(";") if part]
-
-
 def _purity_from_labels(labels: Sequence[int]) -> float:
     if not labels:
         return math.nan
@@ -595,7 +575,7 @@ def _truth_label_maps_by_run(
         .iterrows()
     ):
         case_id = str(row["case_id"])
-        data_role = _output_data_role(row["data_role"])
+        data_role = output_data_role(row["data_role"])
         method_id = str(row["method_id"])
         replicate = int(row["replicate"])
         data_seed = int(row["data_seed"])
@@ -616,7 +596,7 @@ def _truth_label_maps_by_run(
             n_samples=n_samples,
             n_features=n_features,
             n_categories=n_categories,
-            data_role=_input_data_role(data_role),
+            data_role=input_data_role(data_role),
             seed=data_seed,
         )
         maps[(case_id, data_role, method_id, replicate)] = (
@@ -741,11 +721,11 @@ def build_selected_pass_through_truth_context_rows(
 
     truth_by_run = _truth_label_maps_by_run(traversal_rows, suite=suite)
     node_rows = selected_neighborhood_rows.copy()
-    node_rows["replicate"] = _numeric(node_rows, "replicate").fillna(-1).astype(int)
-    node_rows["data_role"] = node_rows["data_role"].map(_output_data_role)
+    node_rows["replicate"] = numeric_column(node_rows, "replicate").fillna(-1).astype(int)
+    node_rows["data_role"] = node_rows["data_role"].map(output_data_role)
     gene_rows = gene_assignments.copy()
-    gene_rows["replicate"] = _numeric(gene_rows, "replicate").fillna(-1).astype(int)
-    gene_rows["data_role"] = gene_rows["data_role"].map(_output_data_role)
+    gene_rows["replicate"] = numeric_column(gene_rows, "replicate").fillna(-1).astype(int)
+    gene_rows["data_role"] = gene_rows["data_role"].map(output_data_role)
 
     records: list[dict[str, object]] = []
     group_columns = ["case_id", "data_role", "method_id", "replicate"]
@@ -790,7 +770,7 @@ def build_selected_pass_through_truth_context_rows(
         samples_by_node: dict[str, list[str]] = {node_id: [] for node_id in node_ids}
         for _, gene_row in genes.iterrows():
             sample_id = str(gene_row["sample_id"])
-            for path_node in _split_path(gene_row["path_node_ids"]):
+            for path_node in split_path(gene_row["path_node_ids"]):
                 if path_node in samples_by_node:
                     samples_by_node[path_node].append(sample_id)
 
@@ -951,11 +931,11 @@ def build_overlap_selected_pass_through_node_rows(
         return pd.DataFrame(columns=NODE_COLUMNS)
     _validate_candidate_columns(candidate_rows)
     rows = candidate_rows.copy()
-    rows["left_descendant_accepted_split_count"] = _numeric(
+    rows["left_descendant_accepted_split_count"] = numeric_column(
         rows,
         "left_descendant_accepted_split_count",
     ).fillna(0)
-    rows["right_descendant_accepted_split_count"] = _numeric(
+    rows["right_descendant_accepted_split_count"] = numeric_column(
         rows,
         "right_descendant_accepted_split_count",
     ).fillna(0)
@@ -999,8 +979,8 @@ def build_overlap_selected_pass_through_node_rows(
                 else str(truth.get("truth_context_status", ""))
             )
         )
-        finite_topology_count = int(_is_finite(row["left_balance_product"])) + int(
-            _is_finite(row["left_outgoing_edge_norm_balance"])
+        finite_topology_count = int(is_finite(row["left_balance_product"])) + int(
+            is_finite(row["left_outgoing_edge_norm_balance"])
         )
         structural_feature_count = (
             0 if structural is None else int(structural["structural_topology_feature_count"])
@@ -1012,7 +992,7 @@ def build_overlap_selected_pass_through_node_rows(
         )
         completed_balance_product = (
             finite_float(row["left_balance_product"])
-            if _is_finite(row["left_balance_product"])
+            if is_finite(row["left_balance_product"])
             else structural_balance_product
         )
         completed_topology_count = finite_topology_count
@@ -1048,10 +1028,10 @@ def build_overlap_selected_pass_through_node_rows(
                 "truth_geometry_role": truth_geometry_role,
                 "truth_context_status": truth_context_status,
                 "truth_node_sample_count": (
-                    0 if truth is None else _finite_int(truth["truth_node_sample_count"])
+                    0 if truth is None else finite_int(truth["truth_node_sample_count"])
                 ),
                 "truth_node_cluster_count": (
-                    0 if truth is None else _finite_int(truth["truth_node_cluster_count"])
+                    0 if truth is None else finite_int(truth["truth_node_cluster_count"])
                 ),
                 "truth_node_majority_fraction": (
                     math.nan

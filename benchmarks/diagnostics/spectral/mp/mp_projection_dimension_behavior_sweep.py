@@ -21,6 +21,7 @@ from benchmarks.diagnostics.calibration.statistics.mixed_internal_calibration_sw
     _select_cases,
 )
 from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.diagnostics.runner_support import case_with_replicate_seed
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
@@ -53,13 +54,6 @@ RULE_IDS = (
     "raw_mp_parent_signal_count_floor1",
     "raw_mp_parent_signal_count_floor2",
 )
-
-
-def _case_with_replicate_seed(case: dict[str, object], replicate_index: int) -> dict[str, object]:
-    replicated = case.copy()
-    if "seed" in replicated:
-        replicated["seed"] = int(replicated["seed"]) + int(replicate_index) * 100_003
-    return replicated
 
 
 def candidate_projection_dimensions(
@@ -230,7 +224,7 @@ def _collect_case_replicate(
     sibling_alpha: float,
 ) -> tuple[pd.DataFrame, dict[str, object]]:
     context = build_tbs_tree_context(
-        _case_with_replicate_seed(case, replicate_index),
+        case_with_replicate_seed(case, replicate_index),
         populate_node_distributions=True,
     )
     edge_df, spectral_context = annotate_child_parent_divergence(

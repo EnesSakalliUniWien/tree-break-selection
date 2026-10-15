@@ -31,8 +31,6 @@ def json_default(value: Any) -> Any:
         return float(value)
     if isinstance(value, np.ndarray):
         return value.tolist()
-    if isinstance(value, Path):
-        return str(value)
     return str(value)
 
 

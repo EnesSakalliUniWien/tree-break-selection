@@ -32,12 +32,7 @@ class ClusterColorSpec:
 
 
 def _discrete_colors_from_matplotlib_cmap(name: str, n: int) -> List[str]:
-    cmap = plt.get_cmap(name)
-    if hasattr(cmap, "colors") and cmap.colors is not None:
-        base = list(cmap.colors)
-        if len(base) >= n:
-            return [mcolors.to_hex(base[i]) for i in range(n)]
-    return [mcolors.to_hex(cmap(i / max(n - 1, 1))) for i in range(n)]
+    return [mcolors.to_hex(color) for color in plt.get_cmap(name).colors[:n]]
 
 
 def _max_contrast_order(colors: List[str]) -> List[str]:
@@ -66,7 +61,6 @@ def _large_cluster_palette(n: int) -> List[str]:
 def build_cluster_color_spec(
     n_clusters: int,
     *,
-    base_cmap: str | None = None,
     unassigned_color: str = "#CCCCCC",
 ) -> ClusterColorSpec:
     """
@@ -93,15 +87,12 @@ def build_cluster_color_spec(
             id_to_color={-1: unassigned_color},
         )
 
-    if base_cmap is not None:
-        colors = _discrete_colors_from_matplotlib_cmap(base_cmap, n_clusters)
+    if n_clusters <= 10:
+        colors = _discrete_colors_from_matplotlib_cmap("tab10", n_clusters)
+    elif n_clusters <= 20:
+        colors = _discrete_colors_from_matplotlib_cmap("tab20", n_clusters)
     else:
-        if n_clusters <= 10:
-            colors = _discrete_colors_from_matplotlib_cmap("tab10", n_clusters)
-        elif n_clusters <= 20:
-            colors = _discrete_colors_from_matplotlib_cmap("tab20", n_clusters)
-        else:
-            colors = _large_cluster_palette(n_clusters)
+        colors = _large_cluster_palette(n_clusters)
 
     cmap = ListedColormap(colors)
     cmap.set_bad(unassigned_color)

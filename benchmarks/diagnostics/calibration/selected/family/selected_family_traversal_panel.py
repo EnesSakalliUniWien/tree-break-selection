@@ -36,6 +36,7 @@ from benchmarks.diagnostics.calibration.traversal.production_admissibility_contr
     evaluate_production_admissibility_components,
     summarize_production_admissibility_contracts,
 )
+from benchmarks.diagnostics.calibration.values import output_data_role
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
@@ -358,16 +359,6 @@ def _read_checkpoint(
     )
 
 
-def _output_data_role(data_role: str) -> str:
-    """Return a CSV-stable role label.
-
-    Pandas treats the literal string ``null`` as missing under default
-    ``read_csv`` settings, so the public output uses ``selected_null`` while
-    preserving ``null`` as the accepted CLI/input role.
-    """
-    return NULL_OUTPUT_ROLE if str(data_role) == "null" else str(data_role)
-
-
 def _is_null_data_role(data_role: object) -> bool:
     return str(data_role) in {"null", NULL_OUTPUT_ROLE}
 
@@ -550,7 +541,7 @@ def _build_node_decisions(
     trace = {row["node_id"]: row for row in decomposition.get("traversal_trace", [])}
     edge_trace = {row["node_id"]: row for row in decomposition.get("full_edge_traversal_trace", [])}
     records: list[dict[str, object]] = []
-    output_role = _output_data_role(data_role)
+    output_role = output_data_role(data_role)
     for node in tree.nodes:
         parent = parents[node]
         children = list(tree.successors(node))
@@ -1101,7 +1092,7 @@ def _run_one(
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
         "case_id": case_id,
-        "data_role": _output_data_role(data_role),
+        "data_role": output_data_role(data_role),
         "source_family": source_family,
         "feature_representation": feature_representation,
         "method_id": method_id,

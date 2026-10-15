@@ -14,6 +14,7 @@ from time import perf_counter
 
 import pandas as pd
 
+from benchmarks.cloud import sharding
 from benchmarks.cloud.sharding import sync_path_to_s3, sync_s3_to_path, write_json
 from benchmarks.diagnostics.spectral.stability.tree_strategy_semantic_panel import (
     DEFAULT_BLOB_RESULTS_DIR,
@@ -43,30 +44,26 @@ class AwsTreeStrategyPanelConfig:
     include_failed: bool = False
 
 
-def _resolved_path(path: Path, input_work_dir: Path, *, use_synced_input: bool) -> Path:
-    if path.is_absolute() or not use_synced_input:
-        return path
-    return input_work_dir / path
-
-
 def run_panel(config: AwsTreeStrategyPanelConfig) -> pd.DataFrame:
     started = perf_counter()
     if config.input_s3_uri is not None:
         sync_s3_to_path(config.input_s3_uri.rstrip("/"), config.input_work_dir)
 
     use_synced_input = config.input_s3_uri is not None
-    blob_results_dir = _resolved_path(
+    blob_results_dir = sharding.resolve_synced_input(
         config.blob_results_dir,
         config.input_work_dir,
         use_synced_input=use_synced_input,
     )
-    diagnostics_results_dir = _resolved_path(
+    diagnostics_results_dir = sharding.resolve_synced_input(
         config.diagnostics_results_dir,
         config.input_work_dir,
         use_synced_input=use_synced_input,
     )
     alpha_summary_paths = [
-        _resolved_path(path, config.input_work_dir, use_synced_input=use_synced_input)
+        sharding.resolve_synced_input(
+            path, config.input_work_dir, use_synced_input=use_synced_input
+        )
         for path in config.alpha_summary_paths
     ]
 

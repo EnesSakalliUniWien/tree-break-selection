@@ -28,6 +28,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import numeric_column
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_overlap_context_negative_bayesian_topology_law"
@@ -149,10 +150,6 @@ def _validate(rows: pd.DataFrame, required: Iterable[str] = REQUIRED_COLUMNS) ->
         raise ValueError(f"Topology rows are missing columns: {missing!r}")
 
 
-def _numeric(rows: pd.DataFrame, column: str) -> pd.Series:
-    return pd.to_numeric(rows[column], errors="coerce")
-
-
 def _clip_unit(values: pd.Series | np.ndarray | float) -> np.ndarray:
     return np.clip(np.asarray(values, dtype=float), 1e-6, 1.0 - 1e-6)
 
@@ -178,7 +175,7 @@ def beta_log_likelihood_ratio(
 
 
 def _balance_unit(balance: pd.Series) -> np.ndarray:
-    return _clip_unit(2.0 * _numeric(pd.DataFrame({"balance": balance}), "balance"))
+    return _clip_unit(2.0 * numeric_column(pd.DataFrame({"balance": balance}), "balance"))
 
 
 def _anti_fragment_unit(fragment_risk: pd.Series) -> np.ndarray:
@@ -217,12 +214,12 @@ def build_context_negative_bayesian_topology_rows(
     """Build row-level Bayesian topology component scores."""
     _validate(topology_rows)
     rows = topology_rows.copy()
-    incoming_balance = _numeric(rows, "incoming_branch_balance")
-    outgoing_balance = _numeric(rows, "outgoing_balance")
-    outgoing_edge_norm = _numeric(rows, "outgoing_edge_norm_balance").clip(0.0, 1.0)
-    fragment_risk = _numeric(rows, "outgoing_fragment_risk_proxy_score")
-    selected_family = _numeric(rows, "selected_family_log_bayes_factor_lower")
-    context = _numeric(rows, "continuous_context_min_margin")
+    incoming_balance = numeric_column(rows, "incoming_branch_balance")
+    outgoing_balance = numeric_column(rows, "outgoing_balance")
+    outgoing_edge_norm = numeric_column(rows, "outgoing_edge_norm_balance").clip(0.0, 1.0)
+    fragment_risk = numeric_column(rows, "outgoing_fragment_risk_proxy_score")
+    selected_family = numeric_column(rows, "selected_family_log_bayes_factor_lower")
+    context = numeric_column(rows, "continuous_context_min_margin")
 
     incoming_balance_lr = _neutralize_missing(
         beta_log_likelihood_ratio(_balance_unit(incoming_balance))
@@ -317,7 +314,7 @@ def summarize_bayesian_topology_components(rows: pd.DataFrame) -> pd.DataFrame:
     )
     records: list[dict[str, object]] = []
     for component in component_columns:
-        values = _numeric(rows, component)
+        values = numeric_column(rows, component)
         truth_values = values[truth]
         negative_values = values[~truth]
         rank_best, rank_worst, negative_above = _rank_bounds(values, roles)
@@ -384,7 +381,7 @@ def summarize_bayesian_topology_rows(
         )
     roles = rows["guard_truth_role"].astype(str)
     truth = roles.eq("truth_recovery")
-    scores = _numeric(rows, "posterior_log_odds")
+    scores = numeric_column(rows, "posterior_log_odds")
     truth_scores = scores[truth]
     negative_scores = scores[~truth]
     rank_best, rank_worst, negative_above = _rank_bounds(scores, roles)

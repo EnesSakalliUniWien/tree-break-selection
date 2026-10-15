@@ -363,8 +363,8 @@ def _profile_current_process_node(
             task,
             leaf_feature_matrix,
             EDGE_GATE_MINIMUM_PROJECTION_DIMENSION,
+            None,
             feature_count,
-            True,
         )
         dimensions.append(int(result.test_projection_dimension))
         raw_counts.append(int(result.raw_mp_signal_count))

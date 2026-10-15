@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from benchmarks.diagnostics.calibration.cli import parse_null_calibration_panel_args
 from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
     parse_selected_hierarchy_args,
 )
@@ -53,33 +52,6 @@ def test_traversal_audit_cli_contract(
     assert args.methods == ("tbs", "tbs_nnls")
     assert args.significance_level == pytest.approx(0.02)
     assert args.edge_alpha == pytest.approx(0.003)
-
-
-def test_null_calibration_panel_cli_contract(tmp_path: Path) -> None:
-    panel_path = tmp_path / "panel.csv"
-    output_dir = tmp_path / "out"
-
-    args = parse_null_calibration_panel_args(
-        [
-            "--panel",
-            str(panel_path),
-            "--output-dir",
-            str(output_dir),
-            "--alpha",
-            "0.02",
-            "--tolerance",
-            "0.03",
-            "--min-rows",
-            "40",
-        ],
-        description="test null panel",
-    )
-
-    assert args.panel == panel_path
-    assert args.output_dir == output_dir
-    assert args.alpha == pytest.approx(0.02)
-    assert args.tolerance == pytest.approx(0.03)
-    assert args.min_rows == 40
 
 
 def test_selected_hierarchy_cli_contract(tmp_path: Path) -> None:

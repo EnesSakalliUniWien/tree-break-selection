@@ -23,12 +23,10 @@ from benchmarks.diagnostics.calibration.overlap.panel_runner import (
     build_binary_overlap_case_node_rows,
     run_binary_overlap_panel,
 )
-from benchmarks.diagnostics.calibration.selected.family.selected_family_traversal_panel import (
-    _output_data_role,
-)
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
     DEFAULT_DATA_ROLES,
 )
+from benchmarks.diagnostics.calibration.values import output_data_role
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     parse_names,
 )
@@ -457,7 +455,7 @@ def _analytical_rows_for_node(
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
         "case_id": case_id,
-        "data_role": _output_data_role(data_role),
+        "data_role": output_data_role(data_role),
         "replicate": int(replicate),
         "data_seed": int(data_seed),
         "profile_id": profile_id,

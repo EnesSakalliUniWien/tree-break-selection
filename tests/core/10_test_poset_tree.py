@@ -153,3 +153,14 @@ def test_tree_root_prefers_cached_root_and_rejects_forests():
     forest.graph["root"] = "a"
     assert tree_root(forest) == "a"
     assert tree_root(nx.DiGraph([("r", "x"), ("r", "y")])) == "r"
+
+
+def test_find_lca_for_set_works_without_cached_root():
+    tree = PosetTree()
+    tree.add_edges_from([("root", "A"), ("root", "B"), ("A", "A1"), ("A", "A2")])
+    for node in tree.nodes:
+        tree.nodes[node]["is_leaf"] = tree.out_degree(node) == 0
+
+    assert "root" not in tree.graph
+    assert tree.find_lca_for_set(["A1", "A2"]) == "A"
+    assert tree.find_lca_for_set(["A1", "B"]) == "root"

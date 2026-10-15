@@ -153,12 +153,8 @@ def _map_nodes_to_clusters(
 
 
 def _build_label_to_node(tree) -> Dict:
-    """Map display labels back to node ids."""
-    label_to_node: Dict = {}
-    for node in tree.nodes():
-        label = tree.nodes[node]["label"]
-        label_to_node[label] = node
-    return label_to_node
+    """Map leaf labels back to leaf node ids; internal labels can repeat sample names."""
+    return {tree.nodes[node]["label"]: node for node in tree.nodes() if tree.out_degree(node) == 0}
 
 
 def _build_leaf_node_colors(
@@ -259,17 +255,12 @@ def _create_figure_and_axes(
     *,
     width: int,
     height: int,
-    figsize: Optional[Tuple[float, float]],
     ax: Optional["plt.Axes"],
 ):
     """Create a new figure when an axes object was not supplied."""
     if ax is not None:
         return ax.figure, ax
-
-    resolved_figsize = figsize
-    if resolved_figsize is None:
-        resolved_figsize = (max(width, 1) / 100.0, max(height, 1) / 100.0)
-    return plt.subplots(figsize=resolved_figsize)
+    return plt.subplots(figsize=(max(width, 1) / 100.0, max(height, 1) / 100.0))
 
 
 def _draw_rectangular_elbow_edges(
@@ -544,10 +535,8 @@ def plot_tree_with_clusters(
     height: int = 600,
     node_size: int = 20,
     font_size: int = 10,
-    colormap: Optional[str] = None,
     title: Optional[str] = None,
     layout: str = "rectangular",
-    figsize: Optional[Tuple[float, float]] = None,
     ax: Optional["plt.Axes"] = None,
     show_legend: bool = True,
     max_cluster_legend_entries: int = 20,
@@ -561,9 +550,7 @@ def plot_tree_with_clusters(
     cluster_assignments = decomposition_results["cluster_assignments"]
     num_clusters = decomposition_results["num_clusters"]
 
-    spec = build_cluster_color_spec(
-        num_clusters, base_cmap=colormap, unassigned_color=UNASSIGNED_NODE_COLOR
-    )
+    spec = build_cluster_color_spec(num_clusters, unassigned_color=UNASSIGNED_NODE_COLOR)
     cluster_id_to_color = spec.id_to_color
 
     label_to_node = _build_label_to_node(tree)
@@ -593,7 +580,6 @@ def plot_tree_with_clusters(
     fig, ax = _create_figure_and_axes(
         width=width,
         height=height,
-        figsize=figsize,
         ax=ax,
     )
     _draw_styled_edges(G, pos, annotations_df, ax, layout=layout)

@@ -17,11 +17,11 @@ from benchmarks.diagnostics.calibration.sibling.nulls.selection_conditioned_sibl
     SelectionConditionedSiblingNullContext,
     simulate_local_edge_selection_conditioned_null,
 )
+from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.diagnostics.oracle.oracle_tree_recoverability import FAILURE_CLASS_GATE_UNDER_SPLIT
 from benchmarks.diagnostics.runner_support import (
     configure_serial_runtime,
     create_result_directory,
-    parse_csv_values,
     resolve_classified_cases,
 )
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
@@ -176,8 +176,8 @@ def main() -> None:
     selection = resolve_classified_cases(
         suite=args.suite,
         classification_csv=args.classification_csv,
-        failure_classes=parse_csv_values(args.failure_classes),
-        case_names=parse_csv_values(args.case_names),
+        failure_classes=parse_csv_list(args.failure_classes),
+        case_names=parse_csv_list(args.case_names),
     )
     output_dir = create_result_directory(
         args.output_dir,
@@ -207,7 +207,7 @@ def main() -> None:
     metadata = {
         "suite": args.suite,
         "classification_csv": str(selection.classification_path),
-        "failure_classes": list(parse_csv_values(args.failure_classes)),
+        "failure_classes": list(parse_csv_list(args.failure_classes)),
         "case_names": [str(item.case["name"]) for item in selection.cases],
         "n_cases": len(selection.cases),
         "n_candidates": int(args.n_candidates),

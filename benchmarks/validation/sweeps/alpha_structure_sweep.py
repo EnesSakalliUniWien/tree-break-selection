@@ -27,7 +27,6 @@ import pandas as pd
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 from benchmarks.diagnostics.calibration.values import finite_float
-from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.result_records import BenchmarkResultRow, benchmark_rows_to_dataframe
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_run import run_single_case
@@ -39,6 +38,7 @@ from benchmarks.validation.sweeps.alpha_grid_search import (
     alpha_pair_id,
     build_alpha_pairs,
     parse_float_grid,
+    select_cases,
 )
 
 SCHEMA_VERSION = "alpha_structure_sweep/v1"
@@ -147,17 +147,6 @@ def _parse_alpha_pairs(raw: str | None) -> tuple[tuple[float, float], ...] | Non
     if not pairs:
         raise ValueError("At least one alpha pair is required.")
     return tuple(pairs)
-
-
-def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, Any]]:
-    cases = get_test_cases_by_suite(suite)
-    if not case_names:
-        return [dict(case) for case in cases]
-    by_name = {str(case["name"]): case for case in cases}
-    missing = [name for name in case_names if name not in by_name]
-    if missing:
-        raise ValueError(f"Unknown case names for suite {suite!r}: {missing!r}")
-    return [dict(by_name[name]) for name in case_names]
 
 
 def _json_default(value: Any) -> Any:
@@ -450,7 +439,7 @@ def _write_pair_outputs(
 
 def run_alpha_structure_sweep(config: AlphaStructureSweepConfig) -> dict[str, object]:
     config.output_dir.mkdir(parents=True, exist_ok=True)
-    cases = _select_cases(suite=config.suite, case_names=config.case_names)
+    cases = select_cases(suite=config.suite, case_names=config.case_names)
     selected_methods, param_sets = resolve_selected_methods_and_param_sets(
         methods=list(config.methods),
         method_params=None,

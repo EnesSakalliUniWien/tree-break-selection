@@ -27,6 +27,7 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _prepare_tree_for_mode,
     _projection_inputs,
     _select_cases,
+    parse_names,
 )
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
@@ -92,13 +93,6 @@ def parse_fdr_layers(raw: str) -> tuple[FdrLayer, ...]:
     if not layers:
         raise ValueError("At least one FDR layer is required.")
     return layers
-
-
-def parse_names(raw: str | None) -> tuple[str, ...]:
-    """Parse optional comma-separated names."""
-    if raw is None:
-        return ()
-    return tuple(item.strip() for item in raw.split(",") if item.strip())
 
 
 def estimate_fdr(rows: Iterable[dict[str, object]]) -> dict[str, float]:

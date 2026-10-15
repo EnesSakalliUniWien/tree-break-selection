@@ -10,6 +10,7 @@ from time import perf_counter
 
 import pandas as pd
 
+from benchmarks.cloud import sharding
 from benchmarks.cloud.sharding import (
     iter_expected_shard_dirs,
     sync_path_to_s3,
@@ -132,20 +133,6 @@ def run_shard(configured: AwsTraversalSiblingFdrConfig, shard_index: int) -> dic
     return shard_manifest
 
 
-def _load_shard_manifest(shard_dir: Path) -> dict[str, object]:
-    path = shard_dir / SHARD_MANIFEST_NAME
-    if not path.exists():
-        raise FileNotFoundError(f"Missing traversal sibling FDR shard manifest: {path}")
-    return json.loads(path.read_text())
-
-
-def _load_shard_table(shard_dir: Path, filename: str) -> pd.DataFrame:
-    path = shard_dir / filename
-    if not path.exists():
-        raise FileNotFoundError(f"Missing traversal sibling FDR shard table: {path}")
-    return pd.read_csv(path)
-
-
 def _validate_simulation_coverage(
     simulations: pd.DataFrame,
     configured: AwsTraversalSiblingFdrConfig,
@@ -212,10 +199,12 @@ def merge_shards(configured: AwsTraversalSiblingFdrConfig) -> dict[str, pd.DataF
             configured.output_dir / "shards",
         )
     shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
-    manifests = [_load_shard_manifest(shard_dir) for shard_dir in shard_dirs]
+    manifests = [
+        sharding.load_shard_manifest(shard_dir, SHARD_MANIFEST_NAME) for shard_dir in shard_dirs
+    ]
     validate_replicate_coverage(manifests, expected_replicates=configured.replicates)
     simulations = pd.concat(
-        [_load_shard_table(shard_dir, SIMULATION_OUTPUT_NAME) for shard_dir in shard_dirs],
+        [sharding.load_shard_table(shard_dir, SIMULATION_OUTPUT_NAME) for shard_dir in shard_dirs],
         ignore_index=True,
     )
     _validate_simulation_coverage(simulations, configured)

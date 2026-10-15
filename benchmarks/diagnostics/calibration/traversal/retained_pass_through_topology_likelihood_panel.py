@@ -20,7 +20,12 @@ import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.root.root_values import finite_median
-from benchmarks.diagnostics.calibration.values import bool_value, finite_float
+from benchmarks.diagnostics.calibration.values import (
+    bool_value,
+    finite_float,
+    is_finite,
+    numeric_column,
+)
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_retained_pass_through_topology_likelihood_not_calibration"
@@ -210,14 +215,6 @@ def _validate_selected_neighborhood_columns(rows: pd.DataFrame) -> None:
         raise ValueError(f"selected-neighborhood rows are missing columns: {missing!r}")
 
 
-def _numeric(rows: pd.DataFrame, column: str) -> pd.Series:
-    return pd.to_numeric(rows[column], errors="coerce")
-
-
-def _is_finite(value: object) -> bool:
-    return math.isfinite(finite_float(value))
-
-
 def _empty_parent_id(value: object) -> bool:
     text = str(value).strip()
     return text == "" or text.lower() in {"nan", "none", "null"}
@@ -307,7 +304,7 @@ def build_traversal_network_context_rows(
         return pd.DataFrame(columns=TRAVERSAL_NETWORK_CONTEXT_COLUMNS)
     _validate_selected_neighborhood_columns(selected_neighborhood_rows)
     rows = selected_neighborhood_rows.copy()
-    rows["replicate"] = _numeric(rows, "replicate").fillna(-1).astype(int)
+    rows["replicate"] = numeric_column(rows, "replicate").fillna(-1).astype(int)
 
     records: list[dict[str, object]] = []
     group_columns = ["case_id", "data_role", "method_id", "replicate"]
@@ -381,15 +378,15 @@ def build_retained_pass_through_topology_likelihood_rows(
     """Return signal and selected-null rows for retained pass-through likelihoods."""
     _validate_columns(candidate_rows)
     rows = candidate_rows.copy()
-    rows["left_depth"] = _numeric(rows, "left_depth")
-    rows["left_n_descendant_leaves"] = _numeric(rows, "left_n_descendant_leaves")
-    rows["left_balance_product"] = _numeric(rows, "left_balance_product")
-    rows["left_outgoing_edge_norm_balance"] = _numeric(
+    rows["left_depth"] = numeric_column(rows, "left_depth")
+    rows["left_n_descendant_leaves"] = numeric_column(rows, "left_n_descendant_leaves")
+    rows["left_balance_product"] = numeric_column(rows, "left_balance_product")
+    rows["left_outgoing_edge_norm_balance"] = numeric_column(
         rows,
         "left_outgoing_edge_norm_balance",
     )
     rows["left_descendant_accepted_split_count"] = (
-        _numeric(
+        numeric_column(
             rows,
             "left_descendant_accepted_split_count",
         )
@@ -397,7 +394,7 @@ def build_retained_pass_through_topology_likelihood_rows(
         .astype(int)
     )
     rows["right_descendant_accepted_split_count"] = (
-        _numeric(
+        numeric_column(
             rows,
             "right_descendant_accepted_split_count",
         )
@@ -450,11 +447,11 @@ def build_retained_pass_through_topology_likelihood_rows(
                 context_row["distance_to_downstream_accepted_split"]
             )
             component_count = finite_float(context_row["network_component_node_count"])
-        finite_balance = _is_finite(row["left_balance_product"])
-        finite_edge_norm = _is_finite(row["left_outgoing_edge_norm_balance"])
+        finite_balance = is_finite(row["left_balance_product"])
+        finite_edge_norm = is_finite(row["left_outgoing_edge_norm_balance"])
         log_leaves = (
             float(math.log1p(float(row["left_n_descendant_leaves"])))
-            if _is_finite(row["left_n_descendant_leaves"])
+            if is_finite(row["left_n_descendant_leaves"])
             else math.nan
         )
         traversal_only_pair = (
@@ -506,7 +503,7 @@ def build_retained_pass_through_topology_likelihood_rows(
                 "finite_balance_product": finite_balance,
                 "finite_outgoing_edge_norm_balance": finite_edge_norm,
                 "finite_topology_feature_count": finite_topology_count,
-                "match_eligible": bool(_is_finite(row["left_depth"]) and math.isfinite(log_leaves)),
+                "match_eligible": bool(is_finite(row["left_depth"]) and math.isfinite(log_leaves)),
             }
         )
     return pd.DataFrame.from_records(records, columns=LIKELIHOOD_ROW_COLUMNS)
@@ -554,7 +551,7 @@ def build_retained_pass_through_topology_match_rows(
                 max_log_descendant_leaves_delta
             )
             pass_delta = math.nan
-            if _is_finite(signal_row["distance_to_pass_through_context"]) and _is_finite(
+            if is_finite(signal_row["distance_to_pass_through_context"]) and is_finite(
                 control_row["distance_to_pass_through_context"]
             ):
                 pass_delta = abs(
@@ -565,7 +562,7 @@ def build_retained_pass_through_topology_match_rows(
                     continue
                 distance += pass_delta / float(max_pass_through_context_delta)
             split_delta = math.nan
-            if _is_finite(signal_row["distance_to_downstream_accepted_split"]) and _is_finite(
+            if is_finite(signal_row["distance_to_downstream_accepted_split"]) and is_finite(
                 control_row["distance_to_downstream_accepted_split"]
             ):
                 split_delta = abs(
@@ -577,7 +574,7 @@ def build_retained_pass_through_topology_match_rows(
                 distance += split_delta / float(max_downstream_accepted_split_delta)
             context_status = (
                 "matched_traversal_network_context"
-                if _is_finite(pass_delta) and _is_finite(split_delta)
+                if is_finite(pass_delta) and is_finite(split_delta)
                 else "traversal_network_context_incomplete"
             )
             if distance < best_distance:

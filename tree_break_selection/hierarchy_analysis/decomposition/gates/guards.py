@@ -23,12 +23,17 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     identify_binary_sibling_children,
 )
+from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.construction.defaults import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     DEFAULT_TREE_LINKAGE_METHOD,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
-from tree_break_selection.tree.topology import compute_descendant_leaf_sets, tree_root
+from tree_break_selection.tree.topology import (
+    compute_descendant_leaf_sets,
+    get_leaf_values,
+    tree_root,
+)
 
 from .annotation_predicates import (
     annotation_bool,
@@ -106,9 +111,8 @@ def _tree_root_split_labels(tree, data_index: pd.Index) -> np.ndarray | None:
     if len(children) != 2:
         return None
 
-    descendant_sets = compute_descendant_leaf_sets(tree)
-    left = set(descendant_sets[children[0]])
-    right = set(descendant_sets[children[1]])
+    left = set(get_leaf_values(tree, node=children[0], sort=False))
+    right = set(get_leaf_values(tree, node=children[1], sort=False))
 
     labels: list[int] = []
     missing: list[object] = []
@@ -136,8 +140,6 @@ def _build_selected_linkage_tree(
     distance_metric: str,
     linkage_method: str,
 ):
-    from tree_break_selection.tree.construction import tree_from_linkage
-
     values = data.to_numpy(dtype=float)
     if values.ndim != 2:
         raise ValueError("leaf_data must be a 2D feature matrix.")

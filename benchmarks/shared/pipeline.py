@@ -58,7 +58,6 @@ def benchmark_cluster_algorithm(
     include_cover_pages: bool = True,
     include_validation_page: bool = True,
     tree_consensus_label_dir: str | Path | None = None,
-    strict: bool = False,
 ):
     """
     Benchmark the cluster decomposition algorithm across multiple test cases.
@@ -185,7 +184,6 @@ def benchmark_cluster_algorithm(
             log_validation_completion(total_runs, len(test_cases))
 
         df_results = benchmark_rows_to_dataframe(result_rows)
-        df_results.attrs["strict"] = bool(strict)
         df_results.attrs["plot_generation_status"] = plot_generation_status
 
         should_generate_plots = bool(concat_plots_pdf)

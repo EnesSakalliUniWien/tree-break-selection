@@ -184,7 +184,7 @@ def lowest_common_ancestor_for_set(
     except StopIteration as exc:
         raise ValueError("Cannot find LCA for an empty node set.") from exc
 
-    root = tree.graph["root"]
+    root = tree_root(tree)
     depths = compute_node_depths(tree)
     for node in node_iterator:
         lca = lowest_common_ancestor(tree, lca, node, depths=depths)

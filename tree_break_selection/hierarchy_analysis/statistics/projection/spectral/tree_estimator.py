@@ -236,7 +236,6 @@ def _run_spectral_tasks_parallel(
     minimum_projection_dimension: int,
     projection_basis_dimension: int | None,
     feature_count: int,
-    compute_eigendecomposition_outputs: bool,
 ) -> list[NodeSpectralResult]:
     """Execute node spectral tasks in parallel (or sequentially for small workloads)."""
     n_jobs = _get_n_jobs(len(node_spectral_tasks))
@@ -247,7 +246,6 @@ def _run_spectral_tasks_parallel(
             minimum_projection_dimension,
             projection_basis_dimension,
             feature_count,
-            compute_eigendecomposition_outputs,
         )
         for task in node_spectral_tasks
     )
@@ -280,11 +278,6 @@ def _aggregate_spectral_results(
             node_result.internal_distribution_row_count
         )
         spectral_matrix_row_counts[node_result.node_id] = node_result.spectral_matrix_row_count
-        if node_result.projection_matrix is None or node_result.eigenvalues is None:
-            raise ValueError(
-                "Spectral decomposition must return PCA projection and eigenvalues for "
-                f"internal node {node_result.node_id!r}."
-            )
         pca_projections[node_result.node_id] = node_result.projection_matrix
         pca_eigenvalues[node_result.node_id] = node_result.eigenvalues
         full_eigenvalues[node_result.node_id] = node_result.full_eigenvalues
@@ -398,7 +391,6 @@ def compute_spectral_decomposition(
         minimum_projection_dimension=minimum_projection_dimension,
         projection_basis_dimension=projection_basis_dimension,
         feature_count=feature_count,
-        compute_eigendecomposition_outputs=True,
     )
 
     _aggregate_spectral_results(

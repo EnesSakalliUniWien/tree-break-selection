@@ -7,6 +7,7 @@ from benchmarks.shared.benchmark_grid import benchmark_grid, benchmark_run_id
 from benchmarks.shared.benchmark_runs.resume import (
     compute_resume_coverage,
     filter_methods_and_params_by_run_ids,
+    require_result_columns,
     run_ids_for_params,
 )
 
@@ -73,3 +74,13 @@ def test_resume_rejects_results_without_run_ids():
 
     with pytest.raises(ValueError, match="predate run-id resume"):
         compute_resume_coverage(existing_results, ["kmeans::default"])
+
+
+def test_appending_rows_requires_the_existing_column_layout():
+    require_result_columns([], ["case_id", "ari"], output_path="results.csv")
+    require_result_columns(["case_id", "ari"], ["case_id", "ari"], output_path="results.csv")
+
+    with pytest.raises(ValueError, match="different column layout"):
+        require_result_columns(["case_id", "ari"], ["case_id", "nmi"], output_path="results.csv")
+    with pytest.raises(ValueError, match="different column layout"):
+        require_result_columns(["case_id", "ari"], ["ari", "case_id"], output_path="results.csv")

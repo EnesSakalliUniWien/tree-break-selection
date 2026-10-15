@@ -14,7 +14,6 @@ tree_bh/
 from .base import benjamini_hochberg_correction
 from .tree_bh import (
     ChildParentEdgeTreeBHResult,
-    TreeBHSiblingGroupOutcome,
     apply_tree_bh_correction,
 )
 
@@ -23,6 +22,5 @@ __all__ = [
     "benjamini_hochberg_correction",
     # Tree-BH correction
     "apply_tree_bh_correction",
-    "TreeBHSiblingGroupOutcome",
     "ChildParentEdgeTreeBHResult",
 ]

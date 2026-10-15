@@ -5,6 +5,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from benchmarks.diagnostics.calibration.values import finite_min
+
 STATISTICAL_DECISION_TRACE_COLUMNS: tuple[str, ...] = (
     "case_id",
     "node_id",
@@ -49,14 +51,6 @@ _REQUIRED_GATE_TRACE_COLUMNS = frozenset(
 )
 
 
-def _finite_min(values: list[object]) -> float:
-    numeric = np.asarray(values, dtype=float)
-    finite = numeric[np.isfinite(numeric)]
-    if finite.size == 0:
-        return float("nan")
-    return float(np.min(finite))
-
-
 def _bool_any(values: list[object]) -> bool:
     return bool(any(bool(value) for value in values))
 
@@ -92,10 +86,10 @@ def statistical_decision_trace_from_gate_path_trace(
                 "case_id": str(series["case_id"]),
                 "node_id": series["node_id"],
                 "node_depth": int(series["depth"]),
-                "edge_raw_p": _finite_min(
+                "edge_raw_p": finite_min(
                     [series["left_edge_p_value"], series["right_edge_p_value"]]
                 ),
-                "edge_bh_p": _finite_min(
+                "edge_bh_p": finite_min(
                     [series["left_edge_p_value_bh"], series["right_edge_p_value_bh"]]
                 ),
                 "edge_tested": _bool_any([series["left_edge_tested"], series["right_edge_tested"]]),

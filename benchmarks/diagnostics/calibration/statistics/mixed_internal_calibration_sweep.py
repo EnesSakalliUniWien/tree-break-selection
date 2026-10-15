@@ -26,6 +26,7 @@ from benchmarks.diagnostics.calibration.statistics.internal_support_threshold_va
     summarize_internal_support_threshold_rows,
 )
 from benchmarks.diagnostics.calibration.values import parse_csv_list
+from benchmarks.diagnostics.runner_support import case_with_replicate_seed
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
@@ -69,13 +70,6 @@ def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, ob
     if missing:
         raise ValueError(f"Unknown case name(s) for suite {suite!r}: {missing!r}.")
     return [by_name[name].copy() for name in case_names]
-
-
-def _case_with_replicate_seed(case: dict[str, object], replicate_index: int) -> dict[str, object]:
-    replicated = case.copy()
-    if "seed" in replicated:
-        replicated["seed"] = int(replicated["seed"]) + int(replicate_index) * 100_003
-    return replicated
 
 
 def _record_selected_ratio(record: SiblingPairRecord) -> float:
@@ -133,7 +127,7 @@ def _collect_case_replicate(
     sibling_alpha: float,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, object]]:
     context = build_tbs_tree_context(
-        _case_with_replicate_seed(case, replicate_index),
+        case_with_replicate_seed(case, replicate_index),
         populate_node_distributions=True,
     )
     edge_df, spectral_context = annotate_child_parent_divergence(

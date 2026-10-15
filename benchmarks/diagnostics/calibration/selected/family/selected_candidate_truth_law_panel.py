@@ -28,7 +28,13 @@ from benchmarks.diagnostics.calibration.selected.family.selected_pass_through_br
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
-from benchmarks.diagnostics.calibration.values import bool_value, finite_float
+from benchmarks.diagnostics.calibration.values import (
+    bool_value,
+    finite_float,
+    input_data_role,
+    output_data_role,
+    split_path,
+)
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -814,20 +820,6 @@ def _candidate_context_metrics(row: pd.Series) -> dict[str, object]:
     }
 
 
-def _input_data_role(data_role: object) -> str:
-    return "null" if str(data_role) == "selected_null" else str(data_role)
-
-
-def _output_data_role(data_role: object) -> str:
-    return "selected_null" if str(data_role) == "null" else str(data_role)
-
-
-def _split_path(value: object) -> list[str]:
-    if pd.isna(value):
-        return []
-    return [part for part in str(value).split(";") if part]
-
-
 def _next_path_node(path: Sequence[str], node_id: str) -> str:
     try:
         index = list(path).index(node_id)
@@ -888,7 +880,7 @@ def _run_data_and_truth_maps_by_run(
     run_columns = ["case_id", "data_role", "method_id", "replicate", "data_seed"]
     for _, row in traversal_rows[run_columns].drop_duplicates().sort_values(run_columns).iterrows():
         case_id = str(row["case_id"])
-        data_role = _output_data_role(row["data_role"])
+        data_role = output_data_role(row["data_role"])
         method_id = str(row["method_id"])
         replicate = int(float(row["replicate"]))
         data_seed = int(float(row["data_seed"]))
@@ -911,7 +903,7 @@ def _run_data_and_truth_maps_by_run(
             n_samples=n_samples,
             n_features=n_features,
             n_categories=n_categories,
-            data_role=_input_data_role(data_role),
+            data_role=input_data_role(data_role),
             seed=data_seed,
         )
         key = (case_id, data_role, method_id, replicate)
@@ -972,7 +964,7 @@ def build_generated_support_candidate_rows(node_rows: pd.DataFrame) -> pd.DataFr
         records.append(
             {
                 "case_id": str(row["case_id"]),
-                "data_role": _output_data_role(row["data_role"]),
+                "data_role": output_data_role(row["data_role"]),
                 "replicate": int(float(row["replicate"])),
                 "node_id": str(row["truth_downstream_split_node_id"]),
                 "left_method_id": str(row["left_method_id"]),
@@ -998,7 +990,7 @@ def _generated_support_traversal_rows(node_rows: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame(
             {
                 "case_id": rows["case_id"].astype(str),
-                "data_role": rows["data_role"].map(_output_data_role),
+                "data_role": rows["data_role"].map(output_data_role),
                 "method_id": rows["left_method_id"].astype(str),
                 "replicate": pd.to_numeric(
                     rows["replicate"],
@@ -1028,7 +1020,7 @@ def _assignment_groups(
         label="gene assignments",
     )
     rows = gene_assignments.copy()
-    rows["data_role"] = rows["data_role"].map(_output_data_role)
+    rows["data_role"] = rows["data_role"].map(output_data_role)
     rows["replicate"] = pd.to_numeric(rows["replicate"], errors="coerce").fillna(-1).astype(int)
     groups: dict[tuple[str, str, str, int], pd.DataFrame] = {}
     for key, group in rows.groupby(
@@ -1083,7 +1075,7 @@ def _own_split_child_samples(
     node_id: str,
 ) -> tuple[str, str, list[str], list[str], int, int]:
     parsed = assignments[["sample_id", "path_node_ids"]].copy()
-    parsed["path"] = parsed["path_node_ids"].map(_split_path)
+    parsed["path"] = parsed["path_node_ids"].map(split_path)
     parsed = parsed.loc[parsed["path"].map(lambda path: node_id in path)].copy()
     if parsed.empty:
         return "", "", [], [], 0, 0
@@ -1323,7 +1315,7 @@ def build_selected_candidate_truth_law_rows(
     assignment_groups = _assignment_groups(gene_assignments)
 
     rows = candidate_rows.copy()
-    rows["data_role"] = rows["data_role"].map(_output_data_role)
+    rows["data_role"] = rows["data_role"].map(output_data_role)
     rows["replicate"] = pd.to_numeric(rows["replicate"], errors="coerce").fillna(-1).astype(int)
 
     records: list[dict[str, object]] = []

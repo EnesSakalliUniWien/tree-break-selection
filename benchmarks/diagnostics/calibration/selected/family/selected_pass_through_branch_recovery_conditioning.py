@@ -29,7 +29,12 @@ from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
     _generate_data_with_truth,
 )
-from benchmarks.diagnostics.calibration.values import bool_value, finite_float
+from benchmarks.diagnostics.calibration.values import (
+    bool_value,
+    finite_float,
+    input_data_role,
+    split_path,
+)
 from benchmarks.shared.util.time import format_timestamp_utc
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _case_contract,
@@ -220,16 +225,6 @@ def _finite(values: pd.Series) -> np.ndarray:
     return numeric.dropna().to_numpy(dtype=float)
 
 
-def _input_data_role(data_role: object) -> str:
-    return "null" if str(data_role) == "selected_null" else str(data_role)
-
-
-def _split_path(value: object) -> list[str]:
-    if pd.isna(value):
-        return []
-    return [part for part in str(value).split(";") if part]
-
-
 def _path_contains(path: list[str], node_id: str) -> bool:
     return str(node_id) in path
 
@@ -309,7 +304,7 @@ def _case_data_by_key(
             n_samples=n_samples,
             n_features=n_features,
             n_categories=n_categories,
-            data_role=_input_data_role(data_role),
+            data_role=input_data_role(data_role),
             seed=seed,
         )
         data_by_key[(case_id, data_role, int(float(row["replicate"])))] = data
@@ -588,7 +583,7 @@ def build_generated_branch_positive_support_fixture(
             n_samples=n_samples,
             n_features=n_features,
             n_categories=n_categories,
-            data_role=_input_data_role(data_role),
+            data_role=input_data_role(data_role),
             seed=seed,
         )
         sample_ids = data.index.astype(str).to_numpy()
@@ -813,7 +808,7 @@ def build_feature_geometry_rows(
             continue
 
         parsed = assignments[["sample_id", "path_node_ids"]].copy()
-        parsed["path"] = parsed["path_node_ids"].map(_split_path)
+        parsed["path"] = parsed["path_node_ids"].map(split_path)
         selected = parsed.loc[parsed["path"].map(lambda path: _path_contains(path, node_id))]
         split = selected.loc[
             selected["path"].map(lambda path: _path_contains(path, split_node_id))

@@ -39,6 +39,14 @@ All notable changes to this project are documented in this file.
 - Spectral branch-length state reads `branch_length` only; the `length` and `weight` edge aliases are gone.
 - `go_ic_tree_summary_plots.py` requires `--method-matrix-summary`; it reads method-matrix rows only.
 - The benchmark Docker image installs `scipy>=1.11.0`, matching `pyproject.toml`.
+- Tree-BH runs one top-down pass: each family's level is its parent family's level times that family's rejection share. Results are unchanged; a 4,000-leaf single-linkage tree takes 0.08 s instead of about 2 s. `ChildParentEdgeTreeBHResult` drops `tree_bh_base_alpha_by_depth` and `sibling_group_outcomes`, and `TreeBHSiblingGroupOutcome` is gone; nothing read them.
+- The fixed-topology NNLS design is built from a sparse leaf-by-edge incidence matrix in chunks; the matrix is identical, about 4x faster to build and half the peak memory on chain-shaped trees.
+- Fixed-subspace evidence columns compute all block p-values with one vectorized `chi2.sf` call and write each column once; on a 1,500 x 600 binary case they take 1.1 s instead of 13 s, with identical values.
+- The full benchmark refuses to append rows whose columns differ from the existing results file.
+- The AWS selected-tail merge raises when a shard's `case_summary.csv` reports a case that did not run, and the KAK lens merge raises for a lens/linkage group with no `ok` row and records status counts in its manifest.
+- `tabulate` is declared in the `benchmark` and `all` extras; `DataFrame.to_markdown` reports needed it.
+- `decompose_leading_axes_space` always standardizes columns; the `standardize` option is gone. `build_cluster_color_spec` loses `base_cmap` and `plot_tree_with_clusters` loses `colormap` and `figsize`.
+- Diagnostics share `finite_int`, `is_finite`, `finite_min` (finite values only), `numeric_column`, `split_path`, `input_data_role` and `output_data_role` from `calibration/values.py`, `case_with_replicate_seed` from `runner_support.py`, and `load_shard_table`, `load_shard_manifest` and `resolve_synced_input` from `cloud/sharding.py`.
 
 
 ### Removed
@@ -68,9 +76,13 @@ All notable changes to this project are documented in this file.
   - In the package: `PosetTree.build_sample_cluster_assignments`, the decomposition result's constant `decision_mode` key, the `kernel_backend` metadata copy of `backend`, the orchestrator re-exports of `SIBLING_GATE_PROFILES`, `resolve_sibling_gate_profile` and the two permutation p-value helpers (import them from `gates.profiles` / `gates.guards`), and the missing-column guards on `Sibling_Divergence_P_Value`.
   - In the benchmarks: the `suite="default"` alias for `full`, the `resolve_shard_index` alias, the AWS selected-edge `--resume/--no-resume` flag that changed nothing, the `row_status`/`lens_tree_id` and `getattr` defaults in the KAK lens panels, the `debug_trace` fallbacks for missing result columns, and `hasattr(tree, "root")` lookups that returned `None` (six diagnostics now call `tree_root`).
   - In the applications: the `--raw-kak-dir`, `--adaptive-diffusion-kak-dir` and `--whole-adaptive-dir` inputs of `go_ic_tree_summary_plots.py`, its `*_kak` family renames and assignment-column aliases, the artifact-index `display_rank` and `method_run_id` fallbacks, and the roster reader for unnamed linkage columns.
+- Dead code: `applications/endotypes/analysis/assess_method_correctness.py`, `benchmarks/diagnostics/calibration/statistics/same_z_functional_decomposition.py`, `benchmarks/diagnostics/calibration/cli.py`, the unused `strict` flag of `benchmark_cluster_algorithm` and the case runners, the always-true `compute_eigendecomposition_outputs` spectral flag, `FeatureBlock.signature`/`FeatureSpace.signature`, the `TREE_CONSENSUS_PRIORITY_ORDER` export, the `--progress` pytest plugin, and local copies of `parse_csv_values`, `parse_names`, `dataset_slug`, `select_cases` and the oracle runner's runtime and output-directory setup.
 
 ### Fixed
 - `build_cluster_color_spec(0)`, `overlap_selected_pass_through_fixture_miner` and `mixed_null_signal_geometry_validation` no longer crash; the previous cleanup left a removed field and two removed helpers referenced. A test now imports every `benchmarks/` module.
+- The tree plot maps sample labels to leaves only, so a sample named like an internal node no longer breaks colouring; `lowest_common_ancestor_for_set` works on trees without a cached root.
+- The GO-IC tree pages seed their subspace UMAP from a CRC32 of the run id instead of the per-process salted `hash()`, so layouts repeat across runs.
+- `profile_spectral_backends.py` calls `_process_node` with its current signature.
 - The full benchmark's relationship analysis no longer fails with `KeyError: 'gaussian_sparse_signal_highd_noise'`; the category is registered in the cover-page group map, and a test checks every default case category.
 - Reject duplicate `leaf_data` sample labels instead of reusing the last matching row.
 - Permutation guards keep fractional Bernoulli and soft categorical values instead of truncating them to zero, and no longer test splits that traversal cannot reach.

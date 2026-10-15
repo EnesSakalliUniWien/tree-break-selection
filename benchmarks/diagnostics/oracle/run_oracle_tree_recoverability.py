@@ -5,29 +5,21 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
-
-repo_root = Path(__file__).resolve().parents[3]
 
 from benchmarks.diagnostics.oracle.oracle_tree_recoverability import (
     classify_tree_recoverability_failure,
     oracle_subtree_cut,
 )
-from benchmarks.diagnostics.runner_support import _load_benchmark_suite
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
-
-_THREAD_ENV_VARS = (
-    "OMP_NUM_THREADS",
-    "OPENBLAS_NUM_THREADS",
-    "MKL_NUM_THREADS",
-    "VECLIB_MAXIMUM_THREADS",
-    "NUMEXPR_NUM_THREADS",
+from benchmarks.diagnostics.runner_support import (
+    _load_benchmark_suite,
+    configure_serial_runtime,
+    create_result_directory,
 )
+from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 
 
 def _parse_args() -> argparse.Namespace:
@@ -87,12 +79,6 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _configure_runtime_defaults() -> None:
-    for env_var in _THREAD_ENV_VARS:
-        os.environ.setdefault(env_var, "1")
-    os.environ.setdefault("TBS_N_JOBS", "1")
-
-
 def _filter_cases(cases: list[dict], raw_case_names: str) -> list[dict]:
     if not raw_case_names.strip():
         return cases
@@ -102,16 +88,6 @@ def _filter_cases(cases: list[dict], raw_case_names: str) -> list[dict]:
     if missing:
         raise ValueError(f"Unknown case names for selected suite: {missing}.")
     return [case_by_name[name].copy() for name in requested]
-
-
-def _make_output_dir(explicit_output_dir: Path | None) -> Path:
-    if explicit_output_dir is not None:
-        output_dir = explicit_output_dir
-    else:
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%SZ")
-        output_dir = repo_root / "benchmarks" / "results" / f"oracle_tree_recoverability_{stamp}"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    return output_dir
 
 
 def _load_tbs_benchmark_rows(path: Path | None) -> pd.DataFrame:
@@ -206,10 +182,10 @@ def _attach_benchmark_comparison(
 
 def main() -> None:
     args = _parse_args()
-    _configure_runtime_defaults()
+    configure_serial_runtime()
 
     cases = _filter_cases(_load_benchmark_suite(args.suite), args.case_names)
-    output_dir = _make_output_dir(args.output_dir)
+    output_dir = create_result_directory(args.output_dir, study_slug="oracle_tree_recoverability")
     output_csv = output_dir / "oracle_tree_recoverability.csv"
     metadata_json = output_dir / "oracle_tree_recoverability_metadata.json"
 

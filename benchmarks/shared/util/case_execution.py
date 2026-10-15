@@ -30,7 +30,6 @@ def _run_case_worker(
     include_validation_page: bool,
     method_params: dict[str, list[dict[str, object]]] | None = None,
     tree_consensus_label_dir: str | None = None,
-    strict: bool = False,
 ) -> None:
     """Execute one case in a fresh process and return rows via a queue."""
     # Reduce native runtime contention in spawned workers. This materially
@@ -55,7 +54,6 @@ def _run_case_worker(
             include_cover_pages=False,
             include_validation_page=include_validation_page,
             tree_consensus_label_dir=tree_consensus_label_dir,
-            strict=strict,
         )
         queue.put({"ok": True, "rows": df_res.to_dict(orient="records")})
     except Exception as exc:
@@ -74,7 +72,6 @@ def run_case_isolated(
     timeout_sec: int,
     include_validation_page: bool,
     tree_consensus_label_dir: str | None = None,
-    strict: bool = False,
 ) -> pd.DataFrame:
     """Run a single benchmark case in an isolated subprocess."""
     ctx = mp.get_context("spawn")
@@ -92,7 +89,6 @@ def run_case_isolated(
             include_validation_page,
             method_params,
             tree_consensus_label_dir,
-            strict,
         ),
     )
     proc.start()
@@ -146,7 +142,6 @@ def run_case_with_optional_isolation(
     method_params: dict[str, list[dict[str, object]]] | None = None,
     include_validation_page: bool = True,
     tree_consensus_label_dir: str | None = None,
-    strict: bool = False,
 ) -> pd.DataFrame:
     """Run a benchmark case, optionally in a subprocess."""
     if case_plot_umap and isolate_umap_cases:
@@ -161,7 +156,6 @@ def run_case_with_optional_isolation(
             timeout_sec=timeout_sec,
             include_validation_page=include_validation_page,
             tree_consensus_label_dir=tree_consensus_label_dir,
-            strict=strict,
         )
 
     df_res, _ = _get_benchmark_fn()(
@@ -176,7 +170,6 @@ def run_case_with_optional_isolation(
         include_cover_pages=False,
         include_validation_page=include_validation_page,
         tree_consensus_label_dir=tree_consensus_label_dir,
-        strict=strict,
     )
     return df_res
 

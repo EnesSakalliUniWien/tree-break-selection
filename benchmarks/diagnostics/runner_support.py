@@ -54,12 +54,6 @@ def configure_serial_runtime(
     target.setdefault("TBS_N_JOBS", "1")
 
 
-def parse_csv_values(raw: str) -> tuple[str, ...]:
-    """Parse a comma-separated command value into non-empty stripped values."""
-
-    return tuple(part.strip() for part in raw.split(",") if part.strip())
-
-
 def resolve_classified_cases(
     *,
     suite: str,
@@ -154,12 +148,20 @@ def _latest_classification_csv(project_root: Path) -> Path:
     )
 
 
+def case_with_replicate_seed(case: dict[str, object], replicate_index: int) -> dict[str, object]:
+    """Return a copy of ``case`` whose seed is offset for one replicate."""
+    replicated = case.copy()
+    if "seed" in replicated:
+        replicated["seed"] = int(replicated["seed"]) + int(replicate_index) * 100_003
+    return replicated
+
+
 __all__ = [
+    "case_with_replicate_seed",
     "ClassifiedBenchmarkCase",
     "ClassifiedCaseSelection",
     "PROJECT_ROOT",
     "configure_serial_runtime",
     "create_result_directory",
-    "parse_csv_values",
     "resolve_classified_cases",
 ]

@@ -208,15 +208,6 @@ def _default_output_dir() -> Path:
     )
 
 
-def _configure_runtime_cache_dirs() -> Path:
-    """Route third-party caches to a writable temp location.
-
-    This avoids sandbox/home-directory cache failures from Numba, UMAP,
-    Matplotlib, and fontconfig-backed libraries.
-    """
-    return _RUNTIME_CACHE_ROOT
-
-
 def _load_binary_matrix(path: Path) -> pd.DataFrame:
     data = pd.read_csv(path, sep="\t", index_col=0)
     if data.empty:
@@ -630,7 +621,6 @@ def _save_linkage_dendrogram(
 
 def main() -> None:
     args = parse_args()
-    cache_root = _configure_runtime_cache_dirs()
 
     input_path = args.input
     if not input_path.exists():
@@ -842,7 +832,7 @@ def main() -> None:
         "tree_method": args.tree_method,
         "distance_metric": decomposition["_tree_method_metadata"]["distance_metric"],
         "linkage_method": decomposition["_tree_method_metadata"]["linkage_method"],
-        "runtime_cache_root": str(cache_root),
+        "runtime_cache_root": str(_RUNTIME_CACHE_ROOT),
         "diffusion_params": {
             "k_neighbors": int(args.diffusion_k_neighbors),
             "diffusion_time": int(args.diffusion_time),

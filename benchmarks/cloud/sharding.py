@@ -6,6 +6,8 @@ import json
 import subprocess
 from pathlib import Path
 
+import pandas as pd
+
 
 def validate_shard_contract(*, shard_index: int, shard_count: int) -> None:
     """Validate shard dimensions before launching compute."""
@@ -57,7 +59,33 @@ def write_json(path: Path, payload: dict[str, object]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def load_shard_table(shard_dir: Path, filename: str) -> pd.DataFrame:
+    """Read one shard's CSV output, failing loudly when the shard did not write it."""
+    path = shard_dir / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Missing shard table: {path}")
+    return pd.read_csv(path)
+
+
+def load_shard_manifest(shard_dir: Path, filename: str) -> dict[str, object]:
+    """Read one shard's JSON manifest, failing loudly when it is absent."""
+    path = shard_dir / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Missing shard manifest: {path}")
+    return json.loads(path.read_text())
+
+
+def resolve_synced_input(path: Path, input_work_dir: Path, *, use_synced_input: bool) -> Path:
+    """Resolve a relative input path against the synced input directory when one is used."""
+    if path.is_absolute() or not use_synced_input:
+        return path
+    return input_work_dir / path
+
+
 __all__ = [
+    "load_shard_manifest",
+    "load_shard_table",
+    "resolve_synced_input",
     "iter_expected_shard_dirs",
     "sync_path_to_s3",
     "sync_s3_to_path",

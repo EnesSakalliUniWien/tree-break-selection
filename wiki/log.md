@@ -7888,3 +7888,24 @@ version comparison report and wiki source summary. Production code unchanged.
   lacks the column), `old_display_rank`, and `--method-versions`.
 - [[repository-execution-and-benchmark-map]] drops its open question about the
   `PosetTree.build_sample_cluster_assignments` facade, which is now removed.
+
+## 2026-10-15 — Audit findings 12-20
+
+- Applied the "should fix" audit items: resume refuses mismatched result
+  columns; AWS tail-study and KAK lens merges fail on shards whose work did
+  not run; the plot label map uses leaves only and the set LCA uses
+  `tree_root`; Tree-BH and flat BH have hand-computed numeric tests;
+  `tabulate` is declared; the UMAP seed uses CRC32.
+- Speed: Tree-BH is one top-down pass (same results), the NNLS design is a
+  chunked sparse incidence product (identical matrix, half the peak memory on
+  chain trees), and the fixed-subspace evidence columns are vectorized
+  (identical values, about 12x faster).
+- Lean: removed the modules, flags and helper copies that `CHANGELOG.md`
+  lists. Kept on purpose: `analyze_hc_clusters.py` (documented in
+  `data/feature_matrices/README_HC_feature_matrix_GO_CC.md`),
+  `math_trace/failure_classifier.py` (cited by
+  [[traceable-mathematical-benchmark-suite]]), the divergent copies of
+  `subspace_dir_name`/`resolve_path`/`_load_binary_matrix`, the tolerant
+  `_numeric` copies, two `_select_cases` variants that return no cases for an
+  empty filter, and the unused `jupyter`/`notebook`/`ipython` dev extras
+  (dependency removal needs a separate decision).

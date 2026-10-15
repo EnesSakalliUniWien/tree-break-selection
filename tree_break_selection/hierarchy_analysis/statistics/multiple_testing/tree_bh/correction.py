@@ -2,19 +2,13 @@
 
 from __future__ import annotations
 
+from collections import deque
+
 import networkx as nx
 import numpy as np
 
-from .helpers import (
-    collect_eligible_sibling_groups_at_depth,
-    compute_child_depths,
-    compute_sibling_group_alpha,
-    find_root_nodes,
-    group_child_indices_by_parent,
-    initialize_tree_bh_arrays,
-    record_sibling_group_outcome,
-    run_bh_within_sibling_group,
-)
+from ..base import benjamini_hochberg_correction
+from .helpers import find_root_nodes, group_child_indices_by_parent
 from .models import ChildParentEdgeTreeBHResult
 
 
@@ -58,95 +52,36 @@ def apply_tree_bh_correction(
     """
     p_values, alpha = _validate_tree_bh_inputs(p_values, child_ids, alpha)
     hypothesis_count = len(p_values)
-    (
-        child_parent_edge_null_rejected_by_tree_bh,
-        child_parent_edge_corrected_p_values_by_tree_bh,
-        child_parent_edge_tested_by_tree_bh,
-    ) = initialize_tree_bh_arrays(hypothesis_count)
+    rejected = np.zeros(hypothesis_count, dtype=bool)
+    corrected_p_values = np.ones(hypothesis_count, dtype=float)
+    tested = np.zeros(hypothesis_count, dtype=bool)
 
-    if hypothesis_count == 0:
-        return ChildParentEdgeTreeBHResult(
-            child_parent_edge_null_rejected_by_tree_bh=child_parent_edge_null_rejected_by_tree_bh,
-            child_parent_edge_corrected_p_values_by_tree_bh=(
-                child_parent_edge_corrected_p_values_by_tree_bh
-            ),
-            child_parent_edge_tested_by_tree_bh=child_parent_edge_tested_by_tree_bh,
-            tree_bh_base_alpha_by_depth={},
-            sibling_group_outcomes={},
-        )
-
-    child_depths = compute_child_depths(tree, child_ids)
-    sibling_group_indices_by_parent = group_child_indices_by_parent(tree, child_ids)
-    root_nodes = set(find_root_nodes(tree))
-    eligible_parent_nodes: set[str] = root_nodes.copy()
-    ancestor_sibling_group_rejections: dict[str, tuple[int, int]] = {}
-    tree_bh_base_alpha_by_depth: dict[int, float] = {}
-    sibling_group_outcomes = {}
-
-    for depth in sorted(set(child_depths)):
-        sibling_groups_at_depth = collect_eligible_sibling_groups_at_depth(
-            sibling_group_indices_by_parent,
-            child_depths,
-            depth,
-            eligible_parent_nodes,
-        )
-        if not sibling_groups_at_depth:
-            continue
-
-        for parent_id, sibling_group_child_indices in sibling_groups_at_depth:
-            sibling_group_alpha = compute_sibling_group_alpha(
-                tree,
-                parent_id,
-                ancestor_sibling_group_rejections,
-                alpha,
-                root_nodes,
-            )
-
-            sibling_group_p_values = p_values[sibling_group_child_indices]
-            sibling_group_bh_result = run_bh_within_sibling_group(
-                sibling_group_p_values,
-                sibling_group_alpha,
-            )
-            if sibling_group_bh_result is None:
+    if hypothesis_count:
+        indices_by_parent = group_child_indices_by_parent(tree, child_ids)
+        # A family's level is its parent family's level times that family's rejection share.
+        family_alpha = {root: alpha for root in find_root_nodes(tree)}
+        frontier = deque(family_alpha)
+        while frontier:
+            parent_id = frontier.popleft()
+            indices = indices_by_parent.get(parent_id)
+            if not indices:
                 continue
-
-            (
-                child_hypotheses_rejected_by_bh,
-                child_hypothesis_corrected_p_values_by_bh,
-            ) = sibling_group_bh_result
-            record_sibling_group_outcome(
-                parent_id=parent_id,
-                depth=depth,
-                sibling_group_child_indices=sibling_group_child_indices,
-                sibling_group_p_values=sibling_group_p_values,
-                child_hypotheses_rejected_by_bh=child_hypotheses_rejected_by_bh,
-                child_hypothesis_corrected_p_values_by_bh=(
-                    child_hypothesis_corrected_p_values_by_bh
-                ),
-                child_ids=child_ids,
-                child_parent_edge_null_rejected_by_tree_bh=(
-                    child_parent_edge_null_rejected_by_tree_bh
-                ),
-                child_parent_edge_corrected_p_values_by_tree_bh=(
-                    child_parent_edge_corrected_p_values_by_tree_bh
-                ),
-                child_parent_edge_tested_by_tree_bh=child_parent_edge_tested_by_tree_bh,
-                eligible_parent_nodes=eligible_parent_nodes,
-                ancestor_sibling_group_rejections=ancestor_sibling_group_rejections,
-                sibling_group_outcomes=sibling_group_outcomes,
-                sibling_group_alpha=sibling_group_alpha,
+            family_rejected, family_corrected = benjamini_hochberg_correction(
+                p_values[indices], alpha=family_alpha[parent_id]
             )
-
-        tree_bh_base_alpha_by_depth[int(depth)] = alpha
+            rejected[indices] = family_rejected
+            corrected_p_values[indices] = family_corrected
+            tested[indices] = True
+            child_family_alpha = family_alpha[parent_id] * family_rejected.sum() / len(indices)
+            for index in np.asarray(indices)[family_rejected]:
+                child_id = str(child_ids[index])
+                family_alpha[child_id] = child_family_alpha
+                frontier.append(child_id)
 
     return ChildParentEdgeTreeBHResult(
-        child_parent_edge_null_rejected_by_tree_bh=child_parent_edge_null_rejected_by_tree_bh,
-        child_parent_edge_corrected_p_values_by_tree_bh=(
-            child_parent_edge_corrected_p_values_by_tree_bh
-        ),
-        child_parent_edge_tested_by_tree_bh=child_parent_edge_tested_by_tree_bh,
-        tree_bh_base_alpha_by_depth=tree_bh_base_alpha_by_depth,
-        sibling_group_outcomes=sibling_group_outcomes,
+        child_parent_edge_null_rejected_by_tree_bh=rejected,
+        child_parent_edge_corrected_p_values_by_tree_bh=corrected_p_values,
+        child_parent_edge_tested_by_tree_bh=tested,
     )
 
 

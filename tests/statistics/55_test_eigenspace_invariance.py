@@ -192,7 +192,7 @@ def test_node_metadata_matches_the_complete_whitened_eigenspace() -> None:
             space.continuous_blocks[0].name: np.cov(values, rowvar=False)
         },
     )
-    result = _process_node(task, values, 1, None, 3, True)
+    result = _process_node(task, values, 1, None, 3)
     assert result.raw_mp_signal_count == 0
     assert result.test_projection_dimension == result.projection_matrix.shape[0] == 3
     assert len(result.eigenvalues) == 3

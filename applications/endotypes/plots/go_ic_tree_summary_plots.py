@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import math
 import textwrap
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -517,7 +518,8 @@ def draw_candidate_page(
     norm = BoundaryNorm(np.arange(-0.5, n_colors + 0.5, 1), cmap.N)
     merged = global_embedding.merge(color_frame, on="gene", how="inner")
     sub = embedding_2d(
-        artifact.subspace_embedding, random_state=abs(hash(artifact.candidate.run_id)) % 100000
+        artifact.subspace_embedding,
+        random_state=zlib.crc32(artifact.candidate.run_id.encode()) % 100000,
     )
     fig = plt.figure(figsize=(20.0, 11.2), layout="constrained")
     grid = fig.add_gridspec(

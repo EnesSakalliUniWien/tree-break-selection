@@ -201,3 +201,15 @@ def test_color_spec_with_no_clusters_maps_only_unassigned():
     spec = build_cluster_color_spec(0, unassigned_color="#CCCCCC")
     assert spec.colors == []
     assert spec.id_to_color == {-1: "#CCCCCC"}
+
+
+def test_label_map_ignores_internal_node_that_shares_a_sample_name():
+    from tree_break_selection.plot.cluster_tree_visualization import _build_label_to_node
+
+    tree = nx.DiGraph()
+    tree.add_node("N5", label="N5")
+    tree.add_node("L0", label="N5")
+    tree.add_node("L1", label="s1")
+    tree.add_edges_from([("N5", "L0"), ("N5", "L1")])
+
+    assert _build_label_to_node(tree) == {"N5": "L0", "s1": "L1"}

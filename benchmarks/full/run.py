@@ -15,6 +15,7 @@ from benchmarks.diagnostics.failure.debug_trace import diagnose_benchmark_failur
 from benchmarks.shared.benchmark_runs.resume import (
     compute_resume_coverage,
     filter_methods_and_params_by_run_ids,
+    require_result_columns,
     run_ids_for_params,
 )
 from benchmarks.shared.benchmark_runs.runtime import apply_single_thread_runtime_defaults
@@ -170,6 +171,7 @@ def run_benchmarks():
         completed_case_ids = set()
         missing_run_ids_by_case = {}
 
+    result_columns = list(all_results.columns)
     result_frames: list[pd.DataFrame] = []
     for i, case in enumerate(test_cases):
         case_key = i + 1
@@ -238,6 +240,8 @@ def run_benchmarks():
         if not df_res.empty:
             result_frames.append(df_res)
 
+            require_result_columns(result_columns, list(df_res.columns), output_path=output_path)
+            result_columns = list(df_res.columns)
             write_header = not output_path.exists()
             df_res.to_csv(output_path, mode="a", header=write_header, index=False)
 

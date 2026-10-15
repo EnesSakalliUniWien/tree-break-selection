@@ -23,6 +23,7 @@ import pandas as pd
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
 
+from benchmarks.diagnostics.calibration.values import finite_min
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
@@ -165,11 +166,6 @@ def hamming_squared_euclidean_embedding(data: pd.DataFrame) -> pd.DataFrame:
         index=data.index,
         columns=[f"hamming_geometry_{index}" for index in range(data.shape[1])],
     )
-
-
-def _finite_min(values: pd.Series | np.ndarray | list[object]) -> float:
-    series = pd.to_numeric(pd.Series(values), errors="coerce").dropna()
-    return float(series.min()) if not series.empty else math.nan
 
 
 def _tree_shape_summary(tree: object) -> dict[str, object]:
@@ -516,10 +512,10 @@ def _run_branch_source(
         "n_sibling_tested": int(sibling_gate_roles.eq("active_traversal_sibling_gate").sum()),
         "n_sibling_open": _bool_sum(annotations_df, "Sibling_BH_Different"),
         "n_sibling_fail_closed": int(sibling_gate_roles.eq("fail_closed_sibling_gate").sum()),
-        "min_sibling_p_value": _finite_min(
+        "min_sibling_p_value": finite_min(
             annotations_df.get("Sibling_Divergence_P_Value", pd.Series(dtype=float))
         ),
-        "min_sibling_p_value_corrected": _finite_min(
+        "min_sibling_p_value_corrected": finite_min(
             annotations_df.get("Sibling_Divergence_P_Value_Corrected", pd.Series(dtype=float))
         ),
         "trace_edge_open": _bool_sum(trace, "edge_gate_open"),

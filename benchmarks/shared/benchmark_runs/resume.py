@@ -50,6 +50,22 @@ def compute_resume_coverage(
     return completed_cases, missing_run_ids_by_case, len(run_ids_by_case)
 
 
+def require_result_columns(
+    existing_columns: list[str],
+    new_columns: list[str],
+    *,
+    output_path: object,
+) -> None:
+    """Refuse to append rows whose columns differ from the results file header."""
+    if existing_columns and list(new_columns) != list(existing_columns):
+        added = sorted(set(new_columns) - set(existing_columns))
+        dropped = sorted(set(existing_columns) - set(new_columns))
+        raise ValueError(
+            f"{output_path} has a different column layout (new: {added}, missing: {dropped}, "
+            "or a different order). Write this run to a new TBS_RUN_DIR."
+        )
+
+
 def run_ids_for_params(
     methods: list[str],
     param_sets: dict[str, list[dict[str, object]]],
@@ -86,5 +102,6 @@ def filter_methods_and_params_by_run_ids(
 __all__ = [
     "compute_resume_coverage",
     "filter_methods_and_params_by_run_ids",
+    "require_result_columns",
     "run_ids_for_params",
 ]

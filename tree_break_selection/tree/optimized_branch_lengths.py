@@ -119,21 +119,24 @@ def _leaf_nodes_for_data(tree: nx.DiGraph, data_index: pd.Index) -> list[object]
     return leaf_nodes
 
 
+_PAIR_CHUNK_SIZE = 4096
+
+
 def _edge_indices(tree: nx.DiGraph) -> dict[tuple[object, object], int]:
     return {(parent, child): index for index, (parent, child) in enumerate(tree.edges())}
 
 
-def _root_path_edge_sets(
+def _leaf_edge_incidence(
     tree: nx.DiGraph,
     leaf_nodes: list[object],
     edge_index_by_pair: dict[tuple[object, object], int],
-) -> list[frozenset[int]]:
-    path_sets: list[frozenset[int]] = []
+) -> sparse.csr_matrix:
+    """Return a leaf-by-edge 0/1 matrix marking the edges on each leaf's root path."""
     root = tree_root(tree)
-
+    indptr = [0]
+    edge_ids: list[int] = []
     for leaf in leaf_nodes:
         current = leaf
-        edge_ids: list[int] = []
         while current != root:
             parents = list(tree.predecessors(current))
             if len(parents) != 1:
@@ -143,8 +146,11 @@ def _root_path_edge_sets(
             parent = parents[0]
             edge_ids.append(edge_index_by_pair[(parent, current)])
             current = parent
-        path_sets.append(frozenset(edge_ids))
-    return path_sets
+        indptr.append(len(edge_ids))
+    return sparse.csr_matrix(
+        (np.ones(len(edge_ids), dtype=np.float64), edge_ids, indptr),
+        shape=(len(leaf_nodes), len(edge_index_by_pair)),
+    )
 
 
 def _sample_leaf_pairs(
@@ -217,23 +223,19 @@ def _squared_euclidean_targets(
 
 
 def _path_incidence_matrix(
-    root_path_sets: list[frozenset[int]],
+    leaf_edge_incidence: sparse.csr_matrix,
     left: np.ndarray,
     right: np.ndarray,
-    n_edges: int,
 ) -> sparse.csr_matrix:
-    row_indices: list[int] = []
-    col_indices: list[int] = []
-    for row_index, (left_index, right_index) in enumerate(zip(left, right, strict=True)):
-        path_edges = root_path_sets[int(left_index)] ^ root_path_sets[int(right_index)]
-        row_indices.extend([row_index] * len(path_edges))
-        col_indices.extend(path_edges)
-    data = np.ones(len(row_indices), dtype=np.float64)
-    return sparse.coo_matrix(
-        (data, (row_indices, col_indices)),
-        shape=(len(left), n_edges),
-        dtype=np.float64,
-    ).tocsr()
+    """Mark the edges on each leaf pair's path: the symmetric difference of root paths."""
+    # Chunked so the shared root-path prefixes of a chunk are the only transient copies.
+    blocks = []
+    for start in range(0, len(left), _PAIR_CHUNK_SIZE):
+        stop = start + _PAIR_CHUNK_SIZE
+        block = abs(leaf_edge_incidence[left[start:stop]] - leaf_edge_incidence[right[start:stop]])
+        block.eliminate_zeros()
+        blocks.append(block)
+    return sparse.vstack(blocks, format="csr")
 
 
 def fit_fixed_topology_nnls_branch_lengths(
@@ -275,7 +277,7 @@ def fit_fixed_topology_nnls_branch_lengths(
     if n_edges == 0:
         raise ValueError("Branch-length optimization requires a non-empty tree.")
 
-    root_path_sets = _root_path_edge_sets(tree, leaf_nodes, edge_index_by_pair)
+    leaf_edge_incidence = _leaf_edge_incidence(tree, leaf_nodes, edge_index_by_pair)
     left, right, total_pairs = _sample_leaf_pairs(
         len(leaf_nodes),
         pair_sample_size=pair_sample_size,
@@ -295,7 +297,7 @@ def fit_fixed_topology_nnls_branch_lengths(
         target_definition = "squared Euclidean distance in the supplied geometry"
         target_normalization = "none"
         target_normalization_divisor = 1
-    design = _path_incidence_matrix(root_path_sets, left, right, n_edges)
+    design = _path_incidence_matrix(leaf_edge_incidence, left, right)
     design_nnz = int(design.nnz)
     design_density = float(design_nnz / (design.shape[0] * design.shape[1]))
     column_nonzero_counts = np.asarray(design.getnnz(axis=0), dtype=np.int64)

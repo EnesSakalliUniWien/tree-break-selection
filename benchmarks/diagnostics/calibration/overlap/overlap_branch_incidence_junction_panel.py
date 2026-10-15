@@ -29,7 +29,6 @@ from benchmarks.diagnostics.calibration.overlap.overlap_structural_sibling_panel
     DEFAULT_PROFILE,
     _as_float_matrix,
     _descendant_labels,
-    _output_data_role,
     _purity,
     _raw_node_by_id,
     _truth_for_labels,
@@ -47,7 +46,7 @@ from benchmarks.diagnostics.calibration.selected.family.selected_family_traversa
 from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
     DEFAULT_DATA_ROLES,
 )
-from benchmarks.diagnostics.calibration.values import bool_value, finite_float
+from benchmarks.diagnostics.calibration.values import bool_value, finite_float, output_data_role
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     parse_names,
 )
@@ -598,7 +597,7 @@ def _branch_row_for_node(
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
         "case_id": case_id,
-        "data_role": _output_data_role(data_role),
+        "data_role": output_data_role(data_role),
         "replicate": int(replicate),
         "data_seed": int(data_seed),
         "profile_id": str(profile_id),

@@ -62,7 +62,6 @@ def _process_node(
     minimum_projection_dimension: int,
     projection_basis_dimension: int | None,
     feature_count: int,
-    compute_eigendecomposition_outputs: bool,
 ) -> NodeSpectralResult:
     """Eigendecompose one node and return a typed result payload.
 
@@ -132,7 +131,7 @@ def _process_node(
     eigensolve_start_sec = perf_counter()
     eigendecomposition_result = eigendecompose_covariance(
         descendant_feature_matrix,
-        compute_eigenvectors=compute_eigendecomposition_outputs,
+        compute_eigenvectors=True,
     )
     stage_timings["eigensolve_sec"] = float(perf_counter() - eigensolve_start_sec)
 
@@ -170,7 +169,7 @@ def _process_node(
         np.zeros(0, dtype=np.float64),
     )
 
-    if compute_eigendecomposition_outputs and test_projection_dimension > 0:
+    if test_projection_dimension > 0:
         projection_start_sec = perf_counter()
         basis_projection_dimension = test_projection_dimension
         if projection_basis_dimension is not None:
@@ -187,8 +186,6 @@ def _process_node(
             n_features_total=feature_count,
         )
         stage_timings["pca_projection_sec"] = float(perf_counter() - projection_start_sec)
-    elif not compute_eigendecomposition_outputs:
-        projection_matrix, pca_eigenvalues = None, None
 
     return NodeSpectralResult(
         node_id=spectral_task.node_id,

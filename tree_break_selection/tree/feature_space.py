@@ -82,19 +82,6 @@ class FeatureBlock:
     def raw_dimension(self) -> int:
         return len(self.column_indices)
 
-    @property
-    def signature(
-        self,
-    ) -> tuple[str, FeatureFamily, tuple[int, ...], FeatureChart, CovarianceModel, int]:
-        return (
-            self.name,
-            self.family,
-            self.column_indices,
-            self.chart,
-            self.covariance,
-            self.contrast_dimension,
-        )
-
 
 @dataclass(frozen=True)
 class FeatureSpace:
@@ -152,15 +139,6 @@ class FeatureSpace:
         if len(families) == 1:
             return next(iter(families))
         return "mixed"
-
-    @property
-    def signature(
-        self,
-    ) -> tuple[
-        tuple[str, ...],
-        tuple[tuple[str, FeatureFamily, tuple[int, ...], FeatureChart, CovarianceModel, int], ...],
-    ]:
-        return self.column_names, tuple(block.signature for block in self.blocks)
 
 
 def bernoulli_feature_space_from_columns(columns: Sequence[object]) -> FeatureSpace:

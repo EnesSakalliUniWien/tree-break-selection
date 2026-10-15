@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-from applications.endotypes._shared import load_binary_feature_matrix, safe_name
+from applications.endotypes._shared import load_binary_feature_matrix, matrix_slug, safe_name
 from applications.endotypes.reports.artifact_index import load_artifact_index
 from benchmarks.diagnostics.calibration.values import finite_float
 from tree_break_selection.plot.image_panel import draw_image_panel
@@ -151,13 +151,6 @@ def attach_roster_status(ranking: pd.DataFrame, output_dir: Path) -> pd.DataFram
             "subspace_embedding_clusters_png"
         ].fillna("")
     return merged
-
-
-def dataset_slug(input_path: Path, label: str | None = None) -> str:
-    raw = label or input_path.stem
-    if raw.startswith("feature_matrix_"):
-        raw = raw[len("feature_matrix_") :]
-    return safe_name(raw).strip("_").lower() or "feature_matrix"
 
 
 def parse_go_term(value: object) -> tuple[str, str]:
@@ -756,7 +749,7 @@ def write_pdf(
 
 def main() -> None:
     args = parse_args()
-    dataset = dataset_slug(args.feature_matrix, args.dataset_label)
+    dataset = matrix_slug(args.feature_matrix, args.dataset_label)
     output_dir = args.output_dir or args.experiment_dir / "systematic_subspace_gene_annotations"
     output_dir.mkdir(parents=True, exist_ok=True)
 

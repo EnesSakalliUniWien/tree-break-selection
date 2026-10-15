@@ -50,6 +50,7 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
 AWS_SELECTED_TAIL_STUDY_ROLE = "aws_distributed_selected_tail_equation_diagnostic"
 SHARD_RECORDS_NAME = "selected_geometry_records.csv"
 SHARD_MANIFEST_NAME = "aws_shard_manifest.json"
+SHARD_CASE_SUMMARY_NAME = "case_summary.csv"
 COMBINED_MANIFEST_NAME = "aws_selected_tail_equation_study_manifest.json"
 
 
@@ -159,6 +160,12 @@ def load_shard_records(shard_dir: Path) -> pd.DataFrame:
         raise FileNotFoundError(f"Missing shard records: {records_path}")
     if not manifest_path.exists():
         raise FileNotFoundError(f"Missing shard manifest: {manifest_path}")
+
+    case_summary = pd.read_csv(shard_dir / SHARD_CASE_SUMMARY_NAME)
+    failed = case_summary.loc[case_summary["status"].astype(str).ne("ok")]
+    if not failed.empty:
+        reasons = dict(zip(failed["case_id"].astype(str), failed["skip_reason"].astype(str)))
+        raise ValueError(f"Shard {shard_dir} has cases that did not run: {reasons!r}")
 
     manifest = json.loads(manifest_path.read_text())
     shard_index = int(manifest["shard_index"])

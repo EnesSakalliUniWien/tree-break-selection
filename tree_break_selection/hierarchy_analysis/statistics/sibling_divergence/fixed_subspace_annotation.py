@@ -136,6 +136,22 @@ def fixed_coordinate_fdr_p_value(
     return coordinate_fdr_adjusted_minimum(coordinate_p, method=method)
 
 
+def _block_starts(feature_space: FeatureSpace, z_dimension: int) -> np.ndarray:
+    """Return each feature block's start offset in the whitened contrast vector."""
+    widths = np.array([int(block.contrast_dimension) for block in feature_space.blocks], dtype=int)
+    if np.any(widths <= 0):
+        block = feature_space.blocks[int(np.flatnonzero(widths <= 0)[0])]
+        raise ValueError(
+            f"Feature block {block.name!r} has invalid contrast_dimension={block.contrast_dimension}."
+        )
+    if int(widths.sum()) != int(z_dimension):
+        raise ValueError(
+            "Feature blocks do not cover the whitened contrast vector: "
+            f"covered={int(widths.sum())}, z_dimension={z_dimension}."
+        )
+    return np.concatenate(([0], np.cumsum(widths)[:-1])).astype(int)
+
+
 def fixed_block_simes_bh_p_value(
     z: np.ndarray,
     feature_space: FeatureSpace,
@@ -149,25 +165,9 @@ def fixed_block_simes_bh_p_value(
     if vector.size == 0:
         return 1.0
 
-    block_p_values: list[float] = []
-    offset = 0
-    for block in feature_space.blocks:
-        width = int(block.contrast_dimension)
-        block_z = vector[offset : offset + width]
-        if block_z.shape[0] != width:
-            raise ValueError(
-                "Feature blocks do not cover the whitened contrast vector: "
-                f"block={block.name!r}, offset={offset}, width={width}, "
-                f"z_dimension={vector.shape[0]}."
-            )
-        coordinate_p = chi2.sf(block_z * block_z, df=1.0)
-        block_p_values.append(_bh_adjusted_minimum(coordinate_p))
-        offset += width
-    if offset != vector.shape[0]:
-        raise ValueError(
-            "Feature blocks do not cover the whitened contrast vector: "
-            f"covered={offset}, z_dimension={vector.shape[0]}."
-        )
+    starts = _block_starts(feature_space, vector.shape[0])
+    coordinate_p = chi2.sf(vector * vector, df=1.0)
+    block_p_values = [_bh_adjusted_minimum(block) for block in np.split(coordinate_p, starts[1:])]
     return _bh_adjusted_minimum(np.asarray(block_p_values, dtype=float))
 
 
@@ -181,29 +181,16 @@ def _feature_block_p_values(
     if not np.isfinite(vector).all():
         raise ValueError("z must contain only finite values.")
 
-    p_values: list[float] = []
-    offset = 0
-    for block in feature_space.blocks:
-        width = int(block.contrast_dimension)
-        if width <= 0:
-            raise ValueError(
-                f"Feature block {block.name!r} has invalid contrast_dimension={width}."
-            )
-        block_z = vector[offset : offset + width]
-        if block_z.shape[0] != width:
+    if not feature_space.blocks:
+        if vector.size:
             raise ValueError(
                 "Feature blocks do not cover the whitened contrast vector: "
-                f"block={block.name!r}, offset={offset}, width={width}, "
-                f"z_dimension={vector.shape[0]}."
+                f"covered=0, z_dimension={vector.shape[0]}."
             )
-        p_values.append(float(chi2.sf(float(np.dot(block_z, block_z)), df=width)))
-        offset += width
-    if offset != vector.shape[0]:
-        raise ValueError(
-            "Feature blocks do not cover the whitened contrast vector: "
-            f"covered={offset}, z_dimension={vector.shape[0]}."
-        )
-    return np.asarray(p_values, dtype=float)
+        return np.zeros(0, dtype=float)
+    starts = _block_starts(feature_space, vector.shape[0])
+    widths = np.diff(np.append(starts, vector.shape[0]))
+    return np.asarray(chi2.sf(np.add.reduceat(vector * vector, starts), df=widths), dtype=float)
 
 
 def fixed_subspace_sibling_p_value(
@@ -323,6 +310,7 @@ def annotate_fixed_subspace_sibling_evidence_channels(
         )
 
     out = annotations_df.copy()
+    rows: dict[object, dict[str, object]] = {}
     for parent in tree.nodes:
         children = identify_binary_sibling_children(tree, parent)
         if children is None:
@@ -338,19 +326,24 @@ def annotate_fixed_subspace_sibling_evidence_channels(
             continuous_covariance_min_child_leaf_count=(continuous_covariance_min_child_leaf_count),
         )
         values = _fixed_subspace_channel_values(z, feature_space)
+        rows[parent] = {
+            "Sibling_Fixed_Coordinate_BH_P_Value": values["fixed_coordinate_bh"],
+            "Sibling_Fixed_Block_BH_P_Value": values["fixed_block_bh"],
+            "Sibling_Fixed_Global_P_Value": values["fixed_global_chi_square"],
+            "Sibling_Sparse_Evidence_P_Value": values[str(sparse_method)],
+            "Sibling_Sparse_Evidence_Method": str(sparse_method),
+            "Sibling_Sparse_Evidence_Calibration": "fixed_subspace_bh",
+            "Sibling_Dense_Evidence_P_Value": values[str(dense_method)],
+            "Sibling_Dense_Evidence_Method": str(dense_method),
+            "Sibling_Dense_Evidence_Calibration": "fixed_subspace_chi_square",
+            "Sibling_Dense_Evidence_Test_Statistic": values["statistic"],
+            "Sibling_Dense_Evidence_Degrees_of_Freedom": values["degrees_of_freedom"],
+        }
 
-        out.loc[parent, "Sibling_Fixed_Coordinate_BH_P_Value"] = values["fixed_coordinate_bh"]
-        out.loc[parent, "Sibling_Fixed_Block_BH_P_Value"] = values["fixed_block_bh"]
-        out.loc[parent, "Sibling_Fixed_Global_P_Value"] = values["fixed_global_chi_square"]
-        out.loc[parent, "Sibling_Sparse_Evidence_P_Value"] = values[str(sparse_method)]
-        out.loc[parent, "Sibling_Sparse_Evidence_Method"] = str(sparse_method)
-        out.loc[parent, "Sibling_Sparse_Evidence_Calibration"] = "fixed_subspace_bh"
-        out.loc[parent, "Sibling_Dense_Evidence_P_Value"] = values[str(dense_method)]
-        out.loc[parent, "Sibling_Dense_Evidence_Method"] = str(dense_method)
-        out.loc[parent, "Sibling_Dense_Evidence_Calibration"] = "fixed_subspace_chi_square"
-        out.loc[parent, "Sibling_Dense_Evidence_Test_Statistic"] = values["statistic"]
-        out.loc[parent, "Sibling_Dense_Evidence_Degrees_of_Freedom"] = values["degrees_of_freedom"]
-
+    if rows:
+        parents = list(rows)
+        for column in next(iter(rows.values())):
+            out.loc[parents, column] = [rows[parent][column] for parent in parents]
     return out
 
 

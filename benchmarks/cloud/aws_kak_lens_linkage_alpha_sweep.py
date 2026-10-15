@@ -142,12 +142,6 @@ def make_shard_spec(
     )
 
 
-def _resolved_path(path: Path, input_work_dir: Path, *, use_synced_input: bool) -> Path:
-    if path.is_absolute() or not use_synced_input:
-        return path
-    return input_work_dir / path
-
-
 def resolve_synced_input_config(configured: AwsKakLensSweepConfig) -> AwsKakLensSweepConfig:
     """Sync repository-shaped S3 inputs and point relative paths at the bundle."""
 
@@ -156,12 +150,12 @@ def resolve_synced_input_config(configured: AwsKakLensSweepConfig) -> AwsKakLens
     sharding.sync_s3_to_path(configured.input_s3_uri.rstrip("/"), configured.input_work_dir)
     return replace(
         configured,
-        input_path=_resolved_path(
+        input_path=sharding.resolve_synced_input(
             configured.input_path,
             configured.input_work_dir,
             use_synced_input=True,
         ),
-        main_assignments=_resolved_path(
+        main_assignments=sharding.resolve_synced_input(
             configured.main_assignments,
             configured.input_work_dir,
             use_synced_input=True,
@@ -301,6 +295,10 @@ def merge_shards(configured: AwsKakLensSweepConfig) -> pd.DataFrame:
     missing_groups = sorted(expected_groups - observed_groups)
     if missing_groups:
         raise ValueError(f"Missing lens/linkage group summaries after merge: {missing_groups!r}")
+    ok_groups = set(summary.loc[summary["status"].astype(str).eq("ok"), "aws_group_id"].astype(str))
+    failed_groups = sorted(observed_groups - ok_groups)
+    if failed_groups:
+        raise ValueError(f"Lens/linkage groups with no ok row after merge: {failed_groups!r}")
 
     merged_dir = configured.output_dir / "merged"
     merged_dir.mkdir(parents=True, exist_ok=True)
@@ -322,6 +320,7 @@ def merge_shards(configured: AwsKakLensSweepConfig) -> pd.DataFrame:
         "shard_count": int(configured.shard_count),
         "n_groups": int(len(expected_groups)),
         "n_rows": int(summary.shape[0]),
+        "status_counts": summary["status"].astype(str).value_counts().to_dict(),
         "outputs": {"summary": str(merged_dir / SUMMARY_NAME)},
         "source_shard_dirs": [str(path) for path in shard_dirs],
         "git": current_git_state(),

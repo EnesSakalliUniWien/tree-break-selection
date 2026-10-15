@@ -21,7 +21,7 @@ import pandas as pd
 from sklearn.covariance import ledoit_wolf_shrinkage
 from sklearn.metrics import adjusted_rand_score
 
-from benchmarks.diagnostics.calibration.values import bool_series
+from benchmarks.diagnostics.calibration.values import bool_series, finite_min
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.metrics import _calculate_ari_nmi_purity_metrics
 from benchmarks.shared.runners.tbs_diffusion_runner import (
@@ -353,11 +353,6 @@ def _branch_k_cut_labels(
     return np.asarray([cluster_by_sample[sample] for sample in sample_labels], dtype=int)
 
 
-def _finite_min(series: pd.Series) -> float:
-    values = pd.to_numeric(series, errors="coerce").dropna()
-    return float(values.min()) if not values.empty else math.nan
-
-
 def _true_cluster_clade_audit(
     tree: object,
     sample_index: pd.Index,
@@ -537,13 +532,13 @@ def _result_row(
             "trace_edge_open": _bool_sum(trace, "edge_gate_open"),
             "trace_sibling_open": _bool_sum(trace, "sibling_gate_open"),
             "root_edge_gate_open": _bool_sum(root_trace, "edge_gate_open") > 0,
-            "root_sibling_p_value_corrected": _finite_min(
+            "root_sibling_p_value_corrected": finite_min(
                 root_trace.get("sibling_p_value_corrected", pd.Series(dtype=float))
             ),
-            "min_edge_open_sibling_p_value_corrected": _finite_min(
+            "min_edge_open_sibling_p_value_corrected": finite_min(
                 edge_open_trace.get("sibling_p_value_corrected", pd.Series(dtype=float))
             ),
-            "min_left_edge_p_value_bh": _finite_min(
+            "min_left_edge_p_value_bh": finite_min(
                 trace.get("left_edge_p_value_bh", pd.Series(dtype=float))
             ),
             "topology_kcut_ari": (

@@ -54,19 +54,12 @@ def decompose_leading_axes_space(
     values: np.ndarray,
     *,
     following_dim: int,
-    standardize: bool = True,
 ) -> LeadingAxesSpace:
     """Return the leading PCA axis and up to ``following_dim`` following axes."""
 
     if following_dim < 0:
         raise ValueError("following_dim must be non-negative.")
-    matrix = standardize_columns(values) if standardize else np.asarray(values, dtype=float)
-    if matrix.ndim != 2:
-        raise ValueError("Expected a 2D matrix.")
-    if matrix.shape[0] == 0 or matrix.shape[1] == 0:
-        raise ValueError("Space separation requires a non-empty matrix.")
-    if not np.isfinite(matrix).all():
-        raise ValueError("Space-separation matrix contains non-finite values.")
+    matrix = standardize_columns(values)
 
     centered = matrix - matrix.mean(axis=0, keepdims=True)
     _, singular_values, right_axes = np.linalg.svd(centered, full_matrices=False)
