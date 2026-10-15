@@ -28,7 +28,7 @@ from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_
     infer_satterthwaite_reference_from_eigenvalues,
 )
 from benchmarks.diagnostics.calibration.values import finite_float
-from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
+from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
 from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
@@ -1014,7 +1014,7 @@ def run_selected_edge_replicate(
 
 
 def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, object]]:
-    cases = get_default_test_cases() if suite == "default" else get_test_cases_by_suite(suite)
+    cases = get_test_cases_by_suite(suite)
     if not case_names:
         return [dict(case) for case in cases]
     by_name = {str(case["name"]): case for case in cases}

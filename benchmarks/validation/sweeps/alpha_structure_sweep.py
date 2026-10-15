@@ -27,7 +27,7 @@ import pandas as pd
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 from benchmarks.diagnostics.calibration.values import finite_float
-from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
+from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.result_records import BenchmarkResultRow, benchmark_rows_to_dataframe
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_run import run_single_case
@@ -150,10 +150,7 @@ def _parse_alpha_pairs(raw: str | None) -> tuple[tuple[float, float], ...] | Non
 
 
 def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, Any]]:
-    if suite == "default":
-        cases = get_default_test_cases()
-    else:
-        cases = get_test_cases_by_suite(suite)
+    cases = get_test_cases_by_suite(suite)
     if not case_names:
         return [dict(case) for case in cases]
     by_name = {str(case["name"]): case for case in cases}

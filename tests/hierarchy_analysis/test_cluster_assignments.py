@@ -85,8 +85,8 @@ def test_build_sample_cluster_assignments_rejects_mismatched_leaf_signature() ->
 def test_build_sample_cluster_assignments_rejects_overlapping_leaves() -> None:
     decomposition = {
         "cluster_assignments": {
-            1: {"root_node": "left", "leaves": ["S1"], "size": 1},
-            2: {"root_node": "right", "leaves": ["S1"], "size": 1},
+            1: {"root_node": "left", "leaves": ["S1"], "leaf_signature": ("S1",), "size": 1},
+            2: {"root_node": "right", "leaves": ["S1"], "leaf_signature": ("S1",), "size": 1},
         }
     }
 

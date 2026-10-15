@@ -40,7 +40,7 @@ from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_ge
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
 )
-from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
+from benchmarks.shared.env import resolve_aws_batch_shard_index
 from benchmarks.shared.util.provenance import current_git_state
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
@@ -351,7 +351,7 @@ def main() -> None:
     args = _parse_args()
     configured = _config_from_args(args)
     if args.command == "run-shard":
-        shard_index = resolve_shard_index(args.shard_index)
+        shard_index = resolve_aws_batch_shard_index(args.shard_index)
         run_shard(configured, shard_index)
         print(f"Wrote shard {shard_index} to {make_shard_spec(configured, shard_index).output_dir}")
     elif args.command == "merge":
@@ -378,7 +378,6 @@ __all__ = [
     "merge_shards",
     "parse_case_names",
     "recompute_outputs_from_records",
-    "resolve_shard_index",
     "run_shard",
     "shard_seed",
     "validate_shard_contract",

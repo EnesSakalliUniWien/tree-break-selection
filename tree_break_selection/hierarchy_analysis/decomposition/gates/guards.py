@@ -723,8 +723,7 @@ def apply_root_selective_permutation_guard(
         subset = leaf_data.loc[labels]
         observed = (
             float(out.loc[node, "Sibling_Divergence_P_Value"])
-            if "Sibling_Divergence_P_Value" in out.columns
-            and pd.notna(out.loc[node, "Sibling_Divergence_P_Value"])
+            if pd.notna(out.loc[node, "Sibling_Divergence_P_Value"])
             else None
         )
         out.loc[node, "Selective_Permutation_Guard_Alpha"] = float(alpha)
@@ -772,9 +771,7 @@ def apply_root_selective_permutation_guard(
         observed_values = [
             float(out.loc[node, "Sibling_Divergence_P_Value"])
             for node in nodes
-            if node in out.index
-            and "Sibling_Divergence_P_Value" in out.columns
-            and pd.notna(out.loc[node, "Sibling_Divergence_P_Value"])
+            if node in out.index and pd.notna(out.loc[node, "Sibling_Divergence_P_Value"])
         ]
         if not observed_values:
             return False

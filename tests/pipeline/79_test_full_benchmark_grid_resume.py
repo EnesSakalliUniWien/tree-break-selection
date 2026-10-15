@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from benchmarks.shared.benchmark_grid import benchmark_grid, benchmark_run_id
 from benchmarks.shared.benchmark_runs.resume import (
@@ -65,3 +66,10 @@ def test_resume_coverage_follows_case_names_when_suite_order_changes():
     assert completed == {"old_first", "old_second"}
     assert "inserted_case" not in completed
     assert missing_by_case == {}
+
+
+def test_resume_rejects_results_without_run_ids():
+    existing_results = pd.DataFrame({"test_case": [1], "method": ["kmeans"], "ari": [1.0]})
+
+    with pytest.raises(ValueError, match="predate run-id resume"):
+        compute_resume_coverage(existing_results, ["kmeans::default"])

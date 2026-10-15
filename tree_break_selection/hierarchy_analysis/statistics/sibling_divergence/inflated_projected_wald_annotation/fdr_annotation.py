@@ -167,7 +167,7 @@ def apply_traversal_aligned_sibling_bh_results(
                 [parent_index[parent] for parent in candidate_parents],
                 dtype=int,
             )
-            reject, corrected_p_values, _ = benjamini_hochberg_correction(
+            reject, corrected_p_values = benjamini_hochberg_correction(
                 p_values[candidate_indices],
                 alpha=alpha,
             )

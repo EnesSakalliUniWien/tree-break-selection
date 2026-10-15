@@ -109,7 +109,7 @@ def path_text(path: Path | None) -> str:
 
 
 def subspace_dir_name(row: dict[str, object] | pd.Series) -> str:
-    rank = safe_int(row.get("_rank", row.get("specificity_aware_rank", row.get("display_rank"))))
+    rank = safe_int(row["_rank"])
     status = str(row.get("status", ""))
     if rank:
         prefix = f"rank{rank:02d}"
@@ -131,10 +131,7 @@ def load_linkage_matrix(path: Path | None) -> np.ndarray | None:
     if path is None or not path.exists():
         return None
     frame = pd.read_csv(path)
-    cols = ["left", "right", "distance", "count"]
-    if all(col in frame.columns for col in cols):
-        return frame[cols].to_numpy(dtype=float)
-    return frame.iloc[:, :4].to_numpy(dtype=float)
+    return frame[["left", "right", "distance", "count"]].to_numpy(dtype=float)
 
 
 def cluster_lookup(frame: pd.DataFrame) -> dict[int, dict[str, object]]:

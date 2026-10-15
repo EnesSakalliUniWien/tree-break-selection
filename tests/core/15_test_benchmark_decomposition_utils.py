@@ -12,8 +12,13 @@ from benchmarks.shared.util.decomposition import (
 def test_labels_and_report_from_decomposition_share_sample_assignment_table() -> None:
     decomposition = {
         "cluster_assignments": {
-            1: {"root_node": "left", "leaves": ["S1", "S3"], "size": 2},
-            2: {"root_node": "right", "leaves": ["S2"], "size": 1},
+            1: {
+                "root_node": "left",
+                "leaves": ["S1", "S3"],
+                "leaf_signature": ("S1", "S3"),
+                "size": 2,
+            },
+            2: {"root_node": "right", "leaves": ["S2"], "leaf_signature": ("S2",), "size": 1},
         }
     }
 

@@ -31,8 +31,7 @@ The coordinates still use the symmetric normalized operator and clip negative
 eigenvalues; this change does not redefine them as Markov right-eigenvector
 coordinates.
 
-Adaptive diffusion metadata retains `backend="pydiffmap"` for compatibility
-and separately records `kernel_backend`, `coordinate_implementation`,
+Adaptive diffusion metadata records `backend="pydiffmap"`, `coordinate_implementation`,
 `coordinate_operator`, `coordinate_operator_definition`,
 `coordinate_eigensolver`, and `coordinate_eigenvalue_policy`. Pydiffmap supplies
 the kernel; repository code computes the symmetric normalized coordinates

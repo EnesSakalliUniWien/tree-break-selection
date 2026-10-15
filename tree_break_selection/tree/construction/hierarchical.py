@@ -73,7 +73,7 @@ def _tree_from_merges(
 
 def tree_from_linkage(
     linkage_matrix: np.ndarray,
-    leaf_names: Optional[List[str]] = None,
+    leaf_names: List[str],
 ) -> "PosetTree":
     """Build a :class:`PosetTree` from a SciPy linkage matrix.
 
@@ -82,15 +82,15 @@ def tree_from_linkage(
     linkage_matrix
         A ``(n-1, 4)`` NumPy array from :func:`scipy.cluster.hierarchy.linkage`.
     leaf_names
-        Optional list of leaf labels; defaults to ``leaf_0 … leaf_{n-1}``.
+        Leaf labels, one per original sample.
 
     Returns
     -------
     PosetTree
     """
     n_leaves = linkage_matrix.shape[0] + 1
-    if leaf_names is None:
-        leaf_names = [f"leaf_{i}" for i in range(n_leaves)]
+    if len(leaf_names) != n_leaves:
+        raise ValueError(f"Expected {n_leaves} leaf names, got {len(leaf_names)}.")
 
     children = linkage_matrix[:, :2].astype(int)
     distances = linkage_matrix[:, 2]

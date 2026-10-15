@@ -251,8 +251,6 @@ def initialize_sibling_divergence_columns(df: pd.DataFrame) -> pd.DataFrame:
 def extract_bool_column_dict(
     df: object,
     column_name: str,
-    *,
-    coerce_index_to_str: bool = True,
 ) -> dict[object, bool]:
     """Extract a boolean column from DataFrame as a dictionary.
 
@@ -262,15 +260,11 @@ def extract_bool_column_dict(
         DataFrame containing the column.
     column_name : str
         Name of the column to extract.
-    coerce_index_to_str
-        Convert index values to strings. Keep the default for existing
-        annotation consumers; disable it when the caller must preserve tree
-        node-id identity.
 
     Returns
     -------
     dict[object, bool]
-        Dictionary mapping index to boolean values.
+        Dictionary mapping each index value (node id, type preserved) to a boolean.
     """
     if not isinstance(df, pd.DataFrame):
         raise TypeError(f"Expected a pandas DataFrame for {column_name!r} extraction.")
@@ -285,7 +279,4 @@ def extract_bool_column_dict(
             f"Column {column_name!r} contains missing values. "
             "Ensure all nodes are annotated before extraction."
         )
-    return {
-        (str(node_id) if coerce_index_to_str else node_id): bool(value)
-        for node_id, value in series.items()
-    }
+    return {node_id: bool(value) for node_id, value in series.items()}

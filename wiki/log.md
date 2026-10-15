@@ -7864,3 +7864,27 @@ version comparison report and wiki source summary. Production code unchanged.
   (766 cases); `docs/onboarding.md` lists the hidden directories that exist;
   the two dated repository audits moved to `raw/inbox/` and
   [[repository-hygiene-and-completion-audit-20260727]] cites the new path.
+
+## 2026-10-15 — Repository audit and compatibility removal
+
+- Ran a whole-repo audit in five slices (core tree/plot/space, hierarchy
+  analysis, benchmark harness, diagnostics, applications/scripts/tests). The
+  ranked report went to the user in the session; the main open items are a
+  timeout that aborts the full benchmark, the stage-2 fixture that stops
+  `scripts/run_tests_ordered.py` before stages 3-7, the sibling test using
+  branch lengths regardless of `edge_branch_length_variance_policy`, gate
+  profiles overriding explicit default-valued arguments, and NNLS edges with
+  no sampled equation reported as fitted.
+- Fixed three crashes left by the previous cleanup and added an import check
+  over every `benchmarks/` module (`tests/validation/contracts/
+  test_benchmark_modules_import.py`); `benchmarks/smoke/run_subset.py` is
+  excluded because it runs the smoke benchmark at import.
+- Removed compatibility paths with no current caller, test or tracked
+  artifact reader; `CHANGELOG.md` lists them. Kept on purpose: the
+  `undefined_unvalidated_reference_law` status (retained 2026-09-09 reports
+  contain it), the `squared_standardized_euclidean` target name, the
+  synthesized artifact-index `run_id` for the 2026-06-18 run, the
+  `tree_linkage_method` default in the semantic panel (the 15_ sweep input
+  lacks the column), `old_display_rank`, and `--method-versions`.
+- [[repository-execution-and-benchmark-map]] drops its open question about the
+  `PosetTree.build_sample_cluster_assignments` facade, which is now removed.

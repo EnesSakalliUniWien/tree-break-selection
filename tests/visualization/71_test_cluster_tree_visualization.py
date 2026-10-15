@@ -193,3 +193,11 @@ def test_tree_style_grouping_uses_significance_and_skips():
     assert set(edge_groups["different"]) == {("root", "a"), ("root", "b")}
     assert set(edge_groups["missing"]) == {("a", "c"), ("a", "d")}
     assert edge_groups["not_different"] == []
+
+
+def test_color_spec_with_no_clusters_maps_only_unassigned():
+    from tree_break_selection.plot.cluster_color_mapping import build_cluster_color_spec
+
+    spec = build_cluster_color_spec(0, unassigned_color="#CCCCCC")
+    assert spec.colors == []
+    assert spec.id_to_color == {-1: "#CCCCCC"}

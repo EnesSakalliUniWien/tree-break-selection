@@ -42,6 +42,7 @@ from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
 )
+from tree_break_selection.tree.topology import tree_root
 
 SCHEMA_VERSION = "family_metric_nnls_grid/v1"
 GENERATED_BY = "benchmarks.validation.sweeps.family_metric_nnls_grid"
@@ -279,13 +280,7 @@ def _bool_sum(frame: pd.DataFrame, column: str) -> int:
 def _root_child_fraction(tree: object) -> float:
     if tree is None:
         return math.nan
-    root = tree.graph.get("root")
-    if root is None:
-        roots = [node for node, degree in tree.in_degree() if degree == 0]
-        root = roots[0] if len(roots) == 1 else None
-    if root is None:
-        return math.nan
-    children = list(tree.successors(root))
+    children = list(tree.successors(tree_root(tree)))
     if len(children) != 2:
         return math.nan
     sizes = []

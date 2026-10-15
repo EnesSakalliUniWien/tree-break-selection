@@ -43,10 +43,11 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _select_cases,
     parse_names,
 )
-from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+from tree_break_selection.hierarchy_analysis.decomposition.gates.profiles import (
     SIBLING_GATE_PROFILES,
     resolve_sibling_gate_profile,
 )
+from tree_break_selection.tree.topology import tree_root
 
 STUDY_ROLE = "diagnostic_selected_family_traversal_not_calibration"
 SCHEMA_VERSION = "selected_family_traversal_panel/v1"
@@ -542,7 +543,7 @@ def _build_node_decisions(
     tree = result.extra["tree"]
     annotations = result.extra["annotations"]
     decomposition = result.extra["decomposition"]
-    root = tree.root() if hasattr(tree, "root") else tree.graph.get("root")
+    root = tree_root(tree)
     parents = _parent_map(tree)
     depths = _depth_map(tree, root)
     descendant_sets = tree.compute_descendant_sets(use_labels=True)
@@ -911,7 +912,7 @@ def _build_regions_and_gene_assignments(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     tree = result.extra["tree"]
     decomposition = result.extra["decomposition"]
-    root = tree.root() if hasattr(tree, "root") else tree.graph.get("root")
+    root = tree_root(tree)
     parents = _parent_map(tree)
     descendant_sets = tree.compute_descendant_sets(use_labels=True)
     raw_node_by_id = {str(node): node for node in tree.nodes}

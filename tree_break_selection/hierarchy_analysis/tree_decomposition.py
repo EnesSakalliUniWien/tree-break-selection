@@ -225,7 +225,6 @@ class TreeDecomposition:
         return extract_bool_column_dict(
             self.annotations_df,
             column_name,
-            coerce_index_to_str=False,
         )
 
     # ---------- traversal audit helpers ----------
@@ -629,7 +628,6 @@ class TreeDecomposition:
                 "edge_alpha": self._annotation_edge_alpha,
                 "sibling_alpha": self._annotation_sibling_alpha,
                 "sibling_alpha_effective": self._annotation_effective_sibling_alpha,
-                "decision_mode": "sibling_divergence",
             },
         }
         if not collect_full_trace:

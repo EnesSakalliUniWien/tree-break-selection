@@ -36,7 +36,6 @@ def extract_child_parent_edge_significance_by_node(
     return extract_bool_column_dict(
         annotations_dataframe,
         "Child_Parent_Divergence_Significant",
-        coerce_index_to_str=False,
     )
 
 
@@ -47,12 +46,10 @@ def extract_child_parent_edge_testing_status_by_node(
     child_parent_edge_tested_by_node = extract_bool_column_dict(
         annotations_dataframe,
         "Child_Parent_Divergence_Tested",
-        coerce_index_to_str=False,
     )
     child_parent_edge_ancestor_blocked_by_node = extract_bool_column_dict(
         annotations_dataframe,
         "Child_Parent_Divergence_Ancestor_Blocked",
-        coerce_index_to_str=False,
     )
     return (
         child_parent_edge_tested_by_node,

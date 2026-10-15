@@ -161,28 +161,3 @@ class PosetTree(nx.DiGraph):
         self.annotations_df = pd.DataFrame.from_records(node_records).set_index(
             "node_id", drop=True
         )
-
-    def build_sample_cluster_assignments(
-        self, decomposition_results: dict[str, object]
-    ) -> pd.DataFrame:
-        """Build a per-sample cluster assignment table from decomposition output.
-
-        This method is a convenience wrapper around
-        :func:`tree_break_selection.hierarchy_analysis.cluster_assignments.build_sample_cluster_assignments`.
-
-        Parameters
-        ----------
-        decomposition_results
-            A decomposition result dictionary produced by :meth:`decompose`.
-
-        Returns
-        -------
-        pandas.DataFrame
-            A pandas DataFrame indexed by ``sample_id`` with cluster assignment columns.
-        """
-
-        from tree_break_selection.hierarchy_analysis.cluster_assignments import (
-            build_sample_cluster_assignments,
-        )
-
-        return build_sample_cluster_assignments(decomposition_results)

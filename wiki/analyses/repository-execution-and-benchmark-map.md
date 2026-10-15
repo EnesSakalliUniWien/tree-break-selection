@@ -2,7 +2,7 @@
 title: Repository Execution and Benchmark Map
 type: analysis
 status: reviewed
-updated: 2026-10-13
+updated: 2026-10-15
 sources:
   - README.md
   - applications/README.md
@@ -251,9 +251,6 @@ strict lower layer.
 
 - Should the descriptive regression runner be renamed, or should locked
   case-specific thresholds be justified and enforced?
-- Should the remaining `PosetTree.build_sample_cluster_assignments()` facade
-  move fully to hierarchy analysis now that decomposition itself has one
-  explicit owner?
 - Should run-scoped feature-space resolution be mandatory at the benchmark
   dispatch seam?
 - How should adaptive diffusion bound or aggregate duplicate-heavy inputs

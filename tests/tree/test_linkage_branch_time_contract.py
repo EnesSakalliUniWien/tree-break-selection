@@ -54,6 +54,9 @@ def _branch_length_result(*, status: str, applied_to_tree: bool) -> BranchLength
         branch_length_min=1.0,
         branch_length_max=1.0,
         solver_message="test",
+        target_definition="squared Euclidean distance in the supplied geometry",
+        target_normalization="none",
+        target_normalization_divisor=1,
     )
 
 

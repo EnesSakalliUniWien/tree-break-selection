@@ -122,10 +122,7 @@ def resolve_adaptive_epsilon(
 ) -> tuple[float, str]:
     """Resolve scalar epsilon after pydiffmap has fitted local bandwidths."""
 
-    scaled_dists = getattr(kernel_object, "scaled_dists", None)
-    if scaled_dists is None:
-        raise ValueError("Adaptive diffusion kernel is missing scaled distance data.")
-    scaled_sq = np.asarray(scaled_dists.data, dtype=float) ** 2
+    scaled_sq = np.asarray(kernel_object.scaled_dists.data, dtype=float) ** 2
     return resolve_adaptive_epsilon_from_scaled_sq(scaled_sq, epsilon, metric=metric)
 
 
@@ -399,7 +396,6 @@ def adaptive_diffusion_geometry(
         coordinates,
         metadata={
             "backend": "pydiffmap",
-            "kernel_backend": "pydiffmap",
             "coordinate_implementation": (
                 "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates"
             ),

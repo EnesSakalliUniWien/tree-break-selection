@@ -116,7 +116,6 @@ def test_compute_ultrametric_branch_lengths_rejects_nonmonotone_heights():
 
 
 def test_from_scipy_linkage_binary_data():
-    pytest.importorskip("scipy")
     from scipy.cluster.hierarchy import linkage
     from scipy.spatial.distance import pdist
 

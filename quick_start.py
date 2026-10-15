@@ -75,10 +75,10 @@ def main():
 
     # --- Display Results ---
     print("\n--- Analysis Complete ---")
-    num_found = decomposition_results.get("num_clusters", 0)
+    num_found = decomposition_results["num_clusters"]
     print(f"\nAlgorithm found {num_found} clusters.")
 
-    cluster_assignments = decomposition_results.get("cluster_assignments", {})
+    cluster_assignments = decomposition_results["cluster_assignments"]
 
     predicted_labels = {}
     if cluster_assignments:
@@ -93,7 +93,7 @@ def main():
     for sample_name in data.index:
         sample_index = int(sample_name.split("_")[1])
         ordered_true_labels.append(y_true[sample_index])
-        ordered_pred_labels.append(predicted_labels.get(sample_name, -1))
+        ordered_pred_labels.append(predicted_labels[sample_name])
 
     if ordered_pred_labels:
         ari_score = adjusted_rand_score(ordered_true_labels, ordered_pred_labels)

@@ -47,10 +47,7 @@ def diagnose_benchmark_failures(
         logger.warning(f"ARI column not found in {df.columns}")
         return
 
-    if "method" in df.columns:
-        bad_cases = df[(df["method"] == "tbs") & (df["ari"] < 0.2)]
-    else:
-        bad_cases = df[df["ari"] < 0.2]
+    bad_cases = df[(df["method"] == "tbs") & (df["ari"] < 0.2)]
 
     if bad_cases.empty:
         logger.info("No failure cases found (ARI < 0.2).")
@@ -72,11 +69,11 @@ def diagnose_benchmark_failures(
     ]
 
     for _, row in bad_cases.iterrows():
-        case_num = row.get("test_case", "N/A")
-        case_id = row.get("case_id", "Unknown")
+        case_num = row["test_case"]
+        case_id = row["case_id"]
         ari_val = row["ari"]
-        true_k = row.get("true_clusters", "?")
-        found_k = row.get("found_clusters", "?")
+        true_k = row["true_clusters"]
+        found_k = row["found_clusters"]
 
         audit_file = audit_root / f"case_{case_num}_tbs_stats.csv"
 

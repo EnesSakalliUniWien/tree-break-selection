@@ -24,7 +24,6 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from benchmarks.diagnostics.path_b.recursive_pvalue_geometry import (
-    _root,
     build_recursive_pvalue_geometry_panels,
 )
 from benchmarks.shared.cases import (
@@ -50,6 +49,7 @@ from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
+from tree_break_selection.tree.topology import tree_root
 
 STUDY_ROLE = "diagnostic_mixed_null_signal_geometry_not_calibration"
 
@@ -76,7 +76,7 @@ class GeometryModelSpec:
 
 def _feature_family(case: dict[str, object], metadata: dict[str, object]) -> str:
     feature_space = metadata.get("feature_space")
-    if feature_space is not None and hasattr(feature_space, "family_label"):
+    if feature_space is not None:
         return str(feature_space.family_label)
     generator = str(case.get("generator", "unknown"))
     if generator in BINARY_BENCHMARK_GENERATORS:
@@ -339,7 +339,7 @@ def build_row_aligned_kak_geometry_panel(
     coordinates used by the edge gate. This makes KAK-style geometry row-aligned
     to the labeled sibling panel without relying on cached KAK block pages.
     """
-    root = _root(tree)
+    root = tree_root(tree)
     root_key = str(root)
     projection = spectral_context.principal_component_projections_by_node.get(root_key)
     if projection is None:

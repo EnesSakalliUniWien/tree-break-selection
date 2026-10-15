@@ -77,9 +77,9 @@ class BranchLengthOptimizationResult:
     branch_length_min: float
     branch_length_max: float
     solver_message: str
-    target_definition: str | None = None
-    target_normalization: str | None = None
-    target_normalization_divisor: int | None = None
+    target_definition: str
+    target_normalization: str
+    target_normalization_divisor: int
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -99,8 +99,8 @@ def validate_branch_length_optimization_method(value: str) -> str:
 def _leaf_nodes_for_data(tree: nx.DiGraph, data_index: pd.Index) -> list[object]:
     label_to_node: dict[str, object] = {}
     for node_id, attrs in tree.nodes(data=True):
-        if bool(attrs.get("is_leaf", False)):
-            label = str(attrs.get("label", node_id))
+        if attrs["is_leaf"]:
+            label = str(attrs["label"])
             if label in label_to_node:
                 raise ValueError(f"Duplicate tree leaf label {label!r}.")
             label_to_node[label] = node_id

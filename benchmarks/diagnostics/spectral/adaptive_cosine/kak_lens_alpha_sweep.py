@@ -546,8 +546,7 @@ def write_plots(summary: pd.DataFrame, output_dir: Path) -> None:
         return
 
     fig, ax = plt.subplots(figsize=(10.8, 7.2))
-    group_column = "lens_tree_id" if "lens_tree_id" in ok.columns else "lens_id"
-    for lens_id, group in ok.groupby(group_column, sort=False):
+    for lens_id, group in ok.groupby("lens_tree_id", sort=False):
         ax.plot(
             group["n_clusters"],
             group["lens_cluster_purity_to_main_context"],
@@ -567,7 +566,7 @@ def write_plots(summary: pd.DataFrame, output_dir: Path) -> None:
 
     ranked = ok.sort_values("alpha_lens_score", ascending=False).head(20).copy()
     labels = [
-        f"{getattr(row, group_column)}\ne={row.edge_alpha:g}, s={row.sibling_alpha:g}"
+        f"{row.lens_tree_id}\ne={row.edge_alpha:g}, s={row.sibling_alpha:g}"
         for row in ranked.itertuples(index=False)
     ]
     fig_height = max(5.0, 0.42 * len(ranked) + 1.8)

@@ -29,10 +29,10 @@ def test_extract_bool_column_dict_numpy_bool():
     assert all(isinstance(v, bool) for v in result.values())
 
 
-def test_extract_bool_column_dict_can_preserve_index_key_type():
+def test_extract_bool_column_dict_preserves_index_key_type():
     df = pd.DataFrame({"flag": [True, False]}, index=[10, 20])
 
-    result = extract_bool_column_dict(df, "flag", coerce_index_to_str=False)
+    result = extract_bool_column_dict(df, "flag")
 
     assert result == {10: True, 20: False}
 

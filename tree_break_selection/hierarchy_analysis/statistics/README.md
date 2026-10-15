@@ -5,7 +5,9 @@ pipeline.
 
 ## Public Entrypoints
 
-Import each entrypoint from its module; the package `__init__.py` files do not re-export.
+Import each entrypoint from the path shown. `child_parent_divergence`, `multiple_testing`,
+`multiple_testing.tree_bh` and `projection.projected_wald` re-export their public names; the
+`statistics`, `projection` and `sibling_divergence` package `__init__.py` files do not.
 
 | Entrypoint | Purpose |
 | ---------- | ------- |

@@ -58,7 +58,6 @@ INTERNAL_DISTRIBUTION_MODES = (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
     INTERNAL_DISTRIBUTION_BRANCH_LENGTH_STATE,
 )
-_EDGE_LENGTH_KEYS = ("branch_length", "length", "weight")
 _BRANCH_LENGTH_STATE_RELATIVE_FLOOR = 1e-6
 
 
@@ -74,35 +73,31 @@ def _validate_internal_distribution_mode(internal_distribution_mode: str) -> str
 
 def _edge_length(tree: nx.DiGraph, parent_id: object, child_id: object) -> float:
     attrs = tree.edges[parent_id, child_id]
-    for key in _EDGE_LENGTH_KEYS:
-        if key not in attrs:
-            continue
-        value = float(attrs[key])
-        if not math.isfinite(value) or value < 0.0:
-            raise ValueError(
-                "Branch-length internal spectral state requires finite "
-                f"non-negative edge lengths; edge {(parent_id, child_id)!r} "
-                f"has {key}={attrs[key]!r}."
-            )
-        return value
-    return 1.0
+    if "branch_length" not in attrs:
+        return 1.0
+    value = float(attrs["branch_length"])
+    if not math.isfinite(value) or value < 0.0:
+        raise ValueError(
+            "Branch-length internal spectral state requires finite "
+            f"non-negative edge lengths; edge {(parent_id, child_id)!r} "
+            f"has branch_length={attrs['branch_length']!r}."
+        )
+    return value
 
 
 def _branch_length_floor(tree: nx.DiGraph) -> float:
     positive_lengths: list[float] = []
     for _parent_id, _child_id, attrs in tree.edges(data=True):
-        for key in _EDGE_LENGTH_KEYS:
-            if key not in attrs:
-                continue
-            value = float(attrs[key])
-            if not math.isfinite(value) or value < 0.0:
-                raise ValueError(
-                    "Branch-length internal spectral state requires finite "
-                    f"non-negative edge lengths; got {key}={attrs[key]!r}."
-                )
-            if value > 0.0:
-                positive_lengths.append(value)
-            break
+        if "branch_length" not in attrs:
+            continue
+        value = float(attrs["branch_length"])
+        if not math.isfinite(value) or value < 0.0:
+            raise ValueError(
+                "Branch-length internal spectral state requires finite "
+                f"non-negative edge lengths; got branch_length={attrs['branch_length']!r}."
+            )
+        if value > 0.0:
+            positive_lengths.append(value)
     if not positive_lengths:
         return 1.0
     median_positive_length = float(np.median(np.asarray(positive_lengths, dtype=float)))
@@ -292,11 +287,7 @@ def _aggregate_spectral_results(
             )
         pca_projections[node_result.node_id] = node_result.projection_matrix
         pca_eigenvalues[node_result.node_id] = node_result.eigenvalues
-        full_eigenvalues[node_result.node_id] = (
-            node_result.full_eigenvalues
-            if node_result.full_eigenvalues is not None
-            else node_result.eigenvalues
-        )
+        full_eigenvalues[node_result.node_id] = node_result.full_eigenvalues
         active_feature_counts[node_result.node_id] = int(node_result.active_feature_count)
 
 

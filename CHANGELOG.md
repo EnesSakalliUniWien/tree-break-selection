@@ -30,6 +30,15 @@ All notable changes to this project are documented in this file.
 - Gate and guard root-stability and permutation-guard defaults, `fit_independent_gaussian_tree(linkage_method=...)` and the TBS runner mirrors use `DEFAULT_BINARY_TREE_DISTANCE_METRIC` and `DEFAULT_TREE_LINKAGE_METHOD` instead of retyped `"hamming"`/`"average"`.
 - Seven scalar coercion copies use `values.finite_float` or `root_values.finite_median`: the alpha-structure sweep and gate-path trace map `inf` to NaN, and the selected-edge geometry panel maps unparseable cells to NaN instead of raising.
 - `benchmarks/README.md` documents every `TBS_*` variable; the dated 2026-04-27 and 2026-07-27 repository audits moved from `docs/` to `raw/inbox/`.
+- `tree_from_linkage` requires `leaf_names` and raises when their count differs from the leaf count; it no longer invents `leaf_{i}` names.
+- `benjamini_hochberg_correction` returns `(rejected, adjusted)`; the third value only echoed `alpha`.
+- `extract_bool_column_dict` always keeps the index type; the `coerce_index_to_str` option is gone.
+- Cluster metadata must carry `leaf_signature`; `build_sample_cluster_assignments` no longer derives a missing one.
+- `BranchLengthOptimizationResult` requires `target_definition`, `target_normalization` and `target_normalization_divisor`.
+- Full-benchmark resume raises on a results CSV without `case_id`/`run_id` instead of rerunning every case into it.
+- Spectral branch-length state reads `branch_length` only; the `length` and `weight` edge aliases are gone.
+- `go_ic_tree_summary_plots.py` requires `--method-matrix-summary`; it reads method-matrix rows only.
+- The benchmark Docker image installs `scipy>=1.11.0`, matching `pyproject.toml`.
 
 
 ### Removed
@@ -55,8 +64,13 @@ All notable changes to this project are documented in this file.
 - Unread parameters: `plot_multi_split_heatmap(branch_lengths, n_groups_list)`, `_run_tbs_distance_tree_method(method_id)`, `build_lens_coordinates(data)` and `geometry_model_specs(table)`.
 - Write-only fields: `TreeBuildDiagnostics.zero_branch_length_count`, `ClusterColorSpec.unassigned_color`, `SiblingInflationInputs.non_binary_nodes` and `SiblingInflationTrace.raw_degrees_of_freedom`.
 - The `TBS_FORCE_UMAP_FOR_LARGE` variable, which the full runner set and nothing read.
+- Compatibility paths nothing still needs:
+  - In the package: `PosetTree.build_sample_cluster_assignments`, the decomposition result's constant `decision_mode` key, the `kernel_backend` metadata copy of `backend`, the orchestrator re-exports of `SIBLING_GATE_PROFILES`, `resolve_sibling_gate_profile` and the two permutation p-value helpers (import them from `gates.profiles` / `gates.guards`), and the missing-column guards on `Sibling_Divergence_P_Value`.
+  - In the benchmarks: the `suite="default"` alias for `full`, the `resolve_shard_index` alias, the AWS selected-edge `--resume/--no-resume` flag that changed nothing, the `row_status`/`lens_tree_id` and `getattr` defaults in the KAK lens panels, the `debug_trace` fallbacks for missing result columns, and `hasattr(tree, "root")` lookups that returned `None` (six diagnostics now call `tree_root`).
+  - In the applications: the `--raw-kak-dir`, `--adaptive-diffusion-kak-dir` and `--whole-adaptive-dir` inputs of `go_ic_tree_summary_plots.py`, its `*_kak` family renames and assignment-column aliases, the artifact-index `display_rank` and `method_run_id` fallbacks, and the roster reader for unnamed linkage columns.
 
 ### Fixed
+- `build_cluster_color_spec(0)`, `overlap_selected_pass_through_fixture_miner` and `mixed_null_signal_geometry_validation` no longer crash; the previous cleanup left a removed field and two removed helpers referenced. A test now imports every `benchmarks/` module.
 - The full benchmark's relationship analysis no longer fails with `KeyError: 'gaussian_sparse_signal_highd_noise'`; the category is registered in the cover-page group map, and a test checks every default case category.
 - Reject duplicate `leaf_data` sample labels instead of reusing the last matching row.
 - Permutation guards keep fractional Bernoulli and soft categorical values instead of truncating them to zero, and no longer test splits that traversal cannot reach.

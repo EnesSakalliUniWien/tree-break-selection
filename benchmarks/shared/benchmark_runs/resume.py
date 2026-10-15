@@ -16,8 +16,14 @@ def compute_resume_coverage(
     Coverage is keyed by ``case_id`` so a suite whose case order changed between
     runs does not credit one case's rows to another.
     """
-    if existing_results.empty or not {"case_id", "run_id"} <= set(existing_results.columns):
+    if existing_results.empty:
         return set(), {}, 0
+    missing_columns = {"case_id", "run_id"} - set(existing_results.columns)
+    if missing_columns:
+        raise ValueError(
+            f"Existing results lack {sorted(missing_columns)}; they predate run-id resume. "
+            "Write this run to a new TBS_RUN_DIR."
+        )
 
     expected_set = set(expected_run_ids)
     run_ids = existing_results["run_id"].astype(str)

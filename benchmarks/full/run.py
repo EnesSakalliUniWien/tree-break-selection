@@ -307,19 +307,14 @@ def run_benchmarks():
         print("\nRun status counts by Method:")
         print(status_summary)
 
-        if "test_case" in df.columns:
-            print(f"\nDetailed results are saved to {output_path}")
+        print(f"\nDetailed results are saved to {output_path}")
 
-            print("\nRunning failure diagnosis...")
-            actual_audit_dir = run_dir / "audit"
-            diagnose_benchmark_failures(
-                str(output_path),
-                str(actual_audit_dir),
-                str(run_dir / "failure_report.md"),
-            )
-        else:
-            print("Could not pivot results: 'case_id' column missing.")
-            print(df.head())
+        print("\nRunning failure diagnosis...")
+        diagnose_benchmark_failures(
+            str(output_path),
+            str(run_dir / "audit"),
+            str(run_dir / "failure_report.md"),
+        )
 
     if enable_plots:
         report_pdf = run_dir / f"{case_suite}_benchmark_report.pdf"

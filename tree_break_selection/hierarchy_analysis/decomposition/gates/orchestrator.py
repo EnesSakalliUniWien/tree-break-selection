@@ -78,15 +78,11 @@ from .guards import (
     apply_root_selective_permutation_guard,
     apply_root_stability_guard,
     compute_root_feature_subsample_stability,
-    selected_global_sibling_min_permutation_p_value,
-    selected_root_permutation_p_value,
     validate_root_selective_permutation_guard_config,
     validate_root_stability_guard_config,
 )
 from .profiles import (
-    SIBLING_GATE_PROFILES,
     SiblingGateProfile,
-    resolve_sibling_gate_profile,
     resolve_sibling_gate_profile_config,
 )
 
@@ -641,16 +637,12 @@ def run_gate_annotation_pipeline(
 
 
 __all__ = [
-    "SIBLING_GATE_PROFILES",
     "SiblingGateProfile",
     "apply_root_selective_permutation_guard",
     "apply_root_stability_guard",
     "build_gate_annotation_config_metadata",
     "compute_root_feature_subsample_stability",
     "resolve_effective_sibling_alpha",
-    "resolve_sibling_gate_profile",
     "resolve_sibling_gate_profile_config",
     "run_gate_annotation_pipeline",
-    "selected_global_sibling_min_permutation_p_value",
-    "selected_root_permutation_p_value",
 ]

@@ -18,7 +18,7 @@ from benchmarks.cloud.sharding import (
     validate_shard_contract,
     write_json,
 )
-from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
+from benchmarks.shared.env import resolve_aws_batch_shard_index
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     DEFAULT_EDGE_ALPHA_GRID,
     DEFAULT_MODES,
@@ -51,7 +51,6 @@ class AwsSelectedEdgeGeometryConfig:
     base_seed: int
     shard_count: int
     s3_uri: str | None = None
-    resume: bool = True
 
 
 @dataclass(frozen=True)
@@ -222,12 +221,6 @@ def _build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--shard-count", type=int, required=True)
         sub.add_argument("--s3-uri")
         if command == "run-shard":
-            sub.add_argument(
-                "--resume",
-                action=argparse.BooleanOptionalAction,
-                default=True,
-                help="Reuse existing shard outputs when present (default: enabled).",
-            )
             sub.add_argument("--shard-index", type=int)
     return parser
 
@@ -246,7 +239,6 @@ def _configured_from_args(args: argparse.Namespace) -> AwsSelectedEdgeGeometryCo
         base_seed=int(args.base_seed),
         shard_count=int(args.shard_count),
         s3_uri=args.s3_uri,
-        resume=bool(getattr(args, "resume", True)),
     )
 
 
@@ -255,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     configured = _configured_from_args(args)
     if args.command == "run-shard":
-        shard_index = resolve_shard_index(args.shard_index)
+        shard_index = resolve_aws_batch_shard_index(args.shard_index)
         print(json.dumps(run_shard(configured, shard_index), indent=2, sort_keys=True))
         return 0
     if args.command == "merge":

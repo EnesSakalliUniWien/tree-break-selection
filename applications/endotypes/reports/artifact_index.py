@@ -13,20 +13,15 @@ def load_artifact_index(experiment_dir: Path) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(path)
     frame = pd.read_csv(path)
-    rank_col = (
-        "specificity_aware_rank" if "specificity_aware_rank" in frame.columns else "display_rank"
-    )
-    frame["_rank"] = pd.to_numeric(frame[rank_col], errors="coerce")
+    frame["_rank"] = pd.to_numeric(frame["specificity_aware_rank"], errors="coerce")
     if "run_id" not in frame.columns:
-        if "method_run_id" in frame.columns:
-            frame["run_id"] = frame["method_run_id"].astype(str)
-        else:
-            frame["run_id"] = (
-                "current__adaptive_diffusion_cosine_subspace__"
-                + frame["weighting"].astype(str)
-                + "__"
-                + frame["block_name"].astype(str)
-            )
+        # The 2026-06-18 adaptive-diffusion subspace run predates the run_id column.
+        frame["run_id"] = (
+            "current__adaptive_diffusion_cosine_subspace__"
+            + frame["weighting"].astype(str)
+            + "__"
+            + frame["block_name"].astype(str)
+        )
     return frame.sort_values(["_rank", "weighting", "block_name"], na_position="last").reset_index(
         drop=True
     )

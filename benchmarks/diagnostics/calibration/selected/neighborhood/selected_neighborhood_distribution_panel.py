@@ -22,7 +22,7 @@ import pandas as pd
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.diagnostics.calibration.values import bool_series, finite_float
 from benchmarks.shared.util.time import format_timestamp_utc
-from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+from tree_break_selection.hierarchy_analysis.decomposition.gates.profiles import (
     SIBLING_GATE_PROFILES,
 )
 

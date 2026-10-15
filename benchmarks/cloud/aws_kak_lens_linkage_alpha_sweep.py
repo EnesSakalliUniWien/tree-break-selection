@@ -26,7 +26,7 @@ from benchmarks.diagnostics.spectral.adaptive_cosine.kak_lens_alpha_sweep import
     parse_lens,
     parse_linkage_methods,
 )
-from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
+from benchmarks.shared.env import resolve_aws_batch_shard_index
 from benchmarks.shared.util.provenance import current_git_state
 
 AWS_KAK_LENS_SWEEP_ROLE = "aws_distributed_kak_lens_linkage_alpha_sweep"
@@ -426,7 +426,7 @@ def main() -> None:
     configured = _config_from_args(args)
     if args.command == "run-shard":
         configured = resolve_synced_input_config(configured)
-        shard_index = resolve_shard_index(args.shard_index)
+        shard_index = resolve_aws_batch_shard_index(args.shard_index)
         run_shard(configured, shard_index)
         print(
             "Wrote KAK lens linkage alpha shard "
@@ -456,7 +456,6 @@ __all__ = [
     "make_shard_spec",
     "merge_shards",
     "parse_lenses",
-    "resolve_shard_index",
     "run_shard",
     "validate_shard_contract",
 ]

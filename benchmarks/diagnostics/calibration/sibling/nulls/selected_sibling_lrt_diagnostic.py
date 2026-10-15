@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from tree_break_selection.plot.backend import configure_matplotlib_backend
+from tree_break_selection.tree.topology import tree_root
 
 configure_matplotlib_backend()
 from typing import Sequence
@@ -67,11 +68,7 @@ def load_binary_matrix(path: Path) -> pd.DataFrame:
 
 
 def _node_depths(tree: nx.DiGraph) -> dict[object, int]:
-    root = (
-        tree.root()
-        if hasattr(tree, "root")
-        else next(node for node, degree in tree.in_degree() if degree == 0)
-    )
+    root = tree_root(tree)
     return {
         node: int(depth)
         for node, depth in nx.single_source_shortest_path_length(tree, root).items()

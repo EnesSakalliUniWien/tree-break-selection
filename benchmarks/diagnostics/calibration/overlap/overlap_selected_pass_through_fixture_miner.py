@@ -20,6 +20,7 @@ import pandas as pd
 from sklearn.metrics import adjusted_rand_score
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.root.root_values import finite_median
 from benchmarks.diagnostics.calibration.selected.family.selected_candidate_truth_law_panel import (
     _majority_label,
 )
@@ -27,7 +28,6 @@ from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_g
     _generate_data_with_truth,
 )
 from benchmarks.diagnostics.calibration.traversal.retained_pass_through_topology_likelihood_panel import (
-    _finite_median,
     build_traversal_network_context_rows,
 )
 from benchmarks.diagnostics.calibration.values import bool_value, finite_float
@@ -1287,8 +1287,8 @@ def build_overlap_selected_pass_through_case_rows(
                 "finite_traversal_context_row_count": int(finite_context.sum()),
                 "min_depth": finite_float(group["left_depth"].min(skipna=True)),
                 "max_depth": finite_float(group["left_depth"].max(skipna=True)),
-                "median_descendant_leaves": _finite_median(group["left_n_descendant_leaves"]),
-                "median_sibling_p_value": _finite_median(group["left_sibling_p_value"]),
+                "median_descendant_leaves": finite_median(group["left_n_descendant_leaves"]),
+                "median_sibling_p_value": finite_median(group["left_sibling_p_value"]),
                 "case_support_status": _case_support_status(group),
             }
         )

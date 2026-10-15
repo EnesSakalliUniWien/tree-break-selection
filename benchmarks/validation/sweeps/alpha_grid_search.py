@@ -19,7 +19,7 @@ from time import perf_counter
 
 import pandas as pd
 
-from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
+from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.pipeline import benchmark_cluster_algorithm
 from benchmarks.shared.util.provenance import current_git_state
 
@@ -86,10 +86,7 @@ def _validate_alpha_pairs(alpha_pairs: Sequence[tuple[float, float]]) -> None:
 
 def select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict]:
     """Return benchmark cases by suite and optional explicit case-name filter."""
-    if suite == "default":
-        cases = get_default_test_cases()
-    else:
-        cases = get_test_cases_by_suite(suite)
+    cases = get_test_cases_by_suite(suite)
     if not case_names:
         return [case.copy() for case in cases]
 
@@ -241,7 +238,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--suite",
         default="full",
-        help="Benchmark suite: full, binary, categorical, continuous, graph, or default.",
+        help="Benchmark suite: full, binary, categorical, continuous, or graph.",
     )
     parser.add_argument(
         "--case-names",

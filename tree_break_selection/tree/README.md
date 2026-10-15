@@ -63,8 +63,6 @@ NetworkX `DiGraph` subclass. Central data structure for the entire pipeline.
 | `compute_descendant_sets()`                 | Map every node → frozenset of its descendant leaf labels.                                      |
 | `find_lca_for_set(nodes)`                   | LCA for a non-empty collection of nodes.                                                       |
 | `populate_node_divergences(leaf_data, feature_space=None)` | Populate flat raw-coordinate distributions and leaf counts. Categorical and continuous data require an explicit feature-space contract. Stores result in `annotations_df`. |
-| `decompose(annotations_df, leaf_data, **kw)` | Thin facade: builds `TreeDecomposition` and runs `decompose_tree()`.                           |
-| `build_sample_cluster_assignments(results)` | Per-sample cluster table from decomposition output.                                            |
 
 ## topology.py
 

@@ -33,6 +33,7 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _select_cases,
     parse_names,
 )
+from tree_break_selection.tree.topology import tree_root
 
 SCHEMA_VERSION = "root_tree_geometry_hard_negative_replay_panel/v1"
 STUDY_ROLE = "diagnostic_root_tree_geometry_hard_negative_replay_not_calibration"
@@ -173,28 +174,13 @@ def classify_hard_negative_row(
     )
 
 
-def _root_node(tree: object) -> object:
-    if hasattr(tree, "root"):
-        return tree.root()
-    graph = getattr(tree, "graph", {})
-    return graph.get("root")
-
-
 def _root_partition_summary(
     *,
     tree: object,
     sample_ids: Sequence[object],
     truth_labels: np.ndarray,
 ) -> dict[str, object]:
-    root = _root_node(tree)
-    if root is None:
-        return {
-            "root_node": "",
-            "root_child_count": 0,
-            "root_child_size_signature": "",
-            "root_child_balance": math.nan,
-            "root_partition_truth_ari": math.nan,
-        }
+    root = tree_root(tree)
     children = list(tree.successors(root))
     if not children:
         return {
@@ -246,7 +232,7 @@ def _unrooted_edge_cut_summary(
     privileged root makes a truth-aligned coarse split visible anywhere in the
     same geometry.
     """
-    root = _root_node(tree)
+    root = tree_root(tree)
     descendant_sets = tree.compute_descendant_sets(use_labels=True)
     sample_list = list(sample_ids)
     all_samples = set(sample_list)
@@ -462,7 +448,7 @@ def _row_for_geometry(
     truth = np.asarray(truth_labels, dtype=int)
     annotations = result.extra["annotations"]
     tree = result.extra["tree"]
-    root = _root_node(tree)
+    root = tree_root(tree)
     root_summary = _root_partition_summary(
         tree=tree,
         sample_ids=data.index.tolist(),

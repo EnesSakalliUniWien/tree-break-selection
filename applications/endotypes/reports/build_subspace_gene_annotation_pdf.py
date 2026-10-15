@@ -72,7 +72,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def subspace_dir_name(row: pd.Series) -> str:
-    rank_value = row.get("_rank", row.get("specificity_aware_rank", row.get("display_rank", -1)))
+    rank_value = row["_rank"]
     try:
         rank = int(float(rank_value))
     except (TypeError, ValueError):
@@ -404,7 +404,7 @@ def _first_existing_image_path(*paths: object) -> str:
 
 
 def subspace_label(row: pd.Series) -> str:
-    rank = row.get("_rank", row.get("display_rank", np.nan))
+    rank = row["_rank"]
     rank_text = f"rank {int(rank)}" if pd.notna(rank) else "unranked"
     source = row.get("assignment_source", "")
     source_text = f" [{source}]" if source else ""

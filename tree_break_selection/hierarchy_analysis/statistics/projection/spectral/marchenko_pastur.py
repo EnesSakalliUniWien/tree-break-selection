@@ -116,8 +116,6 @@ def _process_node(
     internal_distribution_row_count = 0
     if internal_distribution_vectors:
         internal_feature_rows = np.asarray(internal_distribution_vectors, dtype=np.float64)
-        if internal_feature_rows.ndim == 3 and internal_feature_rows.shape[1] == 1:
-            internal_feature_rows = internal_feature_rows[:, 0, :]
         internal_distribution_row_count = int(internal_feature_rows.shape[0])
         whitening_start_sec = perf_counter()
         internal_feature_rows = _build_trusted_null_whitened_tangent_matrix(

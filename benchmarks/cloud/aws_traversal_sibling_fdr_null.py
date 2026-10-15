@@ -18,7 +18,7 @@ from benchmarks.cloud.sharding import (
     validate_shard_contract,
     write_json,
 )
-from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
+from benchmarks.shared.env import resolve_aws_batch_shard_index
 from benchmarks.validation.statistics.traversal_sibling_fdr_null import (
     SIMULATION_OUTPUT_NAME,
     SUMMARY_OUTPUT_NAME,
@@ -289,7 +289,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     configured = _configured_from_args(args)
     if args.command == "run-shard":
-        shard_index = resolve_shard_index(args.shard_index)
+        shard_index = resolve_aws_batch_shard_index(args.shard_index)
         print(json.dumps(run_shard(configured, shard_index), indent=2, sort_keys=True))
         return 0
     if args.command == "merge":

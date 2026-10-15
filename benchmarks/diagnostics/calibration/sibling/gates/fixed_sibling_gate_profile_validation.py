@@ -42,11 +42,12 @@ from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     _select_cases,
     parse_names,
 )
-from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+from tree_break_selection.hierarchy_analysis.decomposition.gates.profiles import (
     SIBLING_GATE_PROFILES,
     resolve_sibling_gate_profile,
     resolve_sibling_gate_profile_config,
 )
+from tree_break_selection.tree.topology import tree_root
 
 STUDY_ROLE = "diagnostic_fixed_sibling_gate_profile_validation_not_calibration"
 SCHEMA_VERSION = "fixed_sibling_gate_profile_validation/v1"
@@ -412,7 +413,7 @@ def _rows_for_replicate(
     )
     annotations = result.extra["annotations"]
     tree = result.extra["tree"]
-    root = tree.root() if hasattr(tree, "root") else tree.graph.get("root")
+    root = tree_root(tree)
     gate_bundle = result.extra["gate_bundle"]
     config = gate_bundle.metadata.config
     methods = _annotation_methods(annotations)

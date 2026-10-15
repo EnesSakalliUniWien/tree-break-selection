@@ -55,7 +55,6 @@ def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix(monke
     assert geometry.coordinates.shape == (12, 5)
     assert np.isfinite(geometry.distance_condensed).all()
     assert geometry.metadata["backend"] == "pydiffmap"
-    assert geometry.metadata["kernel_backend"] == "pydiffmap"
     assert geometry.metadata["coordinate_implementation"] == (
         "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates"
     )

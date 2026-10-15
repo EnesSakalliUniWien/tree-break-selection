@@ -81,7 +81,6 @@ def build_cluster_color_spec(
 
     if n_clusters == 0:
         cmap = ListedColormap([unassigned_color])
-        # Older Matplotlib versions don't accept bad/under kwargs in __init__.
         cmap.set_bad(unassigned_color)
         cmap.set_under(unassigned_color)
         boundaries = np.array([-0.5, 0.5], dtype=float)
@@ -89,7 +88,6 @@ def build_cluster_color_spec(
         return ClusterColorSpec(
             n_clusters=0,
             colors=[],
-            unassigned_color=unassigned_color,
             cmap=cmap,
             norm=norm,
             id_to_color={-1: unassigned_color},
@@ -106,7 +104,6 @@ def build_cluster_color_spec(
             colors = _large_cluster_palette(n_clusters)
 
     cmap = ListedColormap(colors)
-    # Older Matplotlib versions don't accept bad/under kwargs in __init__.
     cmap.set_bad(unassigned_color)
     cmap.set_under(unassigned_color)
     boundaries = np.arange(-0.5, n_clusters + 0.5, 1.0)
