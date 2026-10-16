@@ -8021,3 +8021,22 @@ version comparison report and wiki source summary. Production code unchanged.
   `normalized_branch_length`; the sibling test uses the unchanged sum.
   [[tree-construction-method-map]] describes both rules, and
   `tests/tree/test_optimized_branch_lengths.py` pins them.
+
+## 2026-10-16 — Profile overrides and sweep resume
+
+- Audit finding 6: `resolve_sibling_gate_profile_config` treated an explicit
+  argument equal to its default as "not given", so a profile silently
+  replaced it. `None` now means "not given" in the resolver,
+  `run_gate_annotation_pipeline`, `run_tbs_on_distance` and benchmark
+  dispatch; an explicit value that differs from the profile raises. The
+  defaults live once in `_GATE_SETTING_DEFAULTS` in `gates/profiles.py`.
+  `fixed_sibling_gate_profile_validation.py` leaves unset guard options to
+  the profile.
+- Audit finding 10: the alpha-grid sweep reused per-alpha files from any
+  earlier case set, and the mixed internal-calibration sweep reused outputs
+  whenever the schema matched. Both now refuse saved results written for
+  another configuration (alpha grid: a `case_set_sha256` in each summary;
+  mixed sweep: suite, case names, replicates and alphas from the manifest).
+  `alpha_structure_sweep.py` had the same pattern and now checks the saved
+  `case_id` and `method` columns. `tests/validation/contracts/test_sweep_resume_config.py`
+  covers all three.

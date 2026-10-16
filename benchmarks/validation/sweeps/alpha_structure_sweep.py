@@ -462,6 +462,13 @@ def run_alpha_structure_sweep(config: AlphaStructureSweepConfig) -> dict[str, ob
         summary_path = pair_dir / "structural_summary.csv"
         if config.resume and metrics_path.exists() and summary_path.exists():
             metrics = pd.read_csv(metrics_path)
+            if set(metrics["case_id"].astype(str)) != {str(case["name"]) for case in cases} or set(
+                metrics["method"].astype(str)
+            ) != set(selected_methods):
+                raise ValueError(
+                    f"{metrics_path} holds results for other cases or methods; "
+                    "use another --output-dir or drop --resume."
+                )
             summary = pd.read_csv(summary_path)
             all_metrics.append(metrics)
             summaries.extend(summary.to_dict("records"))

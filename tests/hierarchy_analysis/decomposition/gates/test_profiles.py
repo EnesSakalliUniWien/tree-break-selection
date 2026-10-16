@@ -95,3 +95,12 @@ def test_fixed_profile_rejects_conflicting_explicit_method() -> None:
             sibling_gate_profile="fixed_coordinate_guarded_v1",
             sibling_gate_method="fixed_block_bh",
         )
+
+
+def test_fixed_profile_rejects_explicit_default_method() -> None:
+    # An explicit value is a conflict even when it equals the unprofiled default.
+    with pytest.raises(ValueError, match="conflicts with explicit sibling_gate_method"):
+        resolve_sibling_gate_profile_config(
+            sibling_gate_profile="fixed_coordinate_guarded_v1",
+            sibling_gate_method="projected_wald_inflation",
+        )

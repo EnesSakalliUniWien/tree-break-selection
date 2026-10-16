@@ -298,6 +298,13 @@ def run_mixed_internal_calibration_sweep(
     threshold_contexts_path = output_dir / "mixed_internal_support_contexts.csv"
     status_path = output_dir / "mixed_internal_calibration_status.csv"
     manifest_path = output_dir / "manifest.json"
+    run_config = {
+        "suite": suite,
+        "case_names": list(case_names),
+        "n_replicates": int(n_replicates),
+        "edge_alpha": float(edge_alpha),
+        "sibling_alpha": float(sibling_alpha),
+    }
     resume_schema_matches = False
     if resume and manifest_path.exists():
         try:
@@ -308,6 +315,13 @@ def run_mixed_internal_calibration_sweep(
             isinstance(resume_manifest, dict)
             and resume_manifest.get("schema_version") == SCHEMA_VERSION
         )
+        if resume_schema_matches:
+            stored_config = {key: resume_manifest.get(key) for key in run_config}
+            if stored_config != run_config:
+                raise ValueError(
+                    f"{manifest_path} holds results for {stored_config}, not {run_config}; "
+                    "use another --output-dir or drop --resume."
+                )
     if (
         resume
         and resume_schema_matches
@@ -382,11 +396,7 @@ def run_mixed_internal_calibration_sweep(
         "created_at_utc": format_timestamp_utc(),
         "schema_version": SCHEMA_VERSION,
         "study_role": STUDY_ROLE,
-        "suite": suite,
-        "case_names": list(case_names),
-        "n_replicates": int(n_replicates),
-        "edge_alpha": float(edge_alpha),
-        "sibling_alpha": float(sibling_alpha),
+        **run_config,
         "outputs": {
             "q10_records": str(q10_records_path),
             "q10_weight_summary": str(weight_summary_path),

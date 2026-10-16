@@ -145,8 +145,8 @@ class FixedSiblingGateProfileValidationConfig:
     edge_alpha: float
     replicates: int
     base_seed: int
-    root_selective_permutation_guard_replicates: int = 0
-    root_selective_permutation_guard_seed: int = 0
+    root_selective_permutation_guard_replicates: int | None = None
+    root_selective_permutation_guard_seed: int | None = None
     root_selective_permutation_guard_alpha: float | None = None
     max_null_split_rate: float = 0.05
     min_signal_mean_ari: float = 0.75
@@ -373,8 +373,8 @@ def _rows_for_replicate(
     profile_id: str,
     sibling_alpha: float,
     edge_alpha: float,
-    root_selective_permutation_guard_replicates: int,
-    root_selective_permutation_guard_seed: int,
+    root_selective_permutation_guard_replicates: int | None,
+    root_selective_permutation_guard_seed: int | None,
     root_selective_permutation_guard_alpha: float | None,
 ) -> dict[str, object]:
     profile = resolve_sibling_gate_profile(profile_id)
@@ -400,15 +400,9 @@ def _rows_for_replicate(
         edge_alpha=float(edge_alpha),
         feature_space=feature_space,
         sibling_gate_profile=profile_id,
-        root_selective_permutation_guard_replicates=int(
-            root_selective_permutation_guard_replicates
-        ),
-        root_selective_permutation_guard_seed=int(root_selective_permutation_guard_seed),
-        root_selective_permutation_guard_alpha=(
-            None
-            if root_selective_permutation_guard_alpha is None
-            else float(root_selective_permutation_guard_alpha)
-        ),
+        root_selective_permutation_guard_replicates=root_selective_permutation_guard_replicates,
+        root_selective_permutation_guard_seed=root_selective_permutation_guard_seed,
+        root_selective_permutation_guard_alpha=root_selective_permutation_guard_alpha,
         trace_level="full",
     )
     annotations = result.extra["annotations"]
@@ -951,7 +945,7 @@ def build_method_constant_evidence_fields(
         "random_seed_policy": (
             f"base_seed={int(config.base_seed)}; replicate seed = base + 1009*r; "
             "root_selective_permutation_guard_seed="
-            f"{int(config.root_selective_permutation_guard_seed)}"
+            f"{config.root_selective_permutation_guard_seed}"
         ),
         "n_replicates": int(config.replicates),
         "baseline_setting": "projected_wald_inflation default, not rerun here",
@@ -1094,7 +1088,8 @@ def run_fixed_sibling_gate_profile_validation(
         raise ValueError("sibling_alpha must lie in (0, 1).")
     if not math.isfinite(float(config.edge_alpha)) or not 0.0 < float(config.edge_alpha) < 1.0:
         raise ValueError("edge_alpha must lie in (0, 1).")
-    if int(config.root_selective_permutation_guard_replicates) < 0:
+    replicates = config.root_selective_permutation_guard_replicates
+    if replicates is not None and int(replicates) < 0:
         raise ValueError("root_selective_permutation_guard_replicates must be nonnegative.")
     if (
         config.root_selective_permutation_guard_alpha is not None
@@ -1149,10 +1144,10 @@ def run_fixed_sibling_gate_profile_validation(
                             profile_id=profile_id,
                             sibling_alpha=float(config.sibling_alpha),
                             edge_alpha=float(config.edge_alpha),
-                            root_selective_permutation_guard_replicates=int(
+                            root_selective_permutation_guard_replicates=(
                                 config.root_selective_permutation_guard_replicates
                             ),
-                            root_selective_permutation_guard_seed=int(
+                            root_selective_permutation_guard_seed=(
                                 config.root_selective_permutation_guard_seed
                             ),
                             root_selective_permutation_guard_alpha=(
@@ -1217,12 +1212,10 @@ def run_fixed_sibling_gate_profile_validation(
             "replicates": int(config.replicates),
             "base_seed": int(config.base_seed),
             "resume_from_checkpoints": bool(config.resume_from_checkpoints),
-            "root_selective_permutation_guard_replicates": int(
+            "root_selective_permutation_guard_replicates": (
                 config.root_selective_permutation_guard_replicates
             ),
-            "root_selective_permutation_guard_seed": int(
-                config.root_selective_permutation_guard_seed
-            ),
+            "root_selective_permutation_guard_seed": config.root_selective_permutation_guard_seed,
             "root_selective_permutation_guard_alpha": (
                 None
                 if config.root_selective_permutation_guard_alpha is None
@@ -1264,8 +1257,9 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--edge-alpha", type=float, default=0.001)
     parser.add_argument("--replicates", type=int, default=1)
     parser.add_argument("--base-seed", type=int, default=20260613)
-    parser.add_argument("--root-selective-permutation-guard-replicates", type=int, default=0)
-    parser.add_argument("--root-selective-permutation-guard-seed", type=int, default=0)
+    # Unset guard options leave the profile's values in place.
+    parser.add_argument("--root-selective-permutation-guard-replicates", type=int)
+    parser.add_argument("--root-selective-permutation-guard-seed", type=int)
     parser.add_argument("--root-selective-permutation-guard-alpha", type=float)
     parser.add_argument("--max-null-split-rate", type=float, default=0.05)
     parser.add_argument("--min-signal-mean-ari", type=float, default=0.75)
@@ -1285,10 +1279,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         edge_alpha=float(args.edge_alpha),
         replicates=int(args.replicates),
         base_seed=int(args.base_seed),
-        root_selective_permutation_guard_replicates=int(
-            args.root_selective_permutation_guard_replicates
-        ),
-        root_selective_permutation_guard_seed=int(args.root_selective_permutation_guard_seed),
+        root_selective_permutation_guard_replicates=args.root_selective_permutation_guard_replicates,
+        root_selective_permutation_guard_seed=args.root_selective_permutation_guard_seed,
         root_selective_permutation_guard_alpha=(
             None
             if args.root_selective_permutation_guard_alpha is None

@@ -9,6 +9,7 @@ change production defaults and does not add a fallback calibration rule.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections.abc import Sequence
@@ -149,13 +150,22 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
         else build_alpha_pairs(config.edge_alphas, config.sibling_alphas)
     )
     _validate_alpha_pairs(alpha_pairs)
+    case_set_sha256 = hashlib.sha256(
+        "\n".join(str(case["name"]) for case in cases).encode()
+    ).hexdigest()
 
     for edge_alpha, sibling_alpha in alpha_pairs:
         combo_id = alpha_pair_id(edge_alpha, sibling_alpha)
         result_path = config.output_dir / f"{combo_id}.csv"
         summary_path = config.output_dir / f"{combo_id}.summary.json"
         if config.resume and result_path.exists() and summary_path.exists():
-            summaries.append(json.loads(summary_path.read_text()))
+            summary = json.loads(summary_path.read_text())
+            if summary.get("case_set_sha256") != case_set_sha256:
+                raise ValueError(
+                    f"{summary_path} holds results for a different case set; "
+                    "use another --output-dir or pass --no-resume."
+                )
+            summaries.append(summary)
             continue
 
         started = perf_counter()
@@ -180,6 +190,7 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
             sibling_alpha=sibling_alpha,
             elapsed_sec=elapsed_sec,
         )
+        summary["case_set_sha256"] = case_set_sha256
         summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
         summaries.append(summary)
 

@@ -90,34 +90,35 @@ def resolve_sibling_gate_profile(
         ) from exc
 
 
-def _profile_value(
-    *,
-    field_name: str,
-    current: object,
-    default: object,
-    profile_value: object,
-) -> object:
-    if current == default or current == profile_value:
-        return profile_value
-    raise ValueError(
-        f"sibling_gate_profile conflicts with explicit {field_name}: "
-        f"profile has {profile_value!r}, explicit value is {current!r}."
-    )
+# Settings a profile controls, with the value and type used when neither the
+# caller nor the profile sets them.
+_GATE_SETTING_DEFAULTS: dict[str, tuple[object, type]] = {
+    "sibling_gate_method": ("projected_wald_inflation", str),
+    "sibling_gate_alpha_penalty": (1.0, float),
+    "root_stability_guard_threshold": (None, float),
+    "root_stability_subsample_replicates": (0, int),
+    "root_stability_feature_fraction": (0.8, float),
+    "root_stability_seed": (0, int),
+    "root_selective_permutation_guard_replicates": (0, int),
+    "root_selective_permutation_guard_seed": (0, int),
+    "root_selective_permutation_guard_alpha": (None, float),
+    "root_selective_permutation_guard_scope": ("root", str),
+}
 
 
 def resolve_sibling_gate_profile_config(
     *,
     sibling_gate_profile: str | SiblingGateProfile | None = None,
-    sibling_gate_method: str = "projected_wald_inflation",
-    sibling_gate_alpha_penalty: float = 1.0,
+    sibling_gate_method: str | None = None,
+    sibling_gate_alpha_penalty: float | None = None,
     root_stability_guard_threshold: float | None = None,
-    root_stability_subsample_replicates: int = 0,
-    root_stability_feature_fraction: float = 0.8,
-    root_stability_seed: int = 0,
-    root_selective_permutation_guard_replicates: int = 0,
-    root_selective_permutation_guard_seed: int = 0,
+    root_stability_subsample_replicates: int | None = None,
+    root_stability_feature_fraction: float | None = None,
+    root_stability_seed: int | None = None,
+    root_selective_permutation_guard_replicates: int | None = None,
+    root_selective_permutation_guard_seed: int | None = None,
     root_selective_permutation_guard_alpha: float | None = None,
-    root_selective_permutation_guard_scope: str = "root",
+    root_selective_permutation_guard_scope: str | None = None,
 ) -> tuple[
     str | None,
     str,
@@ -131,122 +132,46 @@ def resolve_sibling_gate_profile_config(
     float | None,
     str,
 ]:
-    """Resolve profile and explicit sibling-gate settings to concrete values."""
-    profile = resolve_sibling_gate_profile(sibling_gate_profile)
-    if profile is None:
-        return (
-            None,
-            str(sibling_gate_method),
-            float(sibling_gate_alpha_penalty),
-            (
-                None
-                if root_stability_guard_threshold is None
-                else float(root_stability_guard_threshold)
-            ),
-            int(root_stability_subsample_replicates),
-            float(root_stability_feature_fraction),
-            int(root_stability_seed),
-            int(root_selective_permutation_guard_replicates),
-            int(root_selective_permutation_guard_seed),
-            (
-                None
-                if root_selective_permutation_guard_alpha is None
-                else float(root_selective_permutation_guard_alpha)
-            ),
-            str(root_selective_permutation_guard_scope),
-        )
+    """Resolve profile and explicit sibling-gate settings to concrete values.
 
-    method = _profile_value(
-        field_name="sibling_gate_method",
-        current=str(sibling_gate_method),
-        default="projected_wald_inflation",
-        profile_value=profile.sibling_gate_method,
-    )
-    penalty = _profile_value(
-        field_name="sibling_gate_alpha_penalty",
-        current=float(sibling_gate_alpha_penalty),
-        default=1.0,
-        profile_value=float(profile.sibling_gate_alpha_penalty),
-    )
-    threshold = _profile_value(
-        field_name="root_stability_guard_threshold",
-        current=(
-            None
-            if root_stability_guard_threshold is None
-            else float(root_stability_guard_threshold)
+    ``None`` means "not given": the profile value applies, else the default in
+    ``_GATE_SETTING_DEFAULTS``. An explicit value the profile also sets must
+    match it, even when it equals that default. A profile without a selective
+    permutation guard leaves the ``root_selective_*`` settings to the caller.
+    """
+    explicit = {
+        "sibling_gate_method": sibling_gate_method,
+        "sibling_gate_alpha_penalty": sibling_gate_alpha_penalty,
+        "root_stability_guard_threshold": root_stability_guard_threshold,
+        "root_stability_subsample_replicates": root_stability_subsample_replicates,
+        "root_stability_feature_fraction": root_stability_feature_fraction,
+        "root_stability_seed": root_stability_seed,
+        "root_selective_permutation_guard_replicates": (
+            root_selective_permutation_guard_replicates
         ),
-        default=None,
-        profile_value=profile.root_stability_guard_threshold,
-    )
-    replicates = _profile_value(
-        field_name="root_stability_subsample_replicates",
-        current=int(root_stability_subsample_replicates),
-        default=0,
-        profile_value=int(profile.root_stability_subsample_replicates),
-    )
-    fraction = _profile_value(
-        field_name="root_stability_feature_fraction",
-        current=float(root_stability_feature_fraction),
-        default=0.8,
-        profile_value=float(profile.root_stability_feature_fraction),
-    )
-    seed = _profile_value(
-        field_name="root_stability_seed",
-        current=int(root_stability_seed),
-        default=0,
-        profile_value=int(profile.root_stability_seed),
-    )
-    if int(profile.root_selective_permutation_guard_replicates) > 0:
-        root_selective_replicates = _profile_value(
-            field_name="root_selective_permutation_guard_replicates",
-            current=int(root_selective_permutation_guard_replicates),
-            default=0,
-            profile_value=int(profile.root_selective_permutation_guard_replicates),
+        "root_selective_permutation_guard_seed": root_selective_permutation_guard_seed,
+        "root_selective_permutation_guard_alpha": root_selective_permutation_guard_alpha,
+        "root_selective_permutation_guard_scope": root_selective_permutation_guard_scope,
+    }
+    profile = resolve_sibling_gate_profile(sibling_gate_profile)
+    resolved: dict[str, object] = {}
+    for name, (default, cast) in _GATE_SETTING_DEFAULTS.items():
+        value = None if explicit[name] is None else cast(explicit[name])
+        profile_sets = profile is not None and (
+            not name.startswith("root_selective_")
+            or profile.root_selective_permutation_guard_replicates > 0
         )
-        root_selective_seed = _profile_value(
-            field_name="root_selective_permutation_guard_seed",
-            current=int(root_selective_permutation_guard_seed),
-            default=0,
-            profile_value=int(profile.root_selective_permutation_guard_seed),
-        )
-        root_selective_alpha = _profile_value(
-            field_name="root_selective_permutation_guard_alpha",
-            current=(
-                None
-                if root_selective_permutation_guard_alpha is None
-                else float(root_selective_permutation_guard_alpha)
-            ),
-            default=None,
-            profile_value=profile.root_selective_permutation_guard_alpha,
-        )
-        root_selective_scope = _profile_value(
-            field_name="root_selective_permutation_guard_scope",
-            current=str(root_selective_permutation_guard_scope),
-            default="root",
-            profile_value=str(profile.root_selective_permutation_guard_scope),
-        )
-    else:
-        root_selective_replicates = int(root_selective_permutation_guard_replicates)
-        root_selective_seed = int(root_selective_permutation_guard_seed)
-        root_selective_alpha = (
-            None
-            if root_selective_permutation_guard_alpha is None
-            else float(root_selective_permutation_guard_alpha)
-        )
-        root_selective_scope = str(root_selective_permutation_guard_scope)
-    return (
-        profile.profile_id,
-        str(method),
-        float(penalty),
-        None if threshold is None else float(threshold),
-        int(replicates),
-        float(fraction),
-        int(seed),
-        int(root_selective_replicates),
-        int(root_selective_seed),
-        None if root_selective_alpha is None else float(root_selective_alpha),
-        str(root_selective_scope),
-    )
+        if not profile_sets:
+            resolved[name] = default if value is None else value
+            continue
+        profile_value = getattr(profile, name)
+        if value is not None and value != profile_value:
+            raise ValueError(
+                f"sibling_gate_profile conflicts with explicit {name}: "
+                f"profile has {profile_value!r}, explicit value is {value!r}."
+            )
+        resolved[name] = None if profile_value is None else cast(profile_value)
+    return (None if profile is None else profile.profile_id, *resolved.values())  # type: ignore[return-value]
 
 
 __all__ = [

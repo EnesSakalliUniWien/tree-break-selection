@@ -95,9 +95,12 @@ def _resolve_tbs_sibling_gate_method(
     *,
     params: Dict[str, Any],
     feature_space: FeatureSpace | None,
-) -> str:
-    """Resolve the active TBS sibling gate for the feature-family contract."""
-    default_method = str(params.get("sibling_gate_method", "projected_wald_inflation"))
+) -> str | None:
+    """Resolve the active TBS sibling gate for the feature-family contract.
+
+    ``None`` leaves the choice to the sibling-gate profile, else the default gate.
+    """
+    default_method = params.get("sibling_gate_method")
     continuous_method = params.get("continuous_sibling_gate_method")
     if (
         continuous_method is not None
@@ -412,27 +415,22 @@ def _run_tbs_distance_tree_method(
             params=params,
             feature_space=feature_space,
         ),
-        sibling_gate_alpha_penalty=float(params.get("sibling_gate_alpha_penalty", 1.0)),
+        # Gate settings stay None when absent so a profile can tell them from explicit values.
+        sibling_gate_alpha_penalty=params.get("sibling_gate_alpha_penalty"),
         root_stability_guard_threshold=params.get("root_stability_guard_threshold"),
-        root_stability_subsample_replicates=int(
-            params.get("root_stability_subsample_replicates", 0)
-        ),
-        root_stability_feature_fraction=float(params.get("root_stability_feature_fraction", 0.8)),
-        root_stability_seed=int(params.get("root_stability_seed", 0)),
+        root_stability_subsample_replicates=params.get("root_stability_subsample_replicates"),
+        root_stability_feature_fraction=params.get("root_stability_feature_fraction"),
+        root_stability_seed=params.get("root_stability_seed"),
         root_stability_tree_distance_metric=str(
             params.get("root_stability_tree_distance_metric", DEFAULT_BINARY_TREE_DISTANCE_METRIC)
         ),
         root_stability_tree_linkage_method=params.get("root_stability_tree_linkage_method"),
-        root_selective_permutation_guard_replicates=int(
-            params.get("root_selective_permutation_guard_replicates", 0)
+        root_selective_permutation_guard_replicates=params.get(
+            "root_selective_permutation_guard_replicates"
         ),
-        root_selective_permutation_guard_seed=int(
-            params.get("root_selective_permutation_guard_seed", 0)
-        ),
+        root_selective_permutation_guard_seed=params.get("root_selective_permutation_guard_seed"),
         root_selective_permutation_guard_alpha=params.get("root_selective_permutation_guard_alpha"),
-        root_selective_permutation_guard_scope=str(
-            params.get("root_selective_permutation_guard_scope", "root")
-        ),
+        root_selective_permutation_guard_scope=params.get("root_selective_permutation_guard_scope"),
         root_selective_permutation_guard_tree_distance_metric=str(
             params.get(
                 "root_selective_permutation_guard_tree_distance_metric",

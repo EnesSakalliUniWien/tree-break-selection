@@ -143,7 +143,8 @@ def test_run_clustering_result_uses_continuous_sibling_gate_only_for_continuous_
         feature_space=continuous_feature_space_from_columns(tuple(df.columns)),
     )
 
-    assert captured_calls[0]["kwargs"]["sibling_gate_method"] == ("projected_wald_inflation")
+    # Unset: the gate pipeline resolves it to the profile's method or projected_wald_inflation.
+    assert captured_calls[0]["kwargs"]["sibling_gate_method"] is None
     assert captured_calls[1]["kwargs"]["sibling_gate_method"] == "fixed_coordinate_bh"
 
 
