@@ -2,9 +2,8 @@
 title: Selected Neighborhood Pvalue Interpolation Comparison 2026-06-16
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_pvalue_interpolation_comparison.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_pvalue_interpolation_comparison_overlap_expanded_candidates
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/overlap_selected_pass_through_expanded_distribution_with_topology_bandwidths
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_pvalue_interpolation_comparison_overlap_expanded_joined_topology_bandwidths
@@ -125,6 +124,7 @@ not a calibrated production p-value.
   of old bandwidth coordinates and the region-level interval table.
 - The refined smoke output records the effective-support schema on a compact
   real selected-neighborhood subset.
+- `benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_pvalue_interpolation_comparison.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

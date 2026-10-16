@@ -40,10 +40,6 @@ METHOD_LABELS = {
 }
 
 
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
 def assignment_key(label: str) -> str:
     return (
         label.lower()

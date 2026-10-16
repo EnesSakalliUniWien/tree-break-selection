@@ -2,12 +2,9 @@
 title: Selected Family Traversal Panel 2026-06-14
 type: source
 status: reviewed
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
-  - benchmarks/diagnostics/calibration/selected/family/multiscale_umap.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
 tags:
   - source
   - diagnostics
@@ -79,6 +76,7 @@ only one flat clustering.
   overlay rendering, and a tiny binary output run.
 - `tests/hierarchy_analysis/test_tree_decomposition.py` continues to cover
   pass-through traversal behavior through `TreeDecomposition`.
+- `benchmarks/diagnostics/calibration/selected/family/multiscale_umap.py`, `benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py` were retired on 2026-10-16 (last present at commit 7cc4e1c0).
 ## Links
 
 - [[fixed-sibling-gate-profile-validation-20260613]]

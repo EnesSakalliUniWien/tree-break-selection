@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score
 
+from benchmarks.shared.performance_grid import markdown_table
 from tree_break_selection.tree.construction import (
     SUPPORTED_LINKAGE_METHODS,
     TREE_CONSENSUS_STRATEGY_PRIORITY,
@@ -618,25 +619,6 @@ def build_tree_consensus_tables(
     )
 
 
-def _markdown_table(frame: pd.DataFrame, *, max_rows: int = 20) -> str:
-    if frame.empty:
-        return "_No rows._"
-    visible = frame.head(max_rows).copy()
-    for column in visible.columns:
-        if pd.api.types.is_float_dtype(visible[column]):
-            visible[column] = visible[column].map(
-                lambda value: "" if pd.isna(value) else f"{float(value):.4f}"
-            )
-    lines = [
-        "| " + " | ".join(visible.columns) + " |",
-        "| " + " | ".join("---" for _column in visible.columns) + " |",
-    ]
-    for row in visible.itertuples(index=False):
-        values = [str(value).replace("|", "\\|") for value in row]
-        lines.append("| " + " | ".join(values) + " |")
-    return "\n".join(lines)
-
-
 def _report_text(tables: TreeConsensusTables, *, source_path: Path | None) -> str:
     summary = tables.summary.iloc[0]
     source_line = f"- Source rows: `{source_path}`" if source_path is not None else ""
@@ -662,7 +644,7 @@ def _report_text(tables: TreeConsensusTables, *, source_path: Path | None) -> st
             "",
             "## Gate Checks",
             "",
-            _markdown_table(
+            markdown_table(
                 tables.summary[
                     [
                         "gate_status",
@@ -678,7 +660,7 @@ def _report_text(tables: TreeConsensusTables, *, source_path: Path | None) -> st
             "",
             "## Selected Topologies",
             "",
-            _markdown_table(tables.selection[selection_cols], max_rows=200),
+            markdown_table(tables.selection[selection_cols], max_rows=200),
             "",
         ]
     )

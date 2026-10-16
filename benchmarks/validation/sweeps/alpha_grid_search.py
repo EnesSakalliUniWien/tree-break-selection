@@ -238,7 +238,8 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
     return {"summary": summary_df, "manifest": manifest}
 
 
-def _parse_case_names(raw_case_names: str | None) -> tuple[str, ...]:
+def parse_case_names(raw_case_names: str | None) -> tuple[str, ...]:
+    """Parse optional comma-separated benchmark case names."""
     if raw_case_names is None:
         return ()
     return tuple(item.strip() for item in raw_case_names.split(",") if item.strip())
@@ -284,7 +285,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     config = AlphaGridConfig(
         suite=str(args.suite),
-        case_names=_parse_case_names(args.case_names),
+        case_names=parse_case_names(args.case_names),
         edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alphas=parse_float_grid(str(args.sibling_alphas)),
         output_dir=args.output_dir,

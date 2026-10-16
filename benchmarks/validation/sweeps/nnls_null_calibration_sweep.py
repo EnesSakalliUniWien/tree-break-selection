@@ -106,7 +106,7 @@ def _record_row(
         "n_parent": int(record.n_parent),
         "is_null_like": bool(record.is_null_like),
         "is_edge_blocked": bool(record.is_edge_blocked),
-        "is_role_supported": bool(record.has_empirical_null_support),
+        "is_role_supported": bool(record.has_null_role),
         "sibling_null_weight": float(record.sibling_null_weight),
         "sibling_projection_dimension": float(record.sibling_projection_dimension),
         "parent_spectral_eigenvalue_count": float(record.parent_spectral_eigenvalue_count),

@@ -2,9 +2,8 @@
 title: Root Selected Region Margins 20260603
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py
   - raw/assets/benchmark-results/root_selected_region_margins_20260603/manifest.json
   - raw/assets/benchmark-results/root_selected_region_margins_20260603/root_selected_region_summary.csv
   - raw/assets/benchmark-results/root_selected_region_margins_20260603/root_selected_region_merge_margins.csv
@@ -139,6 +138,7 @@ boundary from the empirical-inflation layer.
   and margin summaries.
 - `raw/assets/benchmark-results/root_selected_region_margins_20260603/root_selected_region_merge_margins.csv`
   records step-level merge margins and root-child construction roles.
+- `benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

@@ -381,16 +381,3 @@ def test_pipeline_rejects_unknown_sibling_gate_method() -> None:
             leaf_data=leaf_data,
             sibling_gate_method="adaptive_magic",
         )
-
-
-def test_pipeline_requires_leaf_data_for_spectral_gate_context() -> None:
-    tree, annotations_df, _leaf_data = _build_small_tree_with_leaf_data()
-
-    with pytest.raises(ValueError, match="require leaf_data"):
-        run_gate_annotation_pipeline(
-            tree,
-            annotations_df.copy(),
-            edge_alpha=0.01,
-            sibling_alpha=0.01,
-            leaf_data=None,
-        )

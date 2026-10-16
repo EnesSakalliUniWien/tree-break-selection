@@ -73,19 +73,6 @@ def _make_record(
         ("min_supported_groups", True),
         ("min_supported_groups", 1.0),
         ("min_family_supported_groups", 0),
-    ],
-)
-def test_calibration_support_thresholds_reject_invalid_counts(
-    field_name: str,
-    invalid_value: object,
-) -> None:
-    with pytest.raises(ValueError, match=field_name):
-        CalibrationSupportThresholds(**{field_name: invalid_value})
-
-
-@pytest.mark.parametrize(
-    ("field_name", "invalid_value"),
-    [
         ("min_family_effective_sample_size", 0.0),
         ("min_family_effective_sample_size", float("nan")),
         ("min_family_effective_sample_size", float("inf")),
@@ -93,9 +80,9 @@ def test_calibration_support_thresholds_reject_invalid_counts(
         ("min_local_effective_sample_size", float("-inf")),
     ],
 )
-def test_calibration_support_thresholds_reject_invalid_effective_sample_sizes(
+def test_calibration_support_thresholds_reject_invalid_counts_and_sample_sizes(
     field_name: str,
-    invalid_value: float,
+    invalid_value: object,
 ) -> None:
     with pytest.raises(ValueError, match=field_name):
         CalibrationSupportThresholds(**{field_name: invalid_value})
@@ -227,8 +214,8 @@ def test_fit_empirical_null_inflation_model_reports_exclusive_support_roles() ->
     assert model.n_calibration == 2
     assert model.n_strict_null_calibration == 1
     assert model.n_edge_blocked_calibration == 1
-    assert model.sample_is_strict_null.tolist() == [True, False]
-    assert model.sample_is_edge_blocked.tolist() == [False, True]
+    assert model.sample.is_strict_null.tolist() == [True, False]
+    assert model.sample.is_edge_blocked.tolist() == [False, True]
 
 
 def test_fit_empirical_null_inflation_model_rejects_selected_nonnull_only_support() -> None:
@@ -365,7 +352,7 @@ def test_selected_hierarchy_decision_restores_empirical_tail_and_preserves_diagn
     assert "supported_groups_below_threshold" in str(
         decision.support["support_contract_failure_reasons"]
     )
-    assert decision.exact_context["feature_family"] == "bernoulli"
+    assert decision.decision_context["feature_family"] == "bernoulli"
     assert decision.estimator.endswith("family_baseline")
     assert decision.descriptive_strata["reason"] == (
         "same_selected_hierarchy_reference_law_unvalidated"
@@ -588,7 +575,7 @@ def test_fit_empirical_null_inflation_model_reports_underflow_stable_effective_s
         (False, False, False),
     ],
 )
-def test_sibling_pair_record_owns_empirical_null_support_rule(
+def test_sibling_pair_record_has_null_role_rule(
     is_null_like: bool,
     is_edge_blocked: bool,
     expected: bool,
@@ -601,7 +588,7 @@ def test_sibling_pair_record_owns_empirical_null_support_rule(
         is_edge_blocked=is_edge_blocked,
     )
 
-    assert record.has_empirical_null_support is expected
+    assert record.has_null_role is expected
 
 
 def test_sibling_pair_record_rejects_blocked_non_null_role() -> None:

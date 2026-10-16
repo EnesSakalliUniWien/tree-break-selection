@@ -2,9 +2,8 @@
 title: Root Tree Geometry Hard Negative Replay 2026-06-17
 type: source
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/center/root_tree_geometry_hard_negative_replay_panel.py
   - tests/pipeline/dispatch/test_parameter_forwarding.py
   - benchmarks/shared/runners/tbs_runner.py
   - benchmarks/shared/runners/dispatch.py
@@ -109,6 +108,7 @@ distance/linkage/rooting families.
   `skipped_geometry_count = 2`, `hard_negative_leak_count = 0`, and
   `legacy_invalid_root_fragmentation_count = 1`, while its rootless edge scan
   also records `rootless_truth_aligned_geometry_count = 0`.
+- `benchmarks/diagnostics/calibration/root/center/root_tree_geometry_hard_negative_replay_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

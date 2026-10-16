@@ -2,9 +2,8 @@
 title: Selected Hierarchy External Calibration Contract 2026-06-02
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_external_calibration_contract.py
   - raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/manifest.json
   - raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/case_summary.csv
   - raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/external_calibration_contract.csv
@@ -73,6 +72,7 @@ descriptive shape:
   diagnostics, and estimator-family decisions.
 - `raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/manifest.json`
   records thresholds, run seed, cases, and output paths.
+- `benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_external_calibration_contract.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

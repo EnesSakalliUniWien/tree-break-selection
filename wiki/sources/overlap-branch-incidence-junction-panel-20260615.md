@@ -2,9 +2,8 @@
 title: Overlap Branch-Incidence Junction Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/overlap/overlap_branch_incidence_junction_panel.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/branch_incidence_junction_panel/overlap_branch_incidence_junction_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/branch_incidence_junction_panel/overlap_branch_incidence_junction_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/branch_incidence_junction_panel/manifest.json
@@ -85,6 +84,7 @@ The current focused overlap failures live in the second mode.
   `pytest tests/validation/calibration/overlap/127_test_overlap_branch_incidence_junction_panel.py -q`
   and
   `ruff check benchmarks/diagnostics/calibration/overlap/overlap_branch_incidence_junction_panel.py tests/validation/calibration/overlap/127_test_overlap_branch_incidence_junction_panel.py`.
+- `benchmarks/diagnostics/calibration/overlap/overlap_branch_incidence_junction_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

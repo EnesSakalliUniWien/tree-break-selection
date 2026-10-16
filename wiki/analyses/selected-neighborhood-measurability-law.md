@@ -2,7 +2,7 @@
 title: Selected Neighborhood Measurability Law
 type: analysis
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/analyses/selected-neighborhood-bottleneck-law.md
@@ -15,7 +15,6 @@ sources:
   - wiki/sources/root-tie-rank-selected-null-simulation-pilot-20260616.md
   - wiki/sources/root-tie-rank-null-proposal-frontier-20260616.md
   - wiki/sources/legacy-internal-spectral-comparison-panel-20260616.md
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py
 tags:
   - analysis
   - traversal

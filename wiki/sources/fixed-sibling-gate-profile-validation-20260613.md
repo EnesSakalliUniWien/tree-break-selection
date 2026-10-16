@@ -2,9 +2,8 @@
 title: Fixed Sibling Gate Profile Validation 2026-06-13
 type: source
 status: reviewed
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - benchmarks/shared/runners/tbs_runner.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
@@ -248,6 +247,7 @@ validation captures retain the old ID as provenance.
   diagnostic purpose, command shape, outputs, targeted root replay, runtime
   selected-root guard replay, narrowed pass-through descendant replay, and
   interpretation.
+- `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

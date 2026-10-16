@@ -117,20 +117,6 @@ class TestGateEvaluator:
         with pytest.raises(ValueError, match="Missing edge_divergent values"):
             _make_gate(edge_divergent={})
 
-    def test_sibling_gate_siblings_same(self) -> None:
-        gate = _make_gate(
-            sibling_different={
-                "root": False,
-                "L": False,
-                "R": False,
-                "L1": False,
-                "L2": False,
-                "R1": False,
-                "R2": False,
-            },
-        )
-        assert gate.decision("root") is TraversalDecision.BOUNDARY
-
     def test_sibling_gate_siblings_different(self) -> None:
         assert _make_gate().decision("root") is TraversalDecision.SPLIT
 
@@ -261,26 +247,6 @@ class TestGateEvaluator:
             "passthrough_bottleneck": "",
             "passthrough_decision_reason": "passthrough_support_blocked",
         }
-
-    def test_passthrough_decision_uses_cached_gate_results(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        tree = _make_deep_tree()
-        sibling_different = {node: False for node in tree.nodes}
-        sibling_different["B"] = True
-        gate = _make_gate(
-            tree=tree,
-            passthrough=True,
-            sibling_different=sibling_different,
-        )
-
-        def _fail_recompute(*_args, **_kwargs):
-            raise AssertionError("passthrough decision recomputed gate predicates")
-
-        monkeypatch.setattr(gate, "_passes_split_prerequisites", _fail_recompute)
-        monkeypatch.setattr(gate, "_sibling_gate_is_open", _fail_recompute)
-
-        assert gate.decision("root") is TraversalDecision.PASS_THROUGH
 
     def test_no_passthrough_when_sibling_gate_passes(self) -> None:
         gate = _make_gate(

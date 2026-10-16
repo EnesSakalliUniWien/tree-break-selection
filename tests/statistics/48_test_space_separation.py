@@ -93,8 +93,6 @@ def test_leading_axes_decomposition_is_finite_and_energy_ordered() -> None:
     assert result.axes.shape == (3, 3)
     assert np.isfinite(result.coordinates).all()
     assert np.all(np.diff(result.singular_values) <= 0.0)
-    assert result.leading_coordinates.shape == (4,)
-    assert result.following_coordinates.shape == (4, 2)
 
 
 def test_adaptive_cosine_space_exposes_selected_block_coordinates() -> None:

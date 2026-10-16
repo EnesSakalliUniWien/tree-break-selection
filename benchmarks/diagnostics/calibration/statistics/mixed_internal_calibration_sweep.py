@@ -26,7 +26,6 @@ from benchmarks.diagnostics.calibration.statistics.internal_support_threshold_va
     summarize_internal_support_threshold_rows,
 )
 from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.diagnostics.runner_support import case_with_replicate_seed
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from benchmarks.shared.util.time import format_timestamp_utc
@@ -59,6 +58,14 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 
 STUDY_ROLE = "diagnostic_mixed_internal_calibration_sweep_not_calibration"
 SCHEMA_VERSION = "mixed_internal_calibration_sweep/v3"
+
+
+def case_with_replicate_seed(case: dict[str, object], replicate_index: int) -> dict[str, object]:
+    """Return a copy of ``case`` whose seed is offset for one replicate."""
+    replicated = case.copy()
+    if "seed" in replicated:
+        replicated["seed"] = int(replicated["seed"]) + int(replicate_index) * 100_003
+    return replicated
 
 
 def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, object]]:

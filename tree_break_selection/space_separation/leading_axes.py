@@ -19,18 +19,6 @@ class LeadingAxesSpace:
     singular_values: np.ndarray
     energy_fraction: np.ndarray
 
-    @property
-    def leading_coordinates(self) -> np.ndarray:
-        """Coordinates on the leading PCA axis."""
-
-        return self.coordinates[:, 0]
-
-    @property
-    def following_coordinates(self) -> np.ndarray:
-        """Coordinates on the following PCA axes."""
-
-        return self.coordinates[:, 1:]
-
 
 def standardize_columns(values: np.ndarray) -> np.ndarray:
     """Center and scale matrix columns while keeping constant columns finite."""

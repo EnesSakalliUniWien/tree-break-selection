@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 
-from applications.endotypes._shared import matrix_slug, safe_name
+from applications.endotypes._shared import safe_name
 from applications.endotypes.io.adaptive_diffusion_dataframe_io import write_dataframe
 
 # Retain the artifact naming contract used by report readers and saved runs.
@@ -187,11 +186,3 @@ def write_experiment_readme(
             ]
         )
     (output_dir / "README.md").write_text("\n".join(readme_lines) + "\n", encoding="utf-8")
-
-
-def default_output_dir(input_path: Path, dataset_label: str | None = None) -> Path:
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return (
-        Path("results/analyses")
-        / f"{matrix_slug(input_path, dataset_label)}_{RESULT_PREFIX}_{stamp}"
-    )

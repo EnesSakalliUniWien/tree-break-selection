@@ -2,6 +2,7 @@
 
 import csv
 import json
+import re
 from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import urlencode
@@ -10,7 +11,10 @@ from urllib.request import Request, urlopen
 import numpy as np
 import pandas as pd
 
+from applications.output_dirs import timestamped_results_dir
+
 _MYGENE_QUERY_ENDPOINT = "https://mygene.info/v3/query"
+GO_ID_RE = re.compile(r"(GO:\d{7})")
 
 
 def safe_name(value: object) -> str:
@@ -26,6 +30,22 @@ def matrix_slug(input_path: Path, dataset_label: str | None = None) -> str:
     if raw.startswith("feature_matrix_"):
         raw = raw[len("feature_matrix_") :]
     return safe_name(raw).strip("_").lower() or "feature_matrix"
+
+
+def default_output_dir(input_path: Path, dataset_label: str | None, suffix: str) -> Path:
+    """Return a new ``results/analyses/<matrix slug>_<suffix>_<timestamp>`` path."""
+
+    return timestamped_results_dir(f"{matrix_slug(input_path, dataset_label)}_{suffix}")
+
+
+def parse_go_term(value: object) -> tuple[str, str]:
+    """Split a ``term (GO:0000000)`` column label into ``(term, go_id)``; no id gives ``""``."""
+
+    text = "" if pd.isna(value) else str(value)
+    match = GO_ID_RE.search(text)
+    go_id = match.group(1) if match else ""
+    term = text.replace(f"({go_id})", "").strip() if go_id else text.strip()
+    return term, go_id
 
 
 def load_feature_matrix(path: Path) -> pd.DataFrame:

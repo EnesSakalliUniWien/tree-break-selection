@@ -2,9 +2,9 @@
 title: Root Selected Mixed Region Law 2026-06-16
 type: source
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/selected/root_selected_mixed_region_law.py
+  - wiki/analyses/root-selected-region-model.md
 tags:
   - source
   - diagnostics
@@ -53,6 +53,7 @@ compute a calibrated p-value and does not promote traversal.
 - `root_selected_mixed_region_law/v2` records the reduced contract explicitly.
 - No non-empty retained result capture or focused current test supports the
   historical numerical claims, so this page remains draft.
+- `benchmarks/diagnostics/calibration/root/selected/root_selected_mixed_region_law.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

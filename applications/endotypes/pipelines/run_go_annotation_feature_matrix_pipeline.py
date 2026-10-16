@@ -19,11 +19,10 @@ import shutil
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Sequence
 
-from applications.endotypes._shared import matrix_slug
+from applications.endotypes._shared import default_output_dir, matrix_slug
 from applications.endotypes.analysis.audit_go_annotation_analysis_levels import (
     audit_paths,
     write_audit_outputs,
@@ -106,14 +105,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def default_output_dir(input_path: Path, dataset_label: str | None = None) -> Path:
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return (
-        Path("results/analyses")
-        / f"{matrix_slug(input_path, dataset_label)}_go_annotation_pipeline_{stamp}"
-    )
-
-
 def _append_if_present(command: list[str], flag: str, value: object | None) -> None:
     if value is not None:
         command.extend([flag, str(value)])
@@ -177,7 +168,11 @@ def annotation_package_dir(root: Path) -> Path:
 def build_pipeline_plan(
     args: argparse.Namespace, output_dir: Path | None = None
 ) -> list[PipelineStage]:
-    root = output_dir or args.output_dir or default_output_dir(args.input, args.dataset_label)
+    root = (
+        output_dir
+        or args.output_dir
+        or default_output_dir(args.input, args.dataset_label, "go_annotation_pipeline")
+    )
     artifact_prefix = matrix_slug(args.input, args.dataset_label)
     stages: list[PipelineStage] = []
 
@@ -781,7 +776,9 @@ def run_stage(stage: PipelineStage, *, repo_root: Path) -> dict[str, object]:
 
 def main() -> None:
     args = parse_args()
-    output_dir = args.output_dir or default_output_dir(args.input, args.dataset_label)
+    output_dir = args.output_dir or default_output_dir(
+        args.input, args.dataset_label, "go_annotation_pipeline"
+    )
     stages = build_pipeline_plan(args, output_dir)
     if args.dry_run:
         # Print the plan only; a dry run must not touch an existing run's logs or manifest.

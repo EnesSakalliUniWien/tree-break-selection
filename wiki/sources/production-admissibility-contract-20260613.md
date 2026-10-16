@@ -2,14 +2,11 @@
 title: Production Admissibility Contract 2026-06-13
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
-  - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
-  - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
   - wiki/analyses/null-edge-sibling-calibration-enhancement-plan.md
 tags:
   - source

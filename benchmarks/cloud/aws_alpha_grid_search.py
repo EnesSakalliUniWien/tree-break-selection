@@ -29,6 +29,7 @@ from benchmarks.validation.sweeps.alpha_grid_search import (
     DEFAULT_SIBLING_ALPHA_GRID,
     AlphaGridConfig,
     build_alpha_pairs,
+    parse_case_names,
     parse_float_grid,
     run_alpha_grid_search,
 )
@@ -63,13 +64,6 @@ class AlphaGridShardSpec:
     output_dir: Path
     alpha_pairs: tuple[tuple[float, float], ...]
     alpha_pair_indices: tuple[int, ...]
-
-
-def parse_case_names(raw_case_names: str | None) -> tuple[str, ...]:
-    """Parse optional comma-separated benchmark case names."""
-    if raw_case_names is None:
-        return ()
-    return tuple(item.strip() for item in raw_case_names.split(",") if item.strip())
 
 
 def make_shard_spec(configured: AwsAlphaGridConfig, shard_index: int) -> AlphaGridShardSpec:

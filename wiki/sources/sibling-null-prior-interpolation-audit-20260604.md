@@ -2,9 +2,8 @@
 title: Sibling Null Prior Interpolation Audit 2026-06-04
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py
   - raw/assets/benchmark-results/sibling_null_prior_interpolation_audit_20260604/manifest.json
   - raw/assets/benchmark-results/sibling_null_prior_interpolation_audit_20260604/case_summary.csv
   - raw/assets/benchmark-results/sibling_null_prior_interpolation_audit_20260604/record_interpolation_audit.csv
@@ -86,6 +85,7 @@ it excludes the separate high-dimensional continuous covariance-boundary skip.
   records the 24-case calibration-support skip audit.
 - `raw/assets/benchmark-results/sibling_null_prior_interpolation_audit_full_skips_20260604/record_interpolation_audit.csv`
   records `5,800` sibling-pair audit rows from the 24 skipped cases.
+- `benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_prior_interpolation_audit.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

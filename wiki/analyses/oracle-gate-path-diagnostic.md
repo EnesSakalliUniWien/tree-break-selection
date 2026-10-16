@@ -2,19 +2,13 @@
 title: Oracle Gate-Path Diagnostic
 type: analysis
 status: reviewed
-updated: 2026-08-03
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/oracle/oracle_tree_recoverability.py
-  - benchmarks/diagnostics/oracle/gate_path_trace.py
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_inflation_diagnostic.py
   - benchmarks/shared/tbs_tree_context.py
   - benchmarks/shared/runners/tbs_support.py
   - benchmarks/shared/types/unsupported_reason.py
   - benchmarks/shared/cases/gaussian.py
   - benchmarks/shared/cases/dimensionality.py
-  - benchmarks/diagnostics/oracle/run_oracle_tree_recoverability.py
-  - benchmarks/diagnostics/oracle/run_gate_path_trace.py
-  - benchmarks/diagnostics/calibration/sibling/nulls/run_sibling_inflation_diagnostic.py
   - raw/assets/benchmark-results/oracle_tree_recoverability_20260524_155532Z/oracle_tree_recoverability.csv
   - raw/assets/benchmark-results/gate_path_trace_20260524_155551Z/gate_path_trace.csv
   - raw/assets/benchmark-results/gate_path_trace_20260524_155551Z/gate_path_trace_summary.csv
@@ -731,6 +725,7 @@ partition.
   pass-through directly as a method-boundary option, defaulting to `True`.
 - `tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py`
   implements the split and pass-through gate logic described here.
+- `benchmarks/diagnostics/calibration/sibling/nulls/gaussian_sibling_null_calibration.py`, `benchmarks/diagnostics/calibration/sibling/nulls/run_gaussian_sibling_null_calibration.py`, `benchmarks/diagnostics/calibration/sibling/nulls/run_selection_conditioned_sibling_null.py`, `benchmarks/diagnostics/calibration/sibling/nulls/run_tree_bh_selection_conditioned_sibling_null.py`, `benchmarks/diagnostics/calibration/sibling/nulls/selection_conditioned_sibling_null.py`, `benchmarks/diagnostics/calibration/sibling/nulls/sibling_inflation_diagnostic.py`, `benchmarks/diagnostics/oracle/gate_path_trace.py`, `benchmarks/diagnostics/oracle/oracle_tree_recoverability.py` were retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

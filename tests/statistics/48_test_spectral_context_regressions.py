@@ -297,11 +297,16 @@ class TestSpectralContextRegressions:
 
     def test_invalid_spectral_job_env_does_not_fall_back_to_auto(self, monkeypatch):
         """Invalid TBS_N_JOBS should fail instead of silently using auto workers."""
-        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.marchenko_pastur import (
-            _get_n_jobs,
+        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
+            compute_spectral_decomposition,
         )
 
+        tree, leaf_data = _leaf_tree_and_data()
+        tree.nodes["root"]["is_leaf"] = False
+        tree.nodes["root"]["distribution"] = np.array([0.5])
+
+        assert compute_spectral_decomposition(tree, leaf_data).test_projection_dimensions_by_node
         monkeypatch.setenv("TBS_N_JOBS", "not-an-int")
 
-        with pytest.raises(ValueError):
-            _get_n_jobs(16)
+        with pytest.raises(ValueError, match="not-an-int"):
+            compute_spectral_decomposition(tree, leaf_data)

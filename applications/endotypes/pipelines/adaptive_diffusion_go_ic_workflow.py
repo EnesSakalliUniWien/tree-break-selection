@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
 
-from applications.endotypes._shared import matrix_slug, safe_name
+from applications.endotypes._shared import default_output_dir, matrix_slug, safe_name
 from applications.endotypes.analysis.go_ic.adaptive_diffusion_go_ic_ranking import (
     add_specificity_aware_rank,
     rank_go_ic_results,
@@ -44,7 +44,6 @@ from applications.endotypes.reports.go_ic.adaptive_diffusion_plot_exports import
 from applications.endotypes.reports.go_ic.adaptive_diffusion_subspace_artifacts import (
     RESULT_PREFIX,
     attach_artifact_paths,
-    default_output_dir,
     write_artifact_index,
     write_experiment_readme,
 )
@@ -91,7 +90,9 @@ def run_current_kl(
 
 def run_analysis(args: argparse.Namespace) -> None:
     artifact_prefix = matrix_slug(args.input, args.dataset_label)
-    output_dir = args.output_dir or default_output_dir(args.input, args.dataset_label)
+    output_dir = args.output_dir or default_output_dir(
+        args.input, args.dataset_label, RESULT_PREFIX
+    )
     rankings_dir = output_dir / "rankings"
     plots_dir = output_dir / "plots"
     subspaces_dir = output_dir / "subspaces"

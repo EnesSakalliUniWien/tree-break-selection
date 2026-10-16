@@ -89,8 +89,8 @@ different contracts were not automatically grouped as cleanup targets.
 | Symbol | Evidence and assessment |
 |---|---|
 | `TOPOLOGIES = TREE_CONSENSUS_STRATEGIES` in [family_metric_nnls_grid.py:62](../../benchmarks/validation/sweeps/family_metric_nnls_grid.py#L62) | Used by defaults, CLI and validation; equality with the shared constant is tested. Active alias. |
-| `BASE_CONTEXT_COLUMNS = TAIL_LAW_CONTEXT_COLUMNS` in [selected_tail_topology_refinement.py:36](../../benchmarks/diagnostics/calibration/selected/tail/selected_tail_topology_refinement.py#L36) | Shared grouping/default/manifest contract. Active alias. |
-| `CANDIDATE_METHOD_CONTRAST_COLUMNS = METHOD_CONTRAST_COLUMNS` in [selected_neighborhood_distribution_panel.py:306](../../benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py#L306) | Both report builders intentionally share the same output columns. Active alias. |
+| `BASE_CONTEXT_COLUMNS = TAIL_LAW_CONTEXT_COLUMNS` in `benchmarks/diagnostics/calibration/selected/tail/selected_tail_topology_refinement.py:36` (retired 2026-10-16) | Shared grouping/default/manifest contract. Active alias. |
+| `CANDIDATE_METHOD_CONTRAST_COLUMNS = METHOD_CONTRAST_COLUMNS` in `benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py:306` (retired 2026-10-16) | Both report builders intentionally share the same output columns. Active alias. |
 | `_import_runner` in [method_registry.py:38](../../benchmarks/shared/runners/method_registry.py#L38) | Dynamically resolves six runners flagged by the lower-threshold scan. Preserve registered runners. |
 | `bootstrap_consensus.py:81` (removed 2026-10-13) | Documented optional API with focused tests. No application consumer found does not mean dead code. |
 

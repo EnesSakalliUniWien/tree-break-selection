@@ -2,12 +2,10 @@
 title: Overlap Conditional Topology Law Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py
   - raw/inbox/c2ef-cosine-subspace-method-notes-20260615.md
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
-  - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_component_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_summary.csv
@@ -140,6 +138,7 @@ threshold.
   `raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/`.
 - The old/current topology-neighborhood smoke is stored under
   `raw/assets/benchmark-results/old_vs_current_method_stack_20260615/topology_neighborhood_conditional_law_smoke/`.
+- `benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

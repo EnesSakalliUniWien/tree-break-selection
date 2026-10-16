@@ -82,7 +82,7 @@ class SiblingPairRecord:
             )
 
     @property
-    def has_empirical_null_support(self) -> bool:
+    def has_null_role(self) -> bool:
         """Return whether this record has a null-like or edge-blocked role."""
         return bool(self.is_null_like or self.is_edge_blocked)
 
@@ -93,9 +93,7 @@ class SiblingPairRecord:
         It needs positive degrees of freedom, positive null weight and a null role.
         """
         return bool(
-            self.degrees_of_freedom > 0.0
-            and self.sibling_null_weight > 0.0
-            and self.has_empirical_null_support
+            self.degrees_of_freedom > 0.0 and self.sibling_null_weight > 0.0 and self.has_null_role
         )
 
 

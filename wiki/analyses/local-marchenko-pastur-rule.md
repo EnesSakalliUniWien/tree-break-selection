@@ -2,7 +2,7 @@
 title: Local Marchenko-Pastur Rule
 type: analysis
 status: reviewed
-updated: 2026-06-03
+updated: 2026-10-16
 sources:
   - wiki/sources/selected-geometry-mp-integral-literature-20260602.md
   - wiki/sources/local-mp-identity-law-diagnostic-20260602.md
@@ -13,7 +13,6 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/projection/spectral/spectral_decomposition_result.py
   - tree_break_selection/hierarchy_analysis/statistics/projection/spectral/marchenko_pastur.py
   - tree_break_selection/hierarchy_analysis/statistics/projection/spectral/tree_estimator.py
-  - benchmarks/diagnostics/spectral/mp/compare_mp_dimension_contracts.py
   - manuscript/sections/method/edge_test.tex
   - manuscript/sections/method/assumptions_validation.tex
   - benchmarks/validation/contracts/method_constants_manifest.py
@@ -353,6 +352,7 @@ and selected large-node extremes.
 - `wiki/sources/legacy-internal-spectral-comparison-panel-20260616.md`
   records the copied-commit internal-barycenter spectral diagnostic and its
   small overlap benchmark comparison against the current leaf-only path.
+- `benchmarks/diagnostics/spectral/mp/compare_mp_dimension_contracts.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

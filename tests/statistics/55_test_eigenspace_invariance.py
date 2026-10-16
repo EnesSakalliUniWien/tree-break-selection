@@ -2,7 +2,9 @@
 
 from dataclasses import replace
 
+import networkx as nx
 import numpy as np
+import pandas as pd
 import pytest
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
@@ -22,13 +24,11 @@ from tree_break_selection.hierarchy_analysis.statistics.projection.projected_wal
 from tree_break_selection.hierarchy_analysis.statistics.projection.projection_dimension_estimation.projection_dimension_estimators import (
     estimate_marchenko_pastur_dimension,
 )
-from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.marchenko_pastur import (
-    _process_node,
-)
-from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.node_spectral_task import (
-    NodeSpectralTask,
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
+    compute_spectral_decomposition,
 )
 from tree_break_selection.space_separation import diffusion
+from tree_break_selection.tree.distributions import CONTINUOUS_COVARIANCE_BY_BLOCK
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 
 
@@ -182,23 +182,28 @@ def test_mp_dimension_floor_keeps_ties_without_adding_null_directions(
 def test_node_metadata_matches_the_complete_whitened_eigenspace() -> None:
     values = np.random.default_rng(104).normal(size=(20, 3))
     space = continuous_feature_space_from_columns(["x", "y", "z"])
-    task = NodeSpectralTask(
-        node_id="root",
-        row_indices=tuple(range(20)),
-        internal_distributions=(),
-        null_distribution=values.mean(axis=0),
+    labels = [f"L{i}" for i in range(20)]
+    tree = nx.DiGraph()
+    tree.add_edges_from(("root", label) for label in labels)
+    for label in labels:
+        tree.nodes[label]["label"] = label
+        tree.nodes[label]["is_leaf"] = True
+    tree.nodes["root"]["is_leaf"] = False
+    tree.nodes["root"]["distribution"] = values.mean(axis=0)
+    tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK] = {
+        space.continuous_blocks[0].name: np.cov(values, rowvar=False)
+    }
+
+    result = compute_spectral_decomposition(
+        tree,
+        pd.DataFrame(values, index=labels, columns=["x", "y", "z"]),
         feature_space=space,
-        continuous_covariance_by_block={
-            space.continuous_blocks[0].name: np.cov(values, rowvar=False)
-        },
     )
-    result = _process_node(task, values, 1, None, 3)
-    assert result.raw_mp_signal_count == 0
-    assert result.test_projection_dimension == result.projection_matrix.shape[0] == 3
-    assert len(result.eigenvalues) == 3
-    np.testing.assert_allclose(
-        result.projection_matrix.T @ result.projection_matrix, np.eye(3), atol=1e-12
-    )
+    projection = result.principal_component_projections_by_node["root"]
+    assert result.raw_mp_signal_counts_by_node["root"] == 0
+    assert result.test_projection_dimensions_by_node["root"] == projection.shape[0] == 3
+    assert len(result.principal_component_eigenvalues_by_node["root"]) == 3
+    np.testing.assert_allclose(projection.T @ projection, np.eye(3), atol=1e-12)
 
 
 def test_mp_boundary_tie_extends_test_dimension_but_preserves_raw_count() -> None:

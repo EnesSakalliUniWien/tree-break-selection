@@ -2,9 +2,9 @@
 title: Root Tie Rank Selected Null Simulation Pilot 2026-06-16
 type: source
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_selected_null_simulation_pilot.py
+  - wiki/analyses/root-selected-region-model.md
 tags:
   - source
   - diagnostics
@@ -46,6 +46,7 @@ contract and no longer emits a topology-derived bandwidth count.
   reduced calibration key.
 - No non-empty retained result capture or focused current test supports the
   former numerical pilot claims, so this page remains draft.
+- `benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_selected_null_simulation_pilot.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

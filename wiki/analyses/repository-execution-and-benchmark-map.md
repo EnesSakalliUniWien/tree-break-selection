@@ -2,7 +2,7 @@
 title: Repository Execution and Benchmark Map
 type: analysis
 status: reviewed
-updated: 2026-10-15
+updated: 2026-10-16
 sources:
   - README.md
   - applications/README.md
@@ -238,6 +238,7 @@ strict lower layer.
   full-suite results, skip reasons, timing coverage, and profile attribution.
 - The focused 288-test run covered the reusable core, benchmark integration,
   pipeline contracts, tree construction, and visualization surfaces.
+- `benchmarks/diagnostics/calibration/selected/family/multiscale_umap.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

@@ -93,9 +93,9 @@ The `benchmarks/shared/` system provides:
 - `audit_utils.py` for per-case decomposition audit CSV export
 - `linkage_matrix` captured in TBS runner's `extra` dict
 
-The `benchmarks/diagnostics/` system provides failure diagnosis, oracle
-recoverability, gate-path tracing, sibling-calibration diagnostics, and
-standalone benchmark-analysis tools in purpose-named subdirectories. Standalone
+The `benchmarks/diagnostics/` system provides failure diagnosis,
+sibling-calibration diagnostics, spectral diagnostics, and standalone
+benchmark-analysis tools in purpose-named subdirectories. Standalone
 experiments that are not part of the canonical full-suite contract live under
 `benchmarks/experiments/`.
 
@@ -650,8 +650,7 @@ df_results, _ = benchmark_cluster_algorithm(
 
 Calibration diagnostics are maintained as explicit standalone scripts under
 `benchmarks/diagnostics/calibration/`, including edge-calibration helpers.
-Oracle and gate-path diagnostics live under `benchmarks/diagnostics/oracle/`;
-spectral-dimension diagnostics live under `benchmarks/diagnostics/spectral/`;
+Spectral diagnostics live under `benchmarks/diagnostics/spectral/`;
 post-run result analyses live under `benchmarks/diagnostics/analysis/`. The
 full benchmark runner only runs the clustering comparison and relationship
 analysis.

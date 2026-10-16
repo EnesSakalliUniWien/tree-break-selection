@@ -84,10 +84,6 @@ class TreeReviewInputs:
     descendant_leaves: object
 
 
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
 def entropy(values: np.ndarray) -> float:
     counts = np.asarray(values, dtype=float)
     total = float(counts.sum())

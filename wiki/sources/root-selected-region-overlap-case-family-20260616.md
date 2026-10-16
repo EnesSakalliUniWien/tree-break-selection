@@ -2,9 +2,9 @@
 title: Root Selected Region Overlap Case Family 2026-06-16
 type: source
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py
+  - wiki/analyses/root-selected-region-model.md
 tags:
   - source
   - diagnostics
@@ -38,6 +38,7 @@ spectral coordinates needed by downstream diagnostic laws.
   writes them through the shared diagnostic bundle.
 - No tracked result capture or focused current test supports the former
   seven-case numerical claims, so this page remains draft.
+- `benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

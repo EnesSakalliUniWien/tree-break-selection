@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import parse_qs
 
 import pytest
 
 from applications.endotypes import _shared
+from applications.output_dirs import PROJECT_ROOT
 
 
 class _Response:
@@ -91,3 +93,16 @@ def test_map_symbols_to_entrez_wraps_transport_errors(monkeypatch) -> None:
 
     with pytest.raises(RuntimeError, match="Failed to query mygene.info"):
         _shared.map_symbols_to_entrez(["A"])
+
+
+def test_parse_go_term_returns_empty_id_when_label_has_none() -> None:
+    assert _shared.parse_go_term("response to x (GO:0001234)") == ("response to x", "GO:0001234")
+    assert _shared.parse_go_term(" plain label ") == ("plain label", "")
+    assert _shared.parse_go_term(float("nan")) == ("", "")
+
+
+def test_default_output_dir_is_a_timestamped_results_analyses_folder() -> None:
+    path = _shared.default_output_dir(Path("feature_matrix_Demo.tsv"), None, "suffix")
+
+    assert path.parent == PROJECT_ROOT / "results" / "analyses"
+    assert path.name.startswith("demo_suffix_")

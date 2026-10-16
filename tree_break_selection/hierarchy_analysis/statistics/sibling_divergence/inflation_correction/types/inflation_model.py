@@ -25,7 +25,7 @@ class CalibrationDecision:
     p_value: float | None
     estimator: str
     support: dict[str, float | int | str | bool]
-    exact_context: dict[str, object]
+    decision_context: dict[str, object]
     descriptive_strata: dict[str, object]
 
 
@@ -312,14 +312,6 @@ class EmpiricalNullInflationModel:
     @property
     def sample_weights(self) -> np.ndarray:
         return self.sample.weights
-
-    @property
-    def sample_is_strict_null(self) -> np.ndarray:
-        return self.sample.is_strict_null
-
-    @property
-    def sample_is_edge_blocked(self) -> np.ndarray:
-        return self.sample.is_edge_blocked
 
     @property
     def sample_statistics(self) -> np.ndarray:

@@ -21,14 +21,14 @@ class _FakeAdata:
         self.n_vars = 2
 
 
-def _load_benchmark_module():
+def _load_benchmark_module(monkeypatch):
     module_name = "applications.scrna.pancreas_benchmark"
-    sys.modules.pop(module_name, None)
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
     return importlib.import_module(module_name)
 
 
 def test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_benchmark_module()
+    module = _load_benchmark_module(monkeypatch)
     output_dir = tmp_path / "out"
     fake_adata = _FakeAdata()
     qc_summary = {

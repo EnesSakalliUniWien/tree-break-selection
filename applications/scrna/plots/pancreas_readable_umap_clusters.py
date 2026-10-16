@@ -45,10 +45,6 @@ METHODS = [
 ]
 
 
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
 def label_positions(frame: pd.DataFrame, cluster_column: str) -> pd.DataFrame:
     rows = []
     for cluster_id, group in frame.groupby(cluster_column):

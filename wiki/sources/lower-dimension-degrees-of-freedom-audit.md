@@ -2,7 +2,7 @@
 title: Lower-Dimension Degrees-of-Freedom Audit
 type: source
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-16
 sources:
   - raw/inbox/lower-dimension-reference-law-notes-20260928.md
   - reports/lower_dimension_df_audit_20260928/README.md
@@ -13,7 +13,6 @@ sources:
   - reports/lower_dimension_df_audit_20260928/prior_research_audit.md
   - tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py
   - tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py
-  - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
 tags:
   - calibration

@@ -8137,3 +8137,26 @@ version comparison report and wiki source summary. Production code unchanged.
   manuscript and wiki no longer claim the exact-F mode exists, the
   relationship-analysis audit reader skips CSVs missing any column it now
   reads unguarded, and leftover wiki and `pyproject.toml` text was updated.
+
+## 2026-10-16 — Debloat and naming batch
+
+- Four sonnet agents ran in parallel on disjoint files, each under the
+  ponytail skill: retire past-study diagnostics, merge same-name helpers,
+  rename misleading names, and finish the test-audit cleanups.
+- Retired 71 files (44,906 lines) from `benchmarks/diagnostics/`: 32 of 33
+  docs-only entry scripts, 29 helpers only they imported, and 10 empty
+  packages; `runner_support.py` followed once its last helper moved. 58 wiki
+  pages drop the retired `sources:` entries and note the retirement commit
+  (7cc4e1c0). Kept: `spectral/apply_vandermonde_diagnostic.py` (a retained
+  report gives it as the rerun command) and `path_b/recursive_pvalue_geometry.py`
+  (imported by a retained report script).
+- Same-name helpers merged: `parse_go_term`, `load_binary_matrix`,
+  `default_output_dir`, `markdown_table`, `parse_case_names`; four unused
+  `project_root()` copies deleted. Deliberately separate: a `parse_case_names`
+  that rejects an empty list, the UTC `benchmarks/results` default in
+  `run_feature_matrix_with_umap.py`, and a `safe_name` that strips `_`.
+- Renamed `has_empirical_null_support` to `has_null_role` and
+  `CalibrationDecision.exact_context` to `decision_context`; saved column
+  names such as `Sibling_Role_Supported` and `is_role_supported` are unchanged.
+- Test suite: 996 to 920 cases; most of the drop is the module-import
+  contract test, which runs once per benchmark module.

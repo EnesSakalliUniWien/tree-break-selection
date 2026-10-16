@@ -7,7 +7,6 @@ import argparse
 import colorsys
 import json
 import math
-import re
 import shutil
 import sys
 from pathlib import Path
@@ -30,7 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from applications.endotypes._shared import load_binary_feature_matrix
+from applications.endotypes._shared import load_binary_feature_matrix, parse_go_term
 from applications.endotypes.reports.artifact_index import load_artifact_index
 from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
     gene_annotation_blurbs,
@@ -41,7 +40,6 @@ from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
 )
 from benchmarks.diagnostics.calibration.values import finite_float
 
-GO_ID_RE = re.compile(r"(GO:\d{7})")
 COPY_ARTIFACTS = {
     "cluster_assignments": "cluster_assignments.csv",
     "cluster_coherence": "cluster_coherence.csv",
@@ -75,14 +73,6 @@ def parse_args() -> argparse.Namespace:
 
 def safe_name(value: object) -> str:
     return "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in str(value)).strip("_")
-
-
-def parse_go_term(value: object) -> tuple[str, str]:
-    text = "" if pd.isna(value) else str(value)
-    match = GO_ID_RE.search(text)
-    go_id = match.group(1) if match else ""
-    term = text.replace(f"({go_id})", "").strip() if go_id else text.strip()
-    return term, go_id
 
 
 def safe_int(value: object, default: int = 0) -> int:

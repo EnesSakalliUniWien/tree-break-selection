@@ -2,9 +2,8 @@
 title: Phase 1 Path B Foundation 2026-06-06
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/path_b/phase1_path_b_foundation.py
   - benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/phase1_path_b_benchmark_comparison.csv
   - benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/phase1_path_b_summary.csv
   - benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/phase1_cluster_count_distribution.csv
@@ -72,6 +71,7 @@ production traversal or calibration rule.
   records the full benchmark ablation summary.
 - `benchmarks/results/diagnostics/phase1_path_b_foundation_full_20260606/q5_geometry_covariate_predictive_gain.csv`
   records the Q5 geometry covariate gain table.
+- `benchmarks/diagnostics/path_b/phase1_path_b_foundation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

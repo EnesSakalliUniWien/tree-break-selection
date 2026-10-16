@@ -466,7 +466,7 @@ def decide_empirical_null_calibration(
     ``internal_admissible`` denotes availability under the internal support policy.
     The plug-in chi-square p-value does not establish selective error control.
     """
-    exact_context = _decision_context(record)
+    decision_context = _decision_context(record)
     if record.degrees_of_freedom == 0:
         return CalibrationDecision(
             status="internal_admissible",
@@ -474,7 +474,7 @@ def decide_empirical_null_calibration(
             p_value=1.0,
             estimator="zero_dimensional_sibling_record",
             support=_decision_support(model=model, record=record),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={"degrees_of_freedom": 0.0},
         )
     if (
@@ -492,7 +492,7 @@ def decide_empirical_null_calibration(
             p_value=None,
             estimator=model.method,
             support=_decision_support(model=model, record=record),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={"reason": "empty_calibration_model"},
         )
     if record.feature_family not in {"bernoulli", "categorical", "continuous", "mixed"}:
@@ -521,7 +521,7 @@ def decide_empirical_null_calibration(
                 family_mask=family_mask,
                 family_support_cache=family_support_cache,
             ),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={"reason": "no_matching_feature_family"},
         )
     family_reference_expectations = (
@@ -568,7 +568,7 @@ def decide_empirical_null_calibration(
                 p_value=None,
                 estimator=f"{model.method}:family_baseline",
                 support=support,
-                exact_context=exact_context,
+                decision_context=decision_context,
                 descriptive_strata={
                     **descriptive_strata,
                     "reason": "internal_support_thresholds_failed",
@@ -580,7 +580,7 @@ def decide_empirical_null_calibration(
             p_value=_adjusted_p_value(record, c_hat),
             estimator=f"{model.method}:family_baseline",
             support=support,
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={
                 **descriptive_strata,
                 "reason": "same_selected_hierarchy_reference_law_unvalidated",
@@ -621,7 +621,7 @@ def decide_empirical_null_calibration(
                 local_weights=local_weights,
                 family_support_cache=family_support_cache,
             ),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={
                 **descriptive_strata,
                 "reason": "zero_local_calibration_weight",
@@ -652,7 +652,7 @@ def decide_empirical_null_calibration(
             p_value=None,
             estimator=f"{model.method}:local_kernel",
             support=support,
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={
                 **descriptive_strata,
                 "reason": "internal_support_thresholds_failed",
@@ -664,7 +664,7 @@ def decide_empirical_null_calibration(
         p_value=_adjusted_p_value(record, c_hat),
         estimator=f"{model.method}:local_kernel",
         support=support,
-        exact_context=exact_context,
+        decision_context=decision_context,
         descriptive_strata={
             **descriptive_strata,
             "reason": "same_selected_hierarchy_reference_law_unvalidated",

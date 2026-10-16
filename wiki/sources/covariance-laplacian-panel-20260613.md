@@ -2,11 +2,10 @@
 title: Covariance Laplacian Panel 2026-06-13
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py
   - benchmarks/validation/statistics/selected_edge_type1_geometry.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
   - tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py
   - tree_break_selection/hierarchy_analysis/statistics/projection/spectral/tree_estimator.py
   - wiki/questions/open-mathematical-questions.md

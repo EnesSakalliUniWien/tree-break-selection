@@ -2,9 +2,8 @@
 title: Mixed Null Signal Geometry Validation 2026-06-06
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/path_b/mixed_null_signal_geometry_validation.py
   - benchmarks/results/diagnostics/mixed_null_signal_geometry_full_20260606/mixed_null_signal_labeled_nodes.csv
   - benchmarks/results/diagnostics/mixed_null_signal_geometry_full_20260606/mixed_null_signal_edges.csv
   - benchmarks/results/diagnostics/mixed_null_signal_geometry_full_20260606/mixed_null_signal_model_validation.csv
@@ -112,6 +111,7 @@ or traversal rule.
   records split and raw-p rejection rates by truth-context label.
 - `benchmarks/results/diagnostics/mixed_null_signal_geometry_full_20260606/mixed_null_signal_geometry_summary.png`
   visualizes the model AUC comparison and truth-context rejection rates.
+- `benchmarks/diagnostics/path_b/mixed_null_signal_geometry_validation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

@@ -2,7 +2,7 @@
 title: Selected Neighborhood Bottleneck Law
 type: analysis
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/sources/selected-neighborhood-signal-flow-literature-20260617.md
@@ -15,8 +15,6 @@ sources:
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
-  - benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py
-  - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py
 tags:
   - analysis
   - traversal

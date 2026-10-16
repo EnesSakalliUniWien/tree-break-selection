@@ -24,6 +24,7 @@ from sklearn.metrics import adjusted_rand_score
 from benchmarks.diagnostics.calibration.values import bool_series, finite_min
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.metrics import _calculate_ari_nmi_purity_metrics
+from benchmarks.shared.performance_grid import markdown_table
 from benchmarks.shared.runners.tbs_diffusion_runner import (
     _run_tbs_diffusion_graphtools_method,
 )
@@ -636,26 +637,6 @@ def _summary(cells: pd.DataFrame, group_columns: list[str]) -> pd.DataFrame:
     return ok.groupby(group_columns, dropna=False).agg(**aggregations).reset_index()
 
 
-def _markdown_table(frame: pd.DataFrame, columns: Sequence[str]) -> str:
-    visible = frame[[column for column in columns if column in frame.columns]].copy()
-    if visible.empty:
-        return "_No rows._"
-    for column in visible.columns:
-        if pd.api.types.is_float_dtype(visible[column]):
-            visible[column] = visible[column].map(
-                lambda value: "" if pd.isna(value) else f"{float(value):.4f}"
-            )
-    lines = [
-        "| " + " | ".join(visible.columns) + " |",
-        "| " + " | ".join("---" for _ in visible.columns) + " |",
-    ]
-    lines.extend(
-        "| " + " | ".join(str(value).replace("|", "\\|") for value in row) + " |"
-        for row in visible.itertuples(index=False)
-    )
-    return "\n".join(lines)
-
-
 def _write_report(
     output_dir: Path,
     cells: pd.DataFrame,
@@ -702,7 +683,7 @@ def _write_report(
             "",
             "## Family Results",
             "",
-            _markdown_table(
+            markdown_table(
                 case_summary,
                 [
                     "source_case_id",
@@ -725,7 +706,7 @@ def _write_report(
             "",
             "## Label-Free Selections",
             "",
-            _markdown_table(
+            markdown_table(
                 selection,
                 [
                     "case_id",
@@ -741,11 +722,11 @@ def _write_report(
             "",
             "## Branch-Time Paired Effect",
             "",
-            _markdown_table(branch_summary, list(branch_summary.columns)),
+            markdown_table(branch_summary),
             "",
             "## Skipped Cells",
             "",
-            _markdown_table(
+            markdown_table(
                 cells[cells["status"].ne("ok")],
                 [
                     "source_case_id",

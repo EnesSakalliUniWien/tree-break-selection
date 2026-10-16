@@ -2,9 +2,8 @@
 title: Selected Tail Topology Refinement 2026-06-03
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_topology_refinement.py
   - raw/assets/benchmark-results/selected_hierarchy_topology_refinement_input_20260603_300/manifest.json
   - raw/assets/benchmark-results/selected_hierarchy_topology_refinement_input_20260603_300/candidate_equation_holdout.csv
   - raw/assets/benchmark-results/selected_hierarchy_topology_refinement_input_20260603_300/selected_ratio_tail_law.csv
@@ -86,6 +85,7 @@ admissible calibration rule.
   records context-family support and precision summaries.
 - `raw/assets/benchmark-results/selected_tail_topology_refinement_20260603_300/base_context_refinement_comparison.csv`
   records base-versus-refined comparisons for each context.
+- `benchmarks/diagnostics/calibration/selected/tail/selected_tail_topology_refinement.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

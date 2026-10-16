@@ -5,9 +5,6 @@ so panels can build result tables without repeating the same guards. They are
 deliberately permissive: a missing column, an unparseable value, or a pandas
 missing marker yields the neutral result rather than raising, because a
 diagnostic row is evidence and a single bad field must not abort a panel.
-
-`root/root_values.py` pairs `finite_float` with selected-root input-column
-validation.
 """
 
 from __future__ import annotations

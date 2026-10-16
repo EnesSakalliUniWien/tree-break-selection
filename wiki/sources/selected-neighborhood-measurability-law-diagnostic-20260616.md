@@ -2,9 +2,9 @@
 title: Selected Neighborhood Measurability Law Diagnostic 2026-06-16
 type: source
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_measurability_law.py
+  - wiki/analyses/selected-neighborhood-measurability-law.md
 tags:
   - source
   - diagnostics
@@ -52,6 +52,7 @@ label.
 - The previously cited result directories are empty. Regenerate a result
   capture and add focused contract coverage before promoting this page back to
   `reviewed` or recording empirical conclusions.
+- `benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_measurability_law.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

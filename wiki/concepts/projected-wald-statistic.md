@@ -12,12 +12,8 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/fixed_subspace_annotation.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
-  - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
-  - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/fixed_subspace_annotation.py
   - tests/statistics/44_test_fixed_coordinate_fdr_candidates.py
@@ -304,6 +300,7 @@ categorical support evidence remains open.
 - `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py`
   validates the runtime fixed-profile path and the opt-in selected-root
   permutation guard evidence fields.
+- `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py`, `benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py`, `benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py`, `benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py` were retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

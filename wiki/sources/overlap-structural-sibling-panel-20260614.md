@@ -2,9 +2,8 @@
 title: Overlap Structural Sibling Panel 2026-06-14
 type: source
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/overlap/overlap_structural_sibling_panel.py
   - raw/assets/benchmark-results/overlap_structural_sibling_20260614/overlap_structural_sibling_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_20260614/overlap_structural_sibling_summary.csv
 tags:
@@ -85,6 +84,7 @@ production traversal or calibration.
   `pytest tests/validation/calibration/overlap/103_test_overlap_structural_sibling_panel.py -q`
   and
   `ruff check benchmarks/diagnostics/calibration/overlap/overlap_structural_sibling_panel.py tests/validation/calibration/overlap/103_test_overlap_structural_sibling_panel.py`.
+- `benchmarks/diagnostics/calibration/overlap/overlap_structural_sibling_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

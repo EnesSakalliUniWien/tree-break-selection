@@ -2,9 +2,8 @@
 title: Spectral Backend Runtime Diagnostic
 type: analysis
 status: reviewed
-updated: 2026-06-01
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/spectral/mp/profile_spectral_backends.py
   - benchmarks/results/diagnostics/spectral_backend_profile_20260526.csv
   - benchmarks/results/diagnostics/spectral_backend_profile_broader_20260526.csv
   - benchmarks/results/diagnostics/spectral_backend_profile_after_diagonal_vectorization_20260526.csv
@@ -198,6 +197,7 @@ feature-space contracts.
   tree and feature-space contract.
 - `decomposition.py` shows that production eigendecomposition already chooses
   the smaller primal or dual covariance representation.
+- `benchmarks/diagnostics/spectral/mp/profile_spectral_backends.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

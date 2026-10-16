@@ -1,37 +1,13 @@
 # Spectral Diagnostics
 
-This directory contains diagnostics for projection-dimension and
-Marchenko-Pastur threshold behavior.
+This directory contains adaptive-cosine, tree-strategy stability, and
+Vandermonde diagnostics.
 
-- `mp/` owns MP-law checks, dimension sweeps, and backend profiling.
 - `adaptive_cosine/` owns KAK, lens, and adaptive-cosine probes.
-- `stability/` owns covariance-axis and tree-strategy stability panels.
+- `stability/` owns the tree-strategy stability panel.
 - `vandermonde.py` provides guarded PSD Toeplitz factorization for diagnostics;
   `apply_vandermonde_diagnostic.py` checks its applicability to the known-branch
   covariance experiment and records full-rank nonuniqueness.
-
-Entrypoint:
-
-```bash
-uv run python -m benchmarks.diagnostics.spectral.mp.compare_mp_dimension_contracts
-```
-
-Backend profiling:
-
-```bash
-uv run python -m benchmarks.diagnostics.spectral.mp.profile_spectral_backends
-```
-
-Local identity-MP law screen:
-
-```bash
-uv run python -m benchmarks.diagnostics.spectral.mp.local_mp_identity_law_diagnostic
-```
-
-The local identity-MP screen is descriptive only. It writes case-level MP
-departure summaries, node-level spectra, selected-tree spectral-law covariate
-relationships, and a separate categorical extreme-node table. It must not be
-used as a production threshold or fallback calibration path.
 
 ## Eigenvalue block comparisons
 

@@ -18,6 +18,7 @@ from tree_break_selection.tree.continuous_distance import (
 from tree_break_selection.tree.feature_space import (
     FeatureBlock,
     FeatureSpace,
+    bernoulli_feature_space_from_columns,
     continuous_feature_space_from_columns,
     infer_feature_space_from_columns,
 )
@@ -412,17 +413,10 @@ def test_diagonal_bernoulli_null_whitening_matches_block_formula() -> None:
     )
     null_distribution = np.array([0.2, 0.4, 0.6, 0.8], dtype=np.float64)
 
-    assert hasattr(
-        contrast_covariance_module,
-        "_build_bernoulli_null_whitened_tangent_matrix",
-    )
-    vectorized = contrast_covariance_module._build_bernoulli_null_whitened_tangent_matrix(
+    feature_space = bernoulli_feature_space_from_columns(("x0", "x1", "x2", "x3"))
+    vectorized = build_null_whitened_tangent_matrix(
         observations,
         null_distribution,
-        contrast_covariance_module._resolve_distribution_feature_space(
-            null_distribution,
-            None,
-        ),
         ridge=1e-12,
     )
 
@@ -435,10 +429,7 @@ def test_diagonal_bernoulli_null_whitening_matches_block_formula() -> None:
                 continuous_covariance_by_block={},
                 ridge=1e-12,
             )
-            for block in contrast_covariance_module._resolve_distribution_feature_space(
-                null_distribution,
-                None,
-            ).blocks
+            for block in feature_space.blocks
         ]
     )
     np.testing.assert_allclose(vectorized, expected, rtol=0.0, atol=0.0)
@@ -512,10 +503,10 @@ def _assert_grouped_categorical_null_whitening_matches_block_formula(
     null_distribution: np.ndarray,
     feature_space: FeatureSpace,
 ) -> None:
-    grouped = contrast_covariance_module._build_grouped_categorical_null_whitened_tangent_matrix(
+    grouped = build_null_whitened_tangent_matrix(
         observations,
         null_distribution,
-        feature_space,
+        feature_space=feature_space,
         ridge=1e-12,
     )
     expected = np.column_stack(

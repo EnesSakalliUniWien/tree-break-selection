@@ -65,7 +65,7 @@ The existing adaptive-cosine tie fix is working in its own module. Its protectio
 
 [recursive_pvalue_geometry.py:155](/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/path_b/recursive_pvalue_geometry.py:155) truncates both row bases to the smaller rank before forming their cross-Gram matrix. With parent basis `I₂` and child basis `[0,1]`, it reports cosine zero and normalized distance one. Swapping the parent's rows changes those answers to one and zero, although its subspace and projector are identical.
 
-The full rectangular cross-Gram has singular value one: the child lies inside the parent. SciPy's full-subspace calculation returns angle zero. This affects diagnostic interpretation, not production gates. The live consumer is [mixed_null_signal_geometry_validation.py:1264](/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/path_b/mixed_null_signal_geometry_validation.py:1264).
+The full rectangular cross-Gram has singular value one: the child lies inside the parent. SciPy's full-subspace calculation returns angle zero. This affects diagnostic interpretation, not production gates. The live consumer is `benchmarks/diagnostics/path_b/mixed_null_signal_geometry_validation.py:1264` (retired 2026-10-16).
 
 Use full orthonormal bases for containment/principal angles. Also retain both ranks: zero principal angles do not imply equality when dimensions differ. The projector distance satisfies
 

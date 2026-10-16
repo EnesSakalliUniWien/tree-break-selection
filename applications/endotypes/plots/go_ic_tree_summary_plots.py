@@ -26,7 +26,8 @@ from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.manifold import MDS
 
-from applications.endotypes._shared import load_binary_feature_matrix, safe_name
+from applications.endotypes._shared import safe_name
+from applications.endotypes.io.adaptive_diffusion_dataframe_io import load_binary_matrix
 from tree_break_selection.space_separation import (
     SpectralBlock,
     adaptive_diffusion_geometry,
@@ -107,16 +108,6 @@ def tier_color(label: str) -> str:
         "quality_mixed": "#f58518",
         "degenerate": "#b279a2",
     }.get(label, "#777777")
-
-
-def load_binary_matrix(path: Path) -> pd.DataFrame:
-    return load_binary_feature_matrix(
-        path,
-        drop_zero_columns=True,
-        require_nonzero_rows=True,
-        non_binary_message="contains values outside {0,1}.",
-        zero_rows_message="Rows with no active GO terms",
-    )
 
 
 def load_global_embedding(path: Path | None, data: pd.DataFrame) -> tuple[pd.DataFrame, str, str]:

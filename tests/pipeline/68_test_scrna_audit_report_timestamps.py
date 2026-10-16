@@ -9,9 +9,10 @@ from pathlib import Path
 import pandas as pd
 
 
-def _load_script(name: str):
+def _load_script(name: str, monkeypatch):
     module_name = f"applications.scrna.analysis.{Path(name).stem}"
-    sys.modules.pop(module_name, None)
+    # Restored after the test, so later tests keep the original module object.
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
     return importlib.import_module(module_name)
 
 
@@ -24,7 +25,7 @@ def _assert_generated_at(path: Path) -> None:
 
 
 def test_branch_length_audit_report_records_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_script("audit_branch_length_effects.py")
+    module = _load_script("audit_branch_length_effects.py", monkeypatch)
     effects = pd.DataFrame(
         [
             {
@@ -68,7 +69,7 @@ def test_branch_length_audit_report_records_generated_timestamp(monkeypatch, tmp
 
 
 def test_branch_length_audit_manifest_records_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_script("audit_branch_length_effects.py")
+    module = _load_script("audit_branch_length_effects.py", monkeypatch)
     output_root = tmp_path / "branch-audit"
     output_root.mkdir()
     monkeypatch.setattr(module, "PROJECT_ROOT", tmp_path)
@@ -113,7 +114,7 @@ def test_branch_length_audit_manifest_records_generated_timestamp(monkeypatch, t
 
 
 def test_distributional_action_audit_report_records_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_script("audit_distributional_action.py")
+    module = _load_script("audit_distributional_action.py", monkeypatch)
     summary = pd.DataFrame(
         [
             {
@@ -162,7 +163,7 @@ def test_distributional_action_audit_manifest_records_generated_timestamp(
     monkeypatch,
     tmp_path,
 ):
-    module = _load_script("audit_distributional_action.py")
+    module = _load_script("audit_distributional_action.py", monkeypatch)
     output_root = tmp_path / "action-audit"
     output_root.mkdir()
     monkeypatch.setattr(module, "PROJECT_ROOT", tmp_path)

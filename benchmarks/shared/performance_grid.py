@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -203,23 +204,28 @@ def _support_coverage(frame: pd.DataFrame) -> pd.DataFrame:
     return coverage
 
 
-def _markdown_table(frame: pd.DataFrame, *, max_rows: int = 20) -> str:
-    if frame.empty:
+def markdown_table(
+    frame: pd.DataFrame, columns: Sequence[str] | None = None, *, max_rows: int | None = None
+) -> str:
+    """Render the first ``max_rows`` rows of ``columns`` as markdown; floats use four decimals."""
+    if columns is not None:
+        frame = frame[[column for column in columns if column in frame.columns]]
+    visible = frame.iloc[:max_rows].copy()
+    if visible.empty:
         return "_No rows._"
-    visible = frame.head(max_rows).copy()
-    for column in SUMMARY_METRICS + ["unsupported_rate"]:
-        if column in visible.columns:
+    for column in visible.columns:
+        if pd.api.types.is_float_dtype(visible[column]):
             visible[column] = visible[column].map(
                 lambda value: "" if pd.isna(value) else f"{float(value):.4f}"
             )
-    columns = list(visible.columns)
     lines = [
-        "| " + " | ".join(columns) + " |",
-        "| " + " | ".join("---" for _column in columns) + " |",
+        "| " + " | ".join(visible.columns) + " |",
+        "| " + " | ".join("---" for _ in visible.columns) + " |",
     ]
-    for row in visible.itertuples(index=False):
-        values = [str(value).replace("|", "\\|") for value in row]
-        lines.append("| " + " | ".join(values) + " |")
+    lines.extend(
+        "| " + " | ".join(str(value).replace("|", "\\|") for value in row) + " |"
+        for row in visible.itertuples(index=False)
+    )
     return "\n".join(lines)
 
 
@@ -280,7 +286,7 @@ def write_benchmark_performance_grid(
                 "",
                 "Sorted by unsupported rate first, then mean ARI on successful rows.",
                 "",
-                _markdown_table(summary),
+                markdown_table(summary, max_rows=20),
                 "",
             ]
         ),

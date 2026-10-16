@@ -55,8 +55,14 @@ All notable changes to this project are documented in this file.
 - `TreeDecomposition` no longer takes `selected_family_passthrough_guard`; only a gate bundle whose `root_selective_permutation_guard_scope` is a pass-through scope turns the selected-family guard on.
 - Tests now check production outcomes: the root-stability and selective-permutation guard tests assert that the root is blocked, the pipeline parity test compares every non-evidence column and adds a benchmark case where decisions depend on alpha, three tests build trees with `build_tree` (average linkage) or `run_tbs_on_distance` instead of hand-built complete-linkage trees, and the supplied-distance dispatch tests assert the runner receives the supplied matrix.
 
+- Ambiguous names: `SiblingPairRecord.has_empirical_null_support` (role only) is `has_null_role`; `CalibrationDecision.exact_context` is `decision_context`.
+- One implementation per helper name: `parse_go_term`/`GO_ID_RE` and `default_output_dir` live in `applications/endotypes/_shared.py`, one `load_binary_matrix` in `applications/endotypes/io/`, one `markdown_table` in `benchmarks/shared/performance_grid.py`, and `aws_alpha_grid_search` uses `alpha_grid_search.parse_case_names`. A GO label without an id now comes back stripped, with an empty id.
+- Research-tool tests moved from `tests/core` and `tests/pipeline` into `tests/validation`; timestamp tests restore `sys.modules`; tests of the null-whitened tangent and spectral jobs go through `build_null_whitened_tangent_matrix` and `compute_spectral_decomposition`.
+
 
 ### Removed
+- 71 past-study files in `benchmarks/diagnostics/` (32 entry scripts, 29 helpers only they imported, 10 empty packages, plus `runner_support.py`): nothing imported or tested them, and their results are recorded in the wiki. They remain in git history at 7cc4e1c0; `spectral/apply_vandermonde_diagnostic.py` and `path_b/recursive_pvalue_geometry.py` stay because retained reports rerun or import them.
+- Six duplicate tests, the test-only `EmpiricalNullInflationModel.sample_is_strict_null`/`sample_is_edge_blocked` properties, `LeadingAxesSpace.leading_coordinates`/`following_coordinates`, and four unused `project_root()` copies.
 - Code only tests reached: the `selected_gaussian_{radial,hierarchy,diffusion}` prototypes and tests 51–54; the exact-F calibration mode (`fit_independent_unweighted_common_scale_inflation_model`, `decide_independent_unweighted_common_scale_calibration`, `IndependentUnweightedCommonScaleContract`, the model's `reference_law`/`independent_contract` fields and the `independent_exact_admissible` status); `split_distributional_action_summary`.
 - The never-produced `undefined_unvalidated_reference_law` calibration status and `UnsupportedReasonCode.EMPIRICAL_NULL_UNVALIDATED_REFERENCE_LAW`.
 - `benchmarks/external/` (clustbench and OpenML loaders) and the `clustering-benchmarks` and `openml` dependencies of the `benchmark-infra` extra.

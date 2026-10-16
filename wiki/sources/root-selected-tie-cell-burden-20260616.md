@@ -2,9 +2,9 @@
 title: Root Selected Tie Cell Burden 2026-06-16
 type: source
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/selected/root_selected_tie_cell_burden.py
+  - wiki/analyses/root-selected-region-model.md
 tags:
   - source
   - diagnostics
@@ -47,6 +47,7 @@ penalty.
   the shared diagnostic reporting layer.
 - No tracked result capture or focused current test supports the former
   overlap-run numerical claims, so this page remains draft.
+- `benchmarks/diagnostics/calibration/root/selected/root_selected_tie_cell_burden.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

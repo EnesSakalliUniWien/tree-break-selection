@@ -2,9 +2,9 @@
 title: Root Tie Rank Null Proposal Frontier 2026-06-16
 type: source
 status: draft
-updated: 2026-08-10
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_null_proposal_frontier.py
+  - wiki/analyses/root-selected-region-model.md
 tags:
   - source
   - diagnostics
@@ -45,6 +45,7 @@ overlay.
   proposal-family labels alone.
 - No non-empty retained result capture or focused current test supports the
   former numerical smoke-run claims, so this page remains draft.
+- `benchmarks/diagnostics/calibration/root/tie_rank/root_tie_rank_null_proposal_frontier.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

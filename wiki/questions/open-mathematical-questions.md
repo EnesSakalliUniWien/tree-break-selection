@@ -41,7 +41,6 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
   - wiki/analyses/empirical-null-calibration-reference-law-contract.md
   - wiki/sources/selected-tail-law-q5-validation-20260604.md
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_validation.csv
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_summary.csv
   - wiki/sources/recursive-method-followups-20260604.md
@@ -62,7 +61,6 @@ sources:
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_q5_promotion_gate.csv
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_promotion_summary.csv
   - wiki/sources/selected-tail-parent-size-balance-stability-20260604.md
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_parent_size_balance_stability.py
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_contexts.csv
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_parent_folds.csv
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_summary.csv
@@ -91,12 +89,8 @@ sources:
   - wiki/analyses/manuscript-life-science-readiness.md
   - benchmarks/validation/contracts/method_constants_manifest.py
   - benchmarks/validation/statistics/feature_covariance_calibration.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
-  - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
-  - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
   - raw/inbox/data-independent-sibling-gate-smoke-20260613.md
@@ -2374,6 +2368,7 @@ is only `0.16343`.
 - `wiki/sources/topology-vector-benchmark-20260615.md` records the regression
   gate benchmark and the dispatch plumbing required to run the refined profile
   as a standard TBS benchmark parameter variant.
+- `benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

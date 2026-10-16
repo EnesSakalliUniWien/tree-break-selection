@@ -2,10 +2,9 @@
 title: Selected Hierarchy Null Support Contract
 type: analysis
 status: reviewed
-updated: 2026-08-08
+updated: 2026-10-16
 sources:
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_null_audit.py
-  - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_external_calibration_contract.py
   - raw/assets/benchmark-results/selected_hierarchy_precision_20260601_summary.csv
   - raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/external_calibration_contract.csv
   - raw/assets/benchmark-results/selected_hierarchy_stratification_20260602_500/strata_by_parent_size.csv
@@ -415,6 +414,7 @@ internal support is still not a fallback.
 - `manuscript/sections/method/sibling_test.tex` records the current internal
   empirical-null calibration support contract; the selected-hierarchy contract
   is a separate diagnostic object.
+- `benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_external_calibration_contract.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

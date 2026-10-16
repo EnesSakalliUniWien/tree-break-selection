@@ -12,23 +12,12 @@ from benchmarks.shared.types.method_spec import MethodSpec
 from .helpers import _capturing_runner, _toy_dataframe
 
 
-def test_dispatch_result_rejects_invalid_runner_params():
-    df = _toy_dataframe()
+@pytest.mark.parametrize("method_id", ["kmeans", "spectral"])
+def test_dispatch_result_rejects_invalid_runner_params(method_id):
     with pytest.raises(ValueError):
         run_clustering_result(
-            data_df=df,
-            method_id="kmeans",
-            params={"n_clusters": "bad"},
-            seed=42,
-        )
-
-
-def test_dispatch_result_rejects_invalid_spectral_params():
-    df = _toy_dataframe()
-    with pytest.raises(ValueError):
-        run_clustering_result(
-            data_df=df,
-            method_id="spectral",
+            data_df=_toy_dataframe(),
+            method_id=method_id,
             params={"n_clusters": "bad"},
             seed=42,
         )

@@ -8,14 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import normalize
 
-
-def parse_go_term(column: str) -> tuple[str, str]:
-    import re
-
-    match = re.search(r"(GO:\d{7})", column)
-    go_id = match.group(1) if match else ""
-    term = column.replace(f"({go_id})", "").strip() if go_id else column
-    return term, go_id
+from applications.endotypes._shared import parse_go_term
 
 
 def binary_entropy_bits(probabilities: np.ndarray) -> np.ndarray:

@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import re
 import subprocess
 import sys
 import textwrap
@@ -22,12 +21,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-from applications.endotypes._shared import load_binary_feature_matrix, matrix_slug, safe_name
+from applications.endotypes._shared import (
+    load_binary_feature_matrix,
+    matrix_slug,
+    parse_go_term,
+    safe_name,
+)
 from applications.endotypes.reports.artifact_index import load_artifact_index
 from benchmarks.diagnostics.calibration.values import finite_float
 from tree_break_selection.plot.image_panel import draw_image_panel
-
-GO_ID_RE = re.compile(r"(GO:\d{7})")
 
 
 @dataclass
@@ -150,14 +152,6 @@ def attach_roster_status(ranking: pd.DataFrame, output_dir: Path) -> pd.DataFram
             "subspace_embedding_clusters_png"
         ].fillna("")
     return merged
-
-
-def parse_go_term(value: object) -> tuple[str, str]:
-    text = str(value)
-    match = GO_ID_RE.search(text)
-    go_id = match.group(1) if match else ""
-    term = text.replace(f"({go_id})", "").strip() if go_id else text
-    return term, go_id
 
 
 def truncate(value: object, width: int) -> str:

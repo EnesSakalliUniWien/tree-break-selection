@@ -2,10 +2,9 @@
 title: MP Projection Dimension Behavior Sweeps 2026-06-05
 type: source
 status: reviewed
-updated: 2026-06-05
+updated: 2026-10-16
 sources:
   - raw/inbox/gavish-donoho-optimal-hard-threshold-2014.txt
-  - benchmarks/diagnostics/spectral/mp/mp_projection_dimension_behavior_sweep.py
   - benchmarks/results/diagnostics/mp_projection_dimension_behavior_method_proof_20260605/mp_projection_dimension_behavior_summary.csv
   - benchmarks/results/diagnostics/mp_projection_dimension_behavior_method_proof_20260605/mp_projection_dimension_behavior_case_summary.csv
   - benchmarks/results/diagnostics/mp_projection_dimension_behavior_binary_20260605/mp_projection_dimension_behavior_summary.csv

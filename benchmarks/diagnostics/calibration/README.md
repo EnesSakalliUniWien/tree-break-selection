@@ -8,48 +8,24 @@ construction, testing, and plotting interfaces remain under
 ## Categories
 
 - `edge/`: edge-null behavior and selected-edge post-run analysis.
-- `overlap/`: overlap, junction, recovery, and structural-threshold studies.
-- `root/center/`: robust root-center and rooted-tree geometry checks.
-- `root/selected/`: selected-root region and tie-cell studies.
-- `root/tie_rank/`: tie-rank feasibility, selected-null simulation, and
-  null-proposal diagnostics.
-- `selected/family/`: selected-family traversal and candidate-law studies.
-- `selected/hierarchy/`: hierarchy selection and external-calibration studies.
-- `selected/neighborhood/`: neighborhood conditioning and measurability studies.
-- `selected/tail/`: selected-tail law and promotion-gate studies.
+- `selected/hierarchy/`: hierarchy selection null-audit and stratification studies.
 - `sibling/gates/`: data-independent sibling-gate profiles.
 - `sibling/known_branch_skew_diagnostic.py`: known-tree Gaussian ablation of
   covariance, same-data PCA/MP projection, hierarchy selection, and traversal.
-- `sibling/nulls/`: sibling-null models, calibration panels, and their runners.
-- `statistics/`: covariance, test-statistic, and null-law studies.
-- `traversal/`: traversal guards, path conditioning, and admissibility checks.
+- `sibling/nulls/`: sibling null-weight rule validation.
+- `statistics/`: covariance, test-statistic, and internal-calibration studies.
+- `traversal/`: traversal CLI and production-admissibility checks.
 
 The matching tests live under `tests/validation/calibration/` with the same
 category path. Import modules from their owning category; the package roots do
 not re-export moved names.
 
-Root diagnostic stages require callers to pass predecessor CSV artifacts
-explicitly; they do not silently select a dated result capture.
-
 Shared diagnostic contracts remain at this package root:
 
 - `reporting.py` writes named table bundles and their manifest envelope.
-- `overlap/panel_runner.py` owns the shared binary-overlap diagnostic runner
-  mechanics: supported-case filtering, replicate/data-role iteration, one-case
-  TBS execution, rows/summary writing, and manifest envelopes.
-- `root/root_values.py` owns shared selected-root value parsing,
-  and required-column validation.
+
 ## Maintained runners
 
 - `sibling/independent_projection_control.py`: matched independent basis/rank
   controls with pre-run source freezing, known covariance and fixed branches.
-- `selected/family/run_selected_family_matrix.py`
-- `sibling/nulls/run_gaussian_sibling_null_calibration.py`
-- `sibling/nulls/run_selection_conditioned_sibling_null.py`
-- `sibling/nulls/run_sibling_inflation_diagnostic.py`
-- `sibling/nulls/run_tree_bh_selection_conditioned_sibling_null.py`
 - `sibling/known_branch_skew_diagnostic.py`
-
-Multiscale UMAP rendering is owned by
-`selected/family/multiscale_umap.py` beside the selected-family matrix runner.
-It is a calibration-specific overlay, not a production plotting interface.

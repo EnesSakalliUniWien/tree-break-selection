@@ -92,30 +92,6 @@ def test_non_empirical_and_supported_gates_do_not_report_unsupported():
 
 
 @pytest.mark.slow
-def test_dense_high_dimensional_empirical_gate_returns_unsupported(
-    dense_highd_case_data: tuple[pd.DataFrame, np.ndarray],
-):
-    fixture_data, fixture_distances = dense_highd_case_data
-    data = fixture_data.copy(deep=True)
-    distances = fixture_distances.copy()
-
-    result = run_tbs_on_distance(
-        data,
-        distances,
-        0.01,
-        edge_alpha=0.001,
-        trace_level="full",
-    )
-
-    assert result.status == "unsupported"
-    assert result.labels is None
-    assert result.found_clusters == 0
-    assert result.unsupported_reason is not None
-    assert result.unsupported_reason.evidence.admissible_support_count == 0
-    assert result.unsupported_reason.evidence.upstream_rejected_count == 78
-
-
-@pytest.mark.slow
 def test_dense_high_dimensional_fixed_coordinate_control_remains_ok(
     dense_highd_case_data: tuple[pd.DataFrame, np.ndarray],
 ):

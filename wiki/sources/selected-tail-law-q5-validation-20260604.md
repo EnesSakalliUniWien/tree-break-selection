@@ -2,9 +2,8 @@
 title: Selected Tail Law Q5 Validation 2026-06-04
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/manifest.json
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_validation.csv
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_summary.csv
@@ -75,6 +74,7 @@ production external calibration path.
 - `raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/manifest.json`
   records the input table, alpha, tail quantile, fold count, and diagnostic
   interpretation.
+- `benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

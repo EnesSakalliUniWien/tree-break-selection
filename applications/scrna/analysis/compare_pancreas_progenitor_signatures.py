@@ -85,10 +85,6 @@ KEY_MARKERS = [
 ]
 
 
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
 def read_expression(adata_path: Path) -> tuple[pd.DataFrame, pd.Series]:
     adata = ad.read_h5ad(adata_path)
     raw = adata.raw
