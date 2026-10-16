@@ -2,7 +2,7 @@
 title: Open Mathematical Questions
 type: question
 status: reviewed
-updated: 2026-09-17
+updated: 2026-10-16
 sources:
   - reports/calibration_restoration_20260909/validation_protocol.md
   - manuscript/guides/full_method_logic_map.md
@@ -823,9 +823,9 @@ plug-in chi-square p-values with `internal_admissible` status when internal
 support satisfies the requested support policy. This status denotes
 availability, not validated selected-tail error control. Missing internal
 support still closes focal sibling gates; zero-dimensional decisions remain
-the deterministic p=1 case. A separately named exact-F API requires
+the deterministic p=1 case. A separately named exact-F API, which required
 independent statistics, pairwise-disjoint observation ownership, fixed unit
-weights, and one common chi-square scale.
+weights, and one common chi-square scale, was removed on 2026-10-16.
 
 The recursive follow-up pass adds an executable Q9/Q11 support-threshold
 contract around this decision object. Decisions now report positive-weight

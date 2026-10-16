@@ -238,6 +238,11 @@ def test_relationship_audit_summary_uses_root_row_for_root_split(tmp_path: Path)
                 "leaf_count": 4,
                 "is_leaf": False,
                 "parent_node": None,
+                "Child_Parent_Divergence_Significant": False,
+                "Child_Parent_Divergence_Invalid": False,
+                "Sibling_Divergence_Skipped": False,
+                "Sibling_Divergence_Invalid": False,
+                "branch_length": None,
                 "Sibling_Divergence_P_Value": 0.001,
                 "Sibling_Divergence_P_Value_Corrected": 0.001,
                 "Sibling_BH_Different": True,
@@ -247,6 +252,11 @@ def test_relationship_audit_summary_uses_root_row_for_root_split(tmp_path: Path)
                 "leaf_count": 2,
                 "is_leaf": False,
                 "parent_node": "root",
+                "Child_Parent_Divergence_Significant": False,
+                "Child_Parent_Divergence_Invalid": False,
+                "Sibling_Divergence_Skipped": False,
+                "Sibling_Divergence_Invalid": False,
+                "branch_length": None,
                 "Sibling_Divergence_P_Value": 0.9,
                 "Sibling_Divergence_P_Value_Corrected": 0.9,
                 "Sibling_BH_Different": False,
@@ -256,6 +266,11 @@ def test_relationship_audit_summary_uses_root_row_for_root_split(tmp_path: Path)
                 "leaf_count": 2,
                 "is_leaf": False,
                 "parent_node": "root",
+                "Child_Parent_Divergence_Significant": False,
+                "Child_Parent_Divergence_Invalid": False,
+                "Sibling_Divergence_Skipped": False,
+                "Sibling_Divergence_Invalid": False,
+                "branch_length": None,
                 "Sibling_Divergence_P_Value": 0.8,
                 "Sibling_Divergence_P_Value_Corrected": 0.8,
                 "Sibling_BH_Different": False,
@@ -439,55 +454,3 @@ def test_attach_audit_factors_rejects_missing_sibling_decision_column(tmp_path: 
 
     augmented_rows = pd.read_csv(artifacts.augmented_rows_csv)
     assert augmented_rows.loc[0, "audit_available"] == 0.0
-
-
-def test_analyze_benchmark_relationships_handles_missing_branch_length_column(
-    tmp_path: Path,
-) -> None:
-    audit_dir = tmp_path / "audit"
-    audit_dir.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(
-        [
-            {
-                "node_id": "N0",
-                "node_label": "root",
-                "leaf_count": 2,
-                "is_leaf": False,
-                "Child_Parent_Divergence_Significant": False,
-                "Child_Parent_Divergence_Invalid": False,
-                "Sibling_Divergence_Skipped": True,
-                "Sibling_Divergence_Invalid": False,
-                "Sibling_Divergence_P_Value": None,
-                "Sibling_Divergence_P_Value_Corrected": None,
-                "Sibling_BH_Different": False,
-                "parent_node": None,
-                "parent_label": "",
-            },
-            {
-                "node_id": "N1",
-                "node_label": "left",
-                "leaf_count": 1,
-                "is_leaf": True,
-                "Child_Parent_Divergence_Significant": True,
-                "Child_Parent_Divergence_Invalid": False,
-                "Sibling_Divergence_Skipped": False,
-                "Sibling_Divergence_Invalid": False,
-                "Sibling_Divergence_P_Value": 0.01,
-                "Sibling_Divergence_P_Value_Corrected": 0.01,
-                "Sibling_BH_Different": True,
-                "parent_node": "N0",
-                "parent_label": "root",
-            },
-        ]
-    ).to_csv(audit_dir / "case_1_tbs_stats.csv", index=False)
-
-    artifacts = analyze_benchmark_relationships(
-        pd.DataFrame([_minimal_result_row()]),
-        tmp_path,
-        include_plots=False,
-    )
-
-    augmented_rows = pd.read_csv(artifacts.augmented_rows_csv)
-    row = augmented_rows.iloc[0]
-    assert row["audit_available"] == 1.0
-    assert pd.isna(row["audit_mean_branch_length"])

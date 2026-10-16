@@ -46,7 +46,7 @@ clustering pipeline.
   `root_selective_permutation_guard_replicates` exposes a default-off
   validation diagnostic for fixed-subspace sibling gates. It is not part of the
   TBS runtime method: when explicitly enabled for a validation run, it records
-  `Root_Selective_Permutation_*` diagnostics and can close an open root whose
+  `Selective_Permutation_*` diagnostics and can close an open root whose
   selected-root p-value is above the diagnostic guard alpha. The guard scope
   defaults to `root`; validation profiles can also request selected subtree
   checks for `open_internal` nodes or for the narrower `passthrough_descendant`

@@ -8105,3 +8105,35 @@ version comparison report and wiki source summary. Production code unchanged.
 - The original parity fixture is insensitive to alpha and to the spectral
   minimum dimension (all of its decisions are far from the thresholds), so
   the new parity case uses `binary_balanced_low_noise`.
+
+## 2026-10-16 — Remaining audit code removals
+
+- Removed audit findings 8 to 14 and 18 (see CHANGELOG): the
+  selected-Gaussian prototypes, the exact-F calibration mode, the dead
+  unvalidated-reference-law status and reason code, the split-action
+  summary, `benchmarks/external/` with its two dependencies, duplicate
+  root guard columns and echoed config keys, unused package re-exports,
+  `SMALL_TEST_CASES` and test-only dataclass defaults.
+  [[root-selected-region-model]] and the split-action analysis page now
+  mark the removed modules.
+- Finding 20 was partly wrong and only partly applied. Removed: the
+  `old_display_rank` column and the relationship-analysis guards for audit
+  CSVs without gate or branch-length columns (the current writer always
+  writes them). Kept: the root sibling p-value fallback in
+  `relationship_analysis._select_root_split_pvalue` and
+  `debug_trace._root_sibling_pvalue`, which returns the raw p-value whenever
+  the corrected value is NaN, which is every fail-closed root (it produced
+  the `binary_perfect` P=5.29e-84 in the failure report); and the `_legacy`
+  suffix in `inventory_go_annotation_datasets.py`, which still gives the
+  tracked `raw/assets/benchmark-results/julia_allGO_new_c2ef_..._legacy_20260618`
+  folder its `julia_allgo_new` slug.
+- `reports/distribution_equation_comparison_20260928/compare_distributions.py`
+  imports the removed `selected_gaussian_radial`; it stays as a frozen
+  record and cannot be rerun on current code.
+- A second-agent review of these removals found five follow-ups, all fixed:
+  the selected-family panel's `root_selective_guard_blocked` column now reads
+  the generic guard column only on the root row (it had flagged non-root
+  rows), duplicate reads left by the column rename are gone, the README,
+  manuscript and wiki no longer claim the exact-F mode exists, the
+  relationship-analysis audit reader skips CSVs missing any column it now
+  reads unguarded, and leftover wiki and `pyproject.toml` text was updated.

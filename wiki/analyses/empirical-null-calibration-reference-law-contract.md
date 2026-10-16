@@ -2,7 +2,7 @@
 title: Empirical-Null Calibration Reference-Law Contract
 type: analysis
 status: reviewed
-updated: 2026-09-09
+updated: 2026-10-16
 sources:
   - reports/calibration_restoration_20260909/validation_protocol.md
   - reports/diffusion_nnls_versions_20260909/README.md
@@ -45,7 +45,8 @@ The initial 2026-09-09 review identified a production branch that bypassed
 support-threshold decisions, plus a tuple dependency-group indexing failure.
 The restoration removes that bypass and fixes tuple-group masks. The empirical
 entry point now rejects exact-F models rather than mislabeling a plug-in
-chi-square p-value as exact F. New regressions and the restored integration
+chi-square p-value as exact F; the exact-F mode itself was removed on
+2026-10-16 because no pipeline reached it. New regressions and the restored integration
 checks cover these behaviors. See [[calibration-rule-restoration-20260909]].
 
 ### Clustering utility and calibration status
@@ -144,10 +145,11 @@ already strict null-like or edge-blocked.
 
 ## Evidence
 
-- `tests/statistics/35_test_empirical_null_inflation_estimation.py` verifies the
-  F reference, the unadjusted-p-value floor, observation ownership, invalid
-  thresholds, immutable sample alignment, and the restored empirical p-values, strict support decisions and separation
-  of the empirical and exact-F APIs.
+- `tests/statistics/35_test_empirical_null_inflation_estimation.py` verifies
+  invalid thresholds, immutable sample alignment, and the restored empirical
+  p-values and strict support decisions. Its exact-F tests (F reference,
+  unadjusted-p-value floor, observation ownership) were removed with the mode
+  on 2026-10-16.
 - `tests/statistics/40_test_child_parent_edge_metadata.py` verifies that nested
   blocked descendants resolve to one stopping-event dependency group.
 - `tests/statistics/50_test_sibling_skip_annotation.py` verifies production

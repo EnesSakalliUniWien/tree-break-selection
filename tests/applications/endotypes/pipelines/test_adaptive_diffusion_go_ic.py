@@ -70,7 +70,6 @@ def test_specificity_order_preserves_raw_go_ic_rank_and_failed_rows():
     result = add_specificity_aware_rank(rank_go_ic_results(rows), coherence).set_index("run_id")
     assert result.loc["more_specific", "display_rank"] == 1
     assert result.loc["more_specific", "raw_go_ic_rank"] == 2
-    assert result.loc["more_specific", "old_display_rank"] == 2
     assert pd.isna(result.loc["failed", "display_rank"])
     assert result.loc["failed", "status"] == "failed_gate"
 

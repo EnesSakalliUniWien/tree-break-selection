@@ -12,7 +12,6 @@ sources:
   - reports/distribution_equation_comparison_20260928/manifest.json
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
-  - tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py
 tags:
   - calibration
   - degrees-of-freedom

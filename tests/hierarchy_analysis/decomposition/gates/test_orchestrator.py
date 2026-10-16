@@ -329,7 +329,7 @@ def test_pipeline_runs_opt_in_root_selective_permutation_guard(monkeypatch) -> N
     assert bundle.metadata.config.root_selective_permutation_guard_seed == 123
     assert bundle.metadata.config.root_selective_permutation_guard_alpha == 0.01
     # A selected-root p-value of 0.50 is above alpha 0.01, so the guard closes the root.
-    assert bool(bundle.annotated_df.loc["root", "Root_Selective_Permutation_Guard_Blocked"])
+    assert bool(bundle.annotated_df.loc["root", "Selective_Permutation_Guard_Blocked"])
     assert not bool(bundle.annotated_df.loc["root", "Sibling_BH_Different"])
 
 

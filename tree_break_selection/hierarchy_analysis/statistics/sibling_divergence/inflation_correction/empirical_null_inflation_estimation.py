@@ -2,22 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Collection, Mapping
-
 import numpy as np
 from scipy.special import logsumexp
-from scipy.stats import chi2, f
+from scipy.stats import chi2
 
 from ..pair_testing.types.sibling_pair_record import SiblingPairRecord
 from .types.inflation_model import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     CalibrationDecision,
     CalibrationFitDiagnostics,
-    CalibrationReferenceLaw,
     CalibrationSample,
     CalibrationSupportThresholds,
     EmpiricalNullInflationModel,
-    IndependentUnweightedCommonScaleContract,
 )
 
 # =============================================================================
@@ -164,20 +160,15 @@ def _dependency_group_support_weights(
     return np.asarray(group_weights, dtype=float)
 
 
-def _fit_empirical_null_inflation_model(
+def fit_empirical_null_inflation_model(
     records: list[SiblingPairRecord],
-    *,
-    _require_unit_reference_scale: bool = True,
-    _method: str = "context_weighted_supported_empirical_null_inflation",
-    _reference_law: CalibrationReferenceLaw = "unresolved_same_selected_hierarchy",
-    _independent_contract: IndependentUnweightedCommonScaleContract | None = None,
 ) -> EmpiricalNullInflationModel:
-    """Fit the context-weighted empirical-null inflation model."""
+    """Fit the empirical-null scale model; its selected-tail law remains unvalidated."""
     if not records:
         raise ValueError("Cannot fit sibling inflation model: no sibling calibration records.")
     for record in records:
         _validate_calibration_record(record)
-    if _require_unit_reference_scale and any(
+    if any(
         not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12) for record in records
     ):
         first_non_unit = next(
@@ -282,7 +273,7 @@ def _fit_empirical_null_inflation_model(
         ]
     )
     return EmpiricalNullInflationModel(
-        method=_method,
+        method="context_weighted_supported_empirical_null_inflation",
         sample=CalibrationSample(
             contexts=sample_contexts,
             feature_families=calibration_feature_families,
@@ -300,104 +291,6 @@ def _fit_empirical_null_inflation_model(
         fit_diagnostics=CalibrationFitDiagnostics(
             n_positive_weight_records=int(len(positive_weight_records)),
         ),
-        reference_law=_reference_law,
-        independent_contract=_independent_contract,
-    )
-
-
-def fit_empirical_null_inflation_model(
-    records: list[SiblingPairRecord],
-) -> EmpiricalNullInflationModel:
-    """Fit the empirical-null scale model; its selected-tail law remains unvalidated."""
-    return _fit_empirical_null_inflation_model(records)
-
-
-def _validated_observation_ids(
-    observation_ids: Collection[object],
-    *,
-    role: str,
-) -> frozenset[object]:
-    values = tuple(observation_ids)
-    if not values:
-        raise ValueError(f"{role} observation IDs must be non-empty.")
-    try:
-        unique_values = frozenset(values)
-    except TypeError as exc:
-        raise ValueError(f"{role} observation IDs must be hashable.") from exc
-    if len(unique_values) != len(values):
-        raise ValueError(f"{role} observation IDs must be unique.")
-    return unique_values
-
-
-def fit_independent_unweighted_common_scale_inflation_model(
-    records: list[SiblingPairRecord],
-    *,
-    calibration_observation_ids_by_parent: Mapping[object, Collection[object]],
-) -> EmpiricalNullInflationModel:
-    """Fit the denominator for the restricted independent exact F reference law."""
-    if any(not record.has_empirical_null_support for record in records):
-        raise ValueError("Independent exact calibration records must all have a null role.")
-    if any(record.degrees_of_freedom <= 0.0 for record in records):
-        raise ValueError(
-            "Independent exact calibration records must have positive degrees of freedom."
-        )
-    if any(
-        record.sibling_null_weight != 1.0
-        or (
-            record.calibration_dependency_weight is not None
-            and record.calibration_dependency_weight != 1.0
-        )
-        for record in records
-    ):
-        raise ValueError("Independent exact calibration requires unit fixed weights.")
-    dependency_group_ids = tuple(
-        record.parent
-        if record.calibration_dependency_group is None
-        else record.calibration_dependency_group
-        for record in records
-    )
-    if len(set(dependency_group_ids)) != len(dependency_group_ids):
-        raise ValueError(
-            "Independent exact calibration records must have distinct dependency groups."
-        )
-    reference_scales = np.asarray([record.reference_scale for record in records], dtype=float)
-    if reference_scales.size == 0:
-        raise ValueError("Independent exact calibration requires calibration records.")
-    common_reference_scale = float(reference_scales[0])
-    if not np.allclose(reference_scales, common_reference_scale, rtol=1e-12, atol=1e-12):
-        raise ValueError("Independent exact calibration requires one common reference_scale.")
-    parent_ids = tuple(record.parent for record in records)
-    if set(calibration_observation_ids_by_parent) != set(parent_ids):
-        raise ValueError(
-            "Independent calibration observation-ID keys must match calibration parent IDs."
-        )
-    observation_ids_by_parent: list[tuple[object, frozenset[object]]] = []
-    seen_observation_ids: set[object] = set()
-    for parent_id in parent_ids:
-        observation_ids = _validated_observation_ids(
-            calibration_observation_ids_by_parent[parent_id],
-            role=f"Calibration parent {parent_id!r}",
-        )
-        if seen_observation_ids.intersection(observation_ids):
-            raise ValueError(
-                "Independent calibration record observation IDs must be pairwise disjoint."
-            )
-        seen_observation_ids.update(observation_ids)
-        observation_ids_by_parent.append((parent_id, observation_ids))
-    denominator_degrees_of_freedom = float(
-        np.sum([record.degrees_of_freedom for record in records])
-    )
-    contract = IndependentUnweightedCommonScaleContract(
-        calibration_observation_ids_by_parent=tuple(observation_ids_by_parent),
-        common_reference_scale=common_reference_scale,
-        denominator_degrees_of_freedom=denominator_degrees_of_freedom,
-    )
-    return _fit_empirical_null_inflation_model(
-        records,
-        _require_unit_reference_scale=False,
-        _method="exact_independent_unweighted_common_scale_f",
-        _reference_law="exact_independent_unweighted_common_scale_f",
-        _independent_contract=contract,
     )
 
 
@@ -546,80 +439,6 @@ def _decision_context(record: SiblingPairRecord) -> dict[str, object]:
     }
 
 
-def decide_independent_unweighted_common_scale_calibration(
-    model: EmpiricalNullInflationModel,
-    record: SiblingPairRecord,
-    *,
-    focal_observation_ids: Collection[object],
-) -> CalibrationDecision:
-    """Return the restricted exact F decision for disjoint focal observations."""
-    if model.reference_law != "exact_independent_unweighted_common_scale_f":
-        raise ValueError("Exact F calibration requires the independently fitted exact model.")
-    contract = model.independent_contract
-    if contract is None:
-        raise ValueError("Exact F calibration model is missing its provenance contract.")
-    focal_ids = _validated_observation_ids(focal_observation_ids, role="Focal")
-    if focal_ids.intersection(contract.calibration_observation_ids):
-        raise ValueError("Focal and calibration observation IDs must be disjoint.")
-    if record.parent in model.sample.parent_ids:
-        raise ValueError("Focal and calibration parent IDs must be disjoint.")
-    _validate_calibration_record(record)
-    if record.degrees_of_freedom <= 0.0:
-        raise ValueError("Exact F calibration requires positive focal degrees of freedom.")
-    if not np.isclose(
-        record.reference_scale,
-        contract.common_reference_scale,
-        rtol=1e-12,
-        atol=1e-12,
-    ):
-        raise ValueError("Exact F calibration requires the focal common reference_scale.")
-    expected_unadjusted_p_value = float(
-        chi2.sf(
-            record.stat / record.reference_scale,
-            df=float(record.degrees_of_freedom),
-        )
-    )
-    if not np.isclose(record.p_value, expected_unadjusted_p_value, rtol=1e-10, atol=1e-14):
-        raise ValueError(
-            "Exact F calibration requires the focal p_value to match its unadjusted "
-            "common-scale chi-square law."
-        )
-    scale_estimate = float(model.baseline_scale_estimate)
-    f_statistic = (
-        float("inf")
-        if scale_estimate <= 0.0
-        else float(
-            record.stat / (record.reference_scale * record.degrees_of_freedom * scale_estimate)
-        )
-    )
-    exact_p_value = float(
-        f.sf(
-            f_statistic,
-            dfn=float(record.degrees_of_freedom),
-            dfd=contract.denominator_degrees_of_freedom,
-        )
-    )
-    one_sided_p_value = max(exact_p_value, expected_unadjusted_p_value)
-    return CalibrationDecision(
-        status="independent_exact_admissible",
-        c_hat=model.baseline_empirical_inflation_factor,
-        p_value=one_sided_p_value,
-        estimator="exact_independent_unweighted_common_scale_f",
-        support=_decision_support(model=model, record=record),
-        exact_context={
-            **_decision_context(record),
-            "reference_law": "exact_independent_unweighted_common_scale_f",
-            "denominator_degrees_of_freedom": contract.denominator_degrees_of_freedom,
-            "common_reference_scale": contract.common_reference_scale,
-        },
-        descriptive_strata={
-            "f_statistic": f_statistic,
-            "unadjusted_p_value": expected_unadjusted_p_value,
-            "one_sided_p_value_floor_applied": bool(expected_unadjusted_p_value > exact_p_value),
-        },
-    )
-
-
 def _adjusted_p_value(record: SiblingPairRecord, c_hat: float) -> float:
     """Evaluate the historical plug-in chi-square tail after empirical inflation."""
     if not np.isfinite(record.reference_scale) or record.reference_scale <= 0.0:
@@ -647,12 +466,6 @@ def decide_empirical_null_calibration(
     ``internal_admissible`` denotes availability under the internal support policy.
     The plug-in chi-square p-value does not establish selective error control.
     """
-    if model.reference_law != "unresolved_same_selected_hierarchy":
-        raise ValueError(
-            "Empirical-null calibration requires a same-selected-hierarchy model; "
-            "use the independent calibration decision with focal observation ownership "
-            "for an exact F model."
-        )
     exact_context = _decision_context(record)
     if record.degrees_of_freedom == 0:
         return CalibrationDecision(
@@ -873,11 +686,7 @@ def predict_empirical_inflation_factor(
         enforce_support_thresholds=enforce_support_thresholds,
         support_thresholds=support_thresholds,
     )
-    diagnostic_statuses = {
-        "internal_admissible",
-        "undefined_unvalidated_reference_law",
-    }
-    if decision.status not in diagnostic_statuses or decision.c_hat is None:
+    if decision.status != "internal_admissible" or decision.c_hat is None:
         reason = decision.descriptive_strata.get("reason", decision.status)
         raise ValueError(
             "Empirical-null diagnostic inflation prediction is unavailable: "
@@ -892,8 +701,6 @@ __all__ = [
     "EmpiricalNullInflationModel",
     "DEFAULT_INTERNAL_SUPPORT_THRESHOLDS",
     "decide_empirical_null_calibration",
-    "decide_independent_unweighted_common_scale_calibration",
     "fit_empirical_null_inflation_model",
-    "fit_independent_unweighted_common_scale_inflation_model",
     "predict_empirical_inflation_factor",
 ]

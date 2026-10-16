@@ -2,7 +2,7 @@
 title: Root Selected Region Model
 type: analysis
 status: reviewed
-updated: 2026-09-17
+updated: 2026-10-16
 sources:
   - reports/latest_changes_benchmark_review_20260909.md
   - wiki/analyses/method-proof-web.md
@@ -15,13 +15,6 @@ sources:
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py
   - benchmarks/diagnostics/calibration/root/selected/root_selected_region_margins.py
   - benchmarks/shared/tbs_tree_context.py
-  - tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py
-  - tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py
-  - tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_diffusion.py
-  - tests/statistics/51_test_selected_gaussian_radial.py
-  - tests/statistics/52_test_selected_gaussian_hierarchy.py
-  - tests/statistics/53_test_selected_gaussian_branch_lengths.py
-  - tests/statistics/54_test_selected_gaussian_diffusion.py
 tags:
   - analysis
   - selection
@@ -295,7 +288,7 @@ floating-point boundary cases or establishing production selective validity.
 The original review is preserved in [[latest-changes-benchmark-review-20260909]].
 
 The internal prototype in
-`tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py`
+`tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py` (removed 2026-10-16; prototype with no production caller)
 implements the smallest exact conditional object for a continuous Gaussian
 contrast with known fixed feature covariance. Let \(X\in\mathbb R^{n\times q}\),
 let \(\eta\in\mathbb R^n\) be the tested row contrast, and set
@@ -365,7 +358,7 @@ projection-orthogonal contrast along the path, nuisance-only projection
 selection, the unconditional chi limit, and a disconnected selected region.
 
 The companion implementation in
-`tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py`
+`tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py` (removed 2026-10-16; prototype with no production caller)
 now constructs the hierarchy component of \(S\) for one explicit model:
 deterministic average linkage over pairwise squared-Euclidean distances along
 the same radial path. Since every row has the affine form
@@ -726,26 +719,26 @@ with a declared support and precision contract.
   root and non-root null simulations with large selected-hierarchy ratios.
 - `benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py`
   records the current diagnostic proxy variables.
-- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py`
+- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py` (removed 2026-10-16; prototype with no production caller)
   implements the nuisance-derived Gaussian radial path and deterministic
   selected chi-radial interval integration without production wiring.
-- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py`
+- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_hierarchy.py` (removed 2026-10-16; prototype with no production caller)
   replays squared-Euclidean average linkage and analytically constructs the
   complete observed merge-sequence interval union from quadratic constraints.
-- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_diffusion.py`
+- `tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_diffusion.py` (removed 2026-10-16; prototype with no production caller)
   refits adaptive-pydiffmap or Hamming-neighbor geometry and replays average
   linkage at one radius without claiming an exact interval union.
-- `tests/statistics/51_test_selected_gaussian_radial.py` protects the path
+- `tests/statistics/51_test_selected_gaussian_radial.py` (removed 2026-10-16 with the prototypes) protected the path
   invariants and analytic selected-tail examples.
-- `tests/statistics/52_test_selected_gaussian_hierarchy.py` protects full
+- `tests/statistics/52_test_selected_gaussian_hierarchy.py` (removed 2026-10-16 with the prototypes) protected full
   merge-signature replay, every active competitor constraint, analytic
   boundaries, the two-leaf full region, and narrow disconnected cells.
-- `tests/statistics/53_test_selected_gaussian_branch_lengths.py` protects fixed
+- `tests/statistics/53_test_selected_gaussian_branch_lengths.py` (removed 2026-10-16 with the prototypes) protected fixed
   branch-time covariance scaling, fixed-topology NNLS merge-signature
   preservation, the cancelled-quadratic remote-interval regression, and the
   observed failure of fixed projection under recomputed linkage/NNLS branch
   lengths with `branch_length_state`.
-- `tests/statistics/54_test_selected_gaussian_diffusion.py` protects adaptive
+- `tests/statistics/54_test_selected_gaussian_diffusion.py` (removed 2026-10-16 with the prototypes) protected adaptive
   diffusion-distance and topology changes across the continuous path, observed
   binary replay for both Hamming variants, and fail-closed rejection away from
   binary support.

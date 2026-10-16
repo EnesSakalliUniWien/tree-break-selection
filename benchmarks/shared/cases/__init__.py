@@ -66,40 +66,6 @@ BENCHMARK_CASE_SUITES = frozenset(
     }
 )
 
-# Small test cases for quick smoke tests
-SMALL_TEST_CASES = [
-    {
-        "name": "clear",
-        "generator": "blobs",
-        "n_samples": 24,
-        "n_features": 12,
-        "n_clusters": 3,
-        "cluster_std": 0.4,
-        "seed": 0,
-        "category": "small_smoke",
-    },
-    {
-        "name": "moderate",
-        "generator": "blobs",
-        "n_samples": 30,
-        "n_features": 16,
-        "n_clusters": 3,
-        "cluster_std": 1.0,
-        "seed": 1,
-        "category": "small_smoke",
-    },
-    {
-        "name": "noisy",
-        "generator": "blobs",
-        "n_samples": 30,
-        "n_features": 16,
-        "n_clusters": 3,
-        "cluster_std": 1.6,
-        "seed": 2,
-        "category": "small_smoke",
-    },
-]
-
 # All test case categories
 ALL_CASE_CATEGORIES = {
     **GAUSSIAN_CASES,

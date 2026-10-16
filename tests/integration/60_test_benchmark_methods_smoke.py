@@ -2,13 +2,24 @@
 
 import pytest
 
-from benchmarks.shared.cases import SMALL_TEST_CASES, get_default_test_cases
+from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.pipeline import benchmark_cluster_algorithm
+
+SMOKE_CASE = {
+    "name": "clear",
+    "generator": "blobs",
+    "n_samples": 24,
+    "n_features": 12,
+    "n_clusters": 3,
+    "cluster_std": 0.4,
+    "seed": 0,
+    "category": "small_smoke",
+}
 
 
 def test_benchmark_graph_and_density_methods_smoke():
     """Run one graph method and one density method on a single test case."""
-    case = SMALL_TEST_CASES[0].copy()
+    case = SMOKE_CASE.copy()
     df_results, _ = benchmark_cluster_algorithm(
         test_cases=[case],
         verbose=False,
@@ -29,7 +40,7 @@ def test_benchmark_graph_and_density_methods_smoke():
 
 def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
     """Run the previously nonfunctional methods through one benchmark case."""
-    case = SMALL_TEST_CASES[0].copy()
+    case = SMOKE_CASE.copy()
     df_results, _ = benchmark_cluster_algorithm(
         test_cases=[case],
         verbose=False,
@@ -48,7 +59,7 @@ def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
 def test_benchmark_graphtools_diffusion_method_smoke(require_optional_dependencies):
     """Run the optional graphtools diffusion backend when it is installed."""
     require_optional_dependencies("graphtools")
-    case = SMALL_TEST_CASES[0].copy()
+    case = SMOKE_CASE.copy()
     with pytest.warns(RuntimeWarning, match="Detected zero distance between samples"):
         df_results, _ = benchmark_cluster_algorithm(
             test_cases=[case],

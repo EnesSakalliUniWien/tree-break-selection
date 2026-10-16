@@ -305,43 +305,7 @@ def run_tbs_on_distance(
             resolved_gate_config.enforce_internal_support_thresholds
         ),
         "passthrough": bool(passthrough),
-        "sibling_gate_profile": resolved_gate_config.sibling_gate_profile_id,
         "sibling_gate_method": str(resolved_gate_config.sibling_gate_method),
-        "sibling_gate_alpha_penalty": float(resolved_gate_config.sibling_gate_alpha_penalty),
-        "root_stability_guard_threshold": (resolved_gate_config.root_stability_guard_threshold),
-        "root_stability_subsample_replicates": int(
-            resolved_gate_config.root_stability_subsample_replicates
-        ),
-        "root_stability_feature_fraction": float(
-            resolved_gate_config.root_stability_feature_fraction
-        ),
-        "root_stability_seed": int(resolved_gate_config.root_stability_seed),
-        "root_stability_tree_distance_metric": str(
-            resolved_gate_config.root_stability_tree_distance_metric
-        ),
-        "root_stability_tree_linkage_method": str(
-            resolved_gate_config.root_stability_tree_linkage_method
-        ),
-        "root_selective_permutation_guard_replicates": int(
-            resolved_gate_config.root_selective_permutation_guard_replicates
-        ),
-        "root_selective_permutation_guard_seed": int(
-            resolved_gate_config.root_selective_permutation_guard_seed
-        ),
-        "root_selective_permutation_guard_alpha": (
-            None
-            if resolved_gate_config.root_selective_permutation_guard_alpha is None
-            else float(resolved_gate_config.root_selective_permutation_guard_alpha)
-        ),
-        "root_selective_permutation_guard_scope": str(
-            resolved_gate_config.root_selective_permutation_guard_scope
-        ),
-        "root_selective_permutation_guard_tree_distance_metric": str(
-            resolved_gate_config.root_selective_permutation_guard_tree_distance_metric
-        ),
-        "root_selective_permutation_guard_tree_linkage_method": str(
-            resolved_gate_config.root_selective_permutation_guard_tree_linkage_method
-        ),
     }
     if extra:
         duplicate_extra_keys = sorted(set(result_extra).intersection(extra))

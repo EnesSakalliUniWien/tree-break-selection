@@ -172,10 +172,10 @@ def test_root_selective_permutation_guard_closes_unselected_open_root(
 
     assert bool(guarded.loc[root, "Sibling_BH_Different"]) is False
     assert bool(guarded.loc[root, "Sibling_BH_Same"]) is True
-    assert bool(guarded.loc[root, "Root_Selective_Permutation_Guard_Blocked"]) is True
+    assert bool(guarded.loc[root, "Selective_Permutation_Guard_Blocked"]) is True
     assert bool(guarded.loc["A", "Sibling_BH_Different"]) is True
-    assert guarded.loc[root, "Root_Selective_Permutation_P_Value"] == 0.50
-    assert guarded.loc[root, "Root_Selective_Permutation_Guard_Alpha"] == 0.01
+    assert guarded.loc[root, "Selective_Permutation_P_Value"] == 0.50
+    assert guarded.loc[root, "Selective_Permutation_Guard_Alpha"] == 0.01
 
 
 def test_selective_permutation_guard_closes_open_internal_context(
@@ -480,7 +480,7 @@ def test_selective_permutation_passthrough_scope_respects_root_guard_outcome(
 
     assert calls == [("A", "C", "D")]
     assert bool(guarded.loc["root", "Sibling_BH_Different"]) is expected_root_open
-    assert bool(guarded.loc["root", "Root_Selective_Permutation_Guard_Blocked"]) is (
+    assert bool(guarded.loc["root", "Selective_Permutation_Guard_Blocked"]) is (
         not expected_root_open
     )
     assert bool(guarded.loc["B", "Sibling_BH_Different"]) is True

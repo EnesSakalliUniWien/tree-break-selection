@@ -39,8 +39,6 @@ benchmark = [
 ]
 benchmark-infra = [
     "asv>=0.6.6",
-    "clustering-benchmarks>=1.1.6",
-    "openml>=0.15.0",
 ]
 viz = [
     "bokeh>=3.0.0",
@@ -100,12 +98,12 @@ ignore_notebooks = true
 known_first_party = ["applications", "benchmarks", "tree_break_selection"]
 optional_dependencies_dev_groups = ["dev"]
 extend_exclude = ["^manuscript/"]
-package_module_name_map = { "clustering-benchmarks" = "clustbench", "scikit-bio" = "skbio" }
+package_module_name_map = { "scikit-bio" = "skbio" }
 
 [tool.deptry.per_rule_ignores]
-# CLI tools, dynamic adapters, renderer backends, and optional research runtimes
+# CLI tools, renderer backends, and optional research runtimes
 # do not appear as direct static imports in the audited source paths.
 # statsmodels is imported only by retained scripts under reports/; tabulate backs
 # pandas DataFrame.to_markdown in diagnostic reports; the `all` extra refers to the
 # project itself to collect the other extras.
-DEP002 = ["asv", "clustering-benchmarks", "deptry", "ipython", "jupyter", "notebook", "openml", "pygraphviz", "pytest", "ruff", "statsmodels", "tabulate", "tree-break-selection", "vulture"]
+DEP002 = ["asv", "deptry", "ipython", "jupyter", "notebook", "pygraphviz", "pytest", "ruff", "statsmodels", "tabulate", "tree-break-selection", "vulture"]

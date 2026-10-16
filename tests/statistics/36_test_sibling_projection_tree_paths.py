@@ -325,6 +325,12 @@ def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions()
         mp_threshold_rows_by_node={"A": 1},
         principal_component_projections_by_node={},
         principal_component_eigenvalues_by_node={},
+        descendant_leaf_row_counts_by_node={},
+        internal_distribution_row_counts_by_node={},
+        spectral_matrix_row_counts_by_node={},
+        full_component_eigenvalues_by_node={},
+        active_feature_counts_by_node={},
+        stage_timings={},
     )
 
     with pytest.raises(ValueError, match="missing 'root'"):

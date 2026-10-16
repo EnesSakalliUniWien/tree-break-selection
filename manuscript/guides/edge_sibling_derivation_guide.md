@@ -65,9 +65,10 @@ The implemented empirical rule is context-weighted empirical-null inflation:
 not a posterior probability of the sibling null.]
 
 [REFERENCE-LAW GUARD: the empirical plug-in tail is active with internal
-support, but its selected-tail validity remains unproven. A separate exact-F path requires independent focal and calibration
-statistics, pairwise-disjoint observation ownership, fixed unit weights, and a
-common chi-square scale.]
+support, but its selected-tail validity remains unproven. An exact F law would
+require independent focal and calibration statistics, pairwise-disjoint
+observation ownership, fixed unit weights, and a common chi-square scale; the
+software does not implement it.]
 
 [VALIDATION GAP: the inflation estimator needs null calibration, sensitivity to
 few calibration records, sensitivity to the bandwidth rule, and comparison

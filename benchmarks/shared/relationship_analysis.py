@@ -26,7 +26,13 @@ _AUDIT_SUMMARY_REQUIRED_COLUMNS = frozenset(
     {
         "node_id",
         "leaf_count",
+        "is_leaf",
         "parent_node",
+        "branch_length",
+        "Child_Parent_Divergence_Significant",
+        "Child_Parent_Divergence_Invalid",
+        "Sibling_Divergence_Skipped",
+        "Sibling_Divergence_Invalid",
         "Sibling_Divergence_P_Value",
         "Sibling_BH_Different",
     }
@@ -638,12 +644,11 @@ def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
     root_p = _select_root_split_pvalue(root_row)
     root_split_rejected = _root_split_rejected_from_sibling_decision(root_row)
 
-    sibling_valid = pd.Series(True, index=df.index, dtype=bool)
-    if "Sibling_Divergence_Skipped" in df.columns:
-        sibling_valid &= ~bool_series(df["Sibling_Divergence_Skipped"])
-    if "Sibling_Divergence_Invalid" in df.columns:
-        sibling_valid &= ~bool_series(df["Sibling_Divergence_Invalid"])
-    sibling_valid &= df["Sibling_BH_Different"].notna()
+    sibling_valid = (
+        ~bool_series(df["Sibling_Divergence_Skipped"])
+        & ~bool_series(df["Sibling_Divergence_Invalid"])
+        & df["Sibling_BH_Different"].notna()
+    )
     sibling_total = int(sibling_valid.sum())
     if sibling_total > 0:
         sig_sibling_fraction = float(
@@ -652,28 +657,24 @@ def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
     else:
         sig_sibling_fraction = np.nan
 
-    edge_valid = pd.Series(df["parent_node"].notna(), index=df.index, dtype=bool)
-    if "Child_Parent_Divergence_Invalid" in df.columns:
-        edge_valid &= ~bool_series(df["Child_Parent_Divergence_Invalid"])
-    if "Child_Parent_Divergence_Significant" in df.columns:
-        edge_valid &= df["Child_Parent_Divergence_Significant"].notna()
+    edge_valid = (
+        df["parent_node"].notna()
+        & ~bool_series(df["Child_Parent_Divergence_Invalid"])
+        & df["Child_Parent_Divergence_Significant"].notna()
+    )
     edge_total = int(edge_valid.sum())
-    if "Child_Parent_Divergence_Significant" in df.columns and edge_total > 0:
+    if edge_total > 0:
         sig_edge_fraction = float(
             bool_series(df.loc[edge_valid, "Child_Parent_Divergence_Significant"]).mean()
         )
     else:
         sig_edge_fraction = np.nan
 
-    is_leaf = bool_series(df["is_leaf"]) if "is_leaf" in df.columns else df["leaf_count"].eq(1)
-    internal_nodes = float((~is_leaf).sum())
-    if "branch_length" in df.columns:
-        branch_lengths = pd.to_numeric(df["branch_length"], errors="coerce")
-        mean_branch_length = (
-            float(branch_lengths.dropna().mean()) if branch_lengths.notna().any() else np.nan
-        )
-    else:
-        mean_branch_length = np.nan
+    internal_nodes = float((~bool_series(df["is_leaf"])).sum())
+    branch_lengths = pd.to_numeric(df["branch_length"], errors="coerce")
+    mean_branch_length = (
+        float(branch_lengths.dropna().mean()) if branch_lengths.notna().any() else np.nan
+    )
     neglog_root_p = (
         float(-np.log10(max(root_p, 1e-12))) if np.isfinite(root_p) and root_p > 0.0 else np.nan
     )

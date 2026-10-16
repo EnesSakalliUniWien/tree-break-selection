@@ -74,9 +74,6 @@ contract promotes such a rule.
   after projection onto orthonormal rows.
 - Use **context-weighted empirical-null inflation** for the sibling calibration
   model.
-- Use **restricted independent common-scale exact-F mode** only when its full
-  independence, observation-ownership, fixed-unit-weight, and common-scale
-  contract is satisfied.
 - Do not call the sibling inflation model an exact selective p-value.
 - Do not call the empirical-null weight a posterior null probability.
 

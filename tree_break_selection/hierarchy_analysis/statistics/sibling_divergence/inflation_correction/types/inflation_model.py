@@ -10,16 +10,9 @@ import numpy as np
 
 CalibrationDecisionStatus = Literal[
     "internal_admissible",
-    "independent_exact_admissible",
     "undefined_no_internal_support",
     "undefined_no_family_support",
     "undefined_sparse_context",
-    "undefined_unvalidated_reference_law",
-]
-
-CalibrationReferenceLaw = Literal[
-    "unresolved_same_selected_hierarchy",
-    "exact_independent_unweighted_common_scale_f",
 ]
 
 
@@ -233,51 +226,6 @@ class CalibrationFitDiagnostics:
             )
 
 
-@dataclass(frozen=True)
-class IndependentUnweightedCommonScaleContract:
-    """Runtime-checkable provenance required by the restricted exact F law."""
-
-    calibration_observation_ids_by_parent: tuple[tuple[object, frozenset[object]], ...]
-    common_reference_scale: float
-    denominator_degrees_of_freedom: float
-
-    def __post_init__(self) -> None:
-        if not self.calibration_observation_ids_by_parent:
-            raise ValueError("Independent calibration observation IDs must be non-empty.")
-        parent_ids = tuple(parent_id for parent_id, _ in self.calibration_observation_ids_by_parent)
-        if len(set(parent_ids)) != len(parent_ids):
-            raise ValueError("Independent calibration parent IDs must be unique.")
-        seen_observation_ids: set[object] = set()
-        for parent_id, observation_ids in self.calibration_observation_ids_by_parent:
-            if not observation_ids:
-                raise ValueError(
-                    "Every independent calibration parent requires observation IDs; "
-                    f"parent={parent_id!r}."
-                )
-            if seen_observation_ids.intersection(observation_ids):
-                raise ValueError(
-                    "Independent calibration record observation IDs must be pairwise disjoint."
-                )
-            seen_observation_ids.update(observation_ids)
-        if not np.isfinite(self.common_reference_scale) or self.common_reference_scale <= 0.0:
-            raise ValueError("Independent calibration common_reference_scale must be positive.")
-        if (
-            not np.isfinite(self.denominator_degrees_of_freedom)
-            or self.denominator_degrees_of_freedom <= 0.0
-        ):
-            raise ValueError(
-                "Independent calibration denominator_degrees_of_freedom must be positive."
-            )
-
-    @property
-    def calibration_observation_ids(self) -> frozenset[object]:
-        return frozenset(
-            observation_id
-            for _, observation_ids in self.calibration_observation_ids_by_parent
-            for observation_id in observation_ids
-        )
-
-
 def _effective_sample_size_from_weights(weights: np.ndarray) -> float:
     log_weights = np.log(weights)
     return float(
@@ -293,8 +241,6 @@ class EmpiricalNullInflationModel:
     sample: CalibrationSample
     baseline_scale_estimate: float
     fit_diagnostics: CalibrationFitDiagnostics
-    reference_law: CalibrationReferenceLaw = "unresolved_same_selected_hierarchy"
-    independent_contract: IndependentUnweightedCommonScaleContract | None = None
 
     def __post_init__(self) -> None:
         if not np.isfinite(self.baseline_scale_estimate) or self.baseline_scale_estimate < 0.0:
@@ -305,12 +251,6 @@ class EmpiricalNullInflationModel:
         if self.fit_diagnostics.n_positive_weight_records < self.sample.n_records:
             raise ValueError(
                 "n_positive_weight_records cannot be smaller than the calibration sample."
-            )
-        has_exact_law = self.reference_law == "exact_independent_unweighted_common_scale_f"
-        if has_exact_law != (self.independent_contract is not None):
-            raise ValueError(
-                "The exact independent F reference law and its provenance contract "
-                "must be present together."
             )
 
     @property
@@ -398,13 +338,11 @@ __all__ = [
     "CalibrationDecision",
     "CalibrationDecisionStatus",
     "CalibrationFitDiagnostics",
-    "CalibrationReferenceLaw",
     "CalibrationSample",
     "CalibrationSupportPolicySnapshot",
     "CalibrationSupportThresholds",
     "DEFAULT_INTERNAL_SUPPORT_POLICY",
     "DEFAULT_INTERNAL_SUPPORT_THRESHOLDS",
     "EmpiricalNullInflationModel",
-    "IndependentUnweightedCommonScaleContract",
     "INTERNAL_SUPPORT_CONTRACT_VERSION",
 ]

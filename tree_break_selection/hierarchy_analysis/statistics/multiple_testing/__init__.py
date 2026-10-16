@@ -12,15 +12,11 @@ tree_bh/
 """
 
 from .base import benjamini_hochberg_correction
-from .tree_bh import (
-    ChildParentEdgeTreeBHResult,
-    apply_tree_bh_correction,
-)
+from .tree_bh import apply_tree_bh_correction
 
 __all__ = [
     # Core function
     "benjamini_hochberg_correction",
     # Tree-BH correction
     "apply_tree_bh_correction",
-    "ChildParentEdgeTreeBHResult",
 ]

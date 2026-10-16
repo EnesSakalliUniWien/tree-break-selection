@@ -14,7 +14,6 @@ def add_specificity_aware_rank(
     ranking: pd.DataFrame, coherence_long: pd.DataFrame | None
 ) -> pd.DataFrame:
     out = ranking.copy()
-    out["old_display_rank"] = out.get("display_rank", pd.Series(index=out.index, dtype=float))
     out["specific_cluster_count"] = 0
     out["specific_cluster_fraction"] = 0.0
     out["weighted_specificity_delta"] = 0.0

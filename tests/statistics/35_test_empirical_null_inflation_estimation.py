@@ -6,14 +6,12 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from scipy.optimize import minimize_scalar
-from scipy.stats import chi2, f, gamma
+from scipy.stats import chi2, gamma
 
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.empirical_null_inflation_estimation import (
     CalibrationSupportThresholds,
     decide_empirical_null_calibration,
-    decide_independent_unweighted_common_scale_calibration,
     fit_empirical_null_inflation_model,
-    fit_independent_unweighted_common_scale_inflation_model,
     predict_empirical_inflation_factor,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.inflation_adjusted_sibling_tests import (
@@ -710,237 +708,6 @@ def test_dependency_group_metrics_do_not_count_nested_stopping_records_as_indepe
     )
 
 
-def test_independent_unweighted_common_scale_mode_uses_exact_f_reference_law() -> None:
-    calibration_records = [
-        _make_record(
-            "cal0",
-            stat=2.0,
-            degrees_of_freedom=2.0,
-            p_value=float(chi2.sf(2.0, 2.0)),
-        ),
-        _make_record(
-            "cal1",
-            stat=4.0,
-            degrees_of_freedom=4.0,
-            p_value=float(chi2.sf(4.0, 4.0)),
-        ),
-    ]
-    target = _make_record(
-        "target",
-        stat=12.0,
-        degrees_of_freedom=2.0,
-        is_null_like=False,
-        p_value=float(chi2.sf(12.0, 2.0)),
-    )
-
-    model = fit_independent_unweighted_common_scale_inflation_model(
-        calibration_records,
-        calibration_observation_ids_by_parent={
-            "cal0": ("train0", "train1"),
-            "cal1": ("train2",),
-        },
-    )
-    decision = decide_independent_unweighted_common_scale_calibration(
-        model,
-        target,
-        focal_observation_ids=("validation0", "validation1"),
-    )
-
-    expected = float(f.sf(6.0, 2.0, 6.0))
-    assert decision.status == "independent_exact_admissible"
-    assert decision.p_value == pytest.approx(expected)
-    assert decision.c_hat == pytest.approx(1.0)
-    assert decision.estimator == "exact_independent_unweighted_common_scale_f"
-
-    with pytest.raises(ValueError, match="same-selected-hierarchy model"):
-        decide_empirical_null_calibration(model, target)
-    with pytest.raises(ValueError, match="same-selected-hierarchy model"):
-        compute_inflation_adjusted_sibling_tests([target], model=model)
-
-
-def test_exact_f_mode_accepts_one_shared_nonunit_reference_scale() -> None:
-    calibration_records = [
-        _make_record(
-            "cal0",
-            stat=4.0,
-            reference_scale=2.0,
-            degrees_of_freedom=2.0,
-        ),
-        _make_record(
-            "cal1",
-            stat=8.0,
-            reference_scale=2.0,
-            degrees_of_freedom=4.0,
-        ),
-    ]
-    target = _make_record(
-        "target",
-        stat=24.0,
-        reference_scale=2.0,
-        degrees_of_freedom=2.0,
-        is_null_like=False,
-        p_value=float(chi2.sf(12.0, 2.0)),
-    )
-
-    model = fit_independent_unweighted_common_scale_inflation_model(
-        calibration_records,
-        calibration_observation_ids_by_parent={
-            "cal0": ("train0",),
-            "cal1": ("train1",),
-        },
-    )
-    decision = decide_independent_unweighted_common_scale_calibration(
-        model,
-        target,
-        focal_observation_ids=("validation",),
-    )
-
-    assert decision.p_value == pytest.approx(float(f.sf(6.0, 2.0, 6.0)))
-    assert decision.exact_context["common_reference_scale"] == 2.0
-
-
-def test_exact_f_mode_preserves_one_sided_unadjusted_p_value_floor() -> None:
-    calibration_records = [
-        _make_record(
-            "cal0",
-            stat=0.1,
-            degrees_of_freedom=2.0,
-            p_value=float(chi2.sf(0.1, 2.0)),
-        ),
-        _make_record(
-            "cal1",
-            stat=0.1,
-            degrees_of_freedom=2.0,
-            p_value=float(chi2.sf(0.1, 2.0)),
-        ),
-    ]
-    raw_p_value = float(chi2.sf(4.0, 2.0))
-    target = _make_record(
-        "target",
-        stat=4.0,
-        degrees_of_freedom=2.0,
-        is_null_like=False,
-        p_value=raw_p_value,
-    )
-
-    model = fit_independent_unweighted_common_scale_inflation_model(
-        calibration_records,
-        calibration_observation_ids_by_parent={
-            "cal0": ("train0",),
-            "cal1": ("train1",),
-        },
-    )
-    decision = decide_independent_unweighted_common_scale_calibration(
-        model,
-        target,
-        focal_observation_ids=("validation",),
-    )
-
-    assert decision.c_hat == 1.0
-    assert decision.p_value == pytest.approx(raw_p_value)
-
-
-def test_exact_f_mode_rejects_weighted_or_overlapping_calibration_contracts() -> None:
-    weighted = [
-        _make_record(
-            "cal",
-            stat=2.0,
-            degrees_of_freedom=2.0,
-            sibling_null_weight=0.5,
-        )
-    ]
-    with pytest.raises(ValueError, match="unit fixed weights"):
-        fit_independent_unweighted_common_scale_inflation_model(
-            weighted,
-            calibration_observation_ids_by_parent={"cal": ("shared",)},
-        )
-
-    dependency_weighted = [
-        _make_record(
-            "cal",
-            stat=2.0,
-            degrees_of_freedom=2.0,
-            calibration_dependency_group="cal",
-            calibration_dependency_weight=0.5,
-        )
-    ]
-    with pytest.raises(ValueError, match="unit fixed weights"):
-        fit_independent_unweighted_common_scale_inflation_model(
-            dependency_weighted,
-            calibration_observation_ids_by_parent={"cal": ("shared",)},
-        )
-
-    calibration = [_make_record("cal", stat=2.0, degrees_of_freedom=2.0)]
-    model = fit_independent_unweighted_common_scale_inflation_model(
-        calibration,
-        calibration_observation_ids_by_parent={"cal": ("shared",)},
-    )
-    target = _make_record(
-        "target",
-        stat=4.0,
-        degrees_of_freedom=2.0,
-        is_null_like=False,
-        p_value=float(chi2.sf(4.0, 2.0)),
-    )
-    with pytest.raises(ValueError, match="disjoint"):
-        decide_independent_unweighted_common_scale_calibration(
-            model,
-            target,
-            focal_observation_ids=("shared",),
-        )
-
-    overlapping_calibration = [
-        _make_record("cal0", stat=2.0, degrees_of_freedom=2.0),
-        _make_record("cal1", stat=2.0, degrees_of_freedom=2.0),
-    ]
-    with pytest.raises(ValueError, match="pairwise disjoint"):
-        fit_independent_unweighted_common_scale_inflation_model(
-            overlapping_calibration,
-            calibration_observation_ids_by_parent={
-                "cal0": ("shared",),
-                "cal1": ("shared",),
-            },
-        )
-
-    unequal_scales = [
-        _make_record("cal0", stat=2.0, reference_scale=1.0, degrees_of_freedom=2.0),
-        _make_record("cal1", stat=4.0, reference_scale=2.0, degrees_of_freedom=2.0),
-    ]
-    with pytest.raises(ValueError, match="common reference_scale"):
-        fit_independent_unweighted_common_scale_inflation_model(
-            unequal_scales,
-            calibration_observation_ids_by_parent={
-                "cal0": ("train0",),
-                "cal1": ("train1",),
-            },
-        )
-
-    shared_dependency_group = [
-        _make_record(
-            "cal0",
-            stat=2.0,
-            degrees_of_freedom=2.0,
-            calibration_dependency_group="shared_group",
-            calibration_dependency_weight=1.0,
-        ),
-        _make_record(
-            "cal1",
-            stat=2.0,
-            degrees_of_freedom=2.0,
-            calibration_dependency_group="shared_group",
-            calibration_dependency_weight=1.0,
-        ),
-    ]
-    with pytest.raises(ValueError, match="distinct dependency groups"):
-        fit_independent_unweighted_common_scale_inflation_model(
-            shared_dependency_group,
-            calibration_observation_ids_by_parent={
-                "cal0": ("train0",),
-                "cal1": ("train1",),
-            },
-        )
-
-
 def test_zero_dimensional_selected_hierarchy_decision_remains_degenerate_not_unresolved() -> None:
     model = fit_empirical_null_inflation_model(
         [_make_record("cal", stat=2.0, degrees_of_freedom=2.0)]
@@ -1011,7 +778,6 @@ def test_empirical_local_kernel_p_value_uses_weighted_scale_without_deflation() 
     assert decision.c_hat == pytest.approx(expected_scale)
     assert decision.p_value == pytest.approx(chi2.sf(16.0 / expected_scale, 2.0))
     assert decision.p_value >= chi2.sf(16.0, 2.0)
-    assert model.reference_law == "unresolved_same_selected_hierarchy"
 
 
 def test_family_support_cache_matches_uncached_decisions() -> None:

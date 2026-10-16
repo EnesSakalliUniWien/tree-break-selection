@@ -26,9 +26,6 @@ Import each entrypoint from the path shown. `child_parent_divergence`, `multiple
 | `contrast_covariance.py` | Canonical contrast-covariance object for projected-Wald statistics. |
 | `independent_gaussian.py` | Explicit discovery/test API for independent paired Gaussian measurements and externally known covariance; no same-data empirical inflation. |
 | `projection/projected_wald/` | Shared projected-Wald kernel, projection basis, and reference distribution. |
-| `projection/selected_gaussian_radial.py` | Internal continuous-Gaussian selected radial prototype with a nuisance-derived projection and exact declared selection intervals; not connected to production gates. |
-| `projection/selected_gaussian_hierarchy.py` | Analytic observed merge-sequence interval construction for the internal squared-Euclidean average-linkage Gaussian prototype; not a production tree model. |
-| `projection/selected_gaussian_diffusion.py` | Pointwise adaptive-pydiffmap and Hamming-neighbor average-linkage replay along the Gaussian radial path; diagnostic only, with no exact selected interval claim. |
 | `projection/spectral/` | Node spectral tasks, Marchenko-Pastur thresholding, and tree-level spectral context. |
 | `projection/projection_dimension_estimation/` | Projection dimension estimators. |
 | `child_parent_divergence/` | Child-parent projected-Wald tests and tree-level edge annotation. |

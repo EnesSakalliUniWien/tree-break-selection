@@ -45,7 +45,7 @@ Two further existing constructions are relevant:
 
 - [`infer_satterthwaite_reference_from_eigenvalues`](../../benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py)
   provides a diagnostic scale and effective-df moment approximation.
-- [`compute_selected_gaussian_tail`](../../tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py)
+- `compute_selected_gaussian_tail` (`selected_gaussian_radial.py`, removed 2026-10-16)
   integrates a chi-radius law over a declared selection interval union. It is
   an internal conditional-tail prototype. Correct construction of that union
   for an inferred hierarchy is a separate problem.

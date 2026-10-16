@@ -26,16 +26,16 @@ tests/
 
 ## Current Suite Map
 
-The ordered gate currently collects 1048 test cases:
+The ordered gate currently collects 996 test cases:
 
 | Stage | Responsibility | Tests |
 | --- | --- | ---: |
-| 1 | Core structure and decomposition (`core/`, `tree/`, `hierarchy_analysis/`) | 190 |
-| 2 | Statistical engines and calibration (`statistics/`) | 324 |
+| 1 | Core structure and decomposition (`core/`, `tree/`, `hierarchy_analysis/`) | 185 |
+| 2 | Statistical engines and calibration (`statistics/`) | 283 |
 | 3 | Localization and post-hoc merge behavior (`localization/`) | 1 |
-| 4 | Validation artifact contracts (`validation/`) | 334 |
-| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 152 |
-| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 44 |
+| 4 | Validation artifact contracts (`validation/`) | 330 |
+| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 151 |
+| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 43 |
 | 7 | Wiki memory contracts (`wiki/`) | 3 |
 
 Stage 4 protects artifact contracts: 32 cases in `calibration/` cover diagnostic

@@ -45,6 +45,12 @@ class TestSpectralContextRegressions:
                 mp_threshold_rows_by_node={},
                 principal_component_projections_by_node={},
                 principal_component_eigenvalues_by_node={},
+                descendant_leaf_row_counts_by_node={},
+                internal_distribution_row_counts_by_node={},
+                spectral_matrix_row_counts_by_node={},
+                full_component_eigenvalues_by_node={},
+                active_feature_counts_by_node={},
+                stage_timings={},
             )
 
         monkeypatch.setattr(
@@ -96,6 +102,12 @@ class TestSpectralContextRegressions:
                 mp_threshold_rows_by_node={"root": 2},
                 principal_component_projections_by_node=projections,
                 principal_component_eigenvalues_by_node=eigenvalues,
+                descendant_leaf_row_counts_by_node={},
+                internal_distribution_row_counts_by_node={},
+                spectral_matrix_row_counts_by_node={},
+                full_component_eigenvalues_by_node={},
+                active_feature_counts_by_node={},
+                stage_timings={},
             )
 
         monkeypatch.setattr(

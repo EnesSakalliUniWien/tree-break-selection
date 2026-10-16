@@ -467,21 +467,20 @@ def _rows_for_replicate(
         else np.nan
     )
     root_selective_p_value = (
-        float(annotations.at[root, "Root_Selective_Permutation_P_Value"])
+        float(annotations.at[root, "Selective_Permutation_P_Value"])
         if root in annotations.index
-        and "Root_Selective_Permutation_P_Value" in annotations
-        and pd.notna(annotations.at[root, "Root_Selective_Permutation_P_Value"])
+        and "Selective_Permutation_P_Value" in annotations
+        and pd.notna(annotations.at[root, "Selective_Permutation_P_Value"])
         else np.nan
     )
     root_selective_guard_blocked = (
-        bool(annotations.at[root, "Root_Selective_Permutation_Guard_Blocked"])
-        if root in annotations.index and "Root_Selective_Permutation_Guard_Blocked" in annotations
+        bool(annotations.at[root, "Selective_Permutation_Guard_Blocked"])
+        if root in annotations.index and "Selective_Permutation_Guard_Blocked" in annotations
         else False
     )
     root_selective_guard_would_block = (
-        bool(annotations.at[root, "Root_Selective_Permutation_Guard_Would_Block"])
-        if root in annotations.index
-        and "Root_Selective_Permutation_Guard_Would_Block" in annotations
+        bool(annotations.at[root, "Selective_Permutation_Guard_Would_Block"])
+        if root in annotations.index and "Selective_Permutation_Guard_Would_Block" in annotations
         else False
     )
     selective_p_values = (

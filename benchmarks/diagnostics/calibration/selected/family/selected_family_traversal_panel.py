@@ -458,11 +458,6 @@ def _decision_class(
     is_leaf: bool,
     annotations: pd.DataFrame,
 ) -> str:
-    root_selected_blocked = _annotation_bool(
-        annotations,
-        node,
-        "Root_Selective_Permutation_Guard_Blocked",
-    )
     root_stability_blocked = _annotation_bool(
         annotations,
         node,
@@ -473,7 +468,7 @@ def _decision_class(
         node,
         "Selective_Permutation_Guard_Blocked",
     )
-    if node == root and (root_selected_blocked or root_stability_blocked):
+    if node == root and (selected_family_blocked or root_stability_blocked):
         return "selected_root_blocked"
     if selected_family_blocked:
         return "selected_family_blocked"
@@ -723,11 +718,8 @@ def _build_node_decisions(
                     node,
                     "Root_Stability_Guard_Blocked",
                 ),
-                "root_selective_guard_blocked": _annotation_bool(
-                    annotations,
-                    node,
-                    "Root_Selective_Permutation_Guard_Blocked",
-                ),
+                "root_selective_guard_blocked": node == root
+                and _annotation_bool(annotations, node, "Selective_Permutation_Guard_Blocked"),
                 "selected_family_guard_blocked": _annotation_bool(
                     annotations,
                     node,
@@ -790,25 +782,14 @@ def _build_guard_rows(node_decisions: pd.DataFrame, result) -> pd.DataFrame:
         has_selected = pd.notna(
             _annotation_float(annotations, raw_index, "Selective_Permutation_P_Value")
         )
-        has_root = pd.notna(
-            _annotation_float(
-                annotations,
-                raw_index,
-                "Root_Selective_Permutation_P_Value",
-            )
-        )
-        blocked = bool(node_row["selected_family_guard_blocked"]) or bool(
-            node_row["root_selective_guard_blocked"]
-        )
-        if not has_selected and not has_root and not blocked:
+        blocked = bool(node_row["selected_family_guard_blocked"])
+        if not has_selected and not blocked:
             continue
         scope = _annotation_str(
             annotations,
             raw_index,
             "Selective_Permutation_Guard_Scope",
         )
-        if not scope and has_root:
-            scope = "root"
         records.append(
             {
                 "schema_version": SCHEMA_VERSION,
@@ -874,11 +855,6 @@ def _build_guard_rows(node_decisions: pd.DataFrame, result) -> pd.DataFrame:
                     annotations,
                     raw_index,
                     "Selective_Permutation_Guard_Blocked",
-                )
-                or _annotation_bool(
-                    annotations,
-                    raw_index,
-                    "Root_Selective_Permutation_Guard_Blocked",
                 ),
                 "study_role": STUDY_ROLE,
             }

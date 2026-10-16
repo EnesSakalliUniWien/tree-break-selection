@@ -46,8 +46,7 @@ surfaces with their own contracts.
   a projection basis with an explicit covariance model.
 - **Empirical-null inflation** – same-selected-hierarchy scale estimates adjust
   sibling statistics before a plug-in chi-square tail and traversal-aligned BH.
-  This restored empirical rule does not establish selected-tail error control. A separate exact-F API is restricted to independent, disjoint,
-  unit-weighted, common-scale calibration data.
+  This restored empirical rule does not establish selected-tail error control.
 - **Top-down decomposition** – cluster boundaries appear at the first node where
   the traversal contract says the split is not supported.
 

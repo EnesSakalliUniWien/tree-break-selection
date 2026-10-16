@@ -123,6 +123,12 @@ def test_fixed_coordinate_sibling_gate_does_not_raise_edge_projection_floor_to_f
             principal_component_eigenvalues_by_node={
                 "root": np.ones(captured["spectral_minimum_dimension"])
             },
+            descendant_leaf_row_counts_by_node={},
+            internal_distribution_row_counts_by_node={},
+            spectral_matrix_row_counts_by_node={},
+            full_component_eigenvalues_by_node={},
+            active_feature_counts_by_node={},
+            stage_timings={},
         )
         return _fake_edge_dataframe(annotations.index), spectral_context
 
@@ -183,6 +189,12 @@ def test_projected_gates_share_adaptive_projection_fraction_and_full_candidate_b
             principal_component_eigenvalues_by_node={
                 node_id: np.ones(leaf_data.shape[1]) for node_id in binary_parents
             },
+            descendant_leaf_row_counts_by_node={},
+            internal_distribution_row_counts_by_node={},
+            spectral_matrix_row_counts_by_node={},
+            full_component_eigenvalues_by_node={},
+            active_feature_counts_by_node={},
+            stage_timings={},
         )
         return _fake_edge_dataframe(annotations.index), spectral_context
 

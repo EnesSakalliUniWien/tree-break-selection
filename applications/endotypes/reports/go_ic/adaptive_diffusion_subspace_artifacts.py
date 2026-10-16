@@ -99,7 +99,7 @@ def write_artifact_index(
         "ranking_note": (
             "specificity_aware_rank is the preferred reading order: quality tier, "
             "specificity score, specificity fraction, weighted specificity delta, "
-            "then GO-BIC/gene. old_display_rank preserves the earlier quality-tiered GO-IC order."
+            "then GO-BIC/gene."
         ),
         "ranking_csv": str(output_dir / "rankings" / f"{RESULT_PREFIX}_ranking.csv"),
         "specificity_ranking_csv": str(
@@ -162,7 +162,6 @@ def write_experiment_readme(
         "Ranking:",
         "- `display_rank` equals `specificity_aware_rank` for completed rows.",
         "- `specificity_aware_rank` sorts by quality tier, cluster specificity score, specific-cluster fraction, weighted specificity delta, then lower GO-BIC active/gene.",
-        "- `old_display_rank` preserves the older quality-tier then GO-BIC order.",
         "- `raw_go_ic_rank` preserves the raw GO-IC order for audit.",
         "- `go_bic_active_per_gene` is lower-is-better only within comparable quality tiers.",
         "",

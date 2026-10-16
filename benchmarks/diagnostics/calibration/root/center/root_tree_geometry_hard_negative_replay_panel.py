@@ -512,7 +512,7 @@ def _row_for_geometry(
                 _annotation_value(
                     annotations,
                     root,
-                    "Root_Selective_Permutation_P_Value",
+                    "Selective_Permutation_P_Value",
                     math.nan,
                 )
             ),
@@ -520,7 +520,7 @@ def _row_for_geometry(
                 _annotation_value(
                     annotations,
                     root,
-                    "Root_Selective_Permutation_Guard_Blocked",
+                    "Selective_Permutation_Guard_Blocked",
                     False,
                 )
             ),
@@ -528,7 +528,7 @@ def _row_for_geometry(
                 _annotation_value(
                     annotations,
                     root,
-                    "Root_Selective_Permutation_Guard_Would_Block",
+                    "Selective_Permutation_Guard_Would_Block",
                     False,
                 )
             ),

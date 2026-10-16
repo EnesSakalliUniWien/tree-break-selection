@@ -544,7 +544,6 @@ def _node_closed_by_explicit_guard(
         annotation_bool(annotations_df, node, column)
         for column in (
             "Root_Stability_Guard_Blocked",
-            "Root_Selective_Permutation_Guard_Blocked",
             "Selective_Permutation_Guard_Blocked",
         )
     )
@@ -619,10 +618,6 @@ def apply_root_selective_permutation_guard(
         scope=scope,
     )
     out = annotations_df.copy()
-    root_columns = (
-        "Root_Selective_Permutation_P_Value",
-        "Root_Selective_Permutation_Guard_Alpha",
-    )
     generic_columns = (
         "Selective_Permutation_Observed_P_Value",
         "Selective_Permutation_P_Value",
@@ -633,13 +628,11 @@ def apply_root_selective_permutation_guard(
         "Selective_Permutation_Guard_Seed",
         "Selective_Permutation_Guard_Scope",
     )
-    for column in (*root_columns, *generic_columns):
+    for column in generic_columns:
         out[column] = np.nan
     out["Selective_Permutation_Guard_Scope"] = ""
     out["Selective_Permutation_Base_P_Value"] = np.nan
     out["Selective_Permutation_Guard_Refined"] = False
-    out["Root_Selective_Permutation_Guard_Would_Block"] = False
-    out["Root_Selective_Permutation_Guard_Blocked"] = False
     out["Selective_Permutation_Guard_Would_Block"] = False
     out["Selective_Permutation_Guard_Blocked"] = False
 
@@ -692,13 +685,6 @@ def apply_root_selective_permutation_guard(
             out.loc[node, "Sibling_BH_Different"] = False
             out.loc[node, "Sibling_BH_Same"] = True
             out.loc[node, "Selective_Permutation_Guard_Blocked"] = True
-        if node == root:
-            out.loc[root, "Root_Selective_Permutation_P_Value"] = result["root_selective_p_value"]
-            out.loc[root, "Root_Selective_Permutation_Guard_Alpha"] = float(alpha)
-            out.loc[root, "Root_Selective_Permutation_Guard_Would_Block"] = would_block
-            out.loc[root, "Root_Selective_Permutation_Guard_Blocked"] = bool(
-                out.loc[root, "Selective_Permutation_Guard_Blocked"]
-            )
         return True
 
     def evaluate_global_pass_through_nodes(

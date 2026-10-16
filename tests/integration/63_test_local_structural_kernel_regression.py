@@ -154,14 +154,7 @@ def test_tbs_runner_accepts_explicit_fixed_sibling_gate_config() -> None:
     assert metadata.root_selective_permutation_guard_replicates == 1
     assert metadata.root_selective_permutation_guard_seed == 19
     assert metadata.root_selective_permutation_guard_alpha == 0.01
-    assert result.extra["sibling_gate_profile"] is None
     assert result.extra["sibling_gate_method"] == "fixed_global_chi_square"
-    assert result.extra["sibling_gate_alpha_penalty"] == 50.0
-    assert result.extra["root_stability_subsample_replicates"] == 12
-    assert result.extra["root_stability_tree_distance_metric"] == "hamming"
-    assert result.extra["root_stability_tree_linkage_method"] == "average"
-    assert result.extra["root_selective_permutation_guard_tree_distance_metric"] == ("hamming")
-    assert result.extra["root_selective_permutation_guard_tree_linkage_method"] == ("average")
 
 
 def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() -> None:
@@ -224,12 +217,11 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
         assert metadata.root_selective_permutation_guard_replicates == 99
         assert metadata.root_selective_permutation_guard_seed == 0
         assert metadata.root_selective_permutation_guard_alpha == 0.01
-        assert run.extra["root_selective_permutation_guard_replicates"] == 99
         results[role] = {
             "found_clusters": int(run.found_clusters),
             "ari": float(adjusted_rand_score(np.asarray(truth, dtype=int), np.asarray(run.labels))),
-            "root_selective_p": float(annotations.at[root, "Root_Selective_Permutation_P_Value"]),
-            "blocked": bool(annotations.at[root, "Root_Selective_Permutation_Guard_Blocked"]),
+            "root_selective_p": float(annotations.at[root, "Selective_Permutation_P_Value"]),
+            "blocked": bool(annotations.at[root, "Selective_Permutation_Guard_Blocked"]),
         }
 
     assert results["null"]["found_clusters"] == 1

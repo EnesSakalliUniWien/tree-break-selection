@@ -2,7 +2,7 @@
 title: Adaptive Diffusion Cosine Subspace Clustering and GO-IC Analysis
 type: tool
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-16
 sources:
   - tree_break_selection/eigenvalue_groups.py
   - tree_break_selection/space_separation/diffusion.py
@@ -94,9 +94,9 @@ plot, and plain plus term-annotated embeddings.
 
 The preferred reading order is `specificity_aware_rank`: quality tier,
 specificity score, specific-cluster fraction, weighted specificity delta, then
-GO-BIC active per gene. `old_display_rank` preserves the previous
-quality-tiered GO-IC order, and `raw_go_ic_rank` preserves the raw GO-IC-only
-order for audit.
+GO-BIC active per gene. `raw_go_ic_rank` preserves the raw GO-IC-only order
+for audit. The `old_display_rank` snapshot column was removed on 2026-10-16;
+retained artefacts written before then still carry it.
 
 ## Plot and DataFrame interfaces
 
