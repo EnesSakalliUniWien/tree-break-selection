@@ -30,12 +30,6 @@ def _resolve_n_neighbors(n_samples: int, n_neighbors: int) -> int:
     return int(n_neighbors)
 
 
-def _resolve_requested_cluster_count(n_samples: int, params: dict[str, object]) -> int:
-    """Resolve the explicit requested cluster count."""
-    del n_samples
-    return int(params["n_clusters"])
-
-
 def _knn_edge_weights(
     distance_matrix: np.ndarray, n_neighbors: int
 ) -> list[tuple[int, int, float]]:
@@ -64,6 +58,5 @@ __all__ = [
     "_normalize_labels",
     "_estimate_dbscan_eps",
     "_resolve_n_neighbors",
-    "_resolve_requested_cluster_count",
     "_knn_edge_weights",
 ]

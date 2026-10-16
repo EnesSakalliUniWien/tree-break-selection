@@ -54,6 +54,8 @@ All notable changes to this project are documented in this file.
 
 
 ### Removed
+- Compatibility leftovers: `report_helpers` re-exports of `artifact_record`/`sha256_file`; the ignored `save_png`/`collect_figs` parameters of `generate_benchmark_plots`; `_resolve_requested_cluster_count` and its ignored `n_samples` (k-means and spectral read `params["n_clusters"]`); the private `_labels_from_decomposition` wrapper; the `specificity_aware_rank` and `_rank` fallbacks in the subspace annotation PDF; the `run_id` back-fill for artifact indexes written before 2026-06-18.
+- Tests that only guarded removed parameters or a re-export: the two `build_contrast_covariance` branch-length `TypeError` tests, the `tree_builder` absence asserts, the scRNA distributional-action absence test, and `test_goncalves_benchmark_reuses_scrna_method_configs` (it failed when run after the manifest timestamp tests).
 - `sibling_z_scores.py` (`_compute_sibling_z_scores`): a pass-through to `compute_whitened_wald_contrast`, now called directly by `sibling_divergence_test`.
 - `benchmarks/shared/util/pdf/image_concat.py` and `figure_split.py` (`concat_*_plots`, `split_collected_figs_to_pdfs`): no caller; the pipeline writes to `PdfPages` directly.
 - The `diffusion`, `trajectory` and `brancharchitect` extras with deeptime, PyGSP, PHATE, kaleido, biopython and orjson; none was imported.

@@ -13,7 +13,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from applications.output_dirs import parse_run_dir
-from applications.scrna.plots.report_helpers import artifact_record
+from applications.scrna._shared import artifact_record
 
 ROOT = Path(__file__).resolve().parents[3]
 OUTPUT_STEM = "goncalves_progenitor_coherence_score"

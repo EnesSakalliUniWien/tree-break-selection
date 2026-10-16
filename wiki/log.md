@@ -8071,3 +8071,19 @@ version comparison report and wiki source summary. Production code unchanged.
   here: a reference law for the no-support case (the 2026-08-03 unsupported
   outcome spec rejects a fixed-subspace fallback after same-data selection),
   a minimum split size, or the diffusion geometry.
+
+## 2026-10-16 — Test audit and compatibility leftovers
+
+- Audited `tests/` for tests that can be removed, tests that do not exercise
+  production paths, and compatibility, alias or legacy code. Four read-only
+  agents covered `tests/statistics`, `tests/pipeline`,
+  `tests/hierarchy_analysis` with `tests/integration`, and a production
+  compatibility sweep; two agents stopped at the confirmation gate, so the
+  `core`/`tree`/`localization`/`wiki` and `validation`/`applications`/
+  `visualization` slices were covered by an import-graph pass and spot reads.
+- Removed the verified compatibility leftovers and legacy-guard tests listed
+  in the CHANGELOG. Larger candidates are left for a decision: the
+  `selected_gaussian_*` prototypes and their tests, the exact-F calibration
+  mode, `benchmarks/external/`, the dead unvalidated-reference-law branch,
+  package re-exports with no importer, and tests that build their own
+  pipeline with complete linkage instead of `run_tbs_on_distance`.

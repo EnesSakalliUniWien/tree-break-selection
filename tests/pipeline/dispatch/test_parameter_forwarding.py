@@ -208,7 +208,6 @@ def test_run_clustering_result_forwards_graphtools_adaptive_k_params(monkeypatch
     assert result.status == "ok"
     assert captured["kwargs"]["adaptive_neighbor_profile"] == "fragmentation_guard"
     assert captured["kwargs"]["adaptive_neighbor_grid"] == (5, 10, 15, 25, 40, 80, 160)
-    assert "tree_builder" not in captured["kwargs"]
     assert captured["kwargs"]["tree_linkage_method"] == "average"
     assert captured["kwargs"]["edge_branch_length_variance_policy"] == ("normalized_branch_length")
     assert captured["kwargs"]["branch_length_optimization_method"] == ("fixed_topology_nnls")
@@ -242,7 +241,6 @@ def test_run_clustering_result_forwards_graphtools_tree_strategy_params(
     )
 
     assert result.status == "ok"
-    assert "tree_builder" not in captured["kwargs"]
     assert captured["kwargs"]["tree_linkage_method"] == "ward"
     assert captured["kwargs"]["adaptive_neighbor_profile"] == "fragmentation_guard"
 

@@ -33,8 +33,6 @@ def generate_benchmark_plots(
     verbose: bool,
     plot_umap: bool,
     plot_manifold: bool,
-    save_png: bool = True,
-    collect_figs: bool = False,
     include_cover_pages: bool = True,
     include_validation_page: bool = True,
     *,
@@ -53,9 +51,6 @@ def generate_benchmark_plots(
     if pdf is None:
         logger.debug("Skipping plot generation because no PdfPages handle was provided.")
         return None, collected_by_category
-
-    _ = save_png
-    _ = collect_figs
 
     # --- Experiment-setup cover pages ---
     # Full benchmark reports add their own global overview/section pages during

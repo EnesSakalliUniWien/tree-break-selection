@@ -4,9 +4,6 @@ from __future__ import annotations
 
 import pandas as pd
 
-from applications.scrna._shared import artifact_record as artifact_record
-from applications.scrna._shared import sha256_file as sha256_file
-
 
 def plot_cluster_size_bars(
     ax,

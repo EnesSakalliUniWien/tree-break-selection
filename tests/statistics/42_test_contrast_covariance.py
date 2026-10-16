@@ -724,30 +724,6 @@ def test_continuous_wald_whitening_matches_full_block_formula() -> None:
     np.testing.assert_allclose(public_z, block_z, rtol=1e-14, atol=1e-14)
 
 
-def test_sibling_contrast_rejects_child_parent_branch_length_parameter() -> None:
-    with pytest.raises(TypeError, match="unexpected keyword argument 'branch_length'"):
-        build_contrast_covariance(
-            np.array([0.2], dtype=np.float64),
-            np.array([0.4], dtype=np.float64),
-            20.0,
-            30.0,
-            comparison="sibling",
-            branch_length=1.0,
-        )
-
-
-def test_child_parent_contrast_rejects_sibling_branch_length_sum_parameter() -> None:
-    with pytest.raises(TypeError, match="unexpected keyword argument 'branch_length_sum'"):
-        build_contrast_covariance(
-            np.array([0.2], dtype=np.float64),
-            np.array([0.4], dtype=np.float64),
-            20.0,
-            30.0,
-            comparison="child_parent",
-            branch_length_sum=1.0,
-        )
-
-
 def test_bernoulli_contrast_rejects_values_outside_unit_interval() -> None:
     with pytest.raises(ValueError, match="Bernoulli block 'x1' values must lie"):
         build_contrast_covariance(

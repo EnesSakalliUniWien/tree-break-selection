@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.cluster import SpectralClustering
 
 from benchmarks.shared.types.method_run_result import MethodRunResult
-from benchmarks.shared.util.core import _normalize_labels, _resolve_requested_cluster_count
+from benchmarks.shared.util.core import _normalize_labels
 from benchmarks.shared.util.decomposition import _ok_result_from_labels
 
 
@@ -23,7 +23,7 @@ def _run_spectral_method(
         labels = np.zeros(n_samples, dtype=int)
         return _ok_result_from_labels(labels, range(n_samples))
 
-    n_clusters = _resolve_requested_cluster_count(n_samples, params)
+    n_clusters = int(params["n_clusters"])
     random_state = 42 if seed is None else int(seed)
     affinity = str(params["affinity"])
     assign_labels = str(params["assign_labels"])

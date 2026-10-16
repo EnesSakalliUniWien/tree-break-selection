@@ -51,14 +51,6 @@ def labels_and_report_from_decomposition(
     return labels, report_df
 
 
-def _labels_from_decomposition(
-    decomposition: dict, sample_index: Sequence[object] | pd.Index
-) -> list[int]:
-    """Extract cluster labels for each sample from a decomposition result."""
-    labels, _ = labels_and_report_from_decomposition(decomposition, sample_index)
-    return labels.tolist()
-
-
 def _create_report_dataframe_from_labels(
     labels: list[int] | np.ndarray, sample_names: Sequence[object] | pd.Index
 ) -> pd.DataFrame:
@@ -102,7 +94,6 @@ def _ok_result_from_labels(
 
 __all__ = [
     "labels_and_report_from_decomposition",
-    "_labels_from_decomposition",
     "_create_report_dataframe_from_labels",
     "_ok_result_from_labels",
 ]

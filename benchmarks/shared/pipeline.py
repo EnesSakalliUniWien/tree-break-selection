@@ -190,12 +190,7 @@ def benchmark_cluster_algorithm(
         if not should_generate_plots:
             return df_results, None
 
-        plot_kwargs = {
-            "save_png": False,
-            "collect_figs": False,
-        }
-        if pdf_pages is not None:
-            plot_kwargs["pdf"] = pdf_pages
+        plot_kwargs = {} if pdf_pages is None else {"pdf": pdf_pages}
 
         fig, _new_figs_by_category = generate_benchmark_plots(
             df_results,

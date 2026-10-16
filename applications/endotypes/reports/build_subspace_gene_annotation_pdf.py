@@ -19,7 +19,6 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -446,7 +445,7 @@ def build_cluster_annotations(
             annotations.append(
                 ClusterAnnotation(
                     run_id=str(row.run_id),
-                    display_rank=int(getattr(row, "display_rank", getattr(row, "_rank", 0))),
+                    display_rank=int(row.display_rank),
                     weighting=str(row.weighting),
                     block_name=str(row.block_name),
                     assignment_source="accepted_tbs",
@@ -517,10 +516,8 @@ def load_cluster_annotations_from_roster(
         annotations.append(
             ClusterAnnotation(
                 run_id=str(row.get("run_id", "")),
-                display_rank=int(
-                    float(row.get("display_rank", row.get("specificity_aware_rank", -1)))
-                )
-                if pd.notna(row.get("display_rank", row.get("specificity_aware_rank", np.nan)))
+                display_rank=int(float(row["display_rank"]))
+                if pd.notna(row.get("display_rank"))
                 else -1,
                 weighting=str(row.get("weighting", "")),
                 block_name=str(row.get("block_name", "")),

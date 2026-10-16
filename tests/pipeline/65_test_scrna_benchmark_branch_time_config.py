@@ -55,29 +55,3 @@ def test_scrna_benchmark_branch_time_rows_use_nnls_branch_lengths(
         assert config.params["edge_branch_length_variance_policy"] == ("normalized_branch_length")
         assert config.params["allow_linkage_ultrametric_branch_time"] is True
         assert "branch_length_optimization_method" not in config.params
-
-
-def test_scrna_benchmark_does_not_register_distributional_action_configuration(
-    require_optional_dependencies,
-) -> None:
-    require_optional_dependencies("anndata", "scanpy")
-
-    pancreas = importlib.import_module("applications.scrna.pancreas_benchmark")
-    configs = pancreas._method_configs(true_k=8)
-
-    assert all("split-action q50" not in config.label for config in configs)
-    assert all(
-        not any(str(key).startswith("distributional_action") for key in config.params)
-        for config in configs
-    )
-
-
-def test_goncalves_benchmark_reuses_scrna_method_configs(
-    require_optional_dependencies,
-) -> None:
-    require_optional_dependencies("anndata", "scanpy")
-
-    pancreas = importlib.import_module("applications.scrna.pancreas_benchmark")
-    goncalves = importlib.import_module("applications.scrna.goncalves_benchmark")
-
-    assert goncalves._run_benchmarks is pancreas._run_benchmarks
