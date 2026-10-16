@@ -8040,3 +8040,34 @@ version comparison report and wiki source summary. Production code unchanged.
   `alpha_structure_sweep.py` had the same pattern and now checks the saved
   `case_id` and `method` columns. `tests/validation/contracts/test_sweep_resume_config.py`
   covers all three.
+
+## 2026-10-16 — binary_perfect cases: unsupported, and why 2/4/8 is missed
+
+- Canonical `tbs` returned one cluster (ARI 0, status `ok`) on
+  `binary_perfect_2c`, `_4c` and `_8c`. Two definitions of internal
+  empirical-null support disagreed: the gate required df > 0, null weight
+  > 0 and a null role, while the `Sibling_Role_Supported` stamp read by
+  `benchmarks/shared/runners/tbs_support.py` checked the role only. Both now
+  use `SiblingPairRecord.has_internal_empirical_null_support`, and the three
+  cases report `unsupported`. A rerun of `tbs`, `tbs_diffusion` and
+  `tbs_diffusion_adaptive_nnls` on all 122 default cases changed only those
+  three rows.
+- Data: each true cluster is one template row copied 18 to 20 times plus 0 to 2
+  single-row variants 1 to 2 bits away; templates are 45 to 61 bits apart
+  (2c/4c/8c have 5/7/15 distinct rows).
+- Why the Hamming tree misses 2/4/8: identical copies merge first, so 35 of 39
+  internal nodes in 2c have no within-node variance (df 0) and cannot form an
+  empirical null. Each variant joins its clump last with significant edges,
+  so every distinct row pattern is a focal split. Uncalibrated, those
+  variant splits are real (2c: raw p 1.8e-5 to 1.1e-3, all BH-significant at
+  0.01): `fixed_coordinate_bh` returns 5/7/15 clusters (ARI 0.856/0.950/0.949).
+  `fixed_global_chi_square` spreads a 1-bit difference over all 50 to 200
+  features and returns exactly 2/4/8 (ARI 1.0).
+- Why `tbs_diffusion` finds 2/4/8: its tree merges each variant with a single
+  template copy low in the tree, where the edge test has no power. Those
+  merges are null-like with df > 0, so they calibrate the empirical null; only
+  the root is focal (corrected p 6.05e-7), giving 2 clusters in 2c.
+- Recovering 2/4/8 with canonical `tbs` needs a method decision, not taken
+  here: a reference law for the no-support case (the 2026-08-03 unsupported
+  outcome spec rejects a fixed-subspace fallback after same-data selection),
+  a minimum split size, or the diffusion geometry.

@@ -33,7 +33,7 @@ def write_record_calibration_evidence(
         float(record.degrees_of_freedom) for record in records
     ]
     annotations_dataframe.loc[record_parents, "Sibling_Role_Supported"] = [
-        record.has_empirical_null_support for record in records
+        record.has_internal_empirical_null_support for record in records
     ]
     annotations_dataframe.loc[record_parents, "Sibling_Null_Weight"] = [
         float(record.sibling_null_weight) for record in records

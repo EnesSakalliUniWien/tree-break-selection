@@ -83,8 +83,20 @@ class SiblingPairRecord:
 
     @property
     def has_empirical_null_support(self) -> bool:
-        """Return whether this record is admissible empirical-null calibration."""
+        """Return whether this record has a null-like or edge-blocked role."""
         return bool(self.is_null_like or self.is_edge_blocked)
+
+    @property
+    def has_internal_empirical_null_support(self) -> bool:
+        """Return whether this record can calibrate the empirical null.
+
+        It needs positive degrees of freedom, positive null weight and a null role.
+        """
+        return bool(
+            self.degrees_of_freedom > 0.0
+            and self.sibling_null_weight > 0.0
+            and self.has_empirical_null_support
+        )
 
 
 __all__ = ["SiblingPairRecord"]

@@ -82,11 +82,6 @@ def _inflation_mle(
     return float(np.sum(weights * statistics) / np.sum(weights * reference_expectations))
 
 
-def _has_internal_empirical_null_support(record: SiblingPairRecord) -> bool:
-    """Return whether a record is admissible empirical-null calibration."""
-    return record.has_empirical_null_support
-
-
 def _effective_sample_size(weights: np.ndarray) -> float:
     positive_weights = weights[weights > 0.0]
     if positive_weights.size == 0:
@@ -212,11 +207,11 @@ def _fit_empirical_null_inflation_model(
         )
 
     role_supported_records = [
-        record for record in positive_weight_records if _has_internal_empirical_null_support(record)
+        record for record in positive_weight_records if record.has_internal_empirical_null_support
     ]
     if not role_supported_records:
         selected_nonnull_count = sum(
-            not _has_internal_empirical_null_support(record) for record in positive_weight_records
+            not record.has_internal_empirical_null_support for record in positive_weight_records
         )
         raise ValueError(
             "Cannot fit sibling inflation model: no strict-null or stopped-edge "

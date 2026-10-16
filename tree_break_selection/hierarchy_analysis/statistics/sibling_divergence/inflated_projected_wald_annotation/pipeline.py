@@ -56,14 +56,6 @@ def _validate_focal_sibling_records(records: list[SiblingPairRecord]) -> None:
             )
 
 
-def _has_internal_empirical_null_support(record: SiblingPairRecord) -> bool:
-    return bool(
-        record.degrees_of_freedom > 0.0
-        and record.sibling_null_weight > 0.0
-        and (record.is_null_like or record.is_edge_blocked)
-    )
-
-
 def _mark_empirical_calibration_as_fail_closed(
     annotations_df: pd.DataFrame,
     focal_records: list[SiblingPairRecord],
@@ -176,7 +168,7 @@ def annotate_sibling_divergence(
             ) + float(perf_counter() - sibling_fdr_start_sec)
         return result_df
 
-    if not any(_has_internal_empirical_null_support(record) for record in records):
+    if not any(record.has_internal_empirical_null_support for record in records):
         return _mark_no_internal_support_as_fail_closed(annotations_df, records)
 
     inflation_fit_start_sec = perf_counter()
