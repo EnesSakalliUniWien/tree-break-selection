@@ -15,21 +15,27 @@ from tree_break_selection.tree.feature_space import continuous_feature_space_fro
 from .helpers import _capturing_runner, _toy_dataframe
 
 
-def test_run_clustering_result_uses_provided_tbs_distance_condensed():
+def test_run_clustering_result_uses_provided_tbs_distance_condensed(monkeypatch):
+    captured = {}
+    params = {"tree_distance_metric": "euclidean", "tree_linkage_method": "average"}
+    monkeypatch.setitem(
+        METHOD_SPECS,
+        "tbs",
+        MethodSpec(name="TBS Divergence", runner=_capturing_runner(captured), param_grid=[params]),
+    )
     df = _toy_dataframe()
-    dist_condensed = pdist(df.values, metric="euclidean")
-    result = run_clustering_result(
+    # Cityblock differs from the Euclidean distance dispatch would compute itself.
+    supplied = pdist(df.values, metric="cityblock")
+
+    run_clustering_result(
         data_df=df,
         method_id="tbs",
-        params={"tree_distance_metric": "euclidean", "tree_linkage_method": "average"},
+        params=params,
         seed=42,
-        distance_condensed=dist_condensed,
+        distance_condensed=supplied,
     )
 
-    assert result.status == "ok"
-    assert result.labels is not None
-    assert len(result.labels) == len(df)
-    assert result.skip_reason is None
+    np.testing.assert_array_equal(captured["args"][1], supplied)
 
 
 def test_run_clustering_result_builds_continuous_mahalanobis_time_distance(monkeypatch):
@@ -107,27 +113,27 @@ def test_run_clustering_result_builds_continuous_standardized_euclidean_distance
     )
 
 
-def test_run_clustering_result_uses_provided_graph_distance_matrix():
+def test_run_clustering_result_uses_provided_graph_distance_matrix(monkeypatch):
+    captured = {}
+    params = {"n_neighbors": 2, "resolution": 1.0}
+    monkeypatch.setitem(
+        METHOD_SPECS,
+        "leiden",
+        MethodSpec(name="Leiden", runner=_capturing_runner(captured), param_grid=[params]),
+    )
     df = _toy_dataframe()
-    dist_condensed = pdist(df.values, metric="euclidean")
-    dist_matrix = squareform(dist_condensed)
-    result = run_clustering_result(
+    # Dispatch would otherwise build a Hamming matrix from the data.
+    supplied = squareform(pdist(df.values, metric="cityblock"))
+
+    run_clustering_result(
         data_df=df,
         method_id="leiden",
-        params={"n_neighbors": 2, "resolution": 1.0},
+        params=params,
         seed=42,
-        distance_matrix=dist_matrix,
+        distance_matrix=supplied,
     )
 
-    assert result.status in {"ok", "skip"}
-    if result.status == "ok":
-        assert result.labels is not None
-        assert len(result.labels) == len(df)
-        assert result.skip_reason is None
-    else:
-        assert result.labels is None
-        assert isinstance(result.skip_reason, str)
-        assert result.skip_reason.strip()
+    np.testing.assert_array_equal(captured["args"][0], supplied)
 
 
 def test_run_clustering_result_gives_distance_tree_nnls_methods_their_own_geometry(

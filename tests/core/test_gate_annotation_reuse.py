@@ -148,20 +148,3 @@ def test_bundle_metadata_must_identify_the_gate_pipeline() -> None:
 
     with pytest.raises(ValueError, match="metadata.pipeline"):
         TreeDecomposition(tree=tree, gate_annotation_bundle=invalid_bundle)
-
-
-@pytest.mark.parametrize(
-    "guard_kwargs",
-    [
-        {"selected_family_passthrough_guard": True},
-    ],
-)
-def test_bundle_metadata_owns_guard_behavior(guard_kwargs: dict[str, bool]) -> None:
-    tree, bundle = _gate_bundle()
-
-    with pytest.raises(ValueError, match="metadata owns passthrough guard behavior"):
-        TreeDecomposition(
-            tree=tree,
-            gate_annotation_bundle=bundle,
-            **guard_kwargs,
-        )

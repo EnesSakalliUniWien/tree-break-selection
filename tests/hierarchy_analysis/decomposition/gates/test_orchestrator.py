@@ -293,7 +293,9 @@ def test_pipeline_runs_opt_in_root_stability_guard(monkeypatch) -> None:
     assert bundle.metadata.config.root_stability_seed == 7
     assert bundle.metadata.config.root_stability_tree_distance_metric == "hamming"
     assert bundle.metadata.config.root_stability_tree_linkage_method == "average"
-    assert "Root_Stability_Guard_Blocked" in bundle.annotated_df.columns
+    # The fixture's root split opens without a guard; an unstable root must close it.
+    assert bool(bundle.annotated_df.loc["root", "Root_Stability_Guard_Blocked"])
+    assert not bool(bundle.annotated_df.loc["root", "Sibling_BH_Different"])
 
 
 def test_pipeline_runs_opt_in_root_selective_permutation_guard(monkeypatch) -> None:
@@ -326,7 +328,9 @@ def test_pipeline_runs_opt_in_root_selective_permutation_guard(monkeypatch) -> N
     assert bundle.metadata.config.root_selective_permutation_guard_replicates == 5
     assert bundle.metadata.config.root_selective_permutation_guard_seed == 123
     assert bundle.metadata.config.root_selective_permutation_guard_alpha == 0.01
-    assert "Root_Selective_Permutation_Guard_Blocked" in bundle.annotated_df.columns
+    # A selected-root p-value of 0.50 is above alpha 0.01, so the guard closes the root.
+    assert bool(bundle.annotated_df.loc["root", "Root_Selective_Permutation_Guard_Blocked"])
+    assert not bool(bundle.annotated_df.loc["root", "Sibling_BH_Different"])
 
 
 def test_pipeline_rejects_root_selective_guard_with_adaptive_sibling_gate() -> None:

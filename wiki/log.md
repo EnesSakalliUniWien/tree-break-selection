@@ -8087,3 +8087,21 @@ version comparison report and wiki source summary. Production code unchanged.
   mode, `benchmarks/external/`, the dead unvalidated-reference-law branch,
   package re-exports with no importer, and tests that build their own
   pipeline with complete linkage instead of `run_tbs_on_distance`.
+
+## 2026-10-16 — Tests that now catch production breaks
+
+- Fixed audit findings 1 to 5 from the test audit. Each rewritten test was
+  checked by breaking the production code it guards and confirming it fails:
+  disabling both root guards' blocking, emptying
+  `_SELECTED_FAMILY_PASSTHROUGH_SCOPES`, forwarding edge alpha times 5 from
+  `run_gate_annotation_pipeline`, and making dispatch ignore a supplied
+  distance.
+- The selected-family pass-through guard is now tested through a gate bundle
+  scope; the test-only `selected_family_passthrough_guard` keyword is gone.
+- `tests/integration/test_cluster_validation_pipeline.py` runs
+  `run_tbs_on_distance`: the balanced fixture gives 4 clusters (ARI 1.0) and
+  the unbalanced one 2 clusters (ARI 0.48), where the old complete-linkage
+  copy gave 15 clusters (ARI 0.54).
+- The original parity fixture is insensitive to alpha and to the spectral
+  minimum dimension (all of its decisions are far from the thresholds), so
+  the new parity case uses `binary_balanced_low_noise`.

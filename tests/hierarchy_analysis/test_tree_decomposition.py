@@ -2,16 +2,40 @@
 
 from __future__ import annotations
 
-import networkx as nx
-import pandas as pd
+from dataclasses import replace
 
+import networkx as nx
+import numpy as np
+import pandas as pd
+import pytest
+
+from tree_break_selection.hierarchy_analysis.decomposition.gates.column_contracts import (
+    EDGE_GATE_COLUMNS,
+    SIBLING_GATE_COLUMNS,
+)
+from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+    run_gate_annotation_pipeline,
+)
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 
+from .decomposition.gates.gate_annotation_support import _build_small_tree_with_leaf_data
 from .gate_support import (
     _make_annotations,
     _make_binary_tree,
     _make_deep_tree,
 )
+
+
+def _bundle_for(annotations_df: pd.DataFrame, *, guard_scope: str):
+    """Wrap scenario annotations in a real gate bundle whose config sets the guard scope."""
+    tree, fixture_annotations, leaf_data = _build_small_tree_with_leaf_data()
+    bundle = run_gate_annotation_pipeline(tree, fixture_annotations, leaf_data=leaf_data)
+    frame = annotations_df.copy()
+    for column in (*EDGE_GATE_COLUMNS, *SIBLING_GATE_COLUMNS):
+        if column not in frame.columns:
+            frame[column] = np.nan
+    config = replace(bundle.metadata.config, root_selective_permutation_guard_scope=guard_scope)
+    return replace(bundle, annotated_df=frame, metadata=replace(bundle.metadata, config=config))
 
 
 def _decompose_with_annotations(
@@ -270,7 +294,16 @@ class TestTreeDecompositionTraversal:
         cluster_leaf_sets = _cluster_leaf_sets(result)
         assert cluster_leaf_sets == [{"A1", "A2", "C1", "C2", "D1", "D2"}]
 
-    def test_decompose_tree_selected_family_guard_blocks_passthrough(self) -> None:
+    @pytest.mark.parametrize(
+        ("guard_scope", "guard_active"),
+        [
+            pytest.param("global_sibling_min_passthrough_descendant_refined", True, id="family"),
+            pytest.param("root", False, id="root-only"),
+        ],
+    )
+    def test_decompose_tree_selected_family_guard_follows_bundle_scope(
+        self, guard_scope: str, guard_active: bool
+    ) -> None:
         tree = _make_deep_tree()
         edge_divergent = {node: True for node in tree.nodes}
         sibling_different = {node: False for node in tree.nodes}
@@ -286,16 +319,19 @@ class TestTreeDecompositionTraversal:
 
         decomposer = TreeDecomposition(
             tree=tree,
-            annotations_df=annotations_df,
+            gate_annotation_bundle=_bundle_for(annotations_df, guard_scope=guard_scope),
             passthrough=True,
-            selected_family_passthrough_guard=True,
             trace_level="full",
         )
 
         result = decomposer.decompose_tree()
 
-        assert _cluster_leaf_sets(result) == [{"A1", "A2", "C1", "C2", "D1", "D2"}]
         root_trace = result["traversal_trace"][0]
+        if not guard_active:
+            # Root-only scope leaves pass-through to the descendant split at B.
+            assert root_trace["decision"] != "boundary"
+            return
+        assert _cluster_leaf_sets(result) == [{"A1", "A2", "C1", "C2", "D1", "D2"}]
         assert root_trace["decision"] == "boundary"
         assert root_trace["passthrough_candidate"] is True
         assert root_trace["passthrough_supported"] is False

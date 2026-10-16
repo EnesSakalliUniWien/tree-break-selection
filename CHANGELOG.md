@@ -52,6 +52,9 @@ All notable changes to this project are documented in this file.
 - The selected-root permutation guards build sibling contrasts with `sibling_fixed_subspace_contrast`, the helper the fixed-subspace gate uses; the guard-only discrete fast path is gone.
 - `sibling_divergence_test` requires keyword-only `branch_length_sum` and `mean_branch_length` (pass `0.0` and `None` for a tree without branch lengths). The projected-Wald sibling test always scales its contrast variance by `1 + (L_left + L_right) / (2 * mean positive branch length)`; the fixed-subspace sibling gates and guards use no branch time, and `edge_branch_length_variance_policy` governs only the edge test. Both rules are documented and pinned by a test.
 
+- `TreeDecomposition` no longer takes `selected_family_passthrough_guard`; only a gate bundle whose `root_selective_permutation_guard_scope` is a pass-through scope turns the selected-family guard on.
+- Tests now check production outcomes: the root-stability and selective-permutation guard tests assert that the root is blocked, the pipeline parity test compares every non-evidence column and adds a benchmark case where decisions depend on alpha, three tests build trees with `build_tree` (average linkage) or `run_tbs_on_distance` instead of hand-built complete-linkage trees, and the supplied-distance dispatch tests assert the runner receives the supplied matrix.
+
 
 ### Removed
 - Compatibility leftovers: `report_helpers` re-exports of `artifact_record`/`sha256_file`; the ignored `save_png`/`collect_figs` parameters of `generate_benchmark_plots`; `_resolve_requested_cluster_count` and its ignored `n_samples` (k-means and spectral read `params["n_clusters"]`); the private `_labels_from_decomposition` wrapper; the `specificity_aware_rank` and `_rank` fallbacks in the subspace annotation PDF; the `run_id` back-fill for artifact indexes written before 2026-06-18.

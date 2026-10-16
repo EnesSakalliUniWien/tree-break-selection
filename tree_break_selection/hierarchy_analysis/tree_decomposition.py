@@ -72,7 +72,6 @@ class TreeDecomposition:
         annotations_df: pd.DataFrame | None = None,
         *,
         gate_annotation_bundle: GateAnnotationBundle | None = None,
-        selected_family_passthrough_guard: bool = False,
         passthrough: bool = True,
         trace_level: TraceLevel = "compact",
     ):
@@ -89,19 +88,11 @@ class TreeDecomposition:
         gate_annotation_bundle
             Completed output from ``run_gate_annotation_pipeline``. Its metadata
             owns traversal guard behavior.
-        selected_family_passthrough_guard
-            Use selected-family blocking columns when traversing a direct
-            annotations frame.
         """
         if annotations_df is not None and gate_annotation_bundle is not None:
             raise ValueError("Pass either annotations_df or gate_annotation_bundle, not both.")
         if annotations_df is None and gate_annotation_bundle is None:
             raise ValueError("annotations_df or gate_annotation_bundle is required.")
-        if gate_annotation_bundle is not None and selected_family_passthrough_guard:
-            raise ValueError(
-                "GateAnnotationBundle metadata owns passthrough guard behavior; "
-                "do not pass raw-annotation guard flags with a bundle."
-            )
 
         self.tree = tree
         self._node_ids = tuple(self.tree.nodes)
@@ -119,7 +110,7 @@ class TreeDecomposition:
             )
         else:
             self.annotations_df = self._validated_annotations(annotations_df)
-            self._selected_family_passthrough_guard = bool(selected_family_passthrough_guard)
+            self._selected_family_passthrough_guard = False
             self._annotation_edge_alpha = None
             self._annotation_sibling_alpha = None
             self._annotation_effective_sibling_alpha = None
