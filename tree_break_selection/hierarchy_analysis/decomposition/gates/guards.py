@@ -11,14 +11,10 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
 
-from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
-    build_contrast_covariance,
-    compute_whitened_wald_contrast,
-)
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
     FIXED_SUBSPACE_SIBLING_GATE_METHODS,
-    fixed_coordinate_bh_p_value,
     fixed_subspace_sibling_p_value,
+    sibling_fixed_subspace_contrast,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     identify_binary_sibling_children,
@@ -164,42 +160,8 @@ def _fixed_root_sibling_p_value(
     children = identify_binary_sibling_children(tree, root)
     if children is None:
         return 1.0
-    left, right = children
-    contrast = build_contrast_covariance(
-        np.asarray(tree.nodes[left]["distribution"], dtype=float),
-        np.asarray(tree.nodes[right]["distribution"], dtype=float),
-        float(tree.nodes[left]["leaf_count"]),
-        float(tree.nodes[right]["leaf_count"]),
-        comparison="sibling",
-        feature_space=feature_space,
-    )
-    return fixed_subspace_sibling_p_value(
-        contrast.whitened_vector(),
-        feature_space,
-        method=method,  # type: ignore[arg-type]
-    )
-
-
-def _can_use_fast_discrete_coordinate_p_values(feature_space: FeatureSpace) -> bool:
-    return feature_space.family_label in {"bernoulli", "categorical"}
-
-
-def _fixed_discrete_coordinate_sibling_p_value(
-    first: np.ndarray,
-    second: np.ndarray,
-    first_sample_size: float,
-    second_sample_size: float,
-    feature_space: FeatureSpace,
-) -> float:
-    z = compute_whitened_wald_contrast(
-        np.asarray(first, dtype=float),
-        np.asarray(second, dtype=float),
-        float(first_sample_size),
-        float(second_sample_size),
-        comparison="sibling",
-        feature_space=feature_space,
-    )
-    return fixed_coordinate_bh_p_value(z)
+    z = sibling_fixed_subspace_contrast(tree, feature_space, root, *children)
+    return fixed_subspace_sibling_p_value(z, feature_space, method=method)  # type: ignore[arg-type]
 
 
 def _fixed_binary_sibling_p_values(
@@ -210,40 +172,13 @@ def _fixed_binary_sibling_p_values(
 ) -> list[float]:
     """Return fixed-subspace sibling p-values for every binary parent."""
     p_values: list[float] = []
-    use_fast_discrete_coordinate = (
-        method == "fixed_coordinate_bh"
-        and _can_use_fast_discrete_coordinate_p_values(feature_space)
-    )
     for parent in tree.nodes:
         children = identify_binary_sibling_children(tree, parent)
         if children is None:
             continue
-        left, right = children
-        if use_fast_discrete_coordinate:
-            p_values.append(
-                _fixed_discrete_coordinate_sibling_p_value(
-                    np.asarray(tree.nodes[left]["distribution"], dtype=float),
-                    np.asarray(tree.nodes[right]["distribution"], dtype=float),
-                    float(tree.nodes[left]["leaf_count"]),
-                    float(tree.nodes[right]["leaf_count"]),
-                    feature_space,
-                )
-            )
-            continue
-        contrast = build_contrast_covariance(
-            np.asarray(tree.nodes[left]["distribution"], dtype=float),
-            np.asarray(tree.nodes[right]["distribution"], dtype=float),
-            float(tree.nodes[left]["leaf_count"]),
-            float(tree.nodes[right]["leaf_count"]),
-            comparison="sibling",
-            feature_space=feature_space,
-        )
+        z = sibling_fixed_subspace_contrast(tree, feature_space, parent, *children)
         p_values.append(
-            fixed_subspace_sibling_p_value(
-                contrast.whitened_vector(),
-                feature_space,
-                method=method,  # type: ignore[arg-type]
-            )
+            fixed_subspace_sibling_p_value(z, feature_space, method=method)  # type: ignore[arg-type]
         )
     return p_values
 

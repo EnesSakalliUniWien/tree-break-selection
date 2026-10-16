@@ -164,8 +164,8 @@ def test_method_registry_names_diffusion_methods_and_branch_lengths_explicitly()
     assert graphtools_adaptive_nnls_params["tree_linkage_method"] == "average"
 
     tree_strategy_grid = graphtools_adaptive_nnls_diffusion.param_grid
-    assert len(tree_strategy_grid) == 7
-    assert len({params["benchmark_run_id"] for params in tree_strategy_grid}) == 7
+    assert len(tree_strategy_grid) == 5
+    assert len({params["benchmark_run_id"] for params in tree_strategy_grid}) == 5
     assert {params["benchmark_class"] for params in tree_strategy_grid} == {"optional_gpl"}
     assert {params["benchmark_grid"] for params in tree_strategy_grid} == {
         "graphtools_adaptive_k_tree_strategy"
@@ -178,8 +178,6 @@ def test_method_registry_names_diffusion_methods_and_branch_lengths_explicitly()
         "complete",
         "weighted",
         "single",
-        "centroid",
-        "median",
         "ward",
     }
     for params in tree_strategy_grid:

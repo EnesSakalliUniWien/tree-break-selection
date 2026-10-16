@@ -20,7 +20,7 @@ features -> geometry/distance -> topology builder -> rooting -> PosetTree
 
 | Topology route | Input geometry | Builder | Root | Active use |
 | --- | --- | --- | --- | --- |
-| Linkage | Any valid condensed distance | SciPy `linkage`; average, complete, weighted, single, centroid, median, or Ward | Final linkage merge | Canonical TBS, diffusion TBS, applications, and the adaptive-K tree grid |
+| Linkage | Any valid condensed distance | SciPy `linkage`; average, complete, weighted, single, or Ward (centroid and median are rejected: their merge heights are nonmonotone) | Final linkage merge | Canonical TBS, diffusion TBS, applications, and the adaptive-K tree grid |
 
 The registered geometry routes feeding the linkage builder are direct
 feature/precomputed distance, fixed Hamming-neighbor diffusion, adaptive

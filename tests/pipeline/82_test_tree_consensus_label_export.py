@@ -140,8 +140,8 @@ def test_write_tree_consensus_artifacts_outputs_expected_files(tmp_path: Path) -
         assert path.exists()
 
     summary = pd.read_csv(artifacts.summary_csv)
-    assert summary.loc[0, "result_rows"] == 14
-    assert summary.loc[0, "expected_result_rows"] == 14
+    assert summary.loc[0, "result_rows"] == 10
+    assert summary.loc[0, "expected_result_rows"] == 10
     assert summary.loc[0, "label_integrity_pass"] is True or bool(
         summary.loc[0, "label_integrity_pass"]
     )

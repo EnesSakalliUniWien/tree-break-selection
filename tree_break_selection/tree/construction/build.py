@@ -12,6 +12,7 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import squareform
 
+from tree_break_selection.tree.construction.defaults import SUPPORTED_LINKAGE_METHODS
 from tree_break_selection.tree.construction.hierarchical import (
     tree_from_linkage,
 )
@@ -182,6 +183,10 @@ def build_tree(
         raise ValueError("Tree construction requires at least two samples.")
     if not data.index.is_unique:
         raise ValueError("Tree construction requires unique sample labels.")
+    if linkage_method not in SUPPORTED_LINKAGE_METHODS:
+        raise ValueError(
+            f"Unsupported linkage_method {linkage_method!r}; allowed={SUPPORTED_LINKAGE_METHODS!r}."
+        )
 
     canonical_order = _canonical_sample_order(data.index.tolist())
     canonical_data = data.iloc[canonical_order]

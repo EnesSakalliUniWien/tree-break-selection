@@ -334,8 +334,8 @@ def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions()
         )
 
 
-def test_sibling_test_uses_branch_length_when_edge_policy_ignores_it() -> None:
-    def annotate(root_pair_scale: float) -> tuple[pd.DataFrame, float]:
+def test_only_the_projected_wald_sibling_test_uses_branch_length() -> None:
+    def annotate(root_pair_scale: float, **gate_kwargs: str) -> tuple[pd.DataFrame, float]:
         tree, annotations_df, leaf_data = _build_cherry_tree()
         for child in ("A", "B"):
             tree.edges["root", child]["branch_length"] *= root_pair_scale
@@ -343,7 +343,9 @@ def test_sibling_test_uses_branch_length_when_edge_policy_ignores_it() -> None:
         multiplier = 1.0 + (
             tree.edges["root", "A"]["branch_length"] + tree.edges["root", "B"]["branch_length"]
         ) / (2.0 * float(np.mean(lengths)))
-        bundle = run_gate_annotation_pipeline(tree, annotations_df.copy(), leaf_data=leaf_data)
+        bundle = run_gate_annotation_pipeline(
+            tree, annotations_df.copy(), leaf_data=leaf_data, **gate_kwargs
+        )
         assert bundle.metadata.config.edge_branch_length_variance_policy == "none"
         return bundle.annotated_df, multiplier
 
@@ -361,3 +363,8 @@ def test_sibling_test_uses_branch_length_when_edge_policy_ignores_it() -> None:
     assert long_df.loc["root", "Sibling_Test_Statistic"] * long_multiplier == pytest.approx(
         base_df.loc["root", "Sibling_Test_Statistic"] * base_multiplier
     )
+
+    fixed_base_df, _ = annotate(1.0, sibling_gate_method="fixed_coordinate_bh")
+    fixed_long_df, _ = annotate(4.0, sibling_gate_method="fixed_coordinate_bh")
+    for column in ("Sibling_Test_Statistic", "Sibling_Dense_Evidence_Test_Statistic"):
+        assert fixed_long_df.loc["root", column] == pytest.approx(fixed_base_df.loc["root", column])

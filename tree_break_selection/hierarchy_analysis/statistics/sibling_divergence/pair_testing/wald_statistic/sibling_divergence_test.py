@@ -36,8 +36,9 @@ def sibling_divergence_test(
     The contrast variance is always scaled by the sibling branch time,
     ``1 + branch_length_sum / (2 * mean_branch_length)``, whatever
     ``edge_branch_length_variance_policy`` says; that policy governs only the
-    child-parent edge test. Pass ``branch_length_sum=0.0`` for a tree without
-    branch lengths (``mean_branch_length`` is then ``None``).
+    child-parent edge test. This is the only sibling test with a branch-time
+    factor; the fixed-subspace gates use none. Pass ``branch_length_sum=0.0``
+    for a tree without branch lengths (``mean_branch_length`` is then ``None``).
     """
     z_scores = compute_whitened_wald_contrast(
         left_distribution,

@@ -228,7 +228,7 @@ def fixed_subspace_sibling_p_value(
     )
 
 
-def _sibling_fixed_subspace_contrast(
+def sibling_fixed_subspace_contrast(
     tree: nx.DiGraph,
     feature_space: FeatureSpace,
     parent: object,
@@ -240,6 +240,12 @@ def _sibling_fixed_subspace_contrast(
         DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT
     ),
 ) -> np.ndarray:
+    """Return the whitened sibling contrast used by the fixed-subspace gates and guards.
+
+    It carries no branch-time factor: only the projected-Wald sibling test scales
+    its variance by the sibling branch time. With no calibration step behind
+    these gates, that factor removed true root splits of well-separated clusters.
+    """
     return compute_whitened_wald_contrast(
         np.asarray(tree.nodes[left]["distribution"], dtype=float),
         np.asarray(tree.nodes[right]["distribution"], dtype=float),
@@ -316,7 +322,7 @@ def annotate_fixed_subspace_sibling_evidence_channels(
         if children is None:
             continue
         left, right = children
-        z = _sibling_fixed_subspace_contrast(
+        z = sibling_fixed_subspace_contrast(
             tree,
             feature_space,
             parent,
@@ -367,7 +373,7 @@ def _fixed_subspace_sibling_results(
             skipped.append(parent)
             continue
         left, right = children
-        z = _sibling_fixed_subspace_contrast(
+        z = sibling_fixed_subspace_contrast(
             tree,
             feature_space,
             parent,
@@ -441,4 +447,5 @@ __all__ = [
     "fixed_coordinate_bh_p_value",
     "fixed_coordinate_fdr_p_value",
     "fixed_subspace_sibling_p_value",
+    "sibling_fixed_subspace_contrast",
 ]

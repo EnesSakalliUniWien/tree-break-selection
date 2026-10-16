@@ -7971,3 +7971,31 @@ version comparison report and wiki source summary. Production code unchanged.
   under the default `none` policy, lengthening one sibling pair leaves every
   edge statistic unchanged and scales that sibling statistic by the
   multiplier ratio. The test fails when the sibling branch time is dropped.
+
+## 2026-10-16 — Linkage set and fixed-subspace branch time
+
+- Repository audit (branch-length focus) found that `centroid` and `median`
+  linkage fail `build_tree` on almost every input: their merge heights were
+  nonmonotone on all 100 random binary and Euclidean inputs tried (the small
+  graphtools smoke case is an exception), and the topology-only
+  placeholder route was removed on 2026-07-29. `SUPPORTED_LINKAGE_METHODS`
+  now lists average, complete, weighted, single and Ward, and `build_tree`
+  rejects other names. The tree-strategy grid has five cells per case.
+- The audit also found that the fixed-subspace sibling gates ignore branch
+  length while the projected-Wald sibling test applies it. Applying the
+  sibling branch-time factor to the fixed-subspace gates was tried and
+  reverted on the user's decision. On 79 default benchmark cases with
+  `fixed_coordinate_bh` (Hamming, average linkage, edge alpha 0.001, sibling
+  alpha 0.01), mean ARI fell from 0.658 to 0.617: `binary_*` cases rose from
+  0.754 to 0.855, `gauss_*` cases fell from 0.785 to 0.505, and seven cases
+  collapsed to one cluster instead of one. Long root branches of
+  well-separated clusters give root multipliers of 4 to 12, and these gates
+  have no calibration step to absorb that. Rule now: only the projected-Wald
+  sibling test uses branch length; the statistics README, `branch_length_utils.py`,
+  `sibling_divergence_test` and [[projected-wald-statistic]] say so, and
+  `tests/statistics/36_test_sibling_projection_tree_paths.py::test_only_the_projected_wald_sibling_test_uses_branch_length`
+  pins both sides.
+- The permutation guards now share `sibling_fixed_subspace_contrast` with
+  the fixed-subspace gate. Their continuous-data failure seen in the audit
+  is a deliberate rejection: the guard supports Bernoulli and categorical
+  blocks only.

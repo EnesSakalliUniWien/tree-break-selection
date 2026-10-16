@@ -2,7 +2,9 @@
 
 These values describe the supported construction seams. They are constants,
 not mutable runtime configuration; callers with a different geometry or
-topology policy must pass it explicitly.
+topology policy must pass it explicitly. Centroid and median linkage are not
+supported: their merge heights are nonmonotone, which no tree branch length
+can represent.
 """
 
 from __future__ import annotations
@@ -14,8 +16,6 @@ TreeLinkageMethod = Literal[
     "complete",
     "weighted",
     "single",
-    "centroid",
-    "median",
     "ward",
 ]
 
@@ -27,8 +27,6 @@ SUPPORTED_LINKAGE_METHODS: tuple[TreeLinkageMethod, ...] = (
     "complete",
     "weighted",
     "single",
-    "centroid",
-    "median",
     "ward",
 )
 TREE_CONSENSUS_PRIORITY_ORDER: tuple[str, ...] = (
@@ -36,8 +34,6 @@ TREE_CONSENSUS_PRIORITY_ORDER: tuple[str, ...] = (
     "ward",
     "complete",
     "average",
-    "centroid",
-    "median",
     "single",
 )
 TREE_CONSENSUS_STRATEGY_PRIORITY: dict[str, int] = {

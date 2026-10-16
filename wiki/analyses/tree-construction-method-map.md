@@ -2,7 +2,7 @@
 title: Tree Construction Method Map
 type: analysis
 status: reviewed
-updated: 2026-10-14
+updated: 2026-10-16
 sources:
   - tree_break_selection/tree/README.md
   - tree_break_selection/tree/construction/build.py
@@ -156,13 +156,13 @@ difference must therefore be audited separately.
 | Direct linkage | Configured `pdist` metric or case-supplied condensed distance | SciPy `linkage` then `tree_from_linkage` | Final linkage merge (`linkage_root`) | `tbs` average is canonical; `tbs_complete` and `tbs_single` are explicit variants |
 | Fixed Hamming diffusion linkage | Binary/one-hot Hamming kNN similarity, symmetric diffusion coordinates, Euclidean diffusion distance | Average linkage | `linkage_root` | Canonical `tbs_diffusion` |
 | Adaptive pydiffmap linkage | Variable-bandwidth pydiffmap coordinates and Euclidean diffusion distance | Average linkage | `linkage_root` | `tbs_diffusion_adaptive`, with either linkage-ultrametric or fixed-topology NNLS lengths |
-| Graphtools diffusion linkage | Optional graphtools kernel, fixed or fragmentation-guard adaptive K, then Euclidean diffusion distance | Average by default; adaptive-K grid also exposes complete, weighted, single, centroid, median, and Ward | `linkage_root` | Optional GPL methods |
+| Graphtools diffusion linkage | Optional graphtools kernel, fixed or fragmentation-guard adaptive K, then Euclidean diffusion distance | Average by default; adaptive-K grid also exposes complete, weighted, single, and Ward | `linkage_root` | Optional GPL methods |
 
-Centroid and median linkage may return nonmonotone merge heights. When
-fixed-topology NNLS is active, the runner preserves their merge topology with
-placeholder edge lengths and replaces those lengths through NNLS before
-branch-time use. It does not silently reinterpret nonmonotone linkage heights
-as valid ultrametric time.
+Centroid and median linkage return nonmonotone merge heights on almost every
+input. `build_tree` rejects both by name: `SUPPORTED_LINKAGE_METHODS` lists
+only average, complete, weighted, single and Ward. The topology-only
+placeholder path that once let NNLS refit their lengths was removed on
+2026-07-29, so they no longer have a working route.
 
 ### Application routes
 

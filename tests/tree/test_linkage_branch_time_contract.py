@@ -132,7 +132,7 @@ def test_fixed_topology_nnls_rejects_nonmonotone_linkage_topology(
             data,
             pdist(data.to_numpy(), metric="euclidean"),
             0.01,
-            tree_linkage_method="centroid",
+            tree_linkage_method="average",
             feature_space=continuous_feature_space_from_columns(tuple(data.columns)),
             edge_branch_length_variance_policy="normalized_branch_length",
             branch_length_optimization_method="fixed_topology_nnls",

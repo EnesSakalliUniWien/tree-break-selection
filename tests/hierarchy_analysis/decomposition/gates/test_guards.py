@@ -16,12 +16,6 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.guards import (
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
-from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
-    build_contrast_covariance,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
-    fixed_subspace_sibling_p_value,
-)
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     infer_feature_space_from_columns,
@@ -449,69 +443,6 @@ def test_global_selected_family_p_value_uses_add_one_monte_carlo(
     assert result["root_selective_p_value"] == 0.75
     assert result["root_selective_null_min_p_value"] == 0.01
     assert result["root_selective_null_q05_p_value"] == pytest.approx(0.014)
-
-
-def test_fast_bernoulli_coordinate_p_value_matches_canonical_contrast() -> None:
-    tree, _annotations_df, leaf_data = _build_small_tree_with_leaf_data()
-    feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
-    left = tree.nodes["A"]
-    right = tree.nodes["B"]
-
-    fast = guard_module._fixed_discrete_coordinate_sibling_p_value(
-        np.asarray(left["distribution"], dtype=float),
-        np.asarray(right["distribution"], dtype=float),
-        float(left["leaf_count"]),
-        float(right["leaf_count"]),
-        feature_space,
-    )
-    contrast = build_contrast_covariance(
-        np.asarray(left["distribution"], dtype=float),
-        np.asarray(right["distribution"], dtype=float),
-        float(left["leaf_count"]),
-        float(right["leaf_count"]),
-        comparison="sibling",
-        feature_space=feature_space,
-    )
-    canonical = fixed_subspace_sibling_p_value(
-        contrast.whitened_vector(),
-        feature_space,
-        method="fixed_coordinate_bh",
-    )
-
-    assert fast == pytest.approx(canonical)
-
-
-def test_fast_categorical_coordinate_p_value_matches_canonical_contrast() -> None:
-    feature_space = infer_feature_space_from_columns(
-        ("F0_c0", "F0_c1", "F0_c2", "F1_c0", "F1_c1", "F1_c2")
-    )
-    first = np.array([0.70, 0.20, 0.10, 0.20, 0.50, 0.30], dtype=float)
-    second = np.array([0.40, 0.30, 0.30, 0.20, 0.20, 0.60], dtype=float)
-    first_sample_size = 11.0
-    second_sample_size = 13.0
-
-    fast = guard_module._fixed_discrete_coordinate_sibling_p_value(
-        first,
-        second,
-        first_sample_size,
-        second_sample_size,
-        feature_space,
-    )
-    contrast = build_contrast_covariance(
-        first,
-        second,
-        first_sample_size,
-        second_sample_size,
-        comparison="sibling",
-        feature_space=feature_space,
-    )
-    canonical = fixed_subspace_sibling_p_value(
-        contrast.whitened_vector(),
-        feature_space,
-        method="fixed_coordinate_bh",
-    )
-
-    assert fast == pytest.approx(canonical)
 
 
 @pytest.mark.parametrize(
