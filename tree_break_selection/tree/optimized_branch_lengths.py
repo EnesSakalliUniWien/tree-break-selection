@@ -187,6 +187,61 @@ def _sample_leaf_pairs(
     return ordered_pairs[:, 0], ordered_pairs[:, 1], total_pairs
 
 
+def _edge_crossing_pairs(
+    leaf_edge_incidence: sparse.csr_matrix,
+    edges: np.ndarray,
+    edge_by_index: dict[int, tuple[object, object]],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return one leaf pair across each edge: its first leaf below and first leaf outside."""
+    below = leaf_edge_incidence.tocsc()
+    all_leaves = np.arange(below.shape[0])
+    pairs: set[tuple[int, int]] = set()
+    for edge in edges.tolist():
+        inside = below.indices[below.indptr[edge] : below.indptr[edge + 1]]
+        outside = np.setdiff1d(all_leaves, inside)
+        if inside.size == 0 or outside.size == 0:
+            raise ValueError(
+                f"Edge {edge_by_index[edge]!r} has data leaves on one side only; "
+                "no leaf pair crosses it, so its length cannot be fit."
+            )
+        pairs.add((int(inside.min()), int(outside[0])))
+    ordered = np.array(sorted(pairs), dtype=np.int32)
+    return ordered[:, 0], ordered[:, 1]
+
+
+def _split_root_pair_by_linkage(
+    tree: nx.DiGraph,
+    lengths: np.ndarray,
+    edge_index_by_pair: dict[tuple[object, object], int],
+) -> np.ndarray:
+    """Split the fitted root-pair sum in the ratio of the root edges' linkage lengths.
+
+    Every leaf pair crosses both root edges or neither, so NNLS identifies only
+    their sum. The pre-fit linkage lengths carry the tree builder's root
+    placement; missing, non-finite or all-zero linkage lengths split evenly.
+    """
+    root = tree_root(tree)
+    children = list(tree.successors(root))
+    if len(children) != 2:
+        return lengths
+    indices = [edge_index_by_pair[(root, child)] for child in children]
+    weights = np.array(
+        [
+            float(
+                tree.edges[root, child].get(
+                    "linkage_branch_length", tree.edges[root, child].get("branch_length", 0.0)
+                )
+            )
+            for child in children
+        ]
+    )
+    if not np.all(np.isfinite(weights)) or np.any(weights < 0.0) or weights.sum() <= 0.0:
+        weights = np.ones(2)
+    split = lengths.copy()
+    split[indices] = lengths[indices].sum() * weights / weights.sum()
+    return split
+
+
 def _squared_standardized_targets(
     data: pd.DataFrame,
     left: np.ndarray,
@@ -253,7 +308,10 @@ def fit_fixed_topology_nnls_branch_lengths(
 
     The function mutates ``tree`` by replacing each edge's ``branch_length``
     with the fitted value.  The previous value is preserved as
-    ``linkage_branch_length`` when present. ``continuous_data`` is interpreted
+    ``linkage_branch_length`` when present. Only the sum of the root's two edge
+    lengths is identified; it is split in the ratio of their linkage lengths.
+    An edge no sampled pair crosses gets one crossing pair, so every edge
+    length is fit; ``n_zero_design_columns`` counts those edges. ``continuous_data`` is interpreted
     as raw continuous observations for the standardized target and as a
     prepared Euclidean embedding for the unstandardized target. The
     ``squared_standardized_euclidean`` target divides the sum of squared
@@ -278,11 +336,27 @@ def fit_fixed_topology_nnls_branch_lengths(
         raise ValueError("Branch-length optimization requires a non-empty tree.")
 
     leaf_edge_incidence = _leaf_edge_incidence(tree, leaf_nodes, edge_index_by_pair)
+    edge_by_index = {index: edge for edge, index in edge_index_by_pair.items()}
     left, right, total_pairs = _sample_leaf_pairs(
         len(leaf_nodes),
         pair_sample_size=pair_sample_size,
         random_state=random_state,
     )
+    design = _path_incidence_matrix(leaf_edge_incidence, left, right)
+    # An edge no sampled pair crosses has a zero design column; the solver would
+    # leave it at its starting value. Add one crossing pair for each such edge.
+    uncovered_edges = np.flatnonzero(design.getnnz(axis=0) == 0)
+    n_zero_design_columns = int(uncovered_edges.size)
+    if n_zero_design_columns:
+        extra_left, extra_right = _edge_crossing_pairs(
+            leaf_edge_incidence, uncovered_edges, edge_by_index
+        )
+        left = np.concatenate([left, extra_left])
+        right = np.concatenate([right, extra_right])
+        design = sparse.vstack(
+            [design, _path_incidence_matrix(leaf_edge_incidence, extra_left, extra_right)],
+            format="csr",
+        )
     if target_metric == BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN:
         targets = _squared_standardized_targets(continuous_data, left, right)
         target_definition = (
@@ -297,11 +371,8 @@ def fit_fixed_topology_nnls_branch_lengths(
         target_definition = "squared Euclidean distance in the supplied geometry"
         target_normalization = "none"
         target_normalization_divisor = 1
-    design = _path_incidence_matrix(leaf_edge_incidence, left, right)
     design_nnz = int(design.nnz)
     design_density = float(design_nnz / (design.shape[0] * design.shape[1]))
-    column_nonzero_counts = np.asarray(design.getnnz(axis=0), dtype=np.int64)
-    n_zero_design_columns = int(np.count_nonzero(column_nonzero_counts == 0))
 
     solution = lsq_linear(
         design,
@@ -313,14 +384,15 @@ def fit_fixed_topology_nnls_branch_lengths(
         lsmr_tol="auto",
         verbose=0,
     )
-    lengths = np.asarray(solution.x, dtype=float)
+    lengths = _split_root_pair_by_linkage(
+        tree, np.asarray(solution.x, dtype=float), edge_index_by_pair
+    )
     fitted = np.asarray(design @ lengths, dtype=float)
     residuals = fitted - targets
     solver_converged = bool(solution.success)
     applied_to_tree = solver_converged or bool(apply_nonconverged)
 
     if applied_to_tree:
-        edge_by_index = {index: edge for edge, index in edge_index_by_pair.items()}
         for index, length in enumerate(lengths):
             parent, child = edge_by_index[index]
             attrs = tree.edges[parent, child]

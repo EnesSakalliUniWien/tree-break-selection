@@ -7999,3 +7999,25 @@ version comparison report and wiki source summary. Production code unchanged.
   the fixed-subspace gate. Their continuous-data failure seen in the audit
   is a deliberate rejection: the guard supports Bernoulli and categorical
   blocks only.
+
+## 2026-10-16 — NNLS uncovered edges and root split
+
+- Fixed-topology NNLS gave every edge that no sampled leaf pair crosses the
+  solver's starting value 0.1 while reporting status `ok` (90 of 798 edges in
+  a 400-leaf tree fit with 300 pairs). It now adds one crossing pair per such
+  edge: the first leaf below it with the first leaf outside it. An edge with
+  data leaves on one side only raises. `n_zero_design_columns` counts the
+  edges that needed a pair.
+- Every leaf pair crosses both root edges or neither, so NNLS identifies only
+  their sum, and the solver split it evenly by chance. Three split rules were
+  compared on the 122 default cases with `tbs_nnls`,
+  `tbs_fixed_coordinate_bh_nnls` and `tbs_diffusion_adaptive_nnls`:
+  midpoint, linkage-length ratio and leaf-count barycenter (`S * n_other / n`).
+  They tie on 365 of 366 runs; linkage ratio alone changes
+  `gauss_outlier_cluster_4c_continuous` under `tbs_fixed_coordinate_bh_nnls`
+  from 1 to 2 clusters (ARI 0 to 0.461, truth 5). The user chose the linkage
+  ratio; zero or missing linkage lengths fall back to an even split. The split
+  reaches only the edge tests of the root's two children under
+  `normalized_branch_length`; the sibling test uses the unchanged sum.
+  [[tree-construction-method-map]] describes both rules, and
+  `tests/tree/test_optimized_branch_lengths.py` pins them.

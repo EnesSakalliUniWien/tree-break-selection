@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 from scipy.optimize import nnls
 
+from tree_break_selection.tree import optimized_branch_lengths
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
@@ -241,3 +242,56 @@ def test_fixed_topology_nnls_nonconverged_solution_policy(
     else:
         assert all("linkage_branch_length" not in attrs for _, _, attrs in tree.edges(data=True))
         assert all("branch_length_source" not in attrs for _, _, attrs in tree.edges(data=True))
+
+
+def test_fixed_topology_nnls_adds_a_crossing_pair_for_every_unsampled_edge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tree = _small_binary_tree()
+    geometry = _prepared_geometry()
+    real_lsq_linear = optimized_branch_lengths.lsq_linear
+    designs: list[object] = []
+
+    def capture_lsq_linear(design: object, *args: object, **kwargs: object) -> object:
+        designs.append(design)
+        return real_lsq_linear(design, *args, **kwargs)
+
+    monkeypatch.setattr(optimized_branch_lengths, "lsq_linear", capture_lsq_linear)
+
+    result = fit_fixed_topology_nnls_branch_lengths(
+        tree,
+        geometry,
+        target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+        pair_sample_size=1,
+        random_state=0,
+    )
+
+    # One sampled pair cannot cross all six edges; each missed edge gets a crossing pair.
+    assert result.n_zero_design_columns > 0
+    assert result.n_pairs_used > 1
+    assert np.all(designs[0].getnnz(axis=0) > 0)
+
+
+def test_fixed_topology_nnls_splits_the_root_pair_by_linkage_lengths() -> None:
+    even_tree = _small_binary_tree()
+    skewed_tree = _small_binary_tree()
+    skewed_tree.edges["root", "A"]["branch_length"] = 0.3
+    skewed_tree.edges["root", "B"]["branch_length"] = 0.1
+    for tree in (even_tree, skewed_tree):
+        fit_fixed_topology_nnls_branch_lengths(
+            tree,
+            _prepared_geometry(),
+            target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+            pair_sample_size=None,
+            solver_tolerance=1e-10,
+        )
+
+    def root_pair(tree: PosetTree) -> tuple[float, float]:
+        return tree.edges["root", "A"]["branch_length"], tree.edges["root", "B"]["branch_length"]
+
+    # Only the root-pair sum is identified; it is split 3:1 like the linkage lengths.
+    even_a, even_b = root_pair(even_tree)
+    skewed_a, skewed_b = root_pair(skewed_tree)
+    assert even_a == pytest.approx(even_b)
+    assert skewed_a + skewed_b == pytest.approx(even_a + even_b)
+    assert skewed_a == pytest.approx(3.0 * skewed_b)

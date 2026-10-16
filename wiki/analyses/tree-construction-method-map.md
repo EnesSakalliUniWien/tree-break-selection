@@ -102,7 +102,11 @@ non-negative edge lengths so tree path distances approximate squared
 standardized distances in the original feature matrix, or squared Euclidean
 distances in an explicitly supplied aligned embedding. This changes the edge
 semantics and no longer guarantees an ultrametric tree. The old linkage
-lengths are retained as edge evidence.
+lengths are retained as edge evidence. Leaf-pair distances cross both root
+edges or neither, so only their sum is identified; the fit splits it in the
+ratio of the two root edges' linkage lengths (evenly when those are zero). A
+sampled pair set that misses an edge gets one crossing pair for it, so no
+edge keeps the solver's starting value.
 
 Only after topology and edge lengths are fixed does `FeatureSpace` enter the
 tree statistics. Leaves receive their raw typed coordinates; internal nodes
