@@ -17,10 +17,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import norm, spearmanr
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.plots.cover_page import GROUP_ORDER, category_group
 from benchmarks.shared.result_records import NUMERIC_RESULT_COLUMNS, RESULT_COLUMNS
 from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
+from benchmarks.shared.util.values import bool_series
 
 _AUDIT_SUMMARY_REQUIRED_COLUMNS = frozenset(
     {

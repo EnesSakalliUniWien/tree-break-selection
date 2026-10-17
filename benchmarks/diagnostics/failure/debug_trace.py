@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from benchmarks.diagnostics.calibration.values import bool_series
+from benchmarks.shared.util.values import bool_series
 
 logger = logging.getLogger(__name__)
 

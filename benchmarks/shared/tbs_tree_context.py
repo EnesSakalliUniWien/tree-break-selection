@@ -14,7 +14,7 @@ from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.method_execution import (
     TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC,
     TBS_TREE_DISTANCE_SOURCE_PRECOMPUTED,
-    _require_precomputed_tbs_distance_metric,
+    require_precomputed_tbs_distance_metric,
 )
 from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.feature_space import FeatureSpace
@@ -57,7 +57,7 @@ def _resolve_tbs_tree_distance(
             )
         return (
             np.asarray(distance_condensed, dtype=float),
-            _require_precomputed_tbs_distance_metric(
+            require_precomputed_tbs_distance_metric(
                 meta=metadata,
                 case_name=str(metadata["name"]),
             ),

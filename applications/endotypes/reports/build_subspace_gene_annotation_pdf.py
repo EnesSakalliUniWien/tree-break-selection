@@ -28,7 +28,7 @@ from applications.endotypes._shared import (
     safe_name,
 )
 from applications.endotypes.reports.artifact_index import load_artifact_index
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.shared.util.values import finite_float
 from tree_break_selection.plot.image_panel import draw_image_panel
 
 

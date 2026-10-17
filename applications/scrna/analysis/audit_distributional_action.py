@@ -18,7 +18,7 @@ import pandas as pd
 
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import artifact_record
-from benchmarks.diagnostics.calibration.values import bool_value
+from benchmarks.shared.util.values import bool_value
 from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
     edge_distributional_action_summary,
 )

@@ -73,13 +73,13 @@ AMBIGUOUS_LABELS = {
 }
 
 
-def _scanpy_module() -> Any:
+def scanpy_module() -> Any:
     import scanpy as sc
 
     return sc
 
 
-def _scanpy_version() -> str:
+def scanpy_version() -> str:
     try:
         return version("scanpy")
     except PackageNotFoundError as exc:
@@ -116,7 +116,7 @@ def _project_root() -> Path:
 
 
 def _prepare_adata(input_h5ad: Path, output_dir: Path, n_pcs: int) -> Any:
-    sc = _scanpy_module()
+    sc = scanpy_module()
     adata = sc.read(input_h5ad, backup_url=DATA_URL)
     adata.var_names_make_unique()
 
@@ -145,7 +145,7 @@ def _prepare_adata(input_h5ad: Path, output_dir: Path, n_pcs: int) -> Any:
     return adata
 
 
-def _write_qc_outputs(adata: Any, output_dir: Path) -> dict[str, object]:
+def write_qc_outputs(adata: Any, output_dir: Path) -> dict[str, object]:
     qc = pd.DataFrame(
         {
             "cell_id": adata.obs_names.astype(str),
@@ -1056,7 +1056,7 @@ Generated at: {generated_at}
     (output_dir / "edge_gate_distance_time_model_analysis.md").write_text(analysis)
 
 
-def _run_benchmarks(
+def run_benchmarks(
     adata: Any,
     output_dir: Path,
     *,
@@ -1264,7 +1264,7 @@ def _run_benchmarks(
     return results, assignments, tree_summaries, adaptive_metadata, length_sensitivity_rows
 
 
-def _write_plots(
+def write_plots(
     adata: Any,
     results: pd.DataFrame,
     assignments: pd.DataFrame,
@@ -1588,14 +1588,14 @@ def main() -> None:
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     start = time.perf_counter()
     adata = _prepare_adata(input_h5ad, output_dir, args.n_pcs)
-    qc_summary = _write_qc_outputs(adata, output_dir)
+    qc_summary = write_qc_outputs(adata, output_dir)
     (
         results,
         _assignments,
         tree_summaries,
         adaptive_metadata,
         length_sensitivity_rows,
-    ) = _run_benchmarks(
+    ) = run_benchmarks(
         adata,
         output_dir,
         max_cells=args.max_cells,
@@ -1603,7 +1603,7 @@ def main() -> None:
         seed=args.seed,
         generated_at=generated_at,
     )
-    _write_plots(adata, results, _assignments, output_dir)
+    write_plots(adata, results, _assignments, output_dir)
 
     manifest = {
         "generated_at": generated_at,
@@ -1615,7 +1615,7 @@ def main() -> None:
         "seed": args.seed,
         "elapsed_sec": time.perf_counter() - start,
         "python": platform.python_version(),
-        "scanpy": _scanpy_version(),
+        "scanpy": scanpy_version(),
         "qc_summary": qc_summary,
         "adaptive_diffusion_metadata": adaptive_metadata,
         "tbs_tree_summaries": tree_summaries,

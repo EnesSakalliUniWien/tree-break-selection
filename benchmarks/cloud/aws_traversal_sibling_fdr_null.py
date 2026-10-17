@@ -20,6 +20,7 @@ from benchmarks.cloud.sharding import (
     write_json,
 )
 from benchmarks.shared.env import resolve_aws_batch_shard_index
+from benchmarks.shared.util.values import parse_csv_list
 from benchmarks.validation.statistics.traversal_sibling_fdr_null import (
     SIMULATION_OUTPUT_NAME,
     SUMMARY_OUTPUT_NAME,
@@ -27,7 +28,6 @@ from benchmarks.validation.statistics.traversal_sibling_fdr_null import (
     TraversalSiblingFdrConfig,
     classify_fdr_outcome,
     estimate_fdr,
-    parse_names,
     run_traversal_sibling_fdr_layers,
 )
 
@@ -263,7 +263,7 @@ def _configured_from_args(args: argparse.Namespace) -> AwsTraversalSiblingFdrCon
         output_dir=args.output_dir,
         layer=FdrLayer(str(args.layer)),
         suite=str(args.suite),
-        case_names=parse_names(args.case_names),
+        case_names=parse_csv_list(args.case_names),
         replicates=int(args.replicates),
         alpha=float(args.alpha),
         edge_alpha=float(args.edge_alpha),

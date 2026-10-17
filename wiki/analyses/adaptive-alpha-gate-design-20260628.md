@@ -2,7 +2,7 @@
 title: Adaptive Alpha Gate Design 2026-06-28
 type: analysis
 status: reviewed
-updated: 2026-06-28
+updated: 2026-10-17
 sources:
   - raw/inbox/adaptive-alpha-method-literature-20260628.md
   - wiki/sources/alpha-structure-sweep-20260627.md
@@ -11,7 +11,6 @@ sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/analyses/edge-gate-distance-time-contract-20260623.md
   - wiki/questions/open-mathematical-questions.md
-  - benchmarks/validation/sweeps/alpha_structure_sweep.py
   - benchmarks/results/alpha_structure_sweep_cartesian_20260627/alpha_structure_summary.csv
   - benchmarks/results/alpha_structure_sweep_hamming_nn_q4_q5_20260627/alpha_structure_summary.csv
 tags:
@@ -167,6 +166,7 @@ contract.
 - `raw/inbox/adaptive-alpha-method-literature-20260628.md` records the
   multiple-testing, stability, bootstrap-clustering, and selective-inference
   sources used to constrain the design.
+- `benchmarks/validation/sweeps/alpha_structure_sweep.py` was retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

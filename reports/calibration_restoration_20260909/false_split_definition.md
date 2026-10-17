@@ -111,8 +111,9 @@ truth, feature/observation model, representation, seed, parameters and status.
   families and their covariance/contrast representations.
 - `_true_context_labels` in
   `benchmarks/diagnostics/calibration/statistics/mixed_internal_calibration_sweep.py`
-  identifies pure-parent nulls but uses differing majority labels as a signal
-  diagnostic. That signal flag is not exact mixed-child population truth.
+  (retired 2026-10-17; last present at commit 5c554bc5) identified pure-parent
+  nulls but used differing majority labels as a signal diagnostic. That signal
+  flag was not exact mixed-child population truth.
 - `benchmarks/validation/statistics/selected_edge_type1_geometry.py` records
   the global-null final event as `found_clusters > 1`, with run status.
 - `tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py`

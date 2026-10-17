@@ -98,7 +98,7 @@ def _tree_pair_distances(
     return distances
 
 
-def _fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> dict[str, object]:
+def fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> dict[str, object]:
     output_dir = Path(cfg["dir"])
     pca = pd.read_csv(output_dir / "benchmark_subset_pca.csv", index_col=0)
     assignments = pd.read_csv(output_dir / "method_assignments.csv")
@@ -139,7 +139,7 @@ def _fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> d
     }
 
 
-def _plot_fit(ax, diagnostic: dict[str, object]) -> None:
+def plot_fit(ax, diagnostic: dict[str, object]) -> None:
     target = np.asarray(diagnostic["target"], dtype=float)
     fitted = np.asarray(diagnostic["fitted"], dtype=float)
     max_value = float(np.nanmax(np.concatenate([target, fitted]))) * 1.03
@@ -243,7 +243,7 @@ def _save_single_plot_pages(
             plt.close(fig)
 
             fig, ax = plt.subplots(figsize=(8.8, 8.2), facecolor="white")
-            _plot_fit(ax, diagnostic)
+            plot_fit(ax, diagnostic)
             text = (
                 f"cells / clusters: {diagnostic['n_cells']:,} / {diagnostic['n_clusters']}\n"
                 f"sampled pairs: {diagnostic['n_pairs_used']:,}\n"
@@ -277,7 +277,7 @@ def main(output_dir: Path | None = None) -> None:
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
-    diagnostics = [_fit_diagnostic(cfg) for cfg in DATASETS]
+    diagnostics = [fit_diagnostic(cfg) for cfg in DATASETS]
     summary = pd.DataFrame(
         [
             {
@@ -321,7 +321,7 @@ def main(output_dir: Path | None = None) -> None:
         plot_full_radial_tree(ax_tree, full_info, palette, "real full tree")
         for text in list(ax_tree.texts):
             text.remove()
-        _plot_fit(ax_fit, diagnostic)
+        plot_fit(ax_fit, diagnostic)
         _plot_metrics(ax_metrics, diagnostic)
 
     fig.suptitle(

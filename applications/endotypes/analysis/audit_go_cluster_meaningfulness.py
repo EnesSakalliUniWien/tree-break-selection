@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import hypergeom
 
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.shared.util.values import finite_float
 
 GO_RE = re.compile(r"(GO:\d+)")
 

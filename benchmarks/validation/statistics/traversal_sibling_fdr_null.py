@@ -21,14 +21,14 @@ import numpy as np
 import pandas as pd
 
 from benchmarks.shared.util.provenance import current_git_state
+from benchmarks.shared.util.values import parse_csv_list
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _annotate_edges,
-    _case_contract,
-    _prepare_tree_for_mode,
-    _projection_inputs,
-    _select_cases,
-    parse_names,
+    annotate_edges,
+    case_contract,
+    prepare_tree_for_mode,
+    projection_inputs,
 )
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -234,7 +234,7 @@ def _run_raw_wald_sibling_fdr(
     alpha: float,
     feature_space: object,
 ) -> pd.DataFrame:
-    projection_dimensions, parent_projections, parent_eigenvalues = _projection_inputs(
+    projection_dimensions, parent_projections, parent_eigenvalues = projection_inputs(
         tree,
         spectral_context,
     )
@@ -274,7 +274,7 @@ def _run_inflated_sibling_fdr(
     alpha: float,
     feature_space: object,
 ) -> pd.DataFrame:
-    projection_dimensions, parent_projections, parent_eigenvalues = _projection_inputs(
+    projection_dimensions, parent_projections, parent_eigenvalues = projection_inputs(
         tree,
         spectral_context,
     )
@@ -315,11 +315,11 @@ def _run_case_replicate(
     base_seed: int,
 ) -> dict[str, object]:
     case_id, source_family, feature_representation, n_samples, n_features, n_categories = (
-        _case_contract(case)
+        case_contract(case)
     )
     data_seed = int(base_seed + replicate_index * 1009)
     tree_seed = int(base_seed + replicate_index * 917 + 17)
-    tree, data, feature_space, selected_tree, fixed_tree = _prepare_tree_for_mode(
+    tree, data, feature_space, selected_tree, fixed_tree = prepare_tree_for_mode(
         mode=_case_run_mode(layer),
         case_id=case_id,
         source_family=source_family,
@@ -331,7 +331,7 @@ def _run_case_replicate(
         data_seed=data_seed,
     )
     try:
-        edge_annotations, spectral_context = _annotate_edges(
+        edge_annotations, spectral_context = annotate_edges(
             tree,
             data,
             edge_alpha=edge_alpha,
@@ -444,7 +444,7 @@ def run_traversal_sibling_fdr_layer(
             for index in indices
         ]
     else:
-        cases = _select_cases(suite=config.suite, case_names=config.case_names)
+        cases = select_cases(suite=config.suite, case_names=config.case_names)
         rows = [
             _run_case_replicate(
                 layer=config.layer,
@@ -539,7 +539,7 @@ def run_traversal_sibling_fdr_layers(
 
 def _build_configs(args: argparse.Namespace) -> tuple[TraversalSiblingFdrConfig, ...]:
     layers = parse_fdr_layers(str(args.layers))
-    case_names = parse_names(args.case_names)
+    case_names = parse_csv_list(args.case_names)
     if not case_names and layers == (FdrLayer.SYNTHETIC_VALID_P,):
         case_names = ("synthetic_balanced_binary_tree",)
     if not case_names:

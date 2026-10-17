@@ -24,12 +24,12 @@ from benchmarks.cloud.sharding import (
 )
 from benchmarks.shared.env import resolve_aws_batch_shard_index
 from benchmarks.shared.util.provenance import current_git_state
+from benchmarks.shared.util.values import parse_csv_list
 from benchmarks.validation.sweeps.alpha_grid_search import (
     DEFAULT_EDGE_ALPHA_GRID,
     DEFAULT_SIBLING_ALPHA_GRID,
     AlphaGridConfig,
     build_alpha_pairs,
-    parse_case_names,
     parse_float_grid,
     run_alpha_grid_search,
 )
@@ -263,7 +263,7 @@ def _parse_args() -> argparse.Namespace:
 def _config_from_args(args: argparse.Namespace) -> AwsAlphaGridConfig:
     return AwsAlphaGridConfig(
         suite=str(args.suite),
-        case_names=parse_case_names(args.case_names),
+        case_names=parse_csv_list(args.case_names),
         output_dir=Path(args.output_dir),
         edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alphas=parse_float_grid(str(args.sibling_alphas)),
@@ -305,7 +305,6 @@ __all__ = [
     "load_shard_summary",
     "make_shard_spec",
     "merge_shards",
-    "parse_case_names",
     "run_shard",
     "validate_shard_contract",
 ]

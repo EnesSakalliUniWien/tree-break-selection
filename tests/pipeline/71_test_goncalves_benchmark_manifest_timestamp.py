@@ -91,13 +91,13 @@ def test_goncalves_benchmark_manifest_and_summary_record_generated_timestamp(mon
     monkeypatch.setattr(
         module, "_prepare_classical_workflow", lambda adata, *_args, **_kwargs: (adata, 2)
     )
-    monkeypatch.setattr(module, "_write_qc_outputs", lambda *_args, **_kwargs: qc_summary)
+    monkeypatch.setattr(module, "write_qc_outputs", lambda *_args, **_kwargs: qc_summary)
     monkeypatch.setattr(
         module,
-        "_run_benchmarks",
+        "run_benchmarks",
         lambda *_args, **_kwargs: (results, pd.DataFrame(), {}, {}, []),
     )
-    monkeypatch.setattr(module, "_write_plots", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(module, "write_plots", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         sys,
         "argv",

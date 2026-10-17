@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from applications.endotypes.pipelines.run_feature_matrix_with_umap import _build_linkage_tree
+from applications.endotypes.pipelines.run_feature_matrix_with_umap import build_linkage_tree
 
 
 def _small_feature_matrix() -> pd.DataFrame:
@@ -20,7 +20,7 @@ def _small_feature_matrix() -> pd.DataFrame:
 
 def test_build_linkage_tree_rejects_ward_with_non_euclidean_metric() -> None:
     with pytest.raises(ValueError, match="Ward linkage requires euclidean distance"):
-        _build_linkage_tree(
+        build_linkage_tree(
             data_df=_small_feature_matrix(),
             tree_method="tbs",
             tree_distance_metric="cosine",
@@ -36,7 +36,7 @@ def test_build_linkage_tree_rejects_ward_with_non_euclidean_metric() -> None:
 
 
 def test_build_linkage_tree_allows_ward_with_euclidean_metric() -> None:
-    linkage_matrix, distance_metric, linkage_method, adaptive_metadata = _build_linkage_tree(
+    linkage_matrix, distance_metric, linkage_method, adaptive_metadata = build_linkage_tree(
         data_df=_small_feature_matrix(),
         tree_method="tbs",
         tree_distance_metric="euclidean",

@@ -25,11 +25,11 @@ from scipy.stats import chi2
 from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
     parse_selected_hierarchy_args,
 )
-from benchmarks.diagnostics.calibration.values import parse_csv_list
-from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import parse_csv_list
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -97,15 +97,9 @@ class SiblingRecordSample:
     significant_edges: int
 
 
-def _selected_cases(case_names: list[str]) -> list[dict[str, object]]:
-    case_by_name = {str(case["name"]): case for case in get_default_test_cases()}
-    missing = [case_name for case_name in case_names if case_name not in case_by_name]
-    if missing:
-        raise ValueError(f"Unknown benchmark case name(s): {missing!r}.")
-    return [case_by_name[case_name].copy() for case_name in case_names]
-
-
-def _build_tree(data: pd.DataFrame, metadata: dict[str, object]) -> tuple[PosetTree, str]:
+def build_selected_hierarchy_tree(
+    data: pd.DataFrame, metadata: dict[str, object]
+) -> tuple[PosetTree, str]:
     if bool(metadata["requires_precomputed_tbs_distance"]):
         raise ValueError(
             "Selected-hierarchy null audit does not support cases requiring "
@@ -122,12 +116,12 @@ def _build_tree(data: pd.DataFrame, metadata: dict[str, object]) -> tuple[PosetT
     return tree, metric
 
 
-def _run_edge_and_sibling_records(
+def run_edge_and_sibling_records(
     data: pd.DataFrame,
     metadata: dict[str, object],
     feature_space: FeatureSpace | None,
 ) -> tuple[SiblingRecordSample, str]:
-    tree, tree_metric = _build_tree(data, metadata)
+    tree, tree_metric = build_selected_hierarchy_tree(data, metadata)
     tree.populate_node_divergences(data, feature_space=feature_space)
     edge_df, spectral_context = annotate_child_parent_divergence(
         tree,
@@ -273,7 +267,7 @@ def _categorical_null(
     return pd.DataFrame(simulated, index=data.index, columns=data.columns)
 
 
-def _simulate_null_data(
+def simulate_null_data(
     data: pd.DataFrame,
     feature_space: FeatureSpace | None,
     *,
@@ -509,7 +503,7 @@ def _diagnose_case(
             "tree-distance contract before use."
         )
 
-    observed_sample, tree_metric = _run_edge_and_sibling_records(
+    observed_sample, tree_metric = run_edge_and_sibling_records(
         inputs.data,
         inputs.metadata,
         feature_space,
@@ -523,8 +517,8 @@ def _diagnose_case(
     rng = np.random.default_rng(int(seed))
     samples: list[SiblingRecordSample] = []
     for _replicate in range(int(n_replicates)):
-        simulated = _simulate_null_data(inputs.data, feature_space, rng=rng)
-        sample, _tree_metric = _run_edge_and_sibling_records(
+        simulated = simulate_null_data(inputs.data, feature_space, rng=rng)
+        sample, _tree_metric = run_edge_and_sibling_records(
             simulated,
             inputs.metadata,
             feature_space,
@@ -575,12 +569,14 @@ def run_selected_hierarchy_null_audit(
     target_mode: str,
     context_match: str,
 ) -> pd.DataFrame:
+    if not case_names:
+        raise ValueError("case_names must not be empty.")
     if n_replicates <= 0:
         raise ValueError("n_replicates must be positive.")
     output_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, object]] = []
     started_at = perf_counter()
-    for index, case in enumerate(_selected_cases(case_names), start=1):
+    for index, case in enumerate(select_cases(suite="full", case_names=case_names), start=1):
         print(f"[{index}/{len(case_names)}] {case['name']}", flush=True)
         try:
             row = _diagnose_case(

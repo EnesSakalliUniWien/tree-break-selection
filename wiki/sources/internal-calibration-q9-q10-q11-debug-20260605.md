@@ -2,14 +2,12 @@
 title: Internal Calibration Q9 Q10 Q11 Debug 2026-06-05
 type: source
 status: reviewed
-updated: 2026-08-11
+updated: 2026-10-17
 sources:
   - reports/calibration_restoration_20260909/validation_protocol.md
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q9_q11_internal_support_debug.csv
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q10_weight_rule_debug.csv
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q9_q10_q11_root_cause_summary.csv
-  - benchmarks/diagnostics/calibration/statistics/internal_support_threshold_validation.py
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
   - wiki/sources/mixed-internal-calibration-sweeps-20260605.md
 tags:
   - source
@@ -92,6 +90,7 @@ diagnostic outputs.
   `tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py`,
   and `tree_break_selection/hierarchy_analysis/tree_decomposition.py` now
   carry the opt-in support-threshold parameters through the pipeline.
+- `benchmarks/diagnostics/calibration/statistics/internal_support_threshold_validation.py` and `benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py` were retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

@@ -8075,12 +8075,11 @@ version comparison report and wiki source summary. Production code unchanged.
 ## 2026-10-16 — Test audit and compatibility leftovers
 
 - Audited `tests/` for tests that can be removed, tests that do not exercise
-  production paths, and compatibility, alias or legacy code. Four read-only
-  agents covered `tests/statistics`, `tests/pipeline`,
-  `tests/hierarchy_analysis` with `tests/integration`, and a production
-  compatibility sweep; two agents stopped at the confirmation gate, so the
+  production paths, and compatibility, alias or legacy code. Six slices were
+  reviewed: `tests/statistics`, `tests/pipeline`, `tests/hierarchy_analysis`
+  with `tests/integration`, a production compatibility sweep, and the
   `core`/`tree`/`localization`/`wiki` and `validation`/`applications`/
-  `visualization` slices were covered by an import-graph pass and spot reads.
+  `visualization` slices (the last two by an import-graph pass and spot reads).
 - Removed the verified compatibility leftovers and legacy-guard tests listed
   in the CHANGELOG. Larger candidates are left for a decision: the
   `selected_gaussian_*` prototypes and their tests, the exact-F calibration
@@ -8130,7 +8129,7 @@ version comparison report and wiki source summary. Production code unchanged.
 - `reports/distribution_equation_comparison_20260928/compare_distributions.py`
   imports the removed `selected_gaussian_radial`; it stays as a frozen
   record and cannot be rerun on current code.
-- A second-agent review of these removals found five follow-ups, all fixed:
+- A second review of these removals found five follow-ups, all fixed:
   the selected-family panel's `root_selective_guard_blocked` column now reads
   the generic guard column only on the root row (it had flagged non-root
   rows), duplicate reads left by the column rename are gone, the README,
@@ -8140,9 +8139,9 @@ version comparison report and wiki source summary. Production code unchanged.
 
 ## 2026-10-16 — Debloat and naming batch
 
-- Four sonnet agents ran in parallel on disjoint files, each under the
-  ponytail skill: retire past-study diagnostics, merge same-name helpers,
-  rename misleading names, and finish the test-audit cleanups.
+- Four batches ran on disjoint files: retire past-study diagnostics, merge
+  same-name helpers, rename misleading names, and finish the test-audit
+  cleanups.
 - Retired 71 files (44,906 lines) from `benchmarks/diagnostics/`: 32 of 33
   docs-only entry scripts, 29 helpers only they imported, and 10 empty
   packages; `runner_support.py` followed once its last helper moved. 58 wiki
@@ -8160,3 +8159,31 @@ version comparison report and wiki source summary. Production code unchanged.
   names such as `Sibling_Role_Supported` and `is_role_supported` are unchanged.
 - Test suite: 996 to 920 cases; most of the drop is the module-import
   contract test, which runs once per benchmark module.
+
+## 2026-10-17 — Debloat of the verification code
+
+- Applied the same method to `benchmarks/validation/` and `tests/validation/`
+  in two sequential batches.
+- Retired 15 files (4,849 lines): three validation runners nothing imported
+  or tested, `alpha_structure_sweep.py` (only a resume-guard test touched
+  it), and six research tools that only `tests/validation` kept alive, plus
+  the helper only they used and two emptied packages. 18 test functions went
+  with them. `calibration_support.py` stays for
+  `reports/eigenspace_reassessment_20260928/full_pipeline/run_reassessment.py`,
+  minus its now-unused `summarize_p_value_calibration`.
+- `values.py` moved from `benchmarks/diagnostics/calibration/` to
+  `benchmarks/shared/util/`: 17 importers, including applications and
+  `relationship_analysis.py`, had depended on research tooling for basic
+  value coercion.
+- One comma-list parser (`parse_csv_list`) and one case selector
+  (`alpha_grid_search.select_cases`); about 30 helpers shared across modules
+  lost the leading underscore that called them private. Core
+  `tree_break_selection` privates imported by applications and reports keep
+  their names, since renaming them would change the core API.
+- A review of this batch found twelve follow-ups, all fixed: the
+  selected-hierarchy diagnostics reject an empty `--case-names` instead of
+  running the whole suite; the three unused `report_contract.py` helpers and
+  two local comma-list parsers are gone; the newly public helpers are in
+  their modules' `__all__`; wiki pages, reports and the CHANGELOG no longer
+  describe retired scripts in the present tense or name removed helpers.
+- Test suite: 920 to 892 cases.

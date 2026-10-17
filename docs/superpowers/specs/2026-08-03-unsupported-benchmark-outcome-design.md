@@ -46,8 +46,8 @@ create parallel abstractions:
 - `benchmarks.shared.runners.dispatch` normalizes method results.
 - Existing metric, assignment, plotting, and report exporters consume the
   normalized result rows.
-- `benchmarks/diagnostics/generators/case_geometry_audit.py` already audits
-  source representation, duplicate geometry, within/between distances, and
+- `benchmarks/diagnostics/generators/case_geometry_audit.py` (retired
+  2026-10-17; last present at commit 5c554bc5) audited source representation, duplicate geometry, within/between distances, and
   nearest-neighbor label purity.
 - At design time, the calibration-contract audit provided detailed tested-null,
   stopped-frontier, and nested-blocked record evidence. Runtime status consumes

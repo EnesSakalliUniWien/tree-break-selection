@@ -2,9 +2,8 @@
 title: Alpha Structure Sweep 2026-06-27
 type: source
 status: reviewed
-updated: 2026-06-27
+updated: 2026-10-17
 sources:
-  - benchmarks/validation/sweeps/alpha_structure_sweep.py
   - benchmarks/results/alpha_structure_sweep_focus_20260627/alpha_structure_manifest.json
   - benchmarks/results/alpha_structure_sweep_focus_20260627/alpha_structure_summary.csv
   - benchmarks/results/alpha_structure_sweep_focus_20260627/alpha_partition_transitions.csv
@@ -97,6 +96,7 @@ production defaults or claim selected-tree Type-I error calibration.
 - `benchmarks/results/alpha_structure_sweep_smoke_20260627/edge_0p001__sibling_0p01/partition_assignments.csv`
   verifies the partition-assignment output contract added after the focused
   runs.
+- `benchmarks/validation/sweeps/alpha_structure_sweep.py` was retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

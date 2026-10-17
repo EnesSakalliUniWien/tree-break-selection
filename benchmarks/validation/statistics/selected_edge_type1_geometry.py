@@ -27,10 +27,9 @@ from benchmarks.diagnostics.calibration.statistics.covariance_laplacian_panel im
 from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
     infer_satterthwaite_reference_from_eigenvalues,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
-from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
-from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid
+from benchmarks.shared.util.values import finite_float, parse_csv_list
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid, select_cases
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -113,13 +112,6 @@ class SelectedEdgeGeometryConfig:
     @property
     def manifest_path(self) -> Path:
         return self.output_dir / "selected_edge_geometry_manifest.json"
-
-
-def parse_names(raw: str | None) -> tuple[str, ...]:
-    """Parse optional comma-separated names."""
-    if raw is None:
-        return ()
-    return tuple(item.strip() for item in raw.split(",") if item.strip())
 
 
 def validate_modes(modes: Sequence[str]) -> tuple[str, ...]:
@@ -270,13 +262,13 @@ def _tree_balance(tree: nx.DiGraph, parent: object) -> float:
     return float(min(counts) / total)
 
 
-def _build_tree_from_data(data: pd.DataFrame) -> PosetTree:
+def build_tree_from_data(data: pd.DataFrame) -> PosetTree:
     distances = pdist(data.to_numpy(dtype=float), metric="hamming")
     linkage_matrix = linkage(distances, method="average")
     return tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
 
 
-def _prepare_tree_for_mode(
+def prepare_tree_for_mode(
     *,
     mode: str,
     case_id: str,
@@ -298,7 +290,7 @@ def _prepare_tree_for_mode(
             n_categories=n_categories,
             seed=data_seed,
         )
-        return _build_tree_from_data(data), data, metadata["feature_space"], True, False
+        return build_tree_from_data(data), data, metadata["feature_space"], True, False
     if mode == "fixed_tree":
         tree_data, _tree_metadata = regenerate_null_case(
             case_id=case_id,
@@ -319,7 +311,7 @@ def _prepare_tree_for_mode(
             seed=data_seed,
         )
         return (
-            _build_tree_from_data(tree_data),
+            build_tree_from_data(tree_data),
             test_data,
             test_metadata["feature_space"],
             False,
@@ -328,7 +320,7 @@ def _prepare_tree_for_mode(
     raise ValueError(f"Unknown selected-edge mode: {mode!r}.")
 
 
-def _annotate_edges(
+def annotate_edges(
     tree: PosetTree,
     data: pd.DataFrame,
     *,
@@ -473,7 +465,7 @@ def _calibration_support_status(row: pd.Series) -> str:
     return "not_tested"
 
 
-def _projection_inputs(
+def projection_inputs(
     tree: PosetTree, spectral_context: object
 ) -> tuple[
     dict[object, int],
@@ -500,7 +492,7 @@ def _collect_raw_sibling_records(
     spectral_context: object,
     feature_space: FeatureSpace,
 ) -> dict[str, SiblingPairRecord]:
-    projection_dimensions, parent_projections, parent_eigenvalues = _projection_inputs(
+    projection_dimensions, parent_projections, parent_eigenvalues = projection_inputs(
         tree,
         spectral_context,
     )
@@ -909,7 +901,7 @@ def run_selected_edge_replicate(
     run_id: str,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
     """Run one selected-edge Type-I replicate."""
-    tree, data, feature_space, selected_tree, fixed_tree = _prepare_tree_for_mode(
+    tree, data, feature_space, selected_tree, fixed_tree = prepare_tree_for_mode(
         mode=mode,
         case_id=case_id,
         source_family=source_family,
@@ -920,7 +912,7 @@ def run_selected_edge_replicate(
         tree_seed=tree_seed,
         data_seed=data_seed,
     )
-    edge_annotations, spectral_context = _annotate_edges(
+    edge_annotations, spectral_context = annotate_edges(
         tree,
         data,
         edge_alpha=edge_alpha,
@@ -1013,18 +1005,7 @@ def run_selected_edge_replicate(
     return edge_rows, sibling_rows, final_rows
 
 
-def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, object]]:
-    cases = get_test_cases_by_suite(suite)
-    if not case_names:
-        return [dict(case) for case in cases]
-    by_name = {str(case["name"]): case for case in cases}
-    missing = [name for name in case_names if name not in by_name]
-    if missing:
-        raise ValueError(f"Unknown case names for suite {suite!r}: {missing!r}")
-    return [dict(by_name[name]) for name in case_names]
-
-
-def _case_contract(case: dict[str, object]) -> tuple[str, str, str, int, int, int | None]:
+def case_contract(case: dict[str, object]) -> tuple[str, str, str, int, int, int | None]:
     name = str(case["name"])
     generator = str(case.get("generator", ""))
     if generator in {"binary", "planted_hierarchy_deep_signal"}:
@@ -1085,7 +1066,7 @@ def run_selected_edge_geometry_for_replicates(
     """Run selected-edge diagnostics for explicit replicate indices."""
     config.output_dir.mkdir(parents=True, exist_ok=True)
     run_id = build_run_id(config)
-    cases = _select_cases(suite=config.suite, case_names=config.case_names)
+    cases = select_cases(suite=config.suite, case_names=config.case_names)
     replicate_tuple = tuple(int(index) for index in replicate_indices)
     if not replicate_tuple:
         raise ValueError("At least one replicate index is required.")
@@ -1111,7 +1092,7 @@ def run_selected_edge_geometry_for_replicates(
             n_samples,
             n_features,
             n_categories,
-        ) = _case_contract(case)
+        ) = case_contract(case)
         for replicate in replicate_tuple:
             for edge_alpha in config.edge_alphas:
                 for mode in config.modes:
@@ -1194,8 +1175,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     config = SelectedEdgeGeometryConfig(
         output_dir=args.output_dir,
         suite=str(args.suite),
-        case_names=parse_names(args.case_names),
-        modes=validate_modes(parse_names(args.modes)),
+        case_names=parse_csv_list(args.case_names),
+        modes=validate_modes(parse_csv_list(args.modes)),
         edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alpha=float(args.sibling_alpha),
         replicates=int(args.replicates),

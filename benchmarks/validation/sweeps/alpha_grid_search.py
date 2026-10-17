@@ -23,6 +23,7 @@ import pandas as pd
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.pipeline import benchmark_cluster_algorithm
 from benchmarks.shared.util.provenance import current_git_state
+from benchmarks.shared.util.values import parse_csv_list
 
 SCHEMA_VERSION = "alpha_grid_search/v1"
 GENERATED_BY = "benchmarks.validation.sweeps.alpha_grid_search"
@@ -238,13 +239,6 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
     return {"summary": summary_df, "manifest": manifest}
 
 
-def parse_case_names(raw_case_names: str | None) -> tuple[str, ...]:
-    """Parse optional comma-separated benchmark case names."""
-    if raw_case_names is None:
-        return ()
-    return tuple(item.strip() for item in raw_case_names.split(",") if item.strip())
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -285,7 +279,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     config = AlphaGridConfig(
         suite=str(args.suite),
-        case_names=parse_case_names(args.case_names),
+        case_names=parse_csv_list(args.case_names),
         edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alphas=parse_float_grid(str(args.sibling_alphas)),
         output_dir=args.output_dir,

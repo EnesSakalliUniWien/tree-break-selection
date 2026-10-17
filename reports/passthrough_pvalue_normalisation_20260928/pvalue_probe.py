@@ -12,8 +12,8 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 
 from applications.endotypes.pipelines.run_feature_matrix_with_umap import (
-    _build_linkage_tree,
     _load_binary_matrix,
+    build_linkage_tree,
 )
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
@@ -62,7 +62,7 @@ def _same_value(left: object, right: object) -> bool:
 
 def main() -> None:
     data = _load_binary_matrix(INPUT_PATH)
-    linkage_matrix, distance_metric, linkage_method, _ = _build_linkage_tree(
+    linkage_matrix, distance_metric, linkage_method, _ = build_linkage_tree(
         data_df=data,
         tree_method="tbs",
         tree_distance_metric="hamming",

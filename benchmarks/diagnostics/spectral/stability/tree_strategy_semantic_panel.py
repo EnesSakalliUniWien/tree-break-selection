@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.shared.util.values import finite_float
 
 SCHEMA_VERSION = "tree_strategy_semantic_panel/v1"
 

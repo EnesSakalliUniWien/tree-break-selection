@@ -67,13 +67,13 @@ def test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp(monk
 
     monkeypatch.setattr(module, "_project_root", lambda: tmp_path)
     monkeypatch.setattr(module, "_prepare_adata", lambda *_args, **_kwargs: fake_adata)
-    monkeypatch.setattr(module, "_write_qc_outputs", lambda *_args, **_kwargs: qc_summary)
+    monkeypatch.setattr(module, "write_qc_outputs", lambda *_args, **_kwargs: qc_summary)
     monkeypatch.setattr(
         module,
-        "_run_benchmarks",
+        "run_benchmarks",
         lambda *_args, **_kwargs: (results, pd.DataFrame(), [], None, []),
     )
-    monkeypatch.setattr(module, "_write_plots", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(module, "write_plots", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         sys,
         "argv",

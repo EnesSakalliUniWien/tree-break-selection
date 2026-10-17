@@ -31,7 +31,7 @@ from scipy.stats import chi2
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
 from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
-    _expected_chi_square_mixture_skew,
+    expected_chi_square_mixture_skew,
 )
 from benchmarks.validation.contracts.report_contract import wilson_interval
 from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.decomposition import (
@@ -628,7 +628,7 @@ def summarize_tables(tables: dict[str, pd.DataFrame], *, alpha: float) -> pd.Dat
                 if len(null) >= 3
                 else math.nan,
                 "expected_null_chi_square_mixture_skew": (
-                    _expected_chi_square_mixture_skew(null["degrees_of_freedom"])
+                    expected_chi_square_mixture_skew(null["degrees_of_freedom"])
                     if len(null)
                     else math.nan
                 ),

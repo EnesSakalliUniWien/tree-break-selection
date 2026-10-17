@@ -17,7 +17,7 @@ from matplotlib.gridspec import GridSpec
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import add_generated_at, artifact_record
 from applications.scrna.plots.report_helpers import plot_cluster_size_bars
-from applications.scrna.plots.selected_nnls_fit_summary import _fit_diagnostic, _plot_fit
+from applications.scrna.plots.selected_nnls_fit_summary import fit_diagnostic, plot_fit
 from applications.scrna.plots.selected_nnls_report import (
     DATASETS,
     METHOD_TITLE,
@@ -192,7 +192,7 @@ def _fit_page(
     gs = GridSpec(1, len(dataset_records), figure=fig, wspace=0.2)
     for col_index, record in enumerate(dataset_records):
         ax = fig.add_subplot(gs[0, col_index])
-        _plot_fit(ax, record["diagnostic"])
+        plot_fit(ax, record["diagnostic"])
         ax.set_title(
             f"{record['cfg']['title']}\nNNLS branch-length fit",
             fontsize=11,
@@ -247,7 +247,7 @@ def main(output_dir: Path | None = None) -> None:
     for cfg in DATASETS:
         assignments = pd.read_csv(Path(cfg["dir"]) / "method_assignments.csv")
         palette = make_cluster_palette(assignments[str(cfg["selected"])].unique())
-        diagnostic = _fit_diagnostic(cfg)
+        diagnostic = fit_diagnostic(cfg)
         summary_row = _summary_rows(cfg, assignments, diagnostic)
         summary_row["generated_at"] = generated_at
         summary = cluster_summary(assignments, str(cfg["selected"]))

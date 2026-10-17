@@ -19,7 +19,7 @@ from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import artifact_record
-from benchmarks.diagnostics.calibration.values import bool_series
+from benchmarks.shared.util.values import bool_series
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 

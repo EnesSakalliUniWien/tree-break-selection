@@ -163,12 +163,10 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
     from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
         _generate_data_with_truth,
     )
-    from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-        _case_contract,
-        _select_cases,
-    )
+    from benchmarks.validation.statistics.selected_edge_type1_geometry import case_contract
+    from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 
-    case = next(case for case in _select_cases(suite="full", case_names=("cat_clear_3cat_4c",)))
+    case = next(case for case in select_cases(suite="full", case_names=("cat_clear_3cat_4c",)))
     (
         case_id,
         source_family,
@@ -176,7 +174,7 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
         n_samples,
         n_features,
         n_categories,
-    ) = _case_contract(case)
+    ) = case_contract(case)
     seed = 20309045
     results = {}
     for role in ("null", "signal"):

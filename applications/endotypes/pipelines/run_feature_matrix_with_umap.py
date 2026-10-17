@@ -243,7 +243,7 @@ def _run_decomposition(
         distance_metric,
         linkage_method,
         adaptive_metadata,
-    ) = _build_linkage_tree(
+    ) = build_linkage_tree(
         data_df=data_df,
         tree_method=tree_method,
         tree_distance_metric=tree_distance_metric,
@@ -297,7 +297,7 @@ def _run_decomposition(
     return tree, decomposition, assignments
 
 
-def _build_linkage_tree(
+def build_linkage_tree(
     *,
     data_df: pd.DataFrame,
     tree_method: str,
@@ -720,7 +720,7 @@ def main() -> None:
             distance_metric,
             linkage_method,
             adaptive_metadata,
-        ) = _build_linkage_tree(
+        ) = build_linkage_tree(
             data_df=data_df,
             tree_method=args.tree_method,
             tree_distance_metric=args.tree_distance_metric,

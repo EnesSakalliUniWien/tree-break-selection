@@ -11,7 +11,7 @@ from scipy.spatial.distance import pdist, squareform
 from benchmarks.shared.benchmark_grid import BENCHMARK_METADATA_KEYS
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.types import BenchmarkRunStatus, MethodRunResult
-from benchmarks.shared.util.decomposition import _create_report_dataframe_from_labels
+from benchmarks.shared.util.decomposition import create_report_dataframe_from_labels
 from benchmarks.shared.util.execution_mode import coerce_bool_param
 from benchmarks.shared.util.method_sets import (
     TBS_DISTANCE_TREE_METHODS,
@@ -61,7 +61,7 @@ def _normalize_method_result(
         return MethodRunResult(
             labels=labels,
             found_clusters=int(result.found_clusters),
-            report_df=_create_report_dataframe_from_labels(labels, sample_index),
+            report_df=create_report_dataframe_from_labels(labels, sample_index),
             status="ok",
             skip_reason=None,
             extra=result.extra,

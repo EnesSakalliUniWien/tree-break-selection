@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from benchmarks.cloud.sharding import iter_expected_shard_dirs, validate_replicate_coverage
-from benchmarks.diagnostics.calibration.values import bool_series, bool_value, parse_csv_list
+from benchmarks.shared.util.values import bool_series, bool_sum, bool_value, parse_csv_list
 
 
 @pytest.mark.parametrize(
@@ -37,8 +37,16 @@ def test_bool_series_reads_a_01_column_with_a_blank_cell() -> None:
     assert bool_series(column).tolist() == [True, False, False, True]
 
 
+def test_bool_sum_counts_true_cells_and_a_missing_column_as_zero() -> None:
+    frame = pd.DataFrame({"x": [1, 0, None, 1]})
+
+    assert bool_sum(frame, "x") == 2
+    assert bool_sum(frame, "absent") == 0
+
+
 def test_parse_csv_list_strips_and_drops_empty_items() -> None:
     assert parse_csv_list(" a, b,,c ,") == ("a", "b", "c")
+    assert parse_csv_list(None) == ()
 
 
 def test_validate_replicate_coverage_rejects_duplicate_and_missing_indices() -> None:

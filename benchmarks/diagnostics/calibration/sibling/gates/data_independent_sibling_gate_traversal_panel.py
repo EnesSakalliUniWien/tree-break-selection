@@ -36,14 +36,13 @@ from benchmarks.diagnostics.calibration.traversal.production_admissibility_contr
     evaluate_production_admissibility_components,
     summarize_production_admissibility_contracts,
 )
-from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.generators.generate_case_data import generate_case_data
+from benchmarks.shared.util.values import bool_series, parse_csv_list
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _case_contract,
-    _select_cases,
-    parse_names,
+    case_contract,
     regenerate_null_case,
 )
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     ClusterBoundary,
     build_cluster_assignments,
@@ -1462,7 +1461,7 @@ def run_data_independent_sibling_gate_traversal_panel(
     )
     rows: list[dict[str, object]] = []
     checkpoint_paths: list[Path] = []
-    for case in _select_cases(suite=config.suite, case_names=config.case_names):
+    for case in select_cases(suite=config.suite, case_names=config.case_names):
         (
             case_id,
             source_family,
@@ -1470,7 +1469,7 @@ def run_data_independent_sibling_gate_traversal_panel(
             n_samples,
             n_features,
             n_categories,
-        ) = _case_contract(case)
+        ) = case_contract(case)
         if source_family not in {"binary_template", "categorical_multinomial"}:
             raise ValueError(
                 "Data-independent traversal panel supports binary and direct "
@@ -1652,13 +1651,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         DataIndependentSiblingGateTraversalConfig(
             output_dir=args.output_dir,
             suite=str(args.suite),
-            case_names=parse_names(args.case_names),
-            data_roles=validate_data_roles(parse_names(args.data_roles)),
-            candidate_methods=validate_candidate_methods(parse_names(args.candidate_methods)),
+            case_names=parse_csv_list(args.case_names),
+            data_roles=validate_data_roles(parse_csv_list(args.data_roles)),
+            candidate_methods=validate_candidate_methods(parse_csv_list(args.candidate_methods)),
             sibling_alpha=float(args.sibling_alpha),
             edge_alpha=float(args.edge_alpha),
             selected_topology_penalties=validate_selected_topology_penalties(
-                tuple(float(value) for value in parse_names(args.selected_topology_penalties))
+                tuple(float(value) for value in parse_csv_list(args.selected_topology_penalties))
             ),
             replicates=int(args.replicates),
             base_seed=int(args.base_seed),

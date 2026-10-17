@@ -2,7 +2,7 @@
 title: Redundant and Legacy Code Map 2026-06-23
 type: analysis
 status: reviewed
-updated: 2026-10-16
+updated: 2026-10-17
 sources:
   - tree_break_selection/space_separation/diffusion.py
   - tree_break_selection/space_separation/adaptive_cosine.py
@@ -24,8 +24,6 @@ sources:
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/runners/tbs_runner.py
   - benchmarks/shared/tbs_tree_context.py
-  - benchmarks/validation/statistics/feature_covariance_calibration.py
-  - benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py
   - tests/visualization/73_test_report_export_layout.py
 tags:
   - code-audit
@@ -255,6 +253,7 @@ Several high-ranked matches should not be mechanically consolidated:
   over every production and test surface, and Vulture again reports no
   project-owned dead code at 90% confidence.
 - `benchmarks/diagnostics/calibration/sibling/nulls/runner_support.py`, `benchmarks/diagnostics/oracle/gate_path_trace.py` and `benchmarks/diagnostics/runner_support.py` were retired on 2026-10-16 (last present at commit 7cc4e1c0); `case_with_replicate_seed` moved into `mixed_internal_calibration_sweep.py`.
+- `benchmarks/validation/statistics/feature_covariance_calibration.py` and `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` were retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

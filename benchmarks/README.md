@@ -386,9 +386,7 @@ The 40-by-20,000 all-informative blob recipe is named
 dense-signal calibration-saturation stress rather than an irrelevant-noise
 case. `gauss_sparse_signal_highd_noise` is the separate irrelevant-feature
 stress with 12 informative and 19,988 independent nuisance coordinates. Its
-known labels do not promise tree recoverability; the generator-geometry audit
-determines whether its observed median-binary Hamming geometry preserves the
-target partition.
+known labels do not promise tree recoverability.
 
 ### Core Binary (28 cases)
 

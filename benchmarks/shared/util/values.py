@@ -1,10 +1,10 @@
-"""Scalar coercion shared by every calibration diagnostic category.
+"""Scalar coercion shared by benchmarks, validation, diagnostics and applications.
 
-These helpers read one field out of a diagnostic row and return a total value,
-so panels can build result tables without repeating the same guards. They are
+These helpers read one field out of a result row and return a total value,
+so callers can build result tables without repeating the same guards. They are
 deliberately permissive: a missing column, an unparseable value, or a pandas
 missing marker yields the neutral result rather than raising, because a
-diagnostic row is evidence and a single bad field must not abort a panel.
+result row is evidence and a single bad field must not abort a run.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import pandas as pd
 
 
 def finite_float(value: object) -> float:
-    """Return a finite float or ``nan`` for invalid diagnostic values."""
+    """Return a finite float or ``nan`` for invalid values."""
     try:
         numeric = float(value)
     except (TypeError, ValueError):
@@ -36,6 +36,13 @@ def bool_value(value: object) -> bool:
 def bool_series(series: pd.Series) -> pd.Series:
     """Read a table column cell by cell with the bool_value rules."""
     return series.map(bool_value).astype(bool)
+
+
+def bool_sum(frame: pd.DataFrame, column: str) -> int:
+    """Count true cells in a table column with the bool_value rules; a missing column counts 0."""
+    if column not in frame.columns:
+        return 0
+    return int(bool_series(frame[column]).sum())
 
 
 def finite_int(value: object, default: int = 0) -> int:
@@ -82,8 +89,10 @@ def input_data_role(data_role: object) -> str:
     return "null" if str(data_role) == "selected_null" else str(data_role)
 
 
-def parse_csv_list(raw: str) -> tuple[str, ...]:
-    """Split a comma-separated CLI value into stripped, non-empty items."""
+def parse_csv_list(raw: str | None) -> tuple[str, ...]:
+    """Split a comma-separated CLI value into stripped, non-empty items; ``None`` is empty."""
+    if raw is None:
+        return ()
     return tuple(part.strip() for part in str(raw).split(",") if part.strip())
 
 
@@ -92,7 +101,7 @@ def string_value(
     column: str,
     default: str = "",
 ) -> str:
-    """Return a non-missing string field from a diagnostic row."""
+    """Return a non-missing string field from a result row."""
     if column not in row:
         return default
     value = row[column]
@@ -103,6 +112,7 @@ def string_value(
 
 __all__ = [
     "bool_series",
+    "bool_sum",
     "bool_value",
     "finite_float",
     "finite_int",

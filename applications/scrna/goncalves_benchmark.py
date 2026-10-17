@@ -34,11 +34,11 @@ from scipy import sparse
 from applications.output_dirs import timestamped_results_dir
 from applications.scrna._shared import json_default
 from applications.scrna.pancreas_benchmark import (
-    _run_benchmarks,
-    _scanpy_module,
-    _scanpy_version,
-    _write_plots,
-    _write_qc_outputs,
+    run_benchmarks,
+    scanpy_module,
+    scanpy_version,
+    write_plots,
+    write_qc_outputs,
 )
 
 DATASET_ID = "goncalves_human_pancreas_dev_fetal_pancreas"
@@ -166,7 +166,7 @@ def _read_metadata(meta_path: Path, cell_ids: pd.Index) -> pd.DataFrame:
 
 def _build_adata(expr_path: Path, meta_path: Path, output_dir: Path) -> tuple[Any, str]:
     ad = _anndata_module()
-    sc = _scanpy_module()
+    sc = scanpy_module()
     matrix, orientation = _read_ucsc_expression(expr_path)
     metadata = _read_metadata(meta_path, matrix.index)
     values = matrix.to_numpy(dtype=np.float32, copy=False)
@@ -228,7 +228,7 @@ def _prepare_classical_workflow(
     n_pcs: int,
     n_hvgs: int,
 ) -> tuple[Any, int]:
-    sc = _scanpy_module()
+    sc = scanpy_module()
     expression_kind = str(adata.uns.get("input_expression_kind", "unknown"))
     if expression_kind == "count_like":
         sc.pp.normalize_total(adata, target_sum=10_000)
@@ -420,14 +420,14 @@ def main() -> None:
         n_pcs=args.n_pcs,
         n_hvgs=args.n_hvgs,
     )
-    qc_summary = _write_qc_outputs(adata, args.output_dir)
+    qc_summary = write_qc_outputs(adata, args.output_dir)
     (
         results,
         assignments,
         tree_summaries,
         adaptive_metadata,
         length_sensitivity_rows,
-    ) = _run_benchmarks(
+    ) = run_benchmarks(
         adata,
         args.output_dir,
         max_cells=args.max_cells,
@@ -435,7 +435,7 @@ def main() -> None:
         seed=args.seed,
         generated_at=generated_at,
     )
-    _write_plots(adata, results, assignments, args.output_dir)
+    write_plots(adata, results, assignments, args.output_dir)
 
     elapsed_sec = time.perf_counter() - start
     manifest: dict[str, Any] = {
@@ -455,7 +455,7 @@ def main() -> None:
         "seed": args.seed,
         "elapsed_sec": elapsed_sec,
         "python": platform.python_version(),
-        "scanpy": _scanpy_version(),
+        "scanpy": scanpy_version(),
         "qc_summary": qc_summary,
         "adaptive_diffusion_metadata": adaptive_metadata,
         "tbs_tree_summaries": tree_summaries,

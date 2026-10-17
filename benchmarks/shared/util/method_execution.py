@@ -10,7 +10,7 @@ from benchmarks.shared.benchmark_grid import (
     benchmark_param_metadata,
     strip_benchmark_metadata,
 )
-from benchmarks.shared.metrics import _calculate_ari_nmi_purity_metrics
+from benchmarks.shared.metrics import calculate_ari_nmi_purity_metrics
 from benchmarks.shared.result_records import (
     BenchmarkResultRow,
     ComputedResultRecord,
@@ -19,7 +19,7 @@ from benchmarks.shared.result_records import (
 )
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.types import MethodSpec
-from benchmarks.shared.util.decomposition import _create_report_dataframe_from_labels
+from benchmarks.shared.util.decomposition import create_report_dataframe_from_labels
 from benchmarks.shared.util.execution_mode import coerce_bool_param
 from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
 from benchmarks.shared.util.time import BENCHMARK_STAGE_TIMING_KEYS
@@ -41,7 +41,7 @@ TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC = "feature_metric"
 TBS_TREE_DISTANCE_SOURCE_PRECOMPUTED = "precomputed"
 
 
-def _require_precomputed_tbs_distance_metric(
+def require_precomputed_tbs_distance_metric(
     *,
     meta: dict[str, object],
     case_name: str,
@@ -67,7 +67,7 @@ def _report_for_metric_evaluation(
 ) -> pd.DataFrame:
     """Return a report table aligned to the sample index used for metrics."""
     if report_df is None:
-        return _create_report_dataframe_from_labels(labels, sample_index)
+        return create_report_dataframe_from_labels(labels, sample_index)
     if "cluster_id" not in report_df.columns:
         raise ValueError("Runner report_df must include a 'cluster_id' column.")
     if len(report_df.index) != len(sample_index):
@@ -221,7 +221,7 @@ def run_single_method_once(
                     "'precomputed_distance_condensed' for TBS but it is missing."
                 )
             distance_condensed_for_run = distance_condensed
-            recorded_run_params["tree_distance_metric"] = _require_precomputed_tbs_distance_metric(
+            recorded_run_params["tree_distance_metric"] = require_precomputed_tbs_distance_metric(
                 meta=meta,
                 case_name=str(meta["name"]),
             )
@@ -292,7 +292,7 @@ def run_single_method_once(
         report_df = _report_for_metric_evaluation(result.report_df, labels, data_t.index)
         found_clusters = result.found_clusters
         labels_len = len(labels)
-        metrics = _calculate_ari_nmi_purity_metrics(
+        metrics = calculate_ari_nmi_purity_metrics(
             report_df,
             data_t.index,
             y_t,
@@ -465,4 +465,4 @@ def run_single_method_once(
     return result_row, computed_result
 
 
-__all__ = ["run_single_method_once"]
+__all__ = ["require_precomputed_tbs_distance_metric", "run_single_method_once"]

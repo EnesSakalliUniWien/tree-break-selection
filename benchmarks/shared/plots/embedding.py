@@ -60,7 +60,7 @@ def _max_assigned_label(labels: np.ndarray | None) -> int:
     return int(arr.max())
 
 
-def _color_cluster_count(expected: int, found: int, *label_arrays: np.ndarray) -> int:
+def color_cluster_count(expected: int, found: int, *label_arrays: np.ndarray) -> int:
     """
     Determine how many cluster colors are needed to cover all label arrays.
 
@@ -74,7 +74,7 @@ def _color_cluster_count(expected: int, found: int, *label_arrays: np.ndarray) -
     return base
 
 
-def _coerce_nonnegative_cluster_count(raw_count: object) -> int | None:
+def coerce_nonnegative_cluster_count(raw_count: object) -> int | None:
     """Convert a raw cluster-count value to a non-negative integer, if possible."""
     if raw_count is None:
         return None
@@ -87,7 +87,7 @@ def _coerce_nonnegative_cluster_count(raw_count: object) -> int | None:
     return parsed
 
 
-def _infer_cluster_count_from_labels(*label_arrays: np.ndarray | None) -> int | None:
+def infer_cluster_count_from_labels(*label_arrays: np.ndarray | None) -> int | None:
     """Infer cluster count from labels by counting unique non-negative assignments."""
     inferred_count = 0
     for labels in label_arrays:
@@ -108,16 +108,16 @@ def _infer_cluster_count_from_labels(*label_arrays: np.ndarray | None) -> int | 
     return inferred_count if inferred_count > 0 else None
 
 
-def _resolve_expected_cluster_count(
+def resolve_expected_cluster_count(
     meta: dict,
     *label_arrays: np.ndarray | None,
 ) -> tuple[int | None, str]:
     """Resolve expected cluster count from metadata, else infer from available labels."""
-    explicit_count = _coerce_nonnegative_cluster_count(meta.get("n_clusters"))
+    explicit_count = coerce_nonnegative_cluster_count(meta.get("n_clusters"))
     if explicit_count is not None and explicit_count > 0:
         return explicit_count, str(explicit_count)
 
-    inferred_count = _infer_cluster_count_from_labels(*label_arrays)
+    inferred_count = infer_cluster_count_from_labels(*label_arrays)
     if inferred_count is not None:
         return inferred_count, f"{inferred_count} (inferred)"
 
@@ -377,7 +377,7 @@ def create_clustering_comparison_plots(
     X_embedded = _fit_embedding_2d(X_scaled, cache_key=cache_key)
 
     labels_to_plot = dict(labels_dict)
-    expected_clusters, expected_clusters_label = _resolve_expected_cluster_count(
+    expected_clusters, expected_clusters_label = resolve_expected_cluster_count(
         meta,
         *labels_to_plot.values(),
     )
@@ -400,7 +400,7 @@ def create_clustering_comparison_plots(
         labels_to_plot["Spectral"] = spectral.fit_predict(X_scaled)
 
     all_labels = [labels for labels in labels_to_plot.values() if labels is not None]
-    color_clusters = _color_cluster_count(expected_clusters or 0, -1, *all_labels)
+    color_clusters = color_cluster_count(expected_clusters or 0, -1, *all_labels)
     spec = build_cluster_color_spec(color_clusters, unassigned_color="#CCCCCC")
     colors = spec.colors
 
@@ -527,6 +527,9 @@ def create_clustering_comparison_plots(
 
 
 __all__ = [
+    "coerce_nonnegative_cluster_count",
+    "color_cluster_count",
     "create_clustering_comparison_plots",
-    "_color_cluster_count",
+    "infer_cluster_count_from_labels",
+    "resolve_expected_cluster_count",
 ]

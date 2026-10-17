@@ -21,9 +21,8 @@ import pandas as pd
 from sklearn.covariance import ledoit_wolf_shrinkage
 from sklearn.metrics import adjusted_rand_score
 
-from benchmarks.diagnostics.calibration.values import bool_series, finite_min
 from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.metrics import _calculate_ari_nmi_purity_metrics
+from benchmarks.shared.metrics import calculate_ari_nmi_purity_metrics
 from benchmarks.shared.performance_grid import markdown_table
 from benchmarks.shared.runners.tbs_diffusion_runner import (
     _run_tbs_diffusion_graphtools_method,
@@ -35,6 +34,7 @@ from benchmarks.shared.tree_consensus import (
 )
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import bool_series, bool_sum, finite_min, parse_csv_list
 from tree_break_selection.tree.construction import (
     SUPPORTED_LINKAGE_METHODS,
 )
@@ -272,12 +272,6 @@ def _run_id(topology: str) -> str:
     return f"family_metric_tree_linkage_method_{topology}"
 
 
-def _bool_sum(frame: pd.DataFrame, column: str) -> int:
-    if column not in frame.columns:
-        return 0
-    return int(bool_series(frame[column]).sum())
-
-
 def _root_child_fraction(tree: object) -> float:
     if tree is None:
         return math.nan
@@ -447,7 +441,7 @@ def _result_row(
         return base, []
 
     extra = result.extra or {}
-    metrics = _calculate_ari_nmi_purity_metrics(
+    metrics = calculate_ari_nmi_purity_metrics(
         result.report_df,
         geometry.embedding.index,
         np.asarray(case["_true_labels"]),
@@ -468,7 +462,7 @@ def _result_row(
             {"cluster_id": topology_labels},
             index=geometry.embedding.index,
         )
-        topology_metrics = _calculate_ari_nmi_purity_metrics(
+        topology_metrics = calculate_ari_nmi_purity_metrics(
             topology_report,
             geometry.embedding.index,
             true_labels,
@@ -530,9 +524,9 @@ def _result_row(
                 if extra.get("tree") is not None
                 else math.nan
             ),
-            "trace_edge_open": _bool_sum(trace, "edge_gate_open"),
-            "trace_sibling_open": _bool_sum(trace, "sibling_gate_open"),
-            "root_edge_gate_open": _bool_sum(root_trace, "edge_gate_open") > 0,
+            "trace_edge_open": bool_sum(trace, "edge_gate_open"),
+            "trace_sibling_open": bool_sum(trace, "sibling_gate_open"),
+            "root_edge_gate_open": bool_sum(root_trace, "edge_gate_open") > 0,
             "root_sibling_p_value_corrected": finite_min(
                 root_trace.get("sibling_p_value_corrected", pd.Series(dtype=float))
             ),
@@ -903,17 +897,13 @@ def run_family_metric_nnls_grid(
     }
 
 
-def _comma_values(value: str) -> tuple[str, ...]:
-    return tuple(item.strip() for item in value.split(",") if item.strip())
-
-
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--suite", default="full")
-    parser.add_argument("--case-names", type=_comma_values, default=DEFAULT_CASE_NAMES)
-    parser.add_argument("--topologies", type=_comma_values, default=SUPPORTED_LINKAGE_METHODS)
-    parser.add_argument("--branch-modes", type=_comma_values, default=BRANCH_MODES)
+    parser.add_argument("--case-names", type=parse_csv_list, default=DEFAULT_CASE_NAMES)
+    parser.add_argument("--topologies", type=parse_csv_list, default=SUPPORTED_LINKAGE_METHODS)
+    parser.add_argument("--branch-modes", type=parse_csv_list, default=BRANCH_MODES)
     return parser.parse_args(argv)
 
 

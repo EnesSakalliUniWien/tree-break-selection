@@ -23,12 +23,11 @@ import pandas as pd
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
 
-from benchmarks.diagnostics.calibration.values import finite_min
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
-from benchmarks.validation.sweeps.family_metric_nnls_grid import _bool_sum
+from benchmarks.shared.util.values import bool_sum, finite_min, parse_csv_list
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -141,12 +140,6 @@ def _record_row(
         else float(decision.p_value),
         "decision_estimator": "" if decision is None else decision.estimator,
     }
-
-
-def _parse_names(value: str | Sequence[str]) -> tuple[str, ...]:
-    if isinstance(value, str):
-        return tuple(item.strip() for item in value.split(",") if item.strip())
-    return tuple(str(item).strip() for item in value if str(item).strip())
 
 
 def _is_binary_frame(data: pd.DataFrame) -> bool:
@@ -505,12 +498,12 @@ def _run_branch_source(
         "edge_branch_length_variance_policy": EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
         "found_clusters": int(result.found_clusters),
         "ari": ari,
-        "n_edge_tested": _bool_sum(annotations_df, "Child_Parent_Divergence_Tested"),
-        "n_edge_significant": _bool_sum(annotations_df, "Child_Parent_Divergence_Significant"),
+        "n_edge_tested": bool_sum(annotations_df, "Child_Parent_Divergence_Tested"),
+        "n_edge_significant": bool_sum(annotations_df, "Child_Parent_Divergence_Significant"),
         "n_sibling_records": int(len(records)),
         "record_collection_error": record_error,
         "n_sibling_tested": int(sibling_gate_roles.eq("active_traversal_sibling_gate").sum()),
-        "n_sibling_open": _bool_sum(annotations_df, "Sibling_BH_Different"),
+        "n_sibling_open": bool_sum(annotations_df, "Sibling_BH_Different"),
         "n_sibling_fail_closed": int(sibling_gate_roles.eq("fail_closed_sibling_gate").sum()),
         "min_sibling_p_value": finite_min(
             annotations_df.get("Sibling_Divergence_P_Value", pd.Series(dtype=float))
@@ -518,8 +511,8 @@ def _run_branch_source(
         "min_sibling_p_value_corrected": finite_min(
             annotations_df.get("Sibling_Divergence_P_Value_Corrected", pd.Series(dtype=float))
         ),
-        "trace_edge_open": _bool_sum(trace, "edge_gate_open"),
-        "trace_sibling_open": _bool_sum(trace, "sibling_gate_open"),
+        "trace_edge_open": bool_sum(trace, "edge_gate_open"),
+        "trace_sibling_open": bool_sum(trace, "sibling_gate_open"),
         "nnls_status": extra.get("branch_length_optimization_status", ""),
         "nnls_applied_to_tree": extra.get("branch_length_optimization_applied_to_tree", math.nan),
         "nnls_residual_rmse_to_target_mean": extra.get(
@@ -810,11 +803,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--suite", default="binary")
-    parser.add_argument("--case-names", type=_parse_names, default=DEFAULT_CASE_NAMES)
-    parser.add_argument("--branch-sources", type=_parse_names, default=BRANCH_SOURCES)
+    parser.add_argument("--case-names", type=parse_csv_list, default=DEFAULT_CASE_NAMES)
+    parser.add_argument("--branch-sources", type=parse_csv_list, default=BRANCH_SOURCES)
     parser.add_argument(
         "--spectral-contexts",
-        type=_parse_names,
+        type=parse_csv_list,
         default=DEFAULT_SPECTRAL_CONTEXTS,
     )
     parser.add_argument("--tree-linkage-method", default="average")

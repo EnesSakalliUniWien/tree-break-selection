@@ -318,7 +318,7 @@ def _remap_predicted_labels_to_truth(
     return y_true_enc, y_pred_remapped_enc
 
 
-def _calculate_ari_nmi_purity_metrics(
+def calculate_ari_nmi_purity_metrics(
     report_df: pd.DataFrame | None,
     sample_names: pd.Index,
     true_labels: np.ndarray,

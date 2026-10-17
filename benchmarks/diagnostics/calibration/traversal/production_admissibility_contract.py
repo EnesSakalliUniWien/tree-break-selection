@@ -16,8 +16,8 @@ from pathlib import Path
 import pandas as pd
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
-from benchmarks.diagnostics.calibration.values import bool_series
 from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import bool_series
 
 STUDY_ROLE = "diagnostic_production_admissibility_contract_not_calibration"
 SCHEMA_VERSION = "production_admissibility_contract/v1"

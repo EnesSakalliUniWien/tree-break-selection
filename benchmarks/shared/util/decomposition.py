@@ -51,7 +51,7 @@ def labels_and_report_from_decomposition(
     return labels, report_df
 
 
-def _create_report_dataframe_from_labels(
+def create_report_dataframe_from_labels(
     labels: list[int] | np.ndarray, sample_names: Sequence[object] | pd.Index
 ) -> pd.DataFrame:
     """Create a report dataframe from flat cluster labels."""
@@ -74,7 +74,7 @@ def _count_non_noise_clusters(labels: np.ndarray) -> int:
     return int(len({int(label) for label in labels if int(label) >= 0}))
 
 
-def _ok_result_from_labels(
+def ok_result_from_labels(
     labels: list[int] | np.ndarray,
     sample_names: Sequence[object] | pd.Index,
     *,
@@ -85,7 +85,7 @@ def _ok_result_from_labels(
     return MethodRunResult(
         labels=labels_array,
         found_clusters=_count_non_noise_clusters(labels_array),
-        report_df=_create_report_dataframe_from_labels(labels_array, sample_names),
+        report_df=create_report_dataframe_from_labels(labels_array, sample_names),
         status="ok",
         skip_reason=None,
         extra=extra,
@@ -94,6 +94,6 @@ def _ok_result_from_labels(
 
 __all__ = [
     "labels_and_report_from_decomposition",
-    "_create_report_dataframe_from_labels",
-    "_ok_result_from_labels",
+    "create_report_dataframe_from_labels",
+    "ok_result_from_labels",
 ]

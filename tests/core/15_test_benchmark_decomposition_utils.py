@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 from benchmarks.shared.util.decomposition import (
-    _ok_result_from_labels,
     labels_and_report_from_decomposition,
+    ok_result_from_labels,
 )
 
 
@@ -37,7 +37,7 @@ def test_labels_and_report_from_decomposition_share_sample_assignment_table() ->
 
 
 def test_ok_result_from_labels_counts_non_noise_clusters() -> None:
-    result = _ok_result_from_labels(
+    result = ok_result_from_labels(
         np.array([2, 2, -1, 4], dtype=int),
         pd.Index(["a", "b", "noise", "c"], name="sample_id"),
     )

@@ -9,7 +9,7 @@ for the PCA projection in this experiment.
 
 ## Independent-data experiment
 
-The GPT-6 Astra agent implemented the [control runner](../../benchmarks/diagnostics/calibration/sibling/independent_projection_control.py).
+The control runner was `benchmarks/diagnostics/calibration/sibling/independent_projection_control.py` (retired 2026-10-17; last present at commit 5c554bc5).
 The [frozen control protocol](control_protocol.md) retains the original 10,000
 evaluation datasets: five known branch patterns, two covariance profiles,
 1,000 replicates per cell. It draws separate independent basis-training and
@@ -133,20 +133,10 @@ nonorthogonal exact controls, with worst reconstruction error 4.35e-15.
 `make check` passed all 712 tests, lint and dependency/dead-code audits;
 wiki validation was rerun after the final documentation updates.
 
-The original runner, protocol and evaluation remain unchanged. New diagnostics
-do not change production code or defaults. No dependency installation,
-commit or push was performed.
-
-To rerun the control, choose a fresh output directory and freeze before run:
-
-```bash
-uv run --no-sync python -m benchmarks.diagnostics.calibration.sibling.independent_projection_control freeze \
-  --output-dir reports/new-independent-control --replicates 1000 \
-  --protocol reports/independent_projection_vandermonde_20260928/control_protocol.md
-uv run --no-sync python -m benchmarks.diagnostics.calibration.sibling.independent_projection_control run \
-  --output-dir reports/new-independent-control --replicates 1000 \
-  --protocol reports/independent_projection_vandermonde_20260928/control_protocol.md
-```
+The protocol and evaluation remain unchanged. New diagnostics do not change
+production code or defaults. No dependency installation, commit or push was
+performed. The control runner was retired on 2026-10-17; recover it from git
+history at commit 5c554bc5 to rerun the control.
 
 The Vandermonde application command is:
 

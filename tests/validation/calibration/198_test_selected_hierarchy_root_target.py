@@ -2,9 +2,16 @@ from __future__ import annotations
 
 import pytest
 
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_geometry_covariates import (
+    run_selected_hierarchy_geometry_covariate_study,
+)
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     SelectedSiblingRecord,
     _choose_observed_target,
+    run_selected_hierarchy_null_audit,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_stratification_diagnostic import (
+    run_selected_hierarchy_stratification_diagnostic,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.types.sibling_pair_record import (
     SiblingPairRecord,
@@ -48,3 +55,18 @@ def test_root_target_is_not_substituted_by_the_largest_open_parent() -> None:
     with pytest.raises(ValueError, match="no root sibling record"):
         _choose_observed_target("case", records, target_mode="root")
     assert _choose_observed_target("case", records, target_mode="non_root_strongest").parent == "N1"
+
+
+def test_empty_case_names_are_rejected_instead_of_running_the_full_suite(tmp_path) -> None:
+    common = {"case_names": [], "output_dir": tmp_path / "out", "n_replicates": 1, "seed": 0}
+    runs = (
+        lambda: run_selected_hierarchy_null_audit(
+            **common, target_mode="root", context_match="exact"
+        ),
+        lambda: run_selected_hierarchy_geometry_covariate_study(**common),
+        lambda: run_selected_hierarchy_stratification_diagnostic(**common),
+    )
+    for run in runs:
+        with pytest.raises(ValueError, match="case_names must not be empty"):
+            run()
+    assert not (tmp_path / "out").exists()

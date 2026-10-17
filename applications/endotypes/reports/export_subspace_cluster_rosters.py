@@ -38,7 +38,7 @@ from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
     protein_label,
     representative_genes_for_cluster,
 )
-from benchmarks.diagnostics.calibration.values import finite_float
+from benchmarks.shared.util.values import finite_float
 
 COPY_ARTIFACTS = {
     "cluster_assignments": "cluster_assignments.csv",

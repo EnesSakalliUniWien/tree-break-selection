@@ -2,11 +2,10 @@
 title: Selected Edge Binary Categorical Pilot 2026-06-04
 type: source
 status: reviewed
-updated: 2026-06-04
+updated: 2026-10-17
 sources:
   - benchmarks/validation/statistics/selected_edge_type1_geometry.py
   - benchmarks/cloud/aws_selected_edge_type1_geometry.py
-  - benchmarks/diagnostics/analysis/selected_edge_geometry_analysis.py
   - raw/assets/benchmark-results/selected-edge-type1-binary-categorical-pilot-20260604/merged/aws_selected_edge_geometry_manifest.json
   - raw/assets/benchmark-results/selected-edge-type1-binary-categorical-pilot-20260604/merged/selected_edge_geometry_edges.csv
   - raw/assets/benchmark-results/selected-edge-type1-binary-categorical-pilot-20260604/merged/selected_edge_geometry_siblings.csv
@@ -74,6 +73,9 @@ of Fargate compute before small storage and logging charges.
   records final decomposition status and strict support failures.
 - `raw/assets/benchmark-results/selected-edge-type1-binary-categorical-pilot-20260604/merged/selected_edge_geometry_models.csv`
   records descriptive candidate-law outputs.
+- `selected_edge_geometry_models.csv` came from
+  `benchmarks/diagnostics/analysis/selected_edge_geometry_analysis.py`, retired
+  on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

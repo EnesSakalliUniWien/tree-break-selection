@@ -22,19 +22,19 @@ from scipy import stats
 
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
-    _build_tree,
-    _selected_cases,
-    _simulate_null_data,
+    build_selected_hierarchy_tree,
+    simulate_null_data,
 )
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_stratification_diagnostic import (
-    _parent_size_bin,
+    parent_size_bin,
 )
 from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
     effective_rank,
 )
-from benchmarks.diagnostics.calibration.values import parse_csv_list
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import parse_csv_list
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -688,7 +688,7 @@ def _selected_geometry_rows(
             "parent_depth": int(node_depths[record.parent]),
             "parent_sample_size": int(record.n_parent),
             "parent_size_fraction": parent_size_fraction,
-            "parent_size_bin": _parent_size_bin(parent_size_fraction),
+            "parent_size_bin": parent_size_bin(parent_size_fraction),
             "left_child_sample_size": left_sample_size,
             "right_child_sample_size": right_sample_size,
             "child_balance": child_balance,
@@ -741,7 +741,7 @@ def _run_geometry_sample(
     case_id: str,
     replicate_index: int,
 ) -> GeometryStudySample:
-    tree, tree_metric = _build_tree(data, metadata)
+    tree, tree_metric = build_selected_hierarchy_tree(data, metadata)
     tree.populate_node_divergences(data, feature_space=feature_space)
     edge_df, spectral_context = annotate_child_parent_divergence(
         tree,
@@ -819,7 +819,7 @@ def _diagnose_case(
     tree_metric = ""
 
     for replicate_index in range(int(n_replicates)):
-        simulated = _simulate_null_data(inputs.data, feature_space, rng=rng)
+        simulated = simulate_null_data(inputs.data, feature_space, rng=rng)
         sample = _run_geometry_sample(
             data=simulated,
             metadata=inputs.metadata,
@@ -1805,6 +1805,8 @@ def run_selected_hierarchy_geometry_covariate_study(
     write_selected_records: bool = False,
 ) -> dict[str, pd.DataFrame]:
     """Run the selected-hierarchy geometry covariate diagnostic."""
+    if not case_names:
+        raise ValueError("case_names must not be empty.")
     if n_replicates <= 0:
         raise ValueError("n_replicates must be positive.")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1812,7 +1814,7 @@ def run_selected_hierarchy_geometry_covariate_study(
 
     record_tables: list[pd.DataFrame] = []
     case_summaries: list[dict[str, object]] = []
-    for index, case in enumerate(_selected_cases(case_names), start=1):
+    for index, case in enumerate(select_cases(suite="full", case_names=case_names), start=1):
         print(f"[{index}/{len(case_names)}] {case['name']}", flush=True)
         try:
             records, case_summary = _diagnose_case(

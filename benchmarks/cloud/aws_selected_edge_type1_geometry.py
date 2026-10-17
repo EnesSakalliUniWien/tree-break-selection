@@ -20,11 +20,11 @@ from benchmarks.cloud.sharding import (
     write_json,
 )
 from benchmarks.shared.env import resolve_aws_batch_shard_index
+from benchmarks.shared.util.values import parse_csv_list
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     DEFAULT_EDGE_ALPHA_GRID,
     DEFAULT_MODES,
     SelectedEdgeGeometryConfig,
-    parse_names,
     run_selected_edge_geometry_for_replicates,
     validate_modes,
 )
@@ -220,8 +220,8 @@ def _configured_from_args(args: argparse.Namespace) -> AwsSelectedEdgeGeometryCo
     return AwsSelectedEdgeGeometryConfig(
         output_dir=args.output_dir,
         suite=str(args.suite),
-        case_names=parse_names(args.case_names),
-        modes=validate_modes(parse_names(args.modes)),
+        case_names=parse_csv_list(args.case_names),
+        modes=validate_modes(parse_csv_list(args.modes)),
         edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alpha=float(args.sibling_alpha),
         replicates=int(args.replicates),

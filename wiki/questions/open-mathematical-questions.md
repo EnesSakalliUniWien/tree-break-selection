@@ -2,7 +2,7 @@
 title: Open Mathematical Questions
 type: question
 status: reviewed
-updated: 2026-10-16
+updated: 2026-10-17
 sources:
   - reports/calibration_restoration_20260909/validation_protocol.md
   - manuscript/guides/full_method_logic_map.md
@@ -44,7 +44,6 @@ sources:
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_validation.csv
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_summary.csv
   - wiki/sources/recursive-method-followups-20260604.md
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
   - raw/assets/benchmark-results/sibling_null_weight_rule_validation_20260604/sibling_null_weight_rule_summary.csv
   - raw/assets/benchmark-results/sibling_projection_dimension_rule_grid_20260604/sibling_projection_dimension_rule_grid.csv
   - raw/assets/benchmark-results/mp_kmin_q14_q15_smoke_20260604/mp_kmin_contract_smoke.csv
@@ -70,7 +69,6 @@ sources:
   - wiki/sources/mnist-continuous-alpha-sweep-20260605.md
   - wiki/sources/selected-tail-promotion-gate-debug-20260605.md
   - wiki/sources/internal-calibration-q9-q10-q11-debug-20260605.md
-  - benchmarks/diagnostics/calibration/statistics/internal_support_threshold_validation.py
   - wiki/sources/mixed-internal-calibration-sweeps-20260605.md
   - raw/assets/benchmark-results/selected-edge-type1-pilot-20260604/merged/selected_edge_geometry_edges.csv
   - raw/assets/benchmark-results/selected-edge-type1-pilot-20260604/merged/selected_edge_geometry_final.csv
@@ -88,7 +86,6 @@ sources:
   - wiki/analyses/dimensional-gaussian-representation-diagnostic.md
   - wiki/analyses/manuscript-life-science-readiness.md
   - benchmarks/validation/contracts/method_constants_manifest.py
-  - benchmarks/validation/statistics/feature_covariance_calibration.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
@@ -853,10 +850,11 @@ assumption statement that treats the selected PCA rows as fixed, or a
 derivation/validation of the data-selected projection effect. This question is
 coupled to the Marchenko--Pastur dimension rule, the minimum spectral dimension
 floor, and the row set used to estimate the local spectral basis.
-The repository now includes a strict scaffold for this specific validation
+The repository included a strict scaffold for this specific validation
 target in
-`benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py`. That
-scaffold simulates a fixed-membership Gaussian sibling null while selecting the
+`benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py`
+(retired 2026-10-17; last present at commit 5c554bc5). That
+scaffold simulated a fixed-membership Gaussian sibling null while selecting the
 PCA rows and MP dimension from the same local null-whitened rows used by the
 contrast. It is intentionally not evidence for hierarchy construction,
 tree-selected sibling pairs, sibling FDR, traversal, or empirical-null
@@ -930,8 +928,9 @@ remaining mathematical question is validation and high-dimensional extension,
 not contract shape: high-cardinality categorical calibration, continuous
 finite-sample covariance behavior, and a validated low-rank or regularized
 continuous covariance model still need targeted simulation evidence.
-`benchmarks/validation/statistics/feature_covariance_calibration.py` now provides the
-strict evidence generator for the first two targets. Its current scope is the
+`benchmarks/validation/statistics/feature_covariance_calibration.py` (retired
+2026-10-17; last present at commit 5c554bc5) provided the
+strict evidence generator for the first two targets. Its scope was the
 local sibling-null Wald statistic in the full tangent space, so it does not
 close questions about selected PCA projections, MP dimension selection, sibling
 FDR, traversal, tree construction, empirical-null inflation, or high-dimensional
@@ -1903,8 +1902,8 @@ is only `0.16343`.
   fixed-subspace edge-opening boundary/action fields, edge/sibling
   z-relationship fields, and tie-cell status for discrete/nonsmooth
   representatives.
-- `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` defines
-  the selected-PCA projected-Wald validation scaffold.
+- `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` defined
+  the selected-PCA projected-Wald validation scaffold (retired 2026-10-17).
 - `wiki/analyses/selected-pca-projected-wald-validation.md` summarizes the
   first locked selected-PCA validation run and records the internal-row
   calibration failure.
@@ -2369,6 +2368,7 @@ is only `0.16343`.
   gate benchmark and the dispatch plumbing required to run the refined profile
   as a standard TBS benchmark parameter variant.
 - `benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
+- `benchmarks/validation/statistics/feature_covariance_calibration.py` and `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` were retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

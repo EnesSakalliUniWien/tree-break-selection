@@ -27,13 +27,13 @@ from benchmarks.diagnostics.calibration.traversal.production_admissibility_contr
     summarize_production_admissibility_contracts,
 )
 from benchmarks.shared.generators.generate_case_data import generate_case_data
+from benchmarks.shared.util.values import parse_csv_list
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _build_tree_from_data,
-    _case_contract,
-    _select_cases,
-    parse_names,
+    build_tree_from_data,
+    case_contract,
     regenerate_null_case,
 )
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     build_contrast_covariance,
 )
@@ -338,7 +338,7 @@ def _rows_for_replicate(
         data_role=data_role,
         seed=data_seed,
     )
-    tree = _build_tree_from_data(data)
+    tree = build_tree_from_data(data)
     tree.populate_node_divergences(data, feature_space=feature_space)
     rows: list[dict[str, object]] = []
     for parent in tree.nodes:
@@ -616,7 +616,7 @@ def run_data_independent_sibling_gate_panel(
         f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     )
     rows: list[dict[str, object]] = []
-    for case in _select_cases(suite=config.suite, case_names=config.case_names):
+    for case in select_cases(suite=config.suite, case_names=config.case_names):
         (
             case_id,
             source_family,
@@ -624,7 +624,7 @@ def run_data_independent_sibling_gate_panel(
             n_samples,
             n_features,
             n_categories,
-        ) = _case_contract(case)
+        ) = case_contract(case)
         if source_family not in {"binary_template", "categorical_multinomial"}:
             raise ValueError(
                 "Data-independent sibling gate V1 supports binary and direct "
@@ -737,15 +737,15 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse_args(argv)
     selected_topology_penalties = tuple(
-        float(value) for value in parse_names(args.selected_topology_penalties)
+        float(value) for value in parse_csv_list(args.selected_topology_penalties)
     )
     outputs = run_data_independent_sibling_gate_panel(
         DataIndependentSiblingGateConfig(
             output_dir=args.output_dir,
             suite=str(args.suite),
-            case_names=parse_names(args.case_names),
-            data_roles=validate_data_roles(parse_names(args.data_roles)),
-            candidate_methods=validate_candidate_methods(parse_names(args.candidate_methods)),
+            case_names=parse_csv_list(args.case_names),
+            data_roles=validate_data_roles(parse_csv_list(args.data_roles)),
+            candidate_methods=validate_candidate_methods(parse_csv_list(args.candidate_methods)),
             sibling_alpha=float(args.sibling_alpha),
             selected_topology_penalties=validate_selected_topology_penalties(
                 selected_topology_penalties
