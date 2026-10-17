@@ -2,7 +2,7 @@
 title: Independent Projection and Vandermonde Control
 type: source
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-17
 sources:
   - reports/independent_projection_vandermonde_20260928/README.md
   - reports/independent_projection_vandermonde_20260928/control_protocol.md
@@ -31,7 +31,7 @@ does not supply a unique lower-dimensional projection for this study.
 
 ## Key Points
 
-- A GPT-6 Astra agent implemented a cross of basis and rank data sources,
+- The control crossed basis and rank data sources,
   retaining all 10,000 original evaluation datasets and adding separate
   independent basis/rank training draws. All 486,000 rows completed.
 - At fixed rank one, same-data PCA rejects global-null roots 33/1000 and
@@ -61,7 +61,7 @@ The independent verifier regenerates 30,000 streams, matches 30,000 original
 node tests, checks all 486,000 chi-square calculations and 486 summary cells,
 and reproduces 1,944 NumPy projection/MP calculations. All 117 pre-frozen
 source hashes match after execution. Vandermonde has separate before/after
-hashes and guarded structural/reconstruction checks. The agent's read-only
+hashes and guarded structural/reconstruction checks. A read-only
 review also checked nonorthogonal exact controls. No production changes,
 dependency installation, commit or push occurred.
 

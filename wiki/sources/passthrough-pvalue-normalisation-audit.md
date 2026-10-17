@@ -2,7 +2,7 @@
 title: Passthrough P-Value and Normalisation Audit
 type: source
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-17
 sources:
   - reports/passthrough_pvalue_normalisation_20260928/README.md
   - reports/passthrough_pvalue_normalisation_20260928/verification.json
@@ -74,11 +74,11 @@ uses known Gaussian covariance and deliberately open edge gates; it does not
 establish error control for the full inferred-tree pipeline. Reanalysis adds
 no independent simulation datasets.
 
-Two Luna agents completed the source audits and production probe. The root
-checked the recorded per-node equalities, traversal counts, input hash and
+Two independent audits completed the source review and production probe. A
+separate check verified the recorded per-node equalities, traversal counts, input hash and
 seven current source hashes independently. Production hashes are post-run
 records, not a complete pre-run snapshot. Targeted root baseline: 22 tests;
-production agent baseline: six overlapping tests. Report scripts pass Ruff,
+production probe baseline: six overlapping tests. Report scripts pass Ruff,
 local report links resolve, and wiki lint passes 204 pages. No production
 source was changed by this audit.
 

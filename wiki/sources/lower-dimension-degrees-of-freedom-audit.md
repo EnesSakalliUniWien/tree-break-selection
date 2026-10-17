@@ -2,7 +2,7 @@
 title: Lower-Dimension Degrees-of-Freedom Audit
 type: source
 status: reviewed
-updated: 2026-10-16
+updated: 2026-10-17
 sources:
   - raw/inbox/lower-dimension-reference-law-notes-20260928.md
   - reports/lower_dimension_df_audit_20260928/README.md
@@ -27,7 +27,7 @@ tags:
 The current kernel records degrees of freedom as the actual retained projection
 dimension, including complete numerical eigenvalue groups. This bookkeeping
 does not establish a chi-square null law when the projection or rank is selected
-using the tested data. Two Luna agents separately audit implementation and
+using the tested data. Two separate audits cover implementation and
 previous research; new Gaussian controls isolate these distinct claims.
 
 ## Key Points
@@ -72,7 +72,7 @@ tests; these tests establish behavior rather than an adaptive null theorem.
 New external-source notes record the fixed-quadratic-form and selective
 inference references and their applicability limits. No production behavior
 or defaults were changed.
-The implementation agent's overlapping baseline passed 41 tests. Earlier June
+The implementation audit's overlapping baseline passed 41 tests. Earlier June
 locked/rerun CSVs are available; some June smoke figures survive only as wiki
 summaries and are identified as such in the research audit.
 

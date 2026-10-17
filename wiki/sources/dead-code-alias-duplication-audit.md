@@ -2,7 +2,7 @@
 title: Dead Code Alias and Duplication Audit
 type: source
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-17
 sources:
   - reports/dead_code_alias_duplication_20260928/README.md
   - reports/dead_code_alias_duplication_20260928/audit_commands.json
@@ -23,7 +23,7 @@ tags:
 
 ## Summary
 
-One cavecrew investigator identified and verified existing repository tools
+The audit identified and verified existing repository tools
 before auditing dead code, aliases and duplication. Configured deptry, Vulture
 and Ruff checks passed. Supplemental static analysis found one repository-
 unused private helper and two actionable groups of live duplicate helpers.
@@ -59,8 +59,8 @@ constants directly, preserving defaults and output columns.
 ## Evidence
 
 The report retains exact configured commands, versions, exit codes, outputs,
-the supplemental AST algorithm description and candidates. The coordinating
-agent verified retained locations and usages. This is a bounded static audit,
+the supplemental AST algorithm description and candidates. Retained
+locations and usages were verified. This is a bounded static audit,
 not a whole-program reachability proof or an exhaustive alias census.
 The removal follow-up passed three focused tests, changed-file Ruff, import/
 default/schema checks and AST comparison against the pre-edit source; no

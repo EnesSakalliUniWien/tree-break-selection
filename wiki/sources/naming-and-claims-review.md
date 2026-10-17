@@ -2,7 +2,7 @@
 title: Naming and Claims Review
 type: source
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-17
 sources:
   - reports/naming_claims_review_20260928/README.md
   - reports/naming_claims_review_20260928/fixes.md
@@ -24,10 +24,10 @@ tags:
 
 ## Summary
 
-Three Luna agents reviewed statistical names, geometry/solver names and
-documentation claims. The coordinating agent verified seven actionable
-mismatches against implementations and callers. The subsequent user-authorized
-Sol/cavecrew work addressed all seven through clarified descriptions, plot
+Three reviews covered statistical names, geometry/solver names and
+documentation claims. Seven actionable mismatches were verified against
+implementations and callers. The subsequent user-authorized
+corrections addressed all seven through clarified descriptions, plot
 labels and metadata. Numerical formulas and existing API identifiers remain
 unchanged; the original review is explicitly marked as the pre-fix snapshot.
 

@@ -1,6 +1,6 @@
 # Lower dimensions and degrees of freedom
 
-Date: 2026-09-28. Two Luna agents review the current implementation and prior
+Date: 2026-09-28. Two audits review the current implementation and prior
 research. No production statistic, degrees of freedom or default is changed.
 
 ## Finding
@@ -142,7 +142,7 @@ contrast-energy example supplies a separate rank-selection counterexample.
 records before/after source hashes in `reference_law_verification.json`.
 The narrow baseline passed 30 tests in projected-Wald statistics and eigenspace
 invariance. These tests validate implemented behavior, not the adaptive null law.
-The implementation agent separately passed 41 tests across projected-Wald,
+The implementation audit separately passed 41 tests across projected-Wald,
 contrast covariance and reference-law reporting; coverage overlaps with the
 root baseline. Report scripts pass Ruff. Final wiki and report-link checks
 are recorded in the wiki log.

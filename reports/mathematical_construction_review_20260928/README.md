@@ -5,7 +5,7 @@ This is the review snapshot **before** the subsequent
 Its original numerical results and hashes remain preserved. The follow-up records
 which findings were repaired and which mathematical questions remain open.
 
-Three agents reviewed eigenvector geometry, calibration, and documentation/module reachability. The coordinating agent independently reproduced the numerical findings. **The construction has real basis-invariance defects and unresolved selected-calibration questions. Missing left eigenvectors of the current symmetric operators is not the explanation.**
+Three reviews covered eigenvector geometry, calibration, and documentation/module reachability. A separate probe independently reproduced the numerical findings. **The construction has real basis-invariance defects and unresolved selected-calibration questions. Missing left eigenvectors of the current symmetric operators is not the explanation.**
 
 This reviews the working tree at commit `f34f59cacd09b19c34fafa3a4a6e783dd3973f72`, including the existing uncommitted adaptive-cosine tie fix. Production code was not changed. Existing benchmark work was preserved. The results below distinguish demonstrated defects, model choices needing a contract, and questions requiring new statistical evidence.
 
@@ -175,7 +175,7 @@ For the earlier [11-case eigenvalue-block comparison](/Users/berksakalli/Project
 
 ## Verification and scope
 
-The agents passed **184 existing targeted tests** across eigendecomposition, diffusion, GO loadings, Wald/reference calculations, empirical inflation, covariance, traversal, branch lengths and selected-Gaussian replay. The coordinating probe independently reproduced all five numerical defects/edge cases and the dense-whitening observation. Passing existing tests therefore exposes missing adversarial coverage rather than disproving the counterexamples.
+**184 existing targeted tests** passed across eigendecomposition, diffusion, GO loadings, Wald/reference calculations, empirical inflation, covariance, traversal, branch lengths and selected-Gaussian replay. The coordinating probe independently reproduced all five numerical defects/edge cases and the dense-whitening observation. Passing existing tests therefore exposes missing adversarial coverage rather than disproving the counterexamples.
 
 Commands, all with `.venv/bin/python -m pytest -q -p no:cacheprovider`:
 

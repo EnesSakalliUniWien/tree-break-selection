@@ -2,7 +2,7 @@
 title: GO Annotation Feature-Matrix Pipeline
 type: tool
 status: reviewed
-updated: 2026-06-23
+updated: 2026-10-17
 sources:
   - applications/endotypes/pipelines/run_go_annotation_feature_matrix_pipeline.py
   - applications/endotypes/analysis/inventory_go_annotation_datasets.py
@@ -227,7 +227,7 @@ internally enriched.
   cluster meaningfulness calls, eigenband coherence calls, size-preserving null
   partition summaries, and top/weak cluster examples.
 - `scripts/rest_request.py` is the compact REST helper used for QuickGO and
-  UniProt requests following the life-science research plugin skill contract.
+  UniProt requests.
 - `applications/endotypes/analysis/audit_go_annotation_analysis_levels.py` classifies existing
   result roots by file signals such as matrix-quality summaries, assignment
   files, GO-IC rankings, method-split PDFs, connected manifests, subspace

@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-17
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -64,10 +64,10 @@ renamed, or promoted.
 - [[branch-distribution-variance-benchmark]] - matched internal-distribution and
   branch-variance comparison, discovery-only compatibility, and the distinct
   effects on node p-values, calibration support and final partitions.
-- [[dead-code-alias-duplication-audit]] - tool-first single-agent audit; one
+- [[dead-code-alias-duplication-audit]] - tool-first static audit; one
   unused private helper, live duplicate helpers and subsequent removal of
   three aliases in favor of their original constants.
-- [[naming-and-claims-review]] - three Luna reviews and Sol/cavecrew corrections
+- [[naming-and-claims-review]] - three reviews and follow-up corrections
   to independence, calibration, PCA labels, NNLS units and diffusion provenance.
 - [[independent-diffusion-nnls-benchmark]] - discovery-only diffusion/NNLS with
   independent Gaussian testing; matched benchmarks separate changed branch
@@ -667,7 +667,7 @@ renamed, or promoted.
 
 ### Analyses
 
-- [[eigenvector-calibration-construction-review]] - three-agent review of
+- [[eigenvector-calibration-construction-review]] - three-part review of
   repeated-eigenspace truncation, adaptive Wald rank, principal angles,
   left/right pairs, dense whitening, documentation conflicts and unused modules,
   with the subsequent verified rank-group repair and remaining calibration gaps.

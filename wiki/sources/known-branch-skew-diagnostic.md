@@ -2,7 +2,7 @@
 title: Known-Branch Skew Diagnostic
 type: source
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-17
 sources:
   - raw/inbox/recursive-method-program-20260604.txt
   - benchmarks/diagnostics/calibration/sibling/known_branch_skew_diagnostic.py
@@ -78,7 +78,7 @@ splits, pass-through decisions and unavailable denominators are preserved.
 wiki validation. No production method or default was modified for this
 diagnostic. No commit or push was made.
 
-A subsequent requested Luna-agent passthrough benchmark reran the same 10,000
+A subsequent requested passthrough benchmark reran the same 10,000
 datasets with enabled/disabled traversal. Its independent audit reconstructed
 all 20,000 outcomes, verified identical local tests within each pair, matched
 the earlier traversal rows exactly, and matched 17 source hashes captured

@@ -2,7 +2,7 @@
 title: Eigenvector Geometry and Calibration Construction Review
 type: analysis
 status: reviewed
-updated: 2026-09-28
+updated: 2026-10-17
 sources:
   - reports/mathematical_construction_review_20260928/README.md
   - reports/mathematical_construction_review_20260928/reproduce_findings.py
@@ -29,7 +29,7 @@ tags:
 
 ## Summary
 
-The 2026-09-28 three-agent review found basis-invariance defects in diffusion
+The 2026-09-28 three-part review found basis-invariance defects in diffusion
 and local PCA truncation, an optional adaptive Wald rank rule with an invalid
 fixed-rank reference, an unequal-rank principal-angle diagnostic error, and a
 Hamming self-neighbor edge case. Missing separate left eigenvectors of the
@@ -147,7 +147,7 @@ errors are now repaired in live source and their regressions passed.
   vectorized null experiment with 128 actual kernel calls.
 - `reports/mathematical_construction_review_20260928/findings.json` contains
   exact results, seeds, versions and all illustrative left/right angle matrices.
-- Agents passed 184 existing targeted tests; those tests miss the reproduced
+- 184 existing targeted tests passed; those tests miss the reproduced
   basis-rotation/permutation failures. Vulture exited zero without findings.
 - The original review did not rerun the eigenvalue-block benchmark. The later
   reassessment supplies matched reruns and independent calibration evidence,

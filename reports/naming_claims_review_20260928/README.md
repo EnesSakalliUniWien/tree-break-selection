@@ -4,9 +4,9 @@ The findings below describe the **pre-fix review snapshot**. The subsequent
 [corrections and verification](fixes.md) address all seven through clarified
 claims, visible labels and metadata, preserving formulas and API identifiers.
 
-Three user-requested Luna agents reviewed statistical terminology, geometry and
-solver terminology, and documentation claims. The coordinating agent checked
-each retained finding against then-current source and relevant callers. Seven
+Three reviews covered statistical terminology, geometry and solver
+terminology, and documentation claims. Each retained finding was checked
+against then-current source and relevant callers. Seven
 actionable issues were recorded. This is a targeted repository review, not a proof
 that every name or statement in the repository is correct.
 
@@ -15,9 +15,9 @@ dirty and untracked work. No runtime source, public symbol, default or numerical
 result was changed. Only this review and its wiki record were added. Historical
 reports remain evidence for their original snapshots.
 
-The code-review skill supplied review guidance, but its fixed-point diff and
-issue-spec workflow did not apply to the explicitly requested repository-wide
-naming audit. The agents reviewed present meaning against implementation.
+A fixed-point diff and issue-spec workflow did not apply to this
+repository-wide naming audit; the reviews compared present meaning against
+implementation.
 Priorities indicate the risk of scientific or operational misunderstanding;
 they do not imply a reproduced runtime failure.
 

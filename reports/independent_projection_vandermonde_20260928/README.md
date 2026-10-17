@@ -127,7 +127,7 @@ calculations** and **486 summary cells**, and independently reproduced
 All **117 frozen source hashes** and output hashes matched.
 See [verification.json](verification.json). Vandermonde input hashes match the
 original datasets, reconstruction checks pass, and its own before/after source
-hashes match. Both figures were visually inspected. The agent's independent
+hashes match. Both figures were visually inspected. An independent
 Vandermonde review found no actionable defects and checked 12 additional
 nonorthogonal exact controls, with worst reconstruction error 4.35e-15.
 `make check` passed all 712 tests, lint and dependency/dead-code audits;

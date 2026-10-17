@@ -6,12 +6,10 @@ function names and data-column names are preserved. Retained PCA identifiers
 are explicitly documented as operational labels, not transformation claims.
 These corrections do not establish a new statistical calibration guarantee.
 
-The user requested Sol with appropriate reasoning effort and the cavecrew
-skill. A Sol agent at high effort performed a two-file cavecrew-builder task
-for diffusion provenance and NNLS target metadata. The coordinating agent
-handled the connected documentation, captions and existing tests. The same Sol
-agent reviewed the combined changes using the cavecrew-reviewer format; this
-was not an independent review of its own two-file implementation.
+A two-file change added diffusion provenance and NNLS target metadata; the
+connected documentation, captions and existing tests were updated alongside
+it. The combined changes were reviewed by the same author, so this was not an
+independent review of the two-file implementation.
 
 ## Resolution by finding
 
@@ -53,7 +51,7 @@ while new exports describe which implementation supplied the coordinates.
   adaptive diffusion, branch-time integration and independent Gaussian tests.
   Existing tests now check normalization metadata against numerical target
   properties and verify that coordinates come from the reported helper.
-- The Sol agent compared two NNLS fits against the pre-edit snapshot: four
+- Two NNLS fits were compared against the pre-edit snapshot: four
   leaves, three features including one constant, both target metrics. All
   preexisting result fields except execution time and all fitted edge lengths
   were exactly equal. One seed-42 adaptive diffusion case, 16 by 4 normal

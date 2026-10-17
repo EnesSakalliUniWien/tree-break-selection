@@ -1,6 +1,6 @@
 # Passthrough, p-values, and normalisation
 
-Date: 2026-09-28. Two Luna agents independently audit normalisation and the
+Date: 2026-09-28. Two independent audits cover normalisation and the
 p-value/clustering relationship. This report adds diagnostics; it does not
 change production methods or defaults.
 
@@ -158,22 +158,22 @@ variance blocks need not remove cross-feature correlation, and nonzero ridge
 applied before versus after sample-size covariance scaling can give different
 whitening coordinates. Together with same-data tree/basis/rank selection,
 these require controlled calibration; they cannot be repaired by rescaling
-observed p-values after traversal. The normalization agent's report gives the
+observed p-values after traversal. `normalisation_audit.md` gives the
 exact source locations and applicability limits.
 
 ## Evidence and scope
 
 - `audit_observed_pvalues.py`: independent BH reconstruction and paired audit
   of the cached three-node Gaussian benchmark.
-- `normalisation_audit.md`: normalisation/data-flow agent's source audit.
-- `pvalue_audit.md`: p-value/clustering agent's source audit and production probe.
+- `normalisation_audit.md`: normalisation/data-flow source audit.
+- `pvalue_audit.md`: p-value/clustering source audit and production probe.
 - Prior evidence: `../passthrough_benchmark_20260928/README.md` and
   `../independent_projection_vandermonde_20260928/README.md`.
 
 The Gaussian study fixes the tree and known covariance and deliberately opens
 edge prerequisites. It does not establish general error control for inferred
 trees, diffusion geometry, empirical inflation or categorical observations.
-The targeted baseline passed 22 tests. The production agent's separate baseline
+The targeted baseline passed 22 tests. The production probe's separate baseline
 passed six tests (overlapping coverage, not 28 distinct tests). Root inspection
 of the production CSV independently verified all before/after annotation fields
 named for p-values, traversal counts, and the recorded input plus seven current

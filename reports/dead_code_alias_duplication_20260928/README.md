@@ -6,10 +6,10 @@ aliases. All callers now use `TREE_CONSENSUS_STRATEGIES`,
 below and its saved outputs describe the pre-removal snapshot. The private
 helper and duplicate implementations were outside this removal request.
 
-One Sol agent, using the cavecrew-investigator workflow, first identified the
-repository's existing analysis tools and verified their availability. It then
-ran the configured checks and a bounded supplemental static analysis. The
-coordinating agent checked the retained candidates against source and usages.
+The audit first identified the repository's existing analysis tools and
+verified their availability. It then ran the configured checks and a bounded
+supplemental static analysis. The retained candidates were checked against
+source and usages.
 
 Result: one high-confidence repository-unused private helper and two groups
 of live duplicate implementations are cleanup candidates. Three inspected

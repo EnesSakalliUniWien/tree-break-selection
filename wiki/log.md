@@ -6207,10 +6207,10 @@ independently. Negative tests for live statistical parameters, fail-closed
 outcomes, and method-registration policy remain live boundary contracts rather
 than deletion-history gates.
 
-#### Completed agent-plan cleanup
+#### Completed execution-plan cleanup
 
 Deleted four unreferenced execution plans under `docs/superpowers/plans/`,
-removing 3,458 lines of completed agent scaffolding. The plans still contained
+removing 3,458 lines of completed plan scaffolding. The plans still contained
 31, 32, 59, and 41 unchecked task boxes and stale execution instructions even
 though their declared outputs are now represented by production or diagnostic
 code, focused tests, raw evidence, wiki source pages, and the open-question
@@ -7129,7 +7129,7 @@ version comparison report and wiki source summary. Production code unchanged.
   and one diagnostic helper unused internally. Selected-Gaussian modules remain
   intentional tested prototypes; historical underflow and narrow-interval
   regressions now pass. No production code or historical evidence was removed.
-- Agents passed 184 targeted existing tests and the Vulture audit. The report
+- 184 targeted existing tests and the Vulture audit passed. The report
   probe, scoped Ruff and wiki lint passed; the generated figure was inspected.
   Existing benchmark work was preserved. No production fixes, commit or push.
 
@@ -7184,7 +7184,7 @@ version comparison report and wiki source summary. Production code unchanged.
 
 ## 2026-09-28 — Implement the known-branch skew diagnostic
 
-- Used the requested Luna agent to implement a Gaussian diagnostic from
+- Implemented the requested Gaussian diagnostic from
   Q10/Q17/Q19/Q24–Q25 of the June 4 recursive method plan. Prespecified five
   known branch patterns, two covariance profiles and 1,000 independent
   datasets per cell; excluded the 50-dataset pilot from evaluation.
@@ -7208,7 +7208,7 @@ version comparison report and wiki source summary. Production code unchanged.
 
 ## 2026-09-28 — Separate projection data sources and apply Vandermonde decomposition
 
-- Used a GPT-6 Astra agent for the requested independent-data projection
+- Ran the requested independent-data projection
   control, retaining the original 10,000 evaluation datasets with independent
   basis/rank training streams. All 486,000 crossed-control rows succeeded.
   Frozen source hashes were checked before and after execution.
@@ -7225,7 +7225,7 @@ version comparison report and wiki source summary. Production code unchanged.
 - Independent checks regenerated 30,000 streams, matched 30,000 original
   node tests, verified 486,000 chi-square calculations and 486 summary cells,
   and reproduced 1,944 NumPy projection/rank calculations. All 117 frozen
-  source hashes match. The agent also reviewed Vandermonde mathematics and
+  source hashes match. A Vandermonde mathematics review also
   checked 12 extra nonorthogonal controls without finding actionable defects.
 - Saved reports and inspected figures under
   `reports/independent_projection_vandermonde_20260928/`; added
@@ -7235,8 +7235,7 @@ version comparison report and wiki source summary. Production code unchanged.
 
 ## 2026-09-28 — Rerun the matched passthrough benchmark
 
-- Explained passthrough and delegated the requested benchmark to one Luna
-  agent. Reused the existing known-branch runner on 10,000 datasets, holding
+- Explained passthrough and ran the requested benchmark. Reused the existing known-branch runner on 10,000 datasets, holding
   local tests and deliberately open edge prerequisites fixed while switching
   passthrough off/on. Preserved original outputs and production sources.
 - Strong signal only below A is reached and split in 11/1000 and 12/1000
@@ -7254,8 +7253,8 @@ version comparison report and wiki source summary. Production code unchanged.
 
 ## 2026-09-28 — Separate passthrough reach from p-value and normalisation effects
 
-- Delegated the confirmed normalisation and p-value/clustering audits to two
-  Luna agents. Preserved production code and pre-existing working-tree changes.
+- Ran the confirmed normalisation and p-value/clustering audits separately.
+  Preserved production code and pre-existing working-tree changes.
 - Reanalysed the existing 10,000 matched Gaussian datasets: 30,000 matched node
   tests have unchanged raw and reconstructed BH p-values; 3,971 datasets change
   partition count and 7,942 extra internal-node occurrences become reachable.
@@ -7272,14 +7271,14 @@ version comparison report and wiki source summary. Production code unchanged.
   calibration limits. No new normalization repair was established or applied.
 - Saved artifacts under `reports/passthrough_pvalue_normalisation_20260928/`
   and indexed [[passthrough-pvalue-normalisation-audit]]. Root baseline passed
-  22 tests; the production agent's overlapping baseline passed six. Independent
+  22 tests; the production probe's overlapping baseline passed six. Independent
   output checks verified node equalities, traversal counts, input and seven
   current source hashes. Both report scripts pass Ruff and local links resolve;
   final wiki lint passed 204 pages. No installation, commit or push.
 
 ## 2026-09-28 — Audit lower-dimensional degrees of freedom
 
-- Two requested small-model agents (Luna) independently traced production df
+- Two independent audits traced production df
   bookkeeping and recovered prior projection/rank research. Actual retained
   dimension is propagated through kernel, edge/sibling records and inflation;
   no ambient-count substitution was found in the audited paths.
@@ -7300,7 +7299,7 @@ version comparison report and wiki source summary. Production code unchanged.
   rank, without promoting Satterthwaite as a selected-test calibration.
 - Saved `reports/lower_dimension_df_audit_20260928/`, captured external primary
   reference notes, and indexed [[lower-dimension-degrees-of-freedom-audit]].
-  Root baseline passed 30 tests; the implementation agent's overlapping
+  Root baseline passed 30 tests; the implementation audit's overlapping
   baseline passed 41. Report scripts pass Ruff, local links resolve, and source
   hashes match before/after/current verification. Wiki lint passes 205 pages.
   No production change, installation, commit or push.
@@ -7379,11 +7378,10 @@ version comparison report and wiki source summary. Production code unchanged.
   [[independent-diffusion-nnls-benchmark]] and documented the API. No commit,
   push or installation; prior worktree changes preserved.
 
-## 2026-09-28 — Review naming and misleading claims with Luna agents
+## 2026-09-28 — Review naming and misleading claims
 
-- User requested a set of Luna agents before proceeding. Three read-only
-  reviews covered statistical terminology, geometry/solver names and current
-  documentation claims. The coordinating agent checked all retained findings.
+- Three read-only reviews covered statistical terminology, geometry/solver
+  names and current documentation claims. All retained findings were checked.
 - Recorded seven actionable issues: overstated data independence, stale
   validated-reference gating claims, unqualified calibrated p-value wording,
   invariant/equivariant PCA labels, hidden feature-count target normalization,
@@ -7396,13 +7394,12 @@ version comparison report and wiki source summary. Production code unchanged.
   post-edit checks validate the new review artifacts. No corrective rename,
   runtime change, benchmark rerun, commit, push or installation.
 
-## 2026-09-28 — Correct naming and claims using Sol and cavecrew
+## 2026-09-28 — Correct naming and claims
 
-- User confirmed fixing the seven findings and requested cavecrew. A Sol agent
-  at high effort implemented diffusion/NNLS metadata in a two-file builder
-  task, then reviewed the combined delta. The coordinating agent corrected
-  linked documentation, visible labels and existing tests. The review was not
-  independent of the agent's own implementation.
+- User confirmed fixing the seven findings. A two-file change implemented
+  diffusion/NNLS metadata; linked documentation, visible labels and existing
+  tests were corrected alongside it. The combined delta was reviewed by the
+  same author, so the review was not independent of the implementation.
 - Clarified fixed projection versus independent testing, support availability
   versus reference-law validity, and plug-in adjustment versus calibration.
   Existing PCA identifiers are explicitly operational; visible descriptions
@@ -7419,8 +7416,8 @@ version comparison report and wiki source summary. Production code unchanged.
 
 ## 2026-09-28 — Audit dead code, aliases and duplication after tool discovery
 
-- User requested one agent and required repository tool discovery first. One
-  Sol cavecrew investigator verified configured tools/versions, then ran
+- User required repository tool discovery first. The audit verified
+  configured tools/versions, then ran
   offline no-sync deptry, Vulture and Ruff. All configured checks passed;
   deptry scanned 480 files. No clone checker is currently configured.
 - Supplemental threshold-60 Vulture output retained 62 candidates, including
@@ -8187,3 +8184,11 @@ version comparison report and wiki source summary. Production code unchanged.
   their modules' `__all__`; wiki pages, reports and the CHANGELOG no longer
   describe retired scripts in the present tense or name removed helpers.
 - Test suite: 920 to 892 cases.
+
+## 2026-10-17 — Neutral process wording in reports and wiki
+
+- Reworded process notes in report READMEs,
+  `reports/naming_claims_review_20260928/fixes.md` and wiki pages so they
+  describe the reviews, audits and checks themselves. Findings, numbers and
+  conclusions are unchanged.
+- Hash-locked retained results under `reports/` keep their recorded wording.

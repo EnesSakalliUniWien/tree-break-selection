@@ -108,7 +108,7 @@ replaces working-tree source files.
 
 The actual invocation, environment overrides, start/end times and exit code are
 in `invocation.json`; all runner output is retained in `run.log`. Inference wall
-time was 915.9 seconds. Concurrent agent work
+time was 915.9 seconds. Other concurrent work
 means this is not a controlled speed comparison. The existing benchmark command
 creates its output directory and refuses to overwrite an earlier run:
 
