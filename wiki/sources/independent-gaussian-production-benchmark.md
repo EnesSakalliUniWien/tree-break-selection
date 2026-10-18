@@ -1,12 +1,9 @@
 ---
 title: Independent Gaussian Production Benchmark
 type: source
-status: reviewed
-updated: 2026-09-28
+status: deprecated
+updated: 2026-10-18
 sources:
-  - tree_break_selection/hierarchy_analysis/statistics/independent_gaussian.py
-  - tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/energy_selected_reference.py
-  - tests/statistics/56_test_independent_gaussian_reference.py
   - reports/production_pvalue_replacement_20260928/README.md
   - reports/production_pvalue_replacement_20260928/protocol.md
   - reports/production_pvalue_replacement_20260928/evaluation/manifest.json
@@ -28,6 +25,8 @@ known common covariance and independent rows. Conditional energy p-values
 replace nominal adaptive-rank tails before both edge and sibling corrections;
 no empirical inflation is fitted. Ordinary single-matrix calls lack these
 inputs and retain their existing behavior.
+
+The API was removed on 2026-10-18: nothing outside tests and the report scripts called it. The report evidence stays, but its scripts no longer run against current code.
 
 ## Key Points
 

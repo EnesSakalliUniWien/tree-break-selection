@@ -10,9 +10,11 @@ required independent measurements and known covariance.
 
 ## Production entry points and data flow
 
-- [`independent_gaussian.py`](../../tree_break_selection/hierarchy_analysis/statistics/independent_gaussian.py)
+- `tree_break_selection/hierarchy_analysis/statistics/independent_gaussian.py`
+  (removed 2026-10-18; last present at commit 8415ca8a)
   contains `fit_independent_gaussian_tree` and `test_independent_gaussian_tree`.
-- [`energy_selected_reference.py`](../../tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/energy_selected_reference.py)
+- `tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/energy_selected_reference.py`
+  (removed 2026-10-18; last present at commit 8415ca8a)
   evaluates the conditional energy-selected reference, including complete
   numerical eigenvalue groups and more than two candidate dimensions.
 

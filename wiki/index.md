@@ -73,10 +73,11 @@ renamed, or promoted.
   to independence, calibration, PCA labels, NNLS units and diffusion provenance.
 - [[independent-diffusion-nnls-benchmark]] - discovery-only diffusion/NNLS with
   independent Gaussian testing; matched benchmarks separate changed branch
-  geometry from unchanged known-covariance p-values.
+  geometry from unchanged known-covariance p-values; API removed 2026-10-18.
 - [[independent-gaussian-production-benchmark]] - production discovery/test
   separation with known Gaussian covariance, conditional energy p-values and
-  matched eight-tree benchmarks; single-matrix and unsupported cases remain explicit.
+  matched eight-tree benchmarks; single-matrix and unsupported cases remain
+  explicit; API removed 2026-10-18.
 - [[distribution-equation-fitting-comparison]] - recovers ratio-fitting methods
   and compares nominal, independently fitted and exact conditional Gaussian
   distributions, with Wolfram checks and explicit full-pipeline limits.

@@ -2,7 +2,7 @@
 title: Diffusion NNLS Calibration Open Points
 type: question
 status: draft
-updated: 2026-09-28
+updated: 2026-10-18
 sources:
   - reports/calibration_restoration_20260909/false_split_definition.md
   - reports/calibration_restoration_20260909/validation_protocol.md
@@ -36,6 +36,7 @@ because fitted lengths have no role in this covariance model. This supplies
 a restricted independent-data control; it does not close the binary selected-
 tree, fitted-covariance or whole-tree error-control questions below. Its
 40-dimensional conditional root tail still has 6/250 rejections at cutoff .01.
+The independent Gaussian API it evaluated was removed on 2026-10-18.
 
 The empirical calibration rule is restored and benchmark recovery is recorded
 in [[calibration-rule-restoration-20260909]]. The frozen 2026-09-28 reassessment

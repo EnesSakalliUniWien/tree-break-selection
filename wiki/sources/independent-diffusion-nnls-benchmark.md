@@ -1,11 +1,9 @@
 ---
 title: Independent Diffusion NNLS Benchmark
 type: source
-status: reviewed
-updated: 2026-09-28
+status: deprecated
+updated: 2026-10-18
 sources:
-  - tree_break_selection/hierarchy_analysis/statistics/independent_gaussian.py
-  - tests/statistics/57_test_independent_gaussian_diffusion_nnls.py
   - reports/independent_diffusion_nnls_20260928/README.md
   - reports/independent_diffusion_nnls_20260928/protocol.md
   - reports/independent_diffusion_nnls_20260928/evaluation/manifest.json
@@ -25,6 +23,8 @@ The independent Gaussian API now fits adaptive Euclidean diffusion, linkage
 topology, NNLS branch lengths and PCA exclusively on discovery measurements.
 Inference uses the frozen context and separate measurements of the same leaves
 with externally known common Gaussian covariance and independent rows.
+
+The API was removed on 2026-10-18: nothing outside tests and the report scripts called it. The report evidence stays, but its scripts no longer run against current code.
 
 ## Key Points
 

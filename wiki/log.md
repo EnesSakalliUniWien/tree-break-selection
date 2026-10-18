@@ -8299,3 +8299,17 @@ version comparison report and wiki source summary. Production code unchanged.
   The default 512-token batch rejects chunks longer than 512 tokens.
 - One test query ("How does TreeDecomposition decide whether to split a
   node?") took 12 minutes and returned a cited answer over 112 sources.
+
+## 2026-10-18 — Independent Gaussian API removed
+
+- A reachability check of `tree_break_selection` found 422 of 436 top-level
+  symbols reached from benchmarks, applications or scripts. The rest were the
+  independent Gaussian API and one unused `logger` in `marchenko_pastur.py`.
+  No backwards-compatibility shims or deletable legacy code remained.
+- Removed `independent_gaussian.py`, `energy_selected_reference.py` and tests
+  56–57: only tests and four `reports/*_20260928/` scripts called them. Those
+  scripts no longer run against current code; their outputs stay.
+  [[independent-gaussian-production-benchmark]] and
+  [[independent-diffusion-nnls-benchmark]] are now `deprecated`.
+- `run_projected_wald_kernel(adaptive_dimension_energy_fraction=...)` is now
+  reached only by tests 39 and 55.
