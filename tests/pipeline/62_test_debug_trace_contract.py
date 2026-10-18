@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+
 from benchmarks.diagnostics.failure.debug_trace import analyze_single_case
 
 

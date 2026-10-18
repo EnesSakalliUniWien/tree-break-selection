@@ -2,8 +2,8 @@
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -11,10 +11,7 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
 )
-from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
-    EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
-)
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.poset_tree import PosetTree
 
 
@@ -44,16 +41,10 @@ def _create_test_case_data(
     return x, pd.Series(y_true)
 
 
-def _build_hierarchical_tree(
-    x: pd.DataFrame,
-    linkage_method: str = "complete",
-    distance_metric: str = "hamming",
-) -> tuple[PosetTree, np.ndarray]:
-    """Build a PosetTree from a binary feature matrix."""
-    distance_matrix = pdist(x.values, metric=distance_metric)
-    linkage_matrix = linkage(distance_matrix, method=linkage_method)
-    tree = tree_from_linkage(linkage_matrix, x.index.tolist())
-    return tree, linkage_matrix
+def _build_hierarchical_tree(x: pd.DataFrame) -> PosetTree:
+    """Build the production Hamming/average-linkage tree for a binary matrix."""
+    distance = pdist(x.to_numpy(dtype=float), metric="hamming")
+    return build_tree(x, distance, linkage_method="average").tree
 
 
 def _run_statistical_analysis(
@@ -64,14 +55,13 @@ def _run_statistical_analysis(
     sibling_alpha: float = DEFAULT_SIBLING_ALPHA,
 ) -> pd.DataFrame:
     """Run the production gate-annotation pipeline on a populated tree."""
-    tree.populate_node_divergences(x)
+    tree.populate_node_distributions(x)
     return run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),
         edge_alpha=edge_alpha,
         sibling_alpha=sibling_alpha,
         leaf_data=x,
-        edge_branch_length_variance_policy=EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
     ).annotated_df
 
 
@@ -84,7 +74,7 @@ def test_supported_fixture_uses_empirical_null_gate_calibration() -> None:
         noise_level=1.0,
         seed=42,
     )
-    tree, _ = _build_hierarchical_tree(x)
+    tree = _build_hierarchical_tree(x)
     out = _run_statistical_analysis(tree, x, edge_alpha=0.01)
 
     active = out[out["Sibling_Gate_P_Value_Role"].eq("active_traversal_sibling_gate")]

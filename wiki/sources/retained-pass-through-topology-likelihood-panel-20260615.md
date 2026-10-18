@@ -2,10 +2,8 @@
 title: Retained Pass-Through Topology Likelihood Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/traversal/retained_pass_through_topology_likelihood_panel.py
-  - tests/validation/calibration/traversal/138_test_retained_pass_through_topology_likelihood_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/retained_pass_through_topology_likelihood
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_distribution
 tags:
@@ -110,6 +108,7 @@ distance.
   as inputs.
 - The outputs are stored under
   `raw/assets/benchmark-results/specific_small_method_benchmark_20260615/retained_pass_through_topology_likelihood/`.
+- `benchmarks/diagnostics/calibration/traversal/retained_pass_through_topology_likelihood_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

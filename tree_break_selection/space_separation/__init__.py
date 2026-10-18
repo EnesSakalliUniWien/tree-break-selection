@@ -1,7 +1,6 @@
 """Reusable space-separation methods used across applications and benchmarks."""
 
 from .adaptive_cosine import (
-    AdaptiveCosineSpace,
     SpectralBlock,
     adaptive_spectral_blocks,
     coordinates_for_block,
@@ -17,19 +16,13 @@ from .diffusion import (
     compute_diffusion_coordinates,
     hamming_knn_diffusion_geometry,
     resolve_adaptive_epsilon,
-    resolve_adaptive_epsilon_from_scaled_sq,
     resolve_neighbor_search_k,
 )
-from .invariant_equivariant import (
-    InvariantEquivariantSpace,
-    decompose_invariant_equivariant_space,
-    standardize_columns,
-)
+from .leading_axes import decompose_leading_axes_space
 
 __all__ = [
-    "AdaptiveCosineSpace",
+    "decompose_leading_axes_space",
     "DiffusionGeometry",
-    "InvariantEquivariantSpace",
     "SpectralBlock",
     "adaptive_spectral_blocks",
     "adaptive_diffusion_geometry",
@@ -38,12 +31,9 @@ __all__ = [
     "compute_diffusion_coordinates",
     "coordinates_for_block",
     "cosine_eigendecomposition",
-    "decompose_invariant_equivariant_space",
     "hamming_knn_diffusion_geometry",
     "separate_adaptive_cosine_space",
     "resolve_adaptive_epsilon",
-    "resolve_adaptive_epsilon_from_scaled_sq",
     "resolve_neighbor_search_k",
-    "standardize_columns",
     "weight_feature_matrix",
 ]

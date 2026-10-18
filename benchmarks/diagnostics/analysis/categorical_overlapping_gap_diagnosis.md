@@ -3,10 +3,10 @@
 Date: 2026-03-20
 
 Reference run:
-- [run_20260320_133847Z](raw/assets/benchmark-results/run_20260320_133847Z)
-- [full_benchmark_comparison.csv](raw/assets/benchmark-results/run_20260320_133847Z/full_benchmark_comparison.csv)
-- [benchmark_relationship_method_section_summary.csv](raw/assets/benchmark-results/run_20260320_133847Z/benchmark_relationship_method_section_summary.csv)
-- [failure_report.md](raw/assets/benchmark-results/run_20260320_133847Z/failure_report.md)
+- [run_20260320_133847Z](../../../raw/assets/benchmark-results/run_20260320_133847Z)
+- [full_benchmark_comparison.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/full_benchmark_comparison.csv)
+- [benchmark_relationship_method_section_summary.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/benchmark_relationship_method_section_summary.csv)
+- [failure_report.md](../../../raw/assets/benchmark-results/run_20260320_133847Z/failure_report.md)
 
 ## Summary
 
@@ -109,17 +109,17 @@ That is not a multiple-testing artifact. It is a failure to detect a useful root
 
 Relevant code:
 
-- [tree_decomposition.py](/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/hierarchy_analysis/tree_decomposition.py)
-- [gate_evaluator.py](/Users/berksakalli/Projects/tree-break-selection/tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py)
-- [tree_decomposition.py](/Users/berksakalli/Projects/tree-break-selection/tree_break_selection/hierarchy_analysis/tree_decomposition.py)
+- [tree_decomposition.py](../../../tree_break_selection/hierarchy_analysis/tree_decomposition.py)
+- [gate_evaluator.py](../../../tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py)
+- [tree_decomposition.py](../../../tree_break_selection/hierarchy_analysis/tree_decomposition.py)
 
 In contrast, `leiden` and `louvain` work on a k-NN graph built from the benchmark distance matrix and can recover local communities without requiring one globally certifiable binary split near the root.
 
 Relevant code:
 
-- [core.py](/Users/berksakalli/Projects/tree-break-selection/benchmarks/shared/util/core.py)
-- [leiden_runner.py](/Users/berksakalli/Projects/tree-break-selection/benchmarks/shared/runners/leiden_runner.py)
-- [louvain_runner.py](/Users/berksakalli/Projects/tree-break-selection/benchmarks/shared/runners/louvain_runner.py)
+- [core.py](../../shared/util/core.py)
+- [leiden_runner.py](../../shared/runners/leiden_runner.py)
+- [louvain_runner.py](../../shared/runners/louvain_runner.py)
 
 This matters most when:
 
@@ -179,9 +179,9 @@ This means one fix is unlikely to close both gaps.
 
 ## Representative audit files
 
-- [case_56_kl_divergence_stats.csv](raw/assets/benchmark-results/run_20260320_133847Z/audit/case_56_kl_divergence_stats.csv)
-- [case_58_kl_divergence_stats.csv](raw/assets/benchmark-results/run_20260320_133847Z/audit/case_58_kl_divergence_stats.csv)
-- [case_78_kl_divergence_stats.csv](raw/assets/benchmark-results/run_20260320_133847Z/audit/case_78_kl_divergence_stats.csv)
-- [case_79_kl_divergence_stats.csv](raw/assets/benchmark-results/run_20260320_133847Z/audit/case_79_kl_divergence_stats.csv)
-- [case_84_kl_divergence_stats.csv](raw/assets/benchmark-results/run_20260320_133847Z/audit/case_84_kl_divergence_stats.csv)
-- [case_98_kl_divergence_stats.csv](raw/assets/benchmark-results/run_20260320_133847Z/audit/case_98_kl_divergence_stats.csv)
+- [case_56_kl_divergence_stats.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/audit/case_56_kl_divergence_stats.csv)
+- [case_58_kl_divergence_stats.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/audit/case_58_kl_divergence_stats.csv)
+- [case_78_kl_divergence_stats.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/audit/case_78_kl_divergence_stats.csv)
+- [case_79_kl_divergence_stats.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/audit/case_79_kl_divergence_stats.csv)
+- [case_84_kl_divergence_stats.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/audit/case_84_kl_divergence_stats.csv)
+- [case_98_kl_divergence_stats.csv](../../../raw/assets/benchmark-results/run_20260320_133847Z/audit/case_98_kl_divergence_stats.csv)

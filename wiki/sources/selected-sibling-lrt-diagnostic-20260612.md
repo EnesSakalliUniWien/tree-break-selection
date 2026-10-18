@@ -2,10 +2,8 @@
 title: Selected Sibling LRT Diagnostic 2026-06-12
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/sibling/nulls/selected_sibling_lrt_diagnostic.py
-  - tests/validation/calibration/sibling/nulls/87_test_selected_sibling_lrt_diagnostic.py
   - benchmarks/results/00_current_20260427_blob_analysis/20260427_blob_analysis/29_selected_sibling_lrt_diagnostic_20260612/selected_sibling_lrt_node_panel.csv
   - benchmarks/results/00_current_20260427_blob_analysis/20260427_blob_analysis/29_selected_sibling_lrt_diagnostic_20260612/selected_sibling_lrt_summary.csv
   - benchmarks/results/00_current_20260427_blob_analysis/20260427_blob_analysis/29_selected_sibling_lrt_diagnostic_20260612/selected_sibling_lrt_run_summary.png
@@ -65,6 +63,7 @@ output is not a selected-tree calibration rule.
 - `benchmarks/results/00_current_20260427_blob_analysis/20260427_blob_analysis/29_selected_sibling_lrt_diagnostic_20260612/selected_sibling_lrt_vs_projected_wald.png`
   visualizes the separation between projected-Wald amplification and Bernoulli
   deviance.
+- `benchmarks/diagnostics/calibration/sibling/nulls/selected_sibling_lrt_diagnostic.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

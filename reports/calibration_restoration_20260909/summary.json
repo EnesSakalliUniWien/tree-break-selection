@@ -1,0 +1,88 @@
+{
+  "august_1": {
+    "rows": 121,
+    "statuses": {
+      "ok": 100,
+      "skip": 21
+    },
+    "mean_ari_on_ok": 0.7733630489166867,
+    "exact_k_on_ok": 70,
+    "matched": {
+      "cases": 119,
+      "both_ok": 97,
+      "identical_params": 119,
+      "matching_input_metadata": 119,
+      "mean_old_ari_on_both_ok": 0.7972814937285431,
+      "mean_restored_ari_on_both_ok": 0.7972814937285431,
+      "same_ari_and_k_on_both_ok": 97,
+      "status_transitions": [
+        {
+          "status_old": "ok",
+          "status_restored": "ok",
+          "count": 97
+        },
+        {
+          "status_old": "ok",
+          "status_restored": "unsupported",
+          "count": 2
+        },
+        {
+          "status_old": "skip",
+          "status_restored": "skip",
+          "count": 20
+        }
+      ]
+    }
+  },
+  "before_restoration": {
+    "rows": 122,
+    "statuses": {
+      "unsupported": 96,
+      "skip": 21,
+      "ok": 5
+    },
+    "mean_ari_on_ok": 0.2,
+    "exact_k_on_ok": 1,
+    "matched": {
+      "cases": 122,
+      "both_ok": 5,
+      "identical_params": 122,
+      "matching_input_metadata": 122,
+      "mean_old_ari_on_both_ok": 0.2,
+      "mean_restored_ari_on_both_ok": 0.2,
+      "same_ari_and_k_on_both_ok": 5,
+      "status_transitions": [
+        {
+          "status_old": "ok",
+          "status_restored": "ok",
+          "count": 5
+        },
+        {
+          "status_old": "skip",
+          "status_restored": "skip",
+          "count": 21
+        },
+        {
+          "status_old": "unsupported",
+          "status_restored": "ok",
+          "count": 92
+        },
+        {
+          "status_old": "unsupported",
+          "status_restored": "unsupported",
+          "count": 4
+        }
+      ]
+    }
+  },
+  "restored": {
+    "rows": 122,
+    "statuses": {
+      "ok": 97,
+      "skip": 21,
+      "unsupported": 4
+    },
+    "mean_ari_on_ok": 0.7972814937285431,
+    "exact_k_on_ok": 70
+  }
+}

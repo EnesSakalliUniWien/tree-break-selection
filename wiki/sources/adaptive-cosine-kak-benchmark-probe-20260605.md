@@ -2,24 +2,15 @@
 title: Adaptive Cosine KAK Benchmark Probe 2026-06-05
 type: source
 status: reviewed
-updated: 2026-06-12
+updated: 2026-10-16
 sources:
   - benchmarks/diagnostics/spectral/adaptive_cosine/adaptive_cosine_kak_benchmark_probe.py
   - benchmarks/diagnostics/spectral/adaptive_cosine/adaptive_cosine_kak_matrix_probe.py
-  - benchmarks/diagnostics/spectral/adaptive_cosine/adaptive_cosine_kak_diffusion_matrix_probe.py
   - benchmarks/diagnostics/spectral/adaptive_cosine/kak_lens_alpha_sweep.py
-  - benchmarks/diagnostics/spectral/adaptive_cosine/kak_lens_feature_axis_clustering.py
-  - benchmarks/diagnostics/spectral/adaptive_cosine/kak_feature_subspace_clustering.py
   - benchmarks/diagnostics/spectral/stability/tree_strategy_semantic_panel.py
-  - benchmarks/diagnostics/spectral/stability/covariance_axis_stability.py
   - benchmarks/cloud/aws_kak_lens_linkage_alpha_sweep.py
   - benchmarks/cloud/aws_tree_strategy_semantic_panel.py
   - tree_break_selection/plot/cluster_tree_visualization.py
-  - tests/validation/82_test_aws_kak_lens_linkage_alpha_sweep.py
-  - tests/validation/spectral/stability/83_test_covariance_axis_stability.py
-  - tests/validation/spectral/adaptive_cosine/84_test_kak_lens_feature_axis_clustering.py
-  - tests/validation/spectral/stability/85_test_tree_strategy_semantic_panel.py
-  - tests/validation/spectral/adaptive_cosine/86_test_kak_feature_subspace_clustering.py
   - tests/visualization/71_test_cluster_tree_visualization.py
   - applications/endotypes/plots/kak_signal_adaptive_umap_tree_page.py
   - applications/endotypes/pipelines/run_feature_matrix_with_umap.py
@@ -571,6 +562,7 @@ and Ward-Euclidean lens trees, and an AWS Batch wrapper shards the larger
 - `benchmarks/results/diagnostics/adaptive_cosine_kak_probe_full_gate_bundle_20260605/kak_probe_full_block_logic_scatter.png`
   visualizes early-block success versus common-mode and energy-based failure
   modes.
+- `benchmarks/diagnostics/spectral/adaptive_cosine/adaptive_cosine_kak_diffusion_matrix_probe.py`, `benchmarks/diagnostics/spectral/adaptive_cosine/kak_feature_subspace_clustering.py`, `benchmarks/diagnostics/spectral/adaptive_cosine/kak_lens_feature_axis_clustering.py`, `benchmarks/diagnostics/spectral/stability/covariance_axis_stability.py` were retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

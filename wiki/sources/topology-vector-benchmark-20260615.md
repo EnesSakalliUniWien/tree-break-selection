@@ -2,10 +2,10 @@
 title: Topology Vector Benchmark 2026-06-15
 type: source
 status: reviewed
-updated: 2026-06-15
+updated: 2026-08-10
 sources:
   - benchmarks/shared/runners/dispatch.py
-  - tests/pipeline/51_test_dispatch_contract.py
+  - tests/pipeline/dispatch/test_parameter_forwarding.py
   - raw/assets/benchmark-results/topology_vector_benchmark_20260615/regression_gate_kl_profile/regression_gate_kl_profile_comparison.csv
   - raw/assets/benchmark-results/topology_vector_benchmark_20260615/regression_gate_kl_profile/regression_gate_kl_profile_summary.csv
   - raw/assets/benchmark-results/topology_vector_benchmark_20260615/regression_gate_kl_profile/regression_gate_kl_profile_by_case.csv
@@ -64,10 +64,11 @@ TBS parameter variant.
   rank `1`, with conditional log-odds margin `4.694486`, but the support
   status is `support_insufficient_fail_closed` because the internal incidence
   stratum has only one truth-recovery row.
-- The benchmark-facing `tbs_conditional_topology_diagnostic` method id runs the
+- The now-retired `tbs_conditional_topology_diagnostic` method ID ran the
   17-case regression gate with `17/17` ok rows, mean ARI `0.460293`, median
-  ARI `0.480000`, and exact-K count `4/17`. This confirms registry/dispatch
-  integration but does not promote the law to production.
+  ARI `0.480000`, and exact-K count `4/17`. It was a behavior-identical registry
+  alias for the guarded fixed-coordinate profile and did not apply the
+  topology law during traversal.
 - Interpretation: the topology vector is supported as a diagnostic
   conditioning object, especially outgoing balance and outgoing edge-norm
   balance conditioned by the incoming/family event. The refined traversal
@@ -76,7 +77,7 @@ TBS parameter variant.
 
 ## Evidence
 
-- `tests/pipeline/51_test_dispatch_contract.py` verifies that the benchmark
+- `tests/pipeline/dispatch/test_parameter_forwarding.py` verifies that the benchmark
   dispatcher forwards `sibling_gate_profile`, root-stability settings,
   selected-root/selected-family guard settings, and `passthrough` to the TBS
   runner.
@@ -86,8 +87,6 @@ TBS parameter variant.
 ## Links
 
 - [[overlap-context-negative-bayesian-topology-law-20260615]]
-- [[overlap-context-negative-bayesian-topology-sensitivity-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
-- [[overlap-context-negative-topology-transfer-20260615]]
 - [[fixed-sibling-gate-profile-validation-20260613]]
 - [[open-mathematical-questions]]

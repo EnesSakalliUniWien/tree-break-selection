@@ -12,6 +12,9 @@ from pathlib import Path
 from textwrap import dedent
 
 import matplotlib.pyplot as plt
+
+from benchmarks.shared.cases.geometry import case_recipe_cluster_count, case_recipe_geometry
+from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -20,9 +23,6 @@ from tree_break_selection.tree.construction import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     DEFAULT_TREE_LINKAGE_METHOD,
 )
-
-from benchmarks.shared.cases.geometry import case_recipe_cluster_count, case_recipe_geometry
-from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
 
 # ---------------------------------------------------------------------------
 # Category key → parent group mapping
@@ -48,6 +48,7 @@ _register(
     "continuous_gaussian_examples",
     "gaussian_dimensionality_consolidated",
     "gaussian_dimensionality_diffuse",
+    "gaussian_sparse_signal_highd_noise",
     "continuous_dimensional_gaussian_examples",
     "gaussian_outlier_singleton",
     "gaussian_outlier_contamination",
@@ -107,7 +108,6 @@ _register(
     "overlapping_gaussian_quantile",
 )
 _register("method_proof", "method_proof")
-_register("real_data", "real_data")
 
 
 def category_group(subcategory: str) -> str:
@@ -129,7 +129,7 @@ _OVERVIEW_TEXT = dedent(
 
     Pipeline:
       benchmark matrix -> case-specific tree distance -> average linkage -> PosetTree
-      -> populate_node_divergences() -> three statistical gates
+      -> populate_node_distributions() -> three statistical gates
       -> decompose() -> cluster assignments
 
     Statistical gates applied at each internal node:
@@ -341,18 +341,6 @@ _OVERLAPPING_TEXT = dedent(
 """
 )
 
-_REALDATA_TEXT = dedent(
-    """\
-    Real Data
-
-    Source:  data/feature_matrices/feature_matrix.tsv -- a binary Gene Ontology term annotation
-    matrix from the repository root.
-
-    No ground-truth cluster labels are available.  This case is included
-    for qualitative evaluation only (tree structure, cluster sizes).
-"""
-)
-
 _METHOD_PROOF_TEXT = dedent(
     """\
     Method-Proof Cases
@@ -412,7 +400,6 @@ _SECTION_TEXTS: dict[str, str] = {
     "phylogenetic": _PHYLOGENETIC_TEXT,
     "overlapping": _OVERLAPPING_TEXT,
     "method_proof": _METHOD_PROOF_TEXT,
-    "real_data": _REALDATA_TEXT,
 }
 
 # Canonical group order (controls insertion order in merged PDF)
@@ -424,7 +411,6 @@ GROUP_ORDER: list[str] = [
     "phylogenetic",
     "overlapping",
     "method_proof",
-    "real_data",
 ]
 
 
@@ -511,8 +497,8 @@ def generate_section_page(group: str) -> plt.Figure | None:
     text = _SECTION_TEXTS.get(group)
     if text is None:
         return None
-    # Evaluation metrics appended to the last section page (real_data)
-    if group == "real_data":
+    # Evaluation metrics appended to the last section page.
+    if group == GROUP_ORDER[-1]:
         text = text + "\n" + _EVALUATION_TEXT
     return _text_page(text, fontsize=9.5)
 
@@ -596,34 +582,6 @@ def write_case_manifest_pages_to_pdf(
     return str(pdf_path)
 
 
-def write_cover_pages_to_pdf(
-    pdf_path: str | None = None,
-    *,
-    n_cases: int = 110,
-    timestamp: str | None = None,
-) -> str | None:
-    """Write the cover pages to a standalone PDF file.
-
-    Returns the path written, or None if *pdf_path* was None.
-    """
-    if pdf_path is None:
-        return None
-
-    from matplotlib.backends.backend_pdf import PdfPages
-
-    with PdfPages(pdf_path) as pp:
-        fig = generate_overview_page(n_cases=n_cases, timestamp=timestamp)
-        pp.savefig(fig)
-        plt.close(fig)
-        for group in GROUP_ORDER:
-            fig = generate_section_page(group)
-            if fig is None:
-                continue
-            pp.savefig(fig)
-            plt.close(fig)
-    return pdf_path
-
-
 def write_section_page_to_pdf(group: str, pdf_path: str) -> str | None:
     """Write a single section page to a standalone PDF.
 
@@ -647,7 +605,6 @@ __all__ = [
     "generate_section_page",
     "generate_case_manifest_pages",
     "write_case_manifest_pages_to_pdf",
-    "write_cover_pages_to_pdf",
     "write_section_page_to_pdf",
     "GROUP_ORDER",
 ]

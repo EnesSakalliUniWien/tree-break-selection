@@ -8,33 +8,18 @@ import numpy as np
 
 
 @dataclass(frozen=True)
-class TreeBHSiblingGroupOutcome:
-    """Outcome of applying BH within one sibling group."""
-
-    depth: int
-    sibling_group_alpha: float
-    tested_child_ids: list[str]
-    raw_p_values: list[float]
-    child_hypotheses_rejected_by_bh: list[bool]
-
-    @property
-    def rejection_count(self) -> int:
-        return int(sum(self.child_hypotheses_rejected_by_bh))
-
-    @property
-    def test_count(self) -> int:
-        return len(self.raw_p_values)
-
-
-@dataclass(frozen=True)
 class ChildParentEdgeTreeBHResult:
-    """Tree-BH correction output for child-parent edge hypotheses."""
+    """Tree-BH correction output for child-parent edge hypotheses.
+
+    Stored corrected p-values are BH adjustments within each reached family.
+    Rejection flags use the ancestor-scaled family levels, so comparing these
+    values with the base alpha does not reproduce hierarchical rejections.
+    Untested edges retain the placeholder value 1.
+    """
 
     child_parent_edge_null_rejected_by_tree_bh: np.ndarray
     child_parent_edge_corrected_p_values_by_tree_bh: np.ndarray
     child_parent_edge_tested_by_tree_bh: np.ndarray
-    tree_bh_base_alpha_by_depth: dict[int, float]
-    sibling_group_outcomes: dict[str, TreeBHSiblingGroupOutcome]
 
 
-__all__ = ["TreeBHSiblingGroupOutcome", "ChildParentEdgeTreeBHResult"]
+__all__ = ["ChildParentEdgeTreeBHResult"]

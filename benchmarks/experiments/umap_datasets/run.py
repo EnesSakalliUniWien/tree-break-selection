@@ -20,19 +20,15 @@ repo_root = Path(__file__).resolve().parents[3]
 import matplotlib
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.datasets import load_digits
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 from sklearn.preprocessing import KBinsDiscretizer, StandardScaler
-from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
-    run_gate_annotation_pipeline,
-)
-from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from tree_break_selection.tree.construction import tree_from_linkage
+
+from benchmarks.shared.util.decomposition import tbs_decompose
 
 
 def load_penguins() -> tuple[np.ndarray, np.ndarray, list[str]]:
@@ -190,42 +186,14 @@ def run_tbs_clustering(
     if verbose:
         print(f"  Building hierarchy with {distance_metric} + {linkage_method}...")
 
-    # Build hierarchical tree
-    Z = linkage(
+    labels, results = tbs_decompose(
+        data,
         pdist(data.values, metric=distance_metric),
-        method=linkage_method,
+        linkage_method=linkage_method,
+        alpha=significance_level,
     )
-
-    # Create PosetTree
-    tree = tree_from_linkage(Z, leaf_names=sample_names)
-
-    # Decompose
-    tree.populate_node_divergences(data)
-    gate_bundle = run_gate_annotation_pipeline(
-        tree,
-        tree.annotations_df.copy(),
-        leaf_data=data,
-        edge_alpha=significance_level,
-        sibling_alpha=significance_level,
-    )
-    results = TreeDecomposition(
-        tree=tree,
-        gate_annotation_bundle=gate_bundle,
-    ).decompose_tree()
-
-    n_clusters = results.get("num_clusters", 0)
-    cluster_assignments = results.get("cluster_assignments", {})
-
     if verbose:
-        print(f"  Found {n_clusters} clusters")
-
-    # Convert to label array
-    label_map = {}
-    for cluster_id, info in cluster_assignments.items():
-        for leaf in info["leaves"]:
-            label_map[leaf] = cluster_id
-
-    labels = np.array([label_map.get(name, -1) for name in sample_names])
+        print(f"  Found {results.get('num_clusters', 0)} clusters")
 
     return labels, results
 

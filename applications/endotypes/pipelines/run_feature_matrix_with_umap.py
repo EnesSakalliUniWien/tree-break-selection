@@ -4,16 +4,12 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import os
 import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.error import URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
 _RUNTIME_CACHE_ROOT = Path(tempfile.gettempdir()) / "tbs_runtime_cache"
 for _cache_dir in (
@@ -36,6 +32,8 @@ import pandas as pd
 from scipy.cluster.hierarchy import cut_tree, dendrogram, linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+from applications.endotypes._shared import map_symbols_to_entrez, parse_reference_endotypes
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -210,15 +208,6 @@ def _default_output_dir() -> Path:
     )
 
 
-def _configure_runtime_cache_dirs() -> Path:
-    """Route third-party caches to a writable temp location.
-
-    This avoids sandbox/home-directory cache failures from Numba, UMAP,
-    Matplotlib, and fontconfig-backed libraries.
-    """
-    return _RUNTIME_CACHE_ROOT
-
-
 def _load_binary_matrix(path: Path) -> pd.DataFrame:
     data = pd.read_csv(path, sep="\t", index_col=0)
     if data.empty:
@@ -254,7 +243,7 @@ def _run_decomposition(
         distance_metric,
         linkage_method,
         adaptive_metadata,
-    ) = _build_linkage_tree(
+    ) = build_linkage_tree(
         data_df=data_df,
         tree_method=tree_method,
         tree_distance_metric=tree_distance_metric,
@@ -269,7 +258,7 @@ def _run_decomposition(
     )
 
     tree = tree_from_linkage(linkage_matrix, leaf_names=data_df.index.tolist())
-    tree.populate_node_divergences(data_df)
+    tree.populate_node_distributions(data_df)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),
@@ -277,10 +266,10 @@ def _run_decomposition(
         sibling_alpha=sibling_alpha,
         leaf_data=data_df,
     )
-    decomposition = TreeDecomposition(
-        tree=tree,
-        gate_annotation_bundle=gate_bundle,
-    ).decompose_tree()
+    decomposer = TreeDecomposition(tree=tree, gate_annotation_bundle=gate_bundle)
+    decomposition = decomposer.decompose_tree()
+    # The tree plot reads the gate columns, so keep the annotated frame on the tree.
+    tree.annotations_df = decomposer.annotations_df
 
     assignments = build_sample_cluster_assignments(decomposition)
     if assignments.empty:
@@ -308,7 +297,7 @@ def _run_decomposition(
     return tree, decomposition, assignments
 
 
-def _build_linkage_tree(
+def build_linkage_tree(
     *,
     data_df: pd.DataFrame,
     tree_method: str,
@@ -418,81 +407,13 @@ def _run_paper_cosine_clustering(
     return linkage_matrix, labels, metadata, assignments
 
 
-def _parse_reference_endotypes(path: Path) -> dict[str, dict[str, object]]:
-    entrez_to_endotype: dict[str, dict[str, object]] = {}
-    with path.open(encoding="utf-8") as handle:
-        reader = csv.reader(handle, delimiter="\t")
-        for row in reader:
-            if not row:
-                continue
-            first_cell = row[0].strip() if row else ""
-            if first_cell.startswith("#") or first_cell in {"SUM", "AVERAGE"}:
-                continue
-            if len(row) < 10:
-                continue
-            cluster_id_text = row[4].strip()
-            if not cluster_id_text.isdigit():
-                continue
-            endotype = {
-                "cluster_id": int(cluster_id_text),
-                "color": row[5].strip() or "#808080",
-                "rank": row[6].strip(),
-                "name": row[7].strip() or f"Cluster {cluster_id_text}",
-                "type": row[8].strip() or "cluster",
-            }
-            for gene_id in (cell.strip() for cell in row[9:] if cell.strip()):
-                entrez_to_endotype[str(gene_id)] = endotype
-    return entrez_to_endotype
-
-
-def _map_symbols_to_entrez(symbols: list[str], batch_size: int = 200) -> dict[str, str | None]:
-    mapped: dict[str, str | None] = {}
-    endpoint = "https://mygene.info/v3/query"
-    for start in range(0, len(symbols), batch_size):
-        batch = symbols[start : start + batch_size]
-        body = urlencode(
-            {
-                "q": ",".join(batch),
-                "scopes": "symbol",
-                "fields": "symbol,entrezgene,taxid",
-                "species": "human",
-                "size": 1,
-            }
-        ).encode("utf-8")
-        request = Request(
-            endpoint,
-            data=body,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            method="POST",
-        )
-        try:
-            with urlopen(request, timeout=60) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-        except URLError as exc:
-            raise RuntimeError(
-                "Failed to query mygene.info for gene symbol -> Entrez mapping."
-            ) from exc
-
-        if isinstance(payload, dict):
-            payload = [payload]
-        for record in payload:
-            query = record.get("query")
-            if not query:
-                continue
-            entrez = record.get("entrezgene") or record.get("_id")
-            mapped[str(query)] = None if entrez is None else str(entrez)
-        for symbol in batch:
-            mapped.setdefault(symbol, None)
-    return mapped
-
-
 def _build_reference_comparison(
     assignments: pd.DataFrame,
     reference_endotypes_path: Path,
     output_dir: Path,
 ) -> tuple[dict[str, object], int | None]:
-    symbol_to_entrez = _map_symbols_to_entrez(assignments.index.tolist())
-    entrez_to_endotype = _parse_reference_endotypes(reference_endotypes_path)
+    symbol_to_entrez = map_symbols_to_entrez(assignments.index.tolist())
+    entrez_to_endotype = parse_reference_endotypes(reference_endotypes_path)
 
     comparison = assignments.copy()
     comparison.index.name = "gene_symbol"
@@ -500,16 +421,16 @@ def _build_reference_comparison(
 
     endotype_meta = comparison["entrez_id"].map(entrez_to_endotype)
     comparison["reference_cluster_id"] = endotype_meta.map(
-        lambda x: x["cluster_id"] if isinstance(x, dict) else pd.NA
+        lambda x: x["reference_cluster_id"] if isinstance(x, dict) else pd.NA
     )
     comparison["reference_cluster_name"] = endotype_meta.map(
-        lambda x: x["name"] if isinstance(x, dict) else "Unassigned"
+        lambda x: x["reference_cluster_name"] if isinstance(x, dict) else "Unassigned"
     )
     comparison["reference_cluster_type"] = endotype_meta.map(
-        lambda x: x["type"] if isinstance(x, dict) else "unassigned"
+        lambda x: x["reference_cluster_type"] if isinstance(x, dict) else "unassigned"
     )
     comparison["reference_cluster_color"] = endotype_meta.map(
-        lambda x: x["color"] if isinstance(x, dict) else "#bdbdbd"
+        lambda x: x["reference_cluster_color"] if isinstance(x, dict) else "#bdbdbd"
     )
     comparison["matched_reference_label"] = comparison["reference_cluster_id"].notna()
 
@@ -700,7 +621,6 @@ def _save_linkage_dendrogram(
 
 def main() -> None:
     args = parse_args()
-    cache_root = _configure_runtime_cache_dirs()
 
     input_path = args.input
     if not input_path.exists():
@@ -800,7 +720,7 @@ def main() -> None:
             distance_metric,
             linkage_method,
             adaptive_metadata,
-        ) = _build_linkage_tree(
+        ) = build_linkage_tree(
             data_df=data_df,
             tree_method=args.tree_method,
             tree_distance_metric=args.tree_distance_metric,
@@ -912,7 +832,7 @@ def main() -> None:
         "tree_method": args.tree_method,
         "distance_metric": decomposition["_tree_method_metadata"]["distance_metric"],
         "linkage_method": decomposition["_tree_method_metadata"]["linkage_method"],
-        "runtime_cache_root": str(cache_root),
+        "runtime_cache_root": str(_RUNTIME_CACHE_ROOT),
         "diffusion_params": {
             "k_neighbors": int(args.diffusion_k_neighbors),
             "diffusion_time": int(args.diffusion_time),

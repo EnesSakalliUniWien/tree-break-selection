@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -11,7 +11,7 @@ from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecom
 from tree_break_selection.tree.construction import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     DEFAULT_TREE_LINKAGE_METHOD,
-    tree_from_linkage,
+    build_tree,
 )
 
 
@@ -40,22 +40,20 @@ def main():
     print(f"Ground truth contains {len(np.unique(y_true))} clusters.")
 
     # --- Execute the Core Pipeline ---
-    # 2. linkage() - using Hamming distance + average linkage
-    Z = linkage(
+    # 2-3. Build the PosetTree hierarchy with Hamming distance + average linkage.
+    tree = build_tree(
+        data,
         pdist(data.values, metric=DEFAULT_BINARY_TREE_DISTANCE_METRIC),
-        method=DEFAULT_TREE_LINKAGE_METHOD,
-    )
+        linkage_method=DEFAULT_TREE_LINKAGE_METHOD,
+    ).tree
     print(
         f"\nStep 2: Created hierarchy with {DEFAULT_BINARY_TREE_DISTANCE_METRIC} + "
         f"{DEFAULT_TREE_LINKAGE_METHOD} linkage."
     )
-
-    # 3. Build the hierarchy representation.
-    tree = tree_from_linkage(Z, leaf_names=data.index.tolist())
     print("Step 3: Converted hierarchy to PosetTree structure.")
 
     # 4. Compute node distributions, gate annotations, then traverse the tree.
-    tree.populate_node_divergences(data)
+    tree.populate_node_distributions(data)
     significance_level = 0.05
     gate_bundle = run_gate_annotation_pipeline(
         tree,
@@ -74,10 +72,10 @@ def main():
 
     # --- Display Results ---
     print("\n--- Analysis Complete ---")
-    num_found = decomposition_results.get("num_clusters", 0)
+    num_found = decomposition_results["num_clusters"]
     print(f"\nAlgorithm found {num_found} clusters.")
 
-    cluster_assignments = decomposition_results.get("cluster_assignments", {})
+    cluster_assignments = decomposition_results["cluster_assignments"]
 
     predicted_labels = {}
     if cluster_assignments:
@@ -92,7 +90,7 @@ def main():
     for sample_name in data.index:
         sample_index = int(sample_name.split("_")[1])
         ordered_true_labels.append(y_true[sample_index])
-        ordered_pred_labels.append(predicted_labels.get(sample_name, -1))
+        ordered_pred_labels.append(predicted_labels[sample_name])
 
     if ordered_pred_labels:
         ari_score = adjusted_rand_score(ordered_true_labels, ordered_pred_labels)

@@ -14,12 +14,12 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     resolve_feature_space,
     validate_feature_matrix,
 )
+from tree_break_selection.tree.topology import bottom_up_nodes
 
 CONTINUOUS_COVARIANCE_BY_BLOCK = "continuous_covariance_by_block"
 ContinuousCovariancePolicy = Literal["parent_total", "guarded_within_child"]
@@ -265,7 +265,6 @@ def _calculate_hierarchy_continuous_scatter(
 def _finalize_continuous_covariances(
     tree: nx.DiGraph,
     feature_space: FeatureSpace,
-    use_dense_continuous_covariance: bool,
 ) -> None:
     """Write empirical covariance blocks and remove scatter work state.
 
@@ -321,6 +320,9 @@ def populate_distributions(
         active_feature_space,
         value_name="leaf_data",
     )
+    if not leaf_data.index.is_unique:
+        duplicates = leaf_data.index[leaf_data.index.duplicated()].unique().tolist()
+        raise ValueError(f"leaf_data index must be unique; duplicated labels: {duplicates[:5]!r}.")
     label_to_row_idx = {label: i for i, label in enumerate(leaf_data.index)}
 
     # Process nodes bottom-up (leaves first, then parents)
@@ -347,7 +349,6 @@ def populate_distributions(
     _finalize_continuous_covariances(
         tree,
         active_feature_space,
-        use_dense_continuous_covariance,
     )
 
 

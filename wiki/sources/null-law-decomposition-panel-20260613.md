@@ -2,10 +2,8 @@
 title: Null Law Decomposition Panel 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
-  - tests/validation/calibration/statistics/98_test_null_law_decomposition_panel.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
 tags:
   - source
@@ -52,6 +50,7 @@ operator itself or by data-dependent projection selection.
 - The `20`-replicate smoke output records that the null-law failure is caused
   by learning the projection from the same null sample being tested, not by a
   nonorthonormal projection matrix or wrong quadratic weights.
+- `benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

@@ -14,6 +14,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import hypergeom
 
+from benchmarks.shared.util.values import finite_float
+
 GO_RE = re.compile(r"(GO:\d+)")
 
 
@@ -73,15 +75,6 @@ def bh_qvalues(p_values: np.ndarray) -> np.ndarray:
     ranked = np.clip(ranked, 0, 1)
     q_values[finite_indices[order]] = ranked
     return q_values
-
-
-def safe_float(value: Any) -> float:
-    try:
-        if pd.isna(value):
-            return math.nan
-        return float(value)
-    except (TypeError, ValueError):
-        return math.nan
 
 
 def term_stats(
@@ -288,8 +281,8 @@ def summarize_subspaces(cluster_stats: pd.DataFrame, null_stats: pd.DataFrame) -
         rows.append(
             {
                 "run_id": run_id,
-                "specificity_aware_rank": safe_float(first.get("specificity_aware_rank")),
-                "display_rank": safe_float(first.get("display_rank")),
+                "specificity_aware_rank": finite_float(first.get("specificity_aware_rank")),
+                "display_rank": finite_float(first.get("display_rank")),
                 "weighting": first.get("weighting", ""),
                 "block_name": first.get("block_name", ""),
                 "status": first.get("status", ""),

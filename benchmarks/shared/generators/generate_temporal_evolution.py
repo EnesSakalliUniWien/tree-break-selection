@@ -89,11 +89,6 @@ def _sample_from_distribution(
     return samples
 
 
-def _compute_js_divergence(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> float:
-    """Compute mean Jensen-Shannon divergence between two distributions."""
-    return compute_js_divergence_per_feature(p, q, eps)
-
-
 def generate_temporal_evolution_data(
     n_time_points: int,
     n_features: int,
@@ -162,7 +157,7 @@ def generate_temporal_evolution_data(
         distributions_over_time.append(current_dist.copy())
 
         # Compute divergence from ancestor
-        js = _compute_js_divergence(ancestral_dist, current_dist)
+        js = compute_js_divergence_per_feature(ancestral_dist, current_dist)
         divergence_from_ancestor.append(js)
 
         # Sample sequences at this time point
@@ -181,7 +176,7 @@ def generate_temporal_evolution_data(
     divergence_matrix = np.zeros((n_time_points, n_time_points))
     for i in range(n_time_points):
         for j in range(n_time_points):
-            divergence_matrix[i, j] = _compute_js_divergence(
+            divergence_matrix[i, j] = compute_js_divergence_per_feature(
                 distributions_over_time[i], distributions_over_time[j]
             )
 

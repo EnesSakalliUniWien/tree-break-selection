@@ -1,0 +1,14 @@
+{
+  "source": "raw/assets/benchmark-results/selected_hierarchy_external_contract_20260602_500/external_calibration_contract.csv",
+  "rows": 27,
+  "admissible": 0,
+  "max_matching_simulations": 470,
+  "required_matching_simulations": [
+    499
+  ],
+  "rows_at_least_100_matching": 19,
+  "scalar_rejection_min": 0.0,
+  "scalar_rejection_max": 0.0,
+  "max_uniformity_ks_p": 4.958055668775677e-05,
+  "interpretation": "Different external scalar diagnostic, not validation of restored diffusion NNLS. Conservative nonuniform p-values can still control Type I error."
+}

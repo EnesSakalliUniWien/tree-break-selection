@@ -1,1 +1,0 @@
-"""Sibling-gate calibration tests."""

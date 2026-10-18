@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--no-sync",
+    "python",
+    "-m",
+    "benchmarks.diagnostics.spectral.adaptive_cosine.compare_spectral_blocks",
+    "--suite",
+    "method_proof",
+    "--max-rank",
+    "40",
+    "--methods",
+    "average",
+    "complete",
+    "weighted",
+    "single",
+    "centroid",
+    "median",
+    "ward",
+    "neighbor_joining",
+    "--geometries",
+    "raw",
+    "adaptive_diffusion",
+    "--output-dir",
+    "reports/eigenspace_reassessment_20260928/spectral_blocks"
+  ],
+  "shell_command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MPLBACKEND=Agg uv run --no-sync python -m benchmarks.diagnostics.spectral.adaptive_cosine.compare_spectral_blocks --suite method_proof --max-rank 40 --methods average complete weighted single centroid median ward neighbor_joining --geometries raw adaptive_diffusion --output-dir reports/eigenspace_reassessment_20260928/spectral_blocks",
+  "environment_overrides": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MPLBACKEND": "Agg"
+  },
+  "started_utc": "2026-09-28T12:48:52.666818+00:00",
+  "completed_utc": "2026-09-28T13:04:08.533320+00:00",
+  "wall_seconds": 915.8672402498778,
+  "exit_code": 0,
+  "timing_limitation": "One run with concurrent agent activity; not a controlled speed comparison."
+}

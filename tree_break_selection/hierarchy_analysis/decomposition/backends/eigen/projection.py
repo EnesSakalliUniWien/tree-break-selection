@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from tree_break_selection.eigenvalue_groups import extend_rank_through_ties
+
 from ...core.eigen_result import EigenResult
 
 
@@ -13,7 +15,11 @@ def build_pca_projection(
     projection_dimension: int,
     n_features_total: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Build a full-width PCA projection matrix and top eigenvalues."""
+    """Build a full-width PCA projection, extending the target through ties.
+
+    Retain only numerically positive available directions. Return their actual
+    eigenvalues so downstream rank selection uses the same numerical groups.
+    """
     effective_dimension = _resolve_effective_dimension(
         eig,
         projection_dimension=projection_dimension,
@@ -42,7 +48,7 @@ def build_pca_projection(
         is_active_feature=eig.is_active_feature,
         n_features_total=n_features_total,
     )
-    top_eigenvalues = np.maximum(eig.eigenvalues[:effective_dimension], 1e-12).astype(np.float64)
+    top_eigenvalues = np.asarray(eig.eigenvalues[:effective_dimension], dtype=np.float64)
 
     return projection_matrix, top_eigenvalues
 
@@ -63,7 +69,10 @@ def _resolve_effective_dimension(
         n_samples = eig.centered_data_active.shape[0] if eig.centered_data_active is not None else 0
         available_dimensions = min(available_dimensions, max(n_samples - 1, 0))
 
-    return min(int(projection_dimension), available_dimensions)
+    return extend_rank_through_ties(
+        eig.eigenvalues[:available_dimensions],
+        projection_dimension,
+    )
 
 
 def _positive_eigenvalue_count(eigenvalues: np.ndarray) -> int:

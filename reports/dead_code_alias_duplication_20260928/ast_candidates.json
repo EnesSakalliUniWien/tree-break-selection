@@ -1,0 +1,291 @@
+{
+  "scope_roots": [
+    "applications",
+    "benchmarks",
+    "scripts",
+    "tree_break_selection",
+    "tests"
+  ],
+  "python_files_parsed": 623,
+  "exact_duplicate_groups_min_body_8_lines": [
+    [
+      {
+        "path": "applications/scrna/plots/selected_nnls_report.py",
+        "line": 189,
+        "end": 198,
+        "name": "add_generated_at",
+        "body_lines": 9,
+        "signature": "fig, generated_at"
+      },
+      {
+        "path": "applications/scrna/plots/selected_nnls_fit_summary.py",
+        "line": 198,
+        "end": 207,
+        "name": "_add_generated_at",
+        "body_lines": 9,
+        "signature": "fig: plt.Figure, generated_at: str"
+      },
+      {
+        "path": "applications/scrna/analysis/analyze_goncalves_progenitors.py",
+        "line": 279,
+        "end": 288,
+        "name": "add_generated_at",
+        "body_lines": 9,
+        "signature": "fig: plt.Figure, generated_at: str"
+      },
+      {
+        "path": "applications/mnist/plot_report.py",
+        "line": 34,
+        "end": 43,
+        "name": "_add_generated_at",
+        "body_lines": 9,
+        "signature": "fig: plt.Figure, generated_at: str"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/validation/sweeps/alpha_grid_search.py",
+        "line": 234,
+        "end": 259,
+        "name": "current_git_state",
+        "body_lines": 24,
+        "signature": ""
+      },
+      {
+        "path": "benchmarks/validation/statistics/traversal_sibling_fdr_null.py",
+        "line": 514,
+        "end": 539,
+        "name": "current_git_state",
+        "body_lines": 24,
+        "signature": ""
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/cloud/aws_selected_edge_type1_geometry.py",
+        "line": 291,
+        "end": 309,
+        "name": "main",
+        "body_lines": 18,
+        "signature": "argv: list[str] | None=None"
+      },
+      {
+        "path": "benchmarks/cloud/aws_traversal_sibling_fdr_null.py",
+        "line": 329,
+        "end": 347,
+        "name": "main",
+        "body_lines": 18,
+        "signature": "argv: list[str] | None=None"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/diagnostics/calibration/traversal/path_conditioned_traversal_audit.py",
+        "line": 400,
+        "end": 420,
+        "name": "_skip_summary",
+        "body_lines": 13,
+        "signature": "*, case_idx: int, case_name: str, case: dict[str, object], method_id: str, row: Any"
+      },
+      {
+        "path": "benchmarks/diagnostics/calibration/traversal/branch_length_traversal_audit.py",
+        "line": 128,
+        "end": 148,
+        "name": "_case_summary_from_skip",
+        "body_lines": 13,
+        "signature": "*, case_idx: int, case_name: str, case: dict[str, object], method_id: str, row: Any"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/validation/statistics/traversal_sibling_fdr_null.py",
+        "line": 241,
+        "end": 258,
+        "name": "_projection_inputs",
+        "body_lines": 11,
+        "signature": "tree: nx.DiGraph, spectral_context: object"
+      },
+      {
+        "path": "benchmarks/validation/statistics/selected_edge_type1_geometry.py",
+        "line": 492,
+        "end": 509,
+        "name": "_projection_inputs",
+        "body_lines": 11,
+        "signature": "tree: PosetTree, spectral_context: object"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/diagnostics/calibration/overlap/overlap_selected_pass_through_fixture_miner.py",
+        "line": 337,
+        "end": 355,
+        "name": "_key",
+        "body_lines": 11,
+        "signature": "*, case_id: object, data_role: object, method_id: object, replicate: object, node_id: object"
+      },
+      {
+        "path": "benchmarks/diagnostics/calibration/traversal/retained_pass_through_topology_likelihood_panel.py",
+        "line": 237,
+        "end": 254,
+        "name": "_key_from_values",
+        "body_lines": 11,
+        "signature": "case_id: object, data_role: object, method_id: object, replicate: object, node_id: object"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/diagnostics/calibration/overlap/overlap_branch_incidence_junction_panel.py",
+        "line": 394,
+        "end": 404,
+        "name": "_branch_length_to_parent",
+        "body_lines": 10,
+        "signature": "tree, *, parent: object | None, node: object"
+      },
+      {
+        "path": "benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py",
+        "line": 407,
+        "end": 417,
+        "name": "_branch_length_to_parent",
+        "body_lines": 10,
+        "signature": "tree, *, parent: object | None, node: object"
+      }
+    ],
+    [
+      {
+        "path": "applications/scrna/analyze_space_decomposition.py",
+        "line": 85,
+        "end": 94,
+        "name": "_json_default",
+        "body_lines": 9,
+        "signature": "value: Any"
+      },
+      {
+        "path": "benchmarks/validation/sweeps/alpha_structure_sweep.py",
+        "line": 165,
+        "end": 174,
+        "name": "_json_default",
+        "body_lines": 9,
+        "signature": "value: Any"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/diagnostics/spectral/mp/mp_projection_dimension_behavior_sweep.py",
+        "line": 482,
+        "end": 491,
+        "name": "_parse_args",
+        "body_lines": 9,
+        "signature": "argv: Sequence[str] | None=None"
+      },
+      {
+        "path": "benchmarks/diagnostics/calibration/statistics/mixed_internal_calibration_sweep.py",
+        "line": 434,
+        "end": 443,
+        "name": "_parse_args",
+        "body_lines": 9,
+        "signature": "argv: Sequence[str] | None=None"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py",
+        "line": 263,
+        "end": 272,
+        "name": "_df_bin",
+        "body_lines": 9,
+        "signature": "value: float"
+      },
+      {
+        "path": "benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py",
+        "line": 140,
+        "end": 149,
+        "name": "_df_bin",
+        "body_lines": 9,
+        "signature": "value: float"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/cloud/aws_selected_edge_type1_geometry.py",
+        "line": 177,
+        "end": 190,
+        "name": "_validate_replicate_coverage",
+        "body_lines": 9,
+        "signature": "manifests: list[dict[str, object]], *, expected_replicates: int"
+      },
+      {
+        "path": "benchmarks/cloud/aws_traversal_sibling_fdr_null.py",
+        "line": 175,
+        "end": 188,
+        "name": "_validate_replicate_coverage",
+        "body_lines": 9,
+        "signature": "manifests: list[dict[str, object]], *, expected_replicates: int"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/diagnostics/spectral/mp/mp_projection_dimension_behavior_sweep.py",
+        "line": 59,
+        "end": 67,
+        "name": "_select_cases",
+        "body_lines": 8,
+        "signature": "*, suite: str, case_names: Sequence[str]"
+      },
+      {
+        "path": "benchmarks/diagnostics/calibration/statistics/mixed_internal_calibration_sweep.py",
+        "line": 66,
+        "end": 74,
+        "name": "_select_cases",
+        "body_lines": 8,
+        "signature": "*, suite: str, case_names: Sequence[str]"
+      }
+    ],
+    [
+      {
+        "path": "benchmarks/diagnostics/calibration/overlap/overlap_context_negative_bayesian_topology_law.py",
+        "line": 294,
+        "end": 302,
+        "name": "_rank_bounds",
+        "body_lines": 8,
+        "signature": "values: pd.Series, roles: pd.Series"
+      },
+      {
+        "path": "benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py",
+        "line": 1104,
+        "end": 1112,
+        "name": "_rank_bounds",
+        "body_lines": 8,
+        "signature": "values: pd.Series, roles: pd.Series"
+      }
+    ]
+  ],
+  "private_no_static_name_attribute_import_or_exact_string_reference": [
+    {
+      "path": "benchmarks/diagnostics/calibration/sibling/known_branch_skew_diagnostic.py",
+      "line": 550,
+      "end": 576,
+      "name": "_node_pvalue",
+      "decorators": []
+    }
+  ],
+  "top_level_name_attribute_aliases": [
+    {
+      "path": "benchmarks/validation/sweeps/family_metric_nnls_grid.py",
+      "line": 62,
+      "name": "TOPOLOGIES",
+      "value": "TREE_CONSENSUS_STRATEGIES"
+    },
+    {
+      "path": "benchmarks/diagnostics/calibration/selected/tail/selected_tail_topology_refinement.py",
+      "line": 36,
+      "name": "BASE_CONTEXT_COLUMNS",
+      "value": "TAIL_LAW_CONTEXT_COLUMNS"
+    },
+    {
+      "path": "benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py",
+      "line": 306,
+      "name": "CANDIDATE_METHOD_CONTRAST_COLUMNS",
+      "value": "METHOD_CONTRAST_COLUMNS"
+    }
+  ]
+}

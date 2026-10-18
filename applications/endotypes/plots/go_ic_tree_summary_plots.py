@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import textwrap
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,11 +21,13 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
-from scipy.stats import hypergeom
+from scipy.stats import false_discovery_control, hypergeom
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.manifold import MDS
-from statsmodels.stats.multitest import multipletests
+
+from applications.endotypes._shared import safe_name
+from applications.endotypes.io.adaptive_diffusion_dataframe_io import load_binary_matrix
 from tree_break_selection.space_separation import (
     SpectralBlock,
     adaptive_diffusion_geometry,
@@ -35,8 +37,6 @@ from tree_break_selection.space_separation import (
     cosine_eigendecomposition,
     weight_feature_matrix,
 )
-
-from applications.endotypes._shared import safe_name
 
 RESULT_PREFIX = "allgo_new_quality_aware_go_ic"
 
@@ -67,12 +67,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--raw-kak-dir", type=Path)
-    parser.add_argument("--adaptive-diffusion-kak-dir", type=Path)
-    parser.add_argument("--whole-adaptive-dir", type=Path)
     parser.add_argument(
         "--method-matrix-summary",
         type=Path,
+        required=True,
         help=(
             "Generic method/tree-geometry summary CSV produced by "
             "run_allgo_method_version_tree_matrix.py."
@@ -80,36 +78,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--global-embedding", type=Path)
     parser.add_argument("--max-rank", type=int, default=80)
-    parser.add_argument("--plot-all", action="store_true", default=True)
     parser.add_argument("--top-summary-count", type=int, default=12)
     return parser.parse_args()
 
 
-def reader_family(family: str) -> str:
-    return {
-        "adaptive_diffusion_kak": "adaptive_diffusion_cosine_subspace",
-        "raw_kak": "raw_cosine_subspace",
-    }.get(family, family)
-
-
-def reader_run_id(run_id: str) -> str:
-    return run_id.replace(
-        "adaptive_diffusion_kak__", "adaptive_diffusion_cosine_subspace__"
-    ).replace("raw_kak__", "raw_cosine_subspace__")
-
-
 def display_label(run_id: str) -> str:
-    replacements = {
-        "whole_adaptive_diffusion": "whole adaptive diffusion",
-    }
-    if run_id in replacements:
-        return replacements[run_id]
     label = run_id
-    label = label.replace("adaptive_diffusion_kak__", "adaptive diffusion cosine subspace, ")
     label = label.replace(
         "adaptive_diffusion_cosine_subspace__", "adaptive diffusion cosine subspace, "
     )
-    label = label.replace("raw_kak__", "raw cosine subspace, ")
     label = label.replace("raw_cosine_subspace__", "raw cosine subspace, ")
     label = label.replace("current__", "current, ")
     label = label.replace("whole_adaptive_diffusion__", "whole adaptive diffusion, ")
@@ -131,21 +108,6 @@ def tier_color(label: str) -> str:
         "quality_mixed": "#f58518",
         "degenerate": "#b279a2",
     }.get(label, "#777777")
-
-
-def load_binary_matrix(path: Path) -> pd.DataFrame:
-    data = pd.read_csv(path, sep="\t", index_col=0)
-    data = data.apply(pd.to_numeric, errors="raise")
-    values = data.to_numpy()
-    if not np.isin(values, (0, 1)).all():
-        raise ValueError(f"{path} contains values outside {{0,1}}.")
-    zero_columns = data.columns[(data.sum(axis=0) == 0).to_numpy()]
-    if len(zero_columns):
-        data = data.drop(columns=zero_columns)
-    zero_rows = data.index[(data.sum(axis=1) == 0).to_numpy()]
-    if len(zero_rows):
-        raise ValueError(f"Rows with no active GO terms: {list(zero_rows[:10])!r}")
-    return data.astype(int)
 
 
 def load_global_embedding(path: Path | None, data: pd.DataFrame) -> tuple[pd.DataFrame, str, str]:
@@ -190,17 +152,11 @@ def load_global_embedding(path: Path | None, data: pd.DataFrame) -> tuple[pd.Dat
     )
 
 
-def load_assignment(path: Path, data_index: pd.Index) -> pd.DataFrame:
+def load_relabeled_assignment(path: Path, data_index: pd.Index) -> pd.DataFrame:
     frame = pd.read_csv(path)
-    if "gene" not in frame.columns:
-        if "sample_id" in frame.columns:
-            frame = frame.rename(columns={"sample_id": "gene"})
-        elif "Unnamed: 0" in frame.columns:
-            frame = frame.rename(columns={"Unnamed: 0": "gene"})
-        else:
-            frame = frame.rename(columns={frame.columns[0]: "gene"})
-    if "cluster_id" not in frame.columns:
-        raise ValueError(f"{path} has no cluster_id column.")
+    missing = {"gene", "cluster_id"} - set(frame.columns)
+    if missing:
+        raise ValueError(f"{path} lacks assignment columns {sorted(missing)}.")
     frame["gene"] = frame["gene"].astype(str)
     frame = frame.set_index("gene").reindex(data_index.astype(str))
     if frame["cluster_id"].isna().any():
@@ -211,80 +167,6 @@ def load_assignment(path: Path, data_index: pd.Index) -> pd.DataFrame:
     out = pd.DataFrame({"gene": frame.index, "cluster_id": labels})
     out["cluster_size"] = out["cluster_id"].map(sizes).astype(int)
     return out
-
-
-def add_candidates_from_raw_kak(path: Path | None) -> list[Candidate]:
-    if path is None:
-        return []
-    summary_path = path / "matrix_kak_probe_summary.csv"
-    if not summary_path.exists():
-        return []
-    summary = pd.read_csv(summary_path)
-    rows: list[Candidate] = []
-    for _, row in summary[summary["status"].eq("ok")].iterrows():
-        run_id = f"raw_kak__{row['weighting']}__{row['block_name']}"
-        rows.append(
-            Candidate(
-                family="raw_kak",
-                run_id=run_id,
-                weighting=str(row["weighting"]),
-                block_name=str(row["block_name"]),
-                block_start=int(row["block_start"]),
-                block_end=int(row["block_end"]),
-                assignments_path=Path(str(row["assignments_path"])),
-                summary=row.to_dict(),
-            )
-        )
-    return rows
-
-
-def add_candidates_from_diffusion_kak(path: Path | None) -> list[Candidate]:
-    if path is None:
-        return []
-    summary_path = path / "matrix_kak_diffusion_probe_summary.csv"
-    if not summary_path.exists():
-        return []
-    summary = pd.read_csv(summary_path)
-    rows: list[Candidate] = []
-    for _, row in summary[summary["status"].eq("ok")].iterrows():
-        run_id = f"adaptive_diffusion_kak__{row['weighting']}__{row['block_name']}"
-        rows.append(
-            Candidate(
-                family="adaptive_diffusion_kak",
-                run_id=run_id,
-                weighting=str(row["weighting"]),
-                block_name=str(row["block_name"]),
-                block_start=int(row["block_start"]),
-                block_end=int(row["block_end"]),
-                assignments_path=Path(str(row["assignments_path"])),
-                summary=row.to_dict(),
-            )
-        )
-    return rows
-
-
-def add_whole_adaptive_candidate(path: Path | None) -> list[Candidate]:
-    if path is None:
-        return []
-    assignments = path / "cluster_assignments.csv"
-    summary = path / "summary.json"
-    if not assignments.exists():
-        return []
-    meta: dict[str, object] = {}
-    if summary.exists():
-        meta = json.loads(summary.read_text(encoding="utf-8"))
-    return [
-        Candidate(
-            family="whole_adaptive_diffusion",
-            run_id="whole_adaptive_diffusion",
-            weighting="whole",
-            block_name="whole_matrix",
-            block_start=None,
-            block_end=None,
-            assignments_path=assignments,
-            summary=meta,
-        )
-    ]
 
 
 def add_candidates_from_method_matrix(summary_path: Path | None) -> list[Candidate]:
@@ -299,12 +181,17 @@ def add_candidates_from_method_matrix(summary_path: Path | None) -> list[Candida
         return []
     rows: list[Candidate] = []
     for _, row in summary[summary["status"].eq("ok")].iterrows():
-        tree_geometry = str(row.get("tree_geometry", ""))
-        method_version = str(row.get("method_version", ""))
-        family = str(row.get("method_family", f"{method_version}__{tree_geometry}"))
-        run_id = str(row.get("run_id", ""))
-        weighting = str(row.get("weighting", "whole"))
-        block_name = str(row.get("block_name", "whole_matrix"))
+        tree_geometry = str(row["tree_geometry"])
+        family = str(row["method_family"])
+        run_id = str(row["run_id"])
+        weighting = str(row["weighting"])
+        whole_matrix = tree_geometry == "whole_adaptive_diffusion" and weighting == "whole"
+        if not whole_matrix and weighting not in {"raw", "tfidf"}:
+            raise ValueError(
+                f"Unsupported saved weighting label: {weighting!r}; "
+                "use raw or tfidf for spectral blocks, or whole for whole_adaptive_diffusion."
+            )
+        block_name = str(row["block_name"])
 
         def optional_int(value: object) -> int | None:
             if pd.isna(value):
@@ -314,7 +201,7 @@ def add_candidates_from_method_matrix(summary_path: Path | None) -> list[Candida
         rows.append(
             Candidate(
                 family=family,
-                run_id=reader_run_id(run_id),
+                run_id=run_id,
                 weighting=weighting,
                 block_name=block_name,
                 block_start=optional_int(row.get("block_start")),
@@ -330,7 +217,7 @@ def eigensystems_for_data(
     data: pd.DataFrame, max_rank: int
 ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     systems: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-    for weighting in ("binary", "tfidf"):
+    for weighting in ("raw", "tfidf"):
         values = weight_feature_matrix(data, weighting)
         systems[weighting] = cosine_eigendecomposition(values, max_rank)
     return systems
@@ -341,14 +228,7 @@ def candidate_subspace_and_tree(
     data: pd.DataFrame,
     eigensystems: dict[str, tuple[np.ndarray, np.ndarray]],
 ) -> tuple[np.ndarray | None, np.ndarray | None]:
-    tree_geometry = str(candidate.summary.get("tree_geometry", ""))
-    if tree_geometry == "":
-        if candidate.family == "whole_adaptive_diffusion":
-            tree_geometry = "whole_adaptive_diffusion"
-        elif candidate.family == "raw_kak":
-            tree_geometry = "raw_cosine_subspace"
-        elif candidate.family == "adaptive_diffusion_kak":
-            tree_geometry = "adaptive_diffusion_cosine_subspace"
+    tree_geometry = str(candidate.summary["tree_geometry"])
 
     if tree_geometry == "whole_adaptive_diffusion":
         geometry = adaptive_diffusion_geometry(
@@ -371,7 +251,7 @@ def candidate_subspace_and_tree(
         return embedding, distances
 
     if candidate.weighting not in eigensystems:
-        return None, None
+        raise ValueError(f"Unsupported candidate weighting: {candidate.weighting!r}")
     eigvals, eigvecs = eigensystems[candidate.weighting]
     if candidate.block_start is None or candidate.block_end is None:
         return None, None
@@ -452,7 +332,7 @@ def cluster_coherence(data: pd.DataFrame, labels: np.ndarray) -> dict[str, objec
         cluster_counts = presence[idx].sum(axis=0)
         rest_counts = totals - cluster_counts
         p_values = hypergeom.sf(cluster_counts - 1, n, totals, size)
-        q_values = multipletests(p_values, method="fdr_bh")[1]
+        q_values = false_discovery_control(p_values, method="bh")
         cluster_prev = cluster_counts / max(size, 1)
         rest_prev = rest_counts / max(rest_size, 1)
         delta = cluster_prev - rest_prev
@@ -551,7 +431,7 @@ def quality_tier(row: pd.Series) -> tuple[int, str]:
     return 2, "quality_mixed"
 
 
-def cluster_colors(labels: np.ndarray) -> np.ndarray:
+def cluster_size_ranks(labels: np.ndarray) -> np.ndarray:
     sizes = pd.Series(labels).value_counts()
     rank = {int(cluster_id): i for i, cluster_id in enumerate(sizes.index)}
     return np.asarray([rank[int(label)] for label in labels], dtype=int)
@@ -627,7 +507,7 @@ def draw_candidate_page(
     global_y: str,
     output_path: Path,
 ) -> plt.Figure:
-    colors = cluster_colors(artifact.labels)
+    colors = cluster_size_ranks(artifact.labels)
     color_frame = artifact.assignments.copy()
     color_frame["cluster_color_rank"] = colors
     n_colors = max(int(colors.max()) + 1, 1)
@@ -635,7 +515,8 @@ def draw_candidate_page(
     norm = BoundaryNorm(np.arange(-0.5, n_colors + 0.5, 1), cmap.N)
     merged = global_embedding.merge(color_frame, on="gene", how="inner")
     sub = embedding_2d(
-        artifact.subspace_embedding, random_state=abs(hash(artifact.candidate.run_id)) % 100000
+        artifact.subspace_embedding,
+        random_state=zlib.crc32(artifact.candidate.run_id.encode()) % 100000,
     )
     fig = plt.figure(figsize=(20.0, 11.2), layout="constrained")
     grid = fig.add_gridspec(
@@ -740,13 +621,13 @@ def draw_candidate_page(
             )
 
     text_lines = [
-        reader_run_id(artifact.candidate.run_id),
+        artifact.candidate.run_id,
         "",
         f"display rank: {int(rank.get('display_rank', -1))}",
         f"raw GO-IC rank: {int(rank.get('raw_go_ic_rank', -1))}",
         f"quality tier: {rank.get('quality_tier_label', '')}",
         "",
-        f"method family: {reader_family(artifact.candidate.family)}",
+        f"method family: {artifact.candidate.family}",
         f"weighting: {artifact.candidate.weighting}",
         f"block: {artifact.candidate.block_name}",
         f"modes: {artifact.candidate.block_start}-{artifact.candidate.block_end}",
@@ -876,22 +757,19 @@ def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     pages_dir = args.output_dir / "tree_pages"
-    pages_dir.mkdir(parents=True, exist_ok=True)
-    for stale_page in pages_dir.glob("*.png"):
-        stale_page.unlink()
 
     data = load_binary_matrix(args.input)
     global_embedding, global_x, global_y = load_global_embedding(args.global_embedding, data)
     global_embedding.to_csv(args.output_dir / "global_embedding_used.csv", index=False)
     eigensystems = eigensystems_for_data(data, args.max_rank)
 
-    candidates = []
-    candidates.extend(add_candidates_from_method_matrix(args.method_matrix_summary))
-    candidates.extend(add_candidates_from_raw_kak(args.raw_kak_dir))
-    candidates.extend(add_candidates_from_diffusion_kak(args.adaptive_diffusion_kak_dir))
-    candidates.extend(add_whole_adaptive_candidate(args.whole_adaptive_dir))
+    candidates = add_candidates_from_method_matrix(args.method_matrix_summary)
     if not candidates:
         raise ValueError("No candidate tree assignments were found.")
+    # Clear earlier pages only once the inputs and candidates are known to load.
+    pages_dir.mkdir(parents=True, exist_ok=True)
+    for stale_page in pages_dir.glob("*.png"):
+        stale_page.unlink()
 
     artifacts: list[CandidateArtifact] = []
     ranking_rows: list[dict[str, object]] = []
@@ -899,7 +777,7 @@ def main() -> None:
     tfidf_frames: list[pd.DataFrame] = []
     for idx, candidate in enumerate(candidates, start=1):
         print(f"[{idx}/{len(candidates)}] score {candidate.run_id}", flush=True)
-        assignments = load_assignment(candidate.assignments_path, data.index)
+        assignments = load_relabeled_assignment(candidate.assignments_path, data.index)
         labels = assignments["cluster_id"].to_numpy(dtype=int)
         subspace, distances = candidate_subspace_and_tree(candidate, data, eigensystems)
         linkage_matrix = None
@@ -915,9 +793,9 @@ def main() -> None:
         sizes = cluster_size_metrics(labels)
         rank = {
             "run_id": candidate.run_id,
-            "method_run_id": reader_run_id(candidate.run_id),
+            "method_run_id": candidate.run_id,
             "family": candidate.family,
-            "method_family": reader_family(candidate.family),
+            "method_family": candidate.family,
             "weighting": candidate.weighting,
             "block_name": candidate.block_name,
             "block_start": candidate.block_start,
@@ -1007,7 +885,7 @@ def main() -> None:
         for artifact in ordered_artifacts:
             path = (
                 pages_dir
-                / f"{int(artifact.ranking['display_rank']):02d}_{safe_name(reader_run_id(artifact.candidate.run_id))}.png"
+                / f"{int(artifact.ranking['display_rank']):02d}_{safe_name(artifact.candidate.run_id)}.png"
             )
             fig = draw_candidate_page(artifact, global_embedding, global_x, global_y, path)
             pdf.savefig(fig)

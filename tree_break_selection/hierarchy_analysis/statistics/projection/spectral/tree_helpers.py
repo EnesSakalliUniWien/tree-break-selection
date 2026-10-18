@@ -6,12 +6,7 @@ from typing import Dict
 
 import networkx as nx
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
-
-
-def is_leaf(tree: nx.DiGraph, node_id: str) -> bool:
-    """Check whether *node_id* is a leaf in *tree*."""
-    return tree.out_degree(node_id) == 0
+from tree_break_selection.tree.topology import bottom_up_nodes, is_leaf
 
 
 def precompute_descendants(
@@ -76,7 +71,6 @@ def precompute_descendant_internal_nodes(tree: nx.DiGraph) -> Dict[str, list[obj
 
 
 __all__ = [
-    "is_leaf",
     "precompute_descendants",
     "precompute_descendant_internal_nodes",
 ]

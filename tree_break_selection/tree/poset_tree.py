@@ -5,14 +5,12 @@ from typing import TYPE_CHECKING
 
 import networkx as nx
 
-from tree_break_selection.core_utils.tree_utils import compute_node_depths
 from tree_break_selection.tree.distributions import populate_distributions
 from tree_break_selection.tree.topology import (
     compute_descendant_leaf_sets,
     get_leaf_values,
-    is_leaf,
-    lowest_common_ancestor,
     lowest_common_ancestor_for_set,
+    tree_root,
 )
 
 if TYPE_CHECKING:
@@ -47,54 +45,23 @@ class PosetTree(nx.DiGraph):
         """Initialize PosetTree with annotations_df property."""
         super().__init__(*args, **kwargs)
         self.annotations_df: pd.DataFrame | None = None
-        self._depths: dict[object, int] | None = None
 
     # ---------------- Poset helpers ----------------
 
     def root(self) -> object:
         """Return the cached root node, discovering it if necessary."""
-        if "root" in self.graph:
-            return self.graph["root"]
+        root = tree_root(self)
+        self.graph["root"] = root
+        return root
 
-        roots = [u for u, d in self.in_degree() if d == 0]
-        if len(roots) != 1:
-            raise ValueError(f"Expected one root, got {roots}")
-        r = roots[0]
-        self.graph["root"] = r
-        return r
-
-    def get_leaves(
-        self,
-        node: object | None = None,
-        return_labels: bool = True,
-        sort: bool = True,
-    ) -> list[str]:
-        """Collect leaf nodes globally or within a subtree.
-
-        Parameters
-        ----------
-        node
-            When ``None`` (default), returns all leaves. Otherwise restricts the search
-            to the descendants of ``node``.
-        return_labels
-            If ``True`` (default) return the ``label`` attribute; otherwise return raw
-            node ids.
-        sort
-            Whether to sort the returned values in ascending order.
-
-        Returns
-        -------
-        list[str]
-            Leaf labels or ids, depending on ``return_labels``.
-        """
-        return get_leaf_values(self, node=node, use_labels=return_labels, sort=sort)
-
-    def _is_leaf(self, node_id: object) -> bool:
-        """Check if a node is a leaf."""
-        return is_leaf(self, node_id)
+    def get_leaves(self, node: object | None = None, sort: bool = True) -> list[object]:
+        """Return leaf labels, globally or under ``node``; the method form of
+        ``topology.get_leaf_values``."""
+        return get_leaf_values(self, node=node, sort=sort)
 
     def compute_descendant_sets(self, use_labels: bool = True) -> dict[object, frozenset]:
-        """Map each node to the set of leaf labels under it.
+        """Map each node to the set of leaf labels under it; the method form of
+        ``topology.compute_descendant_leaf_sets``.
 
         Parameters
         ----------
@@ -109,30 +76,6 @@ class PosetTree(nx.DiGraph):
             labels/ids as a frozenset.
         """
         return compute_descendant_leaf_sets(self, use_labels=use_labels)
-
-    def _get_depths(self) -> dict[object, int]:
-        """Computes and caches node depths from the root."""
-        if self._depths is None:
-            self._depths = compute_node_depths(self)
-        return self._depths
-
-    def find_lca(self, node_a: object, node_b: object) -> object:
-        """Find the lowest common ancestor (LCA) of two nodes.
-
-        This implementation assumes the graph is a tree (each node has one parent)
-        and uses node depths for an efficient O(depth) search.
-
-        Parameters
-        ----------
-        node_a, node_b
-            Node identifiers whose LCA is sought.
-
-        Returns
-        -------
-        str
-            The node id of the lowest common ancestor.
-        """
-        return lowest_common_ancestor(self, node_a, node_b, depths=self._get_depths())
 
     def find_lca_for_set(self, nodes: Iterable[object]) -> object:
         """Find the lowest common ancestor for a collection of nodes.
@@ -151,7 +94,7 @@ class PosetTree(nx.DiGraph):
         """
         return lowest_common_ancestor_for_set(self, nodes)
 
-    def populate_node_divergences(
+    def populate_node_distributions(
         self,
         leaf_data: "pd.DataFrame",
         *,
@@ -198,28 +141,3 @@ class PosetTree(nx.DiGraph):
         self.annotations_df = pd.DataFrame.from_records(node_records).set_index(
             "node_id", drop=True
         )
-
-    def build_sample_cluster_assignments(
-        self, decomposition_results: dict[str, object]
-    ) -> pd.DataFrame:
-        """Build a per-sample cluster assignment table from decomposition output.
-
-        This method is a convenience wrapper around
-        :func:`tree_break_selection.hierarchy_analysis.cluster_assignments.build_sample_cluster_assignments`.
-
-        Parameters
-        ----------
-        decomposition_results
-            A decomposition result dictionary produced by :meth:`decompose`.
-
-        Returns
-        -------
-        pandas.DataFrame
-            A pandas DataFrame indexed by ``sample_id`` with cluster assignment columns.
-        """
-
-        from tree_break_selection.hierarchy_analysis.cluster_assignments import (
-            build_sample_cluster_assignments,
-        )
-
-        return build_sample_cluster_assignments(decomposition_results)

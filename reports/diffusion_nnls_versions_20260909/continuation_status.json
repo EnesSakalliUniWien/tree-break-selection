@@ -1,0 +1,16 @@
+{
+  "finished_at": "2026-09-09T15:34:36.920003+00:00",
+  "exit_code": 0,
+  "requested_outcomes": 1220,
+  "returned_rows": 1014,
+  "execution_errors": 206,
+  "all_configurations_attempted": true,
+  "parallel_elapsed_seconds": 835.1157665420033,
+  "parallel_worker_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "serial_stage_exit_code": 130,
+  "summary_only_elapsed_seconds": 0.04331858298974112
+}

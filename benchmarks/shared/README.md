@@ -35,7 +35,7 @@ post-run diagnostics.
 | `runners/` | Method implementations and method registry. |
 | `result_records/` | Typed benchmark result record and DataFrame conversion. |
 | `types/` | Small benchmark dataclasses. |
-| `util/` | Case execution, method execution, parameter parsing, PDF helpers, and timing. |
+| `util/` | Case execution, method execution, parameter parsing, result-row value coercion (`values.py`), PDF helpers, and timing. |
 | `plots/` | Benchmark PDF pages, embeddings, runtime plots, and report export. |
 | `relationship_analysis.py` | Post-run benchmark factor analysis. |
 | `metrics.py` | External, fragmentation, internal-geometry, and outlier clustering metrics. |

@@ -2,7 +2,7 @@
 title: PosetTree
 type: entity
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-13
 sources:
   - tree_break_selection/tree/README.md
   - tree_break_selection/tree/poset_tree.py
@@ -24,7 +24,7 @@ and helpers for decomposition and sample cluster assignments.
 
 The tree package README describes `PosetTree` as a NetworkX `DiGraph`
 subclass. Construction is separate: the explicit construction interface builds
-linkage, neighbor-joining, or IQ-TREE topologies and returns a `PosetTree` plus
+linkage topologies and returns a `PosetTree` plus
 construction evidence. `PosetTree` itself owns rooted hierarchy operations,
 distribution population, leaf counts, and decomposition access; it no longer
 contains pass-through constructor aliases.

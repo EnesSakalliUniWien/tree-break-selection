@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence import (
     annotate_child_parent_divergence,
 )
@@ -31,6 +32,8 @@ def _make_two_edge_tree() -> tuple[nx.DiGraph, pd.DataFrame]:
     tree.nodes["B"]["distribution"] = np.array([0.6, 0.4], dtype=float)
     tree.nodes["A"]["label"] = "A"
     tree.nodes["B"]["label"] = "B"
+    for node in tree.nodes:
+        tree.nodes[node]["is_leaf"] = tree.out_degree(node) == 0
 
     nodes_df = pd.DataFrame(
         {
@@ -107,14 +110,6 @@ def _make_sibling_tree() -> tuple[nx.DiGraph, pd.DataFrame]:
                 "CL": 1.0,
                 "CR": 1.0,
             },
-            "Child_Parent_Divergence_Invalid": {
-                "root": False,
-                "L": False,
-                "R": False,
-                "cal": False,
-                "CL": False,
-                "CR": False,
-            },
             "Child_Parent_Divergence_Tested": {
                 "root": False,
                 "L": True,
@@ -153,12 +148,11 @@ def test_child_parent_nonfinite_results_raise_before_correction(
         pca_eigenvalues=None,
         feature_space=None,
         **_unused_kwargs,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         return (
             np.array([np.nan, 3.0], dtype=float),  # stats
             np.array([np.nan, 1.0], dtype=float),  # dfs
             np.array([np.nan, 0.01], dtype=float),  # pvals
-            np.array([True, False], dtype=bool),  # invalid mask
         )
 
     monkeypatch.setattr(
@@ -166,7 +160,7 @@ def test_child_parent_nonfinite_results_raise_before_correction(
         _fake_compute_p_values_via_projection,
     )
 
-    with pytest.raises(ValueError, match="invalid result flags"):
+    with pytest.raises(ValueError, match="must be finite for every edge"):
         annotate_child_parent_divergence(
             tree=tree,
             annotations_df=nodes_df,
@@ -234,7 +228,7 @@ def test_sibling_divergence_nonfinite_z_raises(monkeypatch) -> None:
         return np.array([np.nan, 0.0], dtype=float)
 
     monkeypatch.setattr(
-        "tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.wald_statistic.sibling_z_scores.compute_whitened_wald_contrast",
+        "tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.wald_statistic.sibling_divergence_test.compute_whitened_wald_contrast",
         _fake_compute_whitened_wald_contrast,
     )
 
@@ -244,6 +238,8 @@ def test_sibling_divergence_nonfinite_z_raises(monkeypatch) -> None:
             right_distribution=np.array([0.5, 0.5], dtype=float),
             left_sample_size=10.0,
             right_sample_size=10.0,
+            branch_length_sum=0.0,
+            mean_branch_length=None,
             projection_dimension_from_edge_comparisons=2,
             parent_principal_component_projection=np.eye(2, dtype=float),
             parent_principal_component_eigenvalues=np.ones(2, dtype=float),
@@ -254,9 +250,6 @@ def test_resolve_sibling_projection_dimension_rejects_missing_edge_gate_dimensio
     with pytest.raises(ValueError, match="must be supplied by edge-gate context"):
         resolve_sibling_projection_dimension(
             projection_dimension_from_edge_comparisons=None,
-            left_sample_size=3.0,
-            right_sample_size=4.0,
-            n_features=5,
         )
 
 
@@ -300,11 +293,6 @@ def test_collect_sibling_pair_records_requires_edge_derived_dimension_and_parent
                 "root": np.nan,
                 "L": 1.0,
                 "R": 1.0,
-            },
-            "Child_Parent_Divergence_Invalid": {
-                "root": False,
-                "L": False,
-                "R": False,
             },
             "Child_Parent_Divergence_Tested": {
                 "root": False,
@@ -352,7 +340,9 @@ def test_collect_sibling_pair_records_requires_edge_derived_dimension_and_parent
         annotations_df,
         sibling_projection_dimensions_from_edge_comparisons={"root": 2},
         parent_principal_component_projections={"root": np.eye(2, dtype=float)},
-        parent_principal_component_eigenvalues={"root": np.ones(2, dtype=float)},
+        parent_principal_component_eigenvalues={
+            "root": np.array([4.0, 1.0], dtype=float),
+        },
     )
 
     assert "root" not in non_binary
@@ -364,9 +354,33 @@ def test_collect_sibling_pair_records_requires_edge_derived_dimension_and_parent
     )
     np.testing.assert_array_equal(
         captured["parent_principal_component_eigenvalues"],
-        np.ones(2, dtype=float),
+        np.array([4.0, 1.0], dtype=float),
     )
     assert records[0].sibling_projection_dimension == records[0].degrees_of_freedom == 1.0
+    assert records[0].parent_positive_eigenvalue_count == 2.0
+
+
+def test_collect_sibling_pair_records_uses_unit_projected_wald_reference_scale() -> None:
+    tree, annotations_df = _make_sibling_tree()
+
+    records, non_binary = collect_sibling_pair_records(
+        tree,
+        annotations_df,
+        sibling_projection_dimensions_from_edge_comparisons={"root": 2, "cal": 2},
+        parent_principal_component_projections={
+            "root": np.eye(2, dtype=float),
+            "cal": np.eye(2, dtype=float),
+        },
+        parent_principal_component_eigenvalues={
+            "root": np.ones(2, dtype=float),
+            "cal": np.ones(2, dtype=float),
+        },
+    )
+
+    assert "root" not in non_binary
+    assert "cal" not in non_binary
+    assert len(records) == 2
+    assert {record.reference_scale for record in records} == {1.0}
 
 
 def test_annotate_sibling_divergence_persists_projection_dimension() -> None:
@@ -394,31 +408,19 @@ def test_resolve_sibling_projection_dimension_rejects_negative_dimension() -> No
     with pytest.raises(ValueError, match="Invalid projection_dimension_from_edge_comparisons=-1"):
         resolve_sibling_projection_dimension(
             projection_dimension_from_edge_comparisons=-1,
-            left_sample_size=2.0,
-            right_sample_size=3.0,
-            n_features=4,
         )
 
 
-def test_resolve_sibling_projection_dimension_accepts_zero_dimension() -> None:
+@pytest.mark.parametrize(
+    "projection_dimension",
+    [pytest.param(0, id="zero"), pytest.param(3, id="positive")],
+)
+def test_resolve_sibling_projection_dimension_uses_supplied_edge_derived_dimension(
+    projection_dimension: int,
+) -> None:
     resolved_k, source = resolve_sibling_projection_dimension(
-        projection_dimension_from_edge_comparisons=0,
-        left_sample_size=2.0,
-        right_sample_size=3.0,
-        n_features=4,
+        projection_dimension_from_edge_comparisons=projection_dimension,
     )
 
-    assert resolved_k == 0
-    assert source == "derived_from_edge_comparisons"
-
-
-def test_resolve_sibling_projection_dimension_uses_supplied_edge_derived_dimension() -> None:
-    resolved_k, source = resolve_sibling_projection_dimension(
-        projection_dimension_from_edge_comparisons=3,
-        left_sample_size=2.0,
-        right_sample_size=3.0,
-        n_features=4,
-    )
-
-    assert resolved_k == 3
+    assert resolved_k == projection_dimension
     assert source == "derived_from_edge_comparisons"

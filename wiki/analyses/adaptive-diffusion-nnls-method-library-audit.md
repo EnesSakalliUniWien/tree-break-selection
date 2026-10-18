@@ -2,7 +2,7 @@
 title: Adaptive Diffusion and NNLS Method/Library Audit
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-14
 sources:
   - reports/adaptive_diffusion_nnls_method_library_audit_20260728.md
   - reports/benchmark_execution_audit_20260728.md
@@ -139,11 +139,11 @@ improvement more than the numerical solver needs replacement.
 
 ### Installed comparison backends
 
-The project now declares PyGSP `>=0.6.1` in the `diffusion` extra and deeptime
-`>=0.4.5` in the `trajectory` extra. PHATE `>=2.0.0` is installed through
-`experimental-gpl` beside graphtools because PHATE is GPLv2. SciPy and
-scikit-learn remain core dependencies and already supply `eigsh`,
-`NearestNeighbors`, and `SpectralEmbedding`.
+The project declared PyGSP in a `diffusion` extra, deeptime in a `trajectory`
+extra and PHATE in `experimental-gpl` until 2026-10-14, when the three unused
+packages and the two extras were removed. SciPy and scikit-learn remain core
+dependencies and already supply `eigsh`, `NearestNeighbors`, and
+`SpectralEmbedding`.
 
 Functional smokes passed for a duplicate-aware sparse neighbor operator,
 partial `eigsh`, precomputed-affinity `SpectralEmbedding`, PHATE embedding,

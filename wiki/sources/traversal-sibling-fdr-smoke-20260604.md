@@ -6,8 +6,6 @@ updated: 2026-06-04
 sources:
   - benchmarks/validation/statistics/traversal_sibling_fdr_null.py
   - benchmarks/cloud/aws_traversal_sibling_fdr_null.py
-  - tests/validation/statistics/67_test_traversal_sibling_fdr_null.py
-  - tests/validation/68_test_aws_traversal_sibling_fdr_null.py
   - raw/assets/benchmark-results/traversal_sibling_fdr_smoke_20260604/synthetic/traversal_sibling_fdr_summary.csv
   - raw/assets/benchmark-results/traversal_sibling_fdr_smoke_20260604/binary/traversal_sibling_fdr_summary.csv
 tags:

@@ -19,7 +19,22 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 from scipy import stats
-from tree_break_selection.core_utils.tree_utils import compute_node_depths
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
+    DEFAULT_CASE_NAMES,
+    build_selected_hierarchy_tree,
+    simulate_null_data,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_stratification_diagnostic import (
+    parent_size_bin,
+)
+from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
+    effective_rank,
+)
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import parse_csv_list
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -27,14 +42,11 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.child_parent_divergence_annotation import (
     annotate_child_parent_divergence,
 )
-from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
-    SpectralContext,
-)
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     compute_whitened_wald_contrast,
 )
-from tree_break_selection.hierarchy_analysis.statistics.projection.projection_dimension_estimation.projection_dimension_estimators import (
-    effective_rank,
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     compute_sibling_branch_length_sum,
@@ -56,19 +68,7 @@ from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
-
-from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
-    DEFAULT_CASE_NAMES,
-    _build_tree,
-    _parse_csv_list,
-    _selected_cases,
-    _simulate_null_data,
-)
-from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_stratification_diagnostic import (
-    _parent_size_bin,
-)
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
-from benchmarks.shared.util.time import format_timestamp_utc
+from tree_break_selection.tree.topology import compute_node_depths
 
 STUDY_ROLE = "descriptive_selected_hierarchy_geometry_not_calibration"
 RESPONSE_COLUMN = "log_selected_hierarchy_ratio"
@@ -459,7 +459,7 @@ def _spectral_geometry(
     parent: object,
     projection_dimension: int,
     z_scores: np.ndarray,
-    spectral_context: SpectralContext,
+    spectral_context: SpectralDecompositionResult,
 ) -> dict[str, object]:
     node_id = str(parent)
     if node_id not in spectral_context.principal_component_projections_by_node:
@@ -597,7 +597,7 @@ def _selected_geometry_rows(
     *,
     tree,
     edge_df: pd.DataFrame,
-    spectral_context: SpectralContext,
+    spectral_context: SpectralDecompositionResult,
     records: Sequence[SiblingPairRecord],
     case_id: str,
     case_category: str,
@@ -688,7 +688,7 @@ def _selected_geometry_rows(
             "parent_depth": int(node_depths[record.parent]),
             "parent_sample_size": int(record.n_parent),
             "parent_size_fraction": parent_size_fraction,
-            "parent_size_bin": _parent_size_bin(parent_size_fraction),
+            "parent_size_bin": parent_size_bin(parent_size_fraction),
             "left_child_sample_size": left_sample_size,
             "right_child_sample_size": right_sample_size,
             "child_balance": child_balance,
@@ -741,8 +741,8 @@ def _run_geometry_sample(
     case_id: str,
     replicate_index: int,
 ) -> GeometryStudySample:
-    tree, tree_metric = _build_tree(data, metadata)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree, tree_metric = build_selected_hierarchy_tree(data, metadata)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     edge_df, spectral_context = annotate_child_parent_divergence(
         tree,
         tree.annotations_df,
@@ -819,7 +819,7 @@ def _diagnose_case(
     tree_metric = ""
 
     for replicate_index in range(int(n_replicates)):
-        simulated = _simulate_null_data(inputs.data, feature_space, rng=rng)
+        simulated = simulate_null_data(inputs.data, feature_space, rng=rng)
         sample = _run_geometry_sample(
             data=simulated,
             metadata=inputs.metadata,
@@ -1805,6 +1805,8 @@ def run_selected_hierarchy_geometry_covariate_study(
     write_selected_records: bool = False,
 ) -> dict[str, pd.DataFrame]:
     """Run the selected-hierarchy geometry covariate diagnostic."""
+    if not case_names:
+        raise ValueError("case_names must not be empty.")
     if n_replicates <= 0:
         raise ValueError("n_replicates must be positive.")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1812,7 +1814,7 @@ def run_selected_hierarchy_geometry_covariate_study(
 
     record_tables: list[pd.DataFrame] = []
     case_summaries: list[dict[str, object]] = []
-    for index, case in enumerate(_selected_cases(case_names), start=1):
+    for index, case in enumerate(select_cases(suite="full", case_names=case_names), start=1):
         print(f"[{index}/{len(case_names)}] {case['name']}", flush=True)
         try:
             records, case_summary = _diagnose_case(
@@ -1945,7 +1947,7 @@ def main() -> None:
             / f"selected_hierarchy_geometry_covariates_{format_timestamp_utc()}"
         )
     outputs = run_selected_hierarchy_geometry_covariate_study(
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         output_dir=output_dir,
         n_replicates=int(args.n_replicates),
         seed=int(args.seed),

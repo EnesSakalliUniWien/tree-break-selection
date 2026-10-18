@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     compute_whitened_wald_contrast,
 )

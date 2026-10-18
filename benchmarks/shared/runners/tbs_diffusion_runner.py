@@ -12,6 +12,9 @@ from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
+
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from benchmarks.shared.types import MethodRunResult
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
 )
@@ -31,11 +34,8 @@ from tree_break_selection.space_separation import (
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
-
-from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
-from benchmarks.shared.types import MethodRunResult
 
 GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_CONNECTIVITY_MINIMUM = "connectivity_minimum"
 GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_FRAGMENTATION_GUARD = "fragmentation_guard"
@@ -304,8 +304,7 @@ def _require_adaptive_diffusion_family_contract(
     if family == "continuous":
         if metric != "euclidean":
             raise ValueError(
-                "Continuous adaptive diffusion requires metric='euclidean'; "
-                f"got metric={metric!r}."
+                f"Continuous adaptive diffusion requires metric='euclidean'; got metric={metric!r}."
             )
         return family
     if family in {"bernoulli", "categorical"}:
@@ -363,16 +362,8 @@ def _build_graphtools_diffusion_geometry(
         verbose=False,
     )
     kernel_matrix = graph.kernel
-    weights = (
-        kernel_matrix.toarray()
-        if hasattr(kernel_matrix, "toarray")
-        else np.asarray(
-            kernel_matrix,
-            dtype=float,
-        )
-    )
     diffusion_coords = _compute_diffusion_coordinates(
-        weights,
+        kernel_matrix,
         diffusion_time=diffusion_time,
         n_components=n_components,
     )
@@ -386,7 +377,9 @@ def _build_graphtools_diffusion_geometry(
         "kernel_symm": str(kernel_symm),
         "random_state": int(random_state),
         "graph_class": graph.__class__.__name__,
-        "kernel_nonzero_entries": int(getattr(kernel_matrix, "nnz", np.count_nonzero(weights))),
+        "kernel_nonzero_entries": int(
+            kernel_matrix.nnz if hasattr(kernel_matrix, "nnz") else np.count_nonzero(kernel_matrix)
+        ),
     }
     metadata.update(neighbor_metadata)
     return DiffusionGeometry(
@@ -406,12 +399,13 @@ def _run_tbs_diffusion_method(
     feature_space: FeatureSpace | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,
     branch_length_optimization_solver_tolerance: float = 1e-6,
     branch_length_optimization_max_iterations: int | None = None,
+    branch_length_optimization_apply_nonconverged: bool = False,
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
 ) -> MethodRunResult:
     """Run TBS decomposition on a Hamming nearest-neighbor diffusion tree."""
@@ -437,6 +431,9 @@ def _run_tbs_diffusion_method(
         branch_length_optimization_random_state=branch_length_optimization_random_state,
         branch_length_optimization_solver_tolerance=(branch_length_optimization_solver_tolerance),
         branch_length_optimization_max_iterations=branch_length_optimization_max_iterations,
+        branch_length_optimization_apply_nonconverged=(
+            branch_length_optimization_apply_nonconverged
+        ),
         edge_branch_length_variance_policy=edge_branch_length_variance_policy,
         extra={
             "diffusion_method": "hamming_nn_diffusion",
@@ -463,20 +460,19 @@ def _run_tbs_diffusion_graphtools_method(
     *,
     adaptive_neighbor_profile: str | None = None,
     adaptive_neighbor_grid: Sequence[int] | None = None,
-    tree_builder: str = "linkage",
-    tree_rooting: str = "linkage_root",
     tree_linkage_method: str,
     feature_space: FeatureSpace | None = None,
     graph_data_df: pd.DataFrame | None = None,
     branch_length_data_df: pd.DataFrame | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,
     branch_length_optimization_solver_tolerance: float = 1e-6,
     branch_length_optimization_max_iterations: int | None = None,
+    branch_length_optimization_apply_nonconverged: bool = False,
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
 ) -> MethodRunResult:
     """Run TBS decomposition on a graphtools kernel diffusion tree."""
@@ -487,9 +483,7 @@ def _run_tbs_diffusion_graphtools_method(
         branch_length_optimization_method != BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC
         and branch_length_data_df is None
     ):
-        raise ValueError(
-            "Graphtools NNLS requires explicit branch_length_data_df geometry."
-        )
+        raise ValueError("Graphtools NNLS requires explicit branch_length_data_df geometry.")
     if branch_length_data_df is not None and not branch_length_data_df.index.equals(data_df.index):
         raise ValueError("branch_length_data_df index must exactly match the original data index.")
     geometry = _build_graphtools_diffusion_geometry(
@@ -510,8 +504,6 @@ def _run_tbs_diffusion_graphtools_method(
         data_df,
         geometry.distance_condensed,
         sibling_significance_level,
-        tree_builder=tree_builder,
-        tree_rooting=tree_rooting,
         tree_linkage_method=tree_linkage_method,
         feature_space=feature_space,
         branch_length_data_df=branch_length_data_df,
@@ -521,6 +513,9 @@ def _run_tbs_diffusion_graphtools_method(
         branch_length_optimization_random_state=branch_length_optimization_random_state,
         branch_length_optimization_solver_tolerance=(branch_length_optimization_solver_tolerance),
         branch_length_optimization_max_iterations=branch_length_optimization_max_iterations,
+        branch_length_optimization_apply_nonconverged=(
+            branch_length_optimization_apply_nonconverged
+        ),
         edge_branch_length_variance_policy=edge_branch_length_variance_policy,
         extra={
             "diffusion_method": "graphtools_kernel_diffusion",
@@ -559,12 +554,13 @@ def _run_tbs_diffusion_adaptive_method(
     feature_space: FeatureSpace | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,
     branch_length_optimization_solver_tolerance: float = 1e-6,
     branch_length_optimization_max_iterations: int | None = None,
+    branch_length_optimization_apply_nonconverged: bool = False,
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
 ) -> MethodRunResult:
     """Run TBS decomposition on an adaptive variable-bandwidth diffusion tree."""
@@ -596,6 +592,9 @@ def _run_tbs_diffusion_adaptive_method(
         branch_length_optimization_random_state=branch_length_optimization_random_state,
         branch_length_optimization_solver_tolerance=(branch_length_optimization_solver_tolerance),
         branch_length_optimization_max_iterations=branch_length_optimization_max_iterations,
+        branch_length_optimization_apply_nonconverged=(
+            branch_length_optimization_apply_nonconverged
+        ),
         edge_branch_length_variance_policy=edge_branch_length_variance_policy,
         extra={
             "diffusion_method": "adaptive_pydiffmap_diffusion",

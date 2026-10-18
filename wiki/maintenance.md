@@ -2,10 +2,11 @@
 title: Wiki Maintenance
 type: control
 status: reviewed
-updated: 2026-05-24
+updated: 2026-09-28
 sources:
   - raw/inbox/wiki-construction-brief.md
   - scripts/wiki/lint.py
+  - docs/generated-files.md
 tags:
   - wiki
   - maintenance
@@ -28,7 +29,9 @@ coverage current, and the chronology append-only.
   verification, and maintenance events.
 - Preserve frontmatter `sources` when revising a page.
 - Repair broken wikilinks immediately.
-- Promote useful pages from `wiki/candidates/` once they become reusable.
+- Run `make generated-files-check` for report changes. Missing generated source
+  bytes require a finalized catalog entry to pass wiki lint; restore or reproduce
+  the bytes before using them as numerical evidence. See [[generated-report-files]].
 
 ### Cleanup Cadence
 

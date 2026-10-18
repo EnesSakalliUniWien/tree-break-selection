@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+
 from benchmarks.shared.cases.categorical import CATEGORICAL_CASES
 from benchmarks.shared.generators.generate_case_data import generate_case_data
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_projected_wald.child_parent_standardized_z_scores import (
@@ -136,14 +137,33 @@ def _continuous_leaf_data() -> pd.DataFrame:
     )
 
 
-def test_populate_node_divergences_stores_categorical_blocks_for_one_hot_columns() -> None:
-    """Flat one-hot columns are one categorical block contract, not Bernoulli aliases."""
+def _capture_spectral_input(monkeypatch: pytest.MonkeyPatch) -> list[np.ndarray]:
+    captured_matrices: list[np.ndarray] = []
+
+    def capture(
+        data_matrix: np.ndarray,
+        *,
+        compute_eigenvectors: bool,
+    ) -> None:
+        captured_matrices.append(np.asarray(data_matrix, dtype=np.float64).copy())
+        return None
+
+    monkeypatch.setattr(
+        "tree_break_selection.hierarchy_analysis.statistics.projection.spectral."
+        "marchenko_pastur.eigendecompose_covariance",
+        capture,
+    )
+    return captured_matrices
+
+
+def test_populate_node_distributions_stores_categorical_blocks_for_one_hot_columns() -> None:
+    """Flat one-hot columns are one categorical block contract, not Bernoulli blocks."""
     tree = _simple_binary_tree()
     leaf_data = _categorical_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
     assert isinstance(feature_space, FeatureSpace)
 
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     assert tree.nodes["L0"]["distribution"].shape == (6,)
     np.testing.assert_array_equal(
@@ -158,16 +178,16 @@ def test_populate_node_divergences_stores_categorical_blocks_for_one_hot_columns
         )
 
 
-def test_populate_node_divergences_rejects_one_hot_columns_without_explicit_contract() -> None:
+def test_populate_node_distributions_rejects_one_hot_columns_without_explicit_contract() -> None:
     """One-hot category names alone must not silently select categorical statistics."""
     tree = _simple_binary_tree()
     leaf_data = _categorical_leaf_data()
 
     with pytest.raises(ValueError, match="feature_space"):
-        tree.populate_node_divergences(leaf_data)
+        tree.populate_node_distributions(leaf_data)
 
 
-def test_populate_node_divergences_rejects_bernoulli_values_outside_unit_interval() -> None:
+def test_populate_node_distributions_rejects_bernoulli_values_outside_unit_interval() -> None:
     """Bernoulli leaf data must be probabilities, not unvalidated continuous features."""
     tree = _simple_binary_tree()
     leaf_data = pd.DataFrame(
@@ -182,7 +202,7 @@ def test_populate_node_divergences_rejects_bernoulli_values_outside_unit_interva
     )
 
     with pytest.raises(ValueError, match="Bernoulli block 'F0' values must lie"):
-        tree.populate_node_divergences(leaf_data)
+        tree.populate_node_distributions(leaf_data)
 
 
 def test_feature_space_rejects_duplicate_column_and_block_names() -> None:
@@ -233,12 +253,12 @@ def test_feature_space_rejects_duplicate_column_and_block_names() -> None:
         )
 
 
-def test_populate_node_divergences_stores_continuous_means_and_covariances() -> None:
+def test_populate_node_distributions_stores_continuous_means_and_covariances() -> None:
     tree = _simple_binary_tree()
     leaf_data = _continuous_leaf_data()
     feature_space = _continuous_feature_space()
 
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     expected_mean = leaf_data.to_numpy(dtype=np.float64).mean(axis=0)
     expected_covariance = np.cov(leaf_data.to_numpy(dtype=np.float64), rowvar=False, ddof=1)
@@ -258,7 +278,7 @@ def test_guarded_within_child_continuous_covariance_excludes_between_child_shift
     leaf_data = _balanced_continuous_leaf_data(n_per_child=8)
     feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
 
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     guarded = resolve_node_continuous_covariance_by_block(
         tree,
@@ -287,7 +307,7 @@ def test_guarded_within_child_continuous_covariance_falls_back_for_tiny_children
     leaf_data = _balanced_continuous_leaf_data(n_per_child=2)
     feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
 
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     guarded = resolve_node_continuous_covariance_by_block(
         tree,
@@ -315,7 +335,7 @@ def test_guarded_within_child_continuous_covariance_supports_diagonal_blocks(
     feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
     monkeypatch.setenv(MAX_EXACT_CONTINUOUS_COVARIANCE_BLOCK_DIMENSION_ENV, "1")
 
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     guarded = resolve_node_continuous_covariance_by_block(
         tree,
@@ -358,7 +378,7 @@ def test_guarded_continuous_covariance_policy_is_discrete_noop() -> None:
     )
 
 
-def test_populate_node_divergences_uses_diagonal_continuous_covariance_fallback() -> None:
+def test_populate_node_distributions_uses_diagonal_continuous_covariance_fallback() -> None:
     tree = PosetTree()
     tree.add_node("root", is_leaf=False)
     tree.add_node("L0", is_leaf=True, label="L0")
@@ -373,13 +393,13 @@ def test_populate_node_divergences_uses_diagonal_continuous_covariance_fallback(
     )
     feature_space = continuous_feature_space_from_columns(columns)
 
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     covariance = tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"]
     assert covariance.shape == (len(columns),)
 
 
-def test_populate_node_divergences_rejects_incomplete_one_hot_category_blocks() -> None:
+def test_populate_node_distributions_rejects_incomplete_one_hot_category_blocks() -> None:
     """A malformed one-hot schema should fail at the data boundary."""
     leaf_data = _categorical_leaf_data().drop(columns=["F1_c1"])
 
@@ -425,7 +445,7 @@ def test_categorical_spectral_decomposition_uses_drop_last_projection_width() ->
     leaf_data = _categorical_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
     assert feature_space is not None
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     spectral_decomposition = compute_spectral_decomposition(
         tree,
@@ -452,22 +472,8 @@ def test_categorical_spectral_decomposition_uses_parent_null_whitened_tangent_ro
     leaf_data = _categorical_leaf_data()
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
     assert feature_space is not None
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
-    captured_matrices: list[np.ndarray] = []
-
-    def _capture_eigendecompose_covariance(
-        data_matrix: np.ndarray,
-        *,
-        compute_eigenvectors: bool,
-    ):
-        captured_matrices.append(np.asarray(data_matrix, dtype=np.float64).copy())
-        return None
-
-    monkeypatch.setattr(
-        "tree_break_selection.hierarchy_analysis.statistics.projection.spectral."
-        "marchenko_pastur.eigendecompose_covariance",
-        _capture_eigendecompose_covariance,
-    )
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+    captured_matrices = _capture_spectral_input(monkeypatch)
 
     compute_spectral_decomposition(
         tree,
@@ -495,22 +501,8 @@ def test_continuous_spectral_decomposition_uses_parent_null_whitened_tangent_row
     tree = _simple_binary_tree()
     leaf_data = _continuous_leaf_data()
     feature_space = _continuous_feature_space()
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
-    captured_matrices: list[np.ndarray] = []
-
-    def _capture_eigendecompose_covariance(
-        data_matrix: np.ndarray,
-        *,
-        compute_eigenvectors: bool,
-    ):
-        captured_matrices.append(np.asarray(data_matrix, dtype=np.float64).copy())
-        return None
-
-    monkeypatch.setattr(
-        "tree_break_selection.hierarchy_analysis.statistics.projection.spectral."
-        "marchenko_pastur.eigendecompose_covariance",
-        _capture_eigendecompose_covariance,
-    )
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+    captured_matrices = _capture_spectral_input(monkeypatch)
 
     compute_spectral_decomposition(
         tree,
@@ -572,7 +564,7 @@ def test_continuous_covariance_memory_contract_selects_diagonal_or_dense(monkeyp
 
     monkeypatch.setenv(MAX_EXACT_CONTINUOUS_COVARIANCE_WORK_MIB_ENV, "1")
     diagonal_tree = _simple_binary_tree()
-    diagonal_tree.populate_node_divergences(
+    diagonal_tree.populate_node_distributions(
         leaf_data,
         feature_space=feature_space,
     )
@@ -582,7 +574,7 @@ def test_continuous_covariance_memory_contract_selects_diagonal_or_dense(monkeyp
 
     monkeypatch.setenv(MAX_EXACT_CONTINUOUS_COVARIANCE_WORK_MIB_ENV, "8")
     tree = _simple_binary_tree()
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
     assert CONTINUOUS_COVARIANCE_BY_BLOCK in tree.nodes["root"]
     assert tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"].shape == (
         len(columns),

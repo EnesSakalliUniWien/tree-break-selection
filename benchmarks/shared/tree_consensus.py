@@ -11,30 +11,15 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score
 
+from benchmarks.shared.performance_grid import markdown_table
+from tree_break_selection.tree.construction import (
+    SUPPORTED_LINKAGE_METHODS,
+    TREE_CONSENSUS_STRATEGY_PRIORITY,
+)
+
 TARGET_TREE_CONSENSUS_METHOD = "tbs_diffusion_graphtools_adaptive_nnls"
 TARGET_TREE_CONSENSUS_GRID = "graphtools_adaptive_k_tree_strategy"
 
-EXPECTED_TREE_INFERENCES: tuple[str, ...] = (
-    "average",
-    "complete",
-    "weighted",
-    "single",
-    "centroid",
-    "median",
-    "ward",
-    "neighbor_joining",
-)
-
-TREE_PRIORITY: dict[str, int] = {
-    "weighted": 0,
-    "ward": 1,
-    "complete": 2,
-    "average": 3,
-    "centroid": 4,
-    "median": 5,
-    "neighbor_joining": 6,
-    "single": 7,
-}
 
 LABEL_COLUMNS: list[str] = [
     "test_case",
@@ -82,9 +67,7 @@ class TreeConsensusArtifacts:
 def tree_inference_from_run_id(run_id: str) -> str:
     """Return the tree strategy encoded in a benchmark grid run id."""
     raw = str(run_id)
-    if "tree_builder_neighbor_joining" in raw:
-        return "neighbor_joining"
-    for tree_inference in EXPECTED_TREE_INFERENCES:
+    for tree_inference in SUPPORTED_LINKAGE_METHODS:
         if f"tree_linkage_method_{tree_inference}" in raw:
             return tree_inference
     raise ValueError(f"Cannot infer tree strategy from run_id={run_id!r}.")
@@ -143,7 +126,9 @@ def _target_results(results: pd.DataFrame) -> pd.DataFrame:
         )
 
     target["tree_inference"] = target["run_id"].map(tree_inference_from_run_id)
-    target["tree_priority"] = target["tree_inference"].map(TREE_PRIORITY).astype(int)
+    target["tree_priority"] = (
+        target["tree_inference"].map(TREE_CONSENSUS_STRATEGY_PRIORITY).astype(int)
+    )
     for column in [
         "test_case",
         "true_clusters",
@@ -527,14 +512,14 @@ def _summary(
     label_free_integrity_pass: bool,
 ) -> pd.DataFrame:
     case_count = int(target["case_id"].nunique())
-    expected_rows = case_count * len(EXPECTED_TREE_INFERENCES)
+    expected_rows = case_count * len(SUPPORTED_LINKAGE_METHODS)
     result_rows = int(len(target))
     per_case_complete = target.groupby("case_id")["tree_inference"].agg(
-        lambda values: set(values.astype(str)) == set(EXPECTED_TREE_INFERENCES)
+        lambda values: set(values.astype(str)) == set(SUPPORTED_LINKAGE_METHODS)
     )
     completeness_pass = (
         result_rows == expected_rows
-        and int(target["run_id"].nunique()) == len(EXPECTED_TREE_INFERENCES)
+        and int(target["run_id"].nunique()) == len(SUPPORTED_LINKAGE_METHODS)
         and bool(per_case_complete.all())
     )
 
@@ -571,13 +556,16 @@ def _summary(
         and category_loss_count == 0
     )
     selected_rows = selection[selection["selector_status"].eq("selected")]
+    selected_ari = selected_rows["selected_ari"].dropna()
+    selected_nmi = selected_rows["selected_nmi"].dropna()
+    selected_macro_f1 = selected_rows["selected_macro_f1"].dropna()
     summary = {
         "gate_status": "pass" if promotion_pass else "no_promotion",
         "cases": case_count,
         "result_rows": result_rows,
         "expected_result_rows": expected_rows,
         "run_cells": int(target["run_id"].nunique()),
-        "expected_run_cells": len(EXPECTED_TREE_INFERENCES),
+        "expected_run_cells": len(SUPPORTED_LINKAGE_METHODS),
         "selected_cases": int(len(selected_rows)),
         "skipped_cases": int(selection["selector_status"].ne("selected").sum()),
         "label_rows": int(len(labels)),
@@ -591,17 +579,11 @@ def _summary(
         "metric_median_pass": bool(all(median_passes.values())),
         "category_loss_count": int(category_loss_count),
         "category_gate_pass": bool(category_loss_count == 0),
-        "mean_selected_ari": float(selected_rows["selected_ari"].mean())
-        if not selected_rows.empty
-        else np.nan,
-        "median_selected_ari": float(selected_rows["selected_ari"].median())
-        if not selected_rows.empty
-        else np.nan,
-        "mean_selected_nmi": float(selected_rows["selected_nmi"].mean())
-        if not selected_rows.empty
-        else np.nan,
-        "mean_selected_macro_f1": float(selected_rows["selected_macro_f1"].mean())
-        if not selected_rows.empty
+        "mean_selected_ari": float(selected_ari.mean()) if not selected_ari.empty else np.nan,
+        "median_selected_ari": float(selected_ari.median()) if not selected_ari.empty else np.nan,
+        "mean_selected_nmi": float(selected_nmi.mean()) if not selected_nmi.empty else np.nan,
+        "mean_selected_macro_f1": float(selected_macro_f1.mean())
+        if not selected_macro_f1.empty
         else np.nan,
         **metric_records,
     }
@@ -637,25 +619,6 @@ def build_tree_consensus_tables(
     )
 
 
-def _markdown_table(frame: pd.DataFrame, *, max_rows: int = 20) -> str:
-    if frame.empty:
-        return "_No rows._"
-    visible = frame.head(max_rows).copy()
-    for column in visible.columns:
-        if pd.api.types.is_float_dtype(visible[column]):
-            visible[column] = visible[column].map(
-                lambda value: "" if pd.isna(value) else f"{float(value):.4f}"
-            )
-    lines = [
-        "| " + " | ".join(visible.columns) + " |",
-        "| " + " | ".join("---" for _column in visible.columns) + " |",
-    ]
-    for row in visible.itertuples(index=False):
-        values = [str(value).replace("|", "\\|") for value in row]
-        lines.append("| " + " | ".join(values) + " |")
-    return "\n".join(lines)
-
-
 def _report_text(tables: TreeConsensusTables, *, source_path: Path | None) -> str:
     summary = tables.summary.iloc[0]
     source_line = f"- Source rows: `{source_path}`" if source_path is not None else ""
@@ -681,7 +644,7 @@ def _report_text(tables: TreeConsensusTables, *, source_path: Path | None) -> st
             "",
             "## Gate Checks",
             "",
-            _markdown_table(
+            markdown_table(
                 tables.summary[
                     [
                         "gate_status",
@@ -697,7 +660,7 @@ def _report_text(tables: TreeConsensusTables, *, source_path: Path | None) -> st
             "",
             "## Selected Topologies",
             "",
-            _markdown_table(tables.selection[selection_cols], max_rows=200),
+            markdown_table(tables.selection[selection_cols], max_rows=200),
             "",
         ]
     )
@@ -798,7 +761,6 @@ def export_tree_consensus_label_files(
 
 
 __all__ = [
-    "EXPECTED_TREE_INFERENCES",
     "TARGET_TREE_CONSENSUS_GRID",
     "TARGET_TREE_CONSENSUS_METHOD",
     "TreeConsensusArtifacts",

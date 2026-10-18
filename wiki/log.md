@@ -2,7 +2,7 @@
 title: Wiki Log
 type: control
 status: reviewed
-updated: 2026-07-28
+updated: 2026-08-11
 sources:
   - AGENTS.md
   - raw/inbox/wiki-construction-brief.md
@@ -288,7 +288,7 @@ verification, and maintenance events here in chronological order.
   and compare against in-sample and fixed-tree feature-permutation regimes.
   The first run is stored under
   `raw/assets/benchmark-results/sample_split_selection_audit_20260601/` and
-  summarized in [[feature-split-selection-audit-20260601]].
+  summarized in an audit page that has since been removed.
 - Added `benchmarks/diagnostics/calibration/selected_hierarchy_null_audit.py`
   to estimate the same-data selected-hierarchy sibling null directly. The
   first Bernoulli/categorical run used 20 null replicates on four
@@ -5491,6 +5491,868 @@ verification, and maintenance events here in chronological order.
   and 7,259 duplicated lines (3.97%). Vulture reported no project-owned dead
   code at 90% confidence; Ruff, wiki lint over 271 pages, focused contract
   suites, and all 1,254 ordered repository tests passed.
+- Executed the canonical 121-case, 10-method full benchmark at revision
+  `9331319a`. All 1,210 case-method rows were produced: 1,139 were `ok`, 71
+  were explicit `skip`, and none had error status. Recorded method coverage,
+  common-case and paired diffusion/NNLS comparisons, oracle-K baseline
+  ambiguity, 28 canonical-TBS calibration skips, 13 continuous-preset skips,
+  and 11 pydiffmap duplicate/support failures in
+  `reports/benchmark_execution_audit_20260728.md`; corrected the stale
+  110-case count in `benchmarks/README.md`.
+- Completed the next repository-hygiene tranche. Corrected the clone map's
+  endotype diagnosis: the duplicated block was reference-table and mygene
+  mapping logic, not plotting. Moved that responsibility into
+  `applications/endotypes/_shared.py` and deleted both copies without aliases.
+  Consolidated validation provenance, Wilson intervals, synthetic covariance
+  profiles, and p-value summaries behind the existing report-contract seam and
+  the new statistics-owned `calibration_support.py`, while preserving exact
+  per-program CSV schemas. The production clone scan fell from 373 pairs and
+  7,259 duplicated lines to 370 pairs and 7,175 lines; Ruff, Vulture, 50
+  focused tests, and all 1,272 ordered repository tests passed.
+- Completed the first contract-tested diagnostic-family cleanup. Classified
+  benchmark selection, deterministic runtime defaults, and result-directory
+  creation now belong to `benchmarks/diagnostics/runner_support.py`; prepared
+  tree/gate/traversal/oracle context belongs to `oracle/gate_path_trace.py`;
+  sibling-null table preparation and target selection belong to the
+  sibling-null `runner_support.py`. Deleted the copied implementations from
+  four sibling-null runners and the gate-path runner without aliases. This
+  exposed and fixed their copied project-root bug: sibling defaults formerly
+  resolved under `benchmarks/diagnostics/benchmarks/...` instead of
+  `benchmarks/results/`. The production clone scan fell from 370 pairs and
+  7,175 duplicated lines to 353 pairs and 6,542 lines (3.58%). All 45 focused
+  oracle/sibling tests and all 1,278 repository tests passed; Ruff, Vulture,
+  wiki lint over 271 pages, and five command-interface smokes also passed.
+
+### 2026-07-29
+
+- Removed ten statically proven unused production parameters and their caller
+  arguments. Deleted the unconsumed gate leaf-data metadata contract and its
+  full-DataFrame SHA-256 work. Removed the impossible distributional-action
+  filter configuration without aliases: the statistical module now owns only
+  action formulas, while optional annotation enrichment lives under
+  `benchmarks/diagnostics/analysis/` and no longer runs during clustering.
+  Moved its diagnostic annotation tests out of the statistics suite into the
+  matching validation-diagnostics category, and added the previously omitted
+  15 endotype application tests to the ordered repository gate. Split the
+  ambiguous root `test_methodology_fixes.py` collection into spectral-context,
+  projected-Wald reference-law, and sibling-skip contracts under
+  `tests/statistics/`; no test logic remains at the suite root. Ruff, Vulture,
+  wiki lint over 271 pages, all 1,277 ordered tests, the 14-case smoke benchmark,
+  and the 17-row regression gate passed.
+- Removed five proven redundant test cases. Deleted the pipeline gate-annotation
+  module that was AST-identical to the maintained core contract; deleted three
+  lower-level `TreeDecomposition` validation cases already covered through the
+  core interface, including one assertion against private state; and folded
+  the duplicate support-profile registry contract into the pipeline registry
+  test. Removed repeated negative assertions for retired legacy identifiers.
+  The ordered gate now contains 1,272 cases. The 12-line/80-token test clone
+  scan fell from 53 pairs and 1,175 duplicated lines immediately before this
+  tranche to 51 pairs and 1,084 duplicated lines. All 1,272 ordered tests,
+  Ruff, and wiki lint over 271 pages passed.
+- Added the standalone `tools/repository_audit/` package and globally installed
+  its `tbs-audit` interface. The tool isolates Coverage.py, Grimp, mutmut,
+  pytest-cov, pytest-deadfixtures, pytest-testmon, Ruff, Semgrep, and Vulture
+  behind `map`, `quick`, `evidence`, and explicit `mutation` modes; jscpd is
+  installed globally. Its evidence model excludes package initializers from
+  study counts, distinguishes imports from standalone execution, traces
+  dictionary/DataFrame string fields, and joins documentation and Git history
+  before labeling a module unresolved. Added 19 focused tool tests and Make
+  targets. The first map found 132 calibration implementation modules, 76
+  test-only imports, and 8 statically unimported modules, but zero automatically
+  unresolved modules after documentation and entry-point evidence. The quick
+  adapter smoke and all 19 tool tests passed.
+- Applied the coverage-context evidence to production boundaries. Moved the
+  selected-family UMAP renderer from `tree_break_selection/plot/` to its
+  diagnostic family, removed its public lazy exports without aliases, and
+  moved the calibration-only effective-rank summary from the projection API to
+  calibration statistics. Replaced the sibling-gate calibration catch-all with
+  exhaustive fixed-subspace, data-independent, selected-tail, empirical-null,
+  and degenerate labels; unknown methods now fail explicitly. Calibration-only
+  production coverage fell from 79 lines to 2 retained worker-selection
+  branches in the live spectral estimator; 21,936 remaining lines are confined
+  to benchmark/diagnostic modules. The compact audit deletes raw coverage
+  databases. Ruff, 19 audit-tool tests, wiki lint over 272 pages, all 1,290
+  purpose-ordered tests, and the 14-case canonical benchmark smoke passed.
+- Corrected the quick audit's dead-fixture environment boundary. It previously
+  invoked pytest from the isolated audit-tool environment, where application
+  dependencies such as `pypdf` were unavailable and a collection error could
+  be hidden behind the plugin's successful exit. The adapter now launches the
+  repository's locked application environment through `uv run --no-sync` and
+  adds only `pytest-deadfixtures` as a transient overlay. The twentieth audit
+  tool test protects this command boundary; the corrected quick audit collected
+  all fixtures without import errors.
+- Applied the first structured clone-removal tranche, filtering
+  production/application and benchmark clones separately. Consolidated four
+  scRNA R renderers behind one application plotting module for branch display,
+  edge-table-to-phylo construction, descendant traversal, cluster branch
+  metadata, palettes, root markers, and MRCA audits. Centralized benchmark
+  result numeric-column ownership, derived detailed logging from the canonical
+  result schema, shared overlap binary threshold scans, shared selected-root
+  action-support geometry, and introduced a common diagnostic table/manifest
+  writer. No legacy imports or aliases were added. The combined jscpd scan fell
+  from 492 clone groups and 8,753 duplicated lines (3.71%) to 473 groups and
+  8,178 lines (3.47%); the production/application slice fell from 46 groups and
+  831 lines (1.89%) to 35 groups and 507 lines (1.16%), and the benchmark slice
+  fell from 361 groups and 6,388 lines (4.43%) to 353 groups and 6,139 lines
+  (4.26%). All 1,295 purpose-ordered tests, 20 audit-tool tests, Ruff, R parser
+  checks for all four renderers plus the shared module, and wiki lint over 272
+  pages passed.
+- Continued the benchmark clone cleanup by moving selected-root diagnostic
+  value parsing, support-role classification, log-action transforms,
+  spectral-excess transforms, root-tail stratum keys, and deformed tail-excess
+  lookup to `benchmarks/diagnostics/calibration/root/root_tail_values.py`.
+  Rewired selected-root spectral-tail, action-support, nearest-support,
+  deformed-law, validity, conditional-tilt, binary-resolution, H_u
+  observability, kernel-tail, population-law, and tie-rank generator/spectral
+  lift panels to import from that owner instead of the spectral-tail panel's
+  private helpers. The selected spectral-tail and generator-target panels now
+  use the common diagnostic table/manifest writer. Removed the duplicate
+  method-proof trace-column list by importing the maintained math-trace schema.
+  The benchmark jscpd slice fell from 353 groups and 6,139 duplicated lines
+  (4.26%) to 345 groups and 5,808 lines (4.03%). The selected-root and tie-rank
+  validation subsets, focused spectral/generator/reporting tests, math-trace
+  inference test, targeted Ruff checks, and import checks passed.
+- Removed the duplicated overlap branch-incidence/structural-sibling runner
+  mechanics by adding `benchmarks/diagnostics/calibration/overlap/panel_runner.py`.
+  The helper owns supported-case filtering, replicate/data-role iteration,
+  one-case binary-template TBS execution, node-row collection, rows/summary
+  output, and manifest envelopes; each panel still owns its analytical row
+  builder, relevant-node filter, and summary semantics. The benchmark jscpd
+  slice fell from 345 groups and 5,808 duplicated lines (4.03%) to 339 groups
+  and 5,671 lines (3.94%). The two overlap validation panels, targeted Ruff
+  checks, and compile checks passed.
+- Added a static field/function lineage mode to `tbs-audit` using LibCST for
+  lossless Python source parsing and NetworkX GraphML export. The mode records
+  field writer scopes, reader scopes, schema declarations, surfaces, and
+  no-reader production candidates for pandas/dictionary cleanup. OpenLineage
+  remains documented as runtime job/dataset/run lineage only, not as the static
+  source cleanup adapter. A detailed inspection of the first report exposed
+  missed pandas `.loc` and field-helper reads, so the LibCST adapter now traces
+  multi-slice subscripts and project field-access helpers before classifying
+  no-reader candidates. A later detailed pass added the benchmark
+  `_annotation_float`, `_annotation_bool`, `_annotation_int`, and
+  `_annotation_str` helper readers, reducing generic selected-permutation
+  false positives from the production no-reader set.
+- Removed 12 production empirical-null support/diagnostic metadata keys from
+  `CalibrationDecision.support` and descriptive strata after field-lineage
+  review showed they were output-only mirrors rather than decision inputs:
+  dropped context axes, family/local weight diagnostics, family strict-null and
+  edge-blocked counts, and seven `support_threshold_*` threshold-value mirrors.
+  The retained support contract still records the actual decision inputs,
+  effective sample sizes, max-weight and leave-one-record diagnostics, contract
+  status, and failure reasons. Regenerating `tbs-audit --mode fields` reduced
+  total no-reader candidates from 207 to 195 and production no-reader
+  candidates from 31 to 19 with zero parse errors.
+- Before broad non-production field cleanup, ran the benchmark quality checks:
+  integration benchmark smoke tests, the fixed regression gate, and the quick
+  subset benchmark. The current regression-gate output was row-identical to the
+  stored `benchmarks/results/regression_gate_20260729_070310Z` comparison:
+  17 rows, 11 ok, 6 skip, mean ARI `0.595706`, median ARI `0.680293`, exact-K
+  `4/17`. The quick subset reported exact-K `8/14`, mean ARI `0.898`, and
+  median ARI `0.970`.
+- Deepened `tbs-audit --mode fields` by separating raw LibCST read/write reuse
+  from cleanup classification. The audit now classifies graph attributes,
+  environment keys, configuration keys, and output-schema/dict-literal columns
+  separately from true dead-write candidates. Regenerated field lineage now
+  reports 8,216 fields, 144 raw no-reader candidates, 139 cleanup candidates
+  after filtering, 9 production raw no-reader candidates, and 6 production
+  cleanup candidates; graph keys such as `weight`, `linkage_branch_length`, and
+  `branch_length_optimization` are excluded from pandas cleanup.
+- Removed the 6 remaining production cleanup candidates from root guard output:
+  root-only selected-permutation observed/null/seed/replicate mirrors and the
+  root-stability threshold mirror. Regenerated field lineage now reports 8,210
+  fields, 138 raw no-reader candidates, 133 cleanup candidates after filtering,
+  3 production raw no-reader candidates, and 0 production cleanup candidates;
+  the remaining production raw candidates are graph keys.
+- Hardened fixed-topology NNLS branch-length optimization in
+  `tree_break_selection/tree/optimized_branch_lengths.py`. The fitter now
+  records sparse design diagnostics, residual ratios, and whether fitted
+  lengths were actually applied to the `PosetTree`; non-converged solver output
+  no longer mutates edge branch lengths unless
+  `branch_length_optimization_apply_nonconverged=True` is explicitly forwarded.
+  Added tests for fail-closed mutation, explicit non-converged application, and
+  dense `scipy.optimize.nnls` comparator parity on tiny leaf-pair distances.
+- Updated benchmark handling for the hardened NNLS contract. The shared TBS
+  runner now refuses to continue an NNLS benchmark row when the fitter did not
+  apply branch lengths, preventing rows labeled NNLS branch-time from using
+  topology-only/linkage placeholder branch lengths. The family-metric NNLS grid
+  now exports solver status, applied/non-converged flags, sparse design
+  diagnostics, and normalized residual columns. The quick smoke subset still
+  reports exact-K `8/14`, mean ARI `0.898`, and median ARI `0.970`.
+- Added strict benchmark execution hardening. Dispatch and per-method execution
+  re-raise method exceptions instead of treating them as benchmark skip rows.
+  Strict regression immediately exposes the existing TBS empirical-null
+  calibration failure instead of recording it as a skip row. Remaining shared
+  benchmark string-boolean parameters now use strict parsing, and invalid
+  explicit support-role metadata fails closed.
+- Removed maintained production/benchmark fallback paths. Method dispatch and
+  per-method execution no longer convert exceptions into skip rows; regression
+  and the family-metric NNLS grid no longer expose tolerant CLI modes. Linkage
+  construction no longer builds topology-only placeholder branch lengths for
+  non-monotone heights, branch-length neighborhood distances no longer impute
+  missing edge lengths, mixed-type sample labels no longer sort via
+  type/`repr`, disconnected stopping-edge distances no longer map to infinity,
+  and external selected-tail calibration rescue was removed from the production
+  sibling empirical-null seam.
+- Removed live alias/legacy surfaces from maintained code. Root package,
+  plotting package, and `benchmarks.shared.util` no longer provide lazy
+  compatibility-style attribute exports; callers and tests use direct
+  purpose-specific module imports. Remaining legacy wording in production
+  docstrings was replaced with current-method terminology, and the repository
+  audit import scanner no longer uses `alias` as a variable name for AST import
+  entries.
+- Rechecked alias/legacy surfaces across maintained code and applications.
+  Removed stale scRNA plot-manifest alias failure statuses, renamed the
+  path-conditioned diagnostic `tbs_current` relation from alias to replicate,
+  and removed non-method deprecation wording from the scRNA distributional-action
+  audit warning filter. A full Python scan now leaves only vendor
+  BranchArchitect compatibility terms, wiki-schema/test policy wording, and
+  diagnostic metric-compatibility terminology outside maintained TBS aliases.
+- Removed doubled probability-validation and grouped-categorical simplex
+  covariance setup inside the production contrast-covariance module. Bernoulli
+  and categorical tangent checks now share one probability-input validator, and
+  grouped categorical Wald/tangent whitening share contrast-slice and Cholesky
+  construction helpers.
+- Removed the next statically proven dead parameters from maintained
+  application, benchmark, and validation code. The cleanup eliminated unused
+  endotype report/plot parameters, scRNA diagnostic/report helper parameters,
+  the random-feature coverage width argument, the dead inner benchmark
+  `strict` pass-through after fail-loud execution hardening, and an unused
+  BranchArchitect split-length root argument.
+- Ran a non-canonical full-suite benchmark sweep excluding the TBS-family
+  methods after the fail-loud empirical-null calibration abort. The run used
+  `TBS_METHODS=leiden,louvain,kmeans,spectral,dbscan,optics,hdbscan` and
+  `TBS_ENABLE_PLOTS=0`, completed all 121 cases with 847/847 ok rows, and wrote
+  results under
+  `benchmarks/results/run_20260729_noncanonical_no_tbs_full/`. Mean ARI ranked
+  k-means `0.864`, spectral `0.837`, Leiden `0.816`, Louvain `0.812`, HDBSCAN
+  `0.601`, DBSCAN `0.573`, and OPTICS `0.524`, confirming the non-TBS default
+  methods run through the cleaned benchmark stack.
+- Fixed the TBS empirical-null calibration blocker exposed by
+  `gauss_extreme_noise_highd`. When a sibling gate has selected focal tests but
+  no internal empirical-null support records, annotation now fails closed with
+  explicit `empirical_null_no_internal_support` metadata instead of raising
+  during full benchmark execution.
+- Hardened diffusion benchmark execution around library limitations. Adaptive
+  pydiffmap neighbor resolution now accounts for exact duplicate rows, and
+  pydiffmap variable-bandwidth methods explicitly skip duplicate blocks that
+  would trigger zero local bandwidths. Hamming-diffusion methods also skip
+  continuous feature spaces with recorded compatibility reasons rather than
+  silently falling through.
+- Reran the canonical full benchmark with plots disabled after calibration and
+  diffusion hardening. The run completed all 121 cases and wrote results under
+  `benchmarks/results/run_20260729_canonical_full_maxiter1000_no_plots/`.
+  Status counts were 1176 ok rows, 34 explicit skips, and 0 failures across
+  1210 method-case rows. Mean ARI on ok rows ranked k-means `0.864`, spectral
+  `0.837`, Leiden `0.816`, Louvain `0.812`, adaptive-diffusion NNLS `0.773`,
+  TBS `0.612`, HDBSCAN `0.601`, DBSCAN `0.573`, OPTICS `0.524`, and fixed
+  Hamming diffusion TBS `0.483`.
+- Modularized maintained benchmark orchestration. Added
+  `benchmarks/shared/benchmark_runs/` for runtime defaults, resume/grid
+  coverage, smoke-suite selection and summaries, and regression-gate execution.
+  Added `benchmarks/continuous/run.py` as a continuously runnable local/CI
+  benchmark gate that reuses the regression-gate seam instead of duplicating
+  benchmark logic. Existing full, smoke, and regression entrypoints now delegate
+  to the shared run modules while preserving their command names.
+- Simplified the regression-style benchmark gate CLI seam after modularization.
+  `benchmarks/continuous/run.py` and `benchmarks/regression/run_gate.py` now
+  share `benchmarks/shared/benchmark_runs/regression_gate_cli.py`, keeping both
+  command adapters thin while preserving their distinct help text and completion
+  labels.
+- Removed production endotype duplicate groups. Shared endotype helpers now
+  cover binary feature-matrix loading, Benjamini-Hochberg correction,
+  subspace/tree CLI arguments, spectral-block record fields, report artifact
+  index loading, method/tree run summary recording, tree-analysis command
+  construction, embedding figure layout, rendered artifact path metadata, and
+  KAK candidate-summary loading. The focused `applications` clone scan dropped
+  to 17 exact groups / 246 duplicated lines / 0.95%, with remaining groups in
+  `mnist/` and `scrna/` application code rather than `endotypes/`.
+- Removed high-confidence scRNA plotting/report duplicate groups. Shared scRNA
+  plotting helpers now cover static artifact provenance records, cluster-size
+  bars, selected NNLS radial page construction, selected-tree coordinate
+  assignment, R tree-renderer setup, pancreas method/edge maps, pancreas
+  tip-data construction, cluster MRCA lookup, and repeated Goncalves UMAP panel
+  styling. The focused `applications/scrna` clone scan dropped to 8 exact
+  groups / 90 duplicated lines / 0.83%; the full `applications` scan dropped to
+  9 exact groups / 112 duplicated lines / 0.43%.
+- Removed the remaining MNIST plotting duplicate by moving digit colors and
+  alpha/assignment-key helpers into `applications/mnist/_shared.py`. The full
+  `applications` clone scan dropped to 8 exact groups / 90 duplicated lines /
+  0.35%; remaining groups are scRNA analysis logic plus tiny R renderer
+  bootstrap blocks.
+- Removed the next scRNA analysis duplicate tranche. Static artifact provenance
+  is now shared through `applications/scrna/_shared.py` across scRNA audit and
+  plotting report code, and the pancreas inner-node review builders now share
+  their internal tree-review input/setup seam. The full `applications` clone
+  scan dropped to 6 exact groups / 63 duplicated lines / 0.24%.
+- Added a dedicated duplicate-cleanup mode to the repository hygiene tool.
+  `tbs-audit --mode duplicates --scope applications` now runs jscpd, classifies
+  clone groups by cleanup purpose/risk, and writes JSON plus Markdown reports
+  under `reports/audits/generated/duplicate-cleanup.*`. The global
+  `/Users/berksakalli/.local/bin/tbs-audit` entrypoint exposes the mode, so it
+  is reachable from other worktrees via `--repo /path/to/repo`.
+
+### 2026-07-30
+
+- Generated the all-method topology/diffusion PDF-CDF and p-value audit under
+  `reports/audits/generated/all_topology_spectral_pdf_cdf_relationships/`.
+  The audit covered 18 successful construction/diffusion/branch-source groups,
+  found raw sibling projected-Wald statistics best fit by scaled chi-square,
+  exponential, or gamma families rather than plain fixed-subspace chi-square,
+  and recorded the selected-quadratic-form interpretation in
+  [[topology-diffusion-pdf-cdf-spectral-relationship-audit-20260730]].
+- Traced `n_calibration` through Tree-BH, sibling-record construction, and the
+  empirical-null fit. Blocked descendants had been reported simultaneously as
+  strict-null and stopped-edge records because untested edges retain
+  `rejected=False`. Production reporting now makes these roles exclusive while
+  preserving the validated all-descendant inflation estimate. On
+  `binary_moderate_4c`, the unchanged 75-record fit is now reported as 4 tested
+  null records plus 71 blocked records; it retains four clusters, ARI `1.0`,
+  and `c_hat=15.0933`.
+- Added `tbs-audit --mode calibration-contract --calibration-records PATH`.
+  Across the 48,114 exported all-method sibling rows it found 25,960
+  role-supported node records but only 4,862 tested-null plus stopped-frontier
+  structural records, including 21,098 nested blocked descendants. The report
+  exposes this dependence diagnostic without silently changing production
+  weighting; a frontier-only trial was rejected after it changed the binary
+  low/moderate/hard results from 7/4/4 clusters to 10/5/32 clusters.
+
+### 2026-08-01
+
+- Removed the feature-partition calibration direction from the maintained
+  repository. Deleted its diagnostic runner, dedicated benchmark artifacts,
+  and wiki source page; removed its active code, method-description, report,
+  wiki-index, analysis, question, and source references. Same-data
+  selection-conditioned calibration remains the sole maintained direction.
+
+### 2026-08-03
+
+- Implemented the typed benchmark outcome contract for scientifically
+  unsupported empirical-null TBS runs. Zero-support sibling-calibration
+  boundaries now return no labels, zero clusters, a stable structured reason,
+  and `NaN` quality metrics; dispatch, result rows, performance grids, coverage
+  summaries, and validation plots preserve the distinction from operational
+  skips. Mixed calibration states with other role-supported records remain
+  executable.
+- Replaced the active misleading `gauss_extreme_noise_highd` identifier with
+  `gauss_dense_signal_highd` without an alias, and added the distinct
+  `gauss_sparse_signal_highd_noise` case with 12 informative plus 19,988
+  independent nuisance dimensions. Zero-correlated nuisance sampling now uses
+  a linear-memory direct-normal path. Historical raw result identifiers were
+  not rewritten.
+- Verified 1,363 repository tests with zero failures and 15 numerical warnings,
+  broad Ruff checks, 272-page wiki lint, and diff whitespace checks. The fresh
+  geometry audit measured nearest-neighbor label agreement of `1.000` for the
+  dense case and `0.175` for the sparse case, correctly marking the latter as
+  low-signal. A four-row continuation smoke produced one unsupported TBS row,
+  three later successful rows, and TBS unsupported coverage `1/2` while
+  K-means remained `0/2` unsupported.
+- Ran the globally installed repository analysis before commit. `tbs-audit
+  --mode quick` scanned 833 Python files with zero parse errors and zero
+  unresolved calibration imports; Ruff, Vulture, jscpd execution, and
+  dead-fixture checks all completed successfully. The evidence inventory records
+  438 exact clone groups and 147 filtered field-cleanup candidates for later
+  review rather than treating them as automatic deletions. The generator mode
+  completed across all 122 active cases and retained the sparse high-dimensional
+  case as an explicit low-geometry-signal stress.
+- Removed three proven benchmark-only dead fields: two unused selected-tail
+  transforms and the unused complement of the model table's `signal_label`.
+  Centralized the duplicated binary child/edge/sibling test identities in
+  `TreeDecomposition`. Extended and versioned `tbs-audit` field lineage to
+  recognize pandas exports, dictionary iteration, expanded `**kwargs`,
+  `DataFrame.attrs`, AnnData `.uns`, and Matplotlib `rcParams`. The fresh scan
+  reduced duplicate evidence from 438 to 437 groups and filtered field-cleanup
+  candidates from 147 to 130, with zero production cleanup candidates.
+- Split the CLI/entrypoint clone inventory into parser, persistence, and
+  terminal-rendering responsibilities. Centralized 19 root diagnostic bundle
+  writers and 55 calibration output-path printers, then moved identical
+  calibration, selected-root, root tie-rank, selected-hierarchy, and traversal
+  argument contracts into family-owned `cli.py` modules without forwarding
+  aliases. Characterization tests preserve option names, types, defaults, and
+  explicit overrides. The global clone scan moved from 437 groups and 7,394
+  lines to 409 groups and 6,797 lines; parser-containing groups moved from 62
+  and 1,197 lines to 52 and 903 lines.
+- Consolidated root-calibration column validation, finite/string value parsing,
+  observed-target classification, and diagnostic JSON serialization across six
+  selected-root and tie-rank panels. The panels now call the maintained helpers
+  in `root_tail_values.py` and `reporting.py` directly while preserving manifest
+  ordering and schemas. Focused validation passed 25 tests, and the global clone
+  scan moved from 409 groups and 6,797 lines to 402 groups and 6,603 lines.
+
+### 2026-08-04
+
+- Retired the executable fixed c2ef cosine-band coherence comparator and its
+  dedicated validation suite. The active diagnostics index no longer exposes
+  that legacy entrypoint. Its raw captures and wiki source summary remain as
+  historical evidence only; no production or maintained diagnostic path imports
+  it.
+- Ran `tbs-audit --mode evidence` plus `fields` and `duplicates`, then removed
+  the dead code it proved. Deleted two fully unreferenced modules,
+  `benchmarks/diagnostics/math_trace/metamorphic_checks.py` and
+  `benchmarks/shared/cases/real_data.py`, and 18 unreferenced functions and
+  constants across `tree_break_selection`, `benchmarks`, `applications`, and
+  `tests`. Removing `PosetTree.find_lca` cascaded to `_get_depths` and the
+  `_depths` cache; `find_lca_for_set` stays because MNIST plotting and the
+  poset-tree tests still call it. Net 309 deletions against 3 insertions.
+- Kept the vulture candidates that static reachability cannot resolve: the six
+  `_run_*_method` benchmark runners and `_can_split` are reached through
+  name-string registries, the `tests/conftest.py` hooks are invoked by pytest,
+  and `epsilon_fitted`/`MAX_IMAGE_PIXELS` are writes onto third-party objects.
+- Confirmed the 130 filtered field-cleanup candidates remain false positives for
+  benchmark surfaces. The 16 flagged writes in
+  `overlap_context_negative_topology_conditioning.py` are listed in
+  `DERIVED_NUMERIC_METRICS`, so they reach `ROW_COLUMNS` and the exported CSV;
+  the tracer does not read bare string literals in module-level tuples.
+  Production cleanup candidates stay at zero.
+- Reviewed all three high-risk production-to-production clone groups and made no
+  change. The `orchestrator.py` and `contrast_covariance.py` pairs duplicate
+  explicit keyword signatures whose shared logic already lives in
+  `_resolve_contrast_inputs`, and `SpectralContext`/`SpectralDecompositionResult`
+  duplicate field lists across a deliberate projection-to-gate layer boundary.
+- Repaired a stale reference left by the in-flight scRNA refactor:
+  `goncalves_benchmark.py` still imported the deleted
+  `pancreas_benchmark._json_default` after it moved to `_shared.json_default`.
+  That single broken import was failing three pipeline tests.
+- Closed a scope gap in `tbs-audit`: its import-reachability check only covers
+  `benchmarks/diagnostics/calibration`, so 297 of 443 modules had never been
+  checked. Re-applying the tool's own disposition logic repo-wide returned zero
+  `unresolved_unimported` modules. The five suspicious candidates are all live:
+  `louvain_runner`, `spectral_runner`, and `optics_runner` are registered by
+  module-path string in `method_registry.py`, and the two `benchmarks/external/`
+  adapters are documented in `benchmarks/external/README.md`, a path the audit's
+  evidence scan does not read.
+- Ruff runs only `select = ["E", "F", "I"]`, so the dead-code rule families had
+  never executed. Scanning with `--extend-select` found and removed 18 inert
+  `noqa` directives (ten suppressing non-selected `BLE001`, one suppressing
+  already-ignored `E402`) and 11 unused loop-control bindings across eight
+  files. Two flagged items were kept as false positives: `iterations` in
+  `oracle_tree_recoverability.py` leaks deliberately and is read after the loop
+  as `dinkelbach_iterations`, and `method_registry.py:120` is prose, not code.
+
+### Root selective-permutation guard scope audit
+
+Audited every guard layer in `decomposition/gates/`. Removed one redundant
+dispatch arm in `guards.py`: the `scope_value == "root"` branch called
+`_selective_guard_root_candidate(out, root, root)` with the same arguments as
+the `else` branch and produced the same `[root]` or `[]` result. The predicate
+is a pure two-read boolean, so deleting the arm is behavior-preserving; the
+`else` branch already handles the `root` scope, which
+`fixed_coordinate_selective_root_v1` exercises with 99 replicates.
+
+Two guard scopes are reachable only from tests and were **deliberately kept**:
+
+| Scope | Sole enabling profile | Why it is retained |
+| --- | --- | --- |
+| `open_internal` | `fixed_coordinate_selective_traversal_v1` | Closes the pass-through null leak but is too conservative for signal: binary signal mean ARI `0.651330`, categorical `0.521072`. Superseded by `fixed_coordinate_selective_passthrough_v1`. |
+| `global_sibling_min_passthrough_descendant` | `fixed_coordinate_global_passthrough_v1` | Still shows boundary false splits. Superseded by `fixed_coordinate_global_passthrough_refined_v1`. |
+
+Neither profile is a default and no module outside `profiles.py` selects
+either one, so static reachability reports both as dead. They are not: the wiki
+cites their measured results as the evidence for choosing the profiles that do
+run, so removing them would delete the justification for the current gate
+configuration. Treat a future "unused guard scope" report on these two as
+expected, not as a cleanup target.
+
+All other guard machinery is live. Every guard helper has call sites beyond its
+definition, `root_stability_guard_threshold` is set by all profiles, and
+`spectral_transport_passthrough_guard` is enabled by two profiles that
+production paths select.
+
+### Retired overlapping benchmark cases
+
+Removed seven commented-out binary overlap case definitions from
+`benchmarks/shared/cases/overlapping.py` (401 to 324 lines). All were disabled
+for runtime cost, not for scientific invalidity, so their parameters are
+recorded here as the durable provenance:
+
+| Case | Samples x features | Clusters | Entropy | Balanced | Seed |
+| --- | --- | --- | --- | --- | --- |
+| `overlap_extreme_6c_highd` | 600 x 1000 | 6 | 0.45 | yes | 8004 |
+| `overlap_mod_10c_highd` | 1000 x 800 | 10 | 0.32 | yes | 8103 |
+| `overlap_part_10c_highd` | 1000 x 600 | 10 | 0.23 | yes | 8203 |
+| `overlap_hd_6c_2k` | 600 x 2000 | 6 | 0.33 | yes | 8301 |
+| `overlap_hd_8c_3k` | 800 x 3000 | 8 | 0.30 | yes | 8302 |
+| `overlap_hd_10c_5k` | 1000 x 5000 | 10 | 0.28 | yes | 8303 |
+| `overlap_unbal_10c_highd` | 1000 x 1000 | 10 | 0.28 | no | 8403 |
+
+All seven use `generator: binary` with `feature_sparsity: 0.05`. The active case
+counts are unchanged: four heavy, three moderate, three partial, one
+high-dimensional, three unbalanced binary groups, plus eight Gaussian and three
+Gaussian-quantile cases.
+
+### 2026-08-07
+
+Repository-wide documentation, legacy, and dead-code audit. Ruff, `wiki-lint`
+(272 pages), the ordered suite, `tools/repository_audit`, and `tbs-audit --mode
+quick` all passed before and after. No new dead code: vulture silent, no dead
+fixtures, no unused imports or locals, zero import cycles across the 125 package
+modules, and the only two extended-ruff findings are the 2026-08-04 false
+positives. The GitHub wiki remote returns `Repository not found` while the main
+remote resolves, so in-repo `wiki/` is the only wiki surface.
+
+- Fixed four surfaces that documented things which do not exist.
+  `benchmarks/README.md` section 9 described `benchmarks/calibration/`, removed
+  by `69225de9`, plus `TBS_CAL_NULL_REPS`, `TBS_CAL_TREEBH_REPS`,
+  `calibration_plots.pdf`, and `calibration_report.md` — none of which occur
+  anywhere else in the repository. `tests/README.md` claimed 1,272 collected
+  cases against a measured 1,367. `notebooks/` was still a path policy and a
+  ruff/deptry exclusion after `4a502615` emptied it. `wiki/maintenance.md` told
+  maintainers to promote pages from `wiki/candidates/`, which has no history in
+  this repository and is absent from the `AGENTS.md` layout and [[schema]].
+  Also named the `audit-test` stage that `make check` runs but `README.md`
+  omitted.
+- Added `test_spectral_context_mirrors_every_decomposition_field`. The
+  `SpectralContext`/`SpectralDecompositionResult` split kept on 2026-08-04 had
+  nothing protecting its 12-field hand-written forwarding, where a dropped
+  field silently defaults to `{}`. Mutation check: with one field dropped the
+  other seven tests in that file still passed. The test iterates
+  `dataclasses.fields`, so future fields are covered.
+- Two gaps left open: `selected_quadratic_law_audit.py` is the only calibration
+  diagnostic with no wiki record, and `[tool.deptry]` configures a tool that no
+  dependency group installs and no command invokes.
+
+### Second bloat pass below the configured thresholds
+
+The first pass used the repository's own audit thresholds and found the
+repository clean. Re-running the same signals at lower thresholds found the
+duplication those thresholds sit above.
+
+- **Correction to the 2026-08-04 entry.** It recorded that "the six
+  `_run_*_method` benchmark runners and `_can_split` are reached through
+  name-string registries." That is true for all six runners — each has an
+  `_import_runner(..., "_run_*_method")` string in `method_registry.py`, checked
+  individually. It is **not** true for `GateEvaluator._can_split`:
+  `method_registry.py` never names it, `rg 'self\._can_split\('` returns
+  nothing, `GateEvaluator` is never subclassed, and the only other repository
+  hit is an unrelated tuple-unpacking local in `gate_path_trace.py:348`. Its
+  body was also already inlined in `_compute_can_split_by_node`. Removed; the
+  full suite still passes 1,368. Re-running vulture afterwards surfaced
+  `passthrough_support_status`, which is live via
+  `tests/localization/35_test_gates_traversal.py:351`, so the cascade stops
+  there.
+- **jscpd at 5 lines / 40 tokens reports 7.01% duplication (1,191 clones,
+  12,893 lines), against 2.66% at the configured 8 lines / 70 tokens.** This
+  repository's duplication is mostly 6-to-8-line scalar helpers, which sit just
+  under the configured floor. An AST scan with docstrings stripped and names
+  normalized finds 67 duplicate function groups worth 1,114 redundant lines.
+- **The canonical helpers exist and are bypassed.** `reporting.py` owns
+  `diagnostic_json_default`: 2 modules import it, 20 declare their own
+  `_json_default`. `root/root_tail_values.py` owns `finite_float` and
+  `string_value`, which the calibration README already names as the shared
+  owner: 31 modules declare `_finite_float`, 17 declare `_string_value`, 17
+  declare `_bool_value`. The two `_string_value` variants differ only in one
+  type annotation, and the canonical version is otherwise byte-identical, so
+  this is copying rather than divergence. Consolidation is safe in principle but
+  spans 31 files and is left for a dedicated patch.
+- **Repository weight is the largest untracked issue.** `.git` is 1.8 GB and
+  tracked content is 1.74 GB, of which all source is about 11 MB. `results/` has
+  been ignored by `.gitignore:102` since 2026-02-13, yet 865 files and 211 MB
+  under `results/analyses/aml_michel_...20260623_151556/` were force-added on
+  2026-06-23 by `c74e3e15`, and that run directory is cited by no wiki, doc,
+  report, or manuscript file. Separately, `docs/onboarding.md:73` calls
+  `raw/assets/benchmark-results/` "small promoted evidence snapshots" while it
+  holds 191 files over 1 MB totalling 978 MB, including single 71 MB and 67 MB
+  CSVs. The citation discipline itself holds: 94 of 120 promoted top-level
+  entries are cited. There is no `.gitattributes` and no Git LFS.
+- Smaller items recorded for later: `_capture_runner` is defined 10 times in
+  `tests/pipeline/51_test_dispatch_contract.py` (222 redundant lines across 9
+  within-file test groups); `benchmarks/cloud/` triplicates
+  `validate_shard_contract`, `_validate_replicate_coverage`, `current_git_state`,
+  and `main`; and the `all` extra hand-duplicates 28 dependency specs from eight
+  other extras with no test keeping them in sync. Excluding `graphtools` and
+  `phate` from `all` is a documented GPL boundary, but excluding `biopython` and
+  `orjson` is not explained anywhere.
+
+### Scalar-helper consolidation and the dead AML result set
+
+**Correction to the bloat pass above.** It reported the duplicated helpers as
+"copying, not divergence" on the strength of two `_string_value` variants. That
+generalisation was wrong. Comparing every copy against the canonical body:
+
+| Local helper | Copies | Match canonical | Distinct bodies |
+| --- | ---: | ---: | ---: |
+| `_finite_float` | 28 | 26 | 7 |
+| `_string_value` / `string_value` | 16 | 15 | 3 |
+| `_json_default` | 20 | **0** | **10** |
+| `_require_columns` | 22 | **0** | 7 |
+| `_bool_value` | 17 | n/a (no canonical) | 8 |
+
+Only the first two families are safe to merge. The `_json_default` copies
+genuinely differ: nine omit the canonical dataclass branch, two add
+`np.ndarray -> tolist()`, one replaces the `TypeError` with a `str(value)`
+fallback, and two hand-roll a dataclass branch for one specific config class.
+Merging them would change serialization behaviour, so they are left alone;
+`_require_columns` and `_bool_value` likewise need per-family review.
+
+- Added `benchmarks/diagnostics/calibration/values.py` holding `finite_float`
+  and `string_value`, moved from `root/root_tail_values.py`, which now imports
+  them and keeps its `__all__` so its 22 importers are unaffected. The generic
+  coercers sit at the package root because `overlap/`, `selected/`,
+  `statistics/`, and `traversal/` all need them and should not import from the
+  `root/` category.
+- Removed 41 provably equivalent local definitions across 30 files. Equivalence
+  was checked on unparsed source, not by eye: alpha-renamed locals,
+  `float('nan')` for `math.nan`, and a redundant `value is None` guard all
+  reduce to the canonical body. The two `_finite_float` copies that delegate to
+  a local `_is_finite` or use `pd.to_numeric(errors='coerce')`, and the one
+  `_string_value` that restructures its guard, were left in place.
+- Effect: the AST duplicate scan falls from 67 groups / 1,114 redundant lines to
+  63 / 878; jscpd at 5 lines / 40 tokens falls from 7.01% to 6.87%. The
+  remaining duplication is the `_json_default`, `_require_columns`, and
+  `_bool_value` families plus the panel run/report mechanics.
+- Untracked the dead AML result set. `results/` has been ignored by
+  `.gitignore:102` since 2026-02-13, yet 865 files and about 211 MB were
+  force-added on 2026-06-23 by `c74e3e15`, and no wiki page, doc, report,
+  manuscript, manifest, or test names that run directory. `git rm -r --cached
+  results` drops it from the index; the working tree is untouched, so the
+  `results/analyses` scan in `inventory_go_annotation_datasets.py` still sees
+  local runs, and history still holds every byte. Tracked content falls from
+  1.74 GB to 1.49 GB. **This does not shrink `.git`, which stays at 1.8 GB;
+  only a history rewrite would.** If the AML analysis should stay citable, the
+  repository's own pattern is to promote a curated subset into `raw/assets/`
+  and give it a `wiki/sources/` page.
+- `docs/onboarding.md` called `raw/assets/benchmark-results/` "small promoted
+  evidence snapshots". It is about 1.13 GiB across 120 top-level entries (100
+  directories and 20 files), and is the reason a clone is large. Corrected to
+  say so.
+
+### Dead-fallback audit
+
+`README.md` states that unsupported statistical contexts fail closed and never
+take a neutral fallback. Audited that contract structurally.
+
+**The production contract holds.** No handler anywhere in `tree_break_selection/`
+swallows an exception or returns a neutral value. The `.get(key, 0)` defaults in
+`empirical_null_inflation_estimation.py` fail closed by construction: a missing
+support key reads as `0`, which is below every
+`CalibrationSupportThresholds` floor and therefore appends a support failure.
+Four structural checks across all five source roots also came back empty:
+no statement after an unconditional `return`/`raise`/`continue`/`break`, no
+repeated condition in an `if`/`elif` chain, no `except` handler shadowed by an
+earlier broader one, and no `sys.version_info` guard (`requires-python` is
+already `>=3.11`).
+
+Removed three unreachable fallbacks:
+
+- `kak_lens_alpha_sweep.py:543` and `adaptive_cosine_kak_diffusion_matrix_probe.py:242`
+  wrapped `import matplotlib.pyplot` in `except ImportError: return`. Matplotlib
+  is a base dependency, and both modules already call
+  `configure_matplotlib_backend()` at module scope, which imports it — so the
+  module cannot load without matplotlib and the handler cannot run. Had it run,
+  a function named `write_plots` would have silently written nothing. The other
+  52 files that import `pyplot` use no guard.
+- `overlap_conditional_topology_law_panel.py:717` read
+  `parent = "" if parent_id is None else str(parent_id)` for a parameter
+  annotated `str = ""`. All four call sites pass a string or omit it; the
+  production caller passes `string_value(...)`, which is total over `str`.
+
+Corrected two annotations that were lying rather than dead. In
+`tree_topology_difference_diagnosis.py`, `_subtree_case_summary` and
+`_top_subtree_summary` both annotate `pd.DataFrame` and guard `is None`, but
+their only caller declares `subtree_support`/`subtree_highlights` as
+`pd.DataFrame | None = None` and forwards them unchanged. The guards are live;
+the signatures were wrong, and are now `pd.DataFrame | None`.
+
+Left in place with reasons: the fourteen `except ImportError` guards over
+optional extras (`skbio`, `graphtools`, `umap`, `bokeh`, `pypdf`, `PIL`,
+`requests`, `brancharchitect`); the `plotly` guard in
+`mnist/run_higher_categories.py:653`, which bundles the genuinely optional
+`umap` and reports the skip instead of returning silently; and
+`_annotation_value`'s `annotations is None` guard in
+`overlap_branch_incidence_junction_panel.py:333`, because line 432 builds its
+argument with `result.extra.get("annotations", tree.annotations_df)` and a
+stored `None` could reach it. The three broad `except Exception: continue`
+handlers are also retained: the bootstrap loop in `relationship_analysis.py:1930`
+converts dropped draws into `nan` through its `min_success` check, and the other
+two scan arbitrary local result directories where a malformed CSV must not abort
+an inventory. Narrowing those exception types is worth doing but changes
+behaviour, so it is not part of this pass.
+
+### 2026-08-08
+
+#### Dispatch test-fixture consolidation
+
+Replaced 13 repeated `_capture_runner` definitions in
+`tests/pipeline/51_test_dispatch_contract.py` with three small module-level test
+helpers: one constructs the common successful `MethodRunResult`, one captures a
+single runner call, and one appends repeated calls. The three observed capture
+behaviours remain distinct. This removes 111 net lines while retaining all 30
+dispatch-contract tests. This corrects the 2026-08-07 inventory note, which
+counted only 10 of the 13 local definitions.
+
+#### Test-suite dead-gate and fixture cleanup
+
+Removed two migration-only tests whose subjects no longer exist:
+`test_runtime_config_modules_are_removed` guarded two deleted configuration
+modules, and `test_removed_plot_kwargs_raise_type_error` guarded two deleted
+benchmark keyword arguments. Exact search found no live implementation or
+consumer for those modules or arguments, and history identifies both tests as
+post-removal gates rather than behavioural requirements. Removed four related
+absence assertions for retired benchmark dimensions and case identifiers while
+retaining the surrounding positive generator and replacement-case contracts.
+
+Consolidated repeated local test doubles without deleting their callers or
+assertions: five stable-root stubs and ten selected-root stubs in
+`31_test_registry_config_wiring.py`, four successful method-result runners in
+`52_test_method_execution_index_alignment.py`, and two queue classes plus their
+common successful result construction in
+`60_test_case_execution_pdf_cover_mode.py`. Together with the dispatch cleanup,
+the test tree loses 218 net lines and only the two dead-gate tests; the live
+suite moves from 1,368 to 1,366 collected tests.
+
+Retained the one runtime R skip because it covers a supported optional runtime.
+Also retained the two syntactically identical repository-root tests: they read
+different module constants, so either relocated command can regress
+independently. Negative tests for live statistical parameters, fail-closed
+outcomes, and method-registration policy remain live boundary contracts rather
+than deletion-history gates.
+
+#### Completed execution-plan cleanup
+
+Deleted four unreferenced execution plans under `docs/superpowers/plans/`,
+removing 3,458 lines of completed plan scaffolding. The plans still contained
+31, 32, 59, and 41 unchecked task boxes and stale execution instructions even
+though their declared outputs are now represented by production or diagnostic
+code, focused tests, raw evidence, wiki source pages, and the open-question
+ledger. No repository page, command, test, or publishing surface linked to any
+of the four plan paths. Git history remains the recovery path for their
+task-by-task instructions.
+
+Retained both `docs/superpowers/specs/` design records: the path-conditioned
+barycentric design is cited by a wiki analysis, and the unsupported-outcome
+design records the rationale behind a live public benchmark status contract.
+Retained the `.mex/` router because root `AGENTS.md` explicitly requires that
+compatibility bridge. Retained `tools/repository_audit/`, which has a documented
+public command, repeated project usage, and a maintained wiki tool page, and
+retained `scripts/rest_request.py`, which remains part of the documented GO
+annotation pipeline.
+
+Removed the undocumented `--skip-static-manifest-validation` alias from
+`verify_recent_benchmark_provenance.py`. It was introduced in the same commit as
+the canonical `--skip-manifest-validation` spelling, has no repository caller or
+current documentation, and therefore has no migration history or independent
+consumer evidence. The canonical flag and its behaviour remain unchanged.
+
+Retained the other reviewed candidates:
+
+- The five AWS shard validators and two replicate-coverage validators have
+  similar shapes but enforce different grid, manifest, and error-reporting
+  contracts, with dedicated tests and documented commands. Consolidating them
+  would couple independent studies without removing duplicated semantics.
+- Exact duplicate files under `raw/assets/benchmark-results/` remain primary
+  evidence and are cited by source pages and experiment contracts; they are not
+  cleanup targets.
+- `[tool.deptry]` remains because the documented repository-hygiene audit invokes
+  it. Whether to make the tool reproducibly available through a project extra
+  or an ephemeral runner is a separate dependency-policy decision.
+- BranchArchitect's `biopython` and `orjson` packages remain live optional-extra
+  dependencies. Whether that extra belongs in the aggregate `all` extra is an
+  owner-facing packaging decision.
+- `selected_quadratic_law_audit.py` remains a tested analysis surface. Its
+  missing dedicated wiki record is a documentation gap, not evidence that the
+  implementation is dead.
+
+#### Development dependency pruning
+
+Removed `radon`, `lizard`, `xenon`, and `wily` from the `dev` and aggregate
+`all` extras. They had been added together as optional complexity tools, but no
+repository command, audit adapter, documentation page, CI surface, or source
+module invokes them; the maintained `tbs-audit` workflow uses Ruff, Vulture,
+jscpd, pytest-deadfixtures, LibCST, Grimp, and coverage instead. Deptry also
+reported all four as unused. Regenerating `uv.lock` removed those four packages
+and seven packages used only by them, reducing the lock from 213 to 202
+packages without changing runtime dependencies.
+
+#### Repository storage pruning
+
+Removed the tracked `manuscript/tools/vale` executable and added it to
+`manuscript/.gitignore`. The 37.2 MiB file was a macOS ARM binary generated by
+the maintained `manuscript/install_vale.sh` installer, so it was not portable
+to other supported development platforms and duplicated the documented install
+path. `manuscript/Makefile` still accepts either the installer-provided local
+binary or a `vale` executable on `PATH`; `manuscript/README.md` already directs
+contributors to run the installer before prose linting. This reduces checkout
+size only; the historical blob remains in Git until an explicitly authorized
+history migration is performed.
+
+#### Test suite maintenance follow-up
+
+Reconciled `tests/README.md` with the current 1,366-case collection after the
+repository cleanup. Consolidated the shared selected-hierarchy geometry record
+builder used by the AWS tail-equation and hierarchy-covariate studies, and
+shared deterministic high-dimensional benchmark input setup across the paired
+unsupported/control integration contracts without removing either outcome
+test. All-missing summary medians now return `NaN` without NumPy warning noise,
+while GraphTools duplicate-sample and disconnected spectral-graph warnings are
+asserted narrowly at their intentional smoke-test call sites.
+
+#### Production-boundary test pruning
+
+Audited the 741 tests previously grouped as research calibration and scientific
+validation against the installed `tree_break_selection` package boundary,
+supported artifact contracts, direct assertion subjects, and exact branch
+coverage. The full suite exercised 104 production lines and 49 branches beyond
+the non-research suite, but that increment was concentrated in ten cases with
+independent production assertions: eight neighborhood-bandwidth unit tests and
+two end-to-end gate/decomposition tests. Moved those cases to
+`tests/statistics/test_neighborhood_bandwidth_contract.py` and
+`tests/integration/test_cluster_validation_pipeline.py`, respectively.
+
+Removed the remaining 731 cases because they asserted research-only diagnostic
+helpers, simulations, calibration panels, sweeps, report generators, or
+benchmark adapters rather than a shipped product contract. Removed their
+orphaned test fixtures and package scaffolding, narrowed stage 4 to the eleven
+supported validation artifact-contract cases, and removed obsolete deleted-test
+paths from wiki source frontmatter while preserving the underlying diagnostic
+implementations and research evidence. The project gate now collects 635 cases.
+
+#### Benchmark production-boundary cleanup
+
+Removed 79 benchmark modules (38,557 lines) that neither invoke or reach the
+`tree_break_selection` production package nor support a benchmark path covered
+by the current 635-case suite. The removed cohort consisted of research-only
+calibration panels, post-run analyses, mathematical trace helpers, open-question
+contracts, and standalone validation programs. Preserved benchmark adapters,
+artifact contracts, and diagnostic support modules exercised by current tests,
+as well as all raw result captures.
+
+Removed 65 dedicated wiki source pages for that retired research cohort and
+pruned their current index, source metadata, and wikilinks. Kept eight mixed
+source pages that still cite production-reaching benchmark modules. Historical
+log entries remain unchanged; the wiki linter now exempts the append-only log
+from dangling-link checks while continuing to enforce them on current synthesis
+pages.
+
+#### Repository-audit subsystem retirement
+
+Retired the standalone `tbs-audit` developer subsystem after confirming its 53
+tests protected only the isolated audit CLI and did not exercise the shipped
+`tree_break_selection` package. Removed the seven-module implementation, six
+test files, isolated manifest and lockfile, `make audit*` commands, the
+`audit-test` project gate, and current README/wiki instructions as one coherent
+slice. Historical log entries and the unsupported-outcome design record remain
+as chronology rather than current commands.
+
+The tracked tool project contained 16 files and 5,098 lines. Its ignored local
+virtual environment and caches occupied 313 MB and were moved to Trash; Git
+history preserves the tracked source. Thirty-five ignored reports and transient
+coverage/lineage artifacts produced by the tool occupied another 868 MB and
+were also moved to Trash. Unrelated generated scientific-audit artifacts remain
+in place.
+
+#### Remaining test-maintenance cleanup
+
+Retired the unwired recent-benchmark provenance verifier and its 43 synthetic
+tests as one coherent maintenance slice. The verifier was fixed to the June
+23--24 benchmark folders, had no active build or documentation entry point, and
+its real repository invocation reported 221 stale generator/source references
+after application commands moved to their owned packages. Historical raw
+captures and earlier log evidence remain unchanged.
+
+Removed the pytest wrapper that invoked `scripts/wiki/lint.py` a second time
+during `make check`. The canonical `make wiki-lint` gate remains responsible for
+the wiki structure contract, while the three distinct mex routing and wiki
+lookup behavior tests remain in the suite.
 
 ## Evidence
 
@@ -5504,3 +6366,1952 @@ verification, and maintenance events here in chronological order.
 - [[schema]]
 - [[maintenance]]
 - [[wiki-search]]
+
+### 2026-08-09
+
+#### Highest-confidence test cleanup
+
+Removed two legacy-only benchmark tests after the recursive test audit found no
+live requirement for their retired names. The relationship analyzer now relies
+on its canonical unknown-column rejection instead of maintaining a separate
+old-result-column list and error path, and the suite no longer preserves an
+absence guard for the retired `kl_divergence` audit filename.
+
+Tightened the supported TBS condensed-distance dispatch test to require an
+`ok` result, and removed a redundant status assertion from the NNLS dispatch
+test whose controlled runner already guarantees success. Current-schema,
+method-specific audit matching, and dispatch geometry coverage remain.
+
+### 2026-08-10
+
+#### Optional-test and dispatch-contract cleanup
+
+Marked scRNA, graphtools, and R-runtime coverage explicitly and changed
+optional Python dependency handling to skip only genuinely missing modules;
+installed but incompatible environments now fail instead of being hidden as
+skips. Added the regrouped hierarchy-analysis tests to the ordered test gate.
+
+Split the monolithic dispatch-contract module into validation, distance-input,
+parameter-forwarding, compatibility-outcome, method-registry, and profile
+contracts. Parameterized the repeated gate-profile resolver, method-registry,
+and KL-dispatch matrices while preserving the 589 collected behavioral cases.
+
+#### Retired superseded fixed-coordinate profiles
+
+Removed the superseded `fixed_coordinate_selective_traversal_v1` and
+`fixed_coordinate_global_passthrough_v1` named presets from the production
+profile registry. Their `open_internal` and unrefined global selected-family
+guard implementations remain available through explicit configuration and are
+still covered directly; raw captures and wiki source summaries preserve the
+experimental results that motivated their refined successors.
+
+Also removed the behavior-identical
+`fixed_coordinate_spectral_transport_passthrough_diagnostic_v1` profile alias
+and `tbs_spectral_transport_passthrough_diagnostic` benchmark method alias. The
+canonical opt-in `fixed_coordinate_spectral_transport_passthrough_v1` profile
+and `tbs_spectral_transport_passthrough` method retain the same strict spectral
+transport guard behavior.
+
+#### Consolidated the conditional-topology runtime profile
+
+Removed `fixed_coordinate_conditional_topology_diagnostic_v1` from the
+production profile registry after confirming that every executable setting was
+identical to `fixed_coordinate_guarded_v1`. The distinct maturity label and
+description belonged to the benchmark study, not to runtime behavior.
+
+The benchmark-facing `tbs_conditional_topology_diagnostic` method id remains
+available and now resolves to `fixed_coordinate_guarded_v1`. Conditional-
+topology diagnostic scripts and new output metadata use that canonical profile;
+historical raw results retain the retired profile id as provenance.
+
+#### Retired root and selective-pass-through validation profiles
+
+Removed `fixed_coordinate_selective_root_v1` and
+`fixed_coordinate_selective_passthrough_v1` from the production profile
+registry after their diagnostic roles were superseded. The selected-family
+panel default now compares the projected-Wald baseline, guarded fixed-coordinate
+profile, and refined global selected-family profile.
+
+Migrated the root tree-geometry replay and its categorical false-root regression
+to explicit fixed-coordinate, root-stability, and selected-root permutation
+parameters before removing the root profile ID. The underlying default-off
+guard scopes and their direct behavioral coverage remain; raw captures and
+historical wiki measurements retain the retired identifiers as provenance.
+
+#### Retired redundant benchmark and fixed-global profile IDs
+
+Removed the behavior-identical `tbs_conditional_topology_diagnostic` benchmark
+method alias. It resolved to `fixed_coordinate_guarded_v1` and never applied
+the conditional-topology law during traversal; the canonical profile and the
+separate topology-law diagnostic remain. Alias-only registry, dispatch, and
+duplicate precomputed-distance tests were removed with it.
+
+Migrated the fixed-global runner regression to explicit
+`fixed_global_chi_square`, selected-topology penalty, and root-stability
+parameters, then removed `fixed_global_guarded_v1` from the runtime registry and
+profile-validation defaults. The statistic and its behavioral regression
+remain available without the obsolete public profile ID. Raw captures preserve
+`fixed_global_guarded_v1` and the predecessor conditional-topology IDs; wiki
+history preserves the later `tbs_conditional_topology_diagnostic` alias. Stale
+wiki links to already-removed validation test files were deleted.
+
+#### Retired the spectral-transport traversal experiment
+
+Removed the opt-in `fixed_coordinate_spectral_transport_passthrough_v1`
+profile and `tbs_spectral_transport_passthrough` benchmark method after the
+calibration evidence showed signal-retention regressions and the referenced
+result directories proved empty or untracked. The spectral-transport gate
+module, traversal/config plumbing, two dedicated calibration panels,
+spectral-only tests, and four obsolete wiki source pages were removed with the
+public IDs.
+
+Also removed spectral-transport-only output fields from the selected-family
+panel and the optional spectral branch from the topology-frontier replay and
+its callers. Generic selected-family pass-through support, the independent
+PCA/Marchenko-Pastur spectral context, adjacent selected-neighborhood
+spectral-flow diagnostics, immutable raw captures, and historical log entries
+remain intact.
+
+#### Retired selected-neighborhood spectral-flow diagnostics
+
+Removed the two benchmark-only selected-neighborhood spectral-flow panels
+after recursive reachability found no registered runner or consumer beyond the
+panels themselves and an optional diagnostic CSV join. Their validation tests
+had already been retired as research-only, all seven referenced result
+directories were empty, and a fresh one-case run contradicted the retained
+internal-support narrative.
+
+Removed the unused spectral-flow join and output fields from the
+selected-neighborhood measurability evaluator, plus the orphaned exported
+`CoherentSupportDecision` and its self-contained test. The live PCA/MP spectral
+context, internal-barycenter and branch-length-state estimator options,
+registered internal-filter methods, and the remaining neighborhood bandwidth
+distance, role, kernel, and tau primitives are unchanged. Deleted the two
+obsolete source pages and removed their unsupported claims from retained wiki
+synthesis; raw captures and earlier chronology remain untouched.
+
+#### Corrected the spectral-flow retirement boundary after review
+
+Versioned the reduced measurability CSV contract as
+`selected_neighborhood_measurability_law/v2`, removed retained prose that still
+described the deleted mode-transport implementation, and removed the retired
+spectral bottleneck from the conceptual status list. The measurability source
+page now cites only its live implementation, omits numerical and test-coverage
+claims unsupported by local evidence, and is draft until a non-empty result
+capture and focused contract tests are restored.
+
+#### Retired the selected-neighborhood topology-frontier slice
+
+Removed the benchmark-only selected-neighborhood topology frontier, generated
+neighborhood replay, conditioned topology join, same-geometry external-support
+attempt, and selected spectral-generator target panel. Recursive import and
+artifact tracing found no production consumer, registered runner, current test,
+or non-empty retained result capture for the five-module branch.
+
+Removed the topology-derived bandwidth and hybrid-support coordinates from the
+retained mixed-root law, calibration-feasibility, selected-null pilot, shared
+root-tail key, and spectral-tail contracts. The mixed-root event remains
+conditioned on margin, tie-cell, and tie-rank evidence; the spectral-tail key
+now uses the reduced component, tie, action, edge, and population-law
+coordinates. Surviving spectral-tail and deformed-MP runners now require their
+feasibility input explicitly instead of pointing to deleted historical join
+artifacts. Unsupported source pages were removed and retained synthesis was
+reduced to locally supported code contracts.
+
+#### Corrected the topology-frontier retirement boundary after review
+
+Migrated the retained target-conditioned importance frontier from its
+`pre_topology` schema and replay-oriented outcomes to a versioned final
+conditioning contract whose matched candidates proceed directly to the
+selected-root tail evaluation. Migrated the spectral-lift sweep to version 2,
+renamed `next_replay_step` to `next_diagnostic_step`, and removed statuses that
+directed candidates toward the retired generated-neighborhood topology stage.
+
+Removed the stale bandwidth coordinate from the calibration package contract
+and the dead selected-root result-root default. The deformed-MP runner now also
+requires its \(H_u\)-observability input explicitly because the former producer
+and captured output are absent; its orphaned source page was removed. Rewrote
+the affected root source pages and index/analysis summaries around tracked code
+evidence, removed empty result-directory citations and unsupported smoke-run
+numbers, and marked empirical pages draft until durable captures and focused
+tests exist.
+
+The final checkpoint review also corrected the calibration category map so the
+surviving tie-rank package is described by feasibility, selected-null
+simulation, proposal, and spectral-tail responsibilities rather than the
+retired replay stage.
+
+#### Removed historical root-diagnostic input defaults
+
+Required explicit predecessor CSV paths across the retained selected-root and
+tie-rank diagnostic chain instead of silently binding live entry points to the
+dated 2026-06-15 result tree. The target-conditioned frontier now treats its
+optional tail rows as absent unless a caller supplies them, and a supplied
+missing path fails rather than silently selecting all observed targets.
+The spectral-tail panel applies the same rule to its optional deformed-MP rows
+and support rows.
+
+Removed two uncalled root CLI helper modules and the two tests that only kept
+those helpers reachable. Numerical parameter defaults, diagnostic algorithms,
+production code, raw captures, and append-only history remain unchanged.
+
+#### Retired the selected-root spectral-tail research boundary
+
+Removed the deformed-MP edge panel, selected-root spectral-tail evaluator, and
+target-conditioned importance selector after audit found no maintained runner,
+current test, retained capture, or complete artifact loop. Removed their direct
+source pages and the shared root-tail helpers that became orphaned.
+
+Preserved the broader null-proposal and spectral-lift reach diagnostics. The
+spectral-lift contract is now version 3 and reports standalone root-metric
+reach evidence without claiming that candidates feed a retained tail evaluator
+or define production p-values. Production tree code, raw captures, and earlier
+chronology remain unchanged.
+
+#### Corrected the remaining spectral-tail retirement documentation
+
+Removed the calibration package's stale reference to optional
+target-conditioned tail rows and corrected the wiki index so the retained
+kernel-spectral synthesis is described as an unresolved historical research
+direction, not a current calibrated-tail contract.
+
+#### Retired the terminal root spectral-lift sweep
+
+Removed the standalone root tie-rank spectral-lift parameter sweep after the
+recursive audit found no downstream consumer, registered runner, focused test,
+packaged surface, or non-empty retained result capture. Removed its direct
+source page and the selected-root log-action and spectral-excess helpers that
+became orphaned.
+
+The calibration-feasibility, selected-null simulation, and null-proposal
+frontier diagnostics remain for a separate dependency review. Production code,
+raw evidence, and earlier chronology remain unchanged.
+
+#### Consolidated test duplication and execution groups
+
+Reduced the maintained suite from 566 to 563 cases by removing one exact
+semantic duplicate and one ineffective test whose branch-length variables never
+reached the production call. Consolidated repeated case matrices and fixtures
+without merging distinct behavioral outcomes. The exact-clone audit fell from
+17 clones and 325 duplicated lines to two intentionally retained seam-local
+clones and 27 duplicated lines.
+
+Updated the seven-stage suite map to match collection and marked eight
+catalog-wide or end-to-end cases as slow so the fast lean gate, complete
+non-optional gate, and expensive regression slice can be selected explicitly.
+Production code and supported behavioral coverage remain unchanged.
+
+#### Isolated the IQ-TREE subprocess test seam
+
+Corrected the IQ-TREE construction test so its command stub replaces only the
+phylogenetic module's subprocess binding instead of mutating the process-wide
+`subprocess.run` function. The previous mock was order-dependent: it passed
+after another test imported scikit-bio but failed alone when a lazy dependency
+used subprocess for a platform probe. The standalone test, its complete file,
+and the 194-case core/decomposition stage now pass without changing production
+behavior.
+
+#### Removed benchmark orphans exposed by research-test pruning
+
+Removed seven uncalled diagnostic symbols left behind when research-only tests
+and the math-trace inference entrypoint were retired: an unused cached-distance
+count property, the scalar hold-out interpolation path and its private helper,
+an orphaned table classifier, and the child-null-prior result, validator, and
+calculator used only by that scalar path. The maintained vectorized hold-out
+interpolation path, row-level failure classifier, cached-distance behavior, and
+selected-neighborhood evaluator remain unchanged.
+
+#### Audited the maintained test boundary
+
+Recursively audited 128 tracked test files containing 531 test functions and
+562 collected cases. No test met the two-signal deletion rule: the one exact
+test-body pair protects separate module constants, while delegated assertions,
+protocol hooks, and optional-runtime skips remain live. Corrected the suite map
+from 563 to 562 cases and the statistics stage from 196 to 195 after the recent
+statistical-test pruning.
+
+### 2026-08-11
+
+#### Removed confirmed unfinished-work anti-patterns
+
+Removed the unused `--plot-all` option and made selected-edge AWS resume control
+explicitly disableable while preserving resume as the default. Added the
+dependency and dead-code audits to the locked development tools and `make
+check`, removed the obsolete `python-louvain` dependency after the runner's
+NetworkX implementation was traced, and documented justified dynamic/runtime
+dependency exceptions. Repaired repository-relative links in the categorical
+overlap diagnosis, removed an empty unreferenced guide, and added a focused CLI
+contract test.
+
+#### Audited the production clustering package
+
+Recursively enumerated 125 Python modules under `tree_break_selection/`,
+including 90 concrete modules, 35 package initializers, 469 classes, functions,
+and methods, and 206 internal import edges. Repository entry points reach every
+concrete module; test paths reach 88, while application consumers reach the two
+remaining plotting modules. The package contains no orphan concrete module,
+exact duplicate function body, or incomplete function body.
+
+Removed `GateEvaluator.passthrough_support_status`, whose only consumer was a
+redundant test assertion and whose two diagnostic fields are already supplied
+by the production-used `passthrough_audit_status`. Retained the remaining
+lower-confidence detector findings because they are live application,
+benchmark, or test contracts; exported result properties; or public dataclass
+fields whose external-consumer boundary is unresolved.
+
+#### Audited retained production candidates against downstream consumers
+
+Reproduced the 56 retained Vulture candidates and inspected the 36 direct-child
+Git repositories under `/Users/berksakalli/Projects`, the public source
+repository and its two public forks, PyPI, indexed public code, current package
+contracts, tests, documentation, and history. Removed the unexported
+`extract_row_column_maps` helper, its three self-referential tests, and its
+`core_utils` catalog row after no runtime, downstream, copied-implementation, or
+indexed public consumer was found. The remaining 55 findings are retained
+contracts or require an owner decision because their public-consumer boundary
+cannot be proven closed. A fixed-point pass then exposed
+`BranchLengthOptimizationResult.to_dict`, whose current benchmark runner caller
+confirms it as a live false positive outside the production-only Vulture scan;
+the final detector count therefore remains 56.
+
+#### Corrected empirical-null calibration ownership and reference laws
+
+Separated the immutable calibration sample from fitted scale state, replaced
+record-level stopping support with nearest-stopping-event dependency groups,
+validated every support-threshold boundary, enforced blocked-record role
+consistency, and replaced the tuple threshold signature with an immutable
+version-2 policy snapshot. Removed the redundant stopped-or-null count and its
+threshold after migrating internal and benchmark consumers.
+
+Derived and implemented a separately named exact-F path only for independent,
+pairwise-disjoint, unit-weighted common-scale calibration data. The production
+same-selected-hierarchy path now preserves raw statistics and scale diagnostics
+but fails closed for positive-dimensional records with
+`undefined_unvalidated_reference_law`; it no longer reports the plug-in
+chi-square tail as a calibrated p-value.
+
+The final project check passed Ruff, Deptry, Vulture, the 190-page wiki lint,
+and all 597 tests across the seven ordered test stages.
+
+#### Added the nuisance-derived Gaussian selected radial prototype
+
+Implemented an internal continuous-Gaussian conditional path that learns its
+projection only from contrast-orthogonal nuisance coordinates, reconstructs
+the observed data exactly along the projected radius, and deterministically
+integrates the chi-radial law over an exact declared union of selected
+intervals. Added focused path and disconnected-region tests. The prototype is
+not exported or connected to production gates; exact hierarchy selection-region
+construction, covariance estimation, and non-Gaussian feature families remain
+outside this smallest scope.
+
+#### Constructed the squared-Euclidean hierarchy selection intervals
+
+Added deterministic average-linkage replay over pairwise squared-Euclidean
+distances along the nuisance-derived Gaussian radial path. The implementation
+turns every observed merge-versus-competitor comparison into a quadratic
+inequality, enumerates its nonnegative roots, constructs the complete
+positive-probability interval union, and certifies every retained interval by
+full merge-signature replay. Focused tests cover analytic hand-derived
+boundaries, all active competitors, the unconstrained two-leaf case, and a
+narrow disconnected cell. The implementation remains internal and does not
+represent production Euclidean/Hamming distance paths or edge-opening
+selection.
+
+#### Tested branch-length compatibility of the selected Gaussian prototype
+
+Added focused checks for a fixed scalar branch-time covariance multiplier,
+fixed-topology NNLS branch-length refitting, and branch-length-adjusted internal
+spectral rows. The fixed multiplier rescales the radial path and exact hierarchy
+intervals by the predicted square-root factor, while NNLS changes edge lengths
+without changing the observed merge signature. Recomputing either linkage or
+NNLS branch lengths plus `branch_length_state` changes the root spectral
+projector within one retained merge-signature interval, so the current
+hierarchy event does not support a chi-radial claim for those internal-node
+variants.
+
+A 100-case random covariance-scaling challenge found a false remote hierarchy
+interval caused by subtracting reconstructed path matrices before forming
+radial-slope energies. Added the captured regression and changed the hierarchy
+polynomial constructor to derive its shared raw radial direction directly from
+the conditioned path factors. This preserves mathematically equal quadratic
+coefficients through cancellation; the captured case and a fresh 1,000-case
+challenge then passed.
+
+#### Extended selected Gaussian coverage to diffusion hierarchies
+
+Added pointwise radial replay for the production adaptive-pydiffmap and
+Hamming-neighbor diffusion geometries followed by average linkage. A
+deterministic continuous fixture changes both diffusion distances and complete
+merge signatures at low, observed, and high radii, confirming that the exact
+squared-Euclidean quadratic interval constructor does not cover adaptive
+diffusion. Both Hamming-neighbor and adaptive-Hamming variants replay the
+observed binary matrix and fail closed once a nearby Gaussian radial candidate
+leaves binary/one-hot support. The replay is diagnostic and does not claim an
+exact diffusion selected-region law or production gate integration.
+
+### 2026-09-09
+
+#### Reviewed latest calibration changes, prototype and benchmark results
+
+Reviewed `6441b2e6`, the uncommitted selected-Gaussian prototype and the two
+latest August benchmark directories. Reproduced incorrect narrow hierarchy
+intervals, chi-tail underflow, bypassed support-threshold decisions and a
+tuple-valued dependency-group crash. Preserved findings and numerical
+reproductions in `reports/latest_changes_benchmark_review_20260909.md`.
+
+Re-aggregated all 2,790 variants rows across 25 methods, exposing a saved
+performance summary restricted to six NNLS variants. Recorded canonical
+coverage of 11 successful one-cluster outcomes and 111 unsupported cases,
+fixed-coordinate diagnostic over-splitting and matched NNLS comparisons.
+Saved method summaries and source-hashed evidence without changing original
+benchmark artifacts. The 134 targeted tests passed; full project gates and
+full benchmarks were not rerun. Production code remains unchanged.
+Final wiki lint passed for 191 pages, and `git diff --check` and saved
+review-artifact consistency checks passed.
+
+
+#### Benchmarked diffusion NNLS versions and reviewed the unsupported rule
+
+Completed ten registered diffusion NNLS configurations on all 122 current full
+suite cases at `6441b2e6`: 137 OK, 856 unsupported, 21 skipped and 206 execution
+errors. Every returned partition contains one cluster. Of the unsupported
+outcomes, 813 have internal support but an unvalidated reference law and 43
+have no internal support. Preserved 190 centroid/median merge-height failures
+and 16 MAD zero-distance failures separately from scientific support status.
+The established full runner initially aborted; the study resumed its completed
+cells and finished through three isolated case shards, preserving the initial
+failure, intentionally interrupted serial stage, commands and source hashes.
+
+A seven-case matched gate review completed 168 outcomes, including explicitly
+propagated input-contract skips. On zero-support dense signal, pydiffmap NNLS
+with fixed-coordinate BH at alpha 0.01 recovers four clusters with ARI 1;
+removing only the outer unsupported status returns one cluster. Existing BH
+and BY diagnostics also split null cases and show alpha sensitivity. They are
+not equivalent to the older empirical gate and do not establish calibration.
+
+Among 119 shared August-1/current pydiffmap cases, 94 previously successful
+outcomes are now unsupported; recorded parameters and input metadata match.
+All 122 fresh pydiffmap statuses agree with August 11. The earlier diffusion
+NNLS preset improves mean ARI by 0.121122 against TBS on 100 jointly scored
+cases, with 43 wins, 47 ties and 10 losses. Historical graphtools comparisons
+retain solver-limit and schema caveats. The review also demonstrates constant
+Hamming distances on a native continuous signal case.
+
+Saved reports, compact outcomes, manifests and reproducible study scripts in
+`reports/diffusion_nnls_versions_20260909/` and indexed
+[[diffusion-nnls-versions-and-support-review-20260909]]. Independently rescored
+all 137 full-suite and 141 diagnostic label files, checked complete unique
+case/configuration coverage, and verified 398 source hashes unchanged. The
+focused readiness and support suites passed 35 tests. Production code,
+defaults and dependencies remain unchanged; no commit or push was made.
+
+
+#### Distinguished August support-status and sibling-tail changes
+
+Traced `20362435` (August 3) adding the no-support unsupported result and
+`6441b2e6` (August 11) withholding the previous inflation-adjusted chi-square
+sibling p-value even with internal support. The pre-August code already closed
+sibling gates when support was absent. Verified diffusion, NNLS solver and
+diffusion runner files unchanged against preceding committed snapshot
+`260b11f9`; retained the caveat that the August-1 run lacks an exact checkout
+manifest. Added the code-history evidence and explanation to the existing
+version comparison report and wiki source summary. Production code unchanged.
+
+
+## 2026-09-09 — Restore empirical calibration rule and verify benchmark recovery
+
+- User confirmed restoration of the old calibration rule and investigation of
+  necessary statistical validation. Restored supported empirical chi-square
+  p-values and traversal-aligned sibling BH; retained no-internal-support
+  outcomes, dependency-group diagnostics, support thresholds and exact-F API.
+- Fixed tuple group masks, restored production threshold enforcement, and
+  rejected exact-F model misuse in the empirical API. Updated calibration
+  artifact schema versions and current documentation/manuscript descriptions.
+- Final-source pydiffmap NNLS rerun: 122 outcomes, 97 results, 21 skips, four
+  no-support outcomes, zero errors. All 97 successful historical overlaps have
+  identical ARI/K; mean ARI 0.797281 in both. Recovered 92 formerly unsupported
+  results. Independently rescored 97 labels and verified 399 source hashes.
+- Two review axes found the same exact-F API boundary issue; fixed and rechecked.
+  The 103 targeted checks and seven ordered stages (624 tests) passed. Ruff,
+  dependency audit, Vulture, 193-page wiki lint and manuscript PDF build passed.
+- Documented the necessary held-out whole-pipeline null/signal study and the
+  distinction between conservative nonuniform p-values and inflated false-split
+  error. Rechecked the existing 500-replicate external diagnostic. No selected-
+  tail/FDR guarantee is claimed, and that new study has not been run.
+- Evidence: [[calibration-rule-restoration-20260909]] and
+  `reports/calibration_restoration_20260909/`. Earlier prototype work preserved;
+  no commit or push.
+
+- Final restoration verification: `make check` exited 0 after all 624 tests,
+  lint, dependency/unused-code audits and wiki lint; `git diff --check` passed.
+  Evidence: `reports/calibration_restoration_20260909/checks.json`.
+
+## 2026-09-10 — Record open diffusion NNLS calibration points
+
+- Created [[diffusion-nnls-calibration-open-points]] from the restored-method
+  validation protocol and existing benchmark/support evidence. The twelve open
+  points cover null truth, error targets, data-dependent selection, calibration
+  contamination/dependence, empirical tails, necessary support, BH/traversal,
+  independent held-out evaluation, simulation precision, signal recovery,
+  sensitivity/transfer and acceptance/correction criteria.
+- Each point names the evidence needed for resolution. Distinguished decisions
+  required before confirmatory simulation from questions the simulation must
+  answer; no new simulation or method change is claimed.
+- Added index coverage and a link from the consolidated mathematical backlog.
+- Verification: `make wiki-lint` passed for 194 pages; `git diff --check` passed.
+
+## 2026-09-10 — Define false splits and required data conditions
+
+- Recorded CAL-01 in
+  `reports/calibration_restoration_20260909/false_split_definition.md`: sibling
+  population-parameter null, traversal-used false rejection, global-null false
+  partition and signal-data fragmentation, with an explicit mixed-child truth
+  calculation and data-fitted representation limitation.
+- Inspected the existing pure-parent/majority-label diagnostic, global-null
+  outcome and traversal distinction. Specified feature families, probabilities,
+  dimensions, balance, dependence, contamination, geometry and support coverage.
+- Marked the CAL-01 definition recorded in
+  [[diffusion-nnls-calibration-open-points]]. Generator implementation, the
+  held-out study and calibration guarantees remain pending.
+- Verification: `make wiki-lint` passed for 194 pages; `git diff --check` passed.
+
+## 2026-09-17 — Repair selected Gaussian numerical counterexamples
+
+- Fixed the narrow-interval counterexample in [[root-selected-region-model]]
+  by retaining exact rational path coefficients through average-linkage
+  updates and discriminants, with 80-digit decimal root evaluation. Independent
+  reconstructed-distance regressions cover leaf separations from 1e-6 to 1e-10.
+- Normalized chi interval masses in the log domain, including an integer-dimension
+  survival recurrence when SciPy underflows and scaled density quadrature for
+  nearly cancelling finite intervals. Absolute reported masses may underflow
+  while the conditional p-value remains representable.
+- Added ten regression cases covering narrow hierarchy intervals, extreme
+  upper tails, disconnected intervals, lower-tail underflow, and endpoints.
+  The first seven failed before the implementation fixes and passed afterward.
+- Reconciled the manuscript's sibling-test table and the stale calibration
+  paragraph in [[open-mathematical-questions]] with the restored empirical rule.
+  Production selected-tail validity remains unproven.
+- Verification: 264 statistical/reporting tests passed, followed by all 15
+  radial tests after adding three lower-tail/endpoint cases; targeted Ruff,
+  194-page wiki lint, manuscript PDF compilation, and `git diff --check` passed.
+  No dependencies were installed or updated; changes remain uncommitted.
+
+## 2026-09-19 — Name the clustering and GO-IC analysis pipeline by responsibility
+
+- Renamed the executable to
+  `applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py`
+  and updated the orchestrator, application documentation, wiki source links,
+  and [[current-adaptive-diffusion-subspace-tree-pipeline]].
+- The name covers adaptive diffusion cosine subspace tree construction,
+  Tree-Break Selection clustering, and extended GO information-criterion
+  analysis, including specificity-aware ranking. Existing result prefixes and
+  output directories remain compatible with report readers and saved runs.
+- Verification: eight pipeline contract tests, direct and module CLI help,
+  targeted Ruff, 194-page wiki lint, and `git diff --check` passed. An AST
+  comparison confirmed executable behavior is unchanged by the rename.
+
+## 2026-09-19 — Test the renamed clustering and GO-IC pipeline
+
+- Ran [[current-adaptive-diffusion-subspace-tree-pipeline]] on a synthetic
+  90-sample, 60-binary-feature matrix with three planted clusters (seed 42,
+  entropy 0.1), using binary and TF-IDF weighting, 12 modes, and at most
+  three spectral segments. Features are synthetic, not biological GO annotations.
+- Saved input, truth, exact command, input hash, logs, and verification under
+  `results/analyses/synthetic_diffusion_subspace_go_ic_smoke_20260919_153543/`.
+- All six subspaces completed. Verified 90 aligned assignments per subspace,
+  linkage files, finite GO-BIC/specificity scores, connected artifact indexes,
+  and four readable PDFs. The pipeline exited successfully.
+- TF-IDF common mode recovered three clusters with ARI 0.966475; the
+  specificity-aware top-ranked binary common mode returned six clusters with
+  ARI 0.636402. This one synthetic run tests execution and illustrates that
+  specificity ranking need not select the best planted-cluster recovery.
+- Eight pipeline contract tests passed before the run. No algorithm or
+  significance thresholds were changed.
+
+## 2026-09-19 — Modularise adaptive diffusion clustering and GO-IC analysis
+
+- Reduced the executable to CLI parsing and delegation. Extracted workflow,
+  GO-term loadings, ranking, subspace plots, report assembly, and artifact
+  exports into the existing application directories, documented in
+  [[current-adaptive-diffusion-subspace-tree-pipeline]]. CLI arguments,
+  numerical routines, thresholds, and artifact names remain unchanged.
+- Compared the original and modular pipeline on the saved synthetic matrix,
+  selecting the binary and TF-IDF common-mode subspaces: all 63 non-PDF
+  artifacts were byte-identical, including PNGs; four PDFs had identical
+  extracted text and page counts (16 pages total). All 28 original helper and
+  parser function ASTs were unchanged. Direct and module CLI help matched.
+- Added feature-loading reconstruction, ranking-order, and mixed
+  success/failure workflow coverage in
+  `tests/applications/endotypes/pipelines/test_adaptive_diffusion_go_ic.py`.
+  All 20 pipeline/space-separation tests passed, along with repository Ruff,
+  dependency and dead-code audits, wiki lint, and whitespace checks.
+
+## 2026-09-19 — Deduplicate plot types and separate DataFrame I/O
+
+- Replaced the combined subspace plotting module with seven independent plot
+  types: GO-term bars, GO-term heatmaps, plain dendrograms, cluster-strip trees,
+  subspace embeddings, diffusion embeddings, and subspace ranking bars.
+  Figure constructors accept arrays/DataFrames and return figures; shared
+  renderers are reused across PNG and PDF output.
+- Moved CSV/TSV serialization to
+  `applications/endotypes/reports/adaptive_diffusion_dataframe_io.py` and PNG
+  export to `adaptive_diffusion_plot_exports.py`. `build_axis_loadings` returns
+  DataFrames without writing files; removed the duplicate top-term CSV write.
+  The workflow still orchestrates analysis and export.
+- Researched Matplotlib, Seaborn and SciPy using Context7 and official docs;
+  captured the evidence and adoption decisions in
+  [[go-plot-library-research-20260919]]. Reused Matplotlib Axes composition and
+  SciPy dendrogram leaf order; added no dependencies or statistical changes.
+- Compared clean before/after runs across all six synthetic subspaces. Of 173
+  non-PDF files, 172 were byte-identical, including all CSV/JSON data and PNGs.
+  The remaining difference corrects the report README from two to three pages
+  per subspace. Four PDFs matched extracted text and page counts (66 total).
+  Inspected the rendered multi-axis heatmap and cluster-strip tree.
+- Added 12 tests covering pure loading-table construction, independent plot
+  types, shared heatmap semantics, empty heatmaps, DataFrame round trips, and
+  figure cleanup on export failure. All 26 targeted pipeline/plot tests passed.
+- Final `make check` passed: 650 tests, repository Ruff, dependency and
+  dead-code audits, and 195-page wiki lint; `git diff --check` also passed.
+
+## 2026-09-19 — Group GO-IC modules by responsibility
+
+- Grouped computation in `applications/endotypes/analysis/go_ic/`, DataFrame
+  input/output in `applications/endotypes/io/`, and report/artifact export in
+  `applications/endotypes/reports/go_ic/`.
+- Grouped the independent plotting modules into `plots/terms/`, `plots/trees/`,
+  `plots/embeddings/`, `plots/ranking/`, and `plots/shared/`. CLI entry points
+  and workflow orchestration remain in `pipelines/`.
+- Updated live imports, tests, application examples, and wiki source paths.
+  Preserved historical log entries and raw research evidence.
+- Verification: all 15 moved modules import and retain identical non-import
+  ASTs; 138 application/pipeline tests passed. Direct and module CLI help,
+  repository Ruff, dependency/dead-code audits, 195-page wiki lint, stale-path
+  search, and `git diff --check` passed. No numerical or output changes.
+
+## 2026-09-19 — Review unstaged GO-IC modules and repeat latest analysis
+
+- Repeated the latest saved synthetic analysis with identical input and settings
+  in `results/analyses/synthetic_diffusion_subspace_go_ic_review_20260919_164227/`.
+  All six subspaces completed; assignments, linkage tables, and ranking values
+  matched exactly. All 91 PNGs were byte-identical; four PDFs matched text and
+  page counts (66 pages total). Exact provenance and comparison results are in
+  `run_manifest.json` and `verification.json` in that directory.
+- No new numerical or integration regression was identified in the unstaged
+  refactor. Full `make check` passed, including 650 tests and repository audits.
+- Visual review found preserved readability issues: composite embedding pages
+  reduce annotation text to about 4.4 points; cluster colors lack a clear
+  categorical key; ranking bars omit quality tiers and specificity scores.
+  Detailed evidence and recommendations are in the run directory's `review.md`.
+  Also inspected existing real allGO embedding and term pages, without rerunning
+  the real analysis. No implementation fixes, commit, or push were made.
+
+## 2026-09-19 — Repeat unstaged-change and plot review
+
+- Repeated the latest saved synthetic analysis in
+  `results/analyses/synthetic_diffusion_subspace_go_ic_review_20260919_164944/`.
+  All six subspaces, assignment and linkage tables, and ranking values matched
+  the previous review run; all 91 PNGs were byte-identical, and four PDFs matched
+  extracted text and page counts (66 pages total).
+- Source hashes were unchanged. Fresh source and visual review confirmed the
+  same three readability findings, with no additional regression identified.
+  The run's `review.md`, `run_manifest.json`, and `verification.json` record the
+  evidence. Full `make check` passed with 650 tests and repository checks.
+  No implementation change, real-data rerun, commit, or push was made.
+
+## 2026-09-19 — Fix GO-IC plot readability
+
+- Replaced reduced annotated embedding panels with full-width plot panels and
+  separate 12-point native PDF term summaries. Increased standalone summaries
+  to 11 points and allocated space for long descriptions.
+- Reused the existing discrete cluster palette across trees and embeddings,
+  adding explicit integer legends with height based on cluster count. Ranking
+  charts now show quality tier, specificity score, and GO-BIC on aligned rows.
+  Plot types and shared legend rendering remain separate modules.
+- Repeated the synthetic analysis in
+  `results/analyses/synthetic_diffusion_subspace_go_ic_readability_20260919_165736/`.
+  All six subspaces completed; all 64 CSVs matched after path normalization.
+  Inspected updated figures and checked saved real allGO labels and a 146-cluster
+  legend without rerunning real clustering. The run's `readability_review.md`
+  and `verification.json` contain the evidence.
+- Full `make check` passed with 655 tests; final heading/wrapping adjustments
+  passed all 21 focused tests and scoped Ruff checks. PDF extraction confirms
+  12-point annotation text. No dependencies, commit, or push.
+
+## 2026-09-19 — Rerun both real GO-IC analyses
+
+- Repeated both canonical real inputs using their saved rank-80 binary/TF-IDF
+  settings. Interactome completed 12/12 subspaces and Julia completed 15/15.
+  New numerical results differ from the June runs; explicit comparisons and
+  provenance are retained in both run directories, indexed by
+  [[real-go-ic-readability-rerun-20260919]].
+- Interactome's top TF-IDF modes 06–11 assignments remain identical with
+  13 clusters. Julia's top binary modes 12–21 now has 32 clusters versus 38.
+  Former gate-failure subspaces now return single-cluster degenerate results.
+- Inspected the real plots and enlarged annotation panels for long mode blocks.
+  All 27 embedding pages passed bounds checks with 12-point native PDF text.
+  Report-only regeneration preserved all 263 analysis CSV hashes. Workflow
+  reports contain 36 interactome pages and 45 Julia pages.
+- Added a 39-mode layout regression case. Eighteen plot tests, four pipeline
+  tests, scoped Ruff, and whitespace checks passed. No commit or push.
+
+## 2026-09-26 — Review eigenvalue numbering and subspace grouping
+
+- Verified one-based inclusive mode ranges and zero-based block identifiers;
+  replayed all 27 saved real-analysis blocks and checked the implemented BIC
+  against exhaustive enumeration on 40 small spectra. Six separation tests passed.
+- Reproduced a repeated-eigenvalue boundary defect: rotating a tied eigenspace
+  preserves the operator but changes block distances when segmentation splits it.
+  Rank truncation has the same missing tie protection. Recorded the evidence in
+  [[current-adaptive-diffusion-subspace-tree-pipeline]]. No algorithm changes.
+
+## 2026-09-26 — Preserve repeated eigenvalues in cosine separation
+
+- Added shared numerical-tie detection; segmentation and common-mode isolation
+  respect whole groups, and rank truncation extends through the boundary group.
+  Documented the target-rank behavior in the API and CLI help.
+- Added 12 regression cases covering exact/numerical ties, eigenspace rotations,
+  rank extension and unchanged distinct-spectrum grouping. All 27 saved real
+  block boundaries remain unchanged. Exhaustive constrained BIC enumeration
+  matched 40 tied spectra, including isolated-common-mode offsets.
+- Full `make check` passed: 668 tests, Ruff, dependency/dead-code audits and
+  wiki lint. No commit or push.
+
+## 2026-09-26 — Benchmark the eigenvalue tie fix
+
+- Completed 342 block runs comparing committed `f34f59ca` cosine separation
+  with the fixed working module, using shared downstream diffusion/TBS code.
+  Covered all 42 binary cases, both real GO matrices with both weightings,
+  and one tied-rank stress case. No case preparation or separation failures.
+- All 155 jointly successful ordinary partitions are exactly unchanged,
+  including all 27 real blocks. Both versions retain the same 12 unsupported
+  binary blocks and two binary diffusion failures. The tied-rank fixture
+  extends from 10 to 40 retained modes; both tail partitions have one cluster.
+- Recorded source/input hashes, numerical artifacts, runtimes and stress checks
+  under `results/analyses/eigenvalue_tie_benchmark_20260926/`, summarized in
+  [[current-adaptive-diffusion-subspace-tree-pipeline]]. No commit or push.
+
+## 2026-09-26 — Compare eigenvalue blocks across tree inference methods
+
+- Added a reproducible diagnostic using the existing space-separation and TBS
+  interfaces. Ran all 11 method_proof cases with matched data/seeds over seven
+  linkage methods and neighbor joining, for raw and adaptive-diffusion geometry.
+- Recorded 47 blocks and 752 attempts: 525 completed, 170 nonmonotone-tree
+  failures and 57 unsupported outcomes. Stored spectra, block/distance/tree/
+  partition comparisons, rooted clades, sample assignments and source hashes.
+- Non-common adjacent eigenvalue boundary ratios have median 1.035; between-
+  block normalized rooted tree distance has median 1.000. Of 525 completed
+  outputs, 436 contain one cluster. Raising target rank from 40 to 80 changes
+  grouping within the first 40 modes in 5 of 11 cases.
+- Verified all regenerated input hashes, successful assignment coverage and
+  scores, retained spectra and unchanged source hashes. Eighteen separation
+  tests, 16 construction/rooting tests and analytic metric checks passed.
+  Added the report and figure deck under
+  `reports/eigenvalue_block_comparison_20260926/` and documented limitations in
+  [[eigenvalue-block-tree-comparison]]. No production algorithm changes,
+  commit or push.
+
+## 2026-09-28 — Review eigenvector geometry and mathematical construction
+
+- Completed three coordinated reviews of eigenvectors/subspaces, calibration,
+  and documentation/module reachability; recorded results in
+  [[eigenvector-calibration-construction-review]].
+- Independently reproduced repeated-space truncation in diffusion and local
+  PCA, contrast-selected Wald rank, unequal-rank principal-angle diagnostics,
+  and Hamming self-neighbor behavior. One million independent Gaussian
+  contrasts gave 14,720 adaptive-rank rejections at nominal alpha 0.01; this is
+  a kernel-level experiment, not a whole-pipeline false-split estimate.
+- Verified the dense continuous same-observation whitening identity and
+  distinguished symmetric eigenvectors, paired Markov left/right eigenvectors,
+  sample/feature singular vectors and exact versus numerical multiplicity.
+  Saved all illustrative paired angles, source hashes and reproducible probes
+  under `reports/mathematical_construction_review_20260928/`.
+- Recorded contradictory calibration documentation, stale test/legacy pointers,
+  and one diagnostic helper unused internally. Selected-Gaussian modules remain
+  intentional tested prototypes; historical underflow and narrow-interval
+  regressions now pass. No production code or historical evidence was removed.
+- 184 targeted existing tests and the Vulture audit passed. The report
+  probe, scoped Ruff and wiki lint passed; the generated figure was inspected.
+  Existing benchmark work was preserved. No production fixes, commit or push.
+
+## 2026-09-28 — Check and repair complete-eigenspace rank selection
+
+- Added rotation/permutation regression checks after a green 31-case baseline.
+  The first 21 new cases reproduced 18 failures with three passing controls.
+- Shared the existing cosine numerical-tie rule across diffusion, primal/dual
+  PCA, MP test-dimension metadata and Wald basis selection. Final cutoffs extend
+  through complete groups; diffusion retains a tied leading group instead of
+  removing an arbitrary direction. Positive-rank constraints and raw MP counts
+  retain their previous meanings. PCA now returns actual positive eigenvalues
+  to avoid creating artificial downstream ties through output flooring.
+- All 25 final regressions pass. The six-cycle distance discrepancy is now
+  9.71445e-16, the covariance feature-permutation projector discrepancy is zero,
+  and both Wald rotation cases return p=0.011108997 with rank two.
+- Full `make check` passed 693 tests, Ruff, dependency/dead-code audits and wiki
+  lint. A narrow independent mathematical/integration review found no material
+  defect. Saved source hashes and before/after probes in
+  `reports/mathematical_construction_review_20260928/rank_invariance_repair.json`
+  and updated [[eigenvector-calibration-construction-review]].
+- Rank expansion may increase memory/runtime. No full benchmark or calibration
+  study was rerun; selected-null validity, the separate principal-angle helper
+  and Hamming self-neighbor issue remain open. No commit or push.
+
+## 2026-09-28 — Reassess benchmarks and calibration after the rank repair
+
+- Reran the complete matched 11-case spectral-block panel: 47 blocks, eight
+  tree inference methods, both geometries and 752 attempts. Status counts remain
+  525 successful, 170 failed trees and 57 unsupported; 18 available trees and
+  33 successful partitions change. ARI improves in 15 and worsens in 15 runs.
+- Repeated isolated Wald null experiments with six million generated contrasts,
+  four million held out. Complete groups repair the fully tied example, while
+  current adaptive rank on distinct and partially tied spectra remains
+  anti-conservative at all tested alphas/seeds after the declared multiplicity
+  adjustment. All 2,688 kernel checks and saved-outcome decoding checks pass.
+- Froze and ran six-family, five-method full-pipeline evaluation on 4,200
+  independent datasets, with 500 null and 200 signal replicates per family.
+  Retained all 23,800 method/alpha attempts: 19,595 successful, 4,201 skipped,
+  four unsupported, zero execution errors and zero audit errors. Adaptive NNLS
+  gives false partitions on 316/500 iid Bernoulli and 263/500 categorical null
+  datasets at sibling alpha .01. Signal recovery, exact generator-mixture
+  split truth, root tails and calibration-record contamination remain distinct.
+- Independent verification regenerated all input hashes, checked 1,184,337
+  node rows and 4,140 summary/tail calculations, and passed 39 deterministic
+  production reruns. Source hashes remained fixed; unsupported results were
+  not converted into successful null outcomes. Saved scripts, protocols,
+  manifests, tables and figures under `reports/eigenspace_reassessment_20260928/`
+  and synthesized [[eigenspace-benchmark-calibration-reassessment]].
+- The 47-case current baseline passed, artifact scripts pass Ruff, and figures
+  were inspected. No production rule, default, commit or push was changed.
+
+## 2026-09-28 — Implement the known-branch skew diagnostic
+
+- Implemented the requested Gaussian diagnostic from
+  Q10/Q17/Q19/Q24–Q25 of the June 4 recursive method plan. Prespecified five
+  known branch patterns, two covariance profiles and 1,000 independent
+  datasets per cell; excluded the 50-dataset pilot from evaluation.
+- Saved 120,000 local rows, 10,000 selected-root rows and 20,000 traversal
+  rows, all successful. At alpha .01, fixed-root oracle rejection counts
+  12/1000 and 15/1000 become 33/1000 and 37/1000 under same-data PCA/MP,
+  and 765/1000 and 762/1000 under same-data average-linkage root selection.
+- Independently regenerated all inputs and oracle quadratic forms, checked
+  exact selected group-composition truth and chi-square arithmetic, and
+  reconstructed all BH/traversal outcomes. Matched 17 saved source hashes;
+  no separate pre-run source snapshot was retained.
+- Recorded matched stage comparisons, pointwise intervals, null-only
+  statistic skew with df references, and actual node recovery. Strong A
+  descendants below a null root are locally detected in all datasets but
+  reached in only 11/1000 and 12/1000 without pass-through; pass-through
+  recovers them in all datasets in this controlled open-edge experiment.
+- Added reports under `reports/known_branch_skew_20260928/` and synthesized
+  [[known-branch-skew-diagnostic]]. Full `make check` passed 697 tests,
+  lint and dependency/dead-code audits; final wiki and figure checks followed.
+  No production method/default changes, commit or push.
+
+## 2026-09-28 — Separate projection data sources and apply Vandermonde decomposition
+
+- Ran the requested independent-data projection
+  control, retaining the original 10,000 evaluation datasets with independent
+  basis/rank training streams. All 486,000 crossed-control rows succeeded.
+  Frozen source hashes were checked before and after execution.
+- With rank fixed at one, same-data PCA gives global-null root counts
+  33/1000 and 37/1000 versus 11/1000 and 10/1000 for independent PCA. Canonical
+  evaluation MP rank is one throughout global-null nodes; three independent
+  training rank-two events do not alter rejections. Separately prespecified
+  variable-rank stress does not show a consistent rank-source effect.
+- Implemented guarded PSD Toeplitz Vandermonde factorization and applied it
+  to exact population covariances and algebraic controls. Different anchors
+  reconstruct the same full-rank covariance; general pooled/oracle-whitened
+  sample matrices fail Toeplitz checks. No Toeplitz fitting or production
+  projection replacement was performed. Captured primary-source notes.
+- Independent checks regenerated 30,000 streams, matched 30,000 original
+  node tests, verified 486,000 chi-square calculations and 486 summary cells,
+  and reproduced 1,944 NumPy projection/rank calculations. All 117 frozen
+  source hashes match. A Vandermonde mathematics review also
+  checked 12 extra nonorthogonal controls without finding actionable defects.
+- Saved reports and inspected figures under
+  `reports/independent_projection_vandermonde_20260928/`; added
+  [[independent-projection-vandermonde-control]] and
+  [[vandermonde-reference-notes]]. `make check` passed 712 tests plus audits;
+  final wiki lint followed. No production changes, installation, commit or push.
+
+## 2026-09-28 — Rerun the matched passthrough benchmark
+
+- Explained passthrough and ran the requested benchmark. Reused the existing known-branch runner on 10,000 datasets, holding
+  local tests and deliberately open edge prerequisites fixed while switching
+  passthrough off/on. Preserved original outputs and production sources.
+- Strong signal only below A is reached and split in 11/1000 and 12/1000
+  datasets without passthrough, versus 1000/1000 in each profile with it.
+  All-null any-false-split counts rise from 12/1000 and 15/1000 to 20/1000
+  and 23/1000. `pass_through` decisions are not counted as significant splits.
+- Independent verification reconstructed every one of the 20,000 traversals,
+  confirmed identical local tests within all matched pairs and exact agreement
+  with the prior verified run, and checked 17 pre/post/current source hashes.
+  This rerun adds reproducibility evidence, not new independent replicates.
+- Saved the benchmark under `reports/passthrough_benchmark_20260928/` and
+  updated [[known-branch-skew-diagnostic]]. The targeted 22-test baseline
+  passed; report scripts and final wiki checks followed. No production change,
+  dependency installation, commit or push.
+
+## 2026-09-28 — Separate passthrough reach from p-value and normalisation effects
+
+- Ran the confirmed normalisation and p-value/clustering audits separately.
+  Preserved production code and pre-existing working-tree changes.
+- Reanalysed the existing 10,000 matched Gaussian datasets: 30,000 matched node
+  tests have unchanged raw and reconstructed BH p-values; 3,971 datasets change
+  partition count and 7,942 extra internal-node occurrences become reachable.
+  Added paired upstream covariance/projection/root-selection summaries without
+  counting reused datasets as additional independent evidence.
+- A real-data Hamming/average-linkage probe on the 626-by-456 feature matrix
+  reused one completed annotation bundle. Both decomposers and the shared
+  bundle preserve all 1,251 annotation rows and all nine numeric p-value fields.
+  Passthrough changes 1 cluster to 109, reaching 182 internal nodes and 35 leaves,
+  with 32 splits and 76 pass-throughs. Real-data cluster truth is unavailable.
+- The normalisation audit separates tree geometry from original typed testing
+  features, documents symmetric diffusion versus paired random-walk eigenvectors,
+  and records covariance, ridge, correlated-Bernoulli and same-data projection
+  calibration limits. No new normalization repair was established or applied.
+- Saved artifacts under `reports/passthrough_pvalue_normalisation_20260928/`
+  and indexed [[passthrough-pvalue-normalisation-audit]]. Root baseline passed
+  22 tests; the production probe's overlapping baseline passed six. Independent
+  output checks verified node equalities, traversal counts, input and seven
+  current source hashes. Both report scripts pass Ruff and local links resolve;
+  final wiki lint passed 204 pages. No installation, commit or push.
+
+## 2026-09-28 — Audit lower-dimensional degrees of freedom
+
+- Two independent audits traced production df
+  bookkeeping and recovered prior projection/rank research. Actual retained
+  dimension is propagated through kernel, edge/sibling records and inflation;
+  no ambient-count substitution was found in the audited paths.
+- The fixed orthonormal projection law remains distinct from adaptive selection.
+  A bounded 100,000-contrast Gaussian check at alpha .01 gives 2,148 rejections
+  under contrast-energy selection at .8, versus 957 for fixed rank one, 1,012
+  for an independent direction, and 985 for full rank eight. Actual selected
+  df is recorded correctly. Checked formulas against 1,024 production-kernel
+  calls and verified target-one tie extension produces statistic and df two.
+- Recovered June locked/rerun fixed-membership CSVs, June statistic-shape and
+  null-law panels, September held-out energy-.90 calibration and the fixed-rank
+  independent-projection control. Historical wiki-only smoke numbers remain
+  labeled as such. Low rank itself is not proof of miscalibration; no universal
+  replacement df or production correction was established.
+- Energy selection defaults to disabled but is enabled at .90 by the pancreas
+  benchmark. Its full application was not rerun. A separate correlated-Gaussian
+  control illustrates why scale and effective df are distinct from retained
+  rank, without promoting Satterthwaite as a selected-test calibration.
+- Saved `reports/lower_dimension_df_audit_20260928/`, captured external primary
+  reference notes, and indexed [[lower-dimension-degrees-of-freedom-audit]].
+  Root baseline passed 30 tests; the implementation audit's overlapping
+  baseline passed 41. Report scripts pass Ruff, local links resolve, and source
+  hashes match before/after/current verification. Wiki lint passes 205 pages.
+  No production change, installation, commit or push.
+
+## 2026-09-28 — Compare distribution equations with Wolfram checks
+
+- Recovered the six selected-hierarchy log-ratio equations and local June 4
+  holdout tables, empirical tail contexts, Satterthwaite fitting and the
+  selected-Gaussian radial integral. Historical ranking results remain
+  descriptive; the cloud raw table was not downloaded or rerun.
+- Used Wolfram Alpha to solve scale/df moment equations and evaluate the
+  adaptive-energy integral. Wolfram Language checked the transformed joint
+  density, moments and ten integration values. Captured actual results in
+  `raw/inbox/wolfram-distribution-fitting-20260928.md`.
+- Created `reports/distribution_equation_comparison_20260928/` with independent
+  100,000-vector training and 200,000-vector evaluation, matched Gaussian
+  examples and four alpha values. At alpha .01, combined energy-.9 rejection
+  is 1.4850% nominal versus 1.0135% exact. Conditional radial selection gives
+  7.4818% nominal, 2.4512% moment fitted, and 1.0369% exact.
+- Derived the exact controlled two-dimensional energy-selection law. Fitting
+  scale and df alone does not cover arbitrary selection support or tails.
+  Full selected-tree/PCA/covariance/inflation calibration remains open.
+- Checked 256 kernel results, four existing radial-tail calls, Wolfram values,
+  and independent quadrature; source hashes match. Baselines passed 8 kernel/
+  reference tests and 15 radial tests. Indexed
+  [[distribution-equation-fitting-comparison]]. No production change,
+  installation, commit or push.
+
+## 2026-09-28 — Implement independent Gaussian discovery/test flow
+
+- User chose changing the data flow to satisfy the new equation's assumptions.
+  Added explicit fit/test production entry points requiring independent paired
+  Gaussian measurements with matching leaves and externally known common
+  covariance. Ordinary single-matrix applications cannot meet this contract
+  automatically and remain unchanged. No same-data inflation is applied here.
+- Extended the conditional energy reference to complete-group ranks using Beta
+  directional shares, with converged quadrature and no nominal fallback on
+  numerical failure. Discovery fits topology/PCA; inference evaluates the new
+  tails before existing Tree-BH, sibling BH and traversal.
+- Ran 900 paired evaluation datasets, eight tree methods, two matched independent
+  references and three matched current single-matrix methods. Each independent
+  reference completed 9,267 runs with 1,533 explicit unsupported centroid/median
+  tree cases; the current comparison completed 2,700 runs. No unexpected errors.
+  Saved 175,677 node records and source hashes. Earlier broad baseline: 1,960
+  completed plus 420 skipped, no runtime/audit errors.
+- Conditional tails change 32 primary-alpha cluster-count outcomes; signal ARI
+  does not uniformly improve. High-dimensional neighbor joining still gives
+  8/250 root rejections at .01. Report retains this deviation and identifies the
+  96-cell Holm analysis as post-evaluation. Independent data/known covariance
+  confound whole-method gains against the current single-matrix dispatcher.
+- 146 focused tests passed; 12 independent quadrature checks agree within
+  7.11e-15. Matched output/status counts and source hashes were verified.
+  Indexed [[independent-gaussian-production-benchmark]] and documented required
+  production inputs. No installation, commit or push; prior changes preserved.
+
+## 2026-09-28 — Fit diffusion and NNLS on independent discovery data
+
+- Extended the existing independent Gaussian API with discovery-only adaptive
+  Euclidean diffusion and fixed-topology NNLS. Topology, lengths, coordinates
+  and PCA are frozen before testing; nonconverged fits and branch/coordinate
+  mutation are rejected. Known covariance has no NNLS branch-time component.
+- Completed 900 paired evaluation datasets and 18,000 runs, with 83,700 node
+  records and no warnings/errors/skips. All 900 branch fits changed, while
+  27,900 matched diffusion/NNLS node tests and 5,400 run pairs were identical.
+  Sources and 2,700 independent fitted contexts remained unchanged.
+- Conditional diffusion/NNLS had zero final false partitions per 250 null
+  datasets in each profile. The identity40 raw root tail remains 6/250 at .01;
+  finite non-rejection after the planned 36-cell Holm correction does not
+  prove calibration. Signal ARI improves over direct geometry in these cases
+  but can decrease against matched nominal tails. Current single-matrix
+  comparisons change data quantity and covariance/rank treatment too.
+- Recorded solver success separately from optimality: 695/900 fits stop on
+  relative cost change, with maximum optimality measure .1517. Preserved the
+  Gaussian/known-covariance scope and existing binary calibration questions.
+- 168 focused tests pass, including six new integration tests. Indexed
+  [[independent-diffusion-nnls-benchmark]] and documented the API. No commit,
+  push or installation; prior worktree changes preserved.
+
+## 2026-09-28 — Review naming and misleading claims
+
+- Three read-only reviews covered statistical terminology, geometry/solver
+  names and current documentation claims. All retained findings were checked.
+- Recorded seven actionable issues: overstated data independence, stale
+  validated-reference gating claims, unqualified calibrated p-value wording,
+  invariant/equivariant PCA labels, hidden feature-count target normalization,
+  fitted lengths called time, and incomplete diffusion backend provenance.
+- Preserved properly qualified exact-F, support-status, numerical-tie,
+  retained-rank and NNLS terminology. Revalidated the earlier README/class
+  contradiction rather than claiming it as newly discovered.
+- Added `reports/naming_claims_review_20260928/README.md` and indexed
+  [[naming-and-claims-review]]. Baseline wiki lint passed for 208 pages;
+  post-edit checks validate the new review artifacts. No corrective rename,
+  runtime change, benchmark rerun, commit, push or installation.
+
+## 2026-09-28 — Correct naming and claims
+
+- User confirmed fixing the seven findings. A two-file change implemented
+  diffusion/NNLS metadata; linked documentation, visible labels and existing
+  tests were corrected alongside it. The combined delta was reviewed by the
+  same author, so the review was not independent of the implementation.
+- Clarified fixed projection versus independent testing, support availability
+  versus reference-law validity, and plug-in adjustment versus calibration.
+  Existing PCA identifiers are explicitly operational; visible descriptions
+  use leading/following PCA axes. NNLS captions describe fitted lengths.
+- Added NNLS target definition/normalization/divisor and separate adaptive
+  kernel/coordinate/eigensolver provenance. Existing method IDs, formulas and
+  constructors remain compatible; optional unknown metadata remains None.
+- 71 focused tests passed. Two NNLS snapshot comparisons and one adaptive
+  diffusion comparison preserved numerical outputs exactly; execution time
+  was excluded. Saved benchmark results/source hashes remain historical.
+- Recorded corrections in `reports/naming_claims_review_20260928/fixes.md`
+  and updated [[naming-and-claims-review]]. No commit, push, installation or
+  new calibration benchmark.
+
+## 2026-09-28 — Audit dead code, aliases and duplication after tool discovery
+
+- User required repository tool discovery first. The audit verified
+  configured tools/versions, then ran
+  offline no-sync deptry, Vulture and Ruff. All configured checks passed;
+  deptry scanned 480 files. No clone checker is currently configured.
+- Supplemental threshold-60 Vulture output retained 62 candidates, including
+  known false positives. Custom AST analysis covered 623 Python files and
+  found 13 candidate duplicate-body groups, not blanket deletion targets.
+- Verified one repository-unused private helper (`_node_pvalue`), duplicate
+  Git-provenance implementations and four live timestamp renderers. Retained
+  three active assignment aliases, dynamically registered runners and the
+  documented/tested optional bootstrap-consensus API.
+- Saved command records, outputs and candidates in
+  `reports/dead_code_alias_duplication_20260928/`; indexed
+  [[dead-code-alias-duplication-audit]]. No runtime code edits, removals,
+  installs, test/benchmark reruns, commits or pushes. Wiki baseline: 209 pages.
+
+## 2026-09-28 — Remove the three audited aliases
+
+- User explicitly confirmed removing `TOPOLOGIES`, `BASE_CONTEXT_COLUMNS`
+  and `CANDIDATE_METHOD_CONTRAST_COLUMNS`. Replaced executable uses with
+  `TREE_CONSENSUS_STRATEGIES`, `TAIL_LAW_CONTEXT_COLUMNS` and
+  `METHOD_CONTRAST_COLUMNS`; updated the existing CLI-default regression test.
+- Three focused tests passed before/after. Changed-file Ruff passed; import
+  checks verified alias absence and preserved defaults/output columns. AST
+  comparison confirmed only the intended declaration removals and name
+  substitutions in the three implementation files. Executable exact-name
+  search found no remaining references.
+- Marked the audit as pre-removal evidence and recorded the follow-up in
+  [[dead-code-alias-duplication-audit]]. The private unused helper and duplicate
+  implementations remain outside this change. No commit, push or installation.
+
+## 2026-09-28 — Test internal distributions and branch variance together
+
+- User confirmed matched benchmarks of branch-length internal distributions,
+  branch-length variance, their combination and compatibility with the new
+  independent equations. Completed 48,600 runs on 900 existing Gaussian pairs
+  across two diffusion branch sources, three internal contexts and three sibling
+  alpha values, with both edge-variance policies in the current pipeline.
+- Verified 502,200 node records, unchanged fitting contexts and source hashes,
+  and 7,200 baseline rows reproduced from the earlier evaluation. All 49 focused
+  regression tests pass. No evaluation errors or captured warnings. Preserved
+  the first pilot's diagnostic export error; the reviewed 486-run pilot passes.
+- Empirical internal rows can increase null false partitions; branch-length
+  states behave differently. Discovery-only branch-length states allow NNLS to
+  affect the independent PCA and p-values, with mixed signal-recovery changes.
+  Independent rows are not inflated by deterministic internal states.
+- Confirmed that the edge flag does not disable sibling branch variance and
+  that the adaptive diffusion dispatcher does not forward internal-state flags.
+  The report uses the existing distance runner with verified settings. A
+  report-local independent adapter and incompatible variance-scale control
+  leave production unchanged; correcting the reference scale restores p-values.
+- Saved protocol, mathematical argument, runs, node diagnostics and verification
+  in `reports/branch_distribution_variance_20260928/`; indexed
+  [[branch-distribution-variance-benchmark]]. No commit, push or installation.
+
+## 2026-09-28 — Classify generated reports and measure storage
+
+- Added a catalog for 300 new visible report files and four existing ignored
+  logs, with editable sources separated from checksummed results. Added archive,
+  restore and explicit local-retention commands, exact ignore rules, and a
+  generated-file check in `make check`. Historical tracked evidence is unchanged.
+- Measured 558.47 MiB of new visible report content (576.60 MiB allocated).
+  The exact 36 files above 1 MiB contain 547.00 MiB (564.50 MiB allocated), listed
+  in `docs/generated-output-inventory.md`. Their storage decisions remain
+  pending; no files were deleted or archived, and those 36 paths remain visible
+  to Git pending the user's choice. Four already ignored logs remain local-only.
+- Added [[generated-report-files]] and documented catalog resolution of missing
+  generated evidence without claiming local availability. All 22 focused tests
+  passed, changed-file Ruff passed, wiki lint checked 212 pages, and
+  `git diff --check` passed. The artifact checker reports exactly 36 pending
+  storage decisions and no other errors; its integration into `make check`
+  therefore remains blocked on that choice. No commit, push or installation.
+
+## 2026-10-13 — Fix pass-through reachability and three input/runner defects
+
+- `GateEvaluator` pass-through now counts a deeper split only when traversal
+  can reach it: every child on the path must split or pass through. Before,
+  a root with a failed sibling test could pass through to a boundary child and
+  report a split that no sibling test supported. The guard candidate search in
+  `gates/guards.py` uses the same rule.
+- `populate_distributions` rejects duplicate `leaf_data` index labels instead
+  of silently reusing the last matching row.
+- `_block_permutation_null_sample` permutes float rows, so fractional
+  Bernoulli and soft categorical inputs are no longer truncated to zero.
+  Integer one-hot inputs give the same null samples as before.
+- `run_case_isolated` reads the result queue before joining the subprocess, so
+  large result payloads no longer hang until the timeout.
+- Added one focused test per fix; 748 fast tests and Ruff passed. No commit,
+  push or installation.
+
+## 2026-10-13 — Report effective sibling alpha and reject silent configuration
+
+- `TreeDecomposition.decompose_tree` now reports `sibling_alpha_effective`
+  (sibling alpha divided by `sibling_gate_alpha_penalty`) next to the nominal
+  `sibling_alpha`. Profiles with penalty 50 previously reported only 0.05
+  while the gate applied 0.001.
+- `validate_root_selective_permutation_guard_config` rejects a non-root guard
+  scope with zero replicates, which previously recorded the scope but never
+  ran the guard.
+- The distance-tree TBS benchmark dispatcher rejects parameter keys it does not
+  read; a test keeps the allowlist equal to the keys read in source.
+- `map_symbols_to_entrez` keeps mygene `_id` only when numeric, so Ensembl IDs
+  are no longer stored as Entrez IDs.
+- 752 fast and 8 slow tests and Ruff passed. No commit, push or installation.
+
+## 2026-10-13 — Remove duplicate guard helpers and unused bootstrap consensus
+
+- `gates/guards.py` now uses `compute_descendant_leaf_sets` from
+  `tree/topology.py` instead of its own O(n²) descendant-set fallback.
+  `_tree_root_node` stays because guard tests pass plain `networkx.DiGraph`
+  trees, which have no `root()` method.
+- Deleted `tree_break_selection/hierarchy_analysis/bootstrap_consensus.py` and
+  its test: no application, benchmark or script imported it. Removed its
+  README row and its citations in [[tree-construction-method-map]] and
+  [[redundant-and-legacy-code-map-20260623]]. Historical report manifests and
+  the 2026-09-28 dead-code audit summary still name it as of that date.
+- `run_gate_annotation_pipeline` resolves the feature space once instead of
+  inferring it at five call sites.
+- 758 non-optional tests, Ruff, vulture and wiki lint passed. No commit, push
+  or installation.
+
+## 2026-10-13 — Simplify traversal counters and pass-through bottleneck map
+
+- `TreeDecomposition.decompose_tree` now counts live traversal once, in both
+  trace levels; full traces add only the `full_edge_*` counters. Output keys
+  and values are unchanged.
+- The pass-through bottleneck map is built directly from the support map,
+  since its only possible reason is `selected_family_passthrough_guard_blocked`.
+- 758 non-optional tests and Ruff passed. No commit, push or installation.
+
+## 2026-10-13 — Drop statsmodels from core dependencies and cache family support
+
+- Core Benjamini-Hochberg (`multiple_testing/base.py`, Tree-BH helpers) now
+  uses `scipy.stats.false_discovery_control`, rejecting when the adjusted
+  p-value is at most alpha. Across 20,000 random, tied and grid inputs the
+  rejections matched statsmodels exactly; adjusted values differed by at most
+  2.2e-16. `scipy` floor raised to 1.11; `statsmodels` moved from core
+  dependencies to the `viz` and `all` extras (used by an endotypes plot and
+  report scripts). `uv.lock` was re-resolved offline with no version changes.
+- `compute_inflation_adjusted_sibling_tests` caches the family-level
+  calibration support diagnostics per feature family for one pass. Decisions
+  and support dictionaries are unchanged; at 500 samples `_decision_support`
+  time fell from 0.10 s to 0.03 s.
+- 759 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push, installation or environment sync.
+
+## 2026-10-13 — Remove the IQ-TREE 3 tree builder
+
+- Removed `iqtree3_tree_from_alignment` and its FASTA/Newick helpers from
+  `tree/construction/phylogenetic.py`, the `iqtree3` builder from
+  `SUPPORTED_TREE_BUILDERS`, `IQTREE3_TREE_BUILDER`, the `iqtree_*` parameters
+  of `build_tree` and `run_tbs_on_distance`, `TreeBuildResult.iqtree_metadata`,
+  the `tbs_iqtree3` benchmark method and its dispatch branch. The
+  `TBS_RUNNER_METHODS` alias, which existed only to add `tbs_iqtree3`, was
+  folded into `TBS_DISTANCE_TREE_METHODS`.
+- Removed the three IQ-TREE tests and updated the tree README, spectral
+  diagnostics README and comparison script, [[tree-construction-method-map]],
+  [[repository-execution-and-benchmark-map]], [[eigenvalue-block-tree-comparison]],
+  [[poset-tree]] and the index entry. Dated source summaries, the 2026-06-23
+  code map, `raw/` and `reports/` evidence were kept as historical records.
+- Neighbor joining and MAD rooting are unchanged and still use scikit-bio.
+- 756 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Guard reachability, dispatch allowlists, BH and root helper cleanup
+
+- `_passthrough_descendant_guard_candidates` now stops at nodes that neither
+  split nor pass through, so unreachable splits no longer enter the global
+  selected-family minimum or receive per-node permutation runs.
+- `run_clustering_result` rejects unknown parameter keys for every registered
+  method through one per-method allowlist; `benchmark_*` bookkeeping keys stay
+  allowed. A test checks every registry parameter row against it.
+- Endotype analyses and the GO-IC plot use `scipy.stats.false_discovery_control`;
+  the hand-written `_shared.benjamini_hochberg` was deleted. `statsmodels` left
+  the `viz` extra and stays in `all` for retained `reports/` scripts (deptry
+  DEP002 ignore added).
+- `core_utils.tree_utils.tree_root` replaces the root lookups in `PosetTree.root`,
+  the permutation guards and fixed-topology branch-length fitting.
+- `benchmarks/full/run.py` combines per-case results once instead of
+  re-concatenating every case; a three-case graph-suite run produced the same
+  CSV and summary tables.
+- 760 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Resume by case name, diffusion fixes, stopping-edge removal
+
+- Full-benchmark resume (`compute_resume_coverage`, `benchmarks/full/run.py`)
+  now tracks completion by `case_id` instead of suite position, so a reordered
+  suite no longer credits one case's rows to another.
+- `hamming_knn_diffusion_geometry` uses `resolve_neighbor_search_k`; with
+  `k_neighbors=1` it previously kept only self-neighbors and returned all-zero
+  distances.
+- Deleted the unused `multiple_testing/stopping_edge_recovery` package, its
+  exports and its test.
+- `brancharchitect_tree_comparison.py` uses `tree_root`. The scRNA NNLS summary
+  finds its root from an edge table, not a graph, and was left unchanged.
+- Neighbor-joining internal node names skip any sample label, so a sample named
+  `internal_0` no longer merges with an internal node.
+- `compute_diffusion_coordinates` accepts sparse kernels. Above 2000 samples a
+  connected graph's leading modes come from `eigsh`; disconnected graphs and
+  smaller inputs keep the exact dense solver. Distances matched the dense
+  solver within 4e-13 at 2500 and 4000 samples; random binary Hamming diffusion
+  at 4000 samples fell from 4.8 s to 0.4 s. Well-separated clusters usually
+  give disconnected kNN graphs and therefore see no speedup.
+- 762 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Remove all-pairs bandwidth distance cache and unused package
+
+- `run_tbs_on_distance` no longer builds `build_branch_length_distance_cache`
+  for `neighborhood_bandwidth_profile`; it only recorded a status and the pair
+  count `N(N-1)/2`. Measured cache cost was 7 s at 500 samples, 29 s at 1000
+  and 117 s with 1.5 GiB peak at 2000. The profile name and
+  `support_regularizer_only_no_pvalue_rescue` action fields remain.
+- Deleted `sibling_divergence/neighborhood_bandwidth/` (kernel weights, tau
+  regions, support roles, tree-distance cache) and its contract test; nothing
+  outside that test used them.
+- Kept `descendant_leaf_signature` as a sorted tuple. Sorting every signature
+  took 0.01 s at 4000 samples on an average-linkage tree and 0.36 s on a
+  single-linkage chain, while the scRNA trace writer and report rely on the
+  tuple form.
+- 756 non-optional tests, Ruff, deptry, vulture and wiki lint passed. No
+  commit, push or installation.
+
+## 2026-10-13 — Remove neighbor joining and MAD rooting
+
+- Deleted `tree/construction/phylogenetic.py` (neighbor joining, MAD rooting,
+  unrooted-tree promotion) and its tests. MAD rooting looped over every leaf
+  pair for every edge and took 11 s at 400 samples while scikit-bio `nj` took
+  0.01 s; neighbor joining was not a default method.
+- `build_tree` now supports `linkage` only; `NEIGHBOR_JOINING_TREE_BUILDER`,
+  `DEFAULT_PHYLOGENETIC_TREE_ROOTING` and `TreeBuildResult.phylogenetic_rooting`
+  were removed. `TREE_CONSENSUS_STRATEGIES` equals the seven linkage methods.
+- Removed `tbs_neighbor_joining`, the neighbor-joining cell of the graphtools
+  adaptive-K tree-strategy grid (now seven cells), the tree-consensus parsing
+  of `tree_builder_neighbor_joining`, the family-metric NNLS grid topology, and
+  the neighbor-joining geometries of two diagnostics. Independent Gaussian
+  discovery accepts only linkage.
+- Updated the tree and benchmark READMEs, [[tree-construction-method-map]],
+  [[repository-execution-and-benchmark-map]], [[poset-tree]] and the index;
+  [[phylogenetic-tree-builders-20260614]] is now `deprecated`. Dated source
+  summaries and `reports/` scripts that used neighbor joining were kept as
+  historical records and will not rerun unchanged.
+- 750 non-optional and 6 optional tests, Ruff, deptry, vulture and wiki lint
+  passed. No commit, push or installation.
+
+## 2026-10-13 — Drop single-valued tree builder options, H1 lint, changelog
+
+- `build_tree` no longer takes `builder` or `rooting`, and `TreeBuildResult`
+  no longer carries them; `SUPPORTED_TREE_BUILDERS`, `TreeBuilderName`,
+  `LINKAGE_TREE_BUILDER` and `DEFAULT_LINKAGE_TREE_ROOTING` were removed.
+  `tree_builder`/`tree_rooting` were removed from the TBS and diffusion
+  runners, the dispatcher allowlists, the graphtools registry params, the
+  family-metric sweep, two diagnostics (root replay tokens are now
+  `distance:linkage`), the ASV tree benchmark, the scRNA result rows and
+  `fit_independent_gaussian_tree`.
+- The wiki lint now requires exactly one H1 outside code fences; all 212 pages
+  pass.
+- Added a `CHANGELOG.md` entry for 2026-10-13 covering this session's changed,
+  removed and fixed behavior.
+- 746 non-optional and 6 optional tests, Ruff, deptry, vulture and wiki lint
+  passed. No commit, push or installation.
+
+## 2026-10-13 — Stage new modules, bound subprocess wait, unblock make check
+
+- Staged the untracked modules that tracked code imports
+  (`tree_break_selection/eigenvalue_groups.py`, `scripts/generated_files.py`,
+  `independent_gaussian.py`, `energy_selected_reference.py`), five new
+  diagnostics and seven new tests, and ignored `.serena/`. Nothing was
+  committed.
+- `run_case_isolated` now joins the subprocess only until the case deadline and
+  terminates a child that lingers after sending its result; a test covers it.
+- The dead-code audit report README names the deleted `bootstrap_consensus.py`
+  as plain text, so `generated-files-check` reports only the 36 pending storage
+  decisions.
+- `make check` omits `generated-files-check` until those decisions are made;
+  README and `docs/generated-files.md` say so.
+- 748 non-optional tests, Ruff and wiki lint passed.
+
+## 2026-10-13 — Remove duplicates, aliases and legacy code
+
+- `_passthrough_descendant_guard_candidates` builds a `GateEvaluator` and walks
+  its SPLIT / PASS_THROUGH / BOUNDARY decisions instead of re-deriving the gate
+  rules; the now-unused `node_split_prerequisites` predicate was deleted.
+  `TreeDecomposition` uses `annotation_bool` instead of its own copy.
+- Removed the `matrix_audit` option and TensorFlow matrix export
+  (`audit_utils.py` keeps only the CSV decomposition audit), the unread
+  `TBS_MATRIX_AUDIT_ROOT` variable and its test; `run_single_method_once`
+  returns `(row, computed)`.
+- The sibling inflation diagnostic imports the core `_inflation_mle` and
+  `_effective_sample_size`. Diagnostics share `bool_value` and
+  `parse_csv_list` (`calibration/values.py`), `diagnostic_json_default`
+  (now also handling arrays and frozensets) and `finite_float`; two old copies
+  had treated missing booleans as true. Git provenance lives in
+  `benchmarks/shared/util/provenance.py`, AWS shard checks in
+  `benchmarks/cloud/sharding.py`, and the scRNA timestamp footer in
+  `applications/scrna/_shared.py`. `_node_pvalue` was deleted.
+- Dropped the `TREE_CONSENSUS_STRATEGIES` and `TREE_PRIORITY` aliases, the
+  optional distance/linkage fields left over from neighbor joining, the dead
+  `tree_distribution_kl/js` and `kl_divergence_per_column_*` entries, and the
+  `y_kl` parameter name.
+- Renamed `invariant_equivariant.py` to `leading_axes.py`
+  (`LeadingAxesSpace`, `decompose_leading_axes_space(following_dim=...)`) and
+  the scRNA space-decomposition columns and flag to `leading_*` /
+  `following_*`; two report READMEs now name the old file as plain text, and
+  [[naming-and-claims-review]] and [[redundant-and-legacy-code-map-20260623]]
+  cite the new path.
+- Kept, on purpose: the lenient JSON and infinity-preserving float helpers in
+  `alpha_structure_sweep.py`, the MNIST timestamp footer, the three
+  parse-list wrappers with their own None/empty contracts, the two identical
+  AWS `main` functions, and `fdr_annotation`'s stricter prerequisite check.
+- 746 non-optional and 6 optional tests, Ruff, deptry, vulture, wiki lint and
+  the generated-files reference check passed; all 104 changed modules import.
+
+## 2026-10-14 — Last duplicate helpers, wrappers and invariant labels
+
+- `path_conditioned_traversal_audit.py` imports `_case_summary_from_skip` and
+  `traversal_sibling_fdr_null.py` imports `_projection_inputs` from the modules
+  they already depended on, instead of keeping identical copies.
+- Removed the pass-through wrappers `read_dataframe` (callers use
+  `pd.read_csv`), the annotation-PDF `load_binary_matrix`, `_as_bool` and
+  `_compute_js_divergence`.
+- The endotypes KAK signal page writes `common_axis_score` and
+  `is_common_axis` and labels the axis "Common (leading) axis score".
+- Added tests pinning `bool_value` (missing and "false" are false),
+  `parse_csv_list` and `validate_replicate_coverage`.
+- 757 non-optional and 6 optional tests, Ruff, deptry, vulture and wiki lint
+  passed; all 80 changed benchmark and application modules import.
+
+## 2026-10-14 — Shared small helpers and audit read errors
+
+- `audit_go_annotation_analysis_levels.py` records unreadable
+  `experiment_config.json` and summary CSV files in a new `read_errors` column
+  instead of dropping them; a pipeline-contract test covers both cases.
+- Sixteen small copied helpers now live in one module each and are imported
+  elsewhere: `_select_cases` (two pairs), `_selected_cases` (three copies),
+  `_parse_args`, `_df_bin`, `_rank_bounds`, `_majority_label`,
+  `_branch_length_to_parent`, `_bool_sum`, `_root`, `safe_float`,
+  `sha256_file`, `parse_float_grid` (replacing `parse_alpha_grid` in five
+  modules), `_finite_median` (replacing `_median`), `_load_benchmark_suite`
+  (replacing `_load_cases`), and the pancreas `build_tree_helpers`.
+  `_rank_bounds`, the tie-rank `_select_cases` and `_branch_length_to_parent`
+  are kept in the module the other one already imported, to avoid import
+  cycles.
+- Still duplicated on purpose: the two AWS `main` functions, the fixture
+  miner's `_key` / `_key_from_values`, and the MNIST timestamp footer.
+- 758 non-optional and 6 optional tests, Ruff, deptry and vulture passed; all
+  19 changed modules import.
+
+## 2026-10-14 — Bandwidth label method, test-only API and small copies removed
+
+- `mp_projection_dimension_behavior_sweep.py` has its own `_parse_args`
+  again: the shared copy used `description=__doc__`, so `--help` printed the
+  mixed internal calibration sweep's description.
+- Removed the `tbs_bandwidth_context_v1` benchmark method and its
+  `neighborhood_bandwidth_profile` parameter. Its parameters matched `tbs`
+  once that key was dropped and its labels matched `tbs` exactly; it only added
+  metadata. Older run notes that list it describe plain `tbs` results.
+- Removed the test-only `edge_distributional_action`,
+  `binary_split_distributional_action` and
+  `binary_split_distributional_action_summary`; the contract tests now check
+  the same identities through `edge_distributional_action_summary` and
+  `split_distributional_action_summary`.
+- `benchmarks/cloud/sharding.py` now holds `iter_expected_shard_dirs`,
+  `sync_path_to_s3`, `sync_s3_to_path` and `write_json` for the six AWS
+  drivers. `root/root_values.py` gained `finite_median`, and the two tie-rank
+  modules import `require_columns`. `values.bool_series` replaces two
+  `_coerce_bool_series` copies and reads a 0/1 column with blanks correctly.
+  The spectral profiler imports `_uses_bernoulli_null_whitening` from the core.
+- `RESULT_KINDS` in the GO dataset inventory is a tuple of codes, and the
+  unused `DEFAULT_RESULT_ROOT` constant is gone.
+- 759 non-optional and 6 optional tests, Ruff, deptry and vulture passed; all
+  changed modules import.
+
+## 2026-10-14 — Report output storage decisions and staging
+
+- Archived the 36 pending generated report outputs (547 MB, 34 distinct
+  objects) to `~/kl-te-cluster-archive` with the catalog's copy-and-verify
+  helpers; `reports/artifacts.json` records `storage: archive` and `file://`
+  locations, and `reports/.gitignore` lists each file by exact path. The four
+  run logs keep their earlier `local` decision.
+- `make check` runs `generated-files-check` again; docs, README and
+  [[generated-report-files]] say so.
+- Staged the previously untracked wiki pages, docs, report folders, catalog and
+  `raw/inbox` notes so a commit carries the pages that `wiki/index.md` links to.
+  A tracked-files-only copy now gives the same wiki-lint result as the last
+  commit: no dangling wikilinks, and the same 324 missing local-output sources.
+
+## 2026-10-14 — Hygiene removals after the repository audit
+
+- Removed the second `is_leaf` rule from the spectral tree helpers; the
+  spectral estimator now uses `tree_break_selection.tree.topology.is_leaf`,
+  which reads the explicit node flag.
+- Removed the unreachable 3D-UMAP benchmark plot chain (`plot_umap_3d` was
+  never enabled) and the `TBS_EMBEDDING_BACKEND_3D` variable only it read.
+- Removed `benchmarks/diagnostics/analysis/distributional_action.py`, which no
+  code invoked, together with the scRNA edge-export loop that copied the
+  columns only it wrote; [[scrna-distributional-action-audit-20260624]] records
+  the removal.
+- Removed three tests that could not fail or tested a feature that does not
+  exist, and the orphan `skills-lock.json`.
+- Removed BranchArchitect entirely: the `vendor/BranchArchitect` submodule,
+  the `brancharchitect` extra (biopython, orjson), and
+  `benchmarks/validation/tree/brancharchitect_tree_comparison.py`. The
+  retained 2026-07-09 comparison report under `reports/` is unchanged.
+- Also changed: five diagnostics read boolean cells through `bool_series`/
+  `bool_value`; the selected-hierarchy null audit picks the root target by
+  `parent_depth == 0`; the manifold plot raises instead of falling back to
+  PCA; `plotly` moved to the `viz` extra and the unused `diffusion` and
+  `trajectory` extras are gone. `CHANGELOG.md` lists every item.
+- Deprecated [[ad-hoc-sibling-gate-selected-null-diffusion-comparison-20260617]]:
+  its three cited output directories were never committed, so `make wiki-lint`
+  failed on every fresh clone; the page now cites this log only.
+- The last three hand-written boolean cell readers (scRNA distributional-action
+  audit, family-metric NNLS grid) use `bool_value`/`bool_series`.
+
+## 2026-10-15 — Re-export, root-lookup and helper consolidation
+
+- Reduced the `hierarchy_analysis`, `statistics`, `statistics.projection` and
+  `statistics.sibling_divergence` `__init__.py` files to docstrings; they had
+  no consumers.
+- Dissolved `core_utils/`: `tree_root`, `bottom_up_nodes` and
+  `compute_node_depths` moved into `tree/topology.py`; `data_utils.py` moved
+  to `hierarchy_analysis/statistics/data_utils.py` next to the edge and sibling
+  gate code that uses it.
+- Five root-detection copies (the cluster-tree plot, the linkage builder,
+  recursive p-value geometry, the NNLS null sweep and the selected-edge
+  geometry panel) call `tree.topology.tree_root`; forests now raise there.
+  Tree-BH `find_root_nodes` and sibling-FDR `_root_nodes` stay: they return
+  every parentless node, and the gate test fixtures attach a detached
+  calibration component that Tree-BH must treat as a root.
+- Removed the dead symbols, unread parameters and write-only fields that
+  `CHANGELOG.md` lists, and the unread `TBS_FORCE_UMAP_FOR_LARGE` setter.
+- Seven `finite_float`/`finite_median` copies import the
+  `benchmarks/diagnostics/calibration` owners; callers pass finite-or-NaN
+  annotation and table cells, so the `inf` and raise-on-bad-cell differences
+  do not change current outputs.
+- Gate, guard, independent-Gaussian and runner defaults reference
+  `tree/construction/defaults.py`; the two `alpha=0.05` defaults were removed
+  because every caller passes `alpha`.
+- `benchmarks/README.md` gained a `TBS_*` table and lost the tree-builder axis,
+  matrix-export and retry claims; `tests/README.md` counts were re-collected
+  (766 cases); `docs/onboarding.md` lists the hidden directories that exist;
+  the two dated repository audits moved to `raw/inbox/` and
+  [[repository-hygiene-and-completion-audit-20260727]] cites the new path.
+
+## 2026-10-15 — Repository audit and compatibility removal
+
+- Ran a whole-repo audit in five slices (core tree/plot/space, hierarchy
+  analysis, benchmark harness, diagnostics, applications/scripts/tests). The
+  ranked report went to the user in the session; the main open items are a
+  timeout that aborts the full benchmark, the stage-2 fixture that stops
+  `scripts/run_tests_ordered.py` before stages 3-7, the sibling test using
+  branch lengths regardless of `edge_branch_length_variance_policy`, gate
+  profiles overriding explicit default-valued arguments, and NNLS edges with
+  no sampled equation reported as fitted.
+- Fixed three crashes left by the previous cleanup and added an import check
+  over every `benchmarks/` module (`tests/validation/contracts/
+  test_benchmark_modules_import.py`); `benchmarks/smoke/run_subset.py` is
+  excluded because it runs the smoke benchmark at import.
+- Removed compatibility paths with no current caller, test or tracked
+  artifact reader; `CHANGELOG.md` lists them. Kept on purpose: the
+  `undefined_unvalidated_reference_law` status (retained 2026-09-09 reports
+  contain it), the `squared_standardized_euclidean` target name, the
+  synthesized artifact-index `run_id` for the 2026-06-18 run, the
+  `tree_linkage_method` default in the semantic panel (the 15_ sweep input
+  lacks the column), `old_display_rank`, and `--method-versions`.
+- [[repository-execution-and-benchmark-map]] drops its open question about the
+  `PosetTree.build_sample_cluster_assignments` facade, which is now removed.
+
+## 2026-10-15 — Audit findings 12-20
+
+- Applied the "should fix" audit items: resume refuses mismatched result
+  columns; AWS tail-study and KAK lens merges fail on shards whose work did
+  not run; the plot label map uses leaves only and the set LCA uses
+  `tree_root`; Tree-BH and flat BH have hand-computed numeric tests;
+  `tabulate` is declared; the UMAP seed uses CRC32.
+- Speed: Tree-BH is one top-down pass (same results), the NNLS design is a
+  chunked sparse incidence product (identical matrix, half the peak memory on
+  chain trees), and the fixed-subspace evidence columns are vectorized
+  (identical values, about 12x faster).
+- Lean: removed the modules, flags and helper copies that `CHANGELOG.md`
+  lists. Kept on purpose: `analyze_hc_clusters.py` (documented in
+  `data/feature_matrices/README_HC_feature_matrix_GO_CC.md`),
+  `math_trace/failure_classifier.py` (cited by
+  [[traceable-mathematical-benchmark-suite]]), the divergent copies of
+  `subspace_dir_name`/`resolve_path`/`_load_binary_matrix`, the tolerant
+  `_numeric` copies, two `_select_cases` variants that return no cases for an
+  empty filter, and the unused `jupyter`/`notebook`/`ipython` dev extras
+  (dependency removal needs a separate decision).
+
+## 2026-10-15 — Audit findings 2, 3, 4, 9 and 11
+
+- Fixed the stage-2 fixture (`is_leaf`), so `make check` runs all seven test
+  stages; the full benchmark skips a failed case and exits non-zero at the end;
+  the endotype pipeline's tree plot gets the gate-annotated frame; the GO-IC
+  ranking survives an all-failed run.
+- Finding 9, partly: two diagnostics no longer default into `raw/assets/`;
+  three endotype report scripts delete old outputs only after loading inputs;
+  the GO annotation pipeline's `--dry-run` writes nothing.
+- On the user's decision, the scRNA and MNIST scripts stopped defaulting into
+  retained `raw/assets/` evidence: producers write to a new
+  `results/analyses/<report>_<timestamp>/` folder (`applications/output_dirs.py`),
+  and scripts that read and write one benchmark run in place require
+  `--output-dir`. Refreshing retained evidence now means passing its
+  `raw/assets/benchmark-results/` folder explicitly.
+
+## 2026-10-15 — Config file check
+
+- Checked the project configs (`pyproject.toml`, `Makefile`, `.gitignore`,
+  `.dockerignore`, the AWS `Dockerfile` and `batch-stack.yml`, the validation
+  manifests) and the tool configs (`.mex/`, `.serena/`, `asv.conf.json`).
+  The mex routing targets exist and the ASV suite runs on the current API.
+- Fixed: the `asv.conf.json` repository URL, the `.mex/` setup commands (now
+  locked `uv sync` and `make check`), the unused `statsmodels` in the AWS
+  image, the unneeded `s3:DeleteObject` grant, six stale `.gitignore`
+  entries, `make wiki-lint` running outside `uv`, and the hand-copied `all`
+  extra (now a self-reference with an identical resolved package set).
+- Left for later on the user's decision: removing the unused
+  `jupyter`/`notebook`/`ipython` dev dependencies, and adding pytest
+  `--strict-markers`. Noted only: `.serena/` is fully git-ignored, and the
+  method-constant manifest cites a `benchmarks/results/` run that is not
+  retained.
+
+## 2026-10-15 — One memory system
+
+- Removed `.mex/`, the `mex-agent` compatibility bridge. Its router, setup,
+  sync and context notes only pointed back into `wiki/`, and its pattern
+  index was empty, so no project knowledge moved. `wiki/` is the only memory
+  system: root `AGENTS.md` replaces its "Mex Compatibility" section with that
+  rule, `docs/onboarding.md` drops the `.mex/` note, and
+  `tests/wiki/test_memory_contract.py` replaces the two `.mex` checks with one
+  that requires `AGENTS.md` to route to `wiki/index.md` and `wiki/log.md` and
+  fails if `.mex/` reappears.
+
+## 2026-10-15 — Sibling test always uses branch length
+
+- Resolved audit finding 5 on the user's decision: the sibling test keeps
+  scaling its contrast variance by
+  `1 + (L_left + L_right) / (2 * mean positive branch length)` whatever
+  `edge_branch_length_variance_policy` says; that policy governs only the
+  edge test. Documented in the statistics README contracts,
+  `branch_length_utils.py` and [[projected-wald-statistic]].
+- `sibling_divergence_test` now requires keyword-only `branch_length_sum` and
+  `mean_branch_length`; the `sibling_z_scores.py` pass-through is gone. The
+  MP projection-dimension sweep, which had dropped the branch-time factor,
+  now passes both.
+- Pinned by
+  `tests/statistics/36_test_sibling_projection_tree_paths.py::test_sibling_test_uses_branch_length_when_edge_policy_ignores_it`:
+  under the default `none` policy, lengthening one sibling pair leaves every
+  edge statistic unchanged and scales that sibling statistic by the
+  multiplier ratio. The test fails when the sibling branch time is dropped.
+
+## 2026-10-16 — Linkage set and fixed-subspace branch time
+
+- Repository audit (branch-length focus) found that `centroid` and `median`
+  linkage fail `build_tree` on almost every input: their merge heights were
+  nonmonotone on all 100 random binary and Euclidean inputs tried (the small
+  graphtools smoke case is an exception), and the topology-only
+  placeholder route was removed on 2026-07-29. `SUPPORTED_LINKAGE_METHODS`
+  now lists average, complete, weighted, single and Ward, and `build_tree`
+  rejects other names. The tree-strategy grid has five cells per case.
+- The audit also found that the fixed-subspace sibling gates ignore branch
+  length while the projected-Wald sibling test applies it. Applying the
+  sibling branch-time factor to the fixed-subspace gates was tried and
+  reverted on the user's decision. On 79 default benchmark cases with
+  `fixed_coordinate_bh` (Hamming, average linkage, edge alpha 0.001, sibling
+  alpha 0.01), mean ARI fell from 0.658 to 0.617: `binary_*` cases rose from
+  0.754 to 0.855, `gauss_*` cases fell from 0.785 to 0.505, and seven cases
+  collapsed to one cluster instead of one. Long root branches of
+  well-separated clusters give root multipliers of 4 to 12, and these gates
+  have no calibration step to absorb that. Rule now: only the projected-Wald
+  sibling test uses branch length; the statistics README, `branch_length_utils.py`,
+  `sibling_divergence_test` and [[projected-wald-statistic]] say so, and
+  `tests/statistics/36_test_sibling_projection_tree_paths.py::test_only_the_projected_wald_sibling_test_uses_branch_length`
+  pins both sides.
+- The permutation guards now share `sibling_fixed_subspace_contrast` with
+  the fixed-subspace gate. Their continuous-data failure seen in the audit
+  is a deliberate rejection: the guard supports Bernoulli and categorical
+  blocks only.
+
+## 2026-10-16 — NNLS uncovered edges and root split
+
+- Fixed-topology NNLS gave every edge that no sampled leaf pair crosses the
+  solver's starting value 0.1 while reporting status `ok` (90 of 798 edges in
+  a 400-leaf tree fit with 300 pairs). It now adds one crossing pair per such
+  edge: the first leaf below it with the first leaf outside it. An edge with
+  data leaves on one side only raises. `n_zero_design_columns` counts the
+  edges that needed a pair.
+- Every leaf pair crosses both root edges or neither, so NNLS identifies only
+  their sum, and the solver split it evenly by chance. Three split rules were
+  compared on the 122 default cases with `tbs_nnls`,
+  `tbs_fixed_coordinate_bh_nnls` and `tbs_diffusion_adaptive_nnls`:
+  midpoint, linkage-length ratio and leaf-count barycenter (`S * n_other / n`).
+  They tie on 365 of 366 runs; linkage ratio alone changes
+  `gauss_outlier_cluster_4c_continuous` under `tbs_fixed_coordinate_bh_nnls`
+  from 1 to 2 clusters (ARI 0 to 0.461, truth 5). The user chose the linkage
+  ratio; zero or missing linkage lengths fall back to an even split. The split
+  reaches only the edge tests of the root's two children under
+  `normalized_branch_length`; the sibling test uses the unchanged sum.
+  [[tree-construction-method-map]] describes both rules, and
+  `tests/tree/test_optimized_branch_lengths.py` pins them.
+
+## 2026-10-16 — Profile overrides and sweep resume
+
+- Audit finding 6: `resolve_sibling_gate_profile_config` treated an explicit
+  argument equal to its default as "not given", so a profile silently
+  replaced it. `None` now means "not given" in the resolver,
+  `run_gate_annotation_pipeline`, `run_tbs_on_distance` and benchmark
+  dispatch; an explicit value that differs from the profile raises. The
+  defaults live once in `_GATE_SETTING_DEFAULTS` in `gates/profiles.py`.
+  `fixed_sibling_gate_profile_validation.py` leaves unset guard options to
+  the profile.
+- Audit finding 10: the alpha-grid sweep reused per-alpha files from any
+  earlier case set, and the mixed internal-calibration sweep reused outputs
+  whenever the schema matched. Both now refuse saved results written for
+  another configuration (alpha grid: a `case_set_sha256` in each summary;
+  mixed sweep: suite, case names, replicates and alphas from the manifest).
+  `alpha_structure_sweep.py` had the same pattern and now checks the saved
+  `case_id` and `method` columns. `tests/validation/contracts/test_sweep_resume_config.py`
+  covers all three.
+
+## 2026-10-16 — binary_perfect cases: unsupported, and why 2/4/8 is missed
+
+- Canonical `tbs` returned one cluster (ARI 0, status `ok`) on
+  `binary_perfect_2c`, `_4c` and `_8c`. Two definitions of internal
+  empirical-null support disagreed: the gate required df > 0, null weight
+  > 0 and a null role, while the `Sibling_Role_Supported` stamp read by
+  `benchmarks/shared/runners/tbs_support.py` checked the role only. Both now
+  use `SiblingPairRecord.has_internal_empirical_null_support`, and the three
+  cases report `unsupported`. A rerun of `tbs`, `tbs_diffusion` and
+  `tbs_diffusion_adaptive_nnls` on all 122 default cases changed only those
+  three rows.
+- Data: each true cluster is one template row copied 18 to 20 times plus 0 to 2
+  single-row variants 1 to 2 bits away; templates are 45 to 61 bits apart
+  (2c/4c/8c have 5/7/15 distinct rows).
+- Why the Hamming tree misses 2/4/8: identical copies merge first, so 35 of 39
+  internal nodes in 2c have no within-node variance (df 0) and cannot form an
+  empirical null. Each variant joins its clump last with significant edges,
+  so every distinct row pattern is a focal split. Uncalibrated, those
+  variant splits are real (2c: raw p 1.8e-5 to 1.1e-3, all BH-significant at
+  0.01): `fixed_coordinate_bh` returns 5/7/15 clusters (ARI 0.856/0.950/0.949).
+  `fixed_global_chi_square` spreads a 1-bit difference over all 50 to 200
+  features and returns exactly 2/4/8 (ARI 1.0).
+- Why `tbs_diffusion` finds 2/4/8: its tree merges each variant with a single
+  template copy low in the tree, where the edge test has no power. Those
+  merges are null-like with df > 0, so they calibrate the empirical null; only
+  the root is focal (corrected p 6.05e-7), giving 2 clusters in 2c.
+- Recovering 2/4/8 with canonical `tbs` needs a method decision, not taken
+  here: a reference law for the no-support case (the 2026-08-03 unsupported
+  outcome spec rejects a fixed-subspace fallback after same-data selection),
+  a minimum split size, or the diffusion geometry.
+
+## 2026-10-16 — Test audit and compatibility leftovers
+
+- Audited `tests/` for tests that can be removed, tests that do not exercise
+  production paths, and compatibility, alias or legacy code. Six slices were
+  reviewed: `tests/statistics`, `tests/pipeline`, `tests/hierarchy_analysis`
+  with `tests/integration`, a production compatibility sweep, and the
+  `core`/`tree`/`localization`/`wiki` and `validation`/`applications`/
+  `visualization` slices (the last two by an import-graph pass and spot reads).
+- Removed the verified compatibility leftovers and legacy-guard tests listed
+  in the CHANGELOG. Larger candidates are left for a decision: the
+  `selected_gaussian_*` prototypes and their tests, the exact-F calibration
+  mode, `benchmarks/external/`, the dead unvalidated-reference-law branch,
+  package re-exports with no importer, and tests that build their own
+  pipeline with complete linkage instead of `run_tbs_on_distance`.
+
+## 2026-10-16 — Tests that now catch production breaks
+
+- Fixed audit findings 1 to 5 from the test audit. Each rewritten test was
+  checked by breaking the production code it guards and confirming it fails:
+  disabling both root guards' blocking, emptying
+  `_SELECTED_FAMILY_PASSTHROUGH_SCOPES`, forwarding edge alpha times 5 from
+  `run_gate_annotation_pipeline`, and making dispatch ignore a supplied
+  distance.
+- The selected-family pass-through guard is now tested through a gate bundle
+  scope; the test-only `selected_family_passthrough_guard` keyword is gone.
+- `tests/integration/test_cluster_validation_pipeline.py` runs
+  `run_tbs_on_distance`: the balanced fixture gives 4 clusters (ARI 1.0) and
+  the unbalanced one 2 clusters (ARI 0.48), where the old complete-linkage
+  copy gave 15 clusters (ARI 0.54).
+- The original parity fixture is insensitive to alpha and to the spectral
+  minimum dimension (all of its decisions are far from the thresholds), so
+  the new parity case uses `binary_balanced_low_noise`.
+
+## 2026-10-16 — Remaining audit code removals
+
+- Removed audit findings 8 to 14 and 18 (see CHANGELOG): the
+  selected-Gaussian prototypes, the exact-F calibration mode, the dead
+  unvalidated-reference-law status and reason code, the split-action
+  summary, `benchmarks/external/` with its two dependencies, duplicate
+  root guard columns and echoed config keys, unused package re-exports,
+  `SMALL_TEST_CASES` and test-only dataclass defaults.
+  [[root-selected-region-model]] and the split-action analysis page now
+  mark the removed modules.
+- Finding 20 was partly wrong and only partly applied. Removed: the
+  `old_display_rank` column and the relationship-analysis guards for audit
+  CSVs without gate or branch-length columns (the current writer always
+  writes them). Kept: the root sibling p-value fallback in
+  `relationship_analysis._select_root_split_pvalue` and
+  `debug_trace._root_sibling_pvalue`, which returns the raw p-value whenever
+  the corrected value is NaN, which is every fail-closed root (it produced
+  the `binary_perfect` P=5.29e-84 in the failure report); and the `_legacy`
+  suffix in `inventory_go_annotation_datasets.py`, which still gives the
+  tracked `raw/assets/benchmark-results/julia_allGO_new_c2ef_..._legacy_20260618`
+  folder its `julia_allgo_new` slug.
+- `reports/distribution_equation_comparison_20260928/compare_distributions.py`
+  imports the removed `selected_gaussian_radial`; it stays as a frozen
+  record and cannot be rerun on current code.
+- A second review of these removals found five follow-ups, all fixed:
+  the selected-family panel's `root_selective_guard_blocked` column now reads
+  the generic guard column only on the root row (it had flagged non-root
+  rows), duplicate reads left by the column rename are gone, the README,
+  manuscript and wiki no longer claim the exact-F mode exists, the
+  relationship-analysis audit reader skips CSVs missing any column it now
+  reads unguarded, and leftover wiki and `pyproject.toml` text was updated.
+
+## 2026-10-16 — Debloat and naming batch
+
+- Four batches ran on disjoint files: retire past-study diagnostics, merge
+  same-name helpers, rename misleading names, and finish the test-audit
+  cleanups.
+- Retired 71 files (44,906 lines) from `benchmarks/diagnostics/`: 32 of 33
+  docs-only entry scripts, 29 helpers only they imported, and 10 empty
+  packages; `runner_support.py` followed once its last helper moved. 58 wiki
+  pages drop the retired `sources:` entries and note the retirement commit
+  (7cc4e1c0). Kept: `spectral/apply_vandermonde_diagnostic.py` (a retained
+  report gives it as the rerun command) and `path_b/recursive_pvalue_geometry.py`
+  (imported by a retained report script).
+- Same-name helpers merged: `parse_go_term`, `load_binary_matrix`,
+  `default_output_dir`, `markdown_table`, `parse_case_names`; four unused
+  `project_root()` copies deleted. Deliberately separate: a `parse_case_names`
+  that rejects an empty list, the UTC `benchmarks/results` default in
+  `run_feature_matrix_with_umap.py`, and a `safe_name` that strips `_`.
+- Renamed `has_empirical_null_support` to `has_null_role` and
+  `CalibrationDecision.exact_context` to `decision_context`; saved column
+  names such as `Sibling_Role_Supported` and `is_role_supported` are unchanged.
+- Test suite: 996 to 920 cases; most of the drop is the module-import
+  contract test, which runs once per benchmark module.
+
+## 2026-10-17 — Debloat of the verification code
+
+- Applied the same method to `benchmarks/validation/` and `tests/validation/`
+  in two sequential batches.
+- Retired 15 files (4,849 lines): three validation runners nothing imported
+  or tested, `alpha_structure_sweep.py` (only a resume-guard test touched
+  it), and six research tools that only `tests/validation` kept alive, plus
+  the helper only they used and two emptied packages. 18 test functions went
+  with them. `calibration_support.py` stays for
+  `reports/eigenspace_reassessment_20260928/full_pipeline/run_reassessment.py`,
+  minus its now-unused `summarize_p_value_calibration`.
+- `values.py` moved from `benchmarks/diagnostics/calibration/` to
+  `benchmarks/shared/util/`: 17 importers, including applications and
+  `relationship_analysis.py`, had depended on research tooling for basic
+  value coercion.
+- One comma-list parser (`parse_csv_list`) and one case selector
+  (`alpha_grid_search.select_cases`); about 30 helpers shared across modules
+  lost the leading underscore that called them private. Core
+  `tree_break_selection` privates imported by applications and reports keep
+  their names, since renaming them would change the core API.
+- A review of this batch found twelve follow-ups, all fixed: the
+  selected-hierarchy diagnostics reject an empty `--case-names` instead of
+  running the whole suite; the three unused `report_contract.py` helpers and
+  two local comma-list parsers are gone; the newly public helpers are in
+  their modules' `__all__`; wiki pages, reports and the CHANGELOG no longer
+  describe retired scripts in the present tense or name removed helpers.
+- Test suite: 920 to 892 cases.
+
+## 2026-10-17 — Neutral process wording in reports and wiki
+
+- Reworded process notes in report READMEs,
+  `reports/naming_claims_review_20260928/fixes.md` and wiki pages so they
+  describe the reviews, audits and checks themselves. Findings, numbers and
+  conclusions are unchanged.
+- Hash-locked retained results under `reports/` keep their recorded wording.
+
+## 2026-10-17 — Naming consistency audit and fixes
+
+- A naming audit checked active package, application and benchmark names.
+  The eight verified findings and migrations are recorded in
+  [[naming-consistency-audit]] and
+  `reports/naming_audit_20261017/README.md`.
+- Renamed distribution population, general coordinate adjustments, the
+  unweighted `raw` option, the averaged NNLS target and the clustering-metric
+  helper. Removed the redundant BH forwarding wrapper without an alias.
+  Updated callers, tests, CLI choices, exports, quick start and ASV names.
+- Corrected fitted-length/radial captions, projected-reference return-type
+  documentation and Tree-BH within-family adjustment descriptions.
+  Traversal diagnostic schema v2 uses `any_false_rejection_rate` and
+  `empirical_control_observed`; its merger rejects old or mixed schemas.
+- Historical captures and saved results keep their names and values. Strict
+  spectral readers reject retired labels; integration review preserved the
+  legitimate `whole` weighting used by whole-matrix diffusion. Three reader
+  regression tests cover these cases.
+- `UV_OFFLINE=true make check` passed: Ruff lint/format, dependency and
+  dead-code checks, wiki lint (213 pages), generated-file checks (305
+  classified files), and 895 tests across seven stages. One existing
+  scikit-learn MDS future-default warning remains. The quick-start pipeline
+  completed with six clusters and ARI 0.9530 on its fixed 80-sample example.
+- Checked coordinate-adjustment and NNLS-target values were exactly equal
+  before and after the renames. A local two-shard diagnostic smoke verified
+  v2 production, merging and rejection paths; a pipeline regression test now
+  covers rejection of a v1 shard. No cloud execution, full
+  research benchmark campaign or wheel build was performed; the installed
+  environment lacks `flit_core`. No installation, commit or push occurred.
+- Two report helpers keep the recorded weighting name `binary`:
+  `summarize_results.py` (eigenvalue block comparison) and
+  `compare_before_after.py` (spectral-block reassessment). Each first checks
+  source hashes from a working tree that matches no commit, so neither reaches
+  a weighting call on later source. Their guards now state this, and comments
+  and both READMEs mark `binary` as today's `raw`. Retained results unchanged.
+
+## 2026-10-17 — Dead code, duplication and library-replacement cleanup
+
+- A whole-repository audit reported 20 findings; findings 1, 2, 4-9 and 11-16
+  were implemented. `CHANGELOG.md` lists every rename and removal.
+- Statistics: fixed-coordinate BH/BY use `scipy.stats.false_discovery_control`
+  (exact equality on 20,005 inputs). Holm was removed because its minimum
+  adjusted p-value always equals Bonferroni's. The always-false edge invalid
+  flag, 15 unread parent-spectrum record fields, `SpectralContext` and the
+  test-only full eigenvalue map were removed.
+- Trees from sample data go through `build_tree` in the quick start, the
+  selected-root permutation guard, experiments and diagnostics, so tied
+  distances resolve one way. `run_feature_matrix_with_umap.py` keeps its
+  row-order linkage because its dendrogram and `cut_tree` labels reuse it.
+- Benchmarks: the result schema is derived from `BenchmarkResultRow` and
+  `ClusteringMetrics`; a two-case, three-method results table was identical
+  before and after. Plot export is PDF-only, AWS drivers share one shard
+  layout (S3 paths unchanged), experiments share `tbs_decompose`, and the KAK
+  sweep uses the production block diffusion code (identical coordinates on
+  random blocks without duplicate rows).
+- Kept on purpose: `reference_scale`, which a rerunnable retained report
+  reads; `tree_from_linkage` and `compute_descendant_sets(use_labels=...)`,
+  which retained reports call; `recursive_pvalue_geometry.py`, which a
+  retained report imports and hashes.
+- `make test` passed with 890 tests; removed test-only code took six tests
+  with it. No commit or push occurred.
+
+## 2026-10-17 — Review fixes for the cleanup
+
+- An area-by-area review of the cleanup found two must-fix items and five
+  should-fix items; all seven were fixed.
+- The data-independent gate panel's oracle cut now cuts the same `build_tree`
+  tree the panel tests, mapping clusters back to rows by label. On a
+  topology-changing tie its ARI against the selected root split went from
+  -0.5 to 1.0.
+- The root-stability guard builds its feature-subsample trees with
+  `build_tree`, like the observed tree; on identical tied data its stability
+  ARI is 1.0 instead of -0.07.
+- `reports/passthrough_pvalue_normalisation_20260928/pvalue_probe.py` calls
+  `populate_node_distributions`. README commands no longer unpack two values
+  from `benchmark_cluster_algorithm` or pass the retired `binary` lens
+  weighting.
+- The REST lookup turns list or null `results` bodies into warnings. Stale
+  wiki, README and CHANGELOG lines were corrected.
+- New tests pin the shard S3 layout, `tbs_decompose` label order, the BY cap
+  at 1 and the full `get_env_bool` error text. `make check` passed with 893
+  tests. No commit or push occurred.
+
+## 2026-10-18 — ChunkHound semantic search setup
+
+- Added `.chunkhound.json`: ChunkHound 6.0.0 indexes the repository into
+  `.chunkhound/db` (DuckDB, gitignored) with the local Ollama embedding model
+  `embeddinggemma-2:270m` (768 dims, `http://localhost:11434/v1`).
+  1388 files, 26038 chunks, 0 errors; a full index takes about 9.5 minutes.
+- `per_file_timeout_seconds` is 30 because the 3 s default skipped
+  `wiki/log.md`; Plotly HTML exports under `raw/assets/benchmark-results/`
+  are excluded.
+- Do not run `chunkhound index --include ...` on the full database: its
+  orphan cleanup deletes every file outside the include pattern.
+
+## 2026-10-18 — ChunkHound code research setup
+
+- `code_research` needs a reranker and an LLM. `.chunkhound.json` now uses
+  `bge-reranker-v2-m3` (GGUF Q8_0 from `gpustack/bge-reranker-v2-m3-GGUF`)
+  served by llama.cpp at `http://127.0.0.1:8081/v1/rerank`, and `codex-cli`
+  for synthesis. Ollama 0.40.4 has no rerank endpoint.
+- Start the reranker before research:
+  `llama-server -hf gpustack/bge-reranker-v2-m3-GGUF:Q8_0 --reranking --port 8081 --host 127.0.0.1 -c 8192 -b 8192 -ub 8192`.
+  The default 512-token batch rejects chunks longer than 512 tokens.
+- One test query ("How does TreeDecomposition decide whether to split a
+  node?") took 12 minutes and returned a cited answer over 112 sources.
+
+## 2026-10-18 — Independent Gaussian API removed
+
+- A reachability check of `tree_break_selection` found 422 of 436 top-level
+  symbols reached from benchmarks, applications or scripts. The rest were the
+  independent Gaussian API and one unused `logger` in `marchenko_pastur.py`.
+  No backwards-compatibility shims or deletable legacy code remained.
+- Removed `independent_gaussian.py`, `energy_selected_reference.py` and tests
+  56–57: only tests and four `reports/*_20260928/` scripts called them. Those
+  scripts no longer run against current code; their outputs stay.
+  [[independent-gaussian-production-benchmark]] and
+  [[independent-diffusion-nnls-benchmark]] are now `deprecated`.
+- `run_projected_wald_kernel(adaptive_dimension_energy_fraction=...)` stays:
+  the edge and sibling projected-Wald tests pass the gate option
+  `adaptive_projection_dimension_energy_fraction` to it, and the pancreas
+  scRNA benchmark sets it to 0.90.

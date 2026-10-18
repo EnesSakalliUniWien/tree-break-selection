@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from benchmarks.shared.runners.louvain_runner import _run_louvain_method
 from benchmarks.shared.runners.optics_runner import _run_optics_method
 from benchmarks.shared.runners.spectral_runner import _run_spectral_method
@@ -98,8 +99,9 @@ def test_deterministic_seed_handling_is_consistent():
         "assign_labels": "cluster_qr",
         "n_neighbors": 2,
     }
-    s1 = _run_spectral_method(features, spectral_params, seed=123)
-    s2 = _run_spectral_method(features, spectral_params, seed=123)
+    with pytest.warns(UserWarning, match="Graph is not fully connected"):
+        s1 = _run_spectral_method(features, spectral_params, seed=123)
+        s2 = _run_spectral_method(features, spectral_params, seed=123)
     assert s1.status == s2.status == "ok"
     assert s1.skip_reason is None and s2.skip_reason is None
     assert np.array_equal(np.asarray(s1.labels), np.asarray(s2.labels))

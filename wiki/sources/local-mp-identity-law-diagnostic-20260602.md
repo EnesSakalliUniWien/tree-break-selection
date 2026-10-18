@@ -2,10 +2,8 @@
 title: Local MP Identity Law Diagnostic 2026-06-02
 type: source
 status: reviewed
-updated: 2026-06-03
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/spectral/mp/local_mp_identity_law_diagnostic.py
-  - tests/validation/spectral/mp/54_test_local_mp_identity_law_diagnostic.py
   - raw/assets/benchmark-results/local_mp_identity_law_20260602_representative/manifest.json
   - raw/assets/benchmark-results/local_mp_identity_law_20260602_representative/case_summary.csv
   - raw/assets/benchmark-results/local_mp_identity_law_20260602_representative/node_spectrum.csv
@@ -141,6 +139,7 @@ local population-spectrum model after null whitening.
 - `raw/assets/benchmark-results/local_mp_identity_law_20260603_selected_tree_spectral_law/categorical_extreme_nodes.csv`
   records the categorical nodes exceeding the finite identity-null top-edge
   quantile.
+- `benchmarks/diagnostics/spectral/mp/local_mp_identity_law_diagnostic.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

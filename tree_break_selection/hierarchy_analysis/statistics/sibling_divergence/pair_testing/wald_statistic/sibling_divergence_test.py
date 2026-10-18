@@ -9,11 +9,11 @@ from numpy.typing import NDArray
 
 from tree_break_selection.tree.feature_space import FeatureSpace
 
+from ....contrast_covariance import compute_whitened_wald_contrast
 from ....projection.projected_wald.projected_wald_kernel import run_projected_wald_kernel
 from ...projection.pair_testing.projection_dimension import (
     resolve_sibling_projection_dimension,
 )
-from .sibling_z_scores import _compute_sibling_z_scores
 
 
 def sibling_divergence_test(
@@ -22,8 +22,8 @@ def sibling_divergence_test(
     left_sample_size: float,
     right_sample_size: float,
     *,
-    branch_length_sum: float | None = None,
-    mean_branch_length: float | None = None,
+    branch_length_sum: float,
+    mean_branch_length: float | None,
     projection_dimension_from_edge_comparisons: int | None = None,
     parent_principal_component_projection: np.ndarray | None = None,
     parent_principal_component_eigenvalues: np.ndarray | None = None,
@@ -31,19 +31,29 @@ def sibling_divergence_test(
     continuous_covariance_by_block: Mapping[str, NDArray[np.floating]] | None = None,
     adaptive_projection_dimension_energy_fraction: float | None = None,
 ) -> tuple[float, float, float, float]:
-    """Two-sample Wald test for sibling divergence."""
-    z_scores = _compute_sibling_z_scores(
+    """Two-sample Wald test for sibling divergence.
+
+    The contrast variance is always scaled by the sibling branch time,
+    ``1 + branch_length_sum / (2 * mean_branch_length)``, whatever
+    ``edge_branch_length_variance_policy`` says; that policy governs only the
+    child-parent edge test. This is the only sibling test with a branch-time
+    factor; the fixed-subspace gates use none. Pass ``branch_length_sum=0.0``
+    for a tree without branch lengths (``mean_branch_length`` is then ``None``).
+    """
+    z_scores = compute_whitened_wald_contrast(
         left_distribution,
         right_distribution,
-        left_sample_size,
-        right_sample_size,
-        branch_length_sum=branch_length_sum,
-        mean_branch_length=mean_branch_length,
+        float(left_sample_size),
+        float(right_sample_size),
+        comparison="sibling",
         feature_space=feature_space,
         continuous_covariance_by_block=continuous_covariance_by_block,
+        tree_time=branch_length_sum,
+        tree_time_normalizer=None
+        if mean_branch_length is None
+        else 2.0 * float(mean_branch_length),
     )
 
-    n_features = int(z_scores.shape[0])
     if not np.isfinite(z_scores).all():
         raise ValueError(
             "Sibling Wald z-scores must be finite; "
@@ -52,9 +62,6 @@ def sibling_divergence_test(
 
     sibling_projection_dimension, _ = resolve_sibling_projection_dimension(
         projection_dimension_from_edge_comparisons=projection_dimension_from_edge_comparisons,
-        left_sample_size=left_sample_size,
-        right_sample_size=right_sample_size,
-        n_features=n_features,
     )
 
     z_scores = z_scores.astype(np.float64, copy=False)

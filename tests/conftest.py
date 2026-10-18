@@ -1,77 +1,21 @@
-import os
-import sys
-from dataclasses import dataclass
+import importlib
+import importlib.util
 
-# Prevent pytest from collecting functions whose names start with ``test_``
-# from the *source* package when they are re-exported into a test module's
-# namespace via ``from ... import test_node_pair_divergence`` etc.
-collect_ignore_glob = ["**/tree_break_selection/**"]
+import pytest
 
 
-@dataclass
-class _ProgressState:
-    enabled: bool = False
-    total: int = 0
-    completed: int = 0
-    config: object | None = None
+@pytest.fixture(scope="module")
+def require_optional_dependencies():
+    """Import optional modules, skipping only when they are not installed.
 
+    An installed module whose import fails is a broken optional environment and
+    must remain visible as a test failure instead of being silently skipped.
+    """
 
-_PROGRESS = _ProgressState()
+    def require(*module_names: str) -> tuple[object, ...]:
+        missing = [name for name in module_names if importlib.util.find_spec(name) is None]
+        if missing:
+            pytest.skip(f"Missing optional dependencies: {', '.join(missing)}")
+        return tuple(importlib.import_module(name) for name in module_names)
 
-
-def pytest_addoption(parser):  # type: ignore[no-untyped-def]
-    parser.addoption(
-        "--progress",
-        action="store_true",
-        default=False,
-        help="Show running test count (completed/total).",
-    )
-
-
-def pytest_configure(config):  # type: ignore[no-untyped-def]
-    _PROGRESS.enabled = bool(config.getoption("--progress")) or bool(
-        os.environ.get("PYTEST_PROGRESS")
-    )
-    _PROGRESS.total = 0
-    _PROGRESS.completed = 0
-    _PROGRESS.config = config
-
-
-def pytest_collection_modifyitems(session, config, items):  # type: ignore[no-untyped-def]
-    if not _PROGRESS.enabled:
-        return
-    _PROGRESS.total = len(items)
-
-
-def _write_progress() -> None:
-    if not _PROGRESS.enabled or _PROGRESS.total <= 0 or _PROGRESS.config is None:
-        return
-    terminal_reporter = _PROGRESS.config.pluginmanager.getplugin("terminalreporter")
-    msg = f"\r[pytest] {_PROGRESS.completed}/{_PROGRESS.total} tests"
-    if terminal_reporter is not None:
-        terminal_reporter.write(msg)
-    else:
-        sys.stderr.write(msg)
-        sys.stderr.flush()
-
-
-def pytest_runtest_logreport(report):  # type: ignore[no-untyped-def]
-    if not _PROGRESS.enabled:
-        return
-    # Count a test as "completed" once it has a final outcome:
-    # - normal tests: at call phase
-    # - skipped in setup: at setup phase
-    if report.when == "call" or (report.when == "setup" and report.outcome == "skipped"):
-        _PROGRESS.completed += 1
-        _write_progress()
-
-
-def pytest_sessionfinish(session, exitstatus):  # type: ignore[no-untyped-def]
-    del exitstatus
-    if not _PROGRESS.enabled:
-        return
-    terminal_reporter = session.config.pluginmanager.getplugin("terminalreporter")
-    if terminal_reporter is not None:
-        terminal_reporter.write("\n")
-    else:
-        sys.stderr.write("\n")
+    return require

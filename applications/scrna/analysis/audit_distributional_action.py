@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import warnings
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -16,117 +14,22 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
+from applications.scrna._shared import AUDIT_METHODS as METHODS
+from applications.scrna._shared import (
+    DATASETS,
+    AuditMethodSpec,
+    DatasetSpec,
+    artifact_record,
+)
+from benchmarks.shared.util.values import bool_value
 from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
     edge_distributional_action_summary,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-BENCHMARK_ROOT = PROJECT_ROOT / "raw/assets/benchmark-results"
-OUTPUT_ROOT = BENCHMARK_ROOT / "scrna_distributional_action_audit_20260624"
 
-
-@dataclass(frozen=True)
-class DatasetSpec:
-    key: str
-    label: str
-    output_dir: Path
-
-
-@dataclass(frozen=True)
-class MethodSpec:
-    geometry: str
-    variant: str
-    method_label: str
-    assignment_key: str
-    edge_csv: str
-
-
-DATASETS = (
-    DatasetSpec(
-        key="adult_pancreas",
-        label="Adult pancreas",
-        output_dir=BENCHMARK_ROOT / "pancreas_scrna_cluster_benchmark_20260623",
-    ),
-    DatasetSpec(
-        key="goncalves_fetal",
-        label="Goncalves fetal pancreas",
-        output_dir=BENCHMARK_ROOT / "goncalves_fetal_pancreas_progenitor_benchmark_20260624",
-    ),
-)
-
-METHODS = (
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="topology_only",
-        method_label="TBS topology projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_topology_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv="tbs_topology_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    ),
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="branch_time_nnls",
-        method_label="TBS branch-time recomputed-NNLS projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv=(
-            "tbs_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001_"
-            "tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="branch_time_raw_linkage",
-        method_label=(
-            "TBS raw-linkage branch-time diagnostic projected adaptive-k90 alpha=0.01 edge=0.001"
-        ),
-        assignment_key="tbs_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv=(
-            "tbs_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_"
-            "edge0p001_tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="topology_only",
-        method_label="TBS adaptive diffusion topology projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv=(
-            "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001_"
-            "tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="branch_time_nnls",
-        method_label=(
-            "TBS adaptive diffusion branch-time recomputed-NNLS projected adaptive-k90 "
-            "alpha=0.01 edge=0.001"
-        ),
-        assignment_key=(
-            "tbs_adaptive_diffusion_branch_time_recomputed_nnls_projected_adaptive_k90_"
-            "alpha0p01_edge0p001"
-        ),
-        edge_csv=(
-            "tbs_adaptive_diffusion_branch_time_recomputed_nnls_projected_adaptive_k90_"
-            "alpha0p01_edge0p001_tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="branch_time_raw_linkage",
-        method_label=(
-            "TBS adaptive diffusion raw-linkage branch-time diagnostic projected adaptive-k90 "
-            "alpha=0.01 edge=0.001"
-        ),
-        assignment_key=(
-            "tbs_adaptive_diffusion_raw_linkage_branch_time_diagnostic_projected_adaptive_"
-            "k90_alpha0p01_edge0p001"
-        ),
-        edge_csv=(
-            "tbs_adaptive_diffusion_raw_linkage_branch_time_diagnostic_projected_adaptive_"
-            "k90_alpha0p01_edge0p001_tree_edges.csv"
-        ),
-    ),
-)
 
 EDGE_STAT_COLUMN = "Child_Parent_Divergence_Test_Statistic"
 EDGE_P_COLUMN = "Child_Parent_Divergence_P_Value"
@@ -203,14 +106,6 @@ def _spearman(left: pd.Series, right: pd.Series) -> float:
     return float(data["left"].rank().corr(data["right"].rank()))
 
 
-def _safe_bool(value: object) -> bool:
-    if isinstance(value, bool | np.bool_):
-        return bool(value)
-    if pd.isna(value):
-        return False
-    return str(value).strip().lower() in {"true", "1", "yes"}
-
-
 def _load_goncalves_progenitor_tables(output_dir: Path) -> dict[str, dict[str, object]]:
     node_info: dict[str, dict[str, object]] = {}
     inner_path = output_dir / "goncalves_tbs_inner_node_progenitor_signature_scores.csv"
@@ -249,7 +144,7 @@ def _load_goncalves_progenitor_tables(output_dir: Path) -> dict[str, dict[str, o
 
 def _edge_records_for_method(
     dataset: DatasetSpec,
-    method: MethodSpec,
+    method: AuditMethodSpec,
     pca: pd.DataFrame,
     standardized_pca: pd.DataFrame,
     progenitor_info: dict[str, dict[str, object]],
@@ -339,9 +234,9 @@ def _edge_records_for_method(
                 ),
                 "edge_test_statistic": float(edge.get(EDGE_STAT_COLUMN, np.nan)),
                 "edge_p_value": float(edge.get(EDGE_P_COLUMN, np.nan)),
-                "edge_significant": _safe_bool(edge.get(EDGE_SIGNIFICANT_COLUMN, False)),
-                "edge_tested": _safe_bool(edge.get(EDGE_TESTED_COLUMN, False)),
-                "edge_ancestor_blocked": _safe_bool(edge.get(EDGE_ANCESTOR_BLOCKED_COLUMN, False)),
+                "edge_significant": bool_value(edge.get(EDGE_SIGNIFICANT_COLUMN, False)),
+                "edge_tested": bool_value(edge.get(EDGE_TESTED_COLUMN, False)),
+                "edge_ancestor_blocked": bool_value(edge.get(EDGE_ANCESTOR_BLOCKED_COLUMN, False)),
                 "split_filter_policy": edge.get("Distributional_Split_Action_Filter_Policy"),
                 "split_filter_quantile": float(
                     edge.get("Distributional_Split_Action_Filter_Quantile", np.nan)
@@ -349,10 +244,10 @@ def _edge_records_for_method(
                 "split_filter_threshold": float(
                     edge.get("Distributional_Split_Action_Filter_Threshold", np.nan)
                 ),
-                "split_filter_passes": _safe_bool(
+                "split_filter_passes": bool_value(
                     edge.get("Distributional_Split_Action_Filter_Passes", True)
                 ),
-                "split_filter_filtered": _safe_bool(
+                "split_filter_filtered": bool_value(
                     edge.get("Distributional_Split_Action_Filtered", False)
                 ),
                 "child_progenitor_interpretation": child_info.get("progenitor_interpretation"),
@@ -445,7 +340,7 @@ def _summarize_method(group: pd.DataFrame) -> dict[str, object]:
     }
 
 
-def _plot_action_vs_branch_length(edges: pd.DataFrame) -> None:
+def _plot_action_vs_branch_length(output_root: Path, edges: pd.DataFrame) -> None:
     plot_data = edges[
         (edges["variant"] == "topology_only")
         & (edges["geometry"].isin(["pca_linkage", "adaptive_diffusion"]))
@@ -477,11 +372,11 @@ def _plot_action_vs_branch_length(edges: pd.DataFrame) -> None:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.95))
-    fig.savefig(OUTPUT_ROOT / "distributional_action_vs_branch_length.png", dpi=220)
+    fig.savefig(output_root / "distributional_action_vs_branch_length.png", dpi=220)
     plt.close(fig)
 
 
-def _plot_top_internal_edges(edges: pd.DataFrame) -> None:
+def _plot_top_internal_edges(output_root: Path, edges: pd.DataFrame) -> None:
     focus = edges[
         (edges["geometry"] == "adaptive_diffusion")
         & (edges["variant"] == "topology_only")
@@ -515,11 +410,11 @@ def _plot_top_internal_edges(edges: pd.DataFrame) -> None:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
-    fig.savefig(OUTPUT_ROOT / "top_internal_distributional_action_edges.png", dpi=220)
+    fig.savefig(output_root / "top_internal_distributional_action_edges.png", dpi=220)
     plt.close(fig)
 
 
-def _plot_action_vs_edge_statistic(edges: pd.DataFrame) -> None:
+def _plot_action_vs_edge_statistic(output_root: Path, edges: pd.DataFrame) -> None:
     focus = edges[
         (edges["geometry"] == "adaptive_diffusion")
         & (edges["variant"] == "topology_only")
@@ -550,7 +445,7 @@ def _plot_action_vs_edge_statistic(edges: pd.DataFrame) -> None:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.93))
-    fig.savefig(OUTPUT_ROOT / "distributional_action_vs_edge_statistic.png", dpi=220)
+    fig.savefig(output_root / "distributional_action_vs_edge_statistic.png", dpi=220)
     plt.close(fig)
 
 
@@ -578,27 +473,14 @@ def _format_top_table(edges: pd.DataFrame, dataset: str, geometry: str) -> str:
     return rows[available].to_markdown(index=False, floatfmt=".4f")
 
 
-def _artifact_record(path: Path) -> dict[str, object]:
-    record: dict[str, object] = {
-        "path": str(path.relative_to(PROJECT_ROOT)),
-        "bytes": path.stat().st_size,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-    }
-    if path.suffix == ".csv":
-        frame = pd.read_csv(path, low_memory=False)
-        record["rows"] = int(len(frame))
-        record["columns"] = int(len(frame.columns))
-    return record
-
-
-def _write_manifest(generated_at: str) -> None:
+def _write_manifest(output_root: Path, generated_at: str) -> None:
     artifact_paths = [
-        OUTPUT_ROOT / "scrna_distributional_action_edges.csv",
-        OUTPUT_ROOT / "scrna_distributional_action_method_summary.csv",
-        OUTPUT_ROOT / "distributional_action_vs_branch_length.png",
-        OUTPUT_ROOT / "top_internal_distributional_action_edges.png",
-        OUTPUT_ROOT / "distributional_action_vs_edge_statistic.png",
-        OUTPUT_ROOT / "scrna_distributional_action_audit.md",
+        output_root / "scrna_distributional_action_edges.csv",
+        output_root / "scrna_distributional_action_method_summary.csv",
+        output_root / "distributional_action_vs_branch_length.png",
+        output_root / "top_internal_distributional_action_edges.png",
+        output_root / "distributional_action_vs_edge_statistic.png",
+        output_root / "scrna_distributional_action_audit.md",
     ]
     manifest = {
         "manifest_schema_version": "static_artifact_provenance/v1",
@@ -608,15 +490,16 @@ def _write_manifest(generated_at: str) -> None:
         "source_inputs": [
             str(dataset.output_dir.relative_to(PROJECT_ROOT)) for dataset in DATASETS
         ],
-        "artifacts": [_artifact_record(path) for path in artifact_paths],
+        "artifacts": [artifact_record(path, relative_to=PROJECT_ROOT) for path in artifact_paths],
     }
-    (OUTPUT_ROOT / "manifest.json").write_text(
+    (output_root / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n",
         encoding="utf-8",
     )
 
 
 def _write_report(
+    output_root: Path,
     edges: pd.DataFrame,
     summary: pd.DataFrame,
     generated_at: str | None = None,
@@ -702,12 +585,13 @@ over current benchmark artifacts.
 - `top_internal_distributional_action_edges.png`
 - `distributional_action_vs_edge_statistic.png`
 """
-    (OUTPUT_ROOT / "scrna_distributional_action_audit.md").write_text(report)
+    (output_root / "scrna_distributional_action_audit.md").write_text(report)
     return generated_at
 
 
-def main() -> None:
-    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+def main(output_dir: Path | None = None) -> None:
+    output_root = output_dir or timestamped_results_dir("scrna_distributional_action_audit")
+    output_root.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     edge_tables = []
     for dataset in DATASETS:
@@ -729,14 +613,7 @@ def main() -> None:
             )
 
     with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message=(
-                "The behavior of DataFrame concatenation with empty or all-NA "
-                "entries is deprecated.*"
-            ),
-            category=FutureWarning,
-        )
+        warnings.simplefilter("ignore", FutureWarning)
         edges = pd.concat(edge_tables, ignore_index=True)
     summary = pd.DataFrame.from_records(
         [
@@ -745,18 +622,18 @@ def main() -> None:
         ]
     )
 
-    edges.to_csv(OUTPUT_ROOT / "scrna_distributional_action_edges.csv", index=False)
+    edges.to_csv(output_root / "scrna_distributional_action_edges.csv", index=False)
     summary.to_csv(
-        OUTPUT_ROOT / "scrna_distributional_action_method_summary.csv",
+        output_root / "scrna_distributional_action_method_summary.csv",
         index=False,
     )
-    _plot_action_vs_branch_length(edges)
-    _plot_top_internal_edges(edges)
-    _plot_action_vs_edge_statistic(edges)
-    _write_report(edges, summary, generated_at)
-    _write_manifest(generated_at)
-    print(f"Wrote distributional-action audit outputs to {OUTPUT_ROOT}")
+    _plot_action_vs_branch_length(output_root, edges)
+    _plot_top_internal_edges(output_root, edges)
+    _plot_action_vs_edge_statistic(output_root, edges)
+    _write_report(output_root, edges, summary, generated_at)
+    _write_manifest(output_root, generated_at)
+    print(f"Wrote distributional-action audit outputs to {output_root}")
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_output_dir(__doc__))

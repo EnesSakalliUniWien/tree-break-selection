@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from applications.endotypes.analysis.audit_go_annotation_analysis_levels import audit_paths
 from applications.endotypes.analysis.feature_matrix_quality_analysis import packed_pattern_groups
 from applications.endotypes.analysis.inventory_go_annotation_datasets import (
@@ -13,15 +14,10 @@ from applications.endotypes.analysis.inventory_go_annotation_datasets import (
     matrix_inventory,
 )
 from applications.endotypes.pipelines.run_go_annotation_feature_matrix_pipeline import (
-    REPO_ROOT,
     build_pipeline_plan,
     finalize_go_annotation_results,
     matrix_slug,
 )
-
-
-def test_relocated_pipeline_resolves_repository_root() -> None:
-    assert REPO_ROOT == Path(__file__).resolve().parents[4]
 
 
 def test_audit_distinguishes_go_annotation_analysis_levels(tmp_path: Path) -> None:
@@ -93,6 +89,19 @@ def test_audit_distinguishes_go_annotation_analysis_levels(tmp_path: Path) -> No
     assert bool(by_path["canonical"].is_canonical) is True
 
 
+def test_audit_reports_unreadable_config_and_summary_files(tmp_path: Path) -> None:
+    folder = tmp_path / "broken"
+    folder.mkdir()
+    (folder / "experiment_config.json").write_text("{not json", encoding="utf-8")
+    (folder / "method_tree_matrix_summary.csv").write_bytes(b"\xff\xfe\x00bad")
+
+    row = audit_paths([folder]).iloc[0]
+
+    assert "experiment_config.json: JSONDecodeError" in row.read_errors
+    assert "method_tree_matrix_summary.csv" in row.read_errors
+    assert row.method_versions == ""
+
+
 def test_pipeline_plan_uses_canonical_current_stage_and_optional_audit_matrix(
     tmp_path: Path,
 ) -> None:
@@ -119,9 +128,8 @@ def test_pipeline_plan_uses_canonical_current_stage_and_optional_audit_matrix(
         adaptive_bandwidth_type="-1/(d+2)",
         adaptive_epsilon="median",
         adaptive_metric="euclidean",
-        weightings=["binary"],
+        weightings=["raw"],
         block_names=["adaptive_common_mode_01"],
-        method_versions=["current"],
         tree_geometries=["adaptive_diffusion_cosine_subspace"],
     )
 
@@ -144,6 +152,7 @@ def test_pipeline_plan_uses_canonical_current_stage_and_optional_audit_matrix(
     assert "--adaptive-bandwidth-type=-1/(d+2)" in stages[3].command
     assert stages[3].optional is True
     assert "export_subspace_cluster_rosters.py" in stages[4].command[1]
+    assert Path(stages[4].command[1]).is_file()
     assert "build_subspace_gene_annotation_pdf.py" in stages[5].command[1]
     assert "--skip-life-science-lookups" in stages[5].command
     assert "audit_go_cluster_meaningfulness.py" in stages[6].command[1]
@@ -174,9 +183,8 @@ def test_pipeline_plan_can_skip_subspace_upload_package(tmp_path: Path) -> None:
         adaptive_bandwidth_type="-1/(d+2)",
         adaptive_epsilon="median",
         adaptive_metric="euclidean",
-        weightings=["binary"],
+        weightings=["raw"],
         block_names=None,
-        method_versions=["current"],
         tree_geometries=["adaptive_diffusion_cosine_subspace"],
     )
 
@@ -233,7 +241,7 @@ def test_finalize_go_annotation_results_writes_upload_summary(tmp_path: Path) ->
             {
                 "run_id": "run1",
                 "display_rank": 1,
-                "weighting": "binary",
+                "weighting": "raw",
                 "block_name": "adaptive_common_mode_01",
                 "assignment_source": "accepted_tbs",
                 "cluster_id": 0,
@@ -255,7 +263,7 @@ def test_finalize_go_annotation_results_writes_upload_summary(tmp_path: Path) ->
             {
                 "run_id": "run1",
                 "display_rank": 1,
-                "weighting": "binary",
+                "weighting": "raw",
                 "block_name": "adaptive_common_mode_01",
                 "assignment_source": "accepted_tbs",
                 "n_clusters": 1,
@@ -320,3 +328,29 @@ def test_dataset_inventory_accepts_feature_matrix_prefix_and_flags_download_dupl
         "outside_feature_root"
     )
     assert bool(by_name["feature_matrix_allGO_new_interactome.tsv"].has_duplicate_copy) is True
+
+
+def test_dry_run_leaves_an_existing_run_untouched(tmp_path: Path, monkeypatch, capsys) -> None:
+    import sys
+
+    from applications.endotypes.pipelines import (
+        run_go_annotation_feature_matrix_pipeline as pipeline,
+    )
+
+    input_path = tmp_path / "feature_matrix_demo.tsv"
+    input_path.write_text("gene\tGO:1\nA\t1\n")
+    run_dir = tmp_path / "finished_run"
+    run_dir.mkdir()
+    (run_dir / "pipeline_manifest.json").write_text("finished")
+    before = sorted(path.relative_to(run_dir) for path in run_dir.rglob("*"))
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["pipeline", "--input", str(input_path), "--output-dir", str(run_dir), "--dry-run"],
+    )
+    pipeline.main()
+
+    assert sorted(path.relative_to(run_dir) for path in run_dir.rglob("*")) == before
+    assert (run_dir / "pipeline_manifest.json").read_text() == "finished"
+    assert "00_dataset_inventory" in capsys.readouterr().out

@@ -5,11 +5,14 @@ evidence that is not yet complete in the manuscript.
 
 Programs are grouped by responsibility:
 
-- `contracts/` defines report and evidence-manifest contracts.
-- `statistics/` validates covariance, selected tests, and error control.
+- `contracts/` defines report, provenance, and evidence-manifest contracts.
+- `statistics/` validates covariance, selected tests, and error control; its
+  `calibration_support.py` module owns the synthetic continuous covariance
+  profiles.
 - `sweeps/` explores alpha and method-family parameter grids.
-- `tree/` compares construction methods, topology, and literature policies.
-- `manifests/` stores the validation manifest data consumed by the contracts.
+- `manifests/` stores validation manifests; `contracts/method_constants_manifest.py`
+  reads `method_constant_validation_manifest.json`, and the other two are records
+  of retired runners (see below).
 
 The method-constant manifest is deliberately strict:
 
@@ -31,36 +34,14 @@ The method-constant manifest is deliberately strict:
 - `context_bandwidth_rule`
 - `pass_through_traversal`
 
-## Feature-Covariance Targets
+## Retired Runners
 
-Feature covariance is tracked separately from method constants because it is a
-model-validation question, not a scalar tuning-constant question.
-
-- `categorical_multinomial_drop_last_covariance`
-- `continuous_empirical_gaussian_covariance`
-
-The feature-covariance runner generates local sibling-null simulations in the
-full tangent space. These results validate only the local covariance model under
-a fixed contrast. They do not validate PCA-selected projections, MP dimension
-selection, sibling FDR, traversal, tree construction, or empirical-null
-inflation.
-
-## Selected-PCA Projected-Wald Target
-
-Selected PCA is tracked separately from feature covariance because it asks
-whether the fixed-subspace chi-square reference remains calibrated after the
-projection rows and MP dimension are selected from the same local data used by
-the contrast.
-
-- `selected_pca_projected_wald_reference`
-
-The selected-PCA runner generates fixed-membership Gaussian sibling-null
-simulations. It uses the production null-whitened tangent coordinates, MP
-dimension selection, PCA projection recovery, and projected-Wald kernel. These
-results validate only the local data-selected projection effect. They do not
-validate hierarchy construction, tree-selected sibling pairs, sibling FDR,
-traversal, empirical-null inflation, categorical blocks, or real-data model
-misspecification.
+`statistics/feature_covariance_calibration.py` and
+`statistics/selected_pca_projected_wald_calibration.py` were retired on
+2026-10-17 (last present at commit 5c554bc5). The missing-evidence manifests
+`manifests/feature_covariance_validation_manifest.json` and
+`manifests/selected_pca_projected_wald_validation_manifest.json` remain as
+records of the targets those runners covered.
 
 ## Usage
 
@@ -95,14 +76,6 @@ This diagnostic separates fixed-tree edge calibration from same-data
 selected-tree edge behavior. It is evidence for the selected-tree Type-I
 problem and does not change production alpha defaults or add a calibration
 fallback.
-
-Rank descriptive selected-edge geometry variables:
-
-```bash
-uv run python -m benchmarks.diagnostics.analysis.selected_edge_geometry_analysis \
-  --edge-rows benchmarks/results/selected_edge_type1_geometry_smoke/selected_edge_geometry_edges.csv \
-  --output benchmarks/results/selected_edge_type1_geometry_smoke/selected_edge_geometry_models.csv
-```
 
 Run a traversal-aligned sibling-FDR smoke:
 
@@ -156,54 +129,6 @@ List constants:
 uv run python -m benchmarks.validation.contracts.method_constants_manifest constants
 ```
 
-Create a missing-evidence manifest for feature covariance:
-
-```bash
-uv run python -m benchmarks.validation.statistics.feature_covariance_calibration manifest \
-  --output benchmarks/validation/manifests/feature_covariance_validation_manifest.json
-```
-
-Run a feature-covariance calibration simulation:
-
-```bash
-uv run python -m benchmarks.validation.statistics.feature_covariance_calibration run \
-  --replicates 1000 \
-  --seed 20260601 \
-  --output benchmarks/results/validation/feature_covariance_calibration.json \
-  --csv-output benchmarks/results/validation/feature_covariance_calibration.csv
-```
-
-Validate a feature-covariance manifest or report:
-
-```bash
-uv run python -m benchmarks.validation.statistics.feature_covariance_calibration validate \
-  benchmarks/results/validation/feature_covariance_calibration.json
-```
-
-Create a missing-evidence manifest for selected-PCA projected-Wald calibration:
-
-```bash
-uv run python -m benchmarks.validation.statistics.selected_pca_projected_wald_calibration manifest \
-  --output benchmarks/validation/manifests/selected_pca_projected_wald_validation_manifest.json
-```
-
-Run a selected-PCA projected-Wald calibration simulation:
-
-```bash
-uv run python -m benchmarks.validation.statistics.selected_pca_projected_wald_calibration run \
-  --replicates 1000 \
-  --seed 20260601 \
-  --output benchmarks/results/validation/selected_pca_projected_wald_calibration.json \
-  --csv-output benchmarks/results/validation/selected_pca_projected_wald_calibration.csv
-```
-
-Validate a selected-PCA manifest or report:
-
-```bash
-uv run python -m benchmarks.validation.statistics.selected_pca_projected_wald_calibration validate \
-  benchmarks/results/validation/selected_pca_projected_wald_calibration.json
-```
-
 ## Evidence Policy
 
 Existing benchmark outputs are recorded under `source_paths` only. They are not
@@ -221,8 +146,3 @@ For each constant, the generated manifest contains:
 Future validation jobs should either extend this manifest with complete evidence
 records or generate a separate results artifact that can be validated against the
 same required field contract.
-
-Feature-covariance and selected-PCA calibration reports follow the same evidence
-policy: a smoke run proves the runner works, but it is not manuscript evidence
-unless the report records a locked design, seed, commit, dirty-worktree status,
-command, grid, confidence intervals, endpoints, and limitations.

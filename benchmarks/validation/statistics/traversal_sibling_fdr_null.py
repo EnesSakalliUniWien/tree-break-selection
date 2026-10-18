@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 import sys
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
@@ -21,6 +19,16 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+from benchmarks.shared.util.provenance import current_git_state
+from benchmarks.shared.util.values import parse_csv_list
+from benchmarks.validation.statistics.selected_edge_type1_geometry import (
+    annotate_edges,
+    case_contract,
+    prepare_tree_for_mode,
+    projection_inputs,
+)
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -39,21 +47,8 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection import (
     collect_sibling_pair_records,
 )
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.parent_principal_component_inputs import (
-    collect_parent_principal_component_inputs_for_sibling_tests,
-)
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
-    derive_sibling_projection_dimensions_from_child_edge_comparisons,
-)
 
-from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _annotate_edges,
-    _case_contract,
-    _prepare_tree_for_mode,
-    _select_cases,
-)
-
-SCHEMA_VERSION = "traversal_sibling_fdr_null/v1"
+SCHEMA_VERSION = "traversal_sibling_fdr_null/v2"
 GENERATED_BY = "benchmarks.validation.statistics.traversal_sibling_fdr_null"
 SIMULATION_OUTPUT_NAME = "traversal_sibling_fdr_simulations.csv"
 SUMMARY_OUTPUT_NAME = "traversal_sibling_fdr_summary.csv"
@@ -100,15 +95,13 @@ def parse_fdr_layers(raw: str) -> tuple[FdrLayer, ...]:
     return layers
 
 
-def parse_names(raw: str | None) -> tuple[str, ...]:
-    """Parse optional comma-separated names."""
-    if raw is None:
-        return ()
-    return tuple(item.strip() for item in raw.split(",") if item.strip())
-
-
 def estimate_fdr(rows: Iterable[dict[str, object]]) -> dict[str, float]:
-    """Estimate FDR-style summaries without turning support failures into null decisions."""
+    """Estimate summaries over status='ok' simulations only.
+
+    ``mean_fdp`` averages the false-discovery proportion; ``any_false_rejection_rate``
+    is the fraction with at least one false rejection. Support and runtime failures
+    are counted separately and excluded from both probability denominators.
+    """
     materialized_rows = list(rows)
     if not materialized_rows:
         raise ValueError("Cannot estimate FDR from zero simulation rows.")
@@ -127,14 +120,14 @@ def estimate_fdr(rows: Iterable[dict[str, object]]) -> dict[str, float]:
         ]
         false_rejection_indicators = [float(int(row["n_false_rejections"]) > 0) for row in ok_rows]
         mean_fdp = float(np.mean(fdps))
-        false_rejection_rate = float(np.mean(false_rejection_indicators))
+        any_false_rejection_rate = float(np.mean(false_rejection_indicators))
     else:
         mean_fdp = float("nan")
-        false_rejection_rate = float("nan")
+        any_false_rejection_rate = float("nan")
 
     return {
         "mean_fdp": mean_fdp,
-        "false_rejection_rate": false_rejection_rate,
+        "any_false_rejection_rate": any_false_rejection_rate,
         "n_simulations": float(len(materialized_rows)),
         "n_ok": float(len(ok_rows)),
         "n_support_failures": float(len(support_failures)),
@@ -150,7 +143,11 @@ def classify_fdr_outcome(
     n_ok: int | float = 1,
     n_support_failures: int | float = 0,
 ) -> str:
-    """Classify the diagnostic outcome without hiding unsupported states."""
+    """Classify finite-simulation evidence, not prove FDR control.
+
+    Unsupported states remain explicit; a mean FDP below alpha is only an
+    empirical control observation, including for synthetic valid p-values.
+    """
     if layer == FdrLayer.SELECTED_TREE_INFLATED and int(n_support_failures) > 0:
         return "inflation_support_failure"
     if int(n_ok) == 0 and int(n_support_failures) > 0:
@@ -158,11 +155,7 @@ def classify_fdr_outcome(
     if not np.isfinite(float(mean_fdp)):
         return "no_valid_decision_rows"
     if float(mean_fdp) <= float(alpha):
-        return (
-            "algorithmic_fdr_control"
-            if layer == FdrLayer.SYNTHETIC_VALID_P
-            else "empirical_control_observed"
-        )
+        return "empirical_control_observed"
     if layer == FdrLayer.SYNTHETIC_VALID_P:
         return "algorithmic_fdr_failure"
     if layer == FdrLayer.FIXED_TREE_WALD:
@@ -238,26 +231,6 @@ def _run_synthetic_valid_p_replicate(
     }
 
 
-def _projection_inputs(
-    tree: nx.DiGraph, spectral_context: object
-) -> tuple[
-    dict[str, int],
-    dict[str, np.ndarray],
-    dict[str, np.ndarray],
-]:
-    projection_dimensions = derive_sibling_projection_dimensions_from_child_edge_comparisons(
-        tree,
-        spectral_context=spectral_context,
-    )
-    parent_projections, parent_eigenvalues = (
-        collect_parent_principal_component_inputs_for_sibling_tests(
-            projection_dimensions,
-            spectral_context=spectral_context,
-        )
-    )
-    return projection_dimensions, parent_projections, parent_eigenvalues
-
-
 def _run_raw_wald_sibling_fdr(
     *,
     tree: nx.DiGraph,
@@ -266,7 +239,7 @@ def _run_raw_wald_sibling_fdr(
     alpha: float,
     feature_space: object,
 ) -> pd.DataFrame:
-    projection_dimensions, parent_projections, parent_eigenvalues = _projection_inputs(
+    projection_dimensions, parent_projections, parent_eigenvalues = projection_inputs(
         tree,
         spectral_context,
     )
@@ -306,7 +279,7 @@ def _run_inflated_sibling_fdr(
     alpha: float,
     feature_space: object,
 ) -> pd.DataFrame:
-    projection_dimensions, parent_projections, parent_eigenvalues = _projection_inputs(
+    projection_dimensions, parent_projections, parent_eigenvalues = projection_inputs(
         tree,
         spectral_context,
     )
@@ -347,11 +320,11 @@ def _run_case_replicate(
     base_seed: int,
 ) -> dict[str, object]:
     case_id, source_family, feature_representation, n_samples, n_features, n_categories = (
-        _case_contract(case)
+        case_contract(case)
     )
     data_seed = int(base_seed + replicate_index * 1009)
     tree_seed = int(base_seed + replicate_index * 917 + 17)
-    tree, data, feature_space, selected_tree, fixed_tree = _prepare_tree_for_mode(
+    tree, data, feature_space, selected_tree, fixed_tree = prepare_tree_for_mode(
         mode=_case_run_mode(layer),
         case_id=case_id,
         source_family=source_family,
@@ -363,7 +336,7 @@ def _run_case_replicate(
         data_seed=data_seed,
     )
     try:
-        edge_annotations, spectral_context = _annotate_edges(
+        edge_annotations, spectral_context = annotate_edges(
             tree,
             data,
             edge_alpha=edge_alpha,
@@ -476,7 +449,7 @@ def run_traversal_sibling_fdr_layer(
             for index in indices
         ]
     else:
-        cases = _select_cases(suite=config.suite, case_names=config.case_names)
+        cases = select_cases(suite=config.suite, case_names=config.case_names)
         rows = [
             _run_case_replicate(
                 layer=config.layer,
@@ -509,34 +482,6 @@ def run_traversal_sibling_fdr_layer(
         }
     )
     return {"simulation_rows": rows, "summary": summary}
-
-
-def current_git_state() -> dict[str, object]:
-    """Return git provenance without hiding command failures."""
-    state: dict[str, object] = {
-        "build_commit": os.environ.get("TBS_GIT_COMMIT", "unknown"),
-        "build_branch": os.environ.get("TBS_GIT_BRANCH", "unknown"),
-        "build_dirty": os.environ.get("TBS_GIT_DIRTY", "unknown"),
-    }
-    commands = {
-        "commit": ("git", "rev-parse", "HEAD"),
-        "branch": ("git", "branch", "--show-current"),
-        "status_short": ("git", "status", "--short"),
-    }
-    for key, command in commands.items():
-        try:
-            completed = subprocess.run(command, capture_output=True, text=True)
-        except OSError as exc:
-            state[key] = f"unavailable:{exc}"
-            continue
-        if completed.returncode != 0:
-            state[key] = {
-                "returncode": completed.returncode,
-                "stderr": completed.stderr.strip(),
-            }
-        else:
-            state[key] = completed.stdout.strip()
-    return state
 
 
 def run_traversal_sibling_fdr_layers(
@@ -599,7 +544,7 @@ def run_traversal_sibling_fdr_layers(
 
 def _build_configs(args: argparse.Namespace) -> tuple[TraversalSiblingFdrConfig, ...]:
     layers = parse_fdr_layers(str(args.layers))
-    case_names = parse_names(args.case_names)
+    case_names = parse_csv_list(args.case_names)
     if not case_names and layers == (FdrLayer.SYNTHETIC_VALID_P,):
         case_names = ("synthetic_balanced_binary_tree",)
     if not case_names:

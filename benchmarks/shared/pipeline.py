@@ -12,11 +12,6 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
-
 from benchmarks.shared.cases import get_default_test_cases
 
 # Logging helpers extracted to a small utility module to keep the pipeline
@@ -37,6 +32,10 @@ from benchmarks.shared.util.case_run import run_single_case
 from benchmarks.shared.util.method_selection import resolve_selected_methods_and_param_sets
 from benchmarks.shared.util.method_sets import DEFAULT_METHODS
 from benchmarks.shared.util.pdf.session import open_pdf_pages, resolve_pdf_output_path
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
+)
 
 # Configure logger (library-friendly: leave handlers/levels to callers)
 logger = logging.getLogger(__name__)
@@ -56,7 +55,6 @@ def benchmark_cluster_algorithm(
     method_params: dict[str, list[dict[str, object]]] | None = None,
     concat_plots_pdf: bool = False,
     concat_output: str | None = None,
-    matrix_audit: bool = False,
     include_cover_pages: bool = True,
     include_validation_page: bool = True,
     tree_consensus_label_dir: str | Path | None = None,
@@ -94,8 +92,6 @@ def benchmark_cluster_algorithm(
         When True, stream generated benchmark plots directly into a PDF.
     concat_output : str, optional
         Output PDF path. Defaults to ``plots_root / f'benchmark_plots_{timestamp}.pdf'`` when omitted.
-    matrix_audit : bool, default=False
-        If True, export TensorBoard summaries for key matrices per test case.
     include_cover_pages : bool, default=True
         When streaming plots to PDF, include global benchmark cover/section pages.
         Set False for per-case PDFs that will be merged later by an outer runner.
@@ -104,10 +100,8 @@ def benchmark_cluster_algorithm(
 
     Returns
     -------
-    df_results : pd.DataFrame
+    pd.DataFrame
         Results dataframe using the canonical snake_case benchmark result schema.
-    fig : None
-        Plotting has been removed; always returns None.
     """
 
     # Default test cases
@@ -136,12 +130,10 @@ def benchmark_cluster_algorithm(
     )
 
     if (plot_umap or plot_manifold) and not concat_plots_pdf:
-        logger.warning(
-            "plot_umap/plot_manifold requested without concat_plots_pdf; skipping plot generation."
+        raise ValueError(
+            "plot_umap/plot_manifold require concat_plots_pdf=True and a PDF output path; "
+            "plot requests are no longer converted into skipped plot metadata."
         )
-
-    # PDF-only plotting mode.
-    stream_pdf = bool(concat_plots_pdf)
 
     # Run test cases
     selected_methods, param_sets = resolve_selected_methods_and_param_sets(
@@ -157,7 +149,7 @@ def benchmark_cluster_algorithm(
     pdf_pages = None
 
     try:
-        if stream_pdf:
+        if concat_plots_pdf:
             output_pdf, pdf_pages = open_pdf_pages(
                 output_pdf,
                 plots_root=plots_root,
@@ -176,7 +168,6 @@ def benchmark_cluster_algorithm(
                 edge_alpha=edge_alpha,
                 output_pdf=output_pdf,
                 plots_root=plots_root,
-                matrix_audit=matrix_audit,
                 verbose=verbose,
                 tree_consensus_label_dir=tree_consensus_label_dir,
             )
@@ -187,31 +178,18 @@ def benchmark_cluster_algorithm(
             log_validation_completion(total_runs, len(test_cases))
 
         df_results = benchmark_rows_to_dataframe(result_rows)
-
-        should_generate_plots = bool(concat_plots_pdf)
-        if not should_generate_plots:
-            return df_results, None
-
-        plot_kwargs = {
-            "save_png": False,
-            "collect_figs": False,
-        }
         if pdf_pages is not None:
-            plot_kwargs["pdf"] = pdf_pages
-
-        fig, _new_figs_by_category = generate_benchmark_plots(
-            df_results,
-            computed_results,
-            plots_root,
-            verbose,
-            plot_umap,
-            plot_manifold,
-            include_cover_pages=include_cover_pages,
-            include_validation_page=include_validation_page,
-            **plot_kwargs,
-        )
-
-        return df_results, fig
+            generate_benchmark_plots(
+                df_results,
+                computed_results,
+                pdf=pdf_pages,
+                verbose=verbose,
+                plot_umap=plot_umap,
+                plot_manifold=plot_manifold,
+                include_cover_pages=include_cover_pages,
+                include_validation_page=include_validation_page,
+            )
+        return df_results
 
     finally:
         if pdf_pages is not None:

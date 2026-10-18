@@ -17,9 +17,22 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
+
+from benchmarks.diagnostics.calibration.statistics.covariance_laplacian_panel import (
+    analyze_covariance_laplacian,
+)
+from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
+    effective_rank,
+    spectral_entropy,
+)
+from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
+    infer_satterthwaite_reference_from_eigenvalues,
+)
+from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
+from benchmarks.shared.util.values import finite_float, parse_csv_list
+from benchmarks.validation.sweeps.alpha_grid_search import parse_float_grid, select_cases
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
@@ -42,21 +55,13 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     bernoulli_feature_space_from_columns,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.diagnostics.calibration.statistics.covariance_laplacian_panel import (
-    analyze_covariance_laplacian,
-)
-from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
-    infer_satterthwaite_reference_from_eigenvalues,
-)
-from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
-from benchmarks.shared.generators.case_data_contracts import one_hot_encode_categorical
+from tree_break_selection.tree.topology import tree_root
 
 SCHEMA_VERSION = "selected_edge_type1_geometry/v1"
 GENERATED_BY = "benchmarks.validation.statistics.selected_edge_type1_geometry"
@@ -110,24 +115,6 @@ class SelectedEdgeGeometryConfig:
     @property
     def manifest_path(self) -> Path:
         return self.output_dir / "selected_edge_geometry_manifest.json"
-
-
-def parse_alpha_grid(raw: str) -> tuple[float, ...]:
-    """Parse a comma-separated alpha grid."""
-    values = tuple(float(item.strip()) for item in raw.split(",") if item.strip())
-    if not values:
-        raise ValueError("Alpha grid must contain at least one value.")
-    invalid = [value for value in values if not 0.0 < value < 1.0]
-    if invalid:
-        raise ValueError(f"Alpha values must lie in (0, 1): {invalid!r}")
-    return values
-
-
-def parse_names(raw: str | None) -> tuple[str, ...]:
-    """Parse optional comma-separated names."""
-    if raw is None:
-        return ()
-    return tuple(item.strip() for item in raw.split(",") if item.strip())
 
 
 def validate_modes(modes: Sequence[str]) -> tuple[str, ...]:
@@ -220,19 +207,11 @@ def _require_columns(df: pd.DataFrame, columns: Sequence[str], *, context: str) 
 
 
 def _node_depth_map(tree: nx.DiGraph) -> dict[object, int]:
-    roots = [node for node in tree.nodes if tree.in_degree(node) == 0]
-    if len(roots) != 1:
-        raise ValueError(f"Expected exactly one root; got {roots!r}.")
-    return dict(nx.single_source_shortest_path_length(tree, roots[0]))
-
-
-def _finite_or_nan(value: object) -> float:
-    numeric = float(value)
-    return numeric if np.isfinite(numeric) else float("nan")
+    return dict(nx.single_source_shortest_path_length(tree, tree_root(tree)))
 
 
 def _positive_p_or_nan(value: object) -> float:
-    numeric = _finite_or_nan(value)
+    numeric = finite_float(value)
     if not np.isfinite(numeric):
         return float("nan")
     if numeric <= 0.0:
@@ -259,22 +238,6 @@ def edge_statistic_margin(statistic: float, degrees_of_freedom: float, edge_alph
     return float(np.sqrt(statistic) - np.sqrt(chi2.isf(float(edge_alpha), degrees_of_freedom)))
 
 
-def _spectral_entropy(eigenvalues: np.ndarray) -> float:
-    finite = np.asarray(eigenvalues, dtype=float)
-    finite = finite[np.isfinite(finite) & (finite > 0.0)]
-    if finite.size == 0:
-        return float("nan")
-    weights = finite / np.sum(finite)
-    return float(-np.sum(weights * np.log(weights)))
-
-
-def _effective_rank(eigenvalues: np.ndarray) -> float:
-    entropy = _spectral_entropy(eigenvalues)
-    if not np.isfinite(entropy):
-        return float("nan")
-    return float(np.exp(entropy))
-
-
 def _tree_balance(tree: nx.DiGraph, parent: object) -> float:
     children = list(tree.successors(parent))
     if len(children) != 2:
@@ -286,13 +249,12 @@ def _tree_balance(tree: nx.DiGraph, parent: object) -> float:
     return float(min(counts) / total)
 
 
-def _build_tree_from_data(data: pd.DataFrame) -> PosetTree:
+def build_tree_from_data(data: pd.DataFrame) -> PosetTree:
     distances = pdist(data.to_numpy(dtype=float), metric="hamming")
-    linkage_matrix = linkage(distances, method="average")
-    return tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
+    return build_tree(data, distances, linkage_method="average").tree
 
 
-def _prepare_tree_for_mode(
+def prepare_tree_for_mode(
     *,
     mode: str,
     case_id: str,
@@ -314,7 +276,7 @@ def _prepare_tree_for_mode(
             n_categories=n_categories,
             seed=data_seed,
         )
-        return _build_tree_from_data(data), data, metadata["feature_space"], True, False
+        return build_tree_from_data(data), data, metadata["feature_space"], True, False
     if mode == "fixed_tree":
         tree_data, _tree_metadata = regenerate_null_case(
             case_id=case_id,
@@ -335,7 +297,7 @@ def _prepare_tree_for_mode(
             seed=data_seed,
         )
         return (
-            _build_tree_from_data(tree_data),
+            build_tree_from_data(tree_data),
             test_data,
             test_metadata["feature_space"],
             False,
@@ -344,14 +306,14 @@ def _prepare_tree_for_mode(
     raise ValueError(f"Unknown selected-edge mode: {mode!r}.")
 
 
-def _annotate_edges(
+def annotate_edges(
     tree: PosetTree,
     data: pd.DataFrame,
     *,
     edge_alpha: float,
     feature_space: FeatureSpace,
 ) -> tuple[pd.DataFrame, object]:
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     if tree.annotations_df is None:
         raise ValueError("Tree distribution population did not produce annotations_df.")
     annotations, spectral_context = annotate_child_parent_divergence(
@@ -389,8 +351,8 @@ def extract_edge_geometry_rows(
     for parent, child in tree.edges():
         if child not in annotations_df.index or parent not in annotations_df.index:
             raise ValueError(f"Annotations must contain edge endpoints {parent!r}->{child!r}.")
-        stat = _finite_or_nan(annotations_df.at[child, "Child_Parent_Divergence_Test_Statistic"])
-        df_value = _finite_or_nan(annotations_df.at[child, "Child_Parent_Divergence_df"])
+        stat = finite_float(annotations_df.at[child, "Child_Parent_Divergence_Test_Statistic"])
+        df_value = finite_float(annotations_df.at[child, "Child_Parent_Divergence_df"])
         raw_p = _positive_p_or_nan(annotations_df.at[child, "Child_Parent_Divergence_P_Value"])
         bh_p = _positive_p_or_nan(annotations_df.at[child, "Child_Parent_Divergence_P_Value_BH"])
         n_child = int(annotations_df.at[child, "leaf_count"])
@@ -455,8 +417,8 @@ def extract_edge_geometry_rows(
                     if np.isfinite(leading) and np.isfinite(mp_upper_edge) and mp_upper_edge > 0.0
                     else float("nan")
                 ),
-                "effective_rank": _effective_rank(eigenvalues),
-                "spectral_entropy": _spectral_entropy(eigenvalues),
+                "effective_rank": effective_rank(eigenvalues),
+                "spectral_entropy": spectral_entropy(eigenvalues),
                 "edge_z_norm": float("nan"),
                 "edge_projected_norm": float(np.sqrt(stat)) if np.isfinite(stat) else float("nan"),
                 "edge_projection_energy_ratio": float("nan"),
@@ -489,7 +451,7 @@ def _calibration_support_status(row: pd.Series) -> str:
     return "not_tested"
 
 
-def _projection_inputs(
+def projection_inputs(
     tree: PosetTree, spectral_context: object
 ) -> tuple[
     dict[object, int],
@@ -516,7 +478,7 @@ def _collect_raw_sibling_records(
     spectral_context: object,
     feature_space: FeatureSpace,
 ) -> dict[str, SiblingPairRecord]:
-    projection_dimensions, parent_projections, parent_eigenvalues = _projection_inputs(
+    projection_dimensions, parent_projections, parent_eigenvalues = projection_inputs(
         tree,
         spectral_context,
     )
@@ -752,7 +714,7 @@ def extract_sibling_geometry_rows(
             float(raw_record.degrees_of_freedom)
             if raw_record is not None and np.isfinite(raw_record.degrees_of_freedom)
             else (
-                _finite_or_nan(annotations_df.at[parent, "Sibling_Degrees_of_Freedom"])
+                finite_float(annotations_df.at[parent, "Sibling_Degrees_of_Freedom"])
                 if has_sibling_annotations
                 else float("nan")
             )
@@ -767,7 +729,7 @@ def extract_sibling_geometry_rows(
             )
         )
         adjusted_stat = (
-            _finite_or_nan(annotations_df.at[parent, "Sibling_Test_Statistic"])
+            finite_float(annotations_df.at[parent, "Sibling_Test_Statistic"])
             if has_sibling_annotations
             else float("nan")
         )
@@ -785,7 +747,7 @@ def extract_sibling_geometry_rows(
             float(raw_record.sibling_projection_dimension)
             if raw_record is not None and np.isfinite(raw_record.sibling_projection_dimension)
             else (
-                _finite_or_nan(annotations_df.at[parent, "Sibling_Projection_Dimension"])
+                finite_float(annotations_df.at[parent, "Sibling_Projection_Dimension"])
                 if has_sibling_annotations
                 else float("nan")
             )
@@ -925,7 +887,7 @@ def run_selected_edge_replicate(
     run_id: str,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
     """Run one selected-edge Type-I replicate."""
-    tree, data, feature_space, selected_tree, fixed_tree = _prepare_tree_for_mode(
+    tree, data, feature_space, selected_tree, fixed_tree = prepare_tree_for_mode(
         mode=mode,
         case_id=case_id,
         source_family=source_family,
@@ -936,7 +898,7 @@ def run_selected_edge_replicate(
         tree_seed=tree_seed,
         data_seed=data_seed,
     )
-    edge_annotations, spectral_context = _annotate_edges(
+    edge_annotations, spectral_context = annotate_edges(
         tree,
         data,
         edge_alpha=edge_alpha,
@@ -1029,18 +991,7 @@ def run_selected_edge_replicate(
     return edge_rows, sibling_rows, final_rows
 
 
-def _select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict[str, object]]:
-    cases = get_default_test_cases() if suite == "default" else get_test_cases_by_suite(suite)
-    if not case_names:
-        return [dict(case) for case in cases]
-    by_name = {str(case["name"]): case for case in cases}
-    missing = [name for name in case_names if name not in by_name]
-    if missing:
-        raise ValueError(f"Unknown case names for suite {suite!r}: {missing!r}")
-    return [dict(by_name[name]) for name in case_names]
-
-
-def _case_contract(case: dict[str, object]) -> tuple[str, str, str, int, int, int | None]:
+def case_contract(case: dict[str, object]) -> tuple[str, str, str, int, int, int | None]:
     name = str(case["name"])
     generator = str(case.get("generator", ""))
     if generator in {"binary", "planted_hierarchy_deep_signal"}:
@@ -1101,7 +1052,7 @@ def run_selected_edge_geometry_for_replicates(
     """Run selected-edge diagnostics for explicit replicate indices."""
     config.output_dir.mkdir(parents=True, exist_ok=True)
     run_id = build_run_id(config)
-    cases = _select_cases(suite=config.suite, case_names=config.case_names)
+    cases = select_cases(suite=config.suite, case_names=config.case_names)
     replicate_tuple = tuple(int(index) for index in replicate_indices)
     if not replicate_tuple:
         raise ValueError("At least one replicate index is required.")
@@ -1127,7 +1078,7 @@ def run_selected_edge_geometry_for_replicates(
             n_samples,
             n_features,
             n_categories,
-        ) = _case_contract(case)
+        ) = case_contract(case)
         for replicate in replicate_tuple:
             for edge_alpha in config.edge_alphas:
                 for mode in config.modes:
@@ -1210,9 +1161,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     config = SelectedEdgeGeometryConfig(
         output_dir=args.output_dir,
         suite=str(args.suite),
-        case_names=parse_names(args.case_names),
-        modes=validate_modes(parse_names(args.modes)),
-        edge_alphas=parse_alpha_grid(str(args.edge_alphas)),
+        case_names=parse_csv_list(args.case_names),
+        modes=validate_modes(parse_csv_list(args.modes)),
+        edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alpha=float(args.sibling_alpha),
         replicates=int(args.replicates),
         base_seed=int(args.base_seed),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     compute_whitened_wald_contrast,
 )
@@ -26,6 +27,8 @@ def test_sibling_test_binary_identical() -> None:
         theta,
         100.0,
         100.0,
+        branch_length_sum=0.0,
+        mean_branch_length=None,
         projection_dimension_from_edge_comparisons=d,
         parent_principal_component_projection=np.eye(d),
         parent_principal_component_eigenvalues=np.ones(d),
@@ -44,6 +47,8 @@ def test_sibling_test_binary_different() -> None:
         theta_right,
         500.0,
         500.0,
+        branch_length_sum=0.0,
+        mean_branch_length=None,
         projection_dimension_from_edge_comparisons=d,
         parent_principal_component_projection=np.eye(d),
         parent_principal_component_eigenvalues=np.ones(d),
@@ -69,6 +74,8 @@ def test_sibling_test_categorical_identical() -> None:
         theta.ravel(),
         100.0,
         100.0,
+        branch_length_sum=0.0,
+        mean_branch_length=None,
         projection_dimension_from_edge_comparisons=z_dim,
         parent_principal_component_projection=np.eye(z_dim),
         parent_principal_component_eigenvalues=np.ones(z_dim),
@@ -103,6 +110,8 @@ def test_sibling_test_categorical_different() -> None:
         theta_right.ravel(),
         500.0,
         500.0,
+        branch_length_sum=0.0,
+        mean_branch_length=None,
         projection_dimension_from_edge_comparisons=z_dim,
         parent_principal_component_projection=np.eye(z_dim),
         parent_principal_component_eigenvalues=np.ones(z_dim),

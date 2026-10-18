@@ -1,0 +1,298 @@
+"""Regression contracts for edge-gate spectral context construction."""
+
+from __future__ import annotations
+
+import networkx as nx
+import numpy as np
+import pandas as pd
+import pytest
+
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
+)
+
+
+def _leaf_tree_and_data() -> tuple[nx.DiGraph, pd.DataFrame]:
+    tree = nx.DiGraph()
+    tree.add_edges_from([("root", "L0"), ("root", "L1")])
+    for leaf in ("L0", "L1"):
+        tree.nodes[leaf]["label"] = leaf
+        tree.nodes[leaf]["is_leaf"] = True
+    leaf_data = pd.DataFrame([[0.0], [1.0]], index=["L0", "L1"], columns=["F0"])
+    return tree, leaf_data
+
+
+class TestSpectralContextRegressions:
+    """Verify edge-gate spectral context invariants."""
+
+    def test_edge_gate_spectral_minimum_projection_dimension_is_fixed(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The edge gate should pass the fixed spectral floor into the spectral estimator."""
+        import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
+
+        tree, leaf_data = _leaf_tree_and_data()
+
+        captured: list[int] = []
+
+        def _fake_compute_spectral_decomposition(*args, **kwargs):
+            captured.append(kwargs["minimum_projection_dimension"])
+            return SpectralDecompositionResult(
+                test_projection_dimensions_by_node={},
+                raw_mp_signal_counts_by_node={},
+                effective_independent_rows_by_node={},
+                mp_threshold_rows_by_node={},
+                principal_component_projections_by_node={},
+                principal_component_eigenvalues_by_node={},
+                descendant_leaf_row_counts_by_node={},
+                internal_distribution_row_counts_by_node={},
+                spectral_matrix_row_counts_by_node={},
+                active_feature_counts_by_node={},
+                stage_timings={},
+            )
+
+        monkeypatch.setattr(
+            spectral_module,
+            "compute_spectral_decomposition",
+            _fake_compute_spectral_decomposition,
+        )
+
+        spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
+
+        assert captured == [2]
+
+    @pytest.mark.parametrize(
+        ("projection_dimension", "projections", "eigenvalues", "message"),
+        [
+            pytest.param(
+                1,
+                {"root": np.array([[1.0]])},
+                {},
+                "matching PCA projection/eigenvalue node keys",
+                id="paired-node-keys",
+            ),
+            pytest.param(
+                2,
+                {"root": np.array([[1.0]])},
+                {"root": np.array([1.0, 0.5])},
+                "projection/eigenvalue row count mismatch",
+                id="matching-row-counts",
+            ),
+        ],
+    )
+    def test_edge_gate_spectral_context_validates_projection_eigenvalue_pairing(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        projection_dimension: int,
+        projections: dict[str, np.ndarray],
+        eigenvalues: dict[str, np.ndarray],
+        message: str,
+    ) -> None:
+        import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
+
+        tree, leaf_data = _leaf_tree_and_data()
+
+        def _fake_compute_spectral_decomposition(*args, **kwargs):
+            return SpectralDecompositionResult(
+                test_projection_dimensions_by_node={"root": projection_dimension},
+                raw_mp_signal_counts_by_node={"root": projection_dimension},
+                effective_independent_rows_by_node={"root": 2},
+                mp_threshold_rows_by_node={"root": 2},
+                principal_component_projections_by_node=projections,
+                principal_component_eigenvalues_by_node=eigenvalues,
+                descendant_leaf_row_counts_by_node={},
+                internal_distribution_row_counts_by_node={},
+                spectral_matrix_row_counts_by_node={},
+                active_feature_counts_by_node={},
+                stage_timings={},
+            )
+
+        monkeypatch.setattr(
+            spectral_module,
+            "compute_spectral_decomposition",
+            _fake_compute_spectral_decomposition,
+        )
+
+        with pytest.raises(ValueError, match=message):
+            spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
+
+    def test_spectral_context_returns_decomposition_with_context_timing(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The edge gate reuses the decomposition result and only adds its own timing."""
+        import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
+
+        decomposition = SpectralDecompositionResult(
+            test_projection_dimensions_by_node={"root": 1},
+            raw_mp_signal_counts_by_node={"root": 4},
+            effective_independent_rows_by_node={"root": 5},
+            mp_threshold_rows_by_node={"root": 6},
+            principal_component_projections_by_node={"root": np.array([[1.0, 2.0]])},
+            principal_component_eigenvalues_by_node={"root": np.array([3.0])},
+            descendant_leaf_row_counts_by_node={"root": 7},
+            internal_distribution_row_counts_by_node={"root": 8},
+            spectral_matrix_row_counts_by_node={"root": 9},
+            active_feature_counts_by_node={"root": 2},
+            stage_timings={"spectral_decomposition_sec": 0.5},
+        )
+        tree = nx.DiGraph()
+        tree.add_edges_from([("root", "L0"), ("root", "L1")])
+        for leaf in ["L0", "L1"]:
+            tree.nodes[leaf]["label"] = leaf
+            tree.nodes[leaf]["is_leaf"] = True
+        leaf_data = pd.DataFrame([[0.0], [1.0]], index=["L0", "L1"], columns=["F0"])
+        monkeypatch.setattr(
+            spectral_module, "compute_spectral_decomposition", lambda *_, **__: decomposition
+        )
+
+        context = spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
+
+        assert context.test_projection_dimensions_by_node is (
+            decomposition.test_projection_dimensions_by_node
+        )
+        assert context.stage_timings["spectral_decomposition_sec"] == 0.5
+        assert "spectral_context_sec" in context.stage_timings
+
+    def test_single_active_feature_spectral_path_returns_coordinate_projection(self):
+        """A one-active-feature node is already a valid 1D spectral problem."""
+        import networkx as nx
+
+        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
+            compute_spectral_decomposition,
+        )
+
+        tree = nx.DiGraph()
+        tree.add_edges_from([("root", "L0"), ("root", "L1"), ("root", "L2")])
+        for leaf in ["L0", "L1", "L2"]:
+            tree.nodes[leaf]["label"] = leaf
+            tree.nodes[leaf]["is_leaf"] = True
+        tree.nodes["root"]["is_leaf"] = False
+        tree.nodes["root"]["distribution"] = np.array([1.0 / 3.0, 0.0])
+
+        leaf_data = pd.DataFrame(
+            [[0.0, 0.0], [1.0, 0.0], [0.0, 0.0]],
+            index=["L0", "L1", "L2"],
+            columns=["F0", "F1"],
+        )
+
+        spectral_decomposition = compute_spectral_decomposition(
+            tree,
+            leaf_data,
+            minimum_projection_dimension=2,
+        )
+
+        assert spectral_decomposition.test_projection_dimensions_by_node["root"] == 1
+        assert spectral_decomposition.raw_mp_signal_counts_by_node["root"] == 0
+        assert spectral_decomposition.effective_independent_rows_by_node["root"] == 3
+        assert spectral_decomposition.mp_threshold_rows_by_node["root"] == 3
+        np.testing.assert_array_equal(
+            spectral_decomposition.principal_component_projections_by_node["root"],
+            np.array([[1.0, 0.0]]),
+        )
+        np.testing.assert_allclose(
+            spectral_decomposition.principal_component_eigenvalues_by_node["root"],
+            np.array([1.0]),
+            atol=1e-10,
+        )
+
+    def test_branch_length_internal_state_changes_internal_spectral_rows(self):
+        """Branch-length state rows are a separate diagnostic from empirical barycenters."""
+        import networkx as nx
+
+        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
+            INTERNAL_DISTRIBUTION_BRANCH_LENGTH_STATE,
+            compute_spectral_decomposition,
+        )
+
+        tree = nx.DiGraph()
+        tree.add_edge("root", "I0", branch_length=1.0)
+        tree.add_edge("root", "L2", branch_length=1.0)
+        tree.add_edge("I0", "L0", branch_length=0.01)
+        tree.add_edge("I0", "L1", branch_length=10.0)
+        for leaf, distribution in {
+            "L0": np.array([0.0, 0.0]),
+            "L1": np.array([1.0, 0.0]),
+            "L2": np.array([0.0, 1.0]),
+        }.items():
+            tree.nodes[leaf]["label"] = leaf
+            tree.nodes[leaf]["is_leaf"] = True
+            tree.nodes[leaf]["distribution"] = distribution
+        tree.nodes["I0"]["is_leaf"] = False
+        tree.nodes["root"]["is_leaf"] = False
+        tree.nodes["I0"]["distribution"] = np.array([0.5, 0.0])
+        tree.nodes["root"]["distribution"] = np.array([1.0 / 3.0, 1.0 / 3.0])
+
+        leaf_data = pd.DataFrame(
+            [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]],
+            index=["L0", "L1", "L2"],
+            columns=["F0", "F1"],
+        )
+
+        empirical = compute_spectral_decomposition(
+            tree,
+            leaf_data,
+            minimum_projection_dimension=1,
+            include_internal_barycenters=True,
+        )
+        branch_length = compute_spectral_decomposition(
+            tree,
+            leaf_data,
+            minimum_projection_dimension=1,
+            include_internal_barycenters=True,
+            internal_distribution_mode=INTERNAL_DISTRIBUTION_BRANCH_LENGTH_STATE,
+        )
+
+        assert empirical.effective_independent_rows_by_node["root"] == 3
+        assert branch_length.effective_independent_rows_by_node["root"] == 3
+        assert empirical.mp_threshold_rows_by_node["root"] == 3
+        assert branch_length.mp_threshold_rows_by_node["root"] == 3
+        assert empirical.descendant_leaf_row_counts_by_node["root"] == 3
+        assert empirical.internal_distribution_row_counts_by_node["root"] == 1
+        assert empirical.spectral_matrix_row_counts_by_node["root"] == 4
+        assert empirical.descendant_leaf_row_counts_by_node["I0"] == 2
+        assert empirical.internal_distribution_row_counts_by_node["I0"] == 0
+        assert empirical.spectral_matrix_row_counts_by_node["I0"] == 2
+        assert branch_length.descendant_leaf_row_counts_by_node["root"] == 3
+        assert branch_length.internal_distribution_row_counts_by_node["root"] == 1
+        assert branch_length.spectral_matrix_row_counts_by_node["root"] == 4
+        assert not np.allclose(
+            empirical.principal_component_eigenvalues_by_node["root"],
+            branch_length.principal_component_eigenvalues_by_node["root"],
+        )
+
+    def test_spectral_decomposition_requires_leaf_data_for_every_leaf_label(self):
+        """Missing leaf rows must fail instead of silently shrinking a subtree."""
+        import networkx as nx
+
+        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
+            compute_spectral_decomposition,
+        )
+
+        tree = nx.DiGraph()
+        tree.add_edges_from([("root", "L0"), ("root", "L1")])
+        for leaf in ["L0", "L1"]:
+            tree.nodes[leaf]["label"] = leaf
+            tree.nodes[leaf]["is_leaf"] = True
+
+        leaf_data = pd.DataFrame([[0.0]], index=["L0"], columns=["F0"])
+
+        with pytest.raises(ValueError, match="missing from leaf_data"):
+            compute_spectral_decomposition(tree, leaf_data)
+
+    def test_invalid_spectral_job_env_does_not_fall_back_to_auto(self, monkeypatch):
+        """Invalid TBS_N_JOBS should fail instead of silently using auto workers."""
+        from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
+            compute_spectral_decomposition,
+        )
+
+        tree, leaf_data = _leaf_tree_and_data()
+        tree.nodes["root"]["is_leaf"] = False
+        tree.nodes["root"]["distribution"] = np.array([0.5])
+
+        assert compute_spectral_decomposition(tree, leaf_data).test_projection_dimensions_by_node
+        monkeypatch.setenv("TBS_N_JOBS", "not-an-int")
+
+        with pytest.raises(ValueError, match="not-an-int"):
+            compute_spectral_decomposition(tree, leaf_data)

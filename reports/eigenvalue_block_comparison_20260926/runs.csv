@@ -1,0 +1,753 @@
+case,seed,block,geometry,method,status,error,n_clusters,calibration_counts,runtime_seconds,ari_truth
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 309, ""empirical_null_inflation"": 10}",0.8348001250997186,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 254, ""empirical_null_inflation"": 65}",0.8336438329424709,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 283, ""empirical_null_inflation"": 36}",0.8721445410046726,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 296, ""empirical_null_inflation"": 23}",0.811584624927491,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 309, ""empirical_null_inflation"": 10}",0.7972393748350441,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 283, ""empirical_null_inflation"": 36}",0.7959265420213342,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 252, ""empirical_null_inflation"": 67}",0.8267522500827909,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,raw,neighbor_joining,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 2}",1.9789042919874191,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 209, ""empirical_null_inflation"": 110}",0.8187373748514801,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 273, ""empirical_null_inflation"": 46}",0.8006850420497358,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,1.0,"{"""": 286, ""empirical_null_inflation"": 33}",0.787064999807626,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,single,ok,,1.0,"{"""": 301, ""empirical_null_inflation"": 18}",0.781542917015031,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006707911379635334,
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006032080855220556,
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,1.0,"{"""": 275, ""empirical_null_inflation"": 44}",0.831338084070012,0.0
+bar_binary_balanced_4c,21000,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 268, ""empirical_null_inflation"": 51}",1.703925124835223,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,average,ok,,3.0,"{"""": 238, ""empirical_null_inflation"": 81}",0.8307421670760959,0.6623055439326986
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,complete,ok,,3.0,"{"""": 266, ""empirical_null_inflation"": 53}",0.8093691251706332,0.6702183903371426
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,weighted,ok,,4.0,"{"""": 250, ""empirical_null_inflation"": 69}",0.8231495001818985,0.9497135582431572
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,single,ok,,1.0,"{"""": 319}",0.8037084999959916,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006778750102967024,
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000567292096093297,
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,ward,ok,,2.0,"{"""": 289, ""empirical_null_inflation"": 30}",0.7869145839940757,0.47080105204279576
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,raw,neighbor_joining,ok,,4.0,"{"""": 234, ""empirical_null_inflation"": 85}",1.6350042500998825,0.9335735880032835
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,average,ok,,1.0,"{"""": 270, ""empirical_null_inflation"": 49}",0.9103347500786185,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,complete,ok,,1.0,"{"""": 267, ""empirical_null_inflation"": 52}",0.957667666953057,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,weighted,ok,,1.0,"{"""": 260, ""empirical_null_inflation"": 59}",0.8016392500139773,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,single,ok,,1.0,"{"""": 280, ""empirical_null_inflation"": 39}",0.8401937091257423,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006672909948974848,
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005403750110417604,
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,ward,ok,,1.0,"{"""": 278, ""empirical_null_inflation"": 41}",0.8077038330957294,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_02_06,adaptive_diffusion,neighbor_joining,ok,,4.0,"{"""": 287, ""empirical_null_inflation"": 32}",1.6507463338784873,0.9662489336393237
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,average,ok,,1.0,"{"""": 319}",0.7805611661169678,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,complete,ok,,1.0,"{"""": 319}",0.7762525000143796,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,weighted,ok,,1.0,"{"""": 319}",0.8286470409948379,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,single,ok,,1.0,"{"""": 319}",0.9637100419495255,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008040829561650753,
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008017090149223804,
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,ward,ok,,1.0,"{"""": 319}",0.7644390829373151,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,raw,neighbor_joining,ok,,1.0,"{"""": 319}",1.7008387909736484,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,average,ok,,1.0,"{"""": 319}",0.7766368340235204,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 319}",0.8034161671530455,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 319}",0.772446959046647,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,single,ok,,1.0,"{"""": 314, ""empirical_null_inflation"": 5}",0.8637011249084026,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006920420564711094,
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005785410758107901,
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 319}",0.796805249992758,0.0
+bar_binary_balanced_4c,21000,adaptive_modes_07_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 319}",1.6368656249251217,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 246, ""empirical_null_inflation"": 153}",1.0123615839984268,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 382, ""empirical_null_inflation"": 17}",0.9792296658270061,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 377, ""empirical_null_inflation"": 22}",0.9580070830415934,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 391, ""empirical_null_inflation"": 8}",0.9841253750491887,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 246, ""empirical_null_inflation"": 153}",1.0420265831053257,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 377, ""empirical_null_inflation"": 22}",1.0018384160939604,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 306, ""empirical_null_inflation"": 93}",1.0315729170106351,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,raw,neighbor_joining,ok,,1.0,"{"""": 398, ""empirical_null_inflation"": 1}",2.669241749914363,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 395, ""empirical_null_inflation"": 4}",1.004919916857034,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 395, ""empirical_null_inflation"": 4}",1.029921832960099,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,1.0,"{"""": 395, ""empirical_null_inflation"": 4}",1.0593891669996083,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,single,ok,,1.0,"{"""": 390, ""empirical_null_inflation"": 9}",1.0034824998583645,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008357919286936522,
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007071250583976507,
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,1.0,"{"""": 398, ""empirical_null_inflation"": 1}",0.9782983330078423,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 309, ""empirical_null_inflation"": 90}",2.569948625052348,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,average,ok,,3.0,"{"""": 327, ""empirical_null_inflation"": 72}",0.9980889169964939,0.8530069618941205
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,complete,ok,,2.0,"{"""": 277, ""empirical_null_inflation"": 122}",1.0195892918854952,0.8064595294723607
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,weighted,ok,,3.0,"{"""": 289, ""empirical_null_inflation"": 110}",1.0171320838853717,0.8530069618941205
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,single,ok,,1.0,"{"""": 396, ""empirical_null_inflation"": 3}",1.07121341698803,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009497080463916063,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000764249823987484,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,ward,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 82}",1.0173410829156637,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,raw,neighbor_joining,ok,,2.0,"{"""": 341, ""empirical_null_inflation"": 58}",2.56568470899947,0.7910586975085012
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,average,ok,,2.0,"{"""": 222, ""empirical_null_inflation"": 177}",1.040080958046019,0.8827738118694332
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,complete,ok,,2.0,"{"""": 237, ""empirical_null_inflation"": 162}",1.0082660838961601,0.8827738118694332
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,weighted,ok,,2.0,"{"""": 257, ""empirical_null_inflation"": 142}",1.0321480000857264,0.8645670285919271
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,single,ok,,2.0,"{"""": 392, ""empirical_null_inflation"": 7}",0.9846475408412516,0.8827738118694332
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008713749703019857,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007325001060962677,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,ward,ok,,1.0,"{"""": 230, ""empirical_null_inflation"": 169}",1.0123237080406398,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_02_05,adaptive_diffusion,neighbor_joining,ok,,2.0,"{"""": 367, ""empirical_null_inflation"": 32}",2.5136243749875575,0.8645670285919271
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,average,ok,,1.0,"{"""": 399}",0.9652961250394583,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,complete,ok,,1.0,"{"""": 397, ""empirical_null_inflation"": 2}",0.9512020000256598,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,weighted,ok,,1.0,"{"""": 399}",0.9466834580525756,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,single,ok,,1.0,"{"""": 399}",1.1803679168224335,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010342500172555447,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009436248801648617,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,ward,ok,,1.0,"{"""": 355, ""empirical_null_inflation"": 44}",0.9596622500102967,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,raw,neighbor_joining,ok,,1.0,"{"""": 384, ""empirical_null_inflation"": 15}",2.4824919998645782,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,average,ok,,1.0,"{"""": 399}",0.9777630830649287,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 399}",0.9370277079287916,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 399}",0.95386654115282,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,single,ok,,1.0,"{"""": 398, ""empirical_null_inflation"": 1}",1.0979447080753744,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010205409489572048,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009522498585283756,
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 399}",0.9433123331982642,0.0
+bar_binary_unbalanced_95_5,21001,adaptive_modes_06_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 399}",2.5744473331142217,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,average,ok,,5.0,"{"""": 234, ""empirical_null_inflation"": 5}",2.45137312496081,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,complete,ok,,4.0,"{"""": 234, ""empirical_null_inflation"": 5}",2.4510087920352817,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,weighted,ok,,5.0,"{"""": 234, ""empirical_null_inflation"": 5}",2.4204248329624534,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,single,ok,,1.0,"{"""": 239}",2.358524875016883,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005747501272708178,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00042083393782377243,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,ward,ok,,2.0,"{"""": 234, ""empirical_null_inflation"": 5}",2.411070875125006,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,raw,neighbor_joining,ok,,5.0,"{"""": 235, ""empirical_null_inflation"": 4}",2.800304374890402,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,average,ok,,5.0,"{"""": 235, ""empirical_null_inflation"": 4}",2.4365631251130253,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,complete,ok,,5.0,"{"""": 234, ""empirical_null_inflation"": 5}",2.4175077080726624,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,weighted,ok,,3.0,"{"""": 235, ""empirical_null_inflation"": 4}",2.4932676658499986,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,single,ok,,1.0,"{"""": 239}",2.4042777500580996,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005369158461689949,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0003960421308875084,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,ward,ok,,3.0,"{"""": 234, ""empirical_null_inflation"": 5}",2.400197083130479,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_01_04,adaptive_diffusion,neighbor_joining,ok,,4.0,"{"""": 236, ""empirical_null_inflation"": 3}",2.8304628329351544,0.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,average,ok,,1.0,"{"""": 239}",2.3913236670196056,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,complete,ok,,1.0,"{"""": 239}",2.4181081249844283,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,weighted,ok,,1.0,"{"""": 239}",2.417462583165616,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,single,ok,,1.0,"{"""": 239}",2.3561752079986036,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005671251565217972,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004647080786526203,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,ward,ok,,1.0,"{"""": 239}",2.413799332920462,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,raw,neighbor_joining,ok,,1.0,"{"""": 239}",2.755183167057112,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,average,ok,,1.0,"{"""": 239}",2.3970035419333726,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,complete,ok,,1.0,"{"""": 239}",2.4346099998801947,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,weighted,ok,,1.0,"{"""": 239}",2.4463495421223342,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,single,ok,,1.0,"{"""": 239}",2.64365170779638,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006814999505877495,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004809158854186535,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,ward,ok,,1.0,"{"""": 239}",2.762380541069433,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_05_19,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 239}",3.2148615829646587,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,average,ok,,1.0,"{"""": 239}",2.453154208138585,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,complete,ok,,1.0,"{"""": 239}",2.4687228340189904,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,weighted,ok,,1.0,"{"""": 239}",2.515728292055428,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,single,ok,,1.0,"{"""": 239}",2.4104560841806233,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005892917979508638,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00047445809468626976,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,ward,ok,,1.0,"{"""": 239}",2.5089380422141403,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,raw,neighbor_joining,ok,,1.0,"{"""": 239}",2.9011467918753624,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,average,ok,,1.0,"{"""": 239}",2.4665675000287592,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 239}",2.4155800419393927,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 239}",2.4149549580179155,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,single,ok,,1.0,"{"""": 239}",2.6229805420152843,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000603916822001338,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004452920984476805,
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 239}",2.4790015420876443,1.0
+mp_spike_below_bbp_continuous,21100,adaptive_modes_20_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 239}",2.965235667070374,1.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 237, ""empirical_null_inflation"": 2}",2.4912842500489205,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.473026208113879,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.5125639999751,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 237, ""empirical_null_inflation"": 2}",2.503240582998842,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 237, ""empirical_null_inflation"": 2}",2.576203166972846,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.4613910829648376,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.544043874833733,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,raw,neighbor_joining,ok,,2.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.865789334056899,-0.007344563610512142
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 237, ""empirical_null_inflation"": 2}",2.429435250116512,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 237, ""empirical_null_inflation"": 2}",2.4112287908792496,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,2.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.9772897090297192,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,single,ok,,1.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.4269899579230696,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006211251020431519,
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004409579560160637,
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,2.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.434840959031135,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,2.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.8568920420948416,0.002070607723366808
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,average,ok,,1.0,"{"""": 239}",2.491755499970168,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,complete,ok,,5.0,"{"""": 233, ""empirical_null_inflation"": 6}",2.5530606659594923,-0.009070745191511902
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,weighted,ok,,1.0,"{"""": 239}",2.5218230409082025,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,single,ok,,1.0,"{"""": 239}",2.7235498749651015,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006040828302502632,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004560002125799656,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,ward,ok,,1.0,"{"""": 239}",2.587707333965227,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,raw,neighbor_joining,ok,,1.0,"{"""": 239}",2.867435249965638,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,average,ok,,1.0,"{"""": 235, ""empirical_null_inflation"": 4}",2.4198249999899417,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,complete,ok,,1.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.4063889167737216,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,weighted,ok,,1.0,"{"""": 239}",2.4333592909388244,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,single,ok,,1.0,"{"""": 239}",2.453370915958658,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000541832996532321,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004352079704403877,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,ward,ok,,1.0,"{"""": 238, ""empirical_null_inflation"": 1}",2.510148791130632,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_02_11,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 239}",2.8776682920288295,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,average,ok,,1.0,"{"""": 239}",2.473248958121985,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,complete,ok,,1.0,"{"""": 239}",2.415567292133346,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,weighted,ok,,1.0,"{"""": 239}",2.402614416088909,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,single,ok,,1.0,"{"""": 239}",2.371493750018999,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006249160505831242,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005184579640626907,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,ward,ok,,1.0,"{"""": 239}",2.404551416868344,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,raw,neighbor_joining,ok,,1.0,"{"""": 239}",2.799839457962662,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,average,ok,,1.0,"{"""": 239}",2.455468958010897,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 239}",2.504406874999404,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 239}",2.4492080418858677,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,single,ok,,1.0,"{"""": 239}",2.412037707865238,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005773329176008701,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004302500747144222,
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 239}",2.44907391583547,0.0
+mp_spike_above_bbp_continuous,21101,adaptive_modes_12_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 239}",2.872247332939878,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 409, ""empirical_null_inflation"": 70}",0.9579889161977917,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 479}",0.9282787500414997,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",0.9684193339198828,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",0.9651862080208957,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 409, ""empirical_null_inflation"": 70}",0.9799532501492649,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",0.9230500829871744,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 479}",0.9301479579880834,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,raw,neighbor_joining,ok,,1.0,"{"""": 472, ""empirical_null_inflation"": 7}",3.67887341696769,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",0.9016567079816014,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",0.9917023750022054,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,1.0,"{"""": 466, ""empirical_null_inflation"": 13}",0.9116644579917192,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,single,ok,,1.0,"{"""": 466, ""empirical_null_inflation"": 13}",0.9212607918307185,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0017391659785062075,
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010637089144438505,
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,1.0,"{"""": 447, ""empirical_null_inflation"": 32}",0.92081716703251,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,13.0,"{"""": 345, ""empirical_null_inflation"": 134}",3.724160665879026,0.0005633054468438906
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,average,ok,,6.0,"{"""": 394, ""empirical_null_inflation"": 85}",0.9467828748747706,0.22025546982212288
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,complete,ok,,3.0,"{"""": 331, ""empirical_null_inflation"": 148}",0.9907672500703484,0.18861993566898147
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,weighted,ok,,6.0,"{"""": 333, ""empirical_null_inflation"": 146}",1.0184435420669615,0.20083537675752108
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,single,ok,,1.0,"{"""": 453, ""empirical_null_inflation"": 26}",1.1377462919335812,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0017913749907165766,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010970418807119131,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,ward,ok,,4.0,"{"""": 306, ""empirical_null_inflation"": 173}",0.9559602921362966,0.30132898097026667
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,raw,neighbor_joining,ok,,1.0,"{"""": 422, ""empirical_null_inflation"": 57}",3.6045385419856757,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,average,ok,,4.0,"{"""": 308, ""empirical_null_inflation"": 171}",0.9369942080229521,0.33394882291945216
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,complete,ok,,4.0,"{"""": 299, ""empirical_null_inflation"": 180}",0.9622574171517044,0.17260225601886417
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,weighted,ok,,5.0,"{"""": 327, ""empirical_null_inflation"": 152}",0.9857410001568496,0.25540093002673797
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,single,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",0.9437683750875294,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011287080124020576,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009524580091238022,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,ward,ok,,4.0,"{"""": 274, ""empirical_null_inflation"": 205}",0.96562166698277,0.28271418129639003
+cat_simplex_face_rare_20cat,21200,adaptive_modes_02_05,adaptive_diffusion,neighbor_joining,ok,,4.0,"{"""": 395, ""empirical_null_inflation"": 84}",3.5394127920735627,0.19328639235233347
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,average,ok,,1.0,"{"""": 386, ""empirical_null_inflation"": 93}",0.9308711250778288,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,complete,ok,,1.0,"{"""": 328, ""empirical_null_inflation"": 151}",0.9537784161511809,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,weighted,ok,,1.0,"{"""": 340, ""empirical_null_inflation"": 139}",0.9778164171148092,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,single,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",1.0962179580237716,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011631250381469727,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010006669908761978,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,ward,ok,,1.0,"{"""": 308, ""empirical_null_inflation"": 171}",0.9918745830655098,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,raw,neighbor_joining,ok,,1.0,"{"""": 392, ""empirical_null_inflation"": 87}",3.654289625119418,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,average,ok,,1.0,"{"""": 276, ""empirical_null_inflation"": 203}",1.081778250169009,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,complete,ok,,1.0,"{"""": 267, ""empirical_null_inflation"": 212}",1.1572385830804706,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,weighted,ok,,1.0,"{"""": 372, ""empirical_null_inflation"": 107}",1.0167363751679659,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,single,ok,,1.0,"{"""": 477, ""empirical_null_inflation"": 2}",1.0137829999439418,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0019579161889851093,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010581249371170998,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,ward,ok,,1.0,"{"""": 299, ""empirical_null_inflation"": 180}",0.9891950839664787,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_06_09,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 381, ""empirical_null_inflation"": 98}",4.10458479099907,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,average,ok,,1.0,"{"""": 451, ""empirical_null_inflation"": 28}",0.9143118748907,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,complete,ok,,3.0,"{"""": 368, ""empirical_null_inflation"": 111}",0.9328838328365237,-0.0029084678431500945
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,weighted,ok,,1.0,"{"""": 374, ""empirical_null_inflation"": 105}",0.9509686669334769,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,single,ok,,1.0,"{"""": 474, ""empirical_null_inflation"": 5}",1.1500039589591324,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0013737909030169249,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010280420538038015,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,ward,ok,,1.0,"{"""": 344, ""empirical_null_inflation"": 135}",0.9803459160029888,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,raw,neighbor_joining,ok,,1.0,"{"""": 430, ""empirical_null_inflation"": 49}",3.775706792017445,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,average,ok,,1.0,"{"""": 368, ""empirical_null_inflation"": 111}",0.96865816693753,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,complete,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 162}",0.9869081249926239,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,weighted,ok,,1.0,"{"""": 407, ""empirical_null_inflation"": 72}",0.9476454998366535,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,single,ok,,1.0,"{"""": 479}",0.9480112500023097,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012843329459428787,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009862079750746489,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,ward,ok,,1.0,"{"""": 432, ""empirical_null_inflation"": 47}",0.9105181668419391,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_10_13,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 380, ""empirical_null_inflation"": 99}",3.5765455001965165,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,average,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",0.8933780409861356,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,complete,ok,,1.0,"{"""": 444, ""empirical_null_inflation"": 35}",0.9571081248577684,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,weighted,ok,,1.0,"{"""": 426, ""empirical_null_inflation"": 53}",0.942731749964878,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,single,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",1.1993621247820556,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0014096249360591173,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00116454204544425,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,ward,ok,,1.0,"{"""": 322, ""empirical_null_inflation"": 157}",0.9945875420235097,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,raw,neighbor_joining,ok,,1.0,"{"""": 342, ""empirical_null_inflation"": 137}",3.743311916012317,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,average,ok,,7.0,"{"""": 264, ""empirical_null_inflation"": 215}",0.9667615001089871,0.0400521376612388
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,complete,ok,,15.0,"{"""": 287, ""empirical_null_inflation"": 192}",0.960215708008036,0.014610227972388904
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,weighted,ok,,1.0,"{"""": 427, ""empirical_null_inflation"": 52}",0.9141315838787705,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,single,ok,,1.0,"{"""": 465, ""empirical_null_inflation"": 14}",0.9821288329549134,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001333415973931551,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0013044578954577446,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,ward,ok,,1.0,"{"""": 312, ""empirical_null_inflation"": 167}",0.9412568330299109,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_14_19,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 406, ""empirical_null_inflation"": 73}",3.5575619169976562,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,average,ok,,1.0,"{"""": 477, ""empirical_null_inflation"": 2}",0.9150608750060201,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,complete,ok,,1.0,"{"""": 465, ""empirical_null_inflation"": 14}",0.8937024171464145,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,weighted,ok,,1.0,"{"""": 436, ""empirical_null_inflation"": 43}",0.9172203331254423,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,single,ok,,1.0,"{"""": 474, ""empirical_null_inflation"": 5}",1.1337321670725942,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0013697920367121696,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009817909449338913,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,ward,ok,,1.0,"{"""": 308, ""empirical_null_inflation"": 171}",0.960136333014816,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,raw,neighbor_joining,ok,,1.0,"{"""": 427, ""empirical_null_inflation"": 52}",3.6734881659504026,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,average,ok,,1.0,"{"""": 479}",0.9008740000426769,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,complete,ok,,1.0,"{"""": 423, ""empirical_null_inflation"": 56}",0.957004375057295,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,weighted,ok,,1.0,"{"""": 371, ""empirical_null_inflation"": 108}",0.9499747499357909,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,single,ok,,1.0,"{"""": 479}",0.9444209591019899,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012840828858315945,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009491669479757547,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,ward,ok,,1.0,"{"""": 390, ""empirical_null_inflation"": 89}",0.9222582499496639,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_20_23,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 415, ""empirical_null_inflation"": 64}",3.6004442910198122,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,average,ok,,1.0,"{"""": 472, ""empirical_null_inflation"": 7}",0.9967438329476863,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,complete,ok,,1.0,"{"""": 405, ""empirical_null_inflation"": 74}",0.9651170000433922,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,weighted,ok,,1.0,"{"""": 479}",0.9118088751565665,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,single,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",1.2906800829805434,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011903750710189342,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009873330127447844,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,ward,ok,,1.0,"{"""": 477, ""empirical_null_inflation"": 2}",0.882938374998048,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,raw,neighbor_joining,ok,,1.0,"{"""": 378, ""empirical_null_inflation"": 101}",3.580926707945764,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,average,ok,,1.0,"{"""": 428, ""empirical_null_inflation"": 51}",0.8992273339536041,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,complete,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",0.8730509581509978,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,weighted,ok,,1.0,"{"""": 479}",0.8851615830790251,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,single,ok,,1.0,"{"""": 479}",0.9561763750389218,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0014995001256465912,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010862501803785563,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,ward,ok,,1.0,"{"""": 441, ""empirical_null_inflation"": 38}",0.899561082944274,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_24_29,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 381, ""empirical_null_inflation"": 98}",3.7525897088926286,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,average,ok,,1.0,"{"""": 475, ""empirical_null_inflation"": 4}",0.9173874999396503,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,complete,ok,,1.0,"{"""": 453, ""empirical_null_inflation"": 26}",0.9035273329354823,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,weighted,ok,,1.0,"{"""": 461, ""empirical_null_inflation"": 18}",0.8939517079852521,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,single,ok,,1.0,"{"""": 475, ""empirical_null_inflation"": 4}",1.2307215840555727,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0015023751184344292,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0013431659899652004,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,ward,ok,,1.0,"{"""": 479}",0.9279604579787701,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,raw,neighbor_joining,ok,,1.0,"{"""": 450, ""empirical_null_inflation"": 29}",3.744736541993916,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,average,ok,,1.0,"{"""": 374, ""empirical_null_inflation"": 105}",0.9369296249933541,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 423, ""empirical_null_inflation"": 56}",0.9132810418959707,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 428, ""empirical_null_inflation"": 51}",0.9155803329776973,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,single,ok,,1.0,"{"""": 475, ""empirical_null_inflation"": 4}",1.0243974579498172,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012118341401219368,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010947079863399267,
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 373, ""empirical_null_inflation"": 106}",0.9336632918566465,0.0
+cat_simplex_face_rare_20cat,21200,adaptive_modes_30_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 479}",3.5689369160681963,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",0.8797481250949204,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 479}",0.8692702918779105,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 479}",0.8750589999835938,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 477, ""empirical_null_inflation"": 2}",0.9085259579587728,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",0.8845599999185652,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 479}",0.8711307919584215,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 479}",0.8786427911836654,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,raw,neighbor_joining,ok,,1.0,"{"""": 479}",3.583707416895777,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 446, ""empirical_null_inflation"": 33}",0.9166452079080045,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 462, ""empirical_null_inflation"": 17}",0.9244284590240568,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",0.895322083029896,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,single,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",0.9072947499807924,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011493749916553497,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009877500124275684,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,1.0,"{"""": 427, ""empirical_null_inflation"": 52}",0.947376708034426,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",3.6197559589054435,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,average,ok,,8.0,"{"""": 316, ""empirical_null_inflation"": 163}",0.9729375841561705,0.13632049918608072
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,complete,ok,,25.0,"{"""": 249, ""empirical_null_inflation"": 230}",0.9669850419741124,0.07859325641616616
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,weighted,ok,,1.0,"{"""": 370, ""empirical_null_inflation"": 109}",0.9398406250402331,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,single,ok,,1.0,"{"""": 475, ""empirical_null_inflation"": 4}",1.1389950839802623,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001207584049552679,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009981670882552862,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,ward,ok,,2.0,"{"""": 262, ""empirical_null_inflation"": 217}",0.9798091668635607,0.08770544579526252
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,raw,neighbor_joining,ok,,16.0,"{"""": 268, ""empirical_null_inflation"": 211}",3.5892999169882387,0.11135007534371195
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,average,ok,,1.0,"{"""": 348, ""empirical_null_inflation"": 131}",0.9694104159716517,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,complete,ok,,1.0,"{"""": 288, ""empirical_null_inflation"": 191}",0.948494000127539,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,weighted,ok,,35.0,"{"""": 269, ""empirical_null_inflation"": 210}",0.9820250831544399,0.08594885393029245
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,single,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",1.0424672500230372,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001479000085964799,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012040419969707727,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,ward,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",1.0902713749092072,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_02_10,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 324, ""empirical_null_inflation"": 155}",3.687002999940887,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,average,ok,,1.0,"{"""": 479}",0.9024235000833869,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,complete,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",0.905654959147796,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,weighted,ok,,1.0,"{"""": 472, ""empirical_null_inflation"": 7}",0.891501875128597,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,single,ok,,1.0,"{"""": 471, ""empirical_null_inflation"": 8}",1.1252874578349292,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012709998991340399,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009765839204192162,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,ward,ok,,1.0,"{"""": 367, ""empirical_null_inflation"": 112}",0.937878959113732,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,raw,neighbor_joining,ok,,1.0,"{"""": 479}",3.598917332943529,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,average,ok,,1.0,"{"""": 479}",0.8704604590311646,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,complete,ok,,1.0,"{"""": 336, ""empirical_null_inflation"": 143}",0.950264333980158,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,weighted,ok,,1.0,"{"""": 400, ""empirical_null_inflation"": 79}",0.9207793748937547,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,single,ok,,1.0,"{"""": 447, ""empirical_null_inflation"": 32}",1.013359708013013,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012707498390227556,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009672918822616339,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,ward,ok,,1.0,"{"""": 314, ""empirical_null_inflation"": 165}",0.9621229160111398,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_11_17,adaptive_diffusion,neighbor_joining,ok,,5.0,"{"""": 329, ""empirical_null_inflation"": 150}",3.73018516600132,0.028919314213649305
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,average,ok,,1.0,"{"""": 466, ""empirical_null_inflation"": 13}",0.924305957974866,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,complete,ok,,1.0,"{"""": 309, ""empirical_null_inflation"": 170}",0.9735606249887496,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,weighted,ok,,1.0,"{"""": 334, ""empirical_null_inflation"": 145}",0.9705271669663489,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,single,ok,,1.0,"{"""": 477, ""empirical_null_inflation"": 2}",1.199171458138153,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001358875073492527,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010415420401841402,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,ward,ok,,1.0,"{"""": 376, ""empirical_null_inflation"": 103}",0.9456607920583338,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,raw,neighbor_joining,ok,,8.0,"{"""": 291, ""empirical_null_inflation"": 188}",3.7788309999741614,0.02563481579005093
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,average,ok,,1.0,"{"""": 394, ""empirical_null_inflation"": 85}",0.9369470840319991,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,complete,ok,,1.0,"{"""": 366, ""empirical_null_inflation"": 113}",0.9578837079461664,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,weighted,ok,,7.0,"{"""": 276, ""empirical_null_inflation"": 203}",0.9806838340591639,0.014992050778610527
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,single,ok,,1.0,"{"""": 479}",0.9831654170993716,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00137262511998415,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001046417048200965,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,ward,ok,,1.0,"{"""": 479}",0.8673357081133872,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_18_27,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 293, ""empirical_null_inflation"": 186}",3.634202375076711,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,average,ok,,1.0,"{"""": 478, ""empirical_null_inflation"": 1}",0.9621276669204235,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,complete,ok,,1.0,"{"""": 479}",0.8734452498611063,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,weighted,ok,,1.0,"{"""": 479}",0.9118559579364955,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,single,ok,,1.0,"{"""": 479}",1.2921953331679106,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0015537079889327288,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010458328761160374,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,ward,ok,,1.0,"{"""": 383, ""empirical_null_inflation"": 96}",0.9333991250023246,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,raw,neighbor_joining,ok,,1.0,"{"""": 264, ""empirical_null_inflation"": 215}",3.65654299990274,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,average,ok,,1.0,"{"""": 335, ""empirical_null_inflation"": 144}",0.9584363338071853,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 454, ""empirical_null_inflation"": 25}",0.947782333008945,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 318, ""empirical_null_inflation"": 161}",0.9646389579866081,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,single,ok,,1.0,"{"""": 479}",1.0272324581164867,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012637078762054443,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009658329654484987,
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 479}",0.8720236672088504,0.0
+cat_dirichlet_overdispersed_20cat,21201,adaptive_modes_28_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 414, ""empirical_null_inflation"": 65}",3.6107842919882387,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,average,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.265425082994625,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,complete,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.2795508331619203,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,weighted,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.2765184168238193,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,single,ok,,1.0,"{"""": 156, ""empirical_null_inflation"": 3}",0.2621879579965025,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004470418207347393,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00034133298322558403,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,ward,ok,,1.0,"{"""": 159}",0.27216850011609495,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,raw,neighbor_joining,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.39763941685669124,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,average,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.28455600002780557,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,complete,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.27209483296610415,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,weighted,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.26903887488879263,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,single,ok,,1.0,"{"""": 104, ""empirical_null_inflation"": 55}",0.30260195792652667,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004305420443415642,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00032595801167190075,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,ward,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.26986341713927686,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_01_08,adaptive_diffusion,neighbor_joining,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.3857097080908716,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,average,ok,,1.0,"{"""": 159}",0.26314208400435746,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,complete,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.2747243749909103,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,weighted,ok,,1.0,"{"""": 157, ""empirical_null_inflation"": 2}",0.26937783299945295,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,single,ok,,1.0,"{"""": 157, ""empirical_null_inflation"": 2}",0.243916500126943,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004567911382764578,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0003683750983327627,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,ward,ok,,1.0,"{"""": 138, ""empirical_null_inflation"": 21}",0.2866558749228716,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,raw,neighbor_joining,ok,,1.0,"{"""": 159}",0.40394229209050536,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,average,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.27060825005173683,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,complete,ok,,1.0,"{"""": 97, ""empirical_null_inflation"": 62}",0.2987167499959469,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,weighted,ok,,1.0,"{"""": 159}",0.2766553747933358,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,single,ok,,1.0,"{"""": 152, ""empirical_null_inflation"": 7}",0.26723158289678395,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00043400004506111145,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00032708304934203625,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,ward,ok,,1.0,"{"""": 159}",0.2711874172091484,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_09_22,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 124, ""empirical_null_inflation"": 35}",0.4081410001963377,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,average,ok,,1.0,"{"""": 158, ""empirical_null_inflation"": 1}",0.2644452089443803,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,complete,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.27032862487249076,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,weighted,ok,,1.0,"{"""": 127, ""empirical_null_inflation"": 32}",0.28453612490557134,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,single,ok,,1.0,"{"""": 142, ""empirical_null_inflation"": 17}",0.26525108399800956,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0004576249048113823,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00034429109655320644,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,ward,ok,,1.0,"{"""": 159}",0.2743172920309007,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,raw,neighbor_joining,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.3971549170091748,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,average,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.26571358391083777,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,complete,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.28523866599425673,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,weighted,ok,,1.0,"{"""": 159}",0.2653213331941515,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,single,ok,,1.0,"{"""": 153, ""empirical_null_inflation"": 6}",0.2641454169061035,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00048454198986291885,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00033887499012053013,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,ward,ok,,1.0,"{"""": 159}",0.27161120786331594,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_23_31,adaptive_diffusion,neighbor_joining,unsupported,,,"{"""": 80, ""undefined_no_internal_support"": 79}",0.3882497081067413,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,average,ok,,1.0,"{"""": 152, ""empirical_null_inflation"": 7}",0.26970920781604946,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,complete,ok,,1.0,"{"""": 125, ""empirical_null_inflation"": 34}",0.29414575011469424,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,weighted,ok,,1.0,"{"""": 158, ""empirical_null_inflation"": 1}",0.2622152918484062,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,single,ok,,1.0,"{"""": 149, ""empirical_null_inflation"": 10}",0.2572227909695357,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000454082852229476,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0003506250213831663,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,ward,ok,,1.0,"{"""": 124, ""empirical_null_inflation"": 35}",0.2906528750900179,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,raw,neighbor_joining,ok,,1.0,"{"""": 159}",0.4008574162144214,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,average,ok,,1.0,"{"""": 159}",0.2684971250128001,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 159}",0.27405970892868936,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 159}",0.2720969170331955,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,single,ok,,1.0,"{"""": 156, ""empirical_null_inflation"": 3}",0.26660391711629927,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00045495806261897087,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00034029106609523296,
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 159}",0.2734849168919027,0.0
+cont_lowrank_pggn_shrinkage,21300,adaptive_modes_32_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 94, ""empirical_null_inflation"": 65}",0.41667966707609594,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 209, ""empirical_null_inflation"": 110}",1.751417624996975,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 184, ""empirical_null_inflation"": 135}",1.7508120420388877,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 184, ""empirical_null_inflation"": 135}",1.7283573329914361,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 175, ""empirical_null_inflation"": 144}",1.763120791874826,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 209, ""empirical_null_inflation"": 110}",1.737308582989499,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 184, ""empirical_null_inflation"": 135}",1.723782500019297,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 198, ""empirical_null_inflation"": 121}",1.7775835408829153,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,raw,neighbor_joining,ok,,2.0,"{"""": 202, ""empirical_null_inflation"": 117}",2.7885818749200553,0.2519309269639521
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 206, ""empirical_null_inflation"": 113}",1.7298104169312865,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 194, ""empirical_null_inflation"": 125}",1.7243360842112452,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,1.0,"{"""": 213, ""empirical_null_inflation"": 106}",1.7336586250457913,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,single,ok,,1.0,"{"""": 217, ""empirical_null_inflation"": 102}",1.7693880000151694,0.0
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007186250295490026,
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000560833839699626,
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,2.0,"{"""": 191, ""empirical_null_inflation"": 128}",1.7580713331699371,0.24354644956559426
+support_selected_only_fail_closed,21400,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 187, ""empirical_null_inflation"": 132}",2.6397770831827074,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,average,ok,,3.0,"{"""": 201, ""empirical_null_inflation"": 118}",1.737020165892318,0.7103825136612022
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,complete,ok,,4.0,"{"""": 185, ""empirical_null_inflation"": 134}",1.7611482080537826,1.0
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,weighted,ok,,3.0,"{"""": 207, ""empirical_null_inflation"": 112}",1.717005250044167,0.7103825136612022
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,single,ok,,4.0,"{"""": 273, ""empirical_null_inflation"": 46}",1.8057239579502493,1.0
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000862667104229331,
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006047501228749752,
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,ward,ok,,1.0,"{"""": 178, ""empirical_null_inflation"": 141}",1.7430304998997599,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,raw,neighbor_joining,ok,,3.0,"{"""": 223, ""empirical_null_inflation"": 96}",2.616160542005673,0.7103825136612022
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,average,ok,,4.0,"{"""": 185, ""empirical_null_inflation"": 134}",1.7142929590772837,1.0
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,complete,ok,,3.0,"{"""": 185, ""empirical_null_inflation"": 134}",1.7451529169920832,0.7103825136612022
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,weighted,ok,,67.0,"{"""": 163, ""empirical_null_inflation"": 156}",1.7378469579853117,0.0791072185336912
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,single,ok,,1.0,"{"""": 212, ""empirical_null_inflation"": 107}",1.754773624939844,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007085830438882113,
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0005679999012500048,
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,ward,ok,,1.0,"{"""": 185, ""empirical_null_inflation"": 134}",1.7392601249739528,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_02_06,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 179, ""empirical_null_inflation"": 140}",2.614946666872129,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,average,unsupported,,,"{"""": 160, ""undefined_no_internal_support"": 159}",1.7440081660170108,
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,complete,ok,,1.0,"{"""": 209, ""empirical_null_inflation"": 110}",1.7831092500127852,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,weighted,ok,,1.0,"{"""": 215, ""empirical_null_inflation"": 104}",1.8441298340912908,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,single,ok,,1.0,"{"""": 219, ""empirical_null_inflation"": 100}",2.0626311670057476,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000821791123598814,
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007006658706814051,
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,ward,ok,,1.0,"{"""": 237, ""empirical_null_inflation"": 82}",1.6984566249884665,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,raw,neighbor_joining,ok,,1.0,"{"""": 289, ""empirical_null_inflation"": 30}",2.4947095829993486,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,average,ok,,1.0,"{"""": 229, ""empirical_null_inflation"": 90}",1.757829749956727,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 242, ""empirical_null_inflation"": 77}",1.7977063751313835,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 296, ""empirical_null_inflation"": 23}",1.7203137909527868,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,single,unsupported,,,"{"""": 160, ""undefined_no_internal_support"": 159}",1.8178817911539227,
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007074589375406504,
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006638341583311558,
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 318, ""empirical_null_inflation"": 1}",1.6872218330390751,0.0
+support_selected_only_fail_closed,21400,adaptive_modes_07_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 319}",2.5606112498790026,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 2}",0.5772209158167243,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 318, ""empirical_null_inflation"": 1}",0.5816433329600841,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 319}",0.5640186669770628,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 319}",0.5616568748373538,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 2}",0.5668133329600096,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 319}",0.552066459087655,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 318, ""empirical_null_inflation"": 1}",0.5690413750708103,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,raw,neighbor_joining,ok,,2.0,"{"""": 318, ""empirical_null_inflation"": 1}",1.3991871250327677,0.07982766377751227
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 319}",0.5674369579646736,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 2}",0.5682893330231309,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,1.0,"{"""": 318, ""empirical_null_inflation"": 1}",0.5713913340587169,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,single,ok,,2.0,"{"""": 317, ""empirical_null_inflation"": 2}",0.5726244999095798,0.07556195570184461
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008370841387659311,
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006230419967323542,
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,1.0,"{"""": 318, ""empirical_null_inflation"": 1}",0.5827133329585195,0.0
+phylo_brownian_null_16taxa,21500,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 319}",1.4297590830828995,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,average,ok,,4.0,"{"""": 304, ""empirical_null_inflation"": 15}",0.605570208048448,0.27111984282907664
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,complete,ok,,3.0,"{"""": 304, ""empirical_null_inflation"": 15}",0.5885079160798341,0.2156448202959831
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,weighted,ok,,4.0,"{"""": 304, ""empirical_null_inflation"": 15}",0.5764927081763744,0.28054298642533937
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,single,ok,,8.0,"{"""": 304, ""empirical_null_inflation"": 15}",0.5770096669439226,0.46153846153846156
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007621250115334988,
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007123751565814018,
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,ward,ok,,1.0,"{"""": 304, ""empirical_null_inflation"": 15}",0.5849945419467986,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,raw,neighbor_joining,ok,,3.0,"{"""": 305, ""empirical_null_inflation"": 14}",1.4017864998895675,0.208955223880597
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,average,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 2}",0.5664988339412957,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,complete,ok,,1.0,"{"""": 314, ""empirical_null_inflation"": 5}",0.5722736669704318,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,weighted,ok,,1.0,"{"""": 318, ""empirical_null_inflation"": 1}",0.575102417031303,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,single,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 2}",0.5722504172008485,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007699159905314445,
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006002078298479319,
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,ward,ok,,3.0,"{"""": 309, ""empirical_null_inflation"": 10}",0.5679615829139948,0.16355810616929697
+phylo_brownian_null_16taxa,21500,adaptive_modes_02_05,adaptive_diffusion,neighbor_joining,ok,,7.0,"{"""": 305, ""empirical_null_inflation"": 14}",1.4120016251690686,0.4068466096115866
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,average,ok,,1.0,"{"""": 319}",0.5546515421010554,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,complete,ok,,1.0,"{"""": 319}",0.5595639999955893,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,weighted,ok,,1.0,"{"""": 319}",0.56773154088296,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,single,ok,,1.0,"{"""": 319}",0.5708716670051217,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007386670913547277,
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006647498812526464,
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,ward,ok,,1.0,"{"""": 319}",0.5584763751830906,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,raw,neighbor_joining,ok,,1.0,"{"""": 319}",1.4581618749070913,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,average,ok,,1.0,"{"""": 319}",0.5892112089786679,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,complete,ok,,1.0,"{"""": 319}",0.5797227500006557,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,weighted,ok,,1.0,"{"""": 319}",0.5750768750440329,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,single,ok,,1.0,"{"""": 319}",0.5926545839756727,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007767081260681152,
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000622832914814353,
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,ward,ok,,1.0,"{"""": 319}",0.5701472498476505,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_06_10,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 319}",1.4379680829588324,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,average,ok,,1.0,"{"""": 319}",0.577928083948791,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,complete,ok,,1.0,"{"""": 319}",0.5792110830079764,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,weighted,ok,,1.0,"{"""": 319}",0.584010582882911,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,single,ok,,1.0,"{"""": 319}",0.5759420001413673,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007522921077907085,
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006216249894350767,
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,ward,ok,,1.0,"{"""": 319}",0.5753643750213087,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,raw,neighbor_joining,ok,,1.0,"{"""": 319}",1.4377990830689669,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,average,ok,,1.0,"{"""": 319}",0.576987124979496,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,complete,ok,,1.0,"{"""": 319}",0.5742114169988781,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,weighted,ok,,1.0,"{"""": 319}",0.5727842079941183,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,single,ok,,1.0,"{"""": 319}",0.5688221249729395,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008615001570433378,
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007171658799052238,
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,ward,ok,,1.0,"{"""": 317, ""empirical_null_inflation"": 2}",0.581122542032972,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_11_16,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 319}",1.8095509998966008,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,average,ok,,1.0,"{"""": 319}",0.582607040880248,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,complete,ok,,1.0,"{"""": 319}",0.5636527908500284,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,weighted,ok,,1.0,"{"""": 319}",0.5697000839281827,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,single,ok,,1.0,"{"""": 319}",0.6313601250294596,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008949169423431158,
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007870418485254049,
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,ward,ok,,1.0,"{"""": 319}",0.5665245419368148,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,raw,neighbor_joining,ok,,1.0,"{"""": 319}",1.4218387501314282,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,average,ok,,1.0,"{"""": 319}",0.5776652910280973,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,complete,ok,,1.0,"{"""": 319}",0.577859542099759,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,weighted,ok,,1.0,"{"""": 319}",0.5876269158907235,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,single,ok,,1.0,"{"""": 319}",0.6093002089764923,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008247499354183674,
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006551251281052828,
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,ward,ok,,1.0,"{"""": 319}",0.5769285410642624,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_17_26,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 319}",1.4500589580275118,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,average,ok,,1.0,"{"""": 319}",0.5796798749361187,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,complete,ok,,1.0,"{"""": 319}",0.5635385408531874,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,weighted,ok,,1.0,"{"""": 319}",0.5660776668228209,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,single,ok,,1.0,"{"""": 319}",0.6244640001095831,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007992500904947519,
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007998750079423189,
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,ward,ok,,1.0,"{"""": 319}",0.5616809581406415,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,raw,neighbor_joining,ok,,1.0,"{"""": 319}",1.4083529999479651,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,average,ok,,1.0,"{"""": 319}",0.5809992090798914,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 319}",0.6236699998844415,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 319}",0.5743516250513494,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,single,ok,,1.0,"{"""": 319}",0.5928494590334594,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0007836250588297844,
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0006367499008774757,
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 319}",0.5686744588892907,0.0
+phylo_brownian_null_16taxa,21500,adaptive_modes_27_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 319}",1.4230326251126826,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,average,ok,,1.0,"{"""": 479}",1.6310299169272184,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 453, ""empirical_null_inflation"": 26}",1.6099467501044273,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,weighted,ok,,1.0,"{"""": 389, ""empirical_null_inflation"": 90}",1.663332083960995,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,single,ok,,1.0,"{"""": 479}",1.7411202921066433,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,centroid,ok,,1.0,"{"""": 479}",1.6688310839235783,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,median,ok,,1.0,"{"""": 389, ""empirical_null_inflation"": 90}",1.725531083997339,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 368, ""empirical_null_inflation"": 111}",1.7562463330104947,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,raw,neighbor_joining,ok,,1.0,"{"""": 470, ""empirical_null_inflation"": 9}",4.5551860828418285,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,average,ok,,1.0,"{"""": 466, ""empirical_null_inflation"": 13}",1.6467902502045035,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,complete,ok,,1.0,"{"""": 473, ""empirical_null_inflation"": 6}",1.6285337910521775,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,weighted,ok,,1.0,"{"""": 472, ""empirical_null_inflation"": 7}",1.6271149581298232,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,single,ok,,1.0,"{"""": 471, ""empirical_null_inflation"": 8}",1.6255239171441644,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010459998156875372,
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000894750002771616,
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,ward,ok,,1.0,"{"""": 459, ""empirical_null_inflation"": 20}",1.6221435000188649,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 343, ""empirical_null_inflation"": 136}",4.277815249981359,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,average,ok,,4.0,"{"""": 365, ""empirical_null_inflation"": 114}",1.661443459102884,0.6120625814884959
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,complete,ok,,2.0,"{"""": 314, ""empirical_null_inflation"": 165}",1.7025858748238534,0.2021301707619515
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,weighted,ok,,4.0,"{"""": 348, ""empirical_null_inflation"": 131}",1.6611569160595536,0.5873468610482215
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,single,ok,,1.0,"{"""": 465, ""empirical_null_inflation"": 14}",1.7752325420733541,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011244169436395168,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009251660667359829,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,ward,ok,,1.0,"{"""": 347, ""empirical_null_inflation"": 132}",1.6726389578543603,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,raw,neighbor_joining,ok,,3.0,"{"""": 365, ""empirical_null_inflation"": 114}",4.4857062920928,0.4223341088897657
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,average,ok,,1.0,"{"""": 323, ""empirical_null_inflation"": 156}",1.6798828749451786,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,complete,ok,,1.0,"{"""": 338, ""empirical_null_inflation"": 141}",1.6830659999977797,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,weighted,ok,,1.0,"{"""": 374, ""empirical_null_inflation"": 105}",1.6795995407737792,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,single,ok,,4.0,"{"""": 433, ""empirical_null_inflation"": 46}",1.7373710840474814,0.5382297338173019
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011478750966489315,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009109159000217915,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,ward,ok,,1.0,"{"""": 311, ""empirical_null_inflation"": 168}",1.9472934168297797,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_02_06,adaptive_diffusion,neighbor_joining,ok,,2.0,"{"""": 415, ""empirical_null_inflation"": 64}",4.381854542065412,0.2615139312146278
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,average,ok,,1.0,"{"""": 479}",1.6889387911651284,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,complete,ok,,1.0,"{"""": 479}",1.6311450421344489,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,weighted,ok,,1.0,"{"""": 479}",1.6361468338873237,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,single,ok,,1.0,"{"""": 479}",1.8747031670063734,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.00110008311457932,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009337498340755701,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,ward,ok,,1.0,"{"""": 377, ""empirical_null_inflation"": 102}",1.706766082905233,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,raw,neighbor_joining,ok,,1.0,"{"""": 479}",4.3935009588021785,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,average,ok,,1.0,"{"""": 479}",1.6134163339156657,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,complete,ok,,1.0,"{"""": 304, ""empirical_null_inflation"": 175}",1.7227570000104606,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,weighted,ok,,1.0,"{"""": 479}",1.6140092078130692,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,single,ok,,1.0,"{"""": 479}",1.7087247499730438,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011222499888390303,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0008979171980172396,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,ward,ok,,1.0,"{"""": 479}",1.6091360000427812,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_07_10,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 479}",4.351471375208348,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,average,ok,,1.0,"{"""": 479}",1.6485435829963535,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,complete,ok,,1.0,"{"""": 479}",1.60627158312127,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,weighted,ok,,1.0,"{"""": 479}",1.6220923750661314,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,single,ok,,1.0,"{"""": 479}",2.0286647079046816,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011915420182049274,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011202499736100435,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,ward,ok,,1.0,"{"""": 338, ""empirical_null_inflation"": 141}",1.667644334025681,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,raw,neighbor_joining,ok,,1.0,"{"""": 381, ""empirical_null_inflation"": 98}",4.468956749886274,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,average,ok,,1.0,"{"""": 467, ""empirical_null_inflation"": 12}",1.611227334011346,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 479}",1.5887267920188606,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,weighted,ok,,1.0,"{"""": 469, ""empirical_null_inflation"": 10}",1.617752666119486,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,single,ok,,1.0,"{"""": 476, ""empirical_null_inflation"": 3}",1.8646823749877512,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001150582917034626,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011372920125722885,
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,ward,ok,,1.0,"{"""": 325, ""empirical_null_inflation"": 154}",1.8916756249964237,0.0
+traversal_deep_signal_under_same_parent,21600,adaptive_modes_11_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 434, ""empirical_null_inflation"": 45}",4.290477582952008,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,average,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3724464578554034,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,complete,ok,,1.0,"{"""": 261, ""empirical_null_inflation"": 218}",2.458951083011925,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.361137874890119,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.386385415913537,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,centroid,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.368719916092232,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,median,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.4153007499407977,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,ward,ok,,1.0,"{"""": 257, ""empirical_null_inflation"": 222}",2.4347147080115974,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,raw,neighbor_joining,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",5.314034250099212,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,average,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.378001708071679,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,complete,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.36811212496832,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.358651916962117,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.389659750042483,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001087374985218048,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010863749776035547,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,ward,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3817208749242127,
+traversal_deep_branch_recovery_stress,21601,adaptive_common_mode_01,adaptive_diffusion,neighbor_joining,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",5.081586374901235,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,average,ok,,5.0,"{"""": 390, ""empirical_null_inflation"": 89}",2.3625347081106156,0.8204357625845229
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,complete,ok,,4.0,"{"""": 295, ""empirical_null_inflation"": 184}",2.3804717920720577,0.6796246648793566
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,weighted,ok,,4.0,"{"""": 373, ""empirical_null_inflation"": 106}",2.3683905829675496,0.6796246648793566
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,single,ok,,5.0,"{"""": 451, ""empirical_null_inflation"": 28}",2.431921749841422,0.8204357625845229
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011286658700555563,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009380420669913292,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,ward,ok,,2.0,"{"""": 399, ""empirical_null_inflation"": 80}",2.4460587908979505,0.2716586852416195
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,raw,neighbor_joining,ok,,4.0,"{"""": 344, ""empirical_null_inflation"": 135}",5.279298958135769,0.6796246648793566
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,average,ok,,4.0,"{"""": 355, ""empirical_null_inflation"": 124}",2.33332333387807,0.5662431941923775
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,complete,ok,,6.0,"{"""": 365, ""empirical_null_inflation"": 114}",2.347661708947271,1.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,weighted,ok,,6.0,"{"""": 399, ""empirical_null_inflation"": 80}",2.373352166963741,1.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,single,ok,,5.0,"{"""": 365, ""empirical_null_inflation"": 114}",2.430043124826625,0.8204357625845229
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001049125101417303,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000983458012342453,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,ward,ok,,2.0,"{"""": 307, ""empirical_null_inflation"": 172}",2.3463242910802364,0.32865168539325845
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_02_06,adaptive_diffusion,neighbor_joining,ok,,6.0,"{"""": 356, ""empirical_null_inflation"": 123}",5.214781832881272,1.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,average,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.653691708808765,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,complete,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.52816224982962,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.4878697500098497,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.7136631249450147,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001159916864708066,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.000926624983549118,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,ward,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.4228159999474883,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,raw,neighbor_joining,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",5.086018250091001,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,average,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3585390420630574,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,complete,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3370082499459386,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.355224208906293,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.474298540968448,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0010778331197798252,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009154588915407658,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,ward,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3407697919756174,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_07_10,adaptive_diffusion,neighbor_joining,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",5.033619084162638,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,average,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.438858416862786,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,complete,ok,,58.0,"{"""": 245, ""empirical_null_inflation"": 234}",2.5551550001837313,-0.0009131245045261922
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.403273790841922,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.6822889579925686,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011160410940647125,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009534170385450125,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,ward,ok,,1.0,"{"""": 479}",2.3153535001911223,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,raw,neighbor_joining,ok,,1.0,"{"""": 244, ""empirical_null_inflation"": 235}",5.156054874882102,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,average,ok,,1.0,"{"""": 260, ""empirical_null_inflation"": 219}",2.447211916791275,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,complete,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3160340830218047,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3777739580255,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.503767583053559,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001080125104635954,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009222498629242182,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,ward,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.3501016250811517,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_11_17,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 258, ""empirical_null_inflation"": 221}",5.334151375107467,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,average,ok,,1.0,"{"""": 262, ""empirical_null_inflation"": 217}",2.5367808751761913,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,complete,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.4010725000407547,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.392595333047211,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.8315248750150204,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0012487920466810465,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0011185419280081987,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,ward,ok,,1.0,"{"""": 258, ""empirical_null_inflation"": 221}",2.484729249961674,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,raw,neighbor_joining,ok,,1.0,"{"""": 471, ""empirical_null_inflation"": 8}",5.093541332986206,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,average,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.346414083847776,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,complete,ok,,1.0,"{"""": 275, ""empirical_null_inflation"": 204}",2.4140058329794556,0.0
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,weighted,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.338695584097877,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,single,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.6052346660289913,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,centroid,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.001082457834854722,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,median,failed_tree,ValueError('merge distances must be nondecreasing to compute branch lengths.'),,,0.0009332499466836452,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,ward,unsupported,,,"{"""": 240, ""undefined_no_internal_support"": 239}",2.354832125129178,
+traversal_deep_branch_recovery_stress,21601,adaptive_modes_18_40,adaptive_diffusion,neighbor_joining,ok,,1.0,"{"""": 285, ""empirical_null_inflation"": 194}",5.175614082952961,0.0

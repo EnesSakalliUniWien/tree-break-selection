@@ -1,0 +1,32 @@
+{
+  "train_seed": 2026092806,
+  "test_seed": 2026092807,
+  "n_train_unconditional": 100000,
+  "n_test_unconditional": 200000,
+  "alphas": [
+    0.001,
+    0.005,
+    0.01,
+    0.05
+  ],
+  "cases": [
+    "fixed_rank1",
+    "correlated_rank2",
+    "energy_0.9_rank1",
+    "energy_0.9_rank2",
+    "energy_0.5_rank1",
+    "radial_selected_rank2",
+    "aligned_rank1"
+  ],
+  "source_sha256": {
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py": "3e2534d0ab7c066a3ca0ab4ad7514598b234a860e74a29b5d53ddca30a7583b2",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py": "673dfa4322bcb9a6a6ecaafa1af9ae5da79a44f44c9d57bc5940b02a6522bb1d",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py": "c1648985583f44e9edf7cfb3b7dad20bf28b6bac38c4f8a294b432648df514d1",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/selected_gaussian_radial.py": "b5ab7d93ea358f4e83b616d2aabb9b59010c583c031644260677948bf23babc7",
+    "raw/inbox/wolfram-distribution-fitting-20260928.md": "6ab820b7b94ba673ef1e12536dc3a70705ed0e9ce5357bd5c6e23b345caa7604",
+    "raw/assets/benchmark-results/selected_tail_equation_cloud_run_20260604_1000/candidate_equation_holdout.csv": "8a1486fbe823b966646fbf982a1ac4b2eca44428257823876655d08fd90d637e",
+    "raw/assets/benchmark-results/selected_tail_equation_cloud_run_20260604_1000/selected_ratio_tail_law.csv": "df512dc03cecd716fe2345b162410e74a5adcbcb201bed6142ad4da5443ee1a0"
+  },
+  "script_sha256": "eee1f60e4857f34d38af48f0d0b567c6756419a65cae13734846265f51bf3104",
+  "fit_policy": "Fit once to independent training contrasts, separately per case/selected rank. No tuning on evaluation data. Conditional samples have random sizes; cases share matched draws."
+}

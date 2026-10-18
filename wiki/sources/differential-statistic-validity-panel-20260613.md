@@ -2,10 +2,8 @@
 title: Differential Statistic Validity Panel 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
-  - tests/validation/calibration/statistics/96_test_differential_statistic_validity_panel.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
   - benchmarks/validation/statistics/selected_edge_type1_geometry.py
 tags:
@@ -63,6 +61,7 @@ stability before any production promotion.
   `differential_statistic_validity_summary.csv`,
   `production_admissibility_components.csv`,
   `production_admissibility_summary.csv`, and `manifest.json`.
+- `benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

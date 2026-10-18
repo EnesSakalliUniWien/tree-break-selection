@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import replace
 from time import perf_counter
 
 import networkx as nx
@@ -11,27 +11,13 @@ import pandas as pd
 
 from tree_break_selection.tree.feature_space import FeatureSpace
 
+from ...projection.spectral.spectral_decomposition_result import SpectralDecompositionResult
 from ...projection.spectral.tree_estimator import (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
     compute_spectral_decomposition,
 )
 
 EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION = 2
-
-
-@dataclass
-class SpectralContext:
-    """Edge-gate spectral outputs reused by sibling-divergence tests."""
-
-    test_projection_dimensions_by_node: dict[str, int]
-    raw_mp_signal_counts_by_node: dict[str, int]
-    effective_independent_rows_by_node: dict[str, int]
-    mp_threshold_rows_by_node: dict[str, int]
-    principal_component_projections_by_node: dict[str, np.ndarray]
-    principal_component_eigenvalues_by_node: dict[str, np.ndarray]
-    full_component_eigenvalues_by_node: dict[str, np.ndarray] = field(default_factory=dict)
-    active_feature_counts_by_node: dict[str, int] = field(default_factory=dict)
-    stage_timings: dict[str, float] = field(default_factory=dict)
 
 
 def _validate_spectral_context_outputs(
@@ -103,7 +89,7 @@ def compute_child_parent_spectral_context(
     feature_space: FeatureSpace | None = None,
     include_internal_barycenters: bool = False,
     internal_distribution_mode: str = INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
-) -> SpectralContext:
+) -> SpectralDecompositionResult:
     """Prepare Marchenko-Pastur spectral context for the edge gate."""
     start_sec = perf_counter()
     spectral_decomposition = compute_spectral_decomposition(
@@ -124,31 +110,10 @@ def compute_child_parent_spectral_context(
     stage_timings = dict(spectral_decomposition.stage_timings)
     stage_timings["spectral_context_sec"] = float(perf_counter() - start_sec)
 
-    return SpectralContext(
-        test_projection_dimensions_by_node=(
-            spectral_decomposition.test_projection_dimensions_by_node
-        ),
-        raw_mp_signal_counts_by_node=spectral_decomposition.raw_mp_signal_counts_by_node,
-        effective_independent_rows_by_node=(
-            spectral_decomposition.effective_independent_rows_by_node
-        ),
-        mp_threshold_rows_by_node=spectral_decomposition.mp_threshold_rows_by_node,
-        principal_component_projections_by_node=(
-            spectral_decomposition.principal_component_projections_by_node
-        ),
-        principal_component_eigenvalues_by_node=(
-            spectral_decomposition.principal_component_eigenvalues_by_node
-        ),
-        full_component_eigenvalues_by_node=(
-            spectral_decomposition.full_component_eigenvalues_by_node
-        ),
-        active_feature_counts_by_node=spectral_decomposition.active_feature_counts_by_node,
-        stage_timings=stage_timings,
-    )
+    return replace(spectral_decomposition, stage_timings=stage_timings)
 
 
 __all__ = [
     "EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION",
-    "SpectralContext",
     "compute_child_parent_spectral_context",
 ]

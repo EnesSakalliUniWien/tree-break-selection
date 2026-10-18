@@ -2,10 +2,9 @@
 title: Refined Profile All-Benchmark Tests 2026-06-14
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
   - raw/inbox/refined-profile-all-benchmark-tests-20260614.md
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - benchmarks/shared/runners/tbs_runner.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
 tags:
@@ -74,6 +73,7 @@ continuous feature families fail the current covariance contract.
   runner used by the full-suite performance pass.
 - `tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py`
   defines the refined profile and selected-family guard behavior.
+- `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

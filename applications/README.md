@@ -10,11 +10,19 @@ benchmark orchestration contracts in `benchmarks/shared/`.
 | Endotype KAK geometry | `python applications/endotypes/plots/kak_signal_adaptive_umap_tree_page.py --help` | KAK/cosine geometry and tree pages from matrix-probe outputs |
 | Pancreas scRNA | `python applications/scrna/pancreas_benchmark.py --help` | Adult pancreas benchmark and TBS application |
 | Goncalves fetal pancreas | `python applications/scrna/goncalves_benchmark.py --help` | Fetal pancreas/endocrine lineage application |
-| scRNA space separation | `python applications/scrna/analyze_space_decomposition.py --help` | Invariant/equivariant diagnostic through the main method interface |
+| scRNA space separation | `python applications/scrna/analyze_space_decomposition.py --help` | Leading/following PCA-axis diagnostic through the main method interface |
 | scRNA plot suite | `python applications/scrna/plot_pipeline.py --help` | Dataset-specific plot orchestration and manifest |
 | scRNA follow-up analyses | `applications/scrna/analysis/` | Branch-length/action audits and pancreas progenitor comparisons |
 | scRNA report generators | `applications/scrna/plots/` | Dataset-specific Python/R report and figure composition |
 | MNIST figures | `python applications/mnist/plot_interactive.py` | Interactive digit/tree inspection using saved benchmark outputs |
+
+## Output locations
+
+Scripts that create new results write to `results/analyses/<report>_<YYYYMMDD_HHMMSS>/`
+by default (`applications/output_dirs.py`). Scripts that read and write one benchmark run
+in place (`applications/scrna/plot_pipeline.py`, its plot generators, the R tree renderers
+and the scRNA follow-up analyses) require `--output-dir`. Retained evidence under
+`raw/assets/benchmark-results/` is written only when that path is passed explicitly.
 
 Benchmark cases, calibration panels, and method-comparison experiments remain
 under `benchmarks/`; they validate the method rather than adapt one application.

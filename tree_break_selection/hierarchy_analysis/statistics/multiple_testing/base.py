@@ -12,22 +12,20 @@ the Royal Statistical Society Series B, 57, 289-300.
 
 from __future__ import annotations
 
-from typing import Tuple
-
 import numpy as np
-from statsmodels.stats.multitest import multipletests
+from scipy.stats import false_discovery_control
 
 
 def benjamini_hochberg_correction(
-    p_values: np.ndarray, alpha: float = 0.05
-) -> Tuple[np.ndarray, np.ndarray, float]:
+    p_values: np.ndarray, alpha: float
+) -> tuple[np.ndarray, np.ndarray]:
     """Apply Benjamini-Hochberg FDR correction to p-values.
 
     Parameters
     ----------
     p_values : np.ndarray
         Array of p-values to correct
-    alpha : float, default=0.05
+    alpha : float
         Significance level for FDR control
 
     Returns
@@ -36,19 +34,17 @@ def benjamini_hochberg_correction(
         Boolean array indicating which null hypotheses are rejected
     adjusted_p_values : np.ndarray (float)
         FDR-adjusted p-values
-    alpha_threshold : float
-        The significance level used
 
     Notes
     -----
     Returns empty arrays if input is empty (guards against edge cases).
-    Uses statsmodels implementation of Benjamini-Hochberg procedure.
+    Uses scipy's Benjamini-Hochberg adjustment; rejection is ``adjusted <= alpha``.
 
     Examples
     --------
     >>> import numpy as np
     >>> p_values = np.array([0.001, 0.01, 0.03, 0.05, 0.1])
-    >>> rejected, adjusted, alpha = benjamini_hochberg_correction(p_values)
+    >>> rejected, adjusted = benjamini_hochberg_correction(p_values, alpha=0.05)
     >>> rejected
     array([ True,  True,  True, False, False])
     """
@@ -66,20 +62,12 @@ def benjamini_hochberg_correction(
     if p_values_array.size == 0:
         empty_rejected = np.array([], dtype=bool)
         empty_adjusted = np.array([], dtype=float)
-        return empty_rejected, empty_adjusted, alpha_threshold
+        return empty_rejected, empty_adjusted
 
-    rejected, adjusted, _, _ = multipletests(
-        p_values_array,
-        alpha=alpha_threshold,
-        method="fdr_bh",
-        is_sorted=False,
-        returnsorted=False,
-    )
+    adjusted_p_values = false_discovery_control(p_values_array, method="bh").astype(float)
+    rejected_hypotheses = adjusted_p_values <= alpha_threshold
 
-    rejected_hypotheses = rejected.astype(bool)
-    adjusted_p_values = adjusted.astype(float)
-
-    return rejected_hypotheses, adjusted_p_values, alpha_threshold
+    return rejected_hypotheses, adjusted_p_values
 
 
 __all__ = ["benjamini_hochberg_correction"]

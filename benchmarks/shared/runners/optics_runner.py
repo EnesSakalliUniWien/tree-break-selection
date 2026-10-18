@@ -6,8 +6,8 @@ import numpy as np
 from sklearn.cluster import OPTICS
 
 from benchmarks.shared.types.method_run_result import MethodRunResult
-from benchmarks.shared.util.core import _normalize_labels
-from benchmarks.shared.util.decomposition import _ok_result_from_labels
+from benchmarks.shared.util.core import normalize_labels
+from benchmarks.shared.util.decomposition import ok_result_from_labels
 
 
 def _run_optics_method(
@@ -19,7 +19,7 @@ def _run_optics_method(
     n_samples = int(distance_matrix.shape[0])
     if n_samples <= 1:
         labels = np.zeros(n_samples, dtype=int)
-        return _ok_result_from_labels(labels, range(n_samples))
+        return ok_result_from_labels(labels, range(n_samples))
 
     # Kept for the shared runner signature; OPTICS is deterministic for fixed
     # precomputed distances and does not accept a random_state parameter.
@@ -34,5 +34,5 @@ def _run_optics_method(
         xi=xi,
         min_cluster_size=min_cluster_size,
     )
-    labels = _normalize_labels(model.fit_predict(distance_matrix))
-    return _ok_result_from_labels(labels, range(n_samples))
+    labels = normalize_labels(model.fit_predict(distance_matrix))
+    return ok_result_from_labels(labels, range(n_samples))

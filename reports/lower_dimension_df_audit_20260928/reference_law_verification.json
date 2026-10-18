@@ -1,0 +1,26 @@
+{
+  "passed_arithmetic_checks": true,
+  "seed": 2026092803,
+  "independent_contrasts": 100000,
+  "ambient_dimension": 8,
+  "alpha": 0.01,
+  "production_kernel_cross_checks": 1024,
+  "tie_extended_actual_df": 2,
+  "aligned_rank1_exact_null_law": "chi_square_8 despite rank one",
+  "aligned_rank1_exact_rejection_probability_using_df1": 0.5764867723089577,
+  "correlated_example_operator_weights": [
+    1.8,
+    0.2
+  ],
+  "correlated_example_satterthwaite_scale": 1.6400000000000001,
+  "correlated_example_satterthwaite_df": 1.2195121951219512,
+  "source_sha256_before_and_after": {
+    "tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py": "3e2534d0ab7c066a3ca0ab4ad7514598b234a860e74a29b5d53ddca30a7583b2",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py": "673dfa4322bcb9a6a6ecaafa1af9ae5da79a44f44c9d57bc5940b02a6522bb1d",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py": "c1648985583f44e9edf7cfb3b7dad20bf28b6bac38c4f8a294b432648df514d1",
+    "benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py": "5cd34245eb16f0d9f034a82273e1e5d64b86fb9251c766a8b0696f0ab2cb8021"
+  },
+  "script_sha256": "78c69cc635cf4184571720ccd86dfb9dcece15f55ae8e06f251cee4befae6c10",
+  "scope": "Independent Gaussian contrasts with known covariance, no tree or empirical inflation. Aligned-direction case is an analytic counterexample, not the production PCA algorithm. Energy-fraction case implements the production kernel rank rule with a fixed supplied basis. Satterthwaite is a moment approximation, not exact calibration. Method rows share matched draws."
+}

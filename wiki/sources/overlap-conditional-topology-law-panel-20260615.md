@@ -2,14 +2,10 @@
 title: Overlap Conditional Topology Law Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py
-  - tests/validation/calibration/overlap/134_test_overlap_conditional_topology_law_panel.py
   - raw/inbox/c2ef-cosine-subspace-method-notes-20260615.md
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
-  - benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py
-  - benchmarks/shared/runners/method_registry.py
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_rows.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_component_summary.csv
   - raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/overlap_conditional_topology_law_summary.csv
@@ -43,7 +39,7 @@ tags:
 `overlap_conditional_topology_law_panel.py` makes the selected-neighborhood
 topology object directed and incidence-aware. It scores root, internal,
 pass-through, and leaf rows using local income/outcome topology features only:
-no cross-fit split, no selected-family permutation replay, and no learned
+no data partition, no selected-family permutation replay, and no learned
 threshold.
 
 ## Key Points
@@ -91,12 +87,13 @@ threshold.
   context-negative overlap slice, it recovers `0` rows because the only truth
   row remains support-insufficient. This is the desired fail-closed boundary:
   coherent topology evidence is necessary but not enough without support.
-- The diagnostic profile
-  `fixed_coordinate_conditional_topology_diagnostic_v1` is now registered for
-  benchmark selection. It does not apply the topology law during traversal.
-  Multi-scale node decisions expose directed incidence fields and a
-  fail-closed conditional-topology status placeholder.
-- In the 17-case regression gate, the benchmark-facing profile runs without
+- The historical benchmark method `tbs_conditional_topology_diagnostic`
+  resolved through `fixed_coordinate_guarded_v1` and did not apply the topology
+  law during traversal. The behavior-identical method alias is now retired;
+  raw regression artifacts retain the predecessor
+  `kl_conditional_topology_diagnostic` ID, while wiki history preserves the
+  later alias and the topology-law panel remains a separate diagnostic.
+- In the 17-case regression gate, the historical benchmark alias ran without
   skips, has mean ARI `0.460293`, median ARI `0.480000`, and exact-K count
   `4/17`. This is a runnable diagnostic profile, not a production improvement
   over all existing cases.
@@ -141,11 +138,10 @@ threshold.
   `raw/assets/benchmark-results/overlap_structural_sibling_replicates_20260614/conditional_topology_law/`.
 - The old/current topology-neighborhood smoke is stored under
   `raw/assets/benchmark-results/old_vs_current_method_stack_20260615/topology_neighborhood_conditional_law_smoke/`.
+- `benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 
 - [[overlap-context-negative-bayesian-topology-law-20260615]]
-- [[overlap-context-negative-bayesian-topology-sensitivity-20260615]]
-- [[overlap-context-negative-topology-transfer-20260615]]
 - [[topology-vector-benchmark-20260615]]
 - [[open-mathematical-questions]]

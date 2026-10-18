@@ -9,20 +9,26 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
 import pandas as pd
 
-from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
+from benchmarks.cloud import sharding
+from benchmarks.cloud.sharding import (
+    iter_expected_shard_dirs,
+    validate_shard_contract,
+    write_json,
+)
+from benchmarks.shared.env import resolve_aws_batch_shard_index
+from benchmarks.shared.util.provenance import current_git_state
+from benchmarks.shared.util.values import parse_csv_list
 from benchmarks.validation.sweeps.alpha_grid_search import (
     DEFAULT_EDGE_ALPHA_GRID,
     DEFAULT_SIBLING_ALPHA_GRID,
     AlphaGridConfig,
     build_alpha_pairs,
-    current_git_state,
     parse_float_grid,
     run_alpha_grid_search,
 )
@@ -59,24 +65,6 @@ class AlphaGridShardSpec:
     alpha_pair_indices: tuple[int, ...]
 
 
-def parse_case_names(raw_case_names: str | None) -> tuple[str, ...]:
-    """Parse optional comma-separated benchmark case names."""
-    if raw_case_names is None:
-        return ()
-    return tuple(item.strip() for item in raw_case_names.split(",") if item.strip())
-
-
-def validate_shard_contract(*, shard_index: int, shard_count: int) -> None:
-    """Validate shard dimensions before launching compute."""
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    if not 0 <= shard_index < shard_count:
-        raise ValueError(
-            f"shard_index must satisfy 0 <= index < shard_count; got "
-            f"{shard_index!r} with shard_count={shard_count!r}."
-        )
-
-
 def make_shard_spec(configured: AwsAlphaGridConfig, shard_index: int) -> AlphaGridShardSpec:
     """Build the concrete shard output path and assigned alpha-pair subset."""
     validate_shard_contract(
@@ -97,25 +85,10 @@ def make_shard_spec(configured: AwsAlphaGridConfig, shard_index: int) -> AlphaGr
     return AlphaGridShardSpec(
         shard_index=int(shard_index),
         shard_count=int(configured.shard_count),
-        output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
+        output_dir=sharding.shard_dir(configured.output_dir, shard_index),
         alpha_pairs=tuple(pair for _index, pair in selected),
         alpha_pair_indices=tuple(index for index, _pair in selected),
     )
-
-
-def sync_path_to_s3(local_path: Path, s3_uri: str) -> None:
-    """Sync a local output directory to S3 with the AWS CLI."""
-    subprocess.run(("aws", "s3", "sync", str(local_path), s3_uri), check=True)
-
-
-def sync_s3_to_path(s3_uri: str, local_path: Path) -> None:
-    """Sync S3 outputs into the local filesystem."""
-    local_path.mkdir(parents=True, exist_ok=True)
-    subprocess.run(("aws", "s3", "sync", s3_uri, str(local_path)), check=True)
-
-
-def _write_json(path: Path, payload: dict[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 def run_shard(configured: AwsAlphaGridConfig, shard_index: int) -> dict[str, object]:
@@ -154,20 +127,10 @@ def run_shard(configured: AwsAlphaGridConfig, shard_index: int) -> dict[str, obj
             "before interpreting the full grid."
         ),
     }
-    _write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
+    write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(
-            spec.output_dir,
-            f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}",
-        )
+        sharding.publish_shard(spec.output_dir, configured.s3_uri, shard_index)
     return outputs
-
-
-def iter_expected_shard_dirs(output_dir: Path, shard_count: int) -> tuple[Path, ...]:
-    """Return the canonical shard directories for a completed array job."""
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    return tuple(output_dir / "shards" / f"shard_{index:04d}" for index in range(shard_count))
 
 
 def load_shard_summary(shard_dir: Path) -> pd.DataFrame:
@@ -197,10 +160,7 @@ def load_shard_results(shard_dir: Path) -> pd.DataFrame:
 def merge_shards(configured: AwsAlphaGridConfig) -> dict[str, pd.DataFrame]:
     """Merge all expected alpha-grid shard directories."""
     if configured.s3_uri is not None:
-        sync_s3_to_path(
-            f"{configured.s3_uri.rstrip('/')}/shards",
-            configured.output_dir / "shards",
-        )
+        sharding.fetch_shards(configured.s3_uri, configured.output_dir)
 
     shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     summary = pd.concat(
@@ -252,9 +212,9 @@ def merge_shards(configured: AwsAlphaGridConfig) -> dict[str, pd.DataFrame]:
             "It does not prove selected-tree Type-I error control."
         ),
     }
-    _write_json(merged_dir / COMBINED_MANIFEST_NAME, manifest)
+    write_json(merged_dir / COMBINED_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
+        sharding.publish_merged(merged_dir, configured.s3_uri)
     return {"summary": summary, "results": results}
 
 
@@ -296,7 +256,7 @@ def _parse_args() -> argparse.Namespace:
 def _config_from_args(args: argparse.Namespace) -> AwsAlphaGridConfig:
     return AwsAlphaGridConfig(
         suite=str(args.suite),
-        case_names=parse_case_names(args.case_names),
+        case_names=parse_csv_list(args.case_names),
         output_dir=Path(args.output_dir),
         edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alphas=parse_float_grid(str(args.sibling_alphas)),
@@ -310,7 +270,7 @@ def main() -> None:
     args = _parse_args()
     configured = _config_from_args(args)
     if args.command == "run-shard":
-        shard_index = resolve_shard_index(args.shard_index)
+        shard_index = resolve_aws_batch_shard_index(args.shard_index)
         run_shard(configured, shard_index)
         print(
             f"Wrote alpha-grid shard {shard_index} to {make_shard_spec(configured, shard_index).output_dir}"
@@ -334,15 +294,10 @@ __all__ = [
     "SHARD_MANIFEST_NAME",
     "RESULTS_NAME",
     "SUMMARY_NAME",
-    "iter_expected_shard_dirs",
     "load_shard_results",
     "load_shard_summary",
     "make_shard_spec",
     "merge_shards",
-    "parse_case_names",
-    "resolve_shard_index",
     "run_shard",
-    "sync_s3_to_path",
-    "sync_path_to_s3",
     "validate_shard_contract",
 ]

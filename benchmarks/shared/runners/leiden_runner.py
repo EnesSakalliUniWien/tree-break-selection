@@ -6,11 +6,11 @@ import numpy as np
 
 from benchmarks.shared.types.method_run_result import MethodRunResult
 from benchmarks.shared.util.core import (
-    _knn_edge_weights,
-    _normalize_labels,
-    _resolve_n_neighbors,
+    knn_edge_weights,
+    normalize_labels,
+    resolve_n_neighbors,
 )
-from benchmarks.shared.util.decomposition import _ok_result_from_labels
+from benchmarks.shared.util.decomposition import ok_result_from_labels
 
 
 def _run_leiden_method(
@@ -20,12 +20,12 @@ def _run_leiden_method(
 ) -> MethodRunResult:
     """Run Leiden on a precomputed distance matrix."""
     n_samples = distance_matrix.shape[0]
-    n_neighbors = _resolve_n_neighbors(n_samples, int(params["n_neighbors"]))
+    n_neighbors = resolve_n_neighbors(n_samples, int(params["n_neighbors"]))
     resolution = float(params["resolution"])
-    edges = _knn_edge_weights(distance_matrix, n_neighbors)
+    edges = knn_edge_weights(distance_matrix, n_neighbors)
     if not edges:
         labels = np.zeros(n_samples, dtype=int)
-        return _ok_result_from_labels(labels, range(n_samples))
+        return ok_result_from_labels(labels, range(n_samples))
 
     import igraph
     import leidenalg
@@ -41,5 +41,5 @@ def _run_leiden_method(
         resolution_parameter=resolution,
         seed=seed,
     )
-    labels = _normalize_labels(np.asarray(partition.membership))
-    return _ok_result_from_labels(labels, range(n_samples))
+    labels = normalize_labels(np.asarray(partition.membership))
+    return ok_result_from_labels(labels, range(n_samples))

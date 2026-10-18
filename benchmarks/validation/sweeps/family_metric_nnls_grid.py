@@ -20,14 +20,10 @@ import numpy as np
 import pandas as pd
 from sklearn.covariance import ledoit_wolf_shrinkage
 from sklearn.metrics import adjusted_rand_score
-from tree_break_selection.tree.feature_space import FeatureSpace
-from tree_break_selection.tree.optimized_branch_lengths import (
-    BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
-    BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
-)
 
 from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.metrics import _calculate_ari_nmi_purity_metrics
+from benchmarks.shared.metrics import calculate_clustering_metrics
+from benchmarks.shared.performance_grid import markdown_table
 from benchmarks.shared.runners.tbs_diffusion_runner import (
     _run_tbs_diffusion_graphtools_method,
 )
@@ -38,6 +34,16 @@ from benchmarks.shared.tree_consensus import (
 )
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import bool_series, bool_sum, finite_min, parse_csv_list
+from tree_break_selection.tree.construction import (
+    SUPPORTED_LINKAGE_METHODS,
+)
+from tree_break_selection.tree.feature_space import FeatureSpace
+from tree_break_selection.tree.optimized_branch_lengths import (
+    BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
+    BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+)
+from tree_break_selection.tree.topology import tree_root
 
 SCHEMA_VERSION = "family_metric_nnls_grid/v1"
 GENERATED_BY = "benchmarks.validation.sweeps.family_metric_nnls_grid"
@@ -50,16 +56,6 @@ DEFAULT_CASE_NAMES = (
     "overlap_mod_4c_small",
     "sbm_moderate",
     "cat_clear_3cat_4c",
-)
-TOPOLOGIES = (
-    "average",
-    "complete",
-    "weighted",
-    "single",
-    "centroid",
-    "median",
-    "ward",
-    "neighbor_joining",
 )
 BRANCH_MODES = ("none", "normalized_branch_length")
 
@@ -265,45 +261,21 @@ def build_family_geometry(
 
 
 def _topology_parameters(topology: str) -> dict[str, str]:
-    if topology == "neighbor_joining":
-        return {
-            "tree_builder": "neighbor_joining",
-            "tree_rooting": "mad",
-            "tree_linkage_method": "average",
-        }
-    if topology not in TOPOLOGIES:
+    if topology not in SUPPORTED_LINKAGE_METHODS:
         raise ValueError(f"Unknown topology {topology!r}.")
     return {
-        "tree_builder": "linkage",
-        "tree_rooting": "linkage_root",
         "tree_linkage_method": topology,
     }
 
 
 def _run_id(topology: str) -> str:
-    if topology == "neighbor_joining":
-        return "family_metric_tree_builder_neighbor_joining"
     return f"family_metric_tree_linkage_method_{topology}"
-
-
-def _bool_sum(frame: pd.DataFrame, column: str) -> int:
-    if column not in frame.columns:
-        return 0
-    return int(
-        frame[column].map(lambda value: str(value).strip().lower() in {"true", "1", "yes"}).sum()
-    )
 
 
 def _root_child_fraction(tree: object) -> float:
     if tree is None:
         return math.nan
-    root = tree.graph.get("root")
-    if root is None:
-        roots = [node for node, degree in tree.in_degree() if degree == 0]
-        root = roots[0] if len(roots) == 1 else None
-    if root is None:
-        return math.nan
-    children = list(tree.successors(root))
+    children = list(tree.successors(tree_root(tree)))
     if len(children) != 2:
         return math.nan
     sizes = []
@@ -314,6 +286,11 @@ def _root_child_fraction(tree: object) -> float:
 
 
 def _normalized_branch_residual(extra: Mapping[str, object]) -> float:
+    normalized = float(
+        extra.get("branch_length_optimization_residual_rmse_to_target_mean", math.nan)
+    )
+    if math.isfinite(normalized):
+        return normalized
     rmse = float(extra.get("branch_length_optimization_residual_rmse", math.nan))
     target_mean = float(extra.get("branch_length_optimization_target_mean", math.nan))
     if not math.isfinite(rmse) or not math.isfinite(target_mean) or target_mean <= 0.0:
@@ -369,11 +346,6 @@ def _branch_k_cut_labels(
         sample: cluster_id for cluster_id, part in enumerate(parts) for sample in part
     }
     return np.asarray([cluster_by_sample[sample] for sample in sample_labels], dtype=int)
-
-
-def _finite_min(series: pd.Series) -> float:
-    values = pd.to_numeric(series, errors="coerce").dropna()
-    return float(values.min()) if not values.empty else math.nan
 
 
 def _true_cluster_clade_audit(
@@ -463,12 +435,13 @@ def _result_row(
                 "davies_bouldin_index": math.nan,
                 "calinski_harabasz_index": math.nan,
                 "largest_cluster_fraction": math.nan,
+                "singleton_fraction": math.nan,
             }
         )
         return base, []
 
     extra = result.extra or {}
-    metrics = _calculate_ari_nmi_purity_metrics(
+    metrics = calculate_clustering_metrics(
         result.report_df,
         geometry.embedding.index,
         np.asarray(case["_true_labels"]),
@@ -489,7 +462,7 @@ def _result_row(
             {"cluster_id": topology_labels},
             index=geometry.embedding.index,
         )
-        topology_metrics = _calculate_ari_nmi_purity_metrics(
+        topology_metrics = calculate_clustering_metrics(
             topology_report,
             geometry.embedding.index,
             true_labels,
@@ -507,9 +480,7 @@ def _result_row(
         ).eq(0)
     ]
     edge_open_trace = trace[
-        trace.get("edge_gate_open", pd.Series(False, index=trace.index)).map(
-            lambda value: str(value).strip().lower() in {"true", "1", "yes"}
-        )
+        bool_series(trace.get("edge_gate_open", pd.Series(False, index=trace.index)))
     ]
     base.update(
         {
@@ -520,9 +491,28 @@ def _result_row(
             "labels_length": int(len(labels)),
             **asdict(metrics),
             "root_smaller_child_fraction": _root_child_fraction(extra.get("tree")),
+            "nnls_status": extra.get("branch_length_optimization_status", ""),
+            "nnls_applied_to_tree": extra.get(
+                "branch_length_optimization_applied_to_tree",
+                math.nan,
+            ),
+            "nnls_apply_nonconverged": extra.get(
+                "branch_length_optimization_apply_nonconverged",
+                math.nan,
+            ),
             "nnls_normalized_residual_rmse": _normalized_branch_residual(extra),
             "nnls_residual_rmse": extra.get("branch_length_optimization_residual_rmse", math.nan),
             "nnls_target_mean": extra.get("branch_length_optimization_target_mean", math.nan),
+            "nnls_design_density": extra.get("branch_length_optimization_design_density", math.nan),
+            "nnls_design_nnz": extra.get("branch_length_optimization_design_nnz", math.nan),
+            "nnls_zero_design_columns": extra.get(
+                "branch_length_optimization_n_zero_design_columns",
+                math.nan,
+            ),
+            "nnls_zero_design_column_fraction": extra.get(
+                "branch_length_optimization_zero_design_column_fraction",
+                math.nan,
+            ),
             "nnls_zero_branch_fraction": (
                 float(
                     sum(
@@ -534,16 +524,16 @@ def _result_row(
                 if extra.get("tree") is not None
                 else math.nan
             ),
-            "trace_edge_open": _bool_sum(trace, "edge_gate_open"),
-            "trace_sibling_open": _bool_sum(trace, "sibling_gate_open"),
-            "root_edge_gate_open": _bool_sum(root_trace, "edge_gate_open") > 0,
-            "root_sibling_p_value_corrected": _finite_min(
+            "trace_edge_open": bool_sum(trace, "edge_gate_open"),
+            "trace_sibling_open": bool_sum(trace, "sibling_gate_open"),
+            "root_edge_gate_open": bool_sum(root_trace, "edge_gate_open") > 0,
+            "root_sibling_p_value_corrected": finite_min(
                 root_trace.get("sibling_p_value_corrected", pd.Series(dtype=float))
             ),
-            "min_edge_open_sibling_p_value_corrected": _finite_min(
+            "min_edge_open_sibling_p_value_corrected": finite_min(
                 edge_open_trace.get("sibling_p_value_corrected", pd.Series(dtype=float))
             ),
-            "min_left_edge_p_value_bh": _finite_min(
+            "min_left_edge_p_value_bh": finite_min(
                 trace.get("left_edge_p_value_bh", pd.Series(dtype=float))
             ),
             "topology_kcut_ari": (
@@ -641,26 +631,6 @@ def _summary(cells: pd.DataFrame, group_columns: list[str]) -> pd.DataFrame:
     return ok.groupby(group_columns, dropna=False).agg(**aggregations).reset_index()
 
 
-def _markdown_table(frame: pd.DataFrame, columns: Sequence[str]) -> str:
-    visible = frame[[column for column in columns if column in frame.columns]].copy()
-    if visible.empty:
-        return "_No rows._"
-    for column in visible.columns:
-        if pd.api.types.is_float_dtype(visible[column]):
-            visible[column] = visible[column].map(
-                lambda value: "" if pd.isna(value) else f"{float(value):.4f}"
-            )
-    lines = [
-        "| " + " | ".join(visible.columns) + " |",
-        "| " + " | ".join("---" for _ in visible.columns) + " |",
-    ]
-    lines.extend(
-        "| " + " | ".join(str(value).replace("|", "\\|") for value in row) + " |"
-        for row in visible.itertuples(index=False)
-    )
-    return "\n".join(lines)
-
-
 def _write_report(
     output_dir: Path,
     cells: pd.DataFrame,
@@ -707,7 +677,7 @@ def _write_report(
             "",
             "## Family Results",
             "",
-            _markdown_table(
+            markdown_table(
                 case_summary,
                 [
                     "source_case_id",
@@ -730,7 +700,7 @@ def _write_report(
             "",
             "## Label-Free Selections",
             "",
-            _markdown_table(
+            markdown_table(
                 selection,
                 [
                     "case_id",
@@ -746,11 +716,11 @@ def _write_report(
             "",
             "## Branch-Time Paired Effect",
             "",
-            _markdown_table(branch_summary, list(branch_summary.columns)),
+            markdown_table(branch_summary),
             "",
             "## Skipped Cells",
             "",
-            _markdown_table(
+            markdown_table(
                 cells[cells["status"].ne("ok")],
                 [
                     "source_case_id",
@@ -772,11 +742,11 @@ def run_family_metric_nnls_grid(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     suite: str = "full",
     case_names: Sequence[str] = DEFAULT_CASE_NAMES,
-    topologies: Sequence[str] = TOPOLOGIES,
+    topologies: Sequence[str] = SUPPORTED_LINKAGE_METHODS,
     branch_modes: Sequence[str] = BRANCH_MODES,
 ) -> dict[str, Path]:
     """Run the focused metric/topology/branch-time validation grid."""
-    invalid_topologies = sorted(set(topologies).difference(TOPOLOGIES))
+    invalid_topologies = sorted(set(topologies).difference(SUPPORTED_LINKAGE_METHODS))
     invalid_modes = sorted(set(branch_modes).difference(BRANCH_MODES))
     if invalid_topologies or invalid_modes:
         raise ValueError(
@@ -805,62 +775,52 @@ def run_family_metric_nnls_grid(
         for branch_mode in branch_modes:
             for topology in topologies:
                 start = perf_counter()
-                try:
-                    result = _run_tbs_diffusion_graphtools_method(
-                        inputs.data,
-                        0.01,
-                        k_neighbors=10,
-                        diffusion_time=3,
-                        n_components=30,
-                        metric="euclidean",
-                        decay=40,
-                        anisotropy=0.0,
-                        kernel_symm="+",
-                        random_state=0,
-                        adaptive_neighbor_profile="fragmentation_guard",
-                        adaptive_neighbor_grid=(5, 10, 15, 25, 40, 80, 160),
-                        feature_space=feature_space,
-                        graph_data_df=geometry.embedding,
-                        branch_length_data_df=geometry.embedding,
-                        branch_length_optimization_method=(
-                            BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS
-                        ),
-                        branch_length_optimization_target_metric=(
-                            BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN
-                        ),
-                        branch_length_optimization_pair_sample_size=50_000,
-                        branch_length_optimization_random_state=0,
-                        branch_length_optimization_solver_tolerance=1e-5,
-                        branch_length_optimization_max_iterations=300,
-                        edge_branch_length_variance_policy=branch_mode,
-                        **_topology_parameters(topology),
-                    )
-                    row, labels = _result_row(
-                        case_number=case_number,
-                        case=case,
-                        geometry=geometry,
-                        topology=topology,
-                        branch_mode=branch_mode,
-                        result=result,
-                        elapsed_sec=perf_counter() - start,
-                    )
-                except Exception as exc:
-                    row, labels = _result_row(
-                        case_number=case_number,
-                        case=case,
-                        geometry=geometry,
-                        topology=topology,
-                        branch_mode=branch_mode,
-                        result=None,
-                        elapsed_sec=perf_counter() - start,
-                        error=f"{type(exc).__name__}: {exc}",
-                    )
+                result = _run_tbs_diffusion_graphtools_method(
+                    inputs.data,
+                    0.01,
+                    k_neighbors=10,
+                    diffusion_time=3,
+                    n_components=30,
+                    metric="euclidean",
+                    decay=40,
+                    anisotropy=0.0,
+                    kernel_symm="+",
+                    random_state=0,
+                    adaptive_neighbor_profile="fragmentation_guard",
+                    adaptive_neighbor_grid=(5, 10, 15, 25, 40, 80, 160),
+                    feature_space=feature_space,
+                    graph_data_df=geometry.embedding,
+                    branch_length_data_df=geometry.embedding,
+                    branch_length_optimization_method=(
+                        BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS
+                    ),
+                    branch_length_optimization_target_metric=(
+                        BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN
+                    ),
+                    branch_length_optimization_pair_sample_size=50_000,
+                    branch_length_optimization_random_state=0,
+                    branch_length_optimization_solver_tolerance=1e-5,
+                    branch_length_optimization_max_iterations=300,
+                    edge_branch_length_variance_policy=branch_mode,
+                    **_topology_parameters(topology),
+                )
+                row, labels = _result_row(
+                    case_number=case_number,
+                    case=case,
+                    geometry=geometry,
+                    topology=topology,
+                    branch_mode=branch_mode,
+                    result=result,
+                    elapsed_sec=perf_counter() - start,
+                )
                 cell_rows.append(row)
                 label_rows.extend(labels)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cells = pd.DataFrame.from_records(cell_rows)
     labels = pd.DataFrame.from_records(label_rows)
+    if labels.empty:
+        raise ValueError("Family metric NNLS grid produced no label assignments.")
     cells_path = output_dir / "family_metric_nnls_cells.csv"
     labels_path = output_dir / "family_metric_nnls_labels.csv"
     cells.to_csv(cells_path, index=False)
@@ -937,17 +897,13 @@ def run_family_metric_nnls_grid(
     }
 
 
-def _comma_values(value: str) -> tuple[str, ...]:
-    return tuple(item.strip() for item in value.split(",") if item.strip())
-
-
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--suite", default="full")
-    parser.add_argument("--case-names", type=_comma_values, default=DEFAULT_CASE_NAMES)
-    parser.add_argument("--topologies", type=_comma_values, default=TOPOLOGIES)
-    parser.add_argument("--branch-modes", type=_comma_values, default=BRANCH_MODES)
+    parser.add_argument("--case-names", type=parse_csv_list, default=DEFAULT_CASE_NAMES)
+    parser.add_argument("--topologies", type=parse_csv_list, default=SUPPORTED_LINKAGE_METHODS)
+    parser.add_argument("--branch-modes", type=parse_csv_list, default=BRANCH_MODES)
     return parser.parse_args(argv)
 
 

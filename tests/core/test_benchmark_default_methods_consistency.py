@@ -1,4 +1,5 @@
 import pytest
+
 from benchmarks.shared.benchmark_grid import benchmark_grid, strip_benchmark_metadata
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.method_selection import (

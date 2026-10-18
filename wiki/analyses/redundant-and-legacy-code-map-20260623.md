@@ -2,14 +2,13 @@
 title: Redundant and Legacy Code Map 2026-06-23
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-17
 sources:
   - tree_break_selection/space_separation/diffusion.py
   - tree_break_selection/space_separation/adaptive_cosine.py
-  - tree_break_selection/space_separation/invariant_equivariant.py
+  - tree_break_selection/space_separation/leading_axes.py
   - tree_break_selection/tree/construction/build.py
   - tree_break_selection/tree/construction/hierarchical.py
-  - tree_break_selection/hierarchy_analysis/bootstrap_consensus.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/guards.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/child_parent_divergence_annotation.py
@@ -24,9 +23,6 @@ sources:
   - benchmarks/shared/plots/export.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/runners/tbs_runner.py
-  - benchmarks/shared/tbs_tree_context.py
-  - benchmarks/validation/statistics/feature_covariance_calibration.py
-  - benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py
   - tests/visualization/73_test_report_export_layout.py
 tags:
   - code-audit
@@ -45,11 +41,13 @@ code in project-owned package, application, script, or benchmark Python files.
 The 2026-07-28 clone census initially found 384 weak-mode clone pairs and 7,587
 duplicated lines, or 4.14% of scanned production lines. This is not a blanket
 deletion target. Diagnostic research panels accounted for 299 of the initial
-pairs and 6,287 paired lines. The plot-export and core annotation/traversal
-tranches were completed on 2026-07-28. Under the same 10-line/70-token weak
-threshold, the current production scan reports 373 pairs and 7,259 duplicated
-lines, or 3.97%. Broad diagnostic consolidation should wait for observable
-output-schema tests.
+pairs and 6,287 paired lines. The plot-export, core annotation/traversal,
+endotype reference-data, and validation-calibration tranches were completed on
+2026-07-28. The first contract-tested diagnostic-family cleanup then
+consolidated classified-case execution and sibling-null preparation. Under the
+same 10-line/70-token weak threshold, the current production scan reports 353
+pairs and 6,542 duplicated lines, or 3.58%. Broad diagnostic consolidation
+should continue one output-contract-tested family at a time.
 
 ## Details
 
@@ -88,9 +86,10 @@ does, so this pass records the seam instead of applying a bulk rewrite.
 
 The two validation programs
 `benchmarks/validation/statistics/feature_covariance_calibration.py` and
-`benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` still share
-report-contract and interval helpers. This is the highest-value remaining
-consolidation once their output schemas are covered by focused tests.
+`benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py`
+now share report provenance, Wilson intervals, synthetic continuous covariance
+profiles, and p-value calibration summaries. Their distinct target validation,
+report fields, and command interfaces remain local to each program.
 
 ### 2026-07-28 clone census
 
@@ -100,18 +99,24 @@ matches, so they are prioritization signals rather than removable-line totals.
 
 | Surface pair | Clone pairs | Paired lines | Interpretation |
 | --- | ---: | ---: | --- |
-| diagnostics to diagnostics | 299 | 6,287 | Research-panel scaffolding dominates the total |
-| benchmark support to benchmark support | 37 | 861 | Plot export, runner forwarding, records, and validation reports |
-| applications to applications | 19 | 331 | Endotype and plotting workflows, plus small report helpers |
-| core to core | 10 | 195 | Gate configuration, permutation guards, annotations, and covariance validation |
+| diagnostics to diagnostics | 281 | 5,611 | Research-panel scaffolding still dominates the total |
+| benchmark support to benchmark support | 31 | 630 | Aligned records, generators, and validation reports |
+| applications to applications | 17 | 289 | Endotype and plotting workflows, plus small report helpers |
+| core to core | 5 | 72 | Gate arguments, covariance validation, and result fields |
 | core to diagnostics | 6 | 97 | Diagnostic copies of production spectral and gate calculations |
-| all other cross-surface pairs | 13 | 147 | Small application, script, and benchmark crossings |
+| diagnostics to benchmark support | 6 | 109 | Validation and diagnostic report scaffolding |
+| applications to diagnostics | 4 | 48 | Small cross-surface application probes |
+| scripts to scripts | 2 | 26 | Repeated provenance verification branches |
+| applications to benchmark support | 1 | 13 | One small shared workflow prefix |
 
-Tests contain 58 weak-mode clone pairs and 1,298 duplicated lines, or 2.81% of
-46,177 scanned lines. Most are fixture construction and repeated contract
-cases. They should be replaced only when a shared public-interface test
-expresses the same behavior; line similarity alone is not evidence that a test
-is redundant.
+Tests initially contained 58 weak-mode clone pairs and 1,298 duplicated lines,
+or 2.81% of 46,177 scanned lines. The 2026-07-29 test-surface cleanup deleted
+one completely duplicated gate-annotation test module, three lower-level
+`TreeDecomposition` tests already covered through the core interface, and one
+duplicated method-registry contract. The same scan now reports 51 pairs and
+1,084 duplicated lines across 250 files, or 2.36%. The remaining matches are
+predominantly fixture construction for distinct outcomes; line similarity
+alone is not evidence that a test is redundant.
 
 The actionable clusters, in cleanup order, are:
 
@@ -141,25 +146,44 @@ The actionable clusters, in cleanup order, are:
    function and one return contract containing both the annotated frame and
    spectral context. The DataFrame-only forwarding path was deleted without
    an alias.
-6. The endotype feature-matrix pipeline and KAK UMAP/tree page duplicate a
-   31-line plotting block. This belongs behind an endotype-owned plot helper,
-   not a generic repository utility.
-7. The two covariance-calibration validation programs duplicate Wilson
-   intervals, covariance generation, git-state capture, and report emission.
-   A purpose-named calibration reporting module is appropriate after golden
-   schema tests exist.
-8. Sibling-null, overlap, root-selection, and traversal diagnostic families
-   contain the largest clone groups. Each family needs one output contract and
-   one domain-owned driver before copied scripts are removed.
+6. Completed on 2026-07-28: the apparent endotype plotting clone was traced to
+   reference-data plumbing, not rendering. The feature-matrix pipeline and KAK
+   page now consume one canonical reference-endotype parser and one
+   symbol-to-Entrez batch resolver from `applications/endotypes/_shared.py`.
+   Both copied implementations were deleted without aliases.
+7. Completed on 2026-07-28: the two covariance-calibration programs now consume
+   shared provenance and Wilson helpers from
+   `benchmarks/validation/contracts/report_contract.py` and shared numerical
+   primitives from
+   `benchmarks/validation/statistics/calibration_support.py`. Exact CSV header
+   tests preserve their different output schemas; target-specific validation
+   and CLIs were not flattened into a generic driver.
+8. Completed on 2026-07-28: sibling-null and gate-path runners now resolve
+   classified benchmark cases, runtime defaults, and result directories through
+   `benchmarks/diagnostics/runner_support.py`. Prepared tree, annotation,
+   traversal, and oracle context belongs to `oracle/gate_path_trace.py`;
+   sibling-null table preparation and target selection belong to the
+   sibling-null `runner_support.py`. Four copied sibling setup implementations
+   and the gate-path copy were deleted without aliases. This also corrected the
+   sibling runners' copied `repo_root` calculation, which previously pointed
+   default discovery and output under
+   `benchmarks/diagnostics/benchmarks/...` instead of the project
+   `benchmarks/results/` directory.
+9. Overlap, root-selection, and traversal diagnostic families now contain the
+   largest actionable clone groups. Each family needs one observable output
+   contract and one domain-owned driver before copied scripts are removed.
 
 Several high-ranked matches should not be mechanically consolidated:
 
 - `benchmarks/shared/metrics.py`,
   `benchmarks/shared/result_records/models.py`,
   `benchmarks/shared/result_records/dataframe.py`, and plot/runtime modules
-  repeat record-field sequences that define aligned schemas.
-- `SpectralContext` and `SpectralDecompositionResult` share fields but have
-  different ownership and lifecycle semantics.
+  repeat record-field sequences that define aligned schemas. On 2026-10-17
+  the result columns and row builder were derived from `BenchmarkResultRow`
+  and `ClusteringMetrics` instead, with identical column names and order.
+- `SpectralContext` and `SpectralDecompositionResult` shared fields. On
+  2026-10-17 `SpectralContext` was removed: the edge gate returns the
+  decomposition result with its own timing added.
 - Bernoulli and grouped-categorical covariance validators share structural
   checks but enforce different feature-family invariants.
 - Test setup that looks alike can cover different public contracts.
@@ -173,6 +197,10 @@ Several high-ranked matches should not be mechanically consolidated:
   out of 183,106, and 46,149 duplicated tokens out of 980,227.
 - The corresponding 12-line/80-token test scan measured 58 clone pairs across
   246 files and 1,298 duplicated lines out of 46,177.
+- After the 2026-07-29 redundant-test deletion, the current 12-line/80-token
+  scan reports 51 clone pairs and 1,084 duplicated lines across 250 files and
+  45,854 lines. Exact normalized test-body comparison finds no repeated
+  validation test bodies.
 - Exact normalized AST function-body comparison found 48 repeated function
   groups. Its largest exact groups are diagnostic selectors and threshold
   helpers; the production-facing exact groups corroborate the guard and
@@ -192,6 +220,22 @@ Several high-ranked matches should not be mechanically consolidated:
   duplicated lines across 182,914 lines (3.97%). The removed target pairs no
   longer appear; the remaining core matches are different internal or
   cross-surface seams.
+- After the endotype reference-data and validation-calibration consolidation,
+  the scan fell to 370 clone pairs and 7,175 duplicated lines across 182,862
+  lines (3.92%). The copied endotype HTTP/parser blocks and validation
+  covariance, p-value-summary, Wilson, Git-state, and UTC helpers no longer
+  appear.
+- After the classified diagnostic runner and sibling-null context
+  consolidation, the scan fell to 353 clone pairs and 6,542 duplicated lines
+  across 182,496 lines (3.58%). The former 330-line Gaussian/selection runner
+  cluster, 231-line Gaussian/inflation cluster, and gate-path preparation
+  copies no longer appear. The remaining sibling-runner matches are small
+  command and report-schema prefixes.
+- The shared-runner interface is covered by six direct tests, including a real
+  prepared regression-gate case and the corrected default result-directory
+  contract. All 45 focused oracle/sibling tests and all 1,278 ordered
+  repository tests pass; Ruff, Vulture at 90% confidence, and wiki lint over
+  271 pages also pass.
 - Vulture reported no project-owned dead code at 90% confidence after the
   deletions. Ruff, wiki lint over 271 pages, the focused interface suites, and
   all 1,254 ordered repository tests pass.
@@ -206,6 +250,12 @@ Several high-ranked matches should not be mechanically consolidated:
 - Exact constructor search separated the three live registered topology
   builders from direct representation conversions and proved the two removed
   adapters had no production callers.
+- All 50 endotype and statistical-validation focused tests and all 1,272
+  ordered repository tests pass after the latest consolidation. Ruff passes
+  over every production and test surface, and Vulture again reports no
+  project-owned dead code at 90% confidence.
+- `benchmarks/diagnostics/calibration/sibling/nulls/runner_support.py`, `benchmarks/diagnostics/oracle/gate_path_trace.py` and `benchmarks/diagnostics/runner_support.py` were retired on 2026-10-16 (last present at commit 7cc4e1c0); `case_with_replicate_seed` moved into `mixed_internal_calibration_sweep.py`.
+- `benchmarks/validation/statistics/feature_covariance_calibration.py` and `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` were retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 
@@ -218,8 +268,6 @@ Several high-ranked matches should not be mechanically consolidated:
 
 - Which diagnostic helper contracts are stable enough to move into
   `benchmarks/shared/` without masking panel-specific validation semantics?
-- Should the two calibration validation reports first receive golden-schema
-  tests, then share one report-contract module?
 - Should the remaining internal argument overlap inside the gate orchestrator
   become a typed request object, or would that hide experimentally important
   gate inputs?

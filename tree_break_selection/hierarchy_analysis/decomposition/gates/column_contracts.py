@@ -15,13 +15,15 @@ EDGE_GATE_COLUMNS: tuple[str, ...] = (
     "Child_Parent_Divergence_P_Value_BH",
     "Child_Parent_Divergence_Significant",
     "Child_Parent_Divergence_df",
-    "Child_Parent_Divergence_Invalid",
     "Child_Parent_Divergence_Tested",
     "Child_Parent_Divergence_Ancestor_Blocked",
 )
 
 SIBLING_GATE_COLUMNS: tuple[str, ...] = (
     "Sibling_Divergence_Skipped",
+    "Sibling_Role_Supported",
+    "Sibling_Null_Weight",
+    "Sibling_Parent_Positive_Eigenvalue_Count",
     "Sibling_Test_Statistic",
     "Sibling_Degrees_of_Freedom",
     "Sibling_Divergence_P_Value",

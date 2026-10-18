@@ -7,11 +7,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 from tree_break_selection.tree.poset_tree import PosetTree
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/kl_te_cluster_matplotlib")
 os.environ.setdefault("NUMBA_CACHE_DIR", "/tmp/kl_te_cluster_numba")
+
+pytestmark = [pytest.mark.optional, pytest.mark.scrna]
 
 
 def _small_benchmark_tree() -> PosetTree:
@@ -41,9 +44,9 @@ def _small_benchmark_tree() -> PosetTree:
 
 def test_scrna_benchmark_tree_edges_include_distributional_action_and_mass(
     tmp_path: Path,
+    require_optional_dependencies,
 ) -> None:
-    pytest.importorskip("anndata")
-    pytest.importorskip("scanpy")
+    require_optional_dependencies("anndata", "scanpy")
     pancreas = importlib.import_module("applications.scrna.pancreas_benchmark")
 
     leaf_data = pd.DataFrame(
@@ -55,13 +58,7 @@ def test_scrna_benchmark_tree_edges_include_distributional_action_and_mass(
     )
     feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
     tree = _small_benchmark_tree()
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
-    tree.annotations_df["Distributional_Action"] = np.nan
-    tree.annotations_df["Distributional_Split_Action"] = np.nan
-    tree.annotations_df["Distributional_Split_Action_Filtered"] = False
-    tree.annotations_df.loc["left", "Distributional_Action"] = 123.0
-    tree.annotations_df.loc["left", "Distributional_Split_Action"] = 456.0
-    tree.annotations_df.loc["left", "Distributional_Split_Action_Filtered"] = True
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     config = pancreas.MethodConfig(
         method_id="tbs",
@@ -75,8 +72,6 @@ def test_scrna_benchmark_tree_edges_include_distributional_action_and_mass(
             "annotations": tree.annotations_df,
             "edge_branch_length_variance_policy": "none",
         },
-        leaf_data=leaf_data,
-        feature_space=feature_space,
         sample_ids=leaf_data.index.to_numpy(),
         y_true=np.array(["a", "a", "b", "b"]),
         output_dir=tmp_path,
@@ -92,9 +87,6 @@ def test_scrna_benchmark_tree_edges_include_distributional_action_and_mass(
         "distributional_action_squared_displacement",
         "distributional_action",
         "distributional_action_per_branch_length",
-        "Distributional_Action",
-        "Distributional_Split_Action",
-        "Distributional_Split_Action_Filtered",
     }
     assert expected_columns.issubset(edges.columns)
 
@@ -105,9 +97,6 @@ def test_scrna_benchmark_tree_edges_include_distributional_action_and_mass(
     assert left_edge["distributional_action_child_parent_mass_fraction"] == 0.5
     assert left_edge["distributional_action_squared_displacement"] == 4.0
     assert left_edge["distributional_action"] == 8.0
-    assert left_edge["Distributional_Action"] == 123.0
-    assert left_edge["Distributional_Split_Action"] == 456.0
-    assert bool(left_edge["Distributional_Split_Action_Filtered"])
     assert right_edge["distributional_action"] == 8.0
     assert left_edge["branch_length"] != right_edge["branch_length"]
     assert left_edge["distributional_action"] == right_edge["distributional_action"]

@@ -1,0 +1,24 @@
+{
+  "database": {
+    "provider": "duckdb",
+    "path": ".chunkhound/db"
+  },
+  "indexing": {
+    "per_file_timeout_seconds": 30,
+    "exclude": [
+      "raw/assets/benchmark-results/**/*.html"
+    ]
+  },
+  "embedding": {
+    "provider": "openai",
+    "base_url": "http://localhost:11434/v1",
+    "model": "embeddinggemma-2:270m",
+    "output_dims": 768,
+    "rerank_model": "bge-reranker-v2-m3",
+    "rerank_url": "http://127.0.0.1:8081/v1/rerank",
+    "rerank_format": "cohere"
+  },
+  "llm": {
+    "provider": "codex-cli"
+  }
+}

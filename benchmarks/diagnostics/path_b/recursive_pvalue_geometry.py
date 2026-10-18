@@ -18,16 +18,18 @@ from typing import Any, Sequence
 import networkx as nx
 import numpy as np
 import pandas as pd
+from scipy.stats import chi2
+
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from benchmarks.shared.util.time import format_timestamp_utc
-from scipy.stats import chi2
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
 )
+from tree_break_selection.tree.topology import tree_root
 
 STUDY_ROLE = "diagnostic_recursive_pvalue_geometry_not_calibration"
 P_VALUE_FLOOR = 1e-300
@@ -175,19 +177,10 @@ def principal_subspace_alignment(
     }
 
 
-def _root(tree: nx.DiGraph) -> object:
-    if hasattr(tree, "root"):
-        return tree.root()
-    roots = [node for node in tree.nodes if tree.in_degree(node) == 0]
-    if len(roots) != 1:
-        raise ValueError(f"Expected exactly one root, got {roots!r}.")
-    return roots[0]
-
-
 def _depths(tree: nx.DiGraph) -> dict[object, int]:
     return {
         node: int(depth)
-        for node, depth in nx.single_source_shortest_path_length(tree, _root(tree)).items()
+        for node, depth in nx.single_source_shortest_path_length(tree, tree_root(tree)).items()
     }
 
 

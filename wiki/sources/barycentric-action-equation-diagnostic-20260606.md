@@ -2,9 +2,8 @@
 title: Barycentric Action Equation Diagnostic 2026-06-06
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py
   - raw/assets/benchmark-results/selected_hierarchy_topology_refinement_input_20260603_300/selected_geometry_records.csv
   - benchmarks/results/diagnostics/barycentric_action_equation_diagnostic_20260606/barycentric_action_equation_summary.csv
   - benchmarks/results/diagnostics/barycentric_action_equation_diagnostic_20260606/barycentric_action_equation_validation.csv
@@ -68,6 +67,7 @@ calibration from traversal-fragmentation explanation.
   records the leave-one-block-out KAK traversal-fragment association summary.
 - `benchmarks/results/diagnostics/barycentric_action_equation_diagnostic_20260606/kak_internal_traversal_fragmentation_validation.csv`
   records block-level AUCs for the traversal-fragment diagnostic.
+- `benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

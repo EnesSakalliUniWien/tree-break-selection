@@ -22,7 +22,10 @@ def build_sibling_pair_record(
     is_edge_blocked: bool,
     sibling_null_weight: float,
     sibling_projection_dimension: float,
-    feature_family: str,
+    calibration_dependency_group: object | None = None,
+    calibration_dependency_weight: float | None = None,
+    parent_positive_eigenvalue_count: float = 0.0,
+    feature_family: str = "bernoulli",
 ) -> SiblingPairRecord:
     """Construct a sibling-pair record from resolved statistical inputs."""
     if not np.isfinite(test_statistic):
@@ -53,6 +56,11 @@ def build_sibling_pair_record(
             "Sibling pair record requires a finite non-negative sibling_projection_dimension; "
             f"parent={parent_node_id!r}."
         )
+    if not np.isfinite(parent_positive_eigenvalue_count) or parent_positive_eigenvalue_count < 0:
+        raise ValueError(
+            "Sibling pair record requires finite non-negative parent_positive_eigenvalue_count; "
+            f"parent={parent_node_id!r}, value={parent_positive_eigenvalue_count!r}."
+        )
     if feature_family not in {"bernoulli", "categorical", "continuous", "mixed"}:
         raise ValueError(
             "Sibling pair record requires feature_family to be 'bernoulli', "
@@ -72,7 +80,10 @@ def build_sibling_pair_record(
         is_null_like=is_null_like,
         is_edge_blocked=is_edge_blocked,
         sibling_null_weight=sibling_null_weight,
+        calibration_dependency_group=calibration_dependency_group,
+        calibration_dependency_weight=calibration_dependency_weight,
         sibling_projection_dimension=sibling_projection_dimension,
+        parent_positive_eigenvalue_count=float(parent_positive_eigenvalue_count),
         feature_family=feature_family,
     )
 

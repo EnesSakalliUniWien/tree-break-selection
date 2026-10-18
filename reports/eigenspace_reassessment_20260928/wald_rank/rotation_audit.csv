@@ -1,0 +1,19 @@
+spectrum,selection,version,n_contrasts,rotation,rank_mismatches,max_abs_statistic_difference,max_abs_p_difference,decision_mismatches_alpha_0.001,decision_mismatches_alpha_0.005,decision_mismatches_alpha_0.01,decision_mismatches_alpha_0.05
+fully_tied_2,fixed_cutoff,legacy_prefix,100000,45 degrees within repeated eigenspace,0,13.764673633057255,0.9823360937312532,169,812,1514,6654
+fully_tied_2,fixed_cutoff,current_complete_groups,100000,45 degrees within repeated eigenspace,0,7.105427357601002e-15,5.551115123125783e-16,0,0,0,0
+fully_tied_2,fixed_full,legacy_prefix,100000,45 degrees within repeated eigenspace,0,7.105427357601002e-15,5.551115123125783e-16,0,0,0,0
+fully_tied_2,fixed_full,current_complete_groups,100000,45 degrees within repeated eigenspace,0,7.105427357601002e-15,5.551115123125783e-16,0,0,0,0
+fully_tied_2,adaptive_90,legacy_prefix,100000,45 degrees within repeated eigenspace,40890,1.696923358025252,0.30243751091430904,102,483,863,3592
+fully_tied_2,adaptive_90,current_complete_groups,100000,45 degrees within repeated eigenspace,0,7.105427357601002e-15,5.551115123125783e-16,0,0,0,0
+distinct_2,fixed_cutoff,legacy_prefix,100000,first eigenvector sign flip,0,0.0,0.0,0,0,0,0
+distinct_2,fixed_cutoff,current_complete_groups,100000,first eigenvector sign flip,0,0.0,0.0,0,0,0,0
+distinct_2,fixed_full,legacy_prefix,100000,first eigenvector sign flip,0,0.0,0.0,0,0,0,0
+distinct_2,fixed_full,current_complete_groups,100000,first eigenvector sign flip,0,0.0,0.0,0,0,0,0
+distinct_2,adaptive_90,legacy_prefix,100000,first eigenvector sign flip,0,0.0,0.0,0,0,0,0
+distinct_2,adaptive_90,current_complete_groups,100000,first eigenvector sign flip,0,0.0,0.0,0,0,0,0
+partial_tie_4,fixed_cutoff,legacy_prefix,100000,45 degrees within repeated eigenspace,0,14.273690146029036,0.9836581192736759,133,517,986,4145
+partial_tie_4,fixed_cutoff,current_complete_groups,100000,45 degrees within repeated eigenspace,0,5.329070518200751e-15,2.7755575615628914e-15,0,0,0,0
+partial_tie_4,fixed_full,legacy_prefix,100000,45 degrees within repeated eigenspace,0,7.105427357601002e-15,6.661338147750939e-16,0,0,0,0
+partial_tie_4,fixed_full,current_complete_groups,100000,45 degrees within repeated eigenspace,0,7.105427357601002e-15,6.661338147750939e-16,0,0,0,0
+partial_tie_4,adaptive_90,legacy_prefix,100000,45 degrees within repeated eigenspace,14604,1.940169339563468,0.21008423545506616,55,219,359,1204
+partial_tie_4,adaptive_90,current_complete_groups,100000,45 degrees within repeated eigenspace,0,7.105427357601002e-15,2.7755575615628914e-15,0,0,0,0

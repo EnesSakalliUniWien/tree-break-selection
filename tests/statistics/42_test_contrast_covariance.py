@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+
 import tree_break_selection.hierarchy_analysis.statistics.contrast_covariance as contrast_covariance_module
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     build_contrast_covariance,
@@ -17,6 +18,7 @@ from tree_break_selection.tree.continuous_distance import (
 from tree_break_selection.tree.feature_space import (
     FeatureBlock,
     FeatureSpace,
+    bernoulli_feature_space_from_columns,
     continuous_feature_space_from_columns,
     infer_feature_space_from_columns,
 )
@@ -411,17 +413,10 @@ def test_diagonal_bernoulli_null_whitening_matches_block_formula() -> None:
     )
     null_distribution = np.array([0.2, 0.4, 0.6, 0.8], dtype=np.float64)
 
-    assert hasattr(
-        contrast_covariance_module,
-        "_build_bernoulli_null_whitened_tangent_matrix",
-    )
-    vectorized = contrast_covariance_module._build_bernoulli_null_whitened_tangent_matrix(
+    feature_space = bernoulli_feature_space_from_columns(("x0", "x1", "x2", "x3"))
+    vectorized = build_null_whitened_tangent_matrix(
         observations,
         null_distribution,
-        contrast_covariance_module._resolve_distribution_feature_space(
-            null_distribution,
-            None,
-        ),
         ridge=1e-12,
     )
 
@@ -434,10 +429,7 @@ def test_diagonal_bernoulli_null_whitening_matches_block_formula() -> None:
                 continuous_covariance_by_block={},
                 ridge=1e-12,
             )
-            for block in contrast_covariance_module._resolve_distribution_feature_space(
-                null_distribution,
-                None,
-            ).blocks
+            for block in feature_space.blocks
         ]
     )
     np.testing.assert_allclose(vectorized, expected, rtol=0.0, atol=0.0)
@@ -506,6 +498,32 @@ def test_continuous_covariance_rejects_non_psd_blocks() -> None:
         )
 
 
+def _assert_grouped_categorical_null_whitening_matches_block_formula(
+    observations: np.ndarray,
+    null_distribution: np.ndarray,
+    feature_space: FeatureSpace,
+) -> None:
+    grouped = build_null_whitened_tangent_matrix(
+        observations,
+        null_distribution,
+        feature_space=feature_space,
+        ridge=1e-12,
+    )
+    expected = np.column_stack(
+        [
+            contrast_covariance_module._block_null_whitened_tangent_matrix(
+                observations,
+                null_distribution,
+                block,
+                continuous_covariance_by_block={},
+                ridge=1e-12,
+            )
+            for block in feature_space.blocks
+        ]
+    )
+    np.testing.assert_allclose(grouped, expected, rtol=1e-13, atol=1e-13)
+
+
 def test_grouped_categorical_null_whitening_matches_block_formula() -> None:
     feature_space = _make_categorical_space(n_features=4, n_categories=3)
     observations_blocks = np.array(
@@ -528,30 +546,11 @@ def test_grouped_categorical_null_whitening_matches_block_formula() -> None:
     observations = observations_blocks.reshape(observations_blocks.shape[0], -1)
     null_distribution = null_blocks.ravel()
 
-    assert hasattr(
-        contrast_covariance_module,
-        "_build_grouped_categorical_null_whitened_tangent_matrix",
-    )
-    grouped = contrast_covariance_module._build_grouped_categorical_null_whitened_tangent_matrix(
+    _assert_grouped_categorical_null_whitening_matches_block_formula(
         observations,
         null_distribution,
         feature_space,
-        ridge=1e-12,
     )
-
-    expected = np.column_stack(
-        [
-            contrast_covariance_module._block_null_whitened_tangent_matrix(
-                observations,
-                null_distribution,
-                block,
-                continuous_covariance_by_block={},
-                ridge=1e-12,
-            )
-            for block in feature_space.blocks
-        ]
-    )
-    np.testing.assert_allclose(grouped, expected, rtol=1e-13, atol=1e-13)
 
 
 def test_grouped_categorical_null_whitening_supports_mixed_category_counts() -> None:
@@ -579,30 +578,11 @@ def test_grouped_categorical_null_whitening_supports_mixed_category_counts() -> 
         dtype=np.float64,
     )
 
-    assert hasattr(
-        contrast_covariance_module,
-        "_build_grouped_categorical_null_whitened_tangent_matrix",
-    )
-    grouped = contrast_covariance_module._build_grouped_categorical_null_whitened_tangent_matrix(
+    _assert_grouped_categorical_null_whitening_matches_block_formula(
         observations,
         null_distribution,
         feature_space,
-        ridge=1e-12,
     )
-
-    expected = np.column_stack(
-        [
-            contrast_covariance_module._block_null_whitened_tangent_matrix(
-                observations,
-                null_distribution,
-                block,
-                continuous_covariance_by_block={},
-                ridge=1e-12,
-            )
-            for block in feature_space.blocks
-        ]
-    )
-    np.testing.assert_allclose(grouped, expected, rtol=1e-13, atol=1e-13)
 
 
 def test_bernoulli_is_two_category_multinomial_for_sibling_whitening() -> None:
@@ -733,30 +713,6 @@ def test_continuous_wald_whitening_matches_full_block_formula() -> None:
     ).whitened_vector()
 
     np.testing.assert_allclose(public_z, block_z, rtol=1e-14, atol=1e-14)
-
-
-def test_sibling_contrast_rejects_child_parent_branch_length_parameter() -> None:
-    with pytest.raises(TypeError, match="unexpected keyword argument 'branch_length'"):
-        build_contrast_covariance(
-            np.array([0.2], dtype=np.float64),
-            np.array([0.4], dtype=np.float64),
-            20.0,
-            30.0,
-            comparison="sibling",
-            branch_length=1.0,
-        )
-
-
-def test_child_parent_contrast_rejects_sibling_branch_length_sum_parameter() -> None:
-    with pytest.raises(TypeError, match="unexpected keyword argument 'branch_length_sum'"):
-        build_contrast_covariance(
-            np.array([0.2], dtype=np.float64),
-            np.array([0.4], dtype=np.float64),
-            20.0,
-            30.0,
-            comparison="child_parent",
-            branch_length_sum=1.0,
-        )
 
 
 def test_bernoulli_contrast_rejects_values_outside_unit_interval() -> None:

@@ -1,8 +1,8 @@
 """Compare pancreas inner nodes with progenitor-style lineage expectations."""
-# ruff: noqa: I001
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -10,12 +10,14 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-import matplotlib.pyplot as plt
 import anndata as ad
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import sparse
 
+from applications.output_dirs import parse_run_dir
+from applications.scrna.analysis.compare_pancreas_progenitor_signatures import build_tree_helpers
 
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
 LINEAGE_MAP = {
@@ -73,8 +75,13 @@ MARKERS = [
 ]
 
 
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+@dataclass(frozen=True)
+class TreeReviewInputs:
+    assignments: pd.DataFrame
+    marker_frame: pd.DataFrame
+    children: dict[str, list[str]]
+    parent_nodes: set[str]
+    descendant_leaves: object
 
 
 def entropy(values: np.ndarray) -> float:
@@ -86,12 +93,26 @@ def entropy(values: np.ndarray) -> float:
     return float(-(probabilities * np.log(probabilities)).sum())
 
 
-def top_counts_text(counts: pd.Series, n: int = 10) -> str:
+def format_counts(counts: pd.Series, n: int = 10) -> str:
     return "; ".join(f"{key}:{value}" for key, value in counts.head(n).items())
 
 
 def cluster_ids_text(cluster_ids: list[int] | tuple[int, ...] | set[int] | frozenset[int]) -> str:
     return ",".join(f"C{cluster_id}" for cluster_id in sorted(cluster_ids))
+
+
+def cached_cluster_set(clusters: np.ndarray, descendant_leaves: object):
+    @lru_cache(maxsize=None)
+    def cluster_set(node: str) -> frozenset[int]:
+        return frozenset(int(clusters[index]) for index in descendant_leaves(node))  # type: ignore[operator]
+
+    return cluster_set
+
+
+def tree_review_arrays(inputs: TreeReviewInputs):
+    celltypes = inputs.assignments["celltype"].astype(str).to_numpy()
+    clusters = inputs.assignments[METHOD_KEY].astype(int).to_numpy()
+    return celltypes, clusters, cached_cluster_set(clusters, inputs.descendant_leaves)
 
 
 def fractions(counts: pd.Series, names: list[str], total: int) -> dict[str, float]:
@@ -169,32 +190,15 @@ def read_marker_frame(output_dir: Path, assignments: pd.DataFrame) -> pd.DataFra
 
 
 def main() -> None:
-    output_dir = (
-        project_root()
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623"
-    )
+    output_dir = parse_run_dir(__doc__)
     assignments = pd.read_csv(output_dir / "method_assignments.csv")
     edges = pd.read_csv(output_dir / f"{METHOD_KEY}_tree_edges.csv")
 
-    children: dict[str, list[str]] = {}
+    children, descendant_leaves = build_tree_helpers(edges)
     parents = set(edges["parent"].astype(str))
     child_nodes = set(edges["child"].astype(str))
-    for parent, child in zip(edges["parent"].astype(str), edges["child"].astype(str), strict=True):
-        children.setdefault(parent, []).append(child)
     root = next(iter(parents - child_nodes))
     parent_of = {child: parent for parent, child_list in children.items() for child in child_list}
-
-    @lru_cache(maxsize=None)
-    def descendant_leaves(node: str) -> tuple[int, ...]:
-        if node.startswith("L"):
-            return (int(node[1:]),)
-        leaves: list[int] = []
-        for child in children[node]:
-            leaves.extend(descendant_leaves(child))
-        return tuple(leaves)
 
     def depth_from_root(node: str) -> int:
         depth = 0
@@ -260,7 +264,7 @@ def main() -> None:
                 "effective_celltypes": float(np.exp(entropy(celltype_counts.to_numpy()))),
                 "dominant_celltype": dominant_celltype,
                 "dominant_celltype_fraction": dominant_celltype_fraction,
-                "top_celltypes": top_counts_text(celltype_counts, 10),
+                "top_celltypes": format_counts(celltype_counts, 10),
                 "dominant_lineage": dominant_lineage,
                 "dominant_lineage_fraction": dominant_lineage_fraction,
                 "lineage_counts": "; ".join(
@@ -324,23 +328,21 @@ def main() -> None:
         assignments=assignments,
         summary=summary,
         marker_frame=marker_frame,
+        parent_nodes=parents,
+        descendant_leaves=descendant_leaves,
+    )
+    tree_review_inputs = TreeReviewInputs(
+        assignments=assignments,
+        marker_frame=marker_frame,
         children=children,
         parent_nodes=parents,
         descendant_leaves=descendant_leaves,
     )
     junction_review, junction_child_summary = build_two_three_cluster_junction_review(
-        assignments=assignments,
-        marker_frame=marker_frame,
-        children=children,
-        parent_nodes=parents,
-        descendant_leaves=descendant_leaves,
+        inputs=tree_review_inputs,
     )
     monophyletic_review, monophyletic_child_summary = build_monophyletic_subtree_meeting_review(
-        assignments=assignments,
-        marker_frame=marker_frame,
-        children=children,
-        parent_nodes=parents,
-        descendant_leaves=descendant_leaves,
+        inputs=tree_review_inputs,
     )
 
     summary.to_csv(output_dir / "tbs_adaptive_inner_node_lineage_summary.csv", index=False)
@@ -373,11 +375,10 @@ def main() -> None:
         index=False,
     )
     write_plot(summary, review, output_dir)
-    write_junction_umap_plot(junction_review, assignments, children, descendant_leaves, output_dir)
+    write_junction_umap_plot(junction_review, assignments, descendant_leaves, output_dir)
     write_monophyletic_meeting_umap_plot(
         monophyletic_review,
         assignments,
-        children,
         descendant_leaves,
         output_dir,
     )
@@ -388,7 +389,6 @@ def build_terminal_cluster_review(
     assignments: pd.DataFrame,
     summary: pd.DataFrame,
     marker_frame: pd.DataFrame,
-    children: dict[str, list[str]],
     parent_nodes: set[str],
     descendant_leaves: object,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -446,7 +446,7 @@ def build_terminal_cluster_review(
                 "dominant_celltype_fraction": float(counts.iloc[0] / n_leaves),
                 "n_celltypes": int(len(counts)),
                 "effective_celltypes": float(np.exp(entropy(counts.to_numpy()))),
-                "top_celltypes": top_counts_text(counts, 10),
+                "top_celltypes": format_counts(counts, 10),
                 "root_child_summary": root_inner.get("child_summary", ""),
                 **marker_values,
             }
@@ -486,22 +486,16 @@ def build_terminal_cluster_review(
 
 def build_two_three_cluster_junction_review(
     *,
-    assignments: pd.DataFrame,
-    marker_frame: pd.DataFrame,
-    children: dict[str, list[str]],
-    parent_nodes: set[str],
-    descendant_leaves: object,
+    inputs: TreeReviewInputs,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    celltypes = assignments["celltype"].astype(str).to_numpy()
-    clusters = assignments[METHOD_KEY].astype(int).to_numpy()
-
-    @lru_cache(maxsize=None)
-    def cluster_set(node: str) -> frozenset[int]:
-        return frozenset(int(clusters[index]) for index in descendant_leaves(node))  # type: ignore[operator]
+    marker_frame = inputs.marker_frame
+    children = inputs.children
+    descendant_leaves = inputs.descendant_leaves
+    celltypes, clusters, cluster_set = tree_review_arrays(inputs)
 
     junction_rows: list[dict[str, object]] = []
     child_rows: list[dict[str, object]] = []
-    for node in sorted(parent_nodes, key=lambda value: int(value[1:])):
+    for node in sorted(inputs.parent_nodes, key=lambda value: int(value[1:])):
         node_cluster_set = cluster_set(node)
         if len(node_cluster_set) not in {2, 3}:
             continue
@@ -539,7 +533,7 @@ def build_two_three_cluster_junction_review(
                 "effective_celltypes": effective_celltypes,
                 "dominant_celltype": str(celltype_counts.index[0]),
                 "dominant_celltype_fraction": dominant_fraction,
-                "top_celltypes": top_counts_text(celltype_counts, 8),
+                "top_celltypes": format_counts(celltype_counts, 8),
                 "progenitor_call": (
                     "mixed junction but NEUROG3 is absent; not a validated progenitor"
                     if mixed_flag
@@ -568,7 +562,7 @@ def build_two_three_cluster_junction_review(
                         f"C{cluster_id}:{count}"
                         for cluster_id, count in child_cluster_counts.items()
                     ),
-                    "child_top_celltypes": top_counts_text(child_celltype_counts, 8),
+                    "child_top_celltypes": format_counts(child_celltype_counts, 8),
                     **child_marker_values,
                 }
             )
@@ -581,14 +575,12 @@ def build_two_three_cluster_junction_review(
 
 def build_monophyletic_subtree_meeting_review(
     *,
-    assignments: pd.DataFrame,
-    marker_frame: pd.DataFrame,
-    children: dict[str, list[str]],
-    parent_nodes: set[str],
-    descendant_leaves: object,
+    inputs: TreeReviewInputs,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    celltypes = assignments["celltype"].astype(str).to_numpy()
-    clusters = assignments[METHOD_KEY].astype(int).to_numpy()
+    marker_frame = inputs.marker_frame
+    children = inputs.children
+    descendant_leaves = inputs.descendant_leaves
+    celltypes, clusters, cluster_set = tree_review_arrays(inputs)
     cluster_leaf_sets = {
         int(cluster_id): frozenset(np.flatnonzero(clusters == cluster_id).astype(int).tolist())
         for cluster_id in np.unique(clusters)
@@ -597,10 +589,6 @@ def build_monophyletic_subtree_meeting_review(
     @lru_cache(maxsize=None)
     def leaf_set(node: str) -> frozenset[int]:
         return frozenset(descendant_leaves(node))  # type: ignore[operator]
-
-    @lru_cache(maxsize=None)
-    def cluster_set(node: str) -> frozenset[int]:
-        return frozenset(int(clusters[index]) for index in descendant_leaves(node))  # type: ignore[operator]
 
     def full_cluster_leaf_union(cluster_ids: frozenset[int]) -> frozenset[int]:
         leaves: set[int] = set()
@@ -619,7 +607,7 @@ def build_monophyletic_subtree_meeting_review(
 
     meeting_rows: list[dict[str, object]] = []
     child_rows: list[dict[str, object]] = []
-    for node in sorted(parent_nodes, key=lambda value: int(value[1:])):
+    for node in sorted(inputs.parent_nodes, key=lambda value: int(value[1:])):
         node_cluster_set = cluster_set(node)
         if len(node_cluster_set) < 2:
             continue
@@ -672,7 +660,7 @@ def build_monophyletic_subtree_meeting_review(
                     "child_dominant_celltype_fraction": float(
                         child_celltype_counts.iloc[0] / len(child_indices)
                     ),
-                    "child_top_celltypes": top_counts_text(child_celltype_counts, 8),
+                    "child_top_celltypes": format_counts(child_celltype_counts, 8),
                     "child_dominant_lineage": str(child_lineage_counts.index[0]),
                     "child_lineage_counts": "; ".join(
                         f"{key}:{value}" for key, value in child_lineage_counts.items()
@@ -757,7 +745,7 @@ def build_monophyletic_subtree_meeting_review(
                 "effective_celltypes": effective_celltypes,
                 "dominant_celltype": str(celltype_counts.index[0]),
                 "dominant_celltype_fraction": dominant_celltype_fraction,
-                "top_celltypes": top_counts_text(celltype_counts, 10),
+                "top_celltypes": format_counts(celltype_counts, 10),
                 "dominant_lineage": str(lineage_counts.index[0]),
                 "dominant_lineage_fraction": dominant_lineage_fraction,
                 "lineage_counts": "; ".join(
@@ -884,7 +872,6 @@ def write_plot(summary: pd.DataFrame, review: pd.DataFrame, output_dir: Path) ->
 def write_junction_umap_plot(
     junction_review: pd.DataFrame,
     assignments: pd.DataFrame,
-    children: dict[str, list[str]],
     descendant_leaves: object,
     output_dir: Path,
 ) -> None:
@@ -942,7 +929,6 @@ def write_junction_umap_plot(
 def write_monophyletic_meeting_umap_plot(
     meeting_review: pd.DataFrame,
     assignments: pd.DataFrame,
-    children: dict[str, list[str]],
     descendant_leaves: object,
     output_dir: Path,
 ) -> None:

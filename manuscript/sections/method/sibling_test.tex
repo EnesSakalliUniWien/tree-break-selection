@@ -254,7 +254,7 @@ posterior null probability. Also,
 x_q = (\log s_q,\log n_q),
 \]
 where $s_q$ is the resolved sibling projection dimension and $n_q$ is the
-parent leaf count. The method uses the working post-selection null family
+parent leaf count. The empirical estimator uses the working post-selection scale family
 \begin{equation}\label{eq:sibling-context-scale-model}
 T_q^{\mathrm{raw}} \mid H_0
 \approx
@@ -300,19 +300,23 @@ projected-Wald reference scale:
 {\sum_q w_q(u)a_q\nu_q}
 \right\}.
 \end{equation}
-Let $n_{\mathrm{eff}}$ be the effective sample size of the contributing sibling
-null weights. The implementation reports this effective sample size as
-diagnostic information. It is not an additional multiplier in
-\(\hat c_{f_u}(x_u)\), and it is not currently used as a hard threshold for
-accepting or rejecting calibration support.
+Let $g(q)$ identify the stopping event that owns calibration record $q$.
+Nested blocked descendants inherit the group of the nearest tested,
+non-significant ancestor edge path. Support counts, effective sample size,
+maximum weight share, and leave-one-group sensitivity are evaluated over these
+dependency groups, so descendants of one stopping event cannot create
+additional effective support. These quantities remain support diagnostics;
+grouping known shared events does not establish independence between groups or
+validate a selected-tail reference law.
 
 \paragraph{Calibration-support contract.}
 For a focal sibling pair $u$, the empirical-null interpretation of
 \(\hat c_{f_u}(x_u)\) requires positive calibration mass from records that are
-strict-null-like or stopped by the edge path.
+tested null-like or lie below a stopped edge path.
 Let $f_q$ denote the feature family of sibling record $q$, let
-$S_{l(q)}^{\mathrm{edge}}$ and $S_{r(q)}^{\mathrm{edge}}$ be the two
-child-parent edge rejection indicators, and let
+$E_{l(q)}^{\mathrm{edge}}$ and $E_{r(q)}^{\mathrm{edge}}$ indicate whether the
+two child-parent edges were tested, let $S_{l(q)}^{\mathrm{edge}}$ and
+$S_{r(q)}^{\mathrm{edge}}$ be their rejection indicators, and let
 $B_q^{\mathrm{edge}}$ indicate that the sibling record is edge-blocked by the
 ancestor testing path. Define the local support set
 \[
@@ -329,28 +333,33 @@ The strict empirical-null support set is
 =
 \left\{
 q\in\mathcal C_u:
+E_{l(q)}^{\mathrm{edge}}=1,\
+E_{r(q)}^{\mathrm{edge}}=1,\
 S_{l(q)}^{\mathrm{edge}}=0,\
 S_{r(q)}^{\mathrm{edge}}=0
 \right\},
 \]
-and the weak stopped-or-null support set is
+so untested descendants are not called strict-null observations. The stopped
+support set is
 \[
 \mathcal C_{\mathrm{stop},u}
 =
 \left\{
 q\in\mathcal C_u:
-q\in\mathcal C_{0,u}\ \text{or}\ B_q^{\mathrm{edge}}=1
+B_q^{\mathrm{edge}}=1
 \right\}.
 \]
 If $\mathcal C_{0,u}$ has positive calibration mass, the local estimate has
 strict internal empirical-null support. If $\mathcal C_{0,u}$ is empty but
-$\mathcal C_{\mathrm{stop},u}$ has positive mass, the estimate has only weak
-stopped-or-null support. If both are empty but $\mathcal C_u$ has positive
+$\mathcal C_{\mathrm{stop},u}$ has positive mass, the estimate has only
+stopped-path support. The current estimator retains nested blocked descendants
+as node records but assigns them to their owning stopping-event dependency
+group. If both support sets are empty but $\mathcal C_u$ has positive
 mass, the data provide selected non-null context but not empirical-null
 calibration. If $\mathcal C_u$ has no positive mass, the local empirical-null
-calibration contract is unsatisfied. A leave-one-context version of this
-support contract may be needed for a stronger finite-sample guarantee, but it
-is not the current implementation and is therefore left as validation work.
+calibration contract is unsatisfied. The implementation reports
+leave-one-group sensitivity, but its configured thresholds are not validated
+method constants.
 
 The production rule is intentionally strict. The current implementation raises
 a calibration-data error when the available records are only selected non-null
@@ -360,25 +369,55 @@ external selection-conditioned model would first require validation under the
 full hierarchy-selection event, rather than being used as a fallback. The method
 must not silently substitute a neutral inflation factor.
 The present evidence establishes this as a necessary support contract, not as a
-sufficient finite-sample guarantee. Minimum effective sample size thresholds
-remain a validation gap.
+sufficient finite-sample guarantee. In particular, internal support does not
+resolve the selected-hierarchy reference law.
 The denominator is required to have positive effective calibration mass from
-strict-null or stopped-edge records. If no such positive-degree sibling records
-carry positive null weight, the calibration contract is not satisfied and the
-implementation raises an error.
+tested-null or stopped-path records. If no such positive-degree sibling
+records carry positive null weight, the calibration contract is not satisfied
+and the pipeline closes focal sibling gates; the benchmark reports an unsupported outcome.
 
-\paragraph{Runtime inflation adjustment and sibling false-discovery-rate correction.}
-For each focal pair $u$, the inflation-adjusted runtime test is
+\paragraph{Reference-law contract and sibling false-discovery-rate correction.}
+For same-data selected hierarchies, the hierarchy, focal pair, calibration
+records, stopping events, and weights are all data-derived and may share
+observations. Consequently,
 \begin{equation}
-T_u^{\mathrm{adj}} = \frac{T_u^{\mathrm{raw}}}{a_u\hat{c}(z_u)},
-\qquad
-p_u^{\mathrm{sib}}
-=
-\Pr\!\left(\chi^2_{\nu_u} \ge T_u^{\mathrm{adj}}\right).
+\Pr\!\left(
+\chi^2_{\nu_u}
+\ge
+\frac{T_u^{\mathrm{raw}}}{a_u\hat c_{f_u}(x_u)}
+\right)
 \end{equation}
-This adjusted test should be read as a practical calibration layer for
-post-selection scale distortion rather than as a
-separate finite-sample exact theorem for the adjusted sibling statistic.
+is the restored empirical plug-in p-value, whose selected-tail validity remains
+unproven. With internal support, the production path reports
+\texttt{internal\_admissible} and supplies this p-value to traversal-aligned
+sibling BH. Here admissibility means availability under the support policy,
+not a selective-inference guarantee. Dependency-group support diagnostics
+and the unresolved reference-law metadata remain available in the decision API.
+The zero-dimensional case remains the deterministic decision $p=1$.
+
+A separate exact mode is available only under a stronger contract. Suppose a
+focal statistic and $m$ calibration statistics satisfy
+\[
+\frac{T_u}{ac}\sim\chi^2_{\nu_u},
+\qquad
+\frac{T_q}{ac}\sim\chi^2_{\nu_q},
+\]
+mutually independently, with common positive reference scale $a$, common
+unknown inflation $c$, and fixed unit calibration weights. Let
+$D=\sum_{q=1}^m\nu_q$ and
+\[
+\widetilde c=\frac{\sum_{q=1}^m T_q}{aD}.
+\]
+Pairwise-disjoint calibration observation sets and a focal observation set
+disjoint from their union are required provenance for this mode. Then
+\[
+F_u=\frac{T_u}{a\nu_u\widetilde c}\sim F_{\nu_u,D}.
+\]
+The exact-mode p-value is the upper $F_{\nu_u,D}$ tail, floored by the
+unadjusted upper $\chi^2_{\nu_u}$ tail so estimated deflation cannot make the
+one-sided calibrated p-value smaller. Unequal deterministic weights are not
+accepted by this exact mode; neither Kish effective sample size nor a
+Satterthwaite approximation is labeled exact.
 
 The sibling multiplicity correction is ordinary
 Benjamini--Hochberg \citep{benjamini1995controlling} at

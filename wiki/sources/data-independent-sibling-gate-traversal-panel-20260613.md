@@ -2,14 +2,12 @@
 title: Data-Independent Sibling Gate Traversal Panel 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
-  - tests/validation/calibration/sibling/gates/100_test_data_independent_sibling_gate_traversal_panel.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
-  - tests/statistics/31_test_registry_config_wiring.py
+  - tests/hierarchy_analysis/decomposition/gates/test_profiles.py
   - tests/core/test_gate_annotation_reuse.py
   - raw/inbox/data-independent-sibling-gate-traversal-20260613.md
 tags:
@@ -220,12 +218,11 @@ and reports cluster-level outcomes.
   expected artifacts and behaved as a point-transfer candidate, but production
   admissibility stayed fail-closed because the confidence component was still
   null-uncertain with only two null replicates.
-- Named profiles `fixed_coordinate_guarded_v1` and `fixed_global_guarded_v1`
-  now package the non-cross-fit method knobs as auditable diagnostic
-  candidates. They set the fixed sibling method, selected-topology penalty
-  `50`, root-stability threshold `0.24`, `12` stability subsamples, feature
-  fraction `0.8`, and deterministic seed `0`; the profile id is stored in
-  gate config metadata and participates in cache reuse checks.
+- `fixed_coordinate_guarded_v1` packages the fixed-coordinate same-data method
+  knobs as an auditable diagnostic candidate. The historical fixed-global
+  profile used the same penalty and stability constants with
+  `fixed_global_chi_square`; its ID is now retired and targeted fixed-global
+  runs supply those settings explicitly.
 - The shared TBS benchmark runner now forwards profile/fixed-gate settings to
   both gate annotation and decomposition, and records them in
   `MethodRunResult.extra`. The method-constants manifest tracks
@@ -264,16 +261,15 @@ and reports cluster-level outcomes.
   fixed-profile replay while retaining matched signal, but broad confidence,
   guard replicate count, guard alpha, and supported feature-family/tree-domain
   evidence remain open.
-- The packaged profile for future direct runtime validation is
+- The historical direct-runtime validation profile was
   `fixed_coordinate_selective_root_v1`: fixed coordinate BH, selected-topology
   penalty `50`, root-stability threshold `0.24`, `12` stability subsamples,
   feature fraction `0.8`, and a `99`-draw selected-root permutation guard at
-  alpha `0.01`.
+  alpha `0.01`. That profile ID is now retired; targeted replays supply these
+  default-off guard settings explicitly.
 
 ## Evidence
 
-- `tests/validation/calibration/sibling/gates/100_test_data_independent_sibling_gate_traversal_panel.py`
-  verifies summary statuses and output writing.
 - `raw/inbox/data-independent-sibling-gate-traversal-20260613.md` records the
   six-case binary/categorical traversal smoke, stricter transfer sweep, and
   high-cardinality categorical split-geometry, selected-root permutation,

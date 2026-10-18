@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import hashlib
 import math
-from collections.abc import Mapping
 from dataclasses import dataclass
 from time import perf_counter
 
@@ -18,6 +16,10 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
     validate_edge_branch_length_variance_policy,
+)
+from tree_break_selection.tree.construction.defaults import (
+    DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    DEFAULT_TREE_LINKAGE_METHOD,
 )
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
@@ -50,10 +52,9 @@ from ...statistics.sibling_divergence.inflated_projected_wald_annotation.pipelin
 from ...statistics.sibling_divergence.inflation_correction.empirical_null_inflation_estimation import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
 )
-from ...statistics.sibling_divergence.inflation_correction.external_selected_tail_calibration import (
-    ExternalSelectedTailCalibrationModel,
-)
 from ...statistics.sibling_divergence.inflation_correction.types.inflation_model import (
+    INTERNAL_SUPPORT_CONTRACT_VERSION,
+    CalibrationSupportPolicySnapshot,
     CalibrationSupportThresholds,
 )
 from ...statistics.sibling_divergence.projection.gate_inputs.parent_principal_component_inputs import (
@@ -66,7 +67,6 @@ from .annotation_bundle import (
     EdgeGateResult,
     GateAnnotationBundle,
     GateAnnotationConfigMetadata,
-    GateAnnotationLeafDataMetadata,
     GateAnnotationMetadata,
     GateMetadata,
 )
@@ -78,22 +78,12 @@ from .guards import (
     apply_root_selective_permutation_guard,
     apply_root_stability_guard,
     compute_root_feature_subsample_stability,
-    selected_global_sibling_min_permutation_p_value,
-    selected_root_permutation_p_value,
     validate_root_selective_permutation_guard_config,
     validate_root_stability_guard_config,
 )
 from .profiles import (
-    SIBLING_GATE_PROFILES,
     SiblingGateProfile,
-    resolve_sibling_gate_profile,
     resolve_sibling_gate_profile_config,
-)
-from .spectral_transport import (
-    DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-    DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
-    annotate_spectral_transport_passthrough_support,
 )
 
 
@@ -145,12 +135,6 @@ def resolve_effective_sibling_alpha(
     return float(effective)
 
 
-def _support_thresholds_signature(
-    thresholds: CalibrationSupportThresholds,
-) -> tuple[tuple[str, float | int], ...]:
-    return tuple((field, getattr(thresholds, field)) for field in thresholds.__dataclass_fields__)
-
-
 def build_gate_annotation_config_metadata(
     *,
     spectral_minimum_dimension: int = EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION,
@@ -169,27 +153,17 @@ def build_gate_annotation_config_metadata(
     root_stability_subsample_replicates: int = 0,
     root_stability_feature_fraction: float = 0.8,
     root_stability_seed: int = 0,
-    root_stability_tree_distance_metric: str = "hamming",
-    root_stability_tree_linkage_method: str = "average",
+    root_stability_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    root_stability_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
     root_selective_permutation_guard_replicates: int = 0,
     root_selective_permutation_guard_seed: int = 0,
     root_selective_permutation_guard_alpha: float | None = None,
     root_selective_permutation_guard_scope: str = "root",
-    root_selective_permutation_guard_tree_distance_metric: str = "hamming",
-    root_selective_permutation_guard_tree_linkage_method: str = "average",
+    root_selective_permutation_guard_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    root_selective_permutation_guard_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
     enforce_internal_support_thresholds: bool = False,
     internal_support_thresholds: CalibrationSupportThresholds = (
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
-    ),
-    external_selected_tail_model: ExternalSelectedTailCalibrationModel | None = None,
-    spectral_transport_passthrough_guard: bool = False,
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    spectral_transport_require_mp_blocks: bool = True,
-    spectral_transport_block_log_tolerance: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    ),
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
     ),
 ) -> GateAnnotationConfigMetadata:
     """Capture config values that affect gate annotation outputs."""
@@ -245,52 +219,10 @@ def build_gate_annotation_config_metadata(
             root_selective_permutation_guard_tree_linkage_method
         ),
         enforce_internal_support_thresholds=bool(enforce_internal_support_thresholds),
-        internal_support_thresholds_signature=_support_thresholds_signature(
-            internal_support_thresholds
+        internal_support_policy=CalibrationSupportPolicySnapshot(
+            support_contract_version=INTERNAL_SUPPORT_CONTRACT_VERSION,
+            thresholds=internal_support_thresholds,
         ),
-        external_selected_tail_calibration_enabled=(external_selected_tail_model is not None),
-        external_selected_tail_rule_count=(
-            0
-            if external_selected_tail_model is None
-            else int(len(external_selected_tail_model.rules))
-        ),
-        spectral_transport_passthrough_guard=bool(spectral_transport_passthrough_guard),
-        spectral_transport_max_cost=float(spectral_transport_max_cost),
-        spectral_transport_require_mp_blocks=bool(spectral_transport_require_mp_blocks),
-        spectral_transport_block_log_tolerance=float(spectral_transport_block_log_tolerance),
-        spectral_transport_unmatched_mode_penalty=float(spectral_transport_unmatched_mode_penalty),
-    )
-
-
-def build_gate_annotation_leaf_data_metadata(
-    leaf_data: pd.DataFrame | None,
-    *,
-    feature_space: FeatureSpace | None = None,
-) -> GateAnnotationLeafDataMetadata:
-    """Capture enough leaf-data identity to validate reusable annotations."""
-    if leaf_data is None:
-        return GateAnnotationLeafDataMetadata(present=False)
-
-    content_hash = hashlib.sha256()
-    content_hash.update(str(tuple(leaf_data.shape)).encode("utf-8"))
-    content_hash.update(
-        pd.util.hash_pandas_object(pd.Index(leaf_data.index), index=False)
-        .to_numpy(dtype=np.uint64)
-        .tobytes()
-    )
-    content_hash.update(
-        pd.util.hash_pandas_object(pd.Index(leaf_data.columns), index=False)
-        .to_numpy(dtype=np.uint64)
-        .tobytes()
-    )
-    content_hash.update(
-        pd.util.hash_pandas_object(leaf_data, index=True).to_numpy(dtype=np.uint64).tobytes()
-    )
-    return GateAnnotationLeafDataMetadata(
-        present=True,
-        shape=(int(leaf_data.shape[0]), int(leaf_data.shape[1])),
-        content_hash=content_hash.hexdigest(),
-        feature_space_signature=(None if feature_space is None else feature_space.signature),
     )
 
 
@@ -332,27 +264,30 @@ def _resolve_sibling_gate_inputs(
     )
 
 
-def _resolve_fixed_sibling_gate_feature_space(
+def _resolve_feature_space(
     *,
     feature_space: FeatureSpace | None,
     leaf_data: pd.DataFrame | None,
-) -> FeatureSpace:
+) -> FeatureSpace | None:
     if feature_space is not None:
         return feature_space
     if leaf_data is None:
+        return None
+    return infer_feature_space_from_columns(tuple(leaf_data.columns))
+
+
+def _require_feature_space(feature_space: FeatureSpace | None) -> FeatureSpace:
+    if feature_space is None:
         raise ValueError(
             "Fixed-subspace sibling gates require feature_space metadata or leaf_data "
             "columns for feature-space inference."
         )
-    return infer_feature_space_from_columns(tuple(leaf_data.columns))
+    return feature_space
 
 
 def _resolve_edge_spectral_minimum_dimension(
     *,
     spectral_minimum_dimension: int,
-    sibling_gate_method: str,
-    feature_space: FeatureSpace | None,
-    leaf_data: pd.DataFrame | None,
 ) -> int:
     """Validate the edge projection floor.
 
@@ -386,34 +321,23 @@ def run_gate_annotation_pipeline(
     ),
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
     sibling_gate_profile: str | SiblingGateProfile | None = None,
-    sibling_gate_method: str = "projected_wald_inflation",
-    sibling_gate_alpha_penalty: float = 1.0,
+    sibling_gate_method: str | None = None,
+    sibling_gate_alpha_penalty: float | None = None,
     root_stability_guard_threshold: float | None = None,
-    root_stability_subsample_replicates: int = 0,
-    root_stability_feature_fraction: float = 0.8,
-    root_stability_seed: int = 0,
-    root_stability_tree_distance_metric: str = "hamming",
-    root_stability_tree_linkage_method: str = "average",
-    root_selective_permutation_guard_replicates: int = 0,
-    root_selective_permutation_guard_seed: int = 0,
+    root_stability_subsample_replicates: int | None = None,
+    root_stability_feature_fraction: float | None = None,
+    root_stability_seed: int | None = None,
+    root_stability_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    root_stability_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
+    root_selective_permutation_guard_replicates: int | None = None,
+    root_selective_permutation_guard_seed: int | None = None,
     root_selective_permutation_guard_alpha: float | None = None,
-    root_selective_permutation_guard_scope: str = "root",
-    root_selective_permutation_guard_tree_distance_metric: str = "hamming",
-    root_selective_permutation_guard_tree_linkage_method: str = "average",
+    root_selective_permutation_guard_scope: str | None = None,
+    root_selective_permutation_guard_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    root_selective_permutation_guard_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
     enforce_internal_support_thresholds: bool = False,
     internal_support_thresholds: CalibrationSupportThresholds = (
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
-    ),
-    external_selected_tail_model: ExternalSelectedTailCalibrationModel | None = None,
-    external_selected_tail_context_by_parent: Mapping[object, Mapping[str, object]] | None = None,
-    spectral_transport_passthrough_guard: bool = False,
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    spectral_transport_require_mp_blocks: bool = True,
-    spectral_transport_block_log_tolerance: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    ),
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
     ),
 ) -> GateAnnotationBundle:
     """Run the edge-gate and sibling-gate annotation pipeline.
@@ -432,7 +356,6 @@ def run_gate_annotation_pipeline(
         "sibling_gate_fdr_sec": 0.0,
         "root_stability_guard_sec": 0.0,
         "root_selective_permutation_guard_sec": 0.0,
-        "spectral_transport_passthrough_guard_sec": 0.0,
     }
     (
         sibling_gate_profile_id,
@@ -446,11 +369,6 @@ def run_gate_annotation_pipeline(
         root_selective_permutation_guard_seed,
         root_selective_permutation_guard_alpha,
         root_selective_permutation_guard_scope,
-        spectral_transport_passthrough_guard,
-        spectral_transport_max_cost,
-        spectral_transport_require_mp_blocks,
-        spectral_transport_block_log_tolerance,
-        spectral_transport_unmatched_mode_penalty,
     ) = resolve_sibling_gate_profile_config(
         sibling_gate_profile=sibling_gate_profile,
         sibling_gate_method=sibling_gate_method,
@@ -463,11 +381,6 @@ def run_gate_annotation_pipeline(
         root_selective_permutation_guard_seed=root_selective_permutation_guard_seed,
         root_selective_permutation_guard_alpha=(root_selective_permutation_guard_alpha),
         root_selective_permutation_guard_scope=root_selective_permutation_guard_scope,
-        spectral_transport_passthrough_guard=spectral_transport_passthrough_guard,
-        spectral_transport_max_cost=spectral_transport_max_cost,
-        spectral_transport_require_mp_blocks=spectral_transport_require_mp_blocks,
-        spectral_transport_block_log_tolerance=spectral_transport_block_log_tolerance,
-        spectral_transport_unmatched_mode_penalty=(spectral_transport_unmatched_mode_penalty),
     )
     continuous_covariance_policy = validate_continuous_covariance_policy(
         continuous_covariance_policy
@@ -519,9 +432,6 @@ def run_gate_annotation_pipeline(
         )
     effective_spectral_minimum_dimension = _resolve_edge_spectral_minimum_dimension(
         spectral_minimum_dimension=spectral_minimum_dimension,
-        sibling_gate_method=sibling_gate_method,
-        feature_space=feature_space,
-        leaf_data=leaf_data,
     )
     adaptive_projection_fraction = (
         None
@@ -533,13 +443,15 @@ def run_gate_annotation_pipeline(
             "adaptive_projection_dimension_energy_fraction must lie in (0, 1] "
             f"when set; got {adaptive_projection_dimension_energy_fraction!r}."
         )
+    resolved_feature_space = _resolve_feature_space(
+        feature_space=feature_space,
+        leaf_data=leaf_data,
+    )
     adaptive_projection_basis_dimension = None
     if adaptive_projection_fraction is not None:
-        adaptive_feature_space = _resolve_fixed_sibling_gate_feature_space(
-            feature_space=feature_space,
-            leaf_data=leaf_data,
+        adaptive_projection_basis_dimension = int(
+            _require_feature_space(resolved_feature_space).contrast_dimension
         )
-        adaptive_projection_basis_dimension = int(adaptive_feature_space.contrast_dimension)
 
     # Run edge-divergence gate: child-parent edge tests
     edge_gate_start_sec = perf_counter()
@@ -597,33 +509,20 @@ def run_gate_annotation_pipeline(
             adaptive_projection_dimension_energy_fraction=adaptive_projection_fraction,
             enforce_support_thresholds=enforce_internal_support_thresholds,
             support_thresholds=internal_support_thresholds,
-            external_selected_tail_model=external_selected_tail_model,
-            external_selected_tail_context_by_parent=(external_selected_tail_context_by_parent),
             stage_timings=stage_timings,
         )
     else:
-        fixed_feature_space = _resolve_fixed_sibling_gate_feature_space(
-            feature_space=feature_space,
-            leaf_data=leaf_data,
-        )
         annotated_df = annotate_fixed_subspace_sibling_divergence(
             tree,
             edge_annotated_df,
             significance_level_alpha=effective_sibling_alpha,
-            feature_space=fixed_feature_space,
+            feature_space=_require_feature_space(resolved_feature_space),
             method=sibling_gate_method,
             continuous_covariance_policy=continuous_covariance_policy,
             continuous_covariance_min_child_leaf_count=(continuous_covariance_min_child_leaf_count),
         )
     sibling_gate_sec = float(perf_counter() - sibling_gate_start_sec)
-    channel_feature_space = (
-        feature_space
-        if feature_space is not None
-        else infer_feature_space_from_columns(tuple(leaf_data.columns))
-        if leaf_data is not None
-        else None
-    )
-    if channel_feature_space is not None:
+    if resolved_feature_space is not None:
         sparse_channel_method = (
             sibling_gate_method
             if sibling_gate_method in {"fixed_coordinate_bh", "fixed_block_bh"}
@@ -632,7 +531,7 @@ def run_gate_annotation_pipeline(
         annotated_df = annotate_fixed_subspace_sibling_evidence_channels(
             tree,
             annotated_df,
-            feature_space=channel_feature_space,
+            feature_space=resolved_feature_space,
             sparse_method=sparse_channel_method,  # type: ignore[arg-type]
             dense_method="fixed_global_chi_square",
             continuous_covariance_policy=continuous_covariance_policy,
@@ -642,15 +541,10 @@ def run_gate_annotation_pipeline(
         root_guard_start_sec = perf_counter()
         if leaf_data is None:
             raise ValueError("Root stability guard requires leaf_data.")
-        guard_feature_space = (
-            feature_space
-            if feature_space is not None
-            else infer_feature_space_from_columns(tuple(leaf_data.columns))
-        )
         root_stability = compute_root_feature_subsample_stability(
             tree,
             leaf_data,
-            guard_feature_space,
+            resolved_feature_space,
             subsample_replicates=root_stability_subsample_replicates,
             feature_fraction=root_stability_feature_fraction,
             seed=root_stability_seed,
@@ -668,16 +562,11 @@ def run_gate_annotation_pipeline(
         root_selective_start_sec = perf_counter()
         if leaf_data is None:
             raise ValueError("Selected-root permutation guard requires leaf_data.")
-        guard_feature_space = (
-            feature_space
-            if feature_space is not None
-            else infer_feature_space_from_columns(tuple(leaf_data.columns))
-        )
         annotated_df = apply_root_selective_permutation_guard(
             tree,
             annotated_df,
             leaf_data,
-            guard_feature_space,
+            resolved_feature_space,
             method=sibling_gate_method,
             bootstrap_replicates=int(root_selective_permutation_guard_replicates),
             seed=int(root_selective_permutation_guard_seed),
@@ -688,20 +577,6 @@ def run_gate_annotation_pipeline(
         )
         stage_timings["root_selective_permutation_guard_sec"] = float(
             perf_counter() - root_selective_start_sec
-        )
-    if bool(spectral_transport_passthrough_guard):
-        spectral_transport_start_sec = perf_counter()
-        annotated_df = annotate_spectral_transport_passthrough_support(
-            tree,
-            annotated_df,
-            spectral_context,
-            max_cost=float(spectral_transport_max_cost),
-            require_mp_blocks=bool(spectral_transport_require_mp_blocks),
-            eigenvalue_block_log_tolerance=float(spectral_transport_block_log_tolerance),
-            unmatched_mode_penalty=float(spectral_transport_unmatched_mode_penalty),
-        )
-        stage_timings["spectral_transport_passthrough_guard_sec"] = float(
-            perf_counter() - spectral_transport_start_sec
         )
     validate_edge_gate_columns(
         annotated_df,
@@ -747,16 +622,6 @@ def run_gate_annotation_pipeline(
             ),
             enforce_internal_support_thresholds=enforce_internal_support_thresholds,
             internal_support_thresholds=internal_support_thresholds,
-            external_selected_tail_model=external_selected_tail_model,
-            spectral_transport_passthrough_guard=spectral_transport_passthrough_guard,
-            spectral_transport_max_cost=spectral_transport_max_cost,
-            spectral_transport_require_mp_blocks=spectral_transport_require_mp_blocks,
-            spectral_transport_block_log_tolerance=(spectral_transport_block_log_tolerance),
-            spectral_transport_unmatched_mode_penalty=(spectral_transport_unmatched_mode_penalty),
-        ),
-        leaf_data=build_gate_annotation_leaf_data_metadata(
-            leaf_data,
-            feature_space=feature_space,
         ),
     )
 
@@ -772,17 +637,12 @@ def run_gate_annotation_pipeline(
 
 
 __all__ = [
-    "SIBLING_GATE_PROFILES",
     "SiblingGateProfile",
     "apply_root_selective_permutation_guard",
     "apply_root_stability_guard",
     "build_gate_annotation_config_metadata",
-    "build_gate_annotation_leaf_data_metadata",
     "compute_root_feature_subsample_stability",
     "resolve_effective_sibling_alpha",
-    "resolve_sibling_gate_profile",
     "resolve_sibling_gate_profile_config",
     "run_gate_annotation_pipeline",
-    "selected_global_sibling_min_permutation_p_value",
-    "selected_root_permutation_p_value",
 ]

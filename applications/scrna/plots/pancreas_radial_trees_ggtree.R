@@ -1,52 +1,19 @@
 #!/usr/bin/env Rscript
 # Dataset-specific pancreas radial-tree renderer.
 
-suppressPackageStartupMessages({
-  library(ape)
-  library(ggplot2)
-  library(ggtree)
-})
-
 script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 if (!length(script_arg)) {
   stop("Unable to resolve script path from Rscript command arguments.")
 }
 script_path <- normalizePath(sub("^--file=", "", script_arg[[1]]))
-project_root <- normalizePath(file.path(dirname(script_path), "..", "..", ".."))
-default_output_dir <- file.path(
-  project_root,
-  "raw",
-  "assets",
-  "benchmark-results",
-  "pancreas_scrna_cluster_benchmark_20260623"
+source(file.path(dirname(script_path), "tree_plot_helpers.R"), local = TRUE)
+context <- scrna_tree_plot_context(
+  script_path,
+  c("ape", "ggplot2", "ggtree")
 )
-trailing_args <- commandArgs(trailingOnly = TRUE)
-output_dir_arg <- grep("^--output-dir=", trailing_args, value = TRUE)
-output_dir <- if (length(output_dir_arg)) {
-  normalizePath(sub("^--output-dir=", "", output_dir_arg[[1]]), mustWork = FALSE)
-} else {
-  default_output_dir
-}
+output_dir <- context$output_dir
 
-method_map <- data.frame(
-  edge_csv = c(
-    "tbs_topology_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    "tbs_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    "tbs_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    "tbs_adaptive_diffusion_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    "tbs_adaptive_diffusion_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv"
-  ),
-  title = c(
-    "TBS topology-only edge gate",
-    "TBS recomputed NNLS branch-time edge gate",
-    "TBS raw-linkage branch-time diagnostic edge gate",
-    "TBS adaptive diffusion topology edge gate",
-    "TBS adaptive diffusion recomputed NNLS branch-time edge gate",
-    "TBS adaptive diffusion raw-linkage branch-time diagnostic edge gate"
-  ),
-  stringsAsFactors = FALSE
-)
+method_map <- pancreas_tree_method_map("edge_gate")
 
 missing_edge_csvs <- method_map$edge_csv[!file.exists(file.path(output_dir, method_map$edge_csv))]
 if (length(missing_edge_csvs)) {
@@ -62,60 +29,6 @@ edge_state <- function(edges) {
     "edge significant",
     ifelse(blocked, "ancestor blocked", ifelse(tested, "tested closed", "not tested"))
   )
-}
-
-readable_branch_lengths <- function(branch_lengths) {
-  values <- as.numeric(branch_lengths)
-  values[!is.finite(values) | values < 0] <- 0
-  if (!any(values > 0)) {
-    return(rep(1, length(values)))
-  }
-
-  transformed <- sqrt(values)
-  positive <- transformed[transformed > 0]
-  floor_value <- stats::median(positive, na.rm = TRUE) * 0.05
-  if (!is.finite(floor_value) || floor_value <= 0) {
-    floor_value <- min(positive, na.rm = TRUE)
-  }
-  transformed <- pmax(transformed, floor_value)
-
-  cap_value <- stats::quantile(transformed, probs = 0.99, names = FALSE, na.rm = TRUE)
-  if (is.finite(cap_value) && cap_value > 0) {
-    transformed <- pmin(transformed, cap_value)
-  }
-  transformed
-}
-
-edge_table_to_phylo <- function(edges) {
-  parents <- unique(as.character(edges$parent))
-  children <- unique(as.character(edges$child))
-  root <- setdiff(parents, children)
-  if (length(root) != 1L) {
-    stop("Expected exactly one root; found ", length(root))
-  }
-
-  tips <- sort(setdiff(children, parents))
-  tip_order <- order(as.integer(sub("^L", "", tips)))
-  tips <- tips[tip_order]
-  internal_nodes <- c(root, sort(setdiff(parents, root)))
-  tip_ids <- stats::setNames(seq_along(tips), tips)
-  internal_ids <- stats::setNames(length(tips) + seq_along(internal_nodes), internal_nodes)
-  node_ids <- c(tip_ids, internal_ids)
-
-  branch_lengths <- readable_branch_lengths(edges$branch_length)
-
-  phy <- list(
-    edge = cbind(
-      unname(node_ids[as.character(edges$parent)]),
-      unname(node_ids[as.character(edges$child)])
-    ),
-    tip.label = tips,
-    Nnode = length(internal_nodes),
-    node.label = internal_nodes,
-    edge.length = branch_lengths
-  )
-  class(phy) <- "phylo"
-  ape::reorder.phylo(phy, order = "cladewise")
 }
 
 node_metadata <- function(phy, edges) {

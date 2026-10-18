@@ -8,8 +8,15 @@ from __future__ import annotations
 
 import importlib
 
+from benchmarks.shared.benchmark_grid import benchmark_grid
+from benchmarks.shared.types import MethodSpec
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
+)
+from tree_break_selection.tree.construction import (
+    DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    DEFAULT_TREE_LINKAGE_METHOD,
+    SUPPORTED_LINKAGE_METHODS,
 )
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
@@ -18,11 +25,8 @@ from tree_break_selection.tree.distributions import (
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
-
-from benchmarks.shared.benchmark_grid import benchmark_grid
-from benchmarks.shared.types import MethodSpec
 
 
 def _import_runner(module: str, attr: str):
@@ -35,10 +39,10 @@ ADAPTIVE_PYDIFFMAP_DIFFUSION_PARAMS = {
     "k_neighbors": 10,
     "diffusion_time": 3,
     "n_components": 30,
-    "metric": "hamming",
+    "metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     "bandwidth_type": "-1/(d+2)",
     "epsilon": "median",
-    "tree_linkage_method": "average",
+    "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
 }
 
 GRAPHTOOLS_KERNEL_DIFFUSION_PARAMS = {
@@ -46,14 +50,12 @@ GRAPHTOOLS_KERNEL_DIFFUSION_PARAMS = {
     "k_neighbors": 10,
     "diffusion_time": 3,
     "n_components": 30,
-    "metric": "hamming",
+    "metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     "decay": 40,
     "anisotropy": 0.0,
     "kernel_symm": "+",
     "random_state": 0,
-    "tree_builder": "linkage",
-    "tree_rooting": "linkage_root",
-    "tree_linkage_method": "average",
+    "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
 }
 
 GRAPHTOOLS_ADAPTIVE_K_DIFFUSION_PARAMS = {
@@ -66,12 +68,12 @@ FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS = {
     "edge_branch_length_variance_policy": EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
     "branch_length_optimization_method": BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     "branch_length_optimization_target_metric": (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     "branch_length_optimization_pair_sample_size": 50_000,
     "branch_length_optimization_random_state": 0,
     "branch_length_optimization_solver_tolerance": 1e-5,
-    "branch_length_optimization_max_iterations": 300,
+    "branch_length_optimization_max_iterations": 1000,
 }
 
 CANONICAL_BENCHMARK_CLASS = "canonical"
@@ -87,25 +89,8 @@ GRAPHTOOLS_ADAPTIVE_K_TREE_STRATEGY_PARAMS = benchmark_grid(
         **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
     },
     axes={
-        "tree_linkage_method": (
-            "average",
-            "complete",
-            "weighted",
-            "single",
-            "centroid",
-            "median",
-            "ward",
-        ),
+        "tree_linkage_method": SUPPORTED_LINKAGE_METHODS,
     },
-) + benchmark_grid(
-    benchmark_class=OPTIONAL_GPL_BENCHMARK_CLASS,
-    grid_name=GRAPHTOOLS_TREE_STRATEGY_GRID,
-    base_params={
-        **GRAPHTOOLS_ADAPTIVE_K_DIFFUSION_PARAMS,
-        "tree_rooting": "mad",
-        **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
-    },
-    axes={"tree_builder": ("neighbor_joining",)},
 )
 
 
@@ -117,8 +102,8 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         param_grid=[
             # Default: Hamming + Average (UPGMA)
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
             },
         ],
         benchmark_class=CANONICAL_BENCHMARK_CLASS,
@@ -129,8 +114,8 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "continuous_covariance_policy": (GUARDED_WITHIN_CHILD_CONTINUOUS_COVARIANCE_POLICY),
                 "continuous_covariance_min_child_leaf_count": (
                     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT
@@ -144,7 +129,7 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
                 "tree_linkage_method": "complete",
             },
         ],
@@ -154,7 +139,7 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
                 "tree_linkage_method": "single",
             },
         ],
@@ -164,8 +149,8 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_method": "fixed_coordinate_bh",
             },
         ],
@@ -175,20 +160,9 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_method": "fixed_coordinate_by",
-            },
-        ],
-    ),
-    "tbs_fixed_coordinate_holm": MethodSpec(
-        name="TBS Fixed Coordinate Holm",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
-                "sibling_gate_method": "fixed_coordinate_holm",
             },
         ],
     ),
@@ -197,8 +171,8 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_method": "fixed_coordinate_bonferroni",
             },
         ],
@@ -208,8 +182,8 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_method": "fixed_block_bh",
             },
         ],
@@ -219,20 +193,80 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_method": "fixed_block_simes_bh",
             },
         ],
     ),
-    "tbs_conditional_topology_diagnostic": MethodSpec(
-        name="TBS (Conditional Topology Diagnostic)",
+    "tbs_nnls": MethodSpec(
+        name="TBS Divergence (NNLS branch lengths)",
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
-                "sibling_gate_profile": ("fixed_coordinate_conditional_topology_diagnostic_v1"),
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
+            },
+        ],
+    ),
+    "tbs_fixed_coordinate_bh_nnls": MethodSpec(
+        name="TBS Fixed Coordinate BH (NNLS branch lengths)",
+        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
+        param_grid=[
+            {
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
+                "sibling_gate_method": "fixed_coordinate_bh",
+            },
+        ],
+    ),
+    "tbs_fixed_coordinate_by_nnls": MethodSpec(
+        name="TBS Fixed Coordinate BY (NNLS branch lengths)",
+        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
+        param_grid=[
+            {
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
+                "sibling_gate_method": "fixed_coordinate_by",
+            },
+        ],
+    ),
+    "tbs_fixed_coordinate_bonferroni_nnls": MethodSpec(
+        name="TBS Fixed Coordinate Bonferroni (NNLS branch lengths)",
+        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
+        param_grid=[
+            {
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
+                "sibling_gate_method": "fixed_coordinate_bonferroni",
+            },
+        ],
+    ),
+    "tbs_fixed_block_bh_nnls": MethodSpec(
+        name="TBS Fixed Block Chi-square BH (NNLS branch lengths)",
+        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
+        param_grid=[
+            {
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
+                "sibling_gate_method": "fixed_block_bh",
+            },
+        ],
+    ),
+    "tbs_fixed_block_simes_bh_nnls": MethodSpec(
+        name="TBS Fixed Block Simes-BH (NNLS branch lengths)",
+        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
+        param_grid=[
+            {
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
+                "sibling_gate_method": "fixed_block_simes_bh",
             },
         ],
     ),
@@ -241,33 +275,9 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_profile": ("fixed_coordinate_global_passthrough_refined_v1"),
-            },
-        ],
-    ),
-    "tbs_spectral_transport_passthrough_diagnostic": MethodSpec(
-        name="TBS (Spectral Transport Passthrough Diagnostic)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
-                "sibling_gate_profile": (
-                    "fixed_coordinate_spectral_transport_passthrough_diagnostic_v1"
-                ),
-            },
-        ],
-    ),
-    "tbs_spectral_transport_passthrough": MethodSpec(
-        name="TBS (Spectral Transport Passthrough)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
-                "sibling_gate_profile": ("fixed_coordinate_spectral_transport_passthrough_v1"),
             },
         ],
     ),
@@ -276,8 +286,8 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "spectral_include_internal_barycenters": True,
                 "spectral_internal_distribution_mode": "empirical_barycenter",
                 "enforce_internal_support_thresholds": True,
@@ -289,49 +299,11 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
         param_grid=[
             {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
+                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "spectral_include_internal_barycenters": True,
                 "spectral_internal_distribution_mode": "branch_length_state",
                 "enforce_internal_support_thresholds": True,
-            },
-        ],
-    ),
-    "tbs_bandwidth_context_v1": MethodSpec(
-        name="TBS Regional Bandwidth Context",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
-                "neighborhood_bandwidth_profile": ("regional_tau_branch_length_support_only_v1"),
-            },
-        ],
-    ),
-    "tbs_neighbor_joining": MethodSpec(
-        name="TBS (Neighbor Joining, MAD Root)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
-                "tree_builder": "neighbor_joining",
-                "tree_rooting": "mad",
-            },
-        ],
-    ),
-    "tbs_iqtree3": MethodSpec(
-        name="TBS (IQ-TREE 3, MAD Root)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": "hamming",
-                "tree_linkage_method": "average",
-                "tree_builder": "iqtree3",
-                "tree_rooting": "mad",
-                "iqtree_executable": "iqtree3",
-                "iqtree_model": "JC2",
-                "iqtree_threads": 1,
             },
         ],
     ),
@@ -346,7 +318,7 @@ METHOD_SPECS: dict[str, MethodSpec] = {
                 "diffusion_method": "hamming_nn_diffusion",
                 "k_neighbors": 15,
                 "diffusion_time": 3,
-                "tree_linkage_method": "average",
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "branch_length_optimization_method": BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
             }
         ],

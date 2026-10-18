@@ -24,6 +24,9 @@ uv run python -m benchmarks.smoke.run_subset
 # Fast regression gate
 uv run python -m benchmarks.regression.run_gate
 
+# Continuously runnable local/CI gate
+uv run python -m benchmarks.continuous.run
+
 # Real-world datasets (MNIST, Penguins, Digits)
 uv run python -m benchmarks.experiments.mnist.run
 uv run python -m benchmarks.experiments.umap_datasets.run
@@ -58,6 +61,7 @@ Benchmark code is classified by role, not by age or filename:
 | Class | Location | Role |
 | ----- | -------- | ---- |
 | `canonical` | `benchmarks/full/`, `benchmarks/smoke/`, `benchmarks/regression/`, `benchmarks/shared/` | Current benchmark contract, shared runners, default method set, and fast gates. |
+| `continuous` | `benchmarks/continuous/`, `benchmarks/shared/benchmark_runs/` | CI/local maintained benchmark entrypoints and reusable run orchestration seams. |
 | `experiment` | `benchmarks/experiments/` | Standalone scientific studies with explicit sweeps or real datasets. |
 | `validation` | `benchmarks/validation/` | Focused calibration or method-constant checks with manifests. |
 | `diagnostic` | `benchmarks/diagnostics/` | Investigation-only panels, failure analysis, and post-run diagnosis. |
@@ -77,20 +81,21 @@ duplicate `run_id` values fail during method selection.
 
 Use separate method IDs only for genuinely different runner families, for
 example `tbs_diffusion_graphtools` versus `tbs_diffusion_graphtools_nnls`.
-Use grid axes for settings such as linkage, tree builder, alpha, nearest-neighbor
-K, and repeat index.
+Use grid axes for settings such as linkage, alpha, nearest-neighbor K, and
+repeat index.
 
 ### Shared Features
 
 The `benchmarks/shared/` system provides:
-- `matrix_audit` parameter for TensorBoard-style matrix exports
+- `benchmark_runs/` for reusable full/smoke/regression/continuous orchestration
+  seams
 - `evolution.py` for temporal evolution tracking
-- `audit_utils.py` for matrix export infrastructure
+- `audit_utils.py` for per-case decomposition audit CSV export
 - `linkage_matrix` captured in TBS runner's `extra` dict
 
-The `benchmarks/diagnostics/` system provides failure diagnosis, oracle
-recoverability, gate-path tracing, sibling-calibration diagnostics, and
-standalone benchmark-analysis tools in purpose-named subdirectories. Standalone
+The `benchmarks/diagnostics/` system provides failure diagnosis,
+sibling-calibration diagnostics, spectral diagnostics, and standalone
+benchmark-analysis tools in purpose-named subdirectories. Standalone
 experiments that are not part of the canonical full-suite contract live under
 `benchmarks/experiments/`.
 
@@ -101,6 +106,7 @@ experiments that are not part of the canonical full-suite contract live under
 | `shared/cases/__init__.py` | All test case definitions (Gaussian, binary, SBM, phylogenetic) |
 | `shared/cases/geometry.py` | Canonical case-recipe shape and true-K helpers                  |
 | `shared/pipeline.py`       | `benchmark_cluster_algorithm()` shared execution pipeline       |
+| `shared/benchmark_runs/`   | Shared run planning, runtime defaults, resume logic, and summaries |
 | `full/run.py`              | Canonical suite/report orchestrator                             |
 | `shared/util/case_inputs.py` | Matrix contract validation and shared distance preparation    |
 | `shared/util/method_execution.py` | One method+parameter run and result-row construction     |
@@ -109,6 +115,7 @@ experiments that are not part of the canonical full-suite contract live under
 | `shared/generators/`       | Data generators (phylogenetic, Gaussian, etc.)                  |
 | `smoke/run_subset.py`      | Small fast smoke runner                                         |
 | `regression/run_gate.py`   | Historically sensitive benchmark regression gate                |
+| `continuous/run.py`        | CI/local continuously runnable benchmark gate                   |
 | `experiments/`             | Standalone branch-length, MNIST, UMAP, and multi-split studies  |
 | `diagnostics/`             | Oracle, calibration, spectral, failure, and post-run diagnostics |
 | `validation/`              | Method-constant validation manifests and checks                 |
@@ -128,6 +135,31 @@ uv run python -m benchmarks.full.run
 cd benchmarks/full && python run.py
 ```
 
+### Environment Variables
+
+Every `TBS_*` variable the code reads. Booleans accept `1/true/yes/on` and
+`0/false/no/off`; an invalid value raises.
+
+| Variable | Default | Consumer |
+| --- | --- | --- |
+| `TBS_CASE_SUITE` | `full` | `full/run.py`: case suite (`binary`, `categorical`, `continuous`, `discretized_gaussian`, `graph`, `full`) |
+| `TBS_METHODS` | `DEFAULT_METHODS` | `shared/util/method_selection.py::resolve_methods_from_env`: comma-separated method ids or `all` |
+| `TBS_N_JOBS` | `1` in benchmark entrypoints; otherwise all cores for large trees | `tree_break_selection/.../spectral/marchenko_pastur.py`: spectral worker count; set to `1` by `shared/benchmark_runs/runtime.py` |
+| `TBS_ENABLE_PLOTS` | `true` | `full/run.py`: per-case PDFs and UMAP pages |
+| `TBS_ENABLE_MANIFOLD` | `false` | `full/run.py`: manifold comparison pages (needs plots) |
+| `TBS_UMAP_ISOLATE_CASES` | value of `TBS_ENABLE_PLOTS` | `full/run.py`: run each case in its own subprocess |
+| `TBS_CASE_TIMEOUT_SEC` | `1800` | `full/run.py`: per-case subprocess timeout |
+| `TBS_RUN_RELATIONSHIP_ANALYSIS` | `true` | `full/run.py`: benchmark-factor relationship report |
+| `TBS_ENABLE_RELATIONSHIP_PLOTS` | value of `TBS_ENABLE_PLOTS` | `full/run.py`: relationship-report PDF |
+| `TBS_RUN_TREE_CONSENSUS` | `false` | `full/run.py`: tree-consensus labels, report, and summary |
+| `TBS_RUN_DIR` | `benchmarks/results/run_<timestamp>_<suite>/` | `full/run.py`: output directory |
+| `TBS_EMBEDDING_BACKEND` | `umap` | `shared/plots/embedding.py`: `umap`, `auto`, or `tsne` |
+| `TBS_EMBEDDING_CACHE_DIR` | unset (no cache); `full/run.py` sets `benchmarks/results/.embedding_cache` when plotting | `shared/plots/embedding.py` |
+| `TBS_BENCHMARK_TREE_LAYOUT` | `radial` | `shared/plots/export.py`: `radial` or `rectangular` |
+| `TBS_GIT_COMMIT`, `TBS_GIT_BRANCH`, `TBS_GIT_DIRTY` | `unknown` | `shared/util/provenance.py`: build provenance fields |
+| `TBS_MAX_EXACT_CONTINUOUS_COVARIANCE_BLOCK_DIMENSION` | `4096` | `tree_break_selection/tree/distributions.py`: largest block that gets a dense covariance |
+| `TBS_MAX_EXACT_CONTINUOUS_COVARIANCE_WORK_MIB` | `512` | `tree_break_selection/tree/distributions.py`: dense covariance memory budget |
+
 ### Output Structure
 
 Results saved to timestamped directories under each benchmark's `results/` folder:
@@ -137,11 +169,12 @@ benchmarks/results/run_YYYYMMDD_HHMMSSZ_<case_suite>/
 ├── benchmark_performance_grid.md            # Ranked grid-cell report
 ├── benchmark_performance_grid_summary.csv   # One row per run_id/grid cell
 ├── benchmark_performance_grid_*.csv         # Case-by-run ARI/NMI/Purity/status grids
+├── benchmark_support_coverage_by_method_case_family.csv # Unsupported coverage
 ├── failure_report.md              # Failed cases analysis
 ├── benchmark_relationship_report.md   # Factor/method relationship summary
 ├── benchmark_relationship_*.csv       # Method/section summaries + modeled effects
 ├── benchmark_relationship_plots.pdf   # Relationship plots (if enabled)
-├── audit/                         # Matrix exports (if enabled)
+├── audit/                         # Per-case decomposition audit CSVs
 └── plots/
     └── case_N.pdf                 # Per-case visualizations
 ```
@@ -155,7 +188,7 @@ case suite and compares the default benchmark methods.
 
 **Data generation**: By default the runner uses the `full` suite from
 `benchmarks.shared.cases.get_test_cases_by_suite()`, which currently resolves to
-110 cases. Each case specifies a generator, sample count, feature count,
+122 cases. Each case specifies a generator, sample count, feature count,
 cluster count, and noise level. The dispatcher (`generate_case_data`) routes to
 the appropriate generator, binarizes, one-hot-encodes, or keeps continuous
 coordinates under an explicit `FeatureSpace`, and feeds the resulting matrix to
@@ -176,10 +209,9 @@ benchmark CSV preserves both fields in every result row.
   `tbs_diffusion_graphtools_nnls`, and
   `tbs_diffusion_graphtools_adaptive_nnls` require the `experimental-gpl` extra:
   `uv sync --extra experimental-gpl`.
-  `tbs_diffusion_graphtools_adaptive_nnls` exposes linkage and
-  neighbor-joining tree strategies as one parameter grid, not as duplicate
-  method IDs.
-- Each case runs in an isolated subprocess (optional), with configurable timeout (default 1800 s) and retry count (default 4).
+  `tbs_diffusion_graphtools_adaptive_nnls` exposes the seven linkage tree
+  strategies as one parameter grid, not as duplicate method IDs.
+- With plotting on, each case runs in an isolated subprocess (`TBS_UMAP_ISOLATE_CASES`) with a `TBS_CASE_TIMEOUT_SEC` timeout (default 1800 s). A case that times out or crashes is skipped and not recorded; the run finishes the remaining cases and reports, then exits non-zero listing the failed cases. Rerunning with the same `TBS_RUN_DIR` retries only those.
 - Per-case PDF plots (tree, UMAP embedding, manifold comparison) are generated and merged into `<case_suite>_benchmark_report.pdf`.
 - Set `TBS_CASE_SUITE` to run one mathematical input-contract suite:
   `binary`, `categorical`, `continuous`, `discretized_gaussian`, `graph`, or
@@ -248,7 +280,7 @@ For a focused diagnosis of the current TBS gap on categorical and overlapping fa
 **Purpose**: Fast iteration benchmark — runs ~15 representative cases from the full suite for quick validation during development.
 
 **Data generation**: Draws from the same default case pool used by the full
-suite (`get_default_test_cases()`), which currently contains 110 cases.
+suite (`get_default_test_cases()`), which currently contains 121 cases.
 Hand-picked subset covers Gaussian, Binary, Categorical, SBM, and Overlapping
 families.
 
@@ -295,30 +327,29 @@ families.
 
 **Evaluation**: ARI, NMI, K-found vs. K-true. Per-dataset PDF and interactive HTML plots.
 
+### 8. Performance Regression Suite (ASV)
+
+ASV times core tree construction and divergence population. See
+`asv.conf.json` and `asv_benchmarks/`; install it with
+`uv sync --extra benchmark-infra`.
+
 ---
 
-### 8. Calibration ([calibration/](calibration/))
+### 9. Calibration Diagnostics ([diagnostics/calibration/](diagnostics/calibration/))
 
-**Purpose**: Empirical statistical calibration — verifies that the edge and sibling tests maintain correct Type I error rates under the null hypothesis, and that TreeBH FDR control is valid.
+**Purpose**: Empirical calibration investigation — edge-null, sibling-null,
+selected-hierarchy, overlap, root, and traversal studies.
+Not a production calibration layer.
 
-**Data generation**:
-
-- **Null scenarios**: Pure-noise binary matrices with `p_one=0.5` (no cluster structure). Three sizes: 64×32, 128×64, 192×96.
-- **TreeBH scenarios**: Tree-structured synthetic p-values with known alt/null partition. Varying alt fractions (0–50%) and signal strengths (beta distribution shape parameter 0.2–0.5).
-
-**Experiment setup**:
-
-- Null calibration: 30 replicates per scenario (configurable via `TBS_CAL_NULL_REPS`). Full pipeline runs (linkage → tree → decompose) on each replicate.
-- TreeBH calibration: 200 replicates per scenario (configurable via `TBS_CAL_TREEBH_REPS`).
-- Also includes crossfit permutation diagnostics.
-
-**Evaluation**: Per-scenario Type I error rates with 95% binomial CIs. Edge and sibling rejection rates compared to nominal α = 0.05. TreeBH FDR and power summaries. Results written to CSV + `calibration_plots.pdf` + `calibration_report.md`.
+See `diagnostics/calibration/README.md` for the categories, shared reporting
+contracts, and maintained runners. Matching tests live under
+`tests/validation/calibration/`.
 
 ---
 
 ## Test Case Categories
 
-The full suite currently resolves to 110 cases from the shared case registry.
+The full suite currently resolves to 122 cases from the shared case registry.
 The major families represented in that registry are summarized below.
 
 ### Contract Suites
@@ -329,11 +360,11 @@ contracts instead of mixing every historical stress case into one score.
 | Suite | Cases | Contract | Main interpretation |
 | ----- | ----- | -------- | ------------------- |
 | `binary` | 42 | Native Bernoulli `{0,1}` matrices from the binary generator. | Primary benchmark for the mature Bernoulli Tree-Break Selection path. |
-| `categorical` | 27 | Multinomial/categorical blocks represented by explicit one-hot `FeatureSpace` metadata. | Tests block-covariance categorical support, not independent Bernoulli columns. |
+| `categorical` | 29 | Multinomial/categorical blocks represented by explicit one-hot `FeatureSpace` metadata. | Tests block-covariance categorical support, not independent Bernoulli columns. |
 | `continuous` | 9 | Selected raw Gaussian-coordinate examples with explicit continuous `FeatureSpace` and Euclidean tree distances. | Experimental empirical-Gaussian path; report separately from binary and discretized Gaussian results. |
-| `discretized_gaussian` | 32 | Gaussian sources transformed to binary or quantile one-hot features. | Discretization stress tests, not evidence for native continuous performance. |
+| `discretized_gaussian` | 33 | Gaussian sources transformed to binary or quantile one-hot features. | Discretization stress tests, not evidence for native continuous performance. |
 | `graph` | 3 | SBM adjacency features with precomputed modularity distance. | Graph-distance/recoverability stress tests. |
-| `full` | 110 | Union of the registry. | Broad smoke/reporting suite; avoid using its aggregate as a single method claim. |
+| `full` | 122 | Union of the registry. | Broad smoke/reporting suite; avoid using its aggregate as a single method claim. |
 
 ### Gaussian
 
@@ -347,8 +378,15 @@ Gaussian stress case; they are a focused check of the empirical-Gaussian path.
 | Family | Discretized cases | Selected continuous examples |
 | ------ | ----------------- | ---------------------------- |
 | Gaussian blobs (`blobs`) | `gaussian_extreme_noise`, `improved_gaussian`, `gaussian_null`, `overlapping_gaussian`, `overlapping_gaussian_quantile` | `continuous_gaussian_examples` |
-| Dimensional Gaussian | `gaussian_dimensionality_consolidated`, `gaussian_dimensionality_diffuse` | `continuous_dimensional_gaussian_examples` |
+| Dimensional Gaussian | `gaussian_dimensionality_consolidated`, `gaussian_dimensionality_diffuse`, `gaussian_sparse_signal_highd_noise` | `continuous_dimensional_gaussian_examples` |
 | Gaussian outliers | `gaussian_outlier_singleton`, `gaussian_outlier_contamination` | `continuous_gaussian_outlier_examples` |
+
+The 40-by-20,000 all-informative blob recipe is named
+`gauss_dense_signal_highd`: every coordinate is cluster-dependent, so it is a
+dense-signal calibration-saturation stress rather than an irrelevant-noise
+case. `gauss_sparse_signal_highd_noise` is the separate irrelevant-feature
+stress with 12 informative and 19,988 independent nuisance coordinates. Its
+known labels do not promise tree recoverability.
 
 ### Core Binary (28 cases)
 
@@ -417,10 +455,6 @@ Binary subcategories use the `binary` generator with high `entropy_param` (0.22�
 | `overlapping_binary_unbalanced` | 4     | 400–1000  | 100–1000   | 4–10 | entropy 0.28–0.35 |
 | `overlapping_gaussian`          | 8     | 300–1000  | 30–300     | 3–10 | std 3.0–6.0       |
 
-### Real Data (1 case)
-
-Loads `data/feature_matrices/feature_matrix.tsv` from the repo root — a pre-existing binary GO-term feature matrix. No ground-truth labels; used for qualitative evaluation only.
-
 ---
 
 ## Evaluation Methods
@@ -452,7 +486,7 @@ TBS variants, while the default full benchmark uses the method subset in
 | `tbs_diffusion_adaptive_nnls` | TBS (Adaptive pydiffmap Diffusion, NNLS Branch-Time) | pydiffmap adaptive diffusion tree | average | Default adaptive diffusion branch-time candidate; fixed-topology NNLS lengths plus normalized branch-length variance |
 | `tbs_diffusion_graphtools` | TBS (graphtools Kernel Diffusion) | graphtools kernel diffusion tree | average | Optional GPL backend; requires `uv sync --extra experimental-gpl`; linkage-ultrametric branch lengths |
 | `tbs_diffusion_graphtools_nnls` | TBS (graphtools Kernel Diffusion, NNLS Branch-Time) | graphtools kernel diffusion tree | average | Optional GPL backend; fixed-topology NNLS lengths plus normalized branch-length variance |
-| `tbs_diffusion_graphtools_adaptive_nnls` | TBS (graphtools Kernel Diffusion, Adaptive-K NNLS Branch-Time) | graphtools kernel diffusion tree with fragmentation-guard K selection | grid | Optional GPL backend; one tree-strategy grid over average, complete, weighted, single, centroid, median, Ward, and MAD-rooted neighbor joining; fixed-topology NNLS lengths plus normalized branch-length variance |
+| `tbs_diffusion_graphtools_adaptive_nnls` | TBS (graphtools Kernel Diffusion, Adaptive-K NNLS Branch-Time) | graphtools kernel diffusion tree with fragmentation-guard K selection | grid | Optional GPL backend; one tree-strategy grid over average, complete, weighted, single, and Ward linkage; fixed-topology NNLS lengths plus normalized branch-length variance |
 | `leiden`            | Leiden               | KNN graph         | —        | Community detection, resolution=1.0 |
 | `louvain`           | Louvain              | KNN graph         | —        | Community detection, resolution=1.0 |
 | `kmeans`            | K-Means              | —                 | —        | **Oracle**: uses true K             |
@@ -460,6 +494,33 @@ TBS variants, while the default full benchmark uses the method subset in
 | `dbscan`            | DBSCAN               | —                 | —        | Density-based, auto eps             |
 | `optics`            | OPTICS               | —                 | —        | Density-based, xi=0.05              |
 | `hdbscan`           | HDBSCAN              | —                 | —        | Density-based, min_cluster=5        |
+
+NNLS branch-time methods fail closed if fixed-topology branch-length fitting
+does not apply fitted lengths to the `PosetTree`. Non-converged solver output is
+not allowed to continue with topology-only/linkage branch lengths unless
+`branch_length_optimization_apply_nonconverged=True` is set for an explicit
+diagnostic run. NNLS benchmark output should retain the solver status,
+`applied_to_tree`, design density/nonzero counts, zero design-column counts, and
+normalized residual columns so quality comparisons can distinguish topology
+effects from failed branch-time fitting.
+
+Benchmark dispatch is fail-fast for method exceptions and uses three typed
+non-error outcomes. `status=ok` requires labels and contributes quality scores.
+`status=skip` is an operational non-attempt with a `skip_reason`.
+`status=unsupported` is a scientifically attempted run for which the method's
+assumptions cannot be satisfied; it has no labels, zero found clusters, `NaN`
+quality metrics, and a structured reason. The flattened result fields are
+`unsupported_reason_code`, `unsupported_stage`, `unsupported_reason`, and the
+five `unsupported_*_count` evidence columns. The initial registered reason is
+`empirical_null_no_internal_support` at `sibling_calibration`.
+
+Unexpected exceptions are never converted into result rows. Unsupported runs
+are excluded from quality-score denominators but remain in the scientific
+coverage denominator. Reports expose `unsupported_count` and
+`unsupported_rate = unsupported / (ok + unsupported)` by method and case
+family; operational skips are reported separately and do not change that
+denominator. Regression and maintained validation/NNLS grids therefore stop at
+the first execution error while continuing past typed unsupported outcomes.
 
 ## Adding New Benchmark Suites
 
@@ -495,7 +556,7 @@ from benchmarks.shared.pipeline import benchmark_cluster_algorithm
 from benchmarks.my_suite.cases import ALL_CASES
 
 if __name__ == "__main__":
-    results_df, fig = benchmark_cluster_algorithm(
+    results_df = benchmark_cluster_algorithm(
         test_cases=ALL_CASES,
         methods=["tbs", "tbs_diffusion"],
     )
@@ -571,7 +632,7 @@ from benchmarks.shared.pipeline import benchmark_cluster_algorithm
 # Benchmark runs use the canonical edge threshold and an explicit sibling
 # threshold argument. Tree geometry and linkage are explicit entries in each
 # registered method specification.
-df_results, _ = benchmark_cluster_algorithm(
+df_results = benchmark_cluster_algorithm(
     significance_level=DEFAULT_SIBLING_ALPHA,
 )
 
@@ -583,8 +644,7 @@ df_results, _ = benchmark_cluster_algorithm(
 
 Calibration diagnostics are maintained as explicit standalone scripts under
 `benchmarks/diagnostics/calibration/`, including edge-calibration helpers.
-Oracle and gate-path diagnostics live under `benchmarks/diagnostics/oracle/`;
-spectral-dimension diagnostics live under `benchmarks/diagnostics/spectral/`;
+Spectral diagnostics live under `benchmarks/diagnostics/spectral/`;
 post-run result analyses live under `benchmarks/diagnostics/analysis/`. The
 full benchmark runner only runs the clustering comparison and relationship
 analysis.

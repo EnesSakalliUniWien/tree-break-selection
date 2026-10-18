@@ -5,17 +5,17 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 from skbio.stats.distance import mantel
-from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import StandardScaler
+
 from tree_break_selection.plot.cluster_color_mapping import build_cluster_color_spec
 
 from .embedding import (
-    _coerce_nonnegative_cluster_count,
-    _color_cluster_count,
-    _infer_cluster_count_from_labels,
-    _resolve_expected_cluster_count,
+    coerce_nonnegative_cluster_count,
+    color_cluster_count,
+    infer_cluster_count_from_labels,
+    resolve_expected_cluster_count,
 )
 
 
@@ -34,7 +34,7 @@ def _require_finite(name: str, values: np.ndarray) -> np.ndarray:
 
 def create_manifold_alignment_plot(
     X_original: np.ndarray,
-    y_kl: np.ndarray,
+    y_tbs: np.ndarray,
     test_case_num: int,
     meta: dict,
     y_true: np.ndarray | None = None,
@@ -42,26 +42,23 @@ def create_manifold_alignment_plot(
     title: str | None = None,
 ):
     """Compare UMAP and Isomap manifolds with TBS cluster coloring."""
-    labels_array = np.asarray(y_kl)
+    labels_array = np.asarray(y_tbs)
     X = np.asarray(X_original, dtype=float)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    try:
-        import umap
-    except ImportError:
-        pca = PCA(n_components=min(3, X_scaled.shape[1], len(X_scaled)))
-        embedding_umap = pca.fit_transform(X_scaled)
-    else:
-        n_neighbors = min(15, len(X_scaled) - 1) if len(X_scaled) > 1 else 1
-        reducer = umap.UMAP(
-            n_components=3,
-            random_state=42,
-            n_neighbors=max(2, n_neighbors),
-            min_dist=0.05,
-            metric="euclidean",
-        )
-        embedding_umap = reducer.fit_transform(X_scaled)
+    # umap ships with the viz extra; a missing install must fail here, not silently become PCA.
+    import umap
+
+    n_neighbors = min(15, len(X_scaled) - 1) if len(X_scaled) > 1 else 1
+    reducer = umap.UMAP(
+        n_components=3,
+        random_state=42,
+        n_neighbors=max(2, n_neighbors),
+        min_dist=0.05,
+        metric="euclidean",
+    )
+    embedding_umap = reducer.fit_transform(X_scaled)
 
     embedding_umap = _require_finite("UMAP embedding", _pad_to_three_dims(embedding_umap))
 
@@ -92,14 +89,14 @@ def create_manifold_alignment_plot(
 
     upper_idx = np.triu_indices_from(dist_umap, k=1)
 
-    expected_clusters, expected_clusters_label = _resolve_expected_cluster_count(
+    expected_clusters, expected_clusters_label = resolve_expected_cluster_count(
         meta,
         labels_array,
         y_true,
     )
-    found_clusters = _coerce_nonnegative_cluster_count(meta.get("found_clusters"))
+    found_clusters = coerce_nonnegative_cluster_count(meta.get("found_clusters"))
     if found_clusters is None:
-        inferred_found_clusters = _infer_cluster_count_from_labels(labels_array)
+        inferred_found_clusters = infer_cluster_count_from_labels(labels_array)
         found_clusters = inferred_found_clusters if inferred_found_clusters is not None else 0
     fig = plt.figure(figsize=(18, 6))
     header = (
@@ -116,7 +113,7 @@ def create_manifold_alignment_plot(
         weight="bold",
     )
 
-    color_clusters = _color_cluster_count(expected_clusters or 0, found_clusters, labels_array)
+    color_clusters = color_cluster_count(expected_clusters or 0, found_clusters, labels_array)
     cluster_spec = build_cluster_color_spec(color_clusters, unassigned_color="#CCCCCC")
 
     def _scatter3d(ax, embedding, title: str) -> None:

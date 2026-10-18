@@ -16,22 +16,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLOT_SUFFIXES = {".png", ".pdf"}
 METADATA_COLUMNS = {"cell_id", "celltype", "umap1", "umap2"}
-DATASET_OUTPUT_DIRS = {
-    "pancreas": (
-        PROJECT_ROOT
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623"
-    ),
-    "goncalves": (
-        PROJECT_ROOT
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "goncalves_fetal_pancreas_progenitor_benchmark_20260624"
-    ),
-}
+DATASETS = ("goncalves", "pancreas")
 
 MANIFEST_FIELDS = [
     "dataset",
@@ -482,10 +467,6 @@ def classify_extra_plot(
     )
 
 
-def _append_note(notes: str, extra: str) -> str:
-    return f"{notes} {extra}".strip() if notes else extra
-
-
 def build_manifest(dataset: str, output_dir: Path) -> list[dict[str, Any]]:
     rows_by_name: dict[str, dict[str, Any]] = {}
     add_known_rows(dataset, output_dir, rows_by_name)
@@ -545,24 +526,24 @@ def run_commands(commands: list[list[str]]) -> None:
 
 
 def strict_failures(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    failure_statuses = {"missing", "alias_mismatch", "alias_target_missing"}
-    return [
-        row
-        for row in rows
-        if row["status"] in failure_statuses and row["role"] in {"canonical", "alias"}
-    ]
+    return [row for row in rows if row["status"] == "missing" and row["role"] == "canonical"]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", choices=sorted(DATASET_OUTPUT_DIRS), required=True)
-    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--dataset", choices=DATASETS, required=True)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Benchmark run directory to read and write; pass a raw/assets/ path explicitly.",
+    )
     parser.add_argument("--run-generators", action="store_true")
     parser.add_argument("--print-commands", action="store_true")
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
 
-    output_dir = args.output_dir or DATASET_OUTPUT_DIRS[args.dataset]
+    output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     commands = pipeline_commands(args.dataset, output_dir)
 

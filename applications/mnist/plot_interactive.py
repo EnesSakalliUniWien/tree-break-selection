@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import hashlib
 import html
 import json
@@ -13,51 +12,53 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import umap
+from scipy.spatial.distance import pdist
+
+from applications.mnist._shared import (
+    DIGIT_COLORS,
+    alpha_label,
+    best_rows,
+    parse_digit_counts,
+    sweep_assignment_key,
+)
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from benchmarks.experiments.mnist.run import load_mnist_subset
 from benchmarks.experiments.mnist.run_higher_categories import (
     create_plotly_higher_category_plot_3d,
 )
-from scipy.cluster.hierarchy import linkage
-from scipy.spatial.distance import pdist
-from tree_break_selection.tree.construction import tree_from_linkage
-
-from applications.mnist._shared import best_rows, parse_digit_counts
+from tree_break_selection.tree.construction import build_tree
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = ROOT / "benchmarks/results/experiments/mnist"
 SWEEP_DIR = SOURCE_DIR / "alpha_sweep_continuous_pca50_20260605"
-OUT_DIR = ROOT / "raw/assets/benchmark-results/mnist_tbs_analysis_20260624_plotly"
-
-OUT_INDEX = OUT_DIR / "index.html"
-OUT_CSV = OUT_DIR / "mnist_tbs_analysis_summary.csv"
-OUT_UMAP_COORDS = OUT_DIR / "mnist_pca50_umap_coordinates.csv"
-OUT_MANIFEST = OUT_DIR / "manifest.json"
-OUT_UMAP3D_HTML = OUT_DIR / "00b_mnist_umap3d_true_digit_best_tbs_cluster.html"
-OUT_UMAP3D_DIGIT_LABELS_HTML = OUT_DIR / "00c_mnist_umap3d_visible_digit_labels.html"
-OUT_UMAP3D_DOCSTYLE_HTML = OUT_DIR / "00d_mnist_umap3d_docstyle_digit_colorbar.html"
-OUT_UMAP_IMAGE_INSPECTOR_HTML = OUT_DIR / "00e_mnist_umap_point_image_inspector.html"
-OUT_UMAP3D_IMAGE_INSPECTOR_HTML = OUT_DIR / "00f_mnist_umap3d_point_image_inspector.html"
-
-DIGIT_COLORS = {
-    0: "#4e79a7",
-    1: "#f28e2b",
-    2: "#e15759",
-    3: "#76b7b2",
-    4: "#59a14f",
-    5: "#edc948",
-    6: "#b07aa1",
-    7: "#ff9da7",
-    8: "#9c755f",
-    9: "#bab0ab",
-}
 
 
-def _alpha_label(value: float) -> str:
-    return f"{value:g}"
+def _set_output_dir(output_dir: Path) -> None:
+    """Point every report path at ``output_dir`` (module paths that tests can patch)."""
+    global \
+        OUT_DIR, \
+        OUT_INDEX, \
+        OUT_CSV, \
+        OUT_UMAP_COORDS, \
+        OUT_MANIFEST, \
+        OUT_UMAP3D_HTML, \
+        OUT_UMAP3D_DIGIT_LABELS_HTML, \
+        OUT_UMAP3D_DOCSTYLE_HTML, \
+        OUT_UMAP_IMAGE_INSPECTOR_HTML, \
+        OUT_UMAP3D_IMAGE_INSPECTOR_HTML
+    OUT_DIR = output_dir
+    OUT_INDEX = output_dir / "index.html"
+    OUT_CSV = output_dir / "mnist_tbs_analysis_summary.csv"
+    OUT_UMAP_COORDS = output_dir / "mnist_pca50_umap_coordinates.csv"
+    OUT_MANIFEST = output_dir / "manifest.json"
+    OUT_UMAP3D_HTML = output_dir / "00b_mnist_umap3d_true_digit_best_tbs_cluster.html"
+    OUT_UMAP3D_DIGIT_LABELS_HTML = output_dir / "00c_mnist_umap3d_visible_digit_labels.html"
+    OUT_UMAP3D_DOCSTYLE_HTML = output_dir / "00d_mnist_umap3d_docstyle_digit_colorbar.html"
+    OUT_UMAP_IMAGE_INSPECTOR_HTML = output_dir / "00e_mnist_umap_point_image_inspector.html"
+    OUT_UMAP3D_IMAGE_INSPECTOR_HTML = output_dir / "00f_mnist_umap3d_point_image_inspector.html"
 
 
-def _assignment_key(linkage: str, edge_alpha: float, sibling_alpha: float) -> str:
-    return f"{linkage}_e{_alpha_label(edge_alpha)}_s{_alpha_label(sibling_alpha)}"
+_set_output_dir(timestamped_results_dir("mnist_tbs_analysis_plotly"))
 
 
 def _base_layout(fig: go.Figure, title: str) -> go.Figure:
@@ -139,8 +140,8 @@ def heatmap_figure(summary: pd.DataFrame, linkage: str, value: str, title: str) 
     fig = go.Figure(
         data=go.Heatmap(
             z=matrix,
-            x=[_alpha_label(v) for v in edges],
-            y=[_alpha_label(v) for v in siblings],
+            x=[alpha_label(v) for v in edges],
+            y=[alpha_label(v) for v in siblings],
             text=text,
             texttemplate="%{text}",
             colorscale="Viridis" if value != "n_clusters" else "Magma",
@@ -410,8 +411,11 @@ def _build_tbs_radial_tree_context(
     cluster_labels = assignments[best_key].astype(int).to_numpy()
     digit_labels = assignments["true_digit"].astype(int).to_numpy()
 
-    linkage_matrix = linkage(pdist(feature_matrix), method=str(linkage_method))
-    tree = tree_from_linkage(linkage_matrix, leaf_names=sample_names)
+    tree = build_tree(
+        pd.DataFrame(feature_matrix, index=sample_names),
+        pdist(feature_matrix),
+        linkage_method=str(linkage_method),
+    ).tree
     descendant_sets = tree.compute_descendant_sets(use_labels=True)
     node_by_leaf_set = {frozenset(leaves): node for node, leaves in descendant_sets.items()}
     leaf_node_by_label = {
@@ -1328,7 +1332,7 @@ def main() -> None:
     continuous = pd.read_csv(SOURCE_DIR / "mnist_continuous_pca50_summary.csv")
     assignments = pd.read_csv(SWEEP_DIR / "alpha_sweep_assignments.csv")
     best = summary.sort_values("ARI", ascending=False).iloc[0]
-    best_key = _assignment_key(
+    best_key = sweep_assignment_key(
         str(best["linkage"]), float(best["edge_alpha"]), float(best["sibling_alpha"])
     )
     composition = pd.read_csv(SWEEP_DIR / f"{best_key}_top_cluster_digit_composition.csv")
@@ -1471,9 +1475,11 @@ def main() -> None:
 
 
 def run_cli() -> None:
-    """Validate command-line arguments before generating retained figures."""
+    """Parse ``--output-dir`` and generate the interactive report."""
 
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    output_dir = parse_output_dir(__doc__)
+    if output_dir is not None:
+        _set_output_dir(output_dir)
     main()
 
 

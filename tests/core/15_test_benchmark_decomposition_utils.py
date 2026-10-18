@@ -2,21 +2,25 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.util.decomposition import (
-    _ok_result_from_labels,
     labels_and_report_from_decomposition,
-)
-from tree_break_selection.hierarchy_analysis.cluster_assignments import (
-    build_sample_cluster_assignments,
+    ok_result_from_labels,
+    tbs_decompose,
 )
 
 
 def test_labels_and_report_from_decomposition_share_sample_assignment_table() -> None:
     decomposition = {
         "cluster_assignments": {
-            1: {"root_node": "left", "leaves": ["S1", "S3"], "size": 2},
-            2: {"root_node": "right", "leaves": ["S2"], "size": 1},
+            1: {
+                "root_node": "left",
+                "leaves": ["S1", "S3"],
+                "leaf_signature": ("S1", "S3"),
+                "size": 2,
+            },
+            2: {"root_node": "right", "leaves": ["S2"], "leaf_signature": ("S2",), "size": 1},
         }
     }
 
@@ -34,27 +38,8 @@ def test_labels_and_report_from_decomposition_share_sample_assignment_table() ->
     assert report_df.index.name == "sample_id"
 
 
-def test_build_sample_cluster_assignments_carries_leaf_signature() -> None:
-    decomposition = {
-        "cluster_assignments": {
-            7: {
-                "root_node": "internal_42",
-                "leaves": ["S3", "S1"],
-                "leaf_signature": ("S1", "S3"),
-                "size": 2,
-            }
-        }
-    }
-
-    assignments = build_sample_cluster_assignments(decomposition)
-
-    assert assignments.loc["S1", "cluster_root"] == "internal_42"
-    assert assignments.loc["S1", "cluster_leaf_signature"] == ("S1", "S3")
-    assert assignments.loc["S3", "cluster_leaf_signature"] == ("S1", "S3")
-
-
 def test_ok_result_from_labels_counts_non_noise_clusters() -> None:
-    result = _ok_result_from_labels(
+    result = ok_result_from_labels(
         np.array([2, 2, -1, 4], dtype=int),
         pd.Index(["a", "b", "noise", "c"], name="sample_id"),
     )
@@ -67,41 +52,23 @@ def test_ok_result_from_labels_counts_non_noise_clusters() -> None:
     assert result.report_df.loc["noise", "cluster_size"] == 1
 
 
-def test_build_sample_cluster_assignments_requires_cluster_assignments_key() -> None:
-    with pytest.raises(KeyError, match="cluster_assignments"):
-        build_sample_cluster_assignments({})
+def test_tbs_decompose_returns_labels_in_data_row_order() -> None:
+    rng = np.random.default_rng(0)
+    centers = rng.uniform(size=(2, 30)) > 0.5
+    rows = np.vstack(
+        [np.where(rng.uniform(size=(20, 30)) < 0.05, ~center, center) for center in centers]
+    ).astype(float)
+    # Names out of natural order, so build_tree links samples in a different order.
+    names = [f"cell_{index}" for index in rng.permutation(40)]
+    data = pd.DataFrame(rows, index=names)
 
+    labels, decomposition = tbs_decompose(
+        data, pdist(rows, "hamming"), linkage_method="average", alpha=0.05
+    )
 
-def test_build_sample_cluster_assignments_rejects_malformed_cluster_metadata() -> None:
-    decomposition = {"cluster_assignments": {1: {"root_node": "left", "leaves": ["S1"]}}}
-
-    with pytest.raises(KeyError, match="size"):
-        build_sample_cluster_assignments(decomposition)
-
-
-def test_build_sample_cluster_assignments_rejects_mismatched_leaf_signature() -> None:
-    decomposition = {
-        "cluster_assignments": {
-            1: {
-                "root_node": "left",
-                "leaves": ["S1", "S3"],
-                "leaf_signature": ("S1",),
-                "size": 2,
-            }
-        }
+    cluster_by_leaf = {
+        leaf: cluster_id
+        for cluster_id, info in decomposition["cluster_assignments"].items()
+        for leaf in info["leaves"]
     }
-
-    with pytest.raises(ValueError, match="leaf_signature"):
-        build_sample_cluster_assignments(decomposition)
-
-
-def test_build_sample_cluster_assignments_rejects_overlapping_leaves() -> None:
-    decomposition = {
-        "cluster_assignments": {
-            1: {"root_node": "left", "leaves": ["S1"], "size": 1},
-            2: {"root_node": "right", "leaves": ["S1"], "size": 1},
-        }
-    }
-
-    with pytest.raises(ValueError, match="multiple clusters"):
-        build_sample_cluster_assignments(decomposition)
+    assert labels.tolist() == [cluster_by_leaf[name] for name in names]

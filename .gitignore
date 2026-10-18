@@ -99,20 +99,18 @@ $RECYCLE.BIN/
 # =============================================================================
 # Results and output directories
 results/
-cluster_tree_plots/
-cluster_validation_failures/
+reports/audits/generated/
+# New report runs keep bulk outputs here; the artifact check still inventories them.
+/reports/*/generated/
 
 # Benchmark outputs
 benchmarks/**/results/
 benchmarks/**/run_*/
 raw/assets/benchmark-results/**/selected_geometry_records.csv
+.asv/
 
 # Debug output
-debug_output/
 *.log
-debug_scripts/diagnostics/results/enhancement_lab/
-debug_scripts/enhancement_lab/_oracle_policy_fourier_plots/
-debug_scripts/enhancement_lab/_oracle_policy_fourier_plots_one_active_1d/
 
 # Node modules (if any frontend tooling)
 node_modules/
@@ -143,3 +141,9 @@ local_data/
 
 # Standalone local analysis pipeline
 /analysis/
+
+# Local tool cache for the Serena code assistant
+.serena/
+
+# Local ChunkHound index database
+.chunkhound/

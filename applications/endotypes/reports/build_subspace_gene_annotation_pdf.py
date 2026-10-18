@@ -6,9 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import re
-import subprocess
-import sys
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,14 +16,18 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
-from tree_break_selection.plot import draw_image_panel
 
-from applications.endotypes._shared import safe_name
-
-GO_ID_RE = re.compile(r"(GO:\d{7})")
+from applications.endotypes._shared import (
+    load_binary_feature_matrix,
+    matrix_slug,
+    parse_go_term,
+    safe_name,
+)
+from applications.endotypes.reports.artifact_index import load_artifact_index
+from benchmarks.shared.util.values import finite_float
+from tree_break_selection.plot.image_panel import draw_image_panel
 
 
 @dataclass
@@ -45,7 +46,6 @@ class ClusterAnnotation:
     top_go_id: str
     top_term_prevalence_delta: float
     representative_genes: list[str]
-    representative_gene_proteins: list[str]
     local_top_terms: list[str]
     local_top_go_ids: list[str]
     representative_gene_annotations: list[str]
@@ -70,7 +70,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def subspace_dir_name(row: pd.Series) -> str:
-    rank_value = row.get("_rank", row.get("specificity_aware_rank", row.get("display_rank", -1)))
+    rank_value = row["_rank"]
     try:
         rank = int(float(rank_value))
     except (TypeError, ValueError):
@@ -151,21 +151,6 @@ def attach_roster_status(ranking: pd.DataFrame, output_dir: Path) -> pd.DataFram
     return merged
 
 
-def dataset_slug(input_path: Path, label: str | None = None) -> str:
-    raw = label or input_path.stem
-    if raw.startswith("feature_matrix_"):
-        raw = raw[len("feature_matrix_") :]
-    return safe_name(raw).strip("_").lower() or "feature_matrix"
-
-
-def parse_go_term(value: object) -> tuple[str, str]:
-    text = str(value)
-    match = GO_ID_RE.search(text)
-    go_id = match.group(1) if match else ""
-    term = text.replace(f"({go_id})", "").strip() if go_id else text
-    return term, go_id
-
-
 def truncate(value: object, width: int) -> str:
     text = str(value)
     return text if len(text) <= width else text[: max(width - 3, 0)] + "..."
@@ -175,46 +160,11 @@ def wrap(value: object, width: int = 90) -> str:
     return "\n".join(textwrap.wrap(str(value), width=width)) or ""
 
 
-def load_binary_matrix(path: Path) -> pd.DataFrame:
-    data = pd.read_csv(path, sep="\t", index_col=0)
-    data.index = data.index.astype(str)
-    data.columns = data.columns.astype(str)
-    data = data.apply(pd.to_numeric, errors="raise")
-    values = data.to_numpy()
-    if not np.isin(values, (0, 1)).all():
-        raise ValueError(f"{path} contains non-binary values.")
-    return data.astype(int)
-
-
 def resolve_path(value: object, experiment_dir: Path) -> Path:
     path = Path(str(value))
     if path.exists() or path.is_absolute():
         return path
     return experiment_dir / path
-
-
-def load_artifact_index(experiment_dir: Path) -> pd.DataFrame:
-    path = experiment_dir / "artifact_index.csv"
-    if not path.exists():
-        raise FileNotFoundError(path)
-    frame = pd.read_csv(path)
-    rank_col = (
-        "specificity_aware_rank" if "specificity_aware_rank" in frame.columns else "display_rank"
-    )
-    frame["_rank"] = pd.to_numeric(frame[rank_col], errors="coerce")
-    if "run_id" not in frame.columns:
-        if "method_run_id" in frame.columns:
-            frame["run_id"] = frame["method_run_id"].astype(str)
-        else:
-            frame["run_id"] = (
-                "current__adaptive_diffusion_cosine_subspace__"
-                + frame["weighting"].astype(str)
-                + "__"
-                + frame["block_name"].astype(str)
-            )
-    return frame.sort_values(["_rank", "weighting", "block_name"], na_position="last").reset_index(
-        drop=True
-    )
 
 
 def local_top_terms_for_cluster(
@@ -283,21 +233,23 @@ def gene_annotation_blurbs(
     return blurbs
 
 
-def call_rest(payload: dict[str, Any], *, timeout_sec: int = 45) -> dict[str, Any]:
-    completed = subprocess.run(
-        [sys.executable, "scripts/rest_request.py"],
-        input=json.dumps(payload),
-        text=True,
-        capture_output=True,
-        timeout=timeout_sec + 5,
-        check=False,
-    )
-    if not completed.stdout.strip():
-        return {"ok": False, "error": {"code": "empty_output", "message": completed.stderr}}
+def fetch_records(url: str, *, params: dict[str, object] | None = None) -> dict[str, Any]:
+    """GET a JSON endpoint and return its ``results`` list, or the error as a warning record."""
     try:
-        return json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        return {"ok": False, "error": {"code": "bad_json", "message": str(exc)}}
+        import requests
+    except ImportError as exc:
+        return {"ok": False, "error": {"code": "missing_dependency", "message": str(exc)}}
+    try:
+        response = requests.get(
+            url, params=params, headers={"Accept": "application/json"}, timeout=30
+        )
+        response.raise_for_status()
+        records = response.json()["results"]
+        if not isinstance(records, list):
+            raise ValueError(f"'results' is {type(records).__name__}, not a list")
+        return {"ok": True, "records": records}
+    except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
+        return {"ok": False, "error": {"code": type(exc).__name__, "message": str(exc)}}
 
 
 def chunked(values: list[str], size: int) -> Iterable[list[str]]:
@@ -318,16 +270,9 @@ def save_cache(path: Path, cache: dict[str, Any]) -> None:
 def quickgo_lookup(go_ids: list[str], cache: dict[str, Any], limit: int) -> None:
     missing = [go_id for go_id in go_ids[:limit] if go_id and go_id not in cache["quickgo"]]
     for ids in chunked(missing, 20):
-        payload = {
-            "base_url": "https://www.ebi.ac.uk/QuickGO/services",
-            "path": "ontology/go/terms/" + ",".join(ids),
-            "headers": {"Accept": "application/json"},
-            "record_path": "results",
-            "max_items": 20,
-            "max_depth": 5,
-            "timeout_sec": 30,
-        }
-        response = call_rest(payload, timeout_sec=35)
+        response = fetch_records(
+            "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/" + ",".join(ids)
+        )
         if not response.get("ok"):
             cache["warnings"].append({"quickgo": ids, "response": response})
             continue
@@ -359,24 +304,16 @@ def uniprot_lookup(genes: list[str], cache: dict[str, Any], limit: int) -> None:
         )
     ]
     for gene in missing:
-        payload = {
-            "base_url": "https://rest.uniprot.org",
-            "path": "uniprotkb/search",
-            "params": {
-                "query": f"gene_exact:{gene} AND organism_id:9606 AND reviewed:true",
-                "fields": "accession,id,gene_names,protein_name,organism_name",
-                "size": 1,
-                "format": "json",
-            },
-            "record_path": "results",
-            "max_items": 20,
-            "max_depth": 5,
-            "timeout_sec": 30,
+        params: dict[str, object] = {
+            "query": f"gene_exact:{gene} AND organism_id:9606 AND reviewed:true",
+            "fields": "accession,id,gene_names,protein_name,organism_name",
+            "size": 1,
+            "format": "json",
         }
-        response = call_rest(payload, timeout_sec=35)
+        response = fetch_records("https://rest.uniprot.org/uniprotkb/search", params=params)
         if not response.get("ok") or not response.get("records"):
-            payload["params"]["query"] = f"gene:{gene} AND organism_id:9606 AND reviewed:true"
-            response = call_rest(payload, timeout_sec=35)
+            params["query"] = f"gene:{gene} AND organism_id:9606 AND reviewed:true"
+            response = fetch_records("https://rest.uniprot.org/uniprotkb/search", params=params)
         if not response.get("ok"):
             cache["warnings"].append({"uniprot": gene, "response": response})
             cache["uniprot"][gene] = {"accession": "", "protein_name": "", "gene_names": ""}
@@ -437,7 +374,7 @@ def _first_existing_image_path(*paths: object) -> str:
 
 
 def subspace_label(row: pd.Series) -> str:
-    rank = row.get("_rank", row.get("display_rank", np.nan))
+    rank = row["_rank"]
     rank_text = f"rank {int(rank)}" if pd.notna(rank) else "unranked"
     source = row.get("assignment_source", "")
     source_text = f" [{source}]" if source else ""
@@ -486,7 +423,7 @@ def build_cluster_annotations(
             annotations.append(
                 ClusterAnnotation(
                     run_id=str(row.run_id),
-                    display_rank=int(getattr(row, "display_rank", getattr(row, "_rank", 0))),
+                    display_rank=int(row.display_rank),
                     weighting=str(row.weighting),
                     block_name=str(row.block_name),
                     assignment_source="accepted_tbs",
@@ -499,7 +436,6 @@ def build_cluster_annotations(
                     top_go_id=top_go_id,
                     top_term_prevalence_delta=float(cluster.top_term_prevalence_delta),
                     representative_genes=genes,
-                    representative_gene_proteins=[],
                     local_top_terms=local_terms["go_term"].astype(str).tolist(),
                     local_top_go_ids=local_terms["go_id"].astype(str).tolist(),
                     representative_gene_annotations=gene_annotation_blurbs(
@@ -531,15 +467,6 @@ def to_int(value: object, default: int = 0) -> int:
         return default
 
 
-def to_float(value: object, default: float = math.nan) -> float:
-    try:
-        if value is None or pd.isna(value):
-            return default
-        return float(value)
-    except (TypeError, ValueError):
-        return default
-
-
 def load_cluster_annotations_from_roster(
     roster_path: Path,
     *,
@@ -566,10 +493,8 @@ def load_cluster_annotations_from_roster(
         annotations.append(
             ClusterAnnotation(
                 run_id=str(row.get("run_id", "")),
-                display_rank=int(
-                    float(row.get("display_rank", row.get("specificity_aware_rank", -1)))
-                )
-                if pd.notna(row.get("display_rank", row.get("specificity_aware_rank", np.nan)))
+                display_rank=int(float(row["display_rank"]))
+                if pd.notna(row.get("display_rank"))
                 else -1,
                 weighting=str(row.get("weighting", "")),
                 block_name=str(row.get("block_name", "")),
@@ -578,16 +503,15 @@ def load_cluster_annotations_from_roster(
                 cluster_size=to_int(row.get("cluster_size", 0)),
                 coherent_by_rule=str(row.get("coherent_by_rule", "")).lower() == "true",
                 n_significant_terms_q05=to_int(row.get("n_significant_terms_q05", 0)),
-                min_q_value=to_float(row.get("min_q_value", math.nan)),
+                min_q_value=finite_float(row.get("min_q_value", math.nan)),
                 top_term=str(row.get("top_term", "")) if pd.notna(row.get("top_term", "")) else "",
                 top_go_id=str(row.get("top_go_id", ""))
                 if pd.notna(row.get("top_go_id", ""))
                 else "",
-                top_term_prevalence_delta=to_float(row.get("top_term_prevalence_delta", math.nan)),
-                representative_genes=split_semicolon(row.get("representative_genes", "")),
-                representative_gene_proteins=split_semicolon(
-                    row.get("representative_gene_proteins", "")
+                top_term_prevalence_delta=finite_float(
+                    row.get("top_term_prevalence_delta", math.nan)
                 ),
+                representative_genes=split_semicolon(row.get("representative_genes", "")),
                 local_top_terms=split_semicolon(row.get("local_top_terms", "")),
                 local_top_go_ids=split_semicolon(row.get("local_top_go_ids", "")),
                 representative_gene_annotations=split_annotations(
@@ -625,7 +549,6 @@ def write_csv_outputs(
     rows = []
     for annotation in annotations:
         proteins = [protein_label(gene, cache) for gene in annotation.representative_genes]
-        annotation.representative_gene_proteins = proteins
         rows.append(
             {
                 "run_id": annotation.run_id,
@@ -669,7 +592,6 @@ def write_csv_outputs(
 def draw_subspace_plot_page(
     pdf: PdfPages,
     row: pd.Series,
-    cache: dict[str, Any],
 ) -> None:
     fig = plt.figure(figsize=(18, 11), layout="constrained")
     grid = fig.add_gridspec(2, 3, width_ratios=[1.35, 1.0, 1.0], height_ratios=[1, 1])
@@ -791,17 +713,17 @@ def write_pdf(
 ) -> None:
     with PdfPages(output_path) as pdf:
         for _, row in ranking.iterrows():
-            draw_subspace_plot_page(pdf, row, cache)
+            draw_subspace_plot_page(pdf, row)
             draw_subspace_annotation_page(pdf, row, annotations, cache)
 
 
 def main() -> None:
     args = parse_args()
-    dataset = dataset_slug(args.feature_matrix, args.dataset_label)
+    dataset = matrix_slug(args.feature_matrix, args.dataset_label)
     output_dir = args.output_dir or args.experiment_dir / "systematic_subspace_gene_annotations"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    data = load_binary_matrix(args.feature_matrix)
+    data = load_binary_feature_matrix(args.feature_matrix)
     ranking = load_artifact_index(args.experiment_dir)
     if args.top_subspaces > 0:
         ranking = ranking.head(args.top_subspaces).copy()
@@ -868,7 +790,7 @@ def main() -> None:
         "",
         "`assignment_source=accepted_tbs` rows are final accepted TBS assignments; `assignment_source=diagnostic_linkage_cut` rows are diagnostic linkage-tree cuts for failed gates.",
         "",
-        "Life-science interpretation uses QuickGO term records and UniProt reviewed human gene/protein lookups through `scripts/rest_request.py`.",
+        "Life-science interpretation uses QuickGO term records and UniProt reviewed human gene/protein lookups through their public REST APIs.",
     ]
     (output_dir / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
     print(json.dumps({"pdf": str(pdf_path), "clusters": len(annotations)}, indent=2))

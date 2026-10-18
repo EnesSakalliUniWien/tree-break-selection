@@ -9,7 +9,7 @@ def test_sbm_cases_run_through_pipeline_minimal():
     assert sbm_cases, "No SBM test cases found in default config"
 
     # Run pipeline with graph methods (runners will skip if optional deps are missing)
-    df, fig = benchmark_cluster_algorithm(
+    df = benchmark_cluster_algorithm(
         test_cases=sbm_cases, methods=["louvain", "leiden"], verbose=False
     )
 

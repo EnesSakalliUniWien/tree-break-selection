@@ -1,0 +1,42 @@
+{
+  "run_count": 48600,
+  "dataset_count": 900,
+  "status_counts": {
+    "ok": 48600
+  },
+  "node_count": 502200,
+  "contexts": {
+    "geometry": 900,
+    "current_configuration": 10800,
+    "independent_fit": 1800,
+    "independent_context": 5400
+  },
+  "warning_counts": {},
+  "corrected_scale_max_absolute_p_error": 1.7208456881689926e-15,
+  "shared_data_topology_and_per_source_lengths": true,
+  "independent_row_counts_preserved": true,
+  "edge_variance_preserves_raw_sibling_statistics_and_spectra": true,
+  "analysis_source_sha256": "05d361c95749564b1e886de2f15266f0b2bb75330084684c5c389fcd0bfb0301",
+  "previous_benchmark_baselines_reproduced": [
+    {
+      "source": "diffusion",
+      "pipeline": "current",
+      "matched_rows": 900
+    },
+    {
+      "source": "diffusion",
+      "pipeline": "independent",
+      "matched_rows": 2700
+    },
+    {
+      "source": "diffusion_nnls",
+      "pipeline": "current",
+      "matched_rows": 900
+    },
+    {
+      "source": "diffusion_nnls",
+      "pipeline": "independent",
+      "matched_rows": 2700
+    }
+  ]
+}

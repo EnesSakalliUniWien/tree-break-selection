@@ -12,7 +12,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from benchmarks.diagnostics.failure.debug_trace import diagnose_benchmark_failures
-from benchmarks.shared.benchmark_grid import benchmark_run_id
+from benchmarks.shared.benchmark_runs.resume import (
+    compute_resume_coverage,
+    filter_methods_and_params_by_run_ids,
+    require_result_columns,
+    run_ids_for_params,
+)
+from benchmarks.shared.benchmark_runs.runtime import apply_single_thread_runtime_defaults
 from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.cases.geometry import case_recipe_geometry
 from benchmarks.shared.env import get_env_bool, get_env_int
@@ -35,79 +41,6 @@ from benchmarks.shared.util.method_selection import (
 from benchmarks.shared.util.method_sets import DEFAULT_METHODS
 from benchmarks.shared.util.pdf.merge import merge_existing_pdfs
 from benchmarks.shared.util.time import format_timestamp_utc
-
-
-def _compute_resume_coverage(
-    existing_results: pd.DataFrame,
-    expected_run_ids: list[str],
-) -> tuple[set[int], dict[int, list[str]], int]:
-    """Compute fully-complete and partial case coverage from an existing CSV."""
-    if existing_results.empty:
-        return set(), {}, 0
-
-    if "test_case" not in existing_results.columns:
-        return set(), {}, 0
-
-    if "run_id" not in existing_results.columns:
-        return set(), {}, 0
-
-    expected_set = set(expected_run_ids)
-
-    case_keys = pd.to_numeric(existing_results["test_case"], errors="coerce")
-    run_ids_raw = existing_results["run_id"].astype(str)
-    run_ids_norm = run_ids_raw.where(run_ids_raw.isin(expected_set))
-    progress = pd.DataFrame({"case_key": case_keys, "run_id": run_ids_norm})
-    progress = progress.dropna(subset=["case_key", "run_id"])
-    if progress.empty:
-        return set(), {}, 0
-
-    progress["case_key"] = progress["case_key"].astype(int)
-
-    run_ids_by_case = (
-        progress.groupby("case_key")["run_id"].agg(lambda s: set(s.tolist())).to_dict()
-    )
-
-    completed_cases: set[int] = set()
-    missing_run_ids_by_case: dict[int, list[str]] = {}
-    for case_key, seen_run_ids in run_ids_by_case.items():
-        missing = [run_id for run_id in expected_run_ids if run_id not in seen_run_ids]
-        if not missing:
-            completed_cases.add(int(case_key))
-        else:
-            missing_run_ids_by_case[int(case_key)] = missing
-
-    return completed_cases, missing_run_ids_by_case, len(run_ids_by_case)
-
-
-def _run_ids_for_params(
-    methods: list[str],
-    param_sets: dict[str, list[dict[str, object]]],
-) -> list[str]:
-    return [
-        benchmark_run_id(method_id, params)
-        for method_id in methods
-        for params in param_sets[method_id]
-    ]
-
-
-def _filter_methods_and_params_by_run_ids(
-    *,
-    methods: list[str],
-    param_sets: dict[str, list[dict[str, object]]],
-    run_ids: set[str],
-) -> tuple[list[str], dict[str, list[dict[str, object]]]]:
-    filtered_methods: list[str] = []
-    filtered_params: dict[str, list[dict[str, object]]] = {}
-    for method_id in methods:
-        selected_params = [
-            params
-            for params in param_sets[method_id]
-            if benchmark_run_id(method_id, params) in run_ids
-        ]
-        if selected_params:
-            filtered_methods.append(method_id)
-            filtered_params[method_id] = selected_params
-    return filtered_methods, filtered_params
 
 
 def _stamp_full_run_case_identity(
@@ -136,7 +69,8 @@ def run_benchmarks():
     # Default to single-threaded spectral decomposition workers to avoid
     # thread oversubscription (outer benchmark parallelism + BLAS threads).
     # Users can still override by setting TBS_N_JOBS explicitly.
-    spectral_jobs = os.environ.setdefault("TBS_N_JOBS", "1")
+    apply_single_thread_runtime_defaults()
+    spectral_jobs = os.environ["TBS_N_JOBS"]
 
     case_suite = os.environ.get("TBS_CASE_SUITE", "full").strip().lower()
     print(f"Fetching benchmark case suite: {case_suite}")
@@ -162,7 +96,7 @@ def run_benchmarks():
         default_methods=DEFAULT_METHODS,
         method_specs=METHOD_SPECS,
     )
-    expected_run_ids = _run_ids_for_params(methods_to_test, param_sets)
+    expected_run_ids = run_ids_for_params(methods_to_test, param_sets)
     print(f"Methods: {methods_to_test}")
     print(f"Benchmark run cells: {len(expected_run_ids)}")
     print(f"Spectral settings: TBS_N_JOBS={spectral_jobs}")
@@ -173,10 +107,6 @@ def run_benchmarks():
     case_timeout_sec = get_env_int("TBS_CASE_TIMEOUT_SEC", 1800)
     if enable_umap and "TBS_EMBEDDING_BACKEND" not in os.environ:
         os.environ["TBS_EMBEDDING_BACKEND"] = "umap"
-    if enable_umap and "TBS_EMBEDDING_BACKEND_3D" not in os.environ:
-        os.environ["TBS_EMBEDDING_BACKEND_3D"] = "umap"
-    if enable_umap and "TBS_FORCE_UMAP_FOR_LARGE" not in os.environ:
-        os.environ["TBS_FORCE_UMAP_FOR_LARGE"] = "1"
     run_relationship_analysis = get_env_bool("TBS_RUN_RELATIONSHIP_ANALYSIS", default=True)
     run_tree_consensus = get_env_bool("TBS_RUN_TREE_CONSENSUS", default=False)
     enable_relationship_plots = get_env_bool(
@@ -226,36 +156,39 @@ def run_benchmarks():
     # Load existing results if any to resume
     if output_path.exists():
         all_results = pd.read_csv(output_path)
-        completed_case_keys, missing_run_ids_by_case, tracked_case_count = _compute_resume_coverage(
+        completed_case_ids, missing_run_ids_by_case, tracked_case_count = compute_resume_coverage(
             all_results,
             expected_run_ids,
         )
-        partial_case_count = max(0, tracked_case_count - len(completed_case_keys))
+        partial_case_count = max(0, tracked_case_count - len(completed_case_ids))
         print(
             "Resuming... "
-            f"Found {len(completed_case_keys)} fully completed test indices "
+            f"Found {len(completed_case_ids)} fully completed cases "
             f"and {partial_case_count} partial cases."
         )
     else:
         all_results = pd.DataFrame()
-        completed_case_keys = set()
+        completed_case_ids = set()
         missing_run_ids_by_case = {}
 
+    result_columns = list(all_results.columns)
+    result_frames: list[pd.DataFrame] = []
+    failed_cases: dict[str, str] = {}
     for i, case in enumerate(test_cases):
         case_key = i + 1
         case_id = case["name"]
         case_type = case["category"]
 
-        if case_key in completed_case_keys:
+        if case_id in completed_case_ids:
             print(
                 f"[{i + 1}/{len(test_cases)}] Skipping case: {case_id} "
                 f"(test index {case_key} already done)"
             )
             continue
 
-        if case_key in missing_run_ids_by_case:
-            missing_run_ids = set(missing_run_ids_by_case[case_key])
-            methods_for_case, method_params_for_case = _filter_methods_and_params_by_run_ids(
+        if case_id in missing_run_ids_by_case:
+            missing_run_ids = set(missing_run_ids_by_case[case_id])
+            methods_for_case, method_params_for_case = filter_methods_and_params_by_run_ids(
                 methods=methods_to_test,
                 param_sets=param_sets,
                 run_ids=missing_run_ids,
@@ -263,10 +196,10 @@ def run_benchmarks():
         else:
             methods_for_case = methods_to_test
             method_params_for_case = param_sets
-        if case_key in missing_run_ids_by_case:
+        if case_id in missing_run_ids_by_case:
             print(
                 f"[{i + 1}/{len(test_cases)}] Resuming partial case: {case_id} "
-                f"(missing run IDs: {missing_run_ids_by_case[case_key]})",
+                f"(missing run IDs: {missing_run_ids_by_case[case_id]})",
                 flush=True,
             )
 
@@ -284,21 +217,28 @@ def run_benchmarks():
         case_plot_umap = enable_umap
         case_plot_manifold = enable_manifold and not is_large
 
-        df_res = run_case_with_optional_isolation(
-            case=case,
-            methods_to_test=methods_for_case,
-            method_params=method_params_for_case,
-            case_plot_umap=case_plot_umap,
-            case_plot_manifold=case_plot_manifold,
-            enable_plots=enable_plots,
-            pdf_path=pdf_path,
-            isolate_umap_cases=isolate_umap_cases,
-            timeout_sec=case_timeout_sec,
-            include_validation_page=False,
-            tree_consensus_label_dir=(
-                None if tree_consensus_label_dir is None else str(tree_consensus_label_dir)
-            ),
-        )
+        try:
+            df_res = run_case_with_optional_isolation(
+                case=case,
+                methods_to_test=methods_for_case,
+                method_params=method_params_for_case,
+                case_plot_umap=case_plot_umap,
+                case_plot_manifold=case_plot_manifold,
+                enable_plots=enable_plots,
+                pdf_path=pdf_path,
+                isolate_umap_cases=isolate_umap_cases,
+                timeout_sec=case_timeout_sec,
+                include_validation_page=False,
+                tree_consensus_label_dir=(
+                    None if tree_consensus_label_dir is None else str(tree_consensus_label_dir)
+                ),
+            )
+        except Exception as exc:
+            # A timed-out or crashed case is skipped, not recorded, so a resumed run retries it.
+            failed_cases[str(case_id)] = f"{type(exc).__name__}: {exc}"
+            print(f"  Case failed and was skipped: {failed_cases[str(case_id)]}", flush=True)
+            gc.collect()
+            continue
         df_res = _stamp_full_run_case_identity(
             df_res,
             case_key=case_key,
@@ -306,8 +246,10 @@ def run_benchmarks():
         )
 
         if not df_res.empty:
-            all_results = pd.concat([all_results, df_res], ignore_index=True)
+            result_frames.append(df_res)
 
+            require_result_columns(result_columns, list(df_res.columns), output_path=output_path)
+            result_columns = list(df_res.columns)
             write_header = not output_path.exists()
             df_res.to_csv(output_path, mode="a", header=write_header, index=False)
 
@@ -321,6 +263,7 @@ def run_benchmarks():
 
     print("-" * 50)
     print("Benchmark Complete.")
+    all_results = pd.concat([all_results, *result_frames], ignore_index=True)
 
     relationship_outputs = None
     relationship_pdf: Path | None = None
@@ -354,6 +297,7 @@ def run_benchmarks():
         )
         print(f"Performance grid report written: {performance_grid_outputs.report_md}")
         print(f"Performance grid summary written: {performance_grid_outputs.summary_csv}")
+        print(f"Support coverage written: {performance_grid_outputs.support_coverage_csv}")
 
         if run_tree_consensus:
             if tree_consensus_label_dir is None:
@@ -368,26 +312,21 @@ def run_benchmarks():
             print(f"Tree consensus report written: {tree_consensus_outputs.report_md}")
             print(f"Tree consensus summary written: {tree_consensus_outputs.summary_csv}")
 
-        summary = df.groupby(["method"])["ari"].mean()
+        summary = df.loc[df["status"].eq("ok")].groupby(["method"])["ari"].mean()
         print("\nMean ARI by Method (ok rows only; skipped rows have NaN ARI):")
         print(summary)
         status_summary = df.groupby(["method", "status"]).size().unstack(fill_value=0)
         print("\nRun status counts by Method:")
         print(status_summary)
 
-        if "test_case" in df.columns:
-            print(f"\nDetailed results are saved to {output_path}")
+        print(f"\nDetailed results are saved to {output_path}")
 
-            print("\nRunning failure diagnosis...")
-            actual_audit_dir = run_dir / "audit"
-            diagnose_benchmark_failures(
-                str(output_path),
-                str(actual_audit_dir),
-                str(run_dir / "failure_report.md"),
-            )
-        else:
-            print("Could not pivot results: 'case_id' column missing.")
-            print(df.head())
+        print("\nRunning failure diagnosis...")
+        diagnose_benchmark_failures(
+            str(output_path),
+            str(run_dir / "audit"),
+            str(run_dir / "failure_report.md"),
+        )
 
     if enable_plots:
         report_pdf = run_dir / f"{case_suite}_benchmark_report.pdf"
@@ -438,6 +377,13 @@ def run_benchmarks():
             ordered_case_pdfs.append(relationship_pdf)
             print(f"Appending relationship plots to full report: {relationship_pdf}")
         merge_existing_pdfs(ordered_case_pdfs, report_pdf, verbose=True)
+
+    if failed_cases:
+        details = "; ".join(f"{case_id}: {error}" for case_id, error in failed_cases.items())
+        raise SystemExit(
+            f"{len(failed_cases)} case(s) failed and were not recorded; rerun with the same "
+            f"TBS_RUN_DIR to retry them. {details}"
+        )
 
 
 if __name__ == "__main__":

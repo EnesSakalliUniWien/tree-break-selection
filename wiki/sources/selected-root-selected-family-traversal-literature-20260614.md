@@ -2,7 +2,7 @@
 title: Selected Root Selected Family Traversal Literature 2026-06-14
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
   - raw/inbox/selected-root-selected-family-traversal-literature-20260614.md
 tags:
@@ -64,6 +64,7 @@ family, not the one descendant node after it has already been selected.
 - `tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py`
   exposes `global_sibling_min_passthrough_descendant_refined`, the current
   TreeScan/maxT-like diagnostic candidate for pass-through descendants.
+- `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

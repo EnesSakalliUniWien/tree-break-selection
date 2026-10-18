@@ -26,13 +26,8 @@ import pandas as pd
 import requests
 from scipy import sparse
 
-DEFAULT_OUTPUT_DIR = (
-    Path(__file__).resolve().parents[3]
-    / "raw"
-    / "assets"
-    / "benchmark-results"
-    / "goncalves_fetal_pancreas_progenitor_benchmark_20260624"
-)
+from applications.scrna._shared import add_generated_at, json_default, top_counts_text
+
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
 PROGENITOR_POPULATIONS = {"trunk", "tip", "proliferating"}
 SIGNATURES: dict[str, list[str]] = {
@@ -47,18 +42,6 @@ SIGNATURES: dict[str, list[str]] = {
     "blood": ["ALAS2", "HBG1"],
 }
 ALL_MARKERS = sorted({marker for markers in SIGNATURES.values() for marker in markers})
-
-
-def _json_default(value: Any) -> Any:
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    if isinstance(value, Path):
-        return str(value)
-    return str(value)
 
 
 def _query_symbol(symbol: str) -> list[str]:
@@ -167,11 +150,6 @@ def entropy(counts: np.ndarray) -> float:
         return 0.0
     probabilities = values[values > 0] / total
     return float(-(probabilities * np.log(probabilities)).sum())
-
-
-def top_counts_text(values: pd.Series, n: int = 8) -> str:
-    counts = values.astype(str).value_counts()
-    return "; ".join(f"{label}:{count}" for label, count in counts.head(n).items())
 
 
 def summarize_group(
@@ -289,18 +267,6 @@ def depth_from_root(node: str, parent_of: dict[str, str]) -> int:
         depth += 1
         node = parent_of[node]
     return depth
-
-
-def add_generated_at(fig: plt.Figure, generated_at: str) -> None:
-    fig.text(
-        0.99,
-        0.01,
-        f"Generated at: {generated_at}",
-        ha="right",
-        va="bottom",
-        fontsize=7,
-        color="#6b7280",
-    )
 
 
 def save_timestamped_figure(
@@ -445,7 +411,12 @@ def write_meeting_plot(meetings: pd.DataFrame, output_path: Path, generated_at: 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Benchmark run directory to read and write; pass a raw/assets/ path explicitly.",
+    )
     parser.add_argument("--refresh-marker-mapping", action="store_true")
     args = parser.parse_args()
     output_dir = args.output_dir
@@ -662,9 +633,9 @@ def main() -> None:
         "progenitor_populations": sorted(PROGENITOR_POPULATIONS),
     }
     (output_dir / "goncalves_progenitor_analysis_manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, default=_json_default)
+        json.dumps(manifest, indent=2, sort_keys=True, default=json_default)
     )
-    print(json.dumps(manifest, indent=2, sort_keys=True, default=_json_default))
+    print(json.dumps(manifest, indent=2, sort_keys=True, default=json_default))
     print("\nTop population rows:")
     print(
         population_df[

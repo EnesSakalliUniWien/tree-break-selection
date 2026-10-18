@@ -2,10 +2,8 @@
 title: Selected Neighborhood Distribution Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py
-  - tests/validation/calibration/selected/neighborhood/137_test_selected_neighborhood_distribution_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_distribution
 tags:
   - source
@@ -97,6 +95,10 @@ cutoffs.
 - Only `38/22,376` node rows had joined old-and-current topology-neighborhood
   evidence. The remaining rows are `traversal_only`. This is now an explicit
   coverage problem rather than an implicit missing-data issue.
+- Historical rows name
+  `fixed_coordinate_conditional_topology_diagnostic_v1`; that profile was
+  behavior-identical to `fixed_coordinate_guarded_v1`, which is the canonical
+  runtime profile for new conditional-topology diagnostic runs.
 - Coverage is concentrated around accepted splits and a few selected-null
   stopped rows. In the compact run, signal accepted splits have old/current
   neighborhood coverage for `5/15` rows under
@@ -277,10 +279,10 @@ cutoffs.
   `raw/assets/benchmark-results/specific_small_method_benchmark_20260615/conditional_law_weight1_min2/overlap_conditional_topology_law_rows.csv`.
 - The outputs are stored under
   `raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_neighborhood_distribution/`.
+- `benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 
 - [[traversal-neighborhood-method-comparison]]
-- [[specific-small-method-benchmark-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
 - [[open-mathematical-questions]]

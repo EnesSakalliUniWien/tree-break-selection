@@ -5,18 +5,17 @@ Builds a PosetTree and performs TBS decomposition.
 
 from __future__ import annotations
 
-from dataclasses import asdict, replace
 from time import perf_counter
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.shared.runners.tbs_support import unsupported_empirical_null_reason
+from benchmarks.shared.types import MethodRunResult
+from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
+from benchmarks.shared.util.time import elapsed_since
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
-)
-from tree_break_selection.hierarchy_analysis.decomposition.gates.spectral_transport import (
-    DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE,
-    DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY,
 )
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
@@ -27,18 +26,15 @@ from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils impo
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
     EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION,
 )
-from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
-    DISTRIBUTIONAL_ACTION_SPLIT_FILTER_NONE,
-    annotate_distributional_action_split_filter,
-)
 from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator import (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
 )
-from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.neighborhood_bandwidth import (
-    build_branch_length_distance_cache,
-)
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
-from tree_break_selection.tree.construction import DEFAULT_TREE_LINKAGE_METHOD, build_tree
+from tree_break_selection.tree.construction import (
+    DEFAULT_BINARY_TREE_DISTANCE_METRIC,
+    DEFAULT_TREE_LINKAGE_METHOD,
+    build_tree,
+)
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
     DEFAULT_CONTINUOUS_COVARIANCE_POLICY,
@@ -47,14 +43,10 @@ from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
     fit_fixed_topology_nnls_branch_lengths,
     validate_branch_length_optimization_method,
 )
-
-from benchmarks.shared.types import MethodRunResult
-from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
-from benchmarks.shared.util.time import elapsed_since
 
 
 def run_tbs_on_distance(
@@ -62,13 +54,7 @@ def run_tbs_on_distance(
     distance_condensed: np.ndarray | None,
     sibling_significance_level: float,
     *,
-    tree_builder: str = "linkage",
-    tree_rooting: str = "linkage_root",
     tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD,
-    iqtree_executable: str = "iqtree3",
-    iqtree_model: str = "JC2",
-    iqtree_threads: int = 1,
-    iqtree_work_dir: str | None = None,
     edge_alpha: float = DEFAULT_EDGE_ALPHA,
     feature_space: FeatureSpace | None = None,
     spectral_minimum_dimension: int = EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION,
@@ -82,41 +68,30 @@ def run_tbs_on_distance(
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
     enforce_internal_support_thresholds: bool = False,
     sibling_gate_profile: str | None = None,
-    sibling_gate_method: str = "projected_wald_inflation",
-    sibling_gate_alpha_penalty: float = 1.0,
+    sibling_gate_method: str | None = None,
+    sibling_gate_alpha_penalty: float | None = None,
     root_stability_guard_threshold: float | None = None,
-    root_stability_subsample_replicates: int = 0,
-    root_stability_feature_fraction: float = 0.8,
-    root_stability_seed: int = 0,
-    root_stability_tree_distance_metric: str = "hamming",
+    root_stability_subsample_replicates: int | None = None,
+    root_stability_feature_fraction: float | None = None,
+    root_stability_seed: int | None = None,
+    root_stability_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     root_stability_tree_linkage_method: str | None = None,
-    root_selective_permutation_guard_replicates: int = 0,
-    root_selective_permutation_guard_seed: int = 0,
+    root_selective_permutation_guard_replicates: int | None = None,
+    root_selective_permutation_guard_seed: int | None = None,
     root_selective_permutation_guard_alpha: float | None = None,
-    root_selective_permutation_guard_scope: str = "root",
-    root_selective_permutation_guard_tree_distance_metric: str = "hamming",
+    root_selective_permutation_guard_scope: str | None = None,
+    root_selective_permutation_guard_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     root_selective_permutation_guard_tree_linkage_method: str | None = None,
-    spectral_transport_passthrough_guard: bool = False,
-    spectral_transport_max_cost: float = DEFAULT_SPECTRAL_TRANSPORT_MAX_COST,
-    spectral_transport_require_mp_blocks: bool = True,
-    spectral_transport_block_log_tolerance: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_BLOCK_LOG_TOLERANCE
-    ),
-    spectral_transport_unmatched_mode_penalty: float = (
-        DEFAULT_SPECTRAL_TRANSPORT_UNMATCHED_MODE_PENALTY
-    ),
-    neighborhood_bandwidth_profile: str | None = None,
-    distributional_action_split_filter_policy: str = DISTRIBUTIONAL_ACTION_SPLIT_FILTER_NONE,
-    distributional_action_split_filter_quantile: float = 0.0,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_data_df: pd.DataFrame | None = None,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,
     branch_length_optimization_solver_tolerance: float = 1e-6,
     branch_length_optimization_max_iterations: int | None = None,
+    branch_length_optimization_apply_nonconverged: bool = False,
     allow_linkage_ultrametric_branch_time: bool = False,
     passthrough: bool = True,
     trace_level: str = "compact",
@@ -127,8 +102,7 @@ def run_tbs_on_distance(
         branch_length_optimization_method
     )
     if (
-        tree_builder == "linkage"
-        and edge_branch_length_variance_policy != EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE
+        edge_branch_length_variance_policy != EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE
         and branch_length_optimization_method == BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC
         and not allow_linkage_ultrametric_branch_time
     ):
@@ -144,16 +118,7 @@ def run_tbs_on_distance(
     tree_build = build_tree(
         data_df,
         distance_condensed,
-        builder=tree_builder,
-        rooting=tree_rooting,
         linkage_method=tree_linkage_method,
-        allow_topology_only_linkage=(
-            branch_length_optimization_method == BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS
-        ),
-        iqtree_executable=iqtree_executable,
-        iqtree_model=iqtree_model,
-        iqtree_threads=iqtree_threads,
-        iqtree_work_dir=iqtree_work_dir,
     )
     tree = tree_build.tree
     stage_timings["tree_build_sec"] = elapsed_since(tree_build_start_sec)
@@ -180,6 +145,7 @@ def run_tbs_on_distance(
             random_state=branch_length_optimization_random_state,
             solver_tolerance=branch_length_optimization_solver_tolerance,
             max_iterations=branch_length_optimization_max_iterations,
+            apply_nonconverged=branch_length_optimization_apply_nonconverged,
         )
         stage_timings["branch_length_optimization_sec"] = optimization_result.elapsed_sec
         branch_length_optimization_metadata.update(
@@ -189,25 +155,21 @@ def run_tbs_on_distance(
             }
         )
         branch_length_optimization_metadata["branch_length_geometry_source"] = (
-            "original_data"
-            if branch_length_data_df is data_df
-            else "aligned_geometry_embedding"
+            "original_data" if branch_length_data_df is data_df else "aligned_geometry_embedding"
         )
+        if not optimization_result.applied_to_tree:
+            raise ValueError(
+                "Fixed-topology NNLS branch-length optimization did not apply branch lengths "
+                f"(status={optimization_result.status!r}). Refusing to run an NNLS benchmark "
+                "with unrefit topology-only/linkage branch lengths. Set "
+                "branch_length_optimization_apply_nonconverged=True only for an explicit "
+                "non-converged diagnostic run."
+            )
     elif branch_length_optimization_method != BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC:
         raise ValueError(
             f"Unsupported branch_length_optimization_method {branch_length_optimization_method!r}."
         )
 
-    neighborhood_bandwidth_metadata: dict[str, object] = {}
-    if neighborhood_bandwidth_profile is not None:
-        distance_cache = build_branch_length_distance_cache(tree)
-        neighborhood_bandwidth_metadata = {
-            "neighborhood_bandwidth_profile": str(neighborhood_bandwidth_profile),
-            "neighborhood_distance_status": distance_cache.status,
-            "neighborhood_distance_fallback_edge_length": (distance_cache.fallback_edge_length),
-            "neighborhood_distance_pair_count": len(distance_cache.distances),
-            "neighborhood_bandwidth_action": "support_regularizer_only_no_pvalue_rescue",
-        }
     root_stability_replay_linkage = (
         tree_linkage_method
         if root_stability_tree_linkage_method is None
@@ -220,7 +182,7 @@ def run_tbs_on_distance(
     )
 
     populate_start_sec = perf_counter()
-    tree.populate_node_divergences(
+    tree.populate_node_distributions(
         data_df,
         feature_space=feature_space,
     )
@@ -260,36 +222,36 @@ def run_tbs_on_distance(
             root_selective_permutation_guard_tree_distance_metric
         ),
         root_selective_permutation_guard_tree_linkage_method=(root_selective_replay_linkage),
-        spectral_transport_passthrough_guard=spectral_transport_passthrough_guard,
-        spectral_transport_max_cost=spectral_transport_max_cost,
-        spectral_transport_require_mp_blocks=spectral_transport_require_mp_blocks,
-        spectral_transport_block_log_tolerance=spectral_transport_block_log_tolerance,
-        spectral_transport_unmatched_mode_penalty=(spectral_transport_unmatched_mode_penalty),
     )
     stage_timings.update(gate_annotation_bundle.stage_timings)
     resolved_gate_config = gate_annotation_bundle.metadata.config
 
-    distributional_action_start_sec = perf_counter()
-    filtered_annotations_df, distributional_action_metadata = (
-        annotate_distributional_action_split_filter(
-            tree,
-            gate_annotation_bundle.annotated_df,
-            data_df,
-            policy=distributional_action_split_filter_policy,
-            quantile=distributional_action_split_filter_quantile,
+    unsupported_reason = unsupported_empirical_null_reason(
+        gate_annotation_bundle.annotated_df,
+        sibling_gate_method=str(resolved_gate_config.sibling_gate_method),
+    )
+    if unsupported_reason is not None:
+        return MethodRunResult(
+            labels=None,
+            found_clusters=0,
+            report_df=None,
+            status="unsupported",
+            skip_reason=None,
+            extra={
+                "tree": tree,
+                "decomposition": None,
+                "traversal_trace": [],
+                "full_edge_traversal_trace": [],
+                "traversal_counters": {},
+                "annotations": gate_annotation_bundle.annotated_df,
+                "gate_bundle": gate_annotation_bundle,
+                "linkage_matrix": tree_build.linkage_matrix,
+                "stage_timings": stage_timings,
+                "sibling_gate_method": str(resolved_gate_config.sibling_gate_method),
+                **branch_length_optimization_metadata,
+            },
+            unsupported_reason=unsupported_reason,
         )
-    )
-    stage_timings["distributional_action_split_filter_sec"] = elapsed_since(
-        distributional_action_start_sec
-    )
-    gate_annotation_bundle = replace(
-        gate_annotation_bundle,
-        annotated_df=filtered_annotations_df,
-        edge_gate_result=replace(
-            gate_annotation_bundle.edge_gate_result,
-            annotated_df=filtered_annotations_df,
-        ),
-    )
 
     decomposer = TreeDecomposition(
         tree=tree,
@@ -318,15 +280,6 @@ def run_tbs_on_distance(
         "annotations": tree.annotations_df,
         "gate_bundle": gate_annotation_bundle,
         "linkage_matrix": tree_build.linkage_matrix,
-        "tree_builder": str(tree_builder),
-        "tree_rooting": str(tree_rooting),
-        "tree_build_diagnostics": asdict(tree_build.diagnostics),
-        "linkage_topology_only_branch_lengths": bool(
-            tree_build.topology_only_branch_lengths
-        ),
-        "linkage_topology_only_reason": tree_build.topology_only_reason,
-        "phylogenetic_rooting": tree_build.phylogenetic_rooting,
-        "iqtree_metadata": tree_build.iqtree_metadata,
         "stage_timings": stage_timings,
         **branch_length_optimization_metadata,
         "spectral_minimum_dimension": int(resolved_gate_config.spectral_minimum_dimension),
@@ -349,58 +302,7 @@ def run_tbs_on_distance(
             resolved_gate_config.enforce_internal_support_thresholds
         ),
         "passthrough": bool(passthrough),
-        "sibling_gate_profile": resolved_gate_config.sibling_gate_profile_id,
         "sibling_gate_method": str(resolved_gate_config.sibling_gate_method),
-        "sibling_gate_alpha_penalty": float(resolved_gate_config.sibling_gate_alpha_penalty),
-        "root_stability_guard_threshold": (resolved_gate_config.root_stability_guard_threshold),
-        "root_stability_subsample_replicates": int(
-            resolved_gate_config.root_stability_subsample_replicates
-        ),
-        "root_stability_feature_fraction": float(
-            resolved_gate_config.root_stability_feature_fraction
-        ),
-        "root_stability_seed": int(resolved_gate_config.root_stability_seed),
-        "root_stability_tree_distance_metric": str(
-            resolved_gate_config.root_stability_tree_distance_metric
-        ),
-        "root_stability_tree_linkage_method": str(
-            resolved_gate_config.root_stability_tree_linkage_method
-        ),
-        "root_selective_permutation_guard_replicates": int(
-            resolved_gate_config.root_selective_permutation_guard_replicates
-        ),
-        "root_selective_permutation_guard_seed": int(
-            resolved_gate_config.root_selective_permutation_guard_seed
-        ),
-        "root_selective_permutation_guard_alpha": (
-            None
-            if resolved_gate_config.root_selective_permutation_guard_alpha is None
-            else float(resolved_gate_config.root_selective_permutation_guard_alpha)
-        ),
-        "root_selective_permutation_guard_scope": str(
-            resolved_gate_config.root_selective_permutation_guard_scope
-        ),
-        "root_selective_permutation_guard_tree_distance_metric": str(
-            resolved_gate_config.root_selective_permutation_guard_tree_distance_metric
-        ),
-        "root_selective_permutation_guard_tree_linkage_method": str(
-            resolved_gate_config.root_selective_permutation_guard_tree_linkage_method
-        ),
-        "spectral_transport_passthrough_guard": bool(
-            resolved_gate_config.spectral_transport_passthrough_guard
-        ),
-        "spectral_transport_max_cost": float(resolved_gate_config.spectral_transport_max_cost),
-        "spectral_transport_require_mp_blocks": bool(
-            resolved_gate_config.spectral_transport_require_mp_blocks
-        ),
-        "spectral_transport_block_log_tolerance": float(
-            resolved_gate_config.spectral_transport_block_log_tolerance
-        ),
-        "spectral_transport_unmatched_mode_penalty": float(
-            resolved_gate_config.spectral_transport_unmatched_mode_penalty
-        ),
-        **neighborhood_bandwidth_metadata,
-        **distributional_action_metadata,
     }
     if extra:
         duplicate_extra_keys = sorted(set(result_extra).intersection(extra))

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import math
 
-from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
-    SpectralContext,
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
 )
 
 
@@ -44,7 +44,7 @@ def _cap_to_parent_projection_dimension(
 def derive_sibling_projection_dimensions_from_child_edge_comparisons(
     tree,
     *,
-    spectral_context: SpectralContext,
+    spectral_context: SpectralDecompositionResult,
 ) -> dict[str, int]:
     """Derive sibling-gate projection dimensions from child edge comparisons.
 

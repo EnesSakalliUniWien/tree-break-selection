@@ -2,8 +2,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.tree.branch_lengths import compute_ultrametric_branch_lengths
-from tree_break_selection.tree.construction import tree_from_linkage, tree_from_linkage_topology
+from tree_break_selection.tree.construction import tree_from_linkage
 from tree_break_selection.tree.poset_tree import PosetTree
 
 
@@ -46,7 +47,7 @@ def test_find_lca_for_set_rejects_empty_node_set():
         G.find_lca_for_set([])
 
 
-def test_populate_node_divergences_requires_leaf_labels():
+def test_populate_node_distributions_requires_leaf_labels():
     G = PosetTree()
     G.add_node("root", is_leaf=False)
     G.add_node("left", is_leaf=True)
@@ -56,10 +57,10 @@ def test_populate_node_divergences_requires_leaf_labels():
     leaf_data = pd.DataFrame([[0.0], [1.0]], index=["left", "right"])
 
     with pytest.raises(KeyError, match="label"):
-        G.populate_node_divergences(leaf_data)
+        G.populate_node_distributions(leaf_data)
 
 
-def test_populate_node_divergences_requires_explicit_leaf_flags():
+def test_populate_node_distributions_requires_explicit_leaf_flags():
     G = PosetTree()
     G.add_node("root", is_leaf=False)
     G.add_node("left", label="left")
@@ -69,7 +70,18 @@ def test_populate_node_divergences_requires_explicit_leaf_flags():
     leaf_data = pd.DataFrame([[0.0], [1.0]], index=["left", "right"])
 
     with pytest.raises(KeyError, match="is_leaf"):
-        G.populate_node_divergences(leaf_data)
+        G.populate_node_distributions(leaf_data)
+
+
+def test_populate_node_distributions_rejects_duplicate_sample_labels():
+    leaf_data = pd.DataFrame([[1, 0], [0, 1], [1, 1]], index=["S1", "S1", "S2"])
+    G = tree_from_linkage(
+        np.array([[0, 1, 1.0, 2], [2, 3, 2.0, 3]]),
+        leaf_names=leaf_data.index.tolist(),
+    )
+
+    with pytest.raises(ValueError, match="duplicated labels: \\['S1'\\]"):
+        G.populate_node_distributions(leaf_data)
 
 
 def test_compute_ultrametric_branch_lengths_requires_merge_distances():
@@ -79,7 +91,7 @@ def test_compute_ultrametric_branch_lengths_requires_merge_distances():
         compute_ultrametric_branch_lengths(2, children, distances=None)
 
 
-def test_compute_ultrametric_branch_lengths_normalizes_to_root_time():
+def test_compute_ultrametric_branch_lengths_normalizes_by_root_merge_height():
     children = np.array([[0, 1], [2, 3], [4, 5]], dtype=int)
     distances = np.array([2.0, 6.0, 10.0], dtype=float)
 
@@ -103,36 +115,7 @@ def test_compute_ultrametric_branch_lengths_rejects_nonmonotone_heights():
         compute_ultrametric_branch_lengths(4, children, distances)
 
 
-def test_tree_from_linkage_topology_accepts_nonmonotone_heights_with_placeholders():
-    linkage_matrix = np.array(
-        [
-            [0, 1, 2.0, 2],
-            [2, 3, 6.0, 2],
-            [4, 5, 5.0, 4],
-        ],
-        dtype=float,
-    )
-
-    tree = tree_from_linkage_topology(
-        linkage_matrix,
-        leaf_names=["a", "b", "c", "d"],
-        fallback_branch_length=1.0,
-    )
-
-    assert tree.number_of_nodes() == 7
-    assert nx.is_directed_acyclic_graph(tree)
-    assert nx.is_tree(tree.to_undirected())
-    assert {tree.nodes[leaf]["label"] for leaf in tree.get_leaves(return_labels=False)} == {
-        "a",
-        "b",
-        "c",
-        "d",
-    }
-    assert all(attrs["branch_length"] == 1.0 for _, _, attrs in tree.edges(data=True))
-
-
 def test_from_scipy_linkage_binary_data():
-    pytest.importorskip("scipy")
     from scipy.cluster.hierarchy import linkage
     from scipy.spatial.distance import pdist
 
@@ -158,3 +141,26 @@ def test_from_scipy_linkage_binary_data():
     assert nx.is_tree(G.to_undirected())
 
     _assert_laminar_and_inner_nodes_consistent(G)
+
+
+def test_tree_root_prefers_cached_root_and_rejects_forests():
+    from tree_break_selection.tree.topology import tree_root
+
+    forest = nx.DiGraph([("a", "b"), ("c", "d")])
+    with pytest.raises(ValueError, match="Expected one root"):
+        tree_root(forest)
+
+    forest.graph["root"] = "a"
+    assert tree_root(forest) == "a"
+    assert tree_root(nx.DiGraph([("r", "x"), ("r", "y")])) == "r"
+
+
+def test_find_lca_for_set_works_without_cached_root():
+    tree = PosetTree()
+    tree.add_edges_from([("root", "A"), ("root", "B"), ("A", "A1"), ("A", "A2")])
+    for node in tree.nodes:
+        tree.nodes[node]["is_leaf"] = tree.out_degree(node) == 0
+
+    assert "root" not in tree.graph
+    assert tree.find_lca_for_set(["A1", "A2"]) == "A"
+    assert tree.find_lca_for_set(["A1", "B"]) == "root"

@@ -6,11 +6,16 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.shared.types.method_run_result import MethodRunResult
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
-
-from benchmarks.shared.types.method_run_result import MethodRunResult
+from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+    run_gate_annotation_pipeline,
+)
+from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
+from tree_break_selection.tree.construction import build_tree
 
 
 def _empty_report_dataframe() -> pd.DataFrame:
@@ -51,15 +56,36 @@ def labels_and_report_from_decomposition(
     return labels, report_df
 
 
-def _labels_from_decomposition(
-    decomposition: dict, sample_index: Sequence[object] | pd.Index
-) -> list[int]:
-    """Extract cluster labels for each sample from a decomposition result."""
-    labels, _ = labels_and_report_from_decomposition(decomposition, sample_index)
-    return labels.tolist()
+def tbs_decompose(
+    data: pd.DataFrame,
+    distance_condensed: np.ndarray,
+    *,
+    linkage_method: str,
+    alpha: float,
+) -> tuple[np.ndarray, dict]:
+    """Build the TBS tree, run both gates at ``alpha`` and decompose it.
+
+    Returns labels in ``data`` row order (``-1`` for unassigned samples) and the
+    decomposition result.
+    """
+    tree = build_tree(data, distance_condensed, linkage_method=linkage_method).tree
+    tree.populate_node_distributions(data)
+    gate_bundle = run_gate_annotation_pipeline(
+        tree,
+        tree.annotations_df.copy(),
+        leaf_data=data,
+        edge_alpha=alpha,
+        sibling_alpha=alpha,
+    )
+    decomposition = TreeDecomposition(
+        tree=tree,
+        gate_annotation_bundle=gate_bundle,
+    ).decompose_tree()
+    labels, _report = labels_and_report_from_decomposition(decomposition, data.index)
+    return labels, decomposition
 
 
-def _create_report_dataframe_from_labels(
+def create_report_dataframe_from_labels(
     labels: list[int] | np.ndarray, sample_names: Sequence[object] | pd.Index
 ) -> pd.DataFrame:
     """Create a report dataframe from flat cluster labels."""
@@ -82,7 +108,7 @@ def _count_non_noise_clusters(labels: np.ndarray) -> int:
     return int(len({int(label) for label in labels if int(label) >= 0}))
 
 
-def _ok_result_from_labels(
+def ok_result_from_labels(
     labels: list[int] | np.ndarray,
     sample_names: Sequence[object] | pd.Index,
     *,
@@ -93,7 +119,7 @@ def _ok_result_from_labels(
     return MethodRunResult(
         labels=labels_array,
         found_clusters=_count_non_noise_clusters(labels_array),
-        report_df=_create_report_dataframe_from_labels(labels_array, sample_names),
+        report_df=create_report_dataframe_from_labels(labels_array, sample_names),
         status="ok",
         skip_reason=None,
         extra=extra,
@@ -101,8 +127,8 @@ def _ok_result_from_labels(
 
 
 __all__ = [
+    "tbs_decompose",
     "labels_and_report_from_decomposition",
-    "_labels_from_decomposition",
-    "_create_report_dataframe_from_labels",
-    "_ok_result_from_labels",
+    "create_report_dataframe_from_labels",
+    "ok_result_from_labels",
 ]

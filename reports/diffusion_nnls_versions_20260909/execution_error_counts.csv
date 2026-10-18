@@ -1,0 +1,4 @@
+configuration,error,count
+C10,MAD rooting requires positive distances between leaf pairs.,16
+C07,merge distances must be nondecreasing to compute branch lengths.,99
+C08,merge distances must be nondecreasing to compute branch lengths.,91

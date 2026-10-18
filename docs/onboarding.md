@@ -50,7 +50,7 @@ short: follow it before opening deep implementation directories.
 | Tree structure and feature-space data contracts | `tree_break_selection/tree/` |
 | Decomposition traversal and gate orchestration | `tree_break_selection/hierarchy_analysis/` |
 | Statistical kernels, projection, inflation, and FDR | `tree_break_selection/hierarchy_analysis/statistics/` |
-| Invariant/equivariant and adaptive-cosine separation | `tree_break_selection/space_separation/` |
+| Leading-axis and adaptive-cosine separation | `tree_break_selection/space_separation/` |
 | Reusable plotting engines | `tree_break_selection/plot/` |
 | Full, smoke, and regression benchmark execution | `benchmarks/full/`, `benchmarks/smoke/`, `benchmarks/regression/` |
 | Standalone benchmark experiments | `benchmarks/experiments/` |
@@ -65,17 +65,19 @@ short: follow it before opening deep implementation directories.
 | Durable project memory and open questions | `wiki/` |
 | Paper draft and derivation notes | `manuscript/` |
 | Manuscript-specific figure generators | `manuscript/tools/figures/` |
-| Local-only/generated work | `local_data/`, root `analysis/`, `benchmarks/results/`, `reports/` |
+| Local-only/generated work | `local_data/`, root `analysis/`, `benchmarks/results/`, `reports/<study>/generated/` |
+| Retained reports and generated-file classifications | `reports/`, `reports/artifacts.json`, `docs/generated-files.md` |
 
 ## Do Not Start Here
 
 - `benchmarks/results/`: generated outputs and historical run products.
-- `raw/assets/benchmark-results/`: small promoted evidence snapshots cited by
-  wiki or analysis notes.
+- `raw/assets/benchmark-results/`: promoted evidence snapshots cited by wiki or
+  analysis notes. About 1.13 GiB across 120 top-level entries (100 directories
+  and 20 files), and the reason a clone is large.
 - `manuscript/build/`: build output.
 - root `analysis/`: ignored local analysis workspace if present.
 - hidden tool directories such as `.venv/`, `.pytest_cache/`, `.ruff_cache/`,
-  `.kiro/`, `.playwright-mcp/`, and `.github/skills/`.
+  `.asv/`, and `.serena/`.
 
 ## Main Code Route
 

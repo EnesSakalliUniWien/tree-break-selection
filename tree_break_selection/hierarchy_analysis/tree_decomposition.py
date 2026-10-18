@@ -13,14 +13,15 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-from ..core_utils.data_utils import extract_bool_column_dict
 from .cluster_assignments import ClusterBoundary, build_cluster_assignments
 from .decomposition.gates.annotation_bundle import GateAnnotationBundle
+from .decomposition.gates.annotation_predicates import annotation_bool
 from .decomposition.gates.column_contracts import (
     validate_edge_gate_columns,
     validate_sibling_gate_columns,
 )
 from .decomposition.gates.gate_evaluator import GateEvaluator, TraversalDecision
+from .statistics.data_utils import extract_bool_column_dict
 
 TraceLevel = Literal["compact", "full"]
 
@@ -51,11 +52,13 @@ class TreeDecomposition:
 
     #. **Binary structure prerequisite** - parent must have exactly two children.
     #. **Edge divergence gate** - at least one child must significantly diverge
-       from the parent (projected Wald chi-square test), confirming there is
-       edge-level signal to split on.
-    #. **Sibling divergence gate** - siblings must have significantly different
-       distributions according to a projected Wald chi-square test with
-       empirical-null inflation and sibling FDR correction.
+       from the parent according to the supplied child-parent test annotation.
+    #. **Sibling divergence gate** - the supplied sibling annotation must report
+       an available, significant result after its configured correction. The
+       default empirical-inflation path allows internally supported plug-in
+       p-values while selected-tail validity remains unproven. Missing internal
+       support closes that focal gate; the decomposer does not validate the
+       reference law itself.
 
     Nodes that do not split become cluster boundaries. Leaves under the same
     boundary node are assigned the same cluster identifier. In pass-through mode,
@@ -69,8 +72,6 @@ class TreeDecomposition:
         annotations_df: pd.DataFrame | None = None,
         *,
         gate_annotation_bundle: GateAnnotationBundle | None = None,
-        selected_family_passthrough_guard: bool = False,
-        spectral_transport_passthrough_guard: bool = False,
         passthrough: bool = True,
         trace_level: TraceLevel = "compact",
     ):
@@ -87,24 +88,11 @@ class TreeDecomposition:
         gate_annotation_bundle
             Completed output from ``run_gate_annotation_pipeline``. Its metadata
             owns traversal guard behavior.
-        selected_family_passthrough_guard
-            Use selected-family blocking columns when traversing a direct
-            annotations frame.
-        spectral_transport_passthrough_guard
-            Use spectral-transport support columns when traversing a direct
-            annotations frame.
         """
         if annotations_df is not None and gate_annotation_bundle is not None:
             raise ValueError("Pass either annotations_df or gate_annotation_bundle, not both.")
         if annotations_df is None and gate_annotation_bundle is None:
             raise ValueError("annotations_df or gate_annotation_bundle is required.")
-        if gate_annotation_bundle is not None and (
-            selected_family_passthrough_guard or spectral_transport_passthrough_guard
-        ):
-            raise ValueError(
-                "GateAnnotationBundle metadata owns passthrough guard behavior; "
-                "do not pass raw-annotation guard flags with a bundle."
-            )
 
         self.tree = tree
         self._node_ids = tuple(self.tree.nodes)
@@ -115,17 +103,17 @@ class TreeDecomposition:
                 gate_config.root_selective_permutation_guard_scope
                 in _SELECTED_FAMILY_PASSTHROUGH_SCOPES
             )
-            self._spectral_transport_passthrough_guard = bool(
-                gate_config.spectral_transport_passthrough_guard
-            )
             self._annotation_edge_alpha = float(gate_annotation_bundle.metadata.edge.alpha)
             self._annotation_sibling_alpha = float(gate_annotation_bundle.metadata.sibling.alpha)
+            self._annotation_effective_sibling_alpha = self._annotation_sibling_alpha / float(
+                gate_config.sibling_gate_alpha_penalty
+            )
         else:
             self.annotations_df = self._validated_annotations(annotations_df)
-            self._selected_family_passthrough_guard = bool(selected_family_passthrough_guard)
-            self._spectral_transport_passthrough_guard = bool(spectral_transport_passthrough_guard)
+            self._selected_family_passthrough_guard = False
             self._annotation_edge_alpha = None
             self._annotation_sibling_alpha = None
+            self._annotation_effective_sibling_alpha = None
         self._trace_level = validate_trace_level(str(trace_level))
 
         # ----- root -----
@@ -146,7 +134,14 @@ class TreeDecomposition:
             "Sibling_Divergence_Skipped"
         )
         self._passthrough_supported = self._build_passthrough_support_map()
-        self._passthrough_bottleneck = self._build_passthrough_bottleneck_map()
+        self._passthrough_bottleneck = (
+            None
+            if self._passthrough_supported is None
+            else {
+                node: "" if supported else "selected_family_passthrough_guard_blocked"
+                for node, supported in self._passthrough_supported.items()
+            }
+        )
 
         # Precompute children list (avoids rebuilding generator repeatedly)
         self._children: dict[object, list[object]] = {
@@ -170,12 +165,6 @@ class TreeDecomposition:
     def _uses_selected_family_passthrough_guard(self) -> bool:
         return self._selected_family_passthrough_guard
 
-    def _annotation_bool_value(self, node: object, column: str) -> bool:
-        if column not in self.annotations_df.columns or node not in self.annotations_df.index:
-            return False
-        value = self.annotations_df.loc[node, column]
-        return bool(pd.notna(value) and bool(value))
-
     def _build_passthrough_support_map(self) -> dict[object, bool] | None:
         selected_family_support = None
         if (
@@ -183,56 +172,13 @@ class TreeDecomposition:
             and "Selective_Permutation_Guard_Would_Block" in self.annotations_df.columns
         ):
             selected_family_support = {
-                node: not self._annotation_bool_value(
-                    node, "Selective_Permutation_Guard_Would_Block"
+                node: not annotation_bool(
+                    self.annotations_df, node, "Selective_Permutation_Guard_Would_Block"
                 )
                 for node in self._node_ids
             }
 
-        spectral_support = None
-        if self._spectral_transport_passthrough_guard:
-            spectral_support = self._extract_required_bool_annotation_column(
-                "Spectral_Transport_Pass_Through_Supported"
-            )
-
-        if selected_family_support is None and spectral_support is None:
-            return None
-
-        return {
-            node: bool(
-                (selected_family_support[node] if selected_family_support is not None else True)
-                and (spectral_support[node] if spectral_support is not None else True)
-            )
-            for node in self._node_ids
-        }
-
-    def _build_passthrough_bottleneck_map(self) -> dict[object, str] | None:
-        if self._passthrough_supported is None:
-            return None
-
-        bottlenecks: dict[object, str] = {}
-        for node in self._node_ids:
-            reasons: list[str] = []
-            if self._uses_selected_family_passthrough_guard() and self._annotation_bool_value(
-                node, "Selective_Permutation_Guard_Would_Block"
-            ):
-                reasons.append("selected_family_passthrough_guard_blocked")
-            if (
-                self._spectral_transport_passthrough_guard
-                and "Spectral_Transport_Pass_Through_Supported" in self.annotations_df.columns
-                and not self._annotation_bool_value(
-                    node, "Spectral_Transport_Pass_Through_Supported"
-                )
-            ):
-                spectral_bottleneck = (
-                    str(self.annotations_df.loc[node, "Spectral_Transport_Bottleneck"])
-                    if "Spectral_Transport_Bottleneck" in self.annotations_df.columns
-                    and node in self.annotations_df.index
-                    else "spectral_transport_bottleneck"
-                )
-                reasons.append(spectral_bottleneck)
-            bottlenecks[node] = ";".join(reason for reason in reasons if reason)
-        return bottlenecks
+        return selected_family_support
 
     def _validated_annotations(self, annotations_df: pd.DataFrame | None) -> pd.DataFrame:
         """Validate explicit gate decisions for every tree node."""
@@ -270,7 +216,6 @@ class TreeDecomposition:
         return extract_bool_column_dict(
             self.annotations_df,
             column_name,
-            coerce_index_to_str=False,
         )
 
     # ---------- traversal audit helpers ----------
@@ -292,6 +237,29 @@ class TreeDecomposition:
         if pd.isna(value):
             return None
         return value.item() if hasattr(value, "item") else value
+
+    def _node_edge_context(
+        self,
+        node: object,
+    ) -> tuple[
+        object | None,
+        object | None,
+        tuple[object, object] | None,
+        tuple[object, object] | None,
+        tuple[object, object, object] | None,
+    ]:
+        """Return the binary child and gate-test identities for one node."""
+        children = self._children[node]
+        if len(children) != 2:
+            return None, None, None, None, None
+        left_child, right_child = children
+        return (
+            left_child,
+            right_child,
+            (node, left_child),
+            (node, right_child),
+            (node, left_child, right_child),
+        )
 
     def _gate_p_value_debug_fields(
         self,
@@ -379,15 +347,13 @@ class TreeDecomposition:
     ) -> dict[str, object]:
         """Return one audit row for edge-reachable traversal."""
         children = self._children[node]
-        left_child = children[0] if len(children) == 2 else None
-        right_child = children[1] if len(children) == 2 else None
-        left_edge_test_tuple = (node, left_child) if left_child is not None else None
-        right_edge_test_tuple = (node, right_child) if right_child is not None else None
-        sibling_test_tuple = (
-            (node, left_child, right_child)
-            if left_child is not None and right_child is not None
-            else None
-        )
+        (
+            left_child,
+            right_child,
+            left_edge_test_tuple,
+            right_edge_test_tuple,
+            sibling_test_tuple,
+        ) = self._node_edge_context(node)
 
         left_edge_open = bool(self._edge_divergent[left_child]) if left_child is not None else False
         right_edge_open = (
@@ -532,29 +498,14 @@ class TreeDecomposition:
         )
 
     @staticmethod
-    def _traversal_counters(
-        *,
-        traversal_trace: list[dict[str, object]],
+    def _full_edge_traversal_counters(
         full_edge_traversal_trace: list[dict[str, object]],
     ) -> dict[str, int]:
-        """Return compact counters for live and edge-reachable traversal."""
-        live_decisions = [str(row["decision"]) for row in traversal_trace]
+        """Return compact counters for edge-reachable traversal."""
         full_stop_reasons = [
             str(row["edge_traversal_stop_reason"]) for row in full_edge_traversal_trace
         ]
         return {
-            "live_nodes_visited": len(traversal_trace),
-            "live_internal_tuples": sum(int(row["n_children"]) == 2 for row in traversal_trace),
-            "live_split_count": live_decisions.count(TraversalDecision.SPLIT.value),
-            "live_pass_through_count": live_decisions.count(TraversalDecision.PASS_THROUGH.value),
-            "live_boundary_count": live_decisions.count(TraversalDecision.BOUNDARY.value),
-            "live_passthrough_candidate_count": sum(
-                bool(row["passthrough_candidate"]) for row in traversal_trace
-            ),
-            "live_passthrough_support_blocked_count": sum(
-                row["passthrough_decision_reason"] == "passthrough_support_blocked"
-                for row in traversal_trace
-            ),
             "full_edge_nodes_visited": len(full_edge_traversal_trace),
             "full_edge_internal_tuples": sum(
                 int(row["n_children"]) == 2 for row in full_edge_traversal_trace
@@ -610,15 +561,13 @@ class TreeDecomposition:
             decision = self._gate.decision(node)
             actual_decision_by_node[node] = decision
             children = self._children[node]
-            left_child = children[0] if len(children) == 2 else None
-            right_child = children[1] if len(children) == 2 else None
-            left_edge_test_tuple = (node, left_child) if left_child is not None else None
-            right_edge_test_tuple = (node, right_child) if right_child is not None else None
-            sibling_test_tuple = (
-                (node, left_child, right_child)
-                if left_child is not None and right_child is not None
-                else None
-            )
+            (
+                left_child,
+                right_child,
+                left_edge_test_tuple,
+                right_edge_test_tuple,
+                sibling_test_tuple,
+            ) = self._node_edge_context(node)
             passthrough_audit = self._gate.passthrough_audit_status(node)
             if collect_full_trace:
                 traversal_trace.append(
@@ -645,13 +594,12 @@ class TreeDecomposition:
                         **passthrough_audit,
                     }
                 )
-            else:
-                self._update_live_traversal_counters(
-                    traversal_counters,
-                    decision=decision,
-                    n_children=len(children),
-                    passthrough_audit=passthrough_audit,
-                )
+            self._update_live_traversal_counters(
+                traversal_counters,
+                decision=decision,
+                n_children=len(children),
+                passthrough_audit=passthrough_audit,
+            )
             if decision in (TraversalDecision.SPLIT, TraversalDecision.PASS_THROUGH):
                 left_child, right_child = children
                 nodes_to_visit.append(right_child)
@@ -667,10 +615,10 @@ class TreeDecomposition:
             "cluster_assignments": cluster_assignments,
             "num_clusters": len(cluster_assignments),
             "traversal_counters": traversal_counters,
-            "independence_analysis": {
+            "gate_alphas": {
                 "edge_alpha": self._annotation_edge_alpha,
                 "sibling_alpha": self._annotation_sibling_alpha,
-                "decision_mode": "sibling_divergence",
+                "sibling_alpha_effective": self._annotation_effective_sibling_alpha,
             },
         }
         if not collect_full_trace:
@@ -680,14 +628,11 @@ class TreeDecomposition:
             actual_decision_by_node=actual_decision_by_node,
             actual_visited_nodes=processed,
         )
+        traversal_counters.update(self._full_edge_traversal_counters(full_edge_traversal_trace))
         result.update(
             {
                 "traversal_trace": traversal_trace,
                 "full_edge_traversal_trace": full_edge_traversal_trace,
-                "traversal_counters": self._traversal_counters(
-                    traversal_trace=traversal_trace,
-                    full_edge_traversal_trace=full_edge_traversal_trace,
-                ),
             }
         )
         return result

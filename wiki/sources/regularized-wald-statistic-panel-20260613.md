@@ -2,11 +2,8 @@
 title: Regularized Wald Statistic Panel 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
-  - tests/validation/calibration/statistics/97_test_regularized_wald_statistic_panel.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
 tags:
   - source
@@ -50,6 +47,7 @@ boundary instability detected by the differential statistic-validity panel.
   statistics, summary status decisions, and output writing.
 - The fixed-tree smoke output records that smoothing repairs the boundary
   diagnostic but not the fixed-tree chi-square tail law.
+- `benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

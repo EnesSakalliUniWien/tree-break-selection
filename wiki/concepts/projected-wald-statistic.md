@@ -2,22 +2,21 @@
 title: Projected-Wald Statistic
 type: concept
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
   - manuscript/guides/full_method_logic_map.md
   - manuscript/sections/method/edge_test.tex
   - manuscript/sections/method/sibling_test.tex
+  - tree_break_selection/hierarchy_analysis/statistics/branch_length_utils.py
+  - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/pair_testing/wald_statistic/sibling_divergence_test.py
+  - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/fixed_subspace_annotation.py
   - benchmarks/diagnostics/calibration/statistics/statistic_distribution_shape_panel.py
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
-  - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
-  - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/fixed_subspace_annotation.py
-  - tests/statistics/44_test_fixed_coordinate_fdr_candidates.py
+  - tests/statistics/44_test_fixed_coordinate_adjustment_candidates.py
 tags:
   - method
   - statistics
@@ -34,10 +33,15 @@ with a chi-square reference under the fixed-subspace approximation.
 ## Details
 
 For edge tests, the raw child-parent contrast is standardized coordinatewise
-with the nested variance model, multiplied by a normalized branch-time variance
-factor. For sibling tests, the left-right contrast is standardized with the
-two-sample Bernoulli variance model multiplied by the sibling branch-time
-factor. In both cases, the standardized vector is projected into parent-local
+with the nested variance model; a normalized branch-time variance factor is
+applied only when `edge_branch_length_variance_policy` is
+`normalized_branch_length` (the default is `none`). For sibling tests, the
+left-right contrast is standardized with the two-sample Bernoulli variance
+model and always multiplied by the sibling branch-time factor
+`1 + (L_left + L_right) / (2 * mean positive branch length)`, independent of
+the edge policy. The fixed-subspace sibling gates (`fixed_coordinate_*`,
+`fixed_block_*`) and the selected-root permutation guards use the same
+two-sample contrast without that factor. In both cases, the standardized vector is projected into parent-local
 spectral directions before summing squared projected coordinates.
 
 The manuscript terminology distinguishes the implemented orthonormal
@@ -78,7 +82,7 @@ orthonormal projections are near nominal, so the broken assumption is not the
 quadratic formula itself but using a projection and dimension learned from the
 same null sample as the tested sibling contrast.
 
-The data-independent sibling-gate panel tests the corresponding non-cross-fit
+The data-independent sibling-gate panel tests the corresponding same-data
 repair direction: keep the selected topology but remove adaptive PCA and
 adaptive projection dimension from the tested statistic. Fixed coordinate-wise
 Bonferroni or BH aggregation with a predeclared selected-topology penalty is a
@@ -113,9 +117,9 @@ smoke-scale runs with fixed `coordinate_bh`, edge alpha `0.0001`, and
 selected-topology penalties `500`--`1000`. Direct categorical cases remain
 borderline: high-cardinality null false splits are selected root splits with
 small first children, but a universal min-child guard would block other valid
-signal regimes. The next non-cross-fit mathematical object is therefore a
+signal regimes. The next same-data mathematical object is therefore a
 selective/adaptive traversal null law conditioned on selected topology geometry,
-not a return to sample splitting and not a hard balance threshold.
+and not a hard balance threshold.
 
 The traversal panel now carries this boundary into the production-admissibility
 contract. Binary fixed-coordinate transfer can be represented as a
@@ -183,18 +187,12 @@ null root and retains the matched signal, so this evidence helps identify the
 selected-root failure mode; it should not be folded into the TBS method
 definition.
 
-The packaged validation stress profile is
-`fixed_coordinate_selective_root_v1`: fixed coordinate BH replaces the
-same-sample adaptive sibling projection, selected-topology penalty `50`
-controls edge-selected traversal multiplicity, root-stability threshold `0.24`
-guards unstable selected roots, and the `99`-draw selected-root permutation
-diagnostic probes selected-tree null behavior. This is not a production default
-and not the non-resampling TBS runtime method.
-
-The newest rooting/null-sibling validation refinement is
-`fixed_coordinate_selective_passthrough_v1`. It keeps the fixed coordinate BH
-statistic and selected-root diagnostic, but adds selected-subtree permutation
-only for descendant splits reached through an ordinary closed sibling ancestor.
+The historical `fixed_coordinate_selective_root_v1` validation profile packaged
+fixed coordinate BH, selected-topology penalty `50`, root-stability threshold
+`0.24`, and a `99`-draw selected-root permutation diagnostic. The historical
+`fixed_coordinate_selective_passthrough_v1` variant added selected-subtree
+permutation only for descendant splits reached through an ordinary closed
+sibling ancestor.
 This targets the pass-through leak that root-only diagnostics miss without
 applying the broad `open_internal` diagnostic to every internal signal split. In
 the
@@ -206,6 +204,12 @@ the support requirement directly: with zero observed false splits, production
 confidence at a `0.05` Wilson upper-bound target requires `73` null replicates
 per case, so the current smoke needs `71` additional zero-false null replicates
 per case.
+
+Both named profiles were retired from the runtime registry after this diagnostic
+sequence. The default-off selected-root and pass-through-descendant guard scopes
+remain available through explicit parameters for historical reproduction; the
+refined global selected-family profile is the current packaged diagnostic
+candidate.
 
 The fixed-coordinate FDR reaction panel now makes the aggregation choice
 explicit. Plain coordinate BH reacts to repeated moderate coordinate evidence
@@ -224,7 +228,7 @@ selected-subtree p-value remains small even when permutation resolution is
 increased to `999` draws. A hard barrier below every closed unstable root is
 also invalid, because it collapses strong many-cluster signal rows whose root
 binary split is unstable but whose descendant structure is real. The next
-non-cross-fit statistic is therefore a global selected-family null for
+same-data statistic is therefore a global selected-family null for
 pass-through descendants: rebuild the whole selected tree under
 feature-block permutations and compare the observed pass-through minimum
 sibling p-value against the null minimum over the selected family. Diagnostic
@@ -232,7 +236,7 @@ replays move the observed null failure to global p-values around `0.05` to
 `0.06`, but this layer is not yet production behavior because signal
 sensitivity and runtime need optimized validation.
 
-That global correction is now executable as
+That global correction was evaluated as
 `fixed_coordinate_global_passthrough_v1`. Its guard scope,
 `global_sibling_min_passthrough_descendant`, compares pass-through descendant
 candidates with the minimum fixed-subspace sibling p-value over every binary
@@ -247,7 +251,9 @@ null false splits across `30` null rows and signal mean ARI `0.832022`. The
 direct-categorical rerun preserves those statistics while improving wall time
 from about `309` seconds to about `147` seconds. The method remains
 diagnostic-only because support-level binary validation finds boundary
-pass-through false splits in `binary_unbalanced_low`.
+pass-through false splits in `binary_unbalanced_low`. The superseded named
+profile has since been retired from the live registry; the underlying guard
+scope and direct behavioral coverage remain available.
 
 The refined successor,
 `fixed_coordinate_global_passthrough_refined_v1`, leaves the statistic and
@@ -286,7 +292,7 @@ categorical support evidence remains open.
   decomposes fixed-topology sibling null behavior into same-sample adaptive,
   independent tree-sample, and random fixed orthonormal projection sources.
 - `benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_panel.py`
-  evaluates fixed-coordinate sibling gates as a non-cross-fit candidate repair
+  evaluates fixed-coordinate sibling gates as a same-data candidate repair
   for same-data selected topology.
 - `benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py`
   evaluates the fixed gates through the actual top-down decomposition
@@ -294,6 +300,7 @@ categorical support evidence remains open.
 - `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py`
   validates the runtime fixed-profile path and the opt-in selected-root
   permutation guard evidence fields.
+- `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py`, `benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py`, `benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py`, `benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py` were retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

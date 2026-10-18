@@ -1,1 +1,0 @@
-"""Root-center calibration tests."""

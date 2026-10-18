@@ -9,9 +9,8 @@ change production defaults and does not add a fallback calibration rule.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-import os
-import subprocess
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -21,8 +20,10 @@ from time import perf_counter
 
 import pandas as pd
 
-from benchmarks.shared.cases import get_default_test_cases, get_test_cases_by_suite
+from benchmarks.shared.cases import get_test_cases_by_suite
 from benchmarks.shared.pipeline import benchmark_cluster_algorithm
+from benchmarks.shared.util.provenance import current_git_state
+from benchmarks.shared.util.values import parse_csv_list
 
 SCHEMA_VERSION = "alpha_grid_search/v1"
 GENERATED_BY = "benchmarks.validation.sweeps.alpha_grid_search"
@@ -87,10 +88,7 @@ def _validate_alpha_pairs(alpha_pairs: Sequence[tuple[float, float]]) -> None:
 
 def select_cases(*, suite: str, case_names: Sequence[str]) -> list[dict]:
     """Return benchmark cases by suite and optional explicit case-name filter."""
-    if suite == "default":
-        cases = get_default_test_cases()
-    else:
-        cases = get_test_cases_by_suite(suite)
+    cases = get_test_cases_by_suite(suite)
     if not case_names:
         return [case.copy() for case in cases]
 
@@ -153,17 +151,26 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
         else build_alpha_pairs(config.edge_alphas, config.sibling_alphas)
     )
     _validate_alpha_pairs(alpha_pairs)
+    case_set_sha256 = hashlib.sha256(
+        "\n".join(str(case["name"]) for case in cases).encode()
+    ).hexdigest()
 
     for edge_alpha, sibling_alpha in alpha_pairs:
         combo_id = alpha_pair_id(edge_alpha, sibling_alpha)
         result_path = config.output_dir / f"{combo_id}.csv"
         summary_path = config.output_dir / f"{combo_id}.summary.json"
         if config.resume and result_path.exists() and summary_path.exists():
-            summaries.append(json.loads(summary_path.read_text()))
+            summary = json.loads(summary_path.read_text())
+            if summary.get("case_set_sha256") != case_set_sha256:
+                raise ValueError(
+                    f"{summary_path} holds results for a different case set; "
+                    "use another --output-dir or pass --no-resume."
+                )
+            summaries.append(summary)
             continue
 
         started = perf_counter()
-        result, _ = benchmark_cluster_algorithm(
+        result = benchmark_cluster_algorithm(
             test_cases=[case.copy() for case in cases],
             significance_level=sibling_alpha,
             edge_alpha=edge_alpha,
@@ -184,6 +191,7 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
             sibling_alpha=sibling_alpha,
             elapsed_sec=elapsed_sec,
         )
+        summary["case_set_sha256"] = case_set_sha256
         summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
         summaries.append(summary)
 
@@ -231,46 +239,12 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
     return {"summary": summary_df, "manifest": manifest}
 
 
-def current_git_state() -> dict[str, object]:
-    """Return git provenance without hiding command failures."""
-    state: dict[str, object] = {
-        "build_commit": os.environ.get("TBS_GIT_COMMIT", "unknown"),
-        "build_branch": os.environ.get("TBS_GIT_BRANCH", "unknown"),
-        "build_dirty": os.environ.get("TBS_GIT_DIRTY", "unknown"),
-    }
-    commands = {
-        "commit": ("git", "rev-parse", "HEAD"),
-        "branch": ("git", "branch", "--show-current"),
-        "status_short": ("git", "status", "--short"),
-    }
-    for key, command in commands.items():
-        try:
-            completed = subprocess.run(command, capture_output=True, text=True)
-        except OSError as exc:
-            state[key] = f"unavailable:{exc}"
-            continue
-        if completed.returncode != 0:
-            state[key] = {
-                "returncode": completed.returncode,
-                "stderr": completed.stderr.strip(),
-            }
-        else:
-            state[key] = completed.stdout.strip()
-    return state
-
-
-def _parse_case_names(raw_case_names: str | None) -> tuple[str, ...]:
-    if raw_case_names is None:
-        return ()
-    return tuple(item.strip() for item in raw_case_names.split(",") if item.strip())
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--suite",
         default="full",
-        help="Benchmark suite: full, binary, categorical, continuous, graph, or default.",
+        help="Benchmark suite: full, binary, categorical, continuous, or graph.",
     )
     parser.add_argument(
         "--case-names",
@@ -305,7 +279,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     config = AlphaGridConfig(
         suite=str(args.suite),
-        case_names=_parse_case_names(args.case_names),
+        case_names=parse_csv_list(args.case_names),
         edge_alphas=parse_float_grid(str(args.edge_alphas)),
         sibling_alphas=parse_float_grid(str(args.sibling_alphas)),
         output_dir=args.output_dir,

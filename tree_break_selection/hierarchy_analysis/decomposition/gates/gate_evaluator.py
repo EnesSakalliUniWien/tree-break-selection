@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tree_break_selection.tree.poset_tree import PosetTree
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
+from tree_break_selection.tree.topology import bottom_up_nodes
 
 
 class TraversalDecision(Enum):
@@ -79,7 +79,10 @@ class GateEvaluator:
             self._can_split_by_node = self._compute_can_split_by_node(
                 self._split_prerequisites_by_node
             )
-            self._has_descendant_split = self._compute_has_descendant_split(self._can_split_by_node)
+            self._has_descendant_split = self._compute_has_descendant_split(
+                self._split_prerequisites_by_node,
+                self._can_split_by_node,
+            )
         else:
             self._split_prerequisites_by_node = {}
             self._can_split_by_node = {}
@@ -136,10 +139,6 @@ class GateEvaluator:
 
         return bool(self._sibling_different[parent])
 
-    def _can_split(self, parent: object) -> bool:
-        """Return whether all split gates are open for *parent*."""
-        return self._passes_split_prerequisites(parent) and self._sibling_gate_is_open(parent)
-
     def _compute_split_prerequisites_by_node(self) -> dict[object, bool]:
         """Return cached binary-structure plus edge-gate status for every node."""
         return {node: self._passes_split_prerequisites(node) for node in self._node_ids}
@@ -156,13 +155,24 @@ class GateEvaluator:
 
     def _compute_has_descendant_split(
         self,
+        split_prerequisites_by_node: dict[object, bool],
         can_split_by_node: dict[object, bool],
     ) -> dict[object, bool]:
-        """Return whether each node has a descendant that can split under all gates."""
+        """Return whether traversal can reach a descendant that splits under all gates.
+
+        A deeper split counts only when every node on the path would itself
+        split or pass through; a boundary child hides its subtree.
+        """
         has_split: dict[object, bool] = {}
         for node in bottom_up_nodes(self.tree):
             has_split[node] = any(
-                can_split_by_node[child] or has_split[child] for child in self._children_map[node]
+                can_split_by_node[child]
+                or (
+                    split_prerequisites_by_node[child]
+                    and has_split[child]
+                    and self._passthrough_support_is_open(child)
+                )
+                for child in self._children_map[node]
             )
         return has_split
 
@@ -170,14 +180,6 @@ class GateEvaluator:
         if self._passthrough_supported is None:
             return True
         return bool(self._passthrough_supported[parent])
-
-    def passthrough_support_status(self, parent: object) -> dict[str, object]:
-        """Return diagnostic support metadata for a possible pass-through node."""
-        supported = self._passthrough_support_is_open(parent)
-        return {
-            "passthrough_supported": supported,
-            "passthrough_bottleneck": self._passthrough_bottleneck.get(parent, ""),
-        }
 
     def passthrough_audit_status(self, parent: object) -> dict[str, object]:
         """Return auditable pass-through prerequisites without changing decisions."""

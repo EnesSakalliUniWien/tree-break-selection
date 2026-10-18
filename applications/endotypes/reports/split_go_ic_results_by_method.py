@@ -303,6 +303,18 @@ def write_pages_pdf(
             plt.close(fig)
 
 
+def _source_page(pages_dir: Path, row: pd.Series) -> Path:
+    """Return the ranked tree page for one row, by its method or its source run id."""
+    candidates = [
+        pages_dir / f"{int(row['display_rank']):02d}_{safe_name(str(row[column]))}.png"
+        for column in ("method_run_id", "source_run_id")
+    ]
+    source_page = next((path for path in candidates if path.exists()), None)
+    if source_page is None:
+        raise FileNotFoundError(candidates[0])
+    return source_page
+
+
 def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -324,9 +336,6 @@ def main() -> None:
         method_label = get_method_label(method)
         method_dir = args.output_dir / method_slug
         method_pages_dir = method_dir / "tree_pages"
-        if method_dir.exists():
-            shutil.rmtree(method_dir)
-        method_pages_dir.mkdir(parents=True, exist_ok=True)
 
         method_ranking = ranking[ranking["family"].eq(method)].copy()
         if method_ranking.empty:
@@ -347,6 +356,11 @@ def main() -> None:
         method_ranking["source_run_id"] = method_ranking["run_id"]
         source_run_ids = method_ranking["source_run_id"].copy()
         method_ranking["run_id"] = method_ranking["method_run_id"]
+        source_pages = [_source_page(pages_dir, row) for _, row in method_ranking.iterrows()]
+        # Replace this method's earlier folder only once every source page is known to exist.
+        if method_dir.exists():
+            shutil.rmtree(method_dir)
+        method_pages_dir.mkdir(parents=True, exist_ok=True)
 
         method_prefix = f"{args.prefix}_{safe_name(method_slug)}"
         method_ranking_path = method_dir / f"{method_prefix}_tree_ranking.csv"
@@ -377,18 +391,7 @@ def main() -> None:
         method_tfidf.to_csv(method_tfidf_path, index=False)
 
         copied_pages: list[Path] = []
-        for _, row in method_ranking.iterrows():
-            source_candidates = [
-                pages_dir
-                / f"{int(row['display_rank']):02d}_{safe_name(str(row['method_run_id']))}.png",
-                pages_dir
-                / f"{int(row['display_rank']):02d}_{safe_name(str(row['source_run_id']))}.png",
-            ]
-            source_page = next((path for path in source_candidates if path.exists()), None)
-            if source_page is None:
-                raise FileNotFoundError(source_candidates[0])
-            if not source_page.exists():
-                raise FileNotFoundError(source_page)
+        for (_, row), source_page in zip(method_ranking.iterrows(), source_pages, strict=True):
             target_page = method_pages_dir / (
                 f"{int(row['method_rank']):02d}_{safe_name(str(row['method_run_id']))}.png"
             )

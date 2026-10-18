@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from benchmarks.shared.generators.common import calculate_cluster_sizes
 from benchmarks.shared.generators.generate_categorical_matrix import (
     generate_categorical_feature_matrix,

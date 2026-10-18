@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "matched_datasets": 10000,
+  "matched_node_tests": 30000,
+  "changed_raw_p_values": 0,
+  "changed_reconstructed_bh_p_values": 0,
+  "changed_partition_count": 3971,
+  "newly_reached_node_occurrences": 7942,
+  "input_sha256": "80c3c9a9df3aeacaf2d7aaaf1444806b3268df0f690ae75bbed31eea8aa2abac",
+  "upstream_inputs_sha256": {
+    "known_branch_local_rows.csv": "5bf4af8c3a29b2f9cf88b496fd99edad244daf6acba91c19ac164dcd4a9f4aed",
+    "known_branch_selected_root_rows.csv": "716d7db409268160df9e8d0a56b8b036b177e02758887abf8b285c57dd035e37"
+  },
+  "script_sha256": "d7a0751d742e985d33906eadafe434c9236b26e18822ecce50aef6fbc14c3d9d",
+  "scope": "Cached known-covariance Gaussian fixed-tree tests with open edges; p equality is by construction. BH is reconstructed independently for families {R} and {A,B}. Reached-p summaries are descriptive selections, not new independent calibration trials. Partition changes here are count changes; fixed three-node topology makes every additional descent refine the partition."
+}

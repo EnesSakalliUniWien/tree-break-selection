@@ -2,11 +2,10 @@
 title: Legacy c2ef9a69 Method Package 2026-06-16
 type: source
 status: reviewed
-updated: 2026-06-16
+updated: 2026-08-10
 sources:
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/util/method_sets.py
-  - tests/pipeline/51_test_dispatch_contract.py
 tags:
   - source
   - diagnostics
@@ -49,13 +48,10 @@ comparison artifacts.
 
 ## Evidence
 
-- `legacy_commit_runner.py` exposes `_run_legacy_c2ef9a69_tbs_method`.
-- `method_registry.py` registers `tbs_legacy_c2ef9a69` with hamming distance,
-  average linkage, and linkage-root tree construction.
-- `method_sets.py` adds the method id to the TBS runner method set.
-- `51_test_dispatch_contract.py` verifies package import, registry exposure,
-  dispatcher argument flow, and a small real-run smoke through
-  `run_clustering_result`.
+- Git history preserves the retired `legacy_commit_runner.py`, method-registry
+  entry, runner-method set, and dispatch smoke contract.
+- The raw legacy comparison artifacts remain the primary behavioral evidence
+  for the retired package.
 
 ## Links
 

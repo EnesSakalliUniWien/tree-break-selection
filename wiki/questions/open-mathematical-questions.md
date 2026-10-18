@@ -2,8 +2,9 @@
 title: Open Mathematical Questions
 type: question
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-17
 sources:
+  - reports/calibration_restoration_20260909/validation_protocol.md
   - manuscript/guides/full_method_logic_map.md
   - manuscript/guides/edge_sibling_derivation_guide.md
   - manuscript/sections/method/assumptions_validation.tex
@@ -13,12 +14,13 @@ sources:
   - tree_break_selection/tree/feature_space.py
   - tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py
   - benchmarks/shared/generators/case_data_contracts.py
+  - benchmarks/shared/cases/gaussian.py
+  - benchmarks/shared/cases/dimensionality.py
   - tree_break_selection/tree/distributions.py
   - wiki/analyses/oracle-gate-path-diagnostic.md
   - wiki/sources/edge-selection-null-audit-20260601.md
   - wiki/sources/selected-edge-type1-geometry-pilot-20260604.md
   - wiki/sources/selected-edge-binary-categorical-pilot-20260604.md
-  - wiki/sources/feature-split-selection-audit-20260601.md
   - wiki/sources/selected-hierarchy-null-audit-20260601.md
   - wiki/analyses/selected-hierarchy-null-support-contract.md
   - wiki/sources/selected-hierarchy-external-calibration-contract-20260602.md
@@ -37,14 +39,12 @@ sources:
   - wiki/sources/calibration-contract-enhancement-request-20260604.md
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/types/inflation_model.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
+  - wiki/analyses/empirical-null-calibration-reference-law-contract.md
   - wiki/sources/selected-tail-law-q5-validation-20260604.md
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_law_q5_validation.py
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_validation.csv
   - raw/assets/benchmark-results/selected_tail_law_q5_validation_20260604/q5_selected_tail_law_summary.csv
   - wiki/sources/recursive-method-followups-20260604.md
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
   - raw/assets/benchmark-results/sibling_null_weight_rule_validation_20260604/sibling_null_weight_rule_summary.csv
-  - benchmarks/diagnostics/spectral/mp/sibling_projection_dimension_rule_grid.py
   - raw/assets/benchmark-results/sibling_projection_dimension_rule_grid_20260604/sibling_projection_dimension_rule_grid.csv
   - raw/assets/benchmark-results/mp_kmin_q14_q15_smoke_20260604/mp_kmin_contract_smoke.csv
   - wiki/sources/barycentric-method-literature-request-20260604.md
@@ -53,18 +53,13 @@ sources:
   - manuscript/references.bib
   - wiki/sources/open-question-diagnostic-audit-20260604.md
   - raw/assets/benchmark-results/open_question_diagnostic_audit_20260604/open_question_diagnostic_audit.csv
-  - wiki/sources/open-question-full-diagnostic-contract-20260604.md
   - wiki/sources/cosine-band-coherence-comparator-20260615.md
-  - benchmarks/diagnostics/open_questions/full_diagnostic_contract.py
   - raw/assets/benchmark-results/open_question_full_diagnostic_contract_20260604/open_question_full_diagnostic_contract.csv
   - raw/assets/benchmark-results/open_question_full_diagnostic_contract_20260604/open_question_full_diagnostic_summary.csv
-  - wiki/sources/selected-tail-promotion-gate-20260604.md
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_promotion_gate.py
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_promotion_contexts.csv
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_q5_promotion_gate.csv
   - raw/assets/benchmark-results/selected_tail_promotion_gate_20260604/selected_tail_promotion_summary.csv
   - wiki/sources/selected-tail-parent-size-balance-stability-20260604.md
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_parent_size_balance_stability.py
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_contexts.csv
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_parent_folds.csv
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_summary.csv
@@ -74,7 +69,6 @@ sources:
   - wiki/sources/mnist-continuous-alpha-sweep-20260605.md
   - wiki/sources/selected-tail-promotion-gate-debug-20260605.md
   - wiki/sources/internal-calibration-q9-q10-q11-debug-20260605.md
-  - benchmarks/diagnostics/calibration/statistics/internal_support_threshold_validation.py
   - wiki/sources/mixed-internal-calibration-sweeps-20260605.md
   - raw/assets/benchmark-results/selected-edge-type1-pilot-20260604/merged/selected_edge_geometry_edges.csv
   - raw/assets/benchmark-results/selected-edge-type1-pilot-20260604/merged/selected_edge_geometry_final.csv
@@ -84,7 +78,6 @@ sources:
   - raw/assets/benchmark-results/sibling_null_prior_interpolation_audit_full_skips_20260604/case_summary.csv
   - raw/assets/benchmark-results/traversal_sibling_fdr_smoke_20260604/synthetic/traversal_sibling_fdr_summary.csv
   - raw/assets/benchmark-results/traversal_sibling_fdr_smoke_20260604/binary/traversal_sibling_fdr_summary.csv
-  - wiki/sources/selected-tail-admissibility-domain-20260603.md
   - raw/assets/benchmark-results/selected_tail_admissibility_domain_20260603/context_admissibility_domain.csv
   - raw/assets/benchmark-results/selected_hierarchy_tail_law_binary_boundary_20260603_600/selected_ratio_tail_law.csv
   - wiki/sources/phylogenetic-ml-topological-selected-tail-literature-20260603.md
@@ -93,13 +86,8 @@ sources:
   - wiki/analyses/dimensional-gaussian-representation-diagnostic.md
   - wiki/analyses/manuscript-life-science-readiness.md
   - benchmarks/validation/contracts/method_constants_manifest.py
-  - benchmarks/validation/statistics/feature_covariance_calibration.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
-  - benchmarks/diagnostics/calibration/statistics/regularized_wald_statistic_panel.py
-  - benchmarks/diagnostics/calibration/statistics/null_law_decomposition_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_panel.py
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
   - raw/inbox/data-independent-sibling-gate-smoke-20260613.md
@@ -109,11 +97,7 @@ sources:
   - raw/inbox/refined-profile-all-benchmark-tests-20260614.md
   - wiki/sources/refined-profile-all-benchmark-tests-20260614.md
   - raw/inbox/toomanycells-method-notes-20260613.md
-  - wiki/sources/overlap-context-negative-edge-conditioning-20260615.md
-  - wiki/sources/overlap-context-negative-topology-conditioning-20260615.md
-  - wiki/sources/overlap-context-negative-topology-transfer-20260615.md
   - wiki/sources/overlap-context-negative-bayesian-topology-law-20260615.md
-  - wiki/sources/overlap-context-negative-bayesian-topology-sensitivity-20260615.md
   - wiki/sources/overlap-conditional-topology-law-panel-20260615.md
   - wiki/sources/topology-vector-benchmark-20260615.md
   - wiki/analyses/traversal-neighborhood-method-comparison.md
@@ -136,12 +120,21 @@ treated as publication-ready rather than a gap-marked methods draft?
 
 ## Current State
 
-The central unresolved calibration question is the missing external
-conditional-null object for sibling tests when internal empirical-null support
-is absent. The production estimator may use internal empirical-null calibration
-only when the local support is strict null-like or stopped-edge supported. For
-selected-non-null-only contexts, especially the high-dimensional Gaussian
-blockers, the honest mathematical object is an external conditional law such as
+The focused checklist for the restored method is
+[[diffusion-nnls-calibration-open-points]]: twelve points covering null
+simulations, data-dependent selection, calibration support, held-out evaluation,
+false splits and signal recovery, with evidence required to resolve each point.
+
+The central unresolved calibration question is the selected-hierarchy
+conditional-null object for positive-dimensional sibling tests. Internal
+strict-null or stopped-edge support is necessary for estimating a descriptive
+scale, but it is not sufficient for a calibrated p-value because the focal
+statistic, calibration records, hierarchy, and weights share data and selection
+events. The 2026-09-09 restoration reactivates the historical empirical
+plug-in chi-square p-value and sibling BH with internal support, without
+claiming a validated selected-tail law. See [[calibration-rule-restoration-20260909]]
+for the held-out full-pipeline error-rate validation needed next. For
+same-selected-hierarchy contexts, the required mathematical object is a law such as
 \[
 \mathcal L\!\left(
 T_u\mid
@@ -156,7 +149,7 @@ c_{\mathrm{external}}(u)
 =
 \frac{\mathbb E_0[W_u^{\mathrm{selected}}]}{a_u\nu_u}.
 \]
-The open work is to derive or simulate this law while preserving the local
+The open work is to derive or validate this law while preserving the local
 context \(n_L,n_R,p,k_u,a_u,\nu_u\), feature family, and selection regime. The
 existing fixed-subspace and root/local edge-selection diagnostics do not
 produce inflation factors in the thousands, so they do not justify a production
@@ -187,15 +180,14 @@ an independent random orthonormal projection, tail rates are near nominal. The
 remaining mathematical problem is therefore selective/adaptive projection and
 hierarchy conditioning, not a wrong fixed-subspace chi-square formula.
 
-The project direction explicitly excludes cross-fit/sample-split methods as the
-next production path. The immediate Tree-Break Selection work is therefore selective/adaptive
-projection null theory for the current same-data gate, plus careful study of
-same-data topology objectives. The TooManyCells note is relational only: it
+The immediate Tree-Break Selection work is selective/adaptive projection null
+theory for the current same-data gate, plus careful study of same-data topology
+objectives. The TooManyCells note is relational only: it
 positions Tree-Break Selection against a tree-first divisive spectral method with
 Newman-Girvan modularity stopping. It is not a direct comparator or a proposed
 replacement for the Tree-Break Selection gate.
 
-The same-date data-independent sibling-gate panel gives the first non-cross-fit
+The same-date data-independent sibling-gate panel gives the first same-data
 candidate direction that directly removes the broken adaptive projection layer.
 It replaces parent-learned PCA/dimension selection with fixed coordinate-wise
 Wald p-value aggregation and a predeclared selected-topology penalty. In the
@@ -262,7 +254,7 @@ targeted binary cases retained signal with zero observed null false splits,
 while direct categorical high-cardinality and overlap cases lost power
 (`cat_highcard_20cat_4c` mean ARI `0.080649`, `cat_overlap_3cat_4c` mean ARI
 `0.703263`). The open method problem is therefore no longer the fixed-subspace
-chi-square law; it is how to design a non-cross-fit categorical gate or
+chi-square law; it is how to design a same-data categorical gate or
 stopping objective that preserves power while keeping the selected-root null
 closed.
 
@@ -326,14 +318,14 @@ explicitly enabled. It is default-off, restricted to fixed-subspace sibling
 methods, and should not be treated as part of the TBS runtime method; it exists
 to reveal selected-tree null behavior.
 
-The packaged validation stress profile is now
-`fixed_coordinate_selective_root_v1`. It combines fixed coordinate BH sibling
+The historical validation stress profile
+`fixed_coordinate_selective_root_v1` combined fixed coordinate BH sibling
 p-values, selected-topology penalty `50`, root-stability threshold `0.24`,
 `12` stability subsamples, feature fraction `0.8`, and a `99`-draw
 selected-root permutation diagnostic at alpha `0.01`. The non-resampling TBS
-candidate excludes that permutation layer. The TBS runner records resolved
-profile constants in its result metadata, so downstream validation artifacts can
-audit whether a run used the method path or a resampling diagnostic.
+candidate excludes that permutation layer. The named profile is now retired;
+reproduction uses the same explicit guard constants and the TBS runner records
+the resolved settings in result metadata.
 
 The first executable selective-null object is now available but not sufficient:
 the traversal panel's selected-root permutation diagnostic preserves
@@ -353,7 +345,7 @@ fixed-gate repair. Traversal transfer rows now feed the shared conservative
 contract: binary fixed-coordinate transfer can be carried forward only as
 `diagnostic_only`, while high-cardinality categorical transfer remains
 `fail_closed_undefined`. This means the original adaptive projection failure has
-a concrete non-cross-fit repair candidate for binary contexts, but no broad
+a concrete same-data repair candidate for binary contexts, but no broad
 production method is proved until the selected traversal law is solved for
 categorical and other feature families.
 
@@ -365,9 +357,8 @@ false root and blocked no signal roots. In mixed binary/categorical smoke, the
 guard controlled all tested nulls. However, categorical transfer remains just
 short of the current signal criterion: the best tested minimum categorical
 signal mean ARI was `0.747419` against the `0.75` threshold, driven by
-`cat_mod_3cat_4c`. The open question has therefore shifted from "can selected
-categorical roots be guarded without cross-fitting?" to "how should
-root-stability thresholds and categorical signal criteria be calibrated so that
+`cat_mod_3cat_4c`. The open question is how root-stability thresholds and
+categorical signal criteria should be calibrated so that
 moderate but real categorical structure is not rejected as too weak?"
 
 A follow-up threshold sweep gives a concrete diagnostic method candidate. With
@@ -432,7 +423,7 @@ binary signal. It does not block the `cat_clear_3cat_4c` null root
 (`mean root-stability ARI = 0.283508 > 0.24`). A 99-draw selected-root
 permutation diagnostic then gives selected-root p-value `0.17` for that
 categorical null root and `0.01` for the matched categorical signal root,
-suggesting a non-cross-fit selective-root guard rather than a larger global
+suggesting a same-data selective-root guard rather than a larger global
 topology penalty. This is still not production evidence because it is targeted
 to one observed false-root seed and because broad confidence evidence remains
 fail-closed.
@@ -444,20 +435,20 @@ known `cat_clear_3cat_4c` null root is closed and the method returns one
 cluster; the matched categorical signal is retained with ARI `0.881909`. The
 known `binary_2clusters` null remains closed by root stability, while
 selected-root permutation would also block it. The open mathematical problem is
-therefore no longer "can the specific categorical false root be closed without
-cross-fitting?" It is whether the selected-root permutation conditioning,
+therefore whether the selected-root permutation conditioning,
 replicate count, guard alpha, and feature-family/tree-construction domain can
 be validated broadly enough to satisfy the production-admissibility contract.
-The packaged `fixed_coordinate_selective_root_v1` profile reproduces that
-targeted behavior with its profile-level selected-root guard seed `0`.
+The now-retired `fixed_coordinate_selective_root_v1` profile reproduced that
+targeted behavior with selected-root guard seed `0`; the regression now supplies
+the same settings explicitly.
 
 The next recheck shows that root-only guarding is not enough under pass-through
 traversal. A `cat_clear_3cat_4c` null replicate can have a closed root sibling
 gate and still return three clusters because a descendant sibling split is
 reachable through pass-through. A broad selected-subtree permutation guard
 (`open_internal`) closes this null leak but collapses signal in a two-replicate
-mixed smoke. The current strongest diagnostic refinement is
-`fixed_coordinate_selective_passthrough_v1`: it tests only open descendant
+mixed smoke. The subsequent diagnostic refinement was
+`fixed_coordinate_selective_passthrough_v1`: it tested only open descendant
 splits reached through an ordinary closed sibling ancestor and avoids
 compounding below roots already closed by explicit guards. In the same
 six-case two-replicate smoke it has zero observed null false splits, binary
@@ -471,7 +462,7 @@ mathematical problem is therefore now the selective pass-through null law and
 confidence validation, not the original adaptive sibling projection statistic.
 
 The ten-replicate pass-through recheck reopens that last point in a more
-specific way. `fixed_coordinate_selective_passthrough_v1` keeps categorical
+specific way. The now-retired `fixed_coordinate_selective_passthrough_v1` kept categorical
 nulls closed but has one binary null false split: `binary_many_clusters`, null
 replicate `7`, seed `20316108`, opens descendant node `N585` below a closed
 unstable root. A hard rule that stops all pass-through below closed unstable
@@ -486,7 +477,7 @@ Small diagnostic replays move the false row to global p-values about `0.05` to
 `0.06`, but this needs an optimized implementation and signal validation
 before it can become a guard.
 
-The first implementation of that object is now available as
+The first implementation of that object was evaluated as
 `fixed_coordinate_global_passthrough_v1`. It uses a conservative
 selected-family null: for each feature-block permutation, rebuild the whole
 tree and take the minimum fixed-subspace sibling p-value over every binary
@@ -498,7 +489,9 @@ ten-replicate binary smoke has zero false splits across `30` null rows and
 signal mean ARI `0.945084`; the matching direct-categorical smoke also has zero
 false splits across `30` null rows and signal mean ARI `0.832022`. The
 direct-categorical rerun preserves those statistics while improving wall time
-from about `309` seconds to about `147` seconds.
+from about `309` seconds to about `147` seconds. That superseded profile id is
+now retired from the live registry; the evidence and underlying explicit guard
+scope remain available for research reproduction.
 
 The support-level binary run sharpens the remaining open problem. The
 unrefined global profile reaches acceptable point behavior but not the Wilson
@@ -517,7 +510,7 @@ closes two of the three observed false rows and keeps the row with p-value
 minimum signal mean ARI lower confidence `0.832434`, so the binary production
 summary moves from fail-closed to diagnostic-only.
 
-What remains open is no longer the existence of an executable non-cross-fit
+What remains open is no longer the existence of an executable same-data
 pass-through correction, or a categorical fixed-coordinate whitening path. It
 is direct-categorical support-target validation of the refined profile, the
 cost of repeated selected-family permutations, and proof or prospective
@@ -637,19 +630,8 @@ Wald has mean FDP `0.95`; and the active inflated selected-tree layer has
 FDR question, but it shows that we must validate algorithmic FDR, fixed-tree
 Wald calibration, selected-tree effects, and inflation support separately.
 
-The first cross-fit diagnostic supports this interpretation. Because the TBS
-tree is a sample-leaf hierarchy, literal sample splitting is undefined without
-a held-out-sample assignment model. The implemented feature-split audit builds
-the tree from one feature block and tests node distributions on a held-out
-feature block over the same leaves. In `gauss_null_large`, this changes the
-edge rejection rate from `1.0` in-sample to `0.0`, restores 199 supported
-calibration records, and returns one cluster. Signal examples retain high or
-perfect ARI while recovering many supported records. This points toward
-cross-fit or selected-tree conditional inference as the next mathematical
-development.
-
-The selected-hierarchy null audit then removes cross-fitting from the candidate
-method and simulates the same-data selected hierarchy directly. It regenerates
+The selected-hierarchy null audit simulates the same-data selected hierarchy
+directly. It regenerates
 Bernoulli or categorical null data, rebuilds the tree in every replicate,
 reruns edge tests, and collects selected focal sibling statistics. In the first
 four representative cases, selected-hierarchy correction factors are large
@@ -820,21 +802,26 @@ those records are selected non-null evidence and are not admissible
 empirical-null calibration support. The diagnostic is therefore useful for
 describing the phenomenon, not for changing production calibration.
 
-The 2026-06-04 calibration-contract implementation makes this separation
-explicit in code. Focal sibling calibration now returns a `CalibrationDecision`
-with an admissibility status, scalar \(c\) when available, adjusted p-value,
-support counts, exact context, and descriptive strata. The scalar prediction
-helper remains only as a compatibility path and raises if the decision is not
-`internal_admissible`. This improves the software contract and prevents
-unsupported contexts from being hidden behind a scalar estimate, but it does
-not solve the mathematical support thresholds: minimum effective support,
-leave-one-target stability, and external selected-tail admissibility remain
-open validation questions.
+That identifier is retained here because it names the historical audit row.
+The unchanged active all-informative recipe is now
+`gauss_dense_signal_highd`; the new `gauss_sparse_signal_highd_noise` recipe is
+the distinct question of robustness to 19,988 truly irrelevant coordinates.
+
+The 2026-06-04 calibration-contract implementation made this separation
+explicit in code. The 2026-08-11 correction withheld positive-dimensional
+same-selected-hierarchy p-values. The 2026-09-09 restoration returns empirical
+plug-in chi-square p-values with `internal_admissible` status when internal
+support satisfies the requested support policy. This status denotes
+availability, not validated selected-tail error control. Missing internal
+support still closes focal sibling gates; zero-dimensional decisions remain
+the deterministic p=1 case. A separately named exact-F API, which required
+independent statistics, pairwise-disjoint observation ownership, fixed unit
+weights, and one common chi-square scale, was removed on 2026-10-16.
 
 The recursive follow-up pass adds an executable Q9/Q11 support-threshold
 contract around this decision object. Decisions now report positive-weight
 record counts, selected-nonnull counts, strict and stopped support, family and
-local effective sample size, maximum weight share, leave-one-record
+local group effective sample size, maximum group weight share, leave-one-group
 sensitivity, configured threshold values, and failure reasons. Threshold
 enforcement is opt-in and returns `undefined_sparse_context` when enabled and
 failed; it is not a validated default production threshold. The same pass adds
@@ -863,10 +850,11 @@ assumption statement that treats the selected PCA rows as fixed, or a
 derivation/validation of the data-selected projection effect. This question is
 coupled to the Marchenko--Pastur dimension rule, the minimum spectral dimension
 floor, and the row set used to estimate the local spectral basis.
-The repository now includes a strict scaffold for this specific validation
+The repository included a strict scaffold for this specific validation
 target in
-`benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py`. That
-scaffold simulates a fixed-membership Gaussian sibling null while selecting the
+`benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py`
+(retired 2026-10-17; last present at commit 5c554bc5). That
+scaffold simulated a fixed-membership Gaussian sibling null while selecting the
 PCA rows and MP dimension from the same local null-whitened rows used by the
 contrast. It is intentionally not evidence for hierarchy construction,
 tree-selected sibling pairs, sibling FDR, traversal, or empirical-null
@@ -940,8 +928,9 @@ remaining mathematical question is validation and high-dimensional extension,
 not contract shape: high-cardinality categorical calibration, continuous
 finite-sample covariance behavior, and a validated low-rank or regularized
 continuous covariance model still need targeted simulation evidence.
-`benchmarks/validation/statistics/feature_covariance_calibration.py` now provides the
-strict evidence generator for the first two targets. Its current scope is the
+`benchmarks/validation/statistics/feature_covariance_calibration.py` (retired
+2026-10-17; last present at commit 5c554bc5) provided the
+strict evidence generator for the first two targets. Its scope was the
 local sibling-null Wald statistic in the full tangent space, so it does not
 close questions about selected PCA projections, MP dimension selection, sibling
 FDR, traversal, tree construction, empirical-null inflation, or high-dimensional
@@ -1059,15 +1048,14 @@ still lack a sufficient diagnostic to close them; and the rest are partially
 diagnosed but need larger, better-conditioned, or more specific validation
 panels before they can become method claims.
 
-Full diagnostic-contract checkpoint:
-[[open-question-full-diagnostic-contract-20260604]] converts every item below
+Full diagnostic-contract checkpoint: the archived diagnostic contract converts every item below
 into a fully specified diagnostic work unit. The generated contract has `44`
 rows and every row has `diagnostic_contract_status=fully_specified`, with
 required inputs, required outputs, acceptance criteria, diagnostic scale, and
 the blocker before method-claim promotion. This closes the vague "needs more
 diagnostics" state; it does not close the mathematical questions themselves.
 
-Promotion checkpoint: [[selected-tail-promotion-gate-20260604]] runs the
+Promotion checkpoint: the archived selected-tail promotion run applies the
 strict Q1/Q5/Q7/Q8 gate on the 2026-06-04 1000-replicate selected-tail table.
 It evaluates `79` contexts: `69` are `undefined_support_failure`, `10` are
 `external_diagnostic_only`, and `0` are `external_admissible`. Seven contexts
@@ -1093,11 +1081,10 @@ one parent-size bin, so no parent-size holdout is possible. This creates a
 narrow context-specific diagnostic path, but it is still not a production
 external calibration branch until rerun on a production-scale row-level panel
 and supplied as a promoted external selected-tail rule. On 2026-06-13 the
-runtime wiring gap was narrowed: `ExternalSelectedTailCalibrationModel` can now
-return `external_admissible_scalar` only for exact predeclared context matches,
-and otherwise returns `undefined_external_not_admissible`. This is production
-plumbing for future promoted rows, not validation that the three diagnostic
-candidates are production-admissible.
+runtime wiring gap was narrowed for an experimental production-side external
+rule path, but the path was removed again on 2026-07-29 during fallback cleanup.
+Selected-tail candidates are therefore diagnostic evidence only unless a future
+implementation reintroduces them as a non-fallback primary calibration method.
 The 2026-06-05 promotion-gate debug explains the remaining evidence gap. The
 selected-tail promotion table has six context-level candidates that satisfy
 support, context-law admissibility, tail precision, and absolute-tail-error
@@ -1191,13 +1178,16 @@ is only `0.16343`.
    tie-heavy hierarchy cells and continuous positive-margin hierarchy cells
    should not be pooled without a mathematical reason.
 9. What minimum effective calibration support is required before internal
-   empirical-null inflation is trustworthy? The implementation now reports
-   supported-record, positive-weight, selected-nonnull, strict-null,
-   edge-blocked, feature-family, and local effective-support metadata. It also
-   reports maximum weight share and leave-one-record scale stability, and can
-   opt into a sparse-context failure status through the full sibling/gate
-   annotation path. No hard mathematical threshold has been validated as a
-   default production rule. The next support contract should also test whether
+   empirical-null inflation is trustworthy as a scale diagnostic? The
+   implementation now reports supported-record and stopping-event dependency-
+   group counts, positive-weight, selected-nonnull, strict-null, edge-blocked,
+   feature-family, and local effective-support metadata. It also reports
+   maximum group weight share and leave-one-group scale stability, and can opt
+   into a sparse-context failure status through the full sibling/gate
+   annotation path. Nested descendants from one stopping event contribute one
+   support group. No hard mathematical threshold has been validated as a
+   default production rule, and passing one would not validate the selected-
+   hierarchy reference law. The next support contract should also test whether
    calibration records cover comparable barycentric weights, because balanced
    and highly unbalanced splits share different leverage geometry.
 10. Is the empirical-null weight rule calibrated enough to use beyond
@@ -1886,6 +1876,9 @@ is only `0.16343`.
   assumptions and method-constant validation table.
 - `manuscript/sections/method/sibling_test.tex` defines the strict internal
   empirical-null support contract and the fail-closed calibration behavior.
+- `wiki/analyses/empirical-null-calibration-reference-law-contract.md` derives
+  the restricted exact-F law and separates it from the unresolved same-selected-
+  hierarchy law.
 - `manuscript/sections/method/representation.tex` defines one-hot categorical
   variables as drop-last multinomial blocks and continuous inputs as
   empirical-Gaussian covariance blocks; both still require validation.
@@ -1909,8 +1902,8 @@ is only `0.16343`.
   fixed-subspace edge-opening boundary/action fields, edge/sibling
   z-relationship fields, and tie-cell status for discrete/nonsmooth
   representatives.
-- `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` defines
-  the selected-PCA projected-Wald validation scaffold.
+- `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` defined
+  the selected-PCA projected-Wald validation scaffold (retired 2026-10-17).
 - `wiki/analyses/selected-pca-projected-wald-validation.md` summarizes the
   first locked selected-PCA validation run and records the internal-row
   calibration failure.
@@ -2374,6 +2367,8 @@ is only `0.16343`.
 - `wiki/sources/topology-vector-benchmark-20260615.md` records the regression
   gate benchmark and the dispatch plumbing required to run the refined profile
   as a standard TBS benchmark parameter variant.
+- `benchmarks/diagnostics/calibration/selected/family/selected_family_traversal_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
+- `benchmarks/validation/statistics/feature_covariance_calibration.py` and `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` were retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 
@@ -2382,39 +2377,12 @@ is only `0.16343`.
 - [[local-marchenko-pastur-rule]]
 - [[dimensional-gaussian-representation-diagnostic]]
 - [[oracle-gate-path-diagnostic]]
+- [[empirical-null-calibration-reference-law-contract]]
 - [[top-down-traversal]]
 - [[manuscript-life-science-readiness]]
 - [[overlap-structural-sibling-panel-20260614]]
-- [[overlap-structural-threshold-sensitivity-20260614]]
-- [[overlap-structural-context-thresholds-20260614]]
-- [[overlap-structural-continuous-rule-20260614]]
-- [[overlap-structural-decision-zones-20260614]]
-- [[overlap-weak-zone-separability-20260614]]
-- [[overlap-weak-family-thresholds-20260614]]
-- [[overlap-weak-truth-geometry-20260614]]
-- [[overlap-recovery-proxy-separability-20260614]]
-- [[overlap-fragment-risk-guard-20260614]]
-- [[overlap-diagnostic-traversal-policy-20260614]]
-- [[overlap-residual-family-recovery-20260614]]
-- [[overlap-residual-recovery-eligibility-20260614]]
-- [[overlap-threshold-hierarchy-20260614]]
-- [[overlap-residual-threshold-transfer-20260614]]
-- [[overlap-threshold-stability-contract-20260614]]
-- [[overlap-selected-family-law-requirements-20260614]]
-- [[overlap-conditional-bayesian-traversal-law-20260615]]
-- [[overlap-bayesian-neighborhood-component-audit-20260615]]
-- [[overlap-internal-node-bayesian-likelihood-probe-20260615]]
-- [[overlap-internal-node-likelihood-sensitivity-20260615]]
-- [[overlap-internal-node-likelihood-transfer-20260615]]
-- [[overlap-internal-node-transfer-gap-audit-20260615]]
-- [[overlap-income-outcome-junction-law-20260615]]
 - [[overlap-branch-incidence-junction-panel-20260615]]
-- [[overlap-bayesian-incidence-mode-law-20260615]]
-- [[overlap-context-negative-edge-conditioning-20260615]]
-- [[overlap-context-negative-topology-conditioning-20260615]]
-- [[overlap-context-negative-topology-transfer-20260615]]
 - [[overlap-context-negative-bayesian-topology-law-20260615]]
-- [[overlap-context-negative-bayesian-topology-sensitivity-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
 - [[traversal-neighborhood-method-comparison]]
 - [[selected-neighborhood-distribution-panel-20260615]]

@@ -2,10 +2,8 @@
 title: Internal vs Selected Hierarchy Inflation 2026-06-03
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/hierarchy/internal_vs_selected_hierarchy_inflation.py
-  - tests/validation/calibration/selected/hierarchy/56_test_internal_vs_selected_hierarchy_inflation.py
   - raw/assets/benchmark-results/internal_vs_selected_hierarchy_inflation_20260603/manifest.json
   - raw/assets/benchmark-results/internal_vs_selected_hierarchy_inflation_20260603/internal_vs_selected_hierarchy_inflation.csv
 tags:
@@ -66,6 +64,7 @@ The run used `25` selected-hierarchy null replicates for
 - `raw/assets/benchmark-results/internal_vs_selected_hierarchy_inflation_20260603/manifest.json`
   records the seed, replicate count, target mode, context match, and
   diagnostic-only note.
+- `benchmarks/diagnostics/calibration/selected/hierarchy/internal_vs_selected_hierarchy_inflation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

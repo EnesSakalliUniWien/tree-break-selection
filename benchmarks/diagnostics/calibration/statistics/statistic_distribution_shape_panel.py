@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import chi2, kstest
 
+from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.shared.util.time import format_timestamp_utc
 
 STUDY_ROLE = "diagnostic_statistic_distribution_shape_panel_not_calibration"
@@ -111,7 +112,7 @@ def _sample_skew(values: pd.Series) -> float:
     return float(numeric.skew())
 
 
-def _expected_chi_square_mixture_skew(degrees_of_freedom: pd.Series) -> float:
+def expected_chi_square_mixture_skew(degrees_of_freedom: pd.Series) -> float:
     """Return raw-statistic skew expected from the observed df mixture."""
     df_values = degrees_of_freedom.to_numpy(dtype=float)
     if df_values.size == 0:
@@ -304,8 +305,8 @@ def summarize_statistic_distribution_shape(
         n_rows = int(group.shape[0])
         n_alternate_rows = int(alternate_degrees.notna().sum())
         empirical_skew = _sample_skew(statistic)
-        expected_skew = _expected_chi_square_mixture_skew(degrees)
-        alternate_expected_skew = _expected_chi_square_mixture_skew(alternate_degrees.dropna())
+        expected_skew = expected_chi_square_mixture_skew(degrees)
+        alternate_expected_skew = expected_chi_square_mixture_skew(alternate_degrees.dropna())
         ks_statistic = math.nan
         ks_p_value = math.nan
         if n_rows >= int(min_rows) and cdf_values.notna().all():
@@ -536,7 +537,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         alpha=args.alpha,
         min_rows=args.min_rows,
     )
-    print(json.dumps({key: str(value) for key, value in outputs.items()}, indent=2))
+    print_diagnostic_output_paths(outputs)
 
 
 if __name__ == "__main__":
@@ -545,6 +546,7 @@ if __name__ == "__main__":
 
 __all__ = [
     "STUDY_ROLE",
+    "expected_chi_square_mixture_skew",
     "infer_satterthwaite_reference_from_eigenvalues",
     "normalize_statistic_distribution_records",
     "run_statistic_distribution_shape_panel",

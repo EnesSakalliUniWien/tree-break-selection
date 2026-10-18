@@ -1,13 +1,11 @@
 ---
 title: Phylogenetic Tree Builders 2026-06-14
 type: source
-status: reviewed
-updated: 2026-07-28
+status: deprecated
+updated: 2026-10-13
 sources:
-  - tree_break_selection/tree/construction/phylogenetic.py
   - benchmarks/shared/runners/tbs_runner.py
   - benchmarks/shared/runners/method_registry.py
-  - tests/core/test_phylogenetic_tree_builders.py
 tags:
   - source
   - tree
@@ -18,6 +16,10 @@ tags:
 # Phylogenetic Tree Builders 2026-06-14
 
 ## Summary
+
+Deprecated: both builders described here, neighbor joining with MAD rooting
+and IQ-TREE 3, were removed on 2026-10-13. This page records the historical
+implementation only.
 
 The TBS runner now has opt-in tree estimators for neighbor joining and IQ-TREE 3.
 Both produce unrooted metric trees first and then orient them with minimum

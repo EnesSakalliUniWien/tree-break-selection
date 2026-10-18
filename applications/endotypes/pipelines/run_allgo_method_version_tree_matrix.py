@@ -16,9 +16,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.spatial.distance import pdist
+
+from applications.endotypes._shared import load_feature_matrix, safe_name
+from applications.endotypes.pipelines.spectral_records import spectral_block_record
+from applications.endotypes.pipelines.tree_analysis_args import add_tree_analysis_arguments
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
 from benchmarks.shared.types.method_run_result import MethodRunResult
-from scipy.spatial.distance import pdist
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -32,9 +36,8 @@ from tree_break_selection.space_separation import (
     weight_feature_matrix,
 )
 
-from applications.endotypes._shared import load_feature_matrix, safe_name
-
-METHOD_VERSIONS = ("current",)
+# Saved run ids and the method_version column keep this label for existing readers.
+METHOD_VERSION = "current"
 TREE_GEOMETRIES = (
     "whole_adaptive_diffusion",
     "raw_cosine_subspace",
@@ -46,34 +49,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--edge-alpha", type=float, default=DEFAULT_EDGE_ALPHA)
-    parser.add_argument("--sibling-alpha", type=float, default=DEFAULT_SIBLING_ALPHA)
-    parser.add_argument("--max-rank", type=int, default=80)
-    parser.add_argument("--min-segment-length", type=int, default=4)
-    parser.add_argument("--max-segments", type=int, default=8)
-    parser.add_argument(
-        "--weightings",
-        nargs="+",
-        default=["binary", "tfidf"],
-        choices=["binary", "tfidf"],
-    )
-    parser.add_argument("--diffusion-k-neighbors", type=int, default=15)
-    parser.add_argument("--diffusion-time", type=int, default=3)
-    parser.add_argument("--diffusion-components", type=int, default=30)
-    parser.add_argument("--adaptive-bandwidth-type", default="-1/(d+2)")
-    parser.add_argument("--adaptive-epsilon", default="median")
-    parser.add_argument("--adaptive-metric", default="euclidean")
-    parser.add_argument(
-        "--block-names",
-        nargs="*",
-        default=None,
-        help="Optional block-name allowlist for cosine-subspace geometries.",
-    )
-    parser.add_argument(
-        "--method-versions",
-        nargs="+",
-        default=list(METHOD_VERSIONS),
-        choices=METHOD_VERSIONS,
+    add_tree_analysis_arguments(
+        parser,
+        edge_alpha_default=DEFAULT_EDGE_ALPHA,
+        sibling_alpha_default=DEFAULT_SIBLING_ALPHA,
     )
     parser.add_argument(
         "--tree-geometries",
@@ -82,25 +61,6 @@ def parse_args() -> argparse.Namespace:
         choices=TREE_GEOMETRIES,
     )
     return parser.parse_args()
-
-
-def run_method(
-    *,
-    method_version: str,
-    data: pd.DataFrame,
-    distances: np.ndarray,
-    edge_alpha: float,
-    sibling_alpha: float,
-) -> MethodRunResult:
-    if method_version == "current":
-        return run_tbs_on_distance(
-            data,
-            distances,
-            sibling_alpha,
-            tree_linkage_method="average",
-            edge_alpha=edge_alpha,
-        )
-    raise ValueError(f"Unknown method_version: {method_version!r}")
 
 
 def write_assignments(
@@ -162,6 +122,58 @@ def append_failure(
     )
 
 
+def append_method_tree_run(
+    *,
+    rows: list[dict[str, object]],
+    cluster_size_rows: list[dict[str, object]],
+    base: dict[str, object],
+    run_id: str,
+    data: pd.DataFrame,
+    distances: np.ndarray,
+    assignments_dir: Path,
+    edge_alpha: float,
+    sibling_alpha: float,
+    summary_path: Path | None = None,
+) -> None:
+    """Run one TBS method/tree cell and append summary plus cluster-size rows."""
+    print(f"[{run_id}] gates", flush=True)
+    start_sec = time.perf_counter()
+    try:
+        result = run_tbs_on_distance(
+            data,
+            distances,
+            sibling_alpha,
+            tree_linkage_method="average",
+            edge_alpha=edge_alpha,
+        )
+        if result.labels is None:
+            raise RuntimeError("Method returned no labels.")
+        path = assignments_dir / f"{safe_name(run_id)}__assignments.csv"
+        cluster_sizes = write_assignments(
+            labels=result.labels,
+            index=data.index,
+            output_path=path,
+        )
+        rows.append(
+            row_from_result(
+                base=base,
+                result=result,
+                assignments_path=path,
+                elapsed_sec=time.perf_counter() - start_sec,
+                cluster_sizes=cluster_sizes,
+            )
+        )
+        for cluster_id, size in cluster_sizes.items():
+            cluster_size_rows.append(
+                {**base, "cluster_id": int(cluster_id), "cluster_size": int(size)}
+            )
+    except Exception as exc:
+        append_failure(rows, base=base, start_sec=start_sec, exc=exc)
+
+    if summary_path is not None:
+        pd.DataFrame(rows).to_csv(summary_path, index=False)
+
+
 def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -198,59 +210,36 @@ def main() -> None:
         )
         whole_distances = whole_geometry.distance_condensed
         whole_metadata = whole_geometry.metadata
-        for method_version in args.method_versions:
-            run_id = f"{method_version}__whole_adaptive_diffusion"
-            family = f"{method_version}__whole_adaptive_diffusion"
-            base = {
-                **base_common,
-                "method_version": method_version,
-                "tree_geometry": "whole_adaptive_diffusion",
-                "method_family": family,
-                "run_id": run_id,
-                "weighting": "whole",
-                "block_name": "whole_matrix",
-                "block_type": "whole_matrix",
-                "block_start": pd.NA,
-                "block_end": pd.NA,
-                "subspace_dimensions": pd.NA,
-                "block_energy_fraction": math.nan,
-                "segmentation_bic": math.nan,
-                "diffusion_mode": "adaptive",
-                "diffusion_metadata": repr(whole_metadata),
-            }
-            print(f"[{run_id}] gates", flush=True)
-            start_sec = time.perf_counter()
-            try:
-                result = run_method(
-                    method_version=method_version,
-                    data=data,
-                    distances=whole_distances,
-                    edge_alpha=args.edge_alpha,
-                    sibling_alpha=args.sibling_alpha,
-                )
-                if result.labels is None:
-                    raise RuntimeError("Method returned no labels.")
-                path = assignments_dir / f"{safe_name(run_id)}__assignments.csv"
-                cluster_sizes = write_assignments(
-                    labels=result.labels,
-                    index=data.index,
-                    output_path=path,
-                )
-                rows.append(
-                    row_from_result(
-                        base=base,
-                        result=result,
-                        assignments_path=path,
-                        elapsed_sec=time.perf_counter() - start_sec,
-                        cluster_sizes=cluster_sizes,
-                    )
-                )
-                for cluster_id, size in cluster_sizes.items():
-                    cluster_size_rows.append(
-                        {**base, "cluster_id": int(cluster_id), "cluster_size": int(size)}
-                    )
-            except Exception as exc:  # noqa: BLE001 - diagnostic matrix records failures.
-                append_failure(rows, base=base, start_sec=start_sec, exc=exc)
+        run_id = f"{METHOD_VERSION}__whole_adaptive_diffusion"
+        family = f"{METHOD_VERSION}__whole_adaptive_diffusion"
+        base = {
+            **base_common,
+            "method_version": METHOD_VERSION,
+            "tree_geometry": "whole_adaptive_diffusion",
+            "method_family": family,
+            "run_id": run_id,
+            "weighting": "whole",
+            "block_name": "whole_matrix",
+            "block_type": "whole_matrix",
+            "block_start": pd.NA,
+            "block_end": pd.NA,
+            "subspace_dimensions": pd.NA,
+            "block_energy_fraction": math.nan,
+            "segmentation_bic": math.nan,
+            "diffusion_mode": "adaptive",
+            "diffusion_metadata": repr(whole_metadata),
+        }
+        append_method_tree_run(
+            rows=rows,
+            cluster_size_rows=cluster_size_rows,
+            base=base,
+            run_id=run_id,
+            data=data,
+            distances=whole_distances,
+            assignments_dir=assignments_dir,
+            edge_alpha=args.edge_alpha,
+            sibling_alpha=args.sibling_alpha,
+        )
 
     for weighting in args.weightings:
         if not set(args.tree_geometries).intersection(
@@ -301,69 +290,35 @@ def main() -> None:
                 )
 
             for tree_geometry, (distances, metadata) in geometry_distances.items():
-                for method_version in args.method_versions:
-                    run_id = f"{method_version}__{tree_geometry}__{weighting}__{block.block_name}"
-                    family = f"{method_version}__{tree_geometry}"
-                    base = {
-                        **base_common,
-                        "method_version": method_version,
-                        "tree_geometry": tree_geometry,
-                        "method_family": family,
-                        "run_id": run_id,
-                        "weighting": weighting,
-                        "block_id": int(block.block_id),
-                        "block_name": block.block_name,
-                        "block_type": block.block_type,
-                        "block_start": int(block.block_start),
-                        "block_end": int(block.block_end),
-                        "subspace_dimensions": int(block.block_end - block.block_start + 1),
-                        "block_energy_fraction": block_energy,
-                        "segmentation_bic": diagnostics.get("bic", math.nan),
-                        "common_mode_isolated": diagnostics.get("common_mode_isolated", False),
-                        "diffusion_mode": metadata.get("diffusion_mode", "none"),
-                        "diffusion_metadata": repr(metadata),
-                    }
-                    print(f"[{run_id}] gates", flush=True)
-                    start_sec = time.perf_counter()
-                    try:
-                        result = run_method(
-                            method_version=method_version,
-                            data=data,
-                            distances=distances,
-                            edge_alpha=args.edge_alpha,
-                            sibling_alpha=args.sibling_alpha,
-                        )
-                        if result.labels is None:
-                            raise RuntimeError("Method returned no labels.")
-                        path = assignments_dir / f"{safe_name(run_id)}__assignments.csv"
-                        cluster_sizes = write_assignments(
-                            labels=result.labels,
-                            index=data.index,
-                            output_path=path,
-                        )
-                        rows.append(
-                            row_from_result(
-                                base=base,
-                                result=result,
-                                assignments_path=path,
-                                elapsed_sec=time.perf_counter() - start_sec,
-                                cluster_sizes=cluster_sizes,
-                            )
-                        )
-                        for cluster_id, size in cluster_sizes.items():
-                            cluster_size_rows.append(
-                                {
-                                    **base,
-                                    "cluster_id": int(cluster_id),
-                                    "cluster_size": int(size),
-                                }
-                            )
-                    except Exception as exc:  # noqa: BLE001 - diagnostic matrix records failures.
-                        append_failure(rows, base=base, start_sec=start_sec, exc=exc)
-                    pd.DataFrame(rows).to_csv(
-                        args.output_dir / "method_tree_matrix_summary.csv",
-                        index=False,
-                    )
+                run_id = f"{METHOD_VERSION}__{tree_geometry}__{weighting}__{block.block_name}"
+                family = f"{METHOD_VERSION}__{tree_geometry}"
+                base = {
+                    **base_common,
+                    "method_version": METHOD_VERSION,
+                    "tree_geometry": tree_geometry,
+                    "method_family": family,
+                    "run_id": run_id,
+                    "weighting": weighting,
+                    **spectral_block_record(
+                        block,
+                        block_energy=block_energy,
+                        diagnostics=diagnostics,
+                    ),
+                    "diffusion_mode": metadata.get("diffusion_mode", "none"),
+                    "diffusion_metadata": repr(metadata),
+                }
+                append_method_tree_run(
+                    rows=rows,
+                    cluster_size_rows=cluster_size_rows,
+                    base=base,
+                    run_id=run_id,
+                    data=data,
+                    distances=distances,
+                    assignments_dir=assignments_dir,
+                    edge_alpha=args.edge_alpha,
+                    sibling_alpha=args.sibling_alpha,
+                    summary_path=args.output_dir / "method_tree_matrix_summary.csv",
+                )
 
     summary = pd.DataFrame(rows)
     summary.to_csv(args.output_dir / "method_tree_matrix_summary.csv", index=False)

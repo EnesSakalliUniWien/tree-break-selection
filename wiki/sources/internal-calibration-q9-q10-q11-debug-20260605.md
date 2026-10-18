@@ -2,16 +2,13 @@
 title: Internal Calibration Q9 Q10 Q11 Debug 2026-06-05
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-17
 sources:
+  - reports/calibration_restoration_20260909/validation_protocol.md
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q9_q11_internal_support_debug.csv
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q10_weight_rule_debug.csv
   - benchmarks/results/diagnostics/internal_calibration_q9_q10_q11_debug_20260605/q9_q10_q11_root_cause_summary.csv
-  - benchmarks/diagnostics/calibration/statistics/internal_support_threshold_validation.py
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
   - wiki/sources/mixed-internal-calibration-sweeps-20260605.md
-  - tests/validation/calibration/statistics/76_test_internal_support_threshold_validation.py
-  - tests/validation/calibration/sibling/nulls/69_test_sibling_null_weight_rule_validation.py
 tags:
   - source
   - diagnostics
@@ -31,9 +28,9 @@ diagnostic outputs.
 ## Key Points
 
 - Q9/Q11 are implemented as support reporting plus opt-in threshold
-  enforcement. `CalibrationDecision` reports support counts, effective sample
-  size, max weight share, leave-one-record sensitivity, threshold values, and
-  failure reasons.
+  enforcement. `CalibrationDecision` reports support counts, group effective
+  sample size, maximum group weight share, leave-one-group sensitivity,
+  threshold values, and failure reasons.
 - With `enforce_support_thresholds=True`, sparse internal contexts return
   `undefined_sparse_context`. The default production path does not enable this
   because the threshold values are not yet validated as method constants.
@@ -59,6 +56,15 @@ diagnostic outputs.
   share `0.0250`, and weighted selected-ratio mean `7.37`; min-BH and
   geometric-mean rules increase effective sample size to `174.70`, but without
   support labels this is descriptive only.
+- The 2026-08-11 correction replaces record-level support with stopping-event
+  dependency groups. Nested blocked descendants inherit the nearest tested,
+  non-significant ancestor's group and cannot increase supported-group counts,
+  group effective sample size, maximum group weight share, or leave-one-group
+  stability.
+- Support policy metadata remains an immutable version-2 snapshot. The
+  August-11 unresolved-law gate closure was superseded on September 9 by the
+  restored empirical p-value rule. Support adequacy and reference-law validity
+  remain distinct; see [[calibration-rule-restoration-20260909]].
 
 ## Evidence
 
@@ -77,11 +83,14 @@ diagnostic outputs.
   available.
 - [[mixed-internal-calibration-sweeps-20260605]] records the labeled sweep
   outputs and interpretation.
+- [[empirical-null-calibration-reference-law-contract]] records the corrected
+  dependency-group ownership and reference-law contract.
 - `tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/inflation_adjusted_sibling_tests.py`,
   `tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflated_projected_wald_annotation/pipeline.py`,
   `tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py`,
   and `tree_break_selection/hierarchy_analysis/tree_decomposition.py` now
   carry the opt-in support-threshold parameters through the pipeline.
+- `benchmarks/diagnostics/calibration/statistics/internal_support_threshold_validation.py` and `benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py` were retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

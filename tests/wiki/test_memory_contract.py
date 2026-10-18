@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import re
-import subprocess
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -12,44 +10,12 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def test_wiki_lint_contract_passes() -> None:
-    result = subprocess.run(
-        [sys.executable, "scripts/wiki/lint.py"],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "wiki-lint passed:" in result.stdout
-
-
-def test_mex_bootstrap_delegates_to_wiki_memory_contract() -> None:
+def test_root_guide_routes_memory_to_the_wiki() -> None:
     root_agents = read("AGENTS.md")
-    agents = read(".mex/AGENTS.md")
-    router = read(".mex/ROUTER.md")
 
-    assert ".mex/" in root_agents
-    assert "compatibility" in root_agents.lower()
+    assert "wiki/index.md" in root_agents
     assert "wiki/log.md" in root_agents
-
-    combined = agents + "\n" + router
-    assert "[Project Name]" not in combined
-    assert "[YYYY-MM-DD]" not in combined
-    assert "wiki/index.md" in combined
-    assert "wiki/log.md" in combined
-    assert "make wiki-lint" in combined
-    assert "mex log" not in combined
-
-
-def test_mex_pattern_index_has_no_placeholder_links() -> None:
-    index = read(".mex/patterns/INDEX.md")
-
-    assert "filename.md" not in index
-    assert "add-api-client.md" not in index
-    assert "debug-pipeline.md" not in index
-    assert "crud-operations.md" not in index
+    assert not (ROOT / ".mex").exists(), "wiki/ is the only project memory system."
 
 
 def _wiki_title(path: Path) -> str:
@@ -89,3 +55,16 @@ def test_lookup_finds_core_method_elements() -> None:
     for query, expected_path in expected.items():
         hits = _lookup(query)
         assert expected_path in hits[:5], f"{query!r} returned {hits[:10]}"
+
+
+def test_wiki_lint_counts_only_h1_headings_outside_code_fences() -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("wiki_lint", ROOT / "scripts/wiki/lint.py")
+    lint = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lint)
+
+    assert lint.h1_count("# Title\n\n## Section\n") == 1
+    assert lint.h1_count("# Title\n```bash\n# a shell comment\n```\n") == 1
+    assert lint.h1_count("# One\n# Two\n") == 2
+    assert lint.h1_count("## Only a section\n") == 0

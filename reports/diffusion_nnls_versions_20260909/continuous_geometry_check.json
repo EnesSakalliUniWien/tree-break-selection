@@ -1,0 +1,17 @@
+{
+  "case_id": "gauss_clear_medium_continuous",
+  "seed": 101,
+  "shape": [
+    60,
+    40
+  ],
+  "feature_family": "continuous",
+  "input_sha256": "b6a1c8a873fa3ba9eef1a27fc826ae2bd04a2ef1857078911238ad0e7930778c",
+  "distance_metric": "hamming",
+  "pair_count": 1770,
+  "unique_distance_values": [
+    1.0
+  ],
+  "command": "prepare_case_inputs(full case gauss_clear_medium_continuous); scipy.spatial.distance.pdist(data.values, metric=hamming)",
+  "implication": "The graphtools preset computes identical Hamming distances for every off-diagonal pair on this continuous case."
+}

@@ -7,6 +7,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
+
 from tree_break_selection.plot.cluster_tree_visualization import (
     _group_edges_for_sibling_style,
     _group_internal_nodes_for_halo,
@@ -192,3 +193,23 @@ def test_tree_style_grouping_uses_significance_and_skips():
     assert set(edge_groups["different"]) == {("root", "a"), ("root", "b")}
     assert set(edge_groups["missing"]) == {("a", "c"), ("a", "d")}
     assert edge_groups["not_different"] == []
+
+
+def test_color_spec_with_no_clusters_maps_only_unassigned():
+    from tree_break_selection.plot.cluster_color_mapping import build_cluster_color_spec
+
+    spec = build_cluster_color_spec(0, unassigned_color="#CCCCCC")
+    assert spec.colors == []
+    assert spec.id_to_color == {-1: "#CCCCCC"}
+
+
+def test_label_map_ignores_internal_node_that_shares_a_sample_name():
+    from tree_break_selection.plot.cluster_tree_visualization import _build_label_to_node
+
+    tree = nx.DiGraph()
+    tree.add_node("N5", label="N5")
+    tree.add_node("L0", label="N5")
+    tree.add_node("L1", label="s1")
+    tree.add_edges_from([("N5", "L0"), ("N5", "L1")])
+
+    assert _build_label_to_node(tree) == {"N5": "L0", "s1": "L1"}

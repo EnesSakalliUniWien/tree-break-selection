@@ -1,23 +1,23 @@
 from __future__ import annotations
 
+import pytest
+from scipy.spatial.distance import pdist
+
 from benchmarks.shared.cases.binary import BINARY_CASES
 from benchmarks.shared.cases.gaussian import GAUSSIAN_CASES
 from benchmarks.shared.generators.generate_case_data import generate_case_data
-from scipy.cluster.hierarchy import linkage
-from scipy.spatial.distance import pdist
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 
 
 def _build_case_tree(data_df):
-    distance_matrix = pdist(data_df.values, metric="hamming")
-    linkage_matrix = linkage(distance_matrix, method="complete")
-    return tree_from_linkage(linkage_matrix, data_df.index.tolist())
+    distance = pdist(data_df.to_numpy(dtype=float), metric="hamming")
+    return build_tree(data_df, distance, linkage_method="average").tree
 
 
 def _find_case(case_name: str) -> dict:
@@ -38,7 +38,7 @@ def _collect_binary_parent_structure(
     case = _find_case(case_name)
     data_df, _labels, _x_original, _metadata = generate_case_data(case)
     tree = _build_case_tree(data_df)
-    tree.populate_node_divergences(data_df)
+    tree.populate_node_distributions(data_df)
 
     bundle = run_gate_annotation_pipeline(
         tree,
@@ -88,30 +88,9 @@ def _collect_binary_parent_structure(
     return omitted, included
 
 
-def test_binary_2clusters_contains_leaf_pair_and_internal_pair_sibling_modes() -> None:
-    omitted, included = _collect_binary_parent_structure("binary_2clusters")
-
-    assert not omitted
-    assert included
-
-    leaf_pair_entries = 0
-    internal_entries = 0
-    for _parent, _children, child_dims, child_is_leaf, parent_dim, sibling_k in included:
-        assert 0 <= sibling_k <= parent_dim
-        if child_is_leaf == (True, True):
-            assert child_dims == (0, 0)
-            leaf_pair_entries += 1
-        else:
-            internal_entries += 1
-        if child_dims == (0, 0):
-            assert sibling_k == parent_dim
-
-    assert leaf_pair_entries
-    assert internal_entries
-
-
-def test_gauss_clear_small_contains_leaf_pair_and_internal_pair_sibling_modes() -> None:
-    omitted, included = _collect_binary_parent_structure("gauss_clear_small")
+@pytest.mark.parametrize("case_name", ["binary_2clusters", "gauss_clear_small"])
+def test_case_contains_leaf_pair_and_internal_pair_sibling_modes(case_name: str) -> None:
+    omitted, included = _collect_binary_parent_structure(case_name)
 
     assert not omitted
     assert included

@@ -2,22 +2,20 @@
 title: Tree Construction Method Map
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
   - tree_break_selection/tree/README.md
   - tree_break_selection/tree/construction/build.py
   - tree_break_selection/tree/construction/defaults.py
   - tree_break_selection/tree/construction/hierarchical.py
-  - tree_break_selection/tree/construction/phylogenetic.py
   - tree_break_selection/tree/optimized_branch_lengths.py
   - tree_break_selection/space_separation/diffusion.py
   - benchmarks/shared/runners/tbs_runner.py
   - benchmarks/shared/runners/tbs_diffusion_runner.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/tree_consensus.py
-  - tree_break_selection/hierarchy_analysis/bootstrap_consensus.py
   - applications/endotypes/pipelines/run_feature_matrix_with_umap.py
-  - applications/endotypes/pipelines/run_current_adaptive_diffusion_subspace_tree_experiment.py
+  - applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py
   - applications/scrna/pancreas_benchmark.py
   - benchmarks/experiments/mnist/run.py
 tags:
@@ -32,16 +30,15 @@ tags:
 
 ## Summary
 
-The repository has three live registered topology builders: SciPy hierarchical
-linkage, scikit-bio neighbor joining, and external IQ-TREE 3. Four main geometry
-families feed them: direct or precomputed feature distances, fixed Hamming
+The repository has one live registered topology builder: SciPy hierarchical
+linkage. Four main geometry families feed it: direct or precomputed feature distances, fixed Hamming
 nearest-neighbor diffusion, adaptive pydiffmap diffusion, and optional
 graphtools kernel diffusion. Application-specific adaptive-cosine subspaces add
 block-coordinate geometry but still terminate in average linkage.
 
 Rooting and branch-length fitting are independent seams. Linkage is already
-rooted at its final merge; neighbor joining and IQ-TREE are unrooted and are
-oriented by minimum ancestor deviation (MAD). Raw linkage ultrametric lengths
+rooted at its final merge, so no separate rooting step remains. Raw linkage
+ultrametric lengths
 and fixed-topology NNLS are alternative edge-length policies on an existing
 topology, not additional tree builders. Gate profiles and traversal settings
 are further downstream.
@@ -51,10 +48,9 @@ immutable defaults owned by `tree/construction/defaults.py`. Alternative geometr
 topology choices are explicit method inputs; there is no mutable package-wide
 runtime configuration.
 
-The builders are ordered explicitly as `linkage`, `neighbor_joining`, and
-`iqtree3` by `SUPPORTED_TREE_BUILDERS`. Method choice depends on the requested
-builder name and validated rooting contract, never on filesystem, directory,
-or import-discovery order.
+`build_tree` builds linkage trees only; it takes no builder or rooting argument,
+and the benchmark registry no longer carries `tree_builder` or `tree_rooting`
+parameters.
 
 ## Details
 
@@ -74,10 +70,8 @@ feature representation
 ```
 
 The highest-leverage interface is the condensed-distance seam. Direct feature
-metrics and all diffusion engines can feed linkage; direct and graphtools
-diffusion distances can also feed neighbor joining. IQ-TREE is the exception:
-it consumes an encoded feature-state alignment and therefore does not consume
-the condensed-distance seam.
+metrics and all diffusion engines feed linkage through the condensed-distance
+seam.
 
 ### What happens after diffusion
 
@@ -89,7 +83,7 @@ distance vector into the ordinary construction interface:
 diffusion coordinates
   -> Euclidean condensed distance
   -> build_tree(...)
-  -> SciPy linkage (average by default) or neighbor joining
+  -> SciPy linkage (average by default)
   -> rooted PosetTree
   -> optional fixed-topology NNLS edge-length replacement
   -> bottom-up typed subtree distributions
@@ -108,7 +102,11 @@ non-negative edge lengths so tree path distances approximate squared
 standardized distances in the original feature matrix, or squared Euclidean
 distances in an explicitly supplied aligned embedding. This changes the edge
 semantics and no longer guarantees an ultrametric tree. The old linkage
-lengths are retained as edge evidence.
+lengths are retained as edge evidence. Leaf-pair distances cross both root
+edges or neither, so only their sum is identified; the fit splits it in the
+ratio of the two root edges' linkage lengths (evenly when those are zero). A
+sampled pair set that misses an edge gets one crossing pair for it, so no
+edge keeps the solver's starting value.
 
 Only after topology and edge lengths are fixed does `FeatureSpace` enter the
 tree statistics. Leaves receive their raw typed coordinates; internal nodes
@@ -126,16 +124,11 @@ This ordering exposes five important method contracts:
 2. Average linkage is a hierarchical summary of diffusion distance, not a
    diffusion-native tree estimator. Its root is the last algorithmic merge,
    not a biological origin or trajectory direction.
-3. Diffusion distance is not automatically additive tree distance.
-   Neighbor joining plus MAD rooting is therefore a comparator whose
-   additivity and rooting diagnostics must be checked, not a generally valid
-   replacement for linkage.
+3. Diffusion distance is not automatically additive tree distance; additive
+   tree builders would need their own additivity and rooting checks.
 4. TBS traversal requires exactly two children at a visited internal node.
    Linkage guarantees that shape, but tied or duplicate-heavy discrete data
-   can receive arbitrary binary resolutions. Phylogenetic rooting can also
-   return an existing degree-three node when the optimum lies at an edge
-   endpoint; construction currently has no shared binary postcondition check,
-   and traversal then stops at that non-binary boundary.
+   can receive arbitrary binary resolutions.
 5. NNLS can create a dual-geometry method: diffusion chooses topology while
    original standardized features choose branch time. That is valid only when
    reported explicitly and when topology/branch-target coherence is audited.
@@ -151,7 +144,8 @@ even when they share the construction interface:
 
 The executed seven-case graphtools adaptive-K NNLS focus panel does not support
 one global topology rule. Its label-free selector chose complete once, average
-once, Ward once, neighbor joining once, and weighted three times. The selected
+once, Ward once, neighbor joining once, and weighted three times (neighbor
+joining has since been removed from the grid). The selected
 mean ARI was `0.885`, versus `0.765` for always-average and `0.832` for
 always-weighted, but the panel is too small to promote the selector as a
 production default. A later fail-closed diagnosis also found that radically
@@ -166,15 +160,13 @@ difference must therefore be audited separately.
 | Direct linkage | Configured `pdist` metric or case-supplied condensed distance | SciPy `linkage` then `tree_from_linkage` | Final linkage merge (`linkage_root`) | `tbs` average is canonical; `tbs_complete` and `tbs_single` are explicit variants |
 | Fixed Hamming diffusion linkage | Binary/one-hot Hamming kNN similarity, symmetric diffusion coordinates, Euclidean diffusion distance | Average linkage | `linkage_root` | Canonical `tbs_diffusion` |
 | Adaptive pydiffmap linkage | Variable-bandwidth pydiffmap coordinates and Euclidean diffusion distance | Average linkage | `linkage_root` | `tbs_diffusion_adaptive`, with either linkage-ultrametric or fixed-topology NNLS lengths |
-| Graphtools diffusion linkage | Optional graphtools kernel, fixed or fragmentation-guard adaptive K, then Euclidean diffusion distance | Average by default; adaptive-K grid also exposes complete, weighted, single, centroid, median, and Ward | `linkage_root` | Optional GPL methods |
-| Distance neighbor joining | Configured direct or graphtools diffusion condensed distance | scikit-bio `nj` | MAD | `tbs_neighbor_joining` and the eighth adaptive-K grid route |
-| IQ-TREE 3 | Per-feature categorical states encoded as an alignment | External IQ-TREE 3, default `JC2`, followed by Newick import | MAD | Opt-in `tbs_iqtree3`; external executable required |
+| Graphtools diffusion linkage | Optional graphtools kernel, fixed or fragmentation-guard adaptive K, then Euclidean diffusion distance | Average by default; adaptive-K grid also exposes complete, weighted, single, and Ward | `linkage_root` | Optional GPL methods |
 
-Centroid and median linkage may return nonmonotone merge heights. When
-fixed-topology NNLS is active, the runner preserves their merge topology with
-placeholder edge lengths and replaces those lengths through NNLS before
-branch-time use. It does not silently reinterpret nonmonotone linkage heights
-as valid ultrametric time.
+Centroid and median linkage return nonmonotone merge heights on almost every
+input. `build_tree` rejects both by name: `SUPPORTED_LINKAGE_METHODS` lists
+only average, complete, weighted, single and Ward. The topology-only
+placeholder path that once let NNLS refit their lengths was removed on
+2026-07-29, so they no longer have a working route.
 
 ### Application routes
 
@@ -189,11 +181,11 @@ as valid ultrametric time.
 ### Construction package and removed dormant surfaces
 
 `tree_break_selection/tree/construction/` now owns the complete construction
-responsibility by category. `build.py` validates and dispatches the three live
-methods and returns their topology, rooting, linkage, fallback, and IQ-TREE
-evidence. `hierarchical.py` owns merge-array promotion and the topology-only
-fallback. `phylogenetic.py` owns neighbor joining, IQ-TREE/Newick, and MAD
-rooting. The unused sklearn-agglomerative and arbitrary edge-list adapters were
+responsibility by category. `build.py` validates linkage inputs and returns
+topology, rooting, linkage, and fallback evidence. `hierarchical.py` owns
+merge-array promotion and the topology-only fallback. The IQ-TREE 3 builder,
+neighbor joining, MAD rooting, `phylogenetic.py`, and the `tbs_iqtree3` and
+`tbs_neighbor_joining` methods were removed on 2026-10-13. The unused sklearn-agglomerative and arbitrary edge-list adapters were
 deleted, along with the shallow `PosetTree.from_*` facades. No compatibility
 modules or aliases remain at the old paths.
 
@@ -206,26 +198,20 @@ modules or aliases remain at the old paths.
   passthrough rules, and traversal settings consume a tree after construction.
 - `benchmarks/shared/tree_consensus.py` ranks and selects among eight completed
   candidate clusterings. It does not merge them into a consensus topology.
-- Bootstrap consensus repeatedly invokes direct distance plus linkage to
-  estimate stability. It is a resampling analysis, not a fourth builder.
-- BranchArchitect consumes exported Newick trees for RF-distance and optional
-  interpolation diagnostics. It is not a production topology estimator here.
+- The BranchArchitect comparison adapter, its submodule and its extra were
+  removed on 2026-10-14; the retained 2026-07-09 report keeps the RF evidence.
 - Plotting engines either consume saved trees or reconstruct a known selected
   linkage for display; they do not define a new inference route.
 
 ### Redundancy and locality findings
 
 The three registered topology algorithms each have one implementation. The
-main runner now crosses one deep construction interface that owns validation,
-topology-only fallback, and construction metadata. Direct `tree_from_linkage`
-calls remain only where applications or analyses already own a prepared
-linkage matrix; they share representation conversion without hiding their
-distinct geometry preparation or output contracts.
-
-The `tree_linkage_method` field remains present in neighbor-joining and
-IQ-TREE method configurations. It does not control those topology builders,
-although the runner can reuse the value for linkage-based gate replay defaults.
-That dual meaning should remain explicit in future configuration cleanup.
+main runner now crosses one deep construction interface that owns validation
+and construction metadata. Non-monotone linkage heights fail closed instead of
+building topology-only placeholder branch lengths. Direct `tree_from_linkage`
+calls remain only where applications or analyses already own a prepared linkage
+matrix; they share representation conversion without hiding their distinct
+geometry preparation or output contracts.
 
 The adaptive pydiffmap route also has a stricter backend contract than its
 public neighbor resolver expresses. Pydiffmap's internal bandwidth KDE needs
@@ -241,25 +227,21 @@ dual-geometry, solver, stability, and scaling audit.
 The 2026-07-28 construction correction moved the enforceable assumptions into
 the deep construction and diffusion interfaces:
 
-- `build_tree(...)` now validates the condensed-vector size and values, unique
-  sample labels, a single directed root, exact leaf-label coverage, finite
-  non-negative branch lengths, and exactly two children at every internal
-  node. A malformed phylogenetic result can no longer become an ordinary
-  traversal boundary.
-- MAD rooting always represents an optimum on an edge with a new root. If the
-  optimum is an endpoint, the new root receives one zero-length edge; the
-  metric location is unchanged and the TBS tree remains binary.
-- Samples are placed in natural label order before linkage, neighbor joining,
-  or IQ-TREE input. Numbered strings use numeric-aware ordering; incomparable
-  mixed label types use a stable type/representation fallback. Exact-tie
+- `build_tree(...)` validates the condensed-vector size and values, unique
+  sample labels and the linkage method. The rooted full-binary shape holds by
+  construction from a SciPy linkage, and `branch_lengths.py` rejects
+  non-finite, negative or non-monotone heights.
+- Samples are placed in natural label order before linkage input. Numbered
+  strings use numeric-aware ordering; labels of mixed types that cannot be
+  ordered raise `ValueError`. Exact-tie
   resolution is therefore invariant to DataFrame row order without changing
   the established `S0`, `S1`, ..., `S10` order. This makes the arbitrary
   resolution reproducible; it does not turn tied discrete states into
   statistical evidence.
-- `TreeBuildDiagnostics` records zero-distance pairs, repeated distance
-  values, repeated merge heights, zero-length branches, and tree shape on
-  every construction result. Tie-heavy runs are now auditable without
-  rebuilding the tree.
+- `TreeBuildDiagnostics` and the post-build tree validator were removed on
+  2026-10-17: nothing read the diagnostics, and every validator check already
+  held for a tree built from a SciPy linkage. `TreeBuildResult` now holds the
+  tree and its linkage matrix.
 - Diffusion methods return one `DiffusionGeometry` result containing
   coordinates, condensed distances, and backend evidence. The old
   distance-only interfaces were removed rather than retained as aliases.
@@ -285,20 +267,18 @@ superiority.
 ## Evidence
 
 - `benchmarks/shared/runners/tbs_runner.py` contains the single live dispatch
-  over `linkage`, `neighbor_joining`, and `iqtree3`, plus the nonmonotone-linkage
+  over linkage construction, plus the nonmonotone-linkage
   topology fallback and fixed-topology NNLS call.
 - `benchmarks/shared/runners/method_registry.py` registers the canonical tree
-  variants and the seven-linkage-plus-neighbor-joining adaptive-K grid.
-- `tree_break_selection/tree/construction/phylogenetic.py` contains the only neighbor-joining,
-  IQ-TREE/Newick, and MAD-rooting implementations.
+  variants and the seven-linkage adaptive-K grid.
 - `tree_break_selection/space_separation/diffusion.py` owns reusable fixed
   Hamming-neighbor, adaptive, and block diffusion geometry; the benchmark
   runner owns graphtools-specific adaptive-neighbor policy and method dispatch.
 - Exact repository search found the application, bootstrap, diagnostic, and
   plot-only direct-linkage call sites summarized above, and no live internal
   callers for the two dormant public adapters.
-- Tests cover linkage representations, topology-only fallback, phylogenetic
-  builders/rooting, diffusion runners, registry dispatch, consensus selection,
+- Tests cover linkage representations, fail-closed non-monotone heights,
+  diffusion runners, registry dispatch, consensus selection,
   application contracts, and plotting reconstruction.
 - The focused construction/diffusion/dispatch tranche passed, the complete
   `tests/core` plus `tests/tree` tranche passed 122 tests, and the ordered
@@ -322,9 +302,6 @@ superiority.
 
 ## Open Questions
 
-- Should builder-specific method interfaces be separated from gate-replay
-  linkage inputs so neighbor-joining and IQ-TREE runs do not appear to use
-  `tree_linkage_method` for their primary topology?
 - Should visualization-only tree reconstruction be replaced by persisted
   serialized `PosetTree`/Newick artifacts where exact inference replay is
   required?

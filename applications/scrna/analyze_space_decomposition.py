@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Analyze scRNA benchmark PCA space by invariant and equivariant axes.
+"""Analyze scRNA benchmark PCA space by leading and following PCA axes.
 
-This is a diagnostic layer over the saved scRNA benchmark subsets. It treats
-the leading standardized-PCA spectral axis as a common/invariant axis and the
-next orthogonal axes as equivariant variation. This is intentionally a
-PCA/spectral diagnostic, not a formal Cartan decomposition claim.
+This diagnostic decomposes standardized saved PCA coordinates by SVD. It
+declares no transformation or group action and makes no formal Cartan
+decomposition claim.
 """
 
 from __future__ import annotations
@@ -14,7 +13,6 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 import matplotlib
 
@@ -23,14 +21,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from applications.output_dirs import timestamped_results_dir
+from applications.scrna._shared import json_default
 from tree_break_selection.space_separation import (
-    decompose_invariant_equivariant_space,
+    decompose_leading_axes_space,
 )
 
 SCHEMA_VERSION = "scrna_space_decomposition/v1"
-STUDY_ROLE = "diagnostic_scrna_invariant_equivariant_axis_decomposition"
+STUDY_ROLE = "diagnostic_scrna_leading_following_axis_decomposition"
 GENERATED_BY = "applications/scrna/analyze_space_decomposition.py"
-DEFAULT_OUTPUT_DIR = Path("raw/assets/benchmark-results/scrna_space_decomposition_20260627")
 DEFAULT_DATASETS = (
     (
         "adult_pancreas",
@@ -54,15 +54,15 @@ class DatasetConfig:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run invariant/equivariant spectral-space diagnostics on saved "
+            "Run leading/following PCA-axis diagnostics on saved "
             "adult and Goncalves scRNA benchmark PCA subsets."
         )
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=DEFAULT_OUTPUT_DIR,
-        help="Directory for CSV, PNG, and manifest outputs.",
+        default=None,
+        help="Directory for CSV, PNG, and manifest outputs (default: a new results/analyses/ folder).",
     )
     parser.add_argument(
         "--datasets",
@@ -74,24 +74,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--equivariant-dim",
+        "--following-dim",
         type=int,
         default=5,
-        help="Number of orthogonal axes after the invariant axis to summarize.",
+        help="Number of orthogonal PCA axes after the leading axis to summarize.",
     )
     return parser.parse_args()
-
-
-def _json_default(value: Any) -> Any:
-    if isinstance(value, Path):
-        return str(value)
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    return str(value)
 
 
 def _dataset_configs(raw_specs: list[str] | None) -> list[DatasetConfig]:
@@ -178,25 +166,25 @@ def _geometry_table(
     coords: np.ndarray,
     energy_fraction: np.ndarray,
 ) -> pd.DataFrame:
-    invariant = coords[:, 0]
-    equivariant = coords[:, 1:]
-    equivariant_radius = (
-        np.linalg.norm(equivariant, axis=1)
-        if equivariant.shape[1]
-        else np.zeros(len(invariant), dtype=float)
+    leading = coords[:, 0]
+    following = coords[:, 1:]
+    following_radius = (
+        np.linalg.norm(following, axis=1)
+        if following.shape[1]
+        else np.zeros(len(leading), dtype=float)
     )
     total_radius = np.linalg.norm(coords, axis=1)
     with np.errstate(divide="ignore", invalid="ignore"):
         signed_cos = np.divide(
-            invariant,
+            leading,
             total_radius,
-            out=np.zeros_like(invariant, dtype=float),
+            out=np.zeros_like(leading, dtype=float),
             where=total_radius > 0.0,
         )
-        equivariant_fraction = np.divide(
-            equivariant_radius**2,
+        following_fraction = np.divide(
+            following_radius**2,
             total_radius**2,
-            out=np.zeros_like(equivariant_radius, dtype=float),
+            out=np.zeros_like(following_radius, dtype=float),
             where=total_radius > 0.0,
         )
     angle = np.degrees(np.arccos(np.clip(np.abs(signed_cos), 0.0, 1.0)))
@@ -205,19 +193,19 @@ def _geometry_table(
             "dataset_id": dataset_id,
             "cell_id": pca.index.astype(str),
             "celltype": assignments["celltype"].astype(str).to_numpy(),
-            "invariant_axis_score": invariant,
-            "abs_invariant_axis_score": np.abs(invariant),
-            "equivariant_radius": equivariant_radius,
+            "leading_axis_score": leading,
+            "abs_leading_axis_score": np.abs(leading),
+            "following_radius": following_radius,
             "total_radius": total_radius,
-            "signed_cosine_to_invariant_axis": signed_cos,
-            "angle_to_invariant_axis_deg": angle,
-            "equivariant_energy_fraction_cell": equivariant_fraction,
-            "global_invariant_axis_energy_fraction": float(energy_fraction[0]),
-            "global_equivariant_axes_energy_fraction": float(energy_fraction[1:].sum()),
+            "signed_cosine_to_leading_axis": signed_cos,
+            "angle_to_leading_axis_deg": angle,
+            "following_energy_fraction_cell": following_fraction,
+            "global_leading_axis_energy_fraction": float(energy_fraction[0]),
+            "global_following_axes_energy_fraction": float(energy_fraction[1:].sum()),
         }
     )
     for axis_index in range(coords.shape[1]):
-        role = "invariant" if axis_index == 0 else "equivariant"
+        role = "leading" if axis_index == 0 else "following"
         table[f"{role}_axis_{axis_index + 1}_score"] = coords[:, axis_index]
     return table
 
@@ -230,15 +218,15 @@ def _celltype_summary(geometry: pd.DataFrame) -> pd.DataFrame:
                 "dataset_id": str(group["dataset_id"].iloc[0]),
                 "celltype": celltype,
                 "n_cells": int(len(group)),
-                "invariant_axis_mean": float(group["invariant_axis_score"].mean()),
-                "abs_invariant_axis_median": _safe_quantile(group["abs_invariant_axis_score"], 0.5),
-                "equivariant_radius_mean": float(group["equivariant_radius"].mean()),
-                "equivariant_radius_median": _safe_quantile(group["equivariant_radius"], 0.5),
-                "angle_to_invariant_axis_deg_median": _safe_quantile(
-                    group["angle_to_invariant_axis_deg"], 0.5
+                "leading_axis_mean": float(group["leading_axis_score"].mean()),
+                "abs_leading_axis_median": _safe_quantile(group["abs_leading_axis_score"], 0.5),
+                "following_radius_mean": float(group["following_radius"].mean()),
+                "following_radius_median": _safe_quantile(group["following_radius"], 0.5),
+                "angle_to_leading_axis_deg_median": _safe_quantile(
+                    group["angle_to_leading_axis_deg"], 0.5
                 ),
-                "equivariant_energy_fraction_cell_median": _safe_quantile(
-                    group["equivariant_energy_fraction_cell"], 0.5
+                "following_energy_fraction_cell_median": _safe_quantile(
+                    group["following_energy_fraction_cell"], 0.5
                 ),
             }
         )
@@ -292,16 +280,16 @@ def _cluster_summary(
                     "n_cells": int(len(group)),
                     "dominant_celltype": dominant,
                     "dominant_celltype_purity": purity,
-                    "invariant_axis_mean": float(group["invariant_axis_score"].mean()),
-                    "invariant_axis_q25": _safe_quantile(group["invariant_axis_score"], 0.25),
-                    "invariant_axis_q75": _safe_quantile(group["invariant_axis_score"], 0.75),
-                    "equivariant_radius_mean": float(group["equivariant_radius"].mean()),
-                    "equivariant_radius_median": _safe_quantile(group["equivariant_radius"], 0.5),
-                    "angle_to_invariant_axis_deg_median": _safe_quantile(
-                        group["angle_to_invariant_axis_deg"], 0.5
+                    "leading_axis_mean": float(group["leading_axis_score"].mean()),
+                    "leading_axis_q25": _safe_quantile(group["leading_axis_score"], 0.25),
+                    "leading_axis_q75": _safe_quantile(group["leading_axis_score"], 0.75),
+                    "following_radius_mean": float(group["following_radius"].mean()),
+                    "following_radius_median": _safe_quantile(group["following_radius"], 0.5),
+                    "angle_to_leading_axis_deg_median": _safe_quantile(
+                        group["angle_to_leading_axis_deg"], 0.5
                     ),
-                    "equivariant_energy_fraction_cell_median": _safe_quantile(
-                        group["equivariant_energy_fraction_cell"], 0.5
+                    "following_energy_fraction_cell_median": _safe_quantile(
+                        group["following_energy_fraction_cell"], 0.5
                     ),
                 }
             )
@@ -326,20 +314,20 @@ def _method_summary(
                 "dataset_id": dataset_id,
                 "method": method,
                 "n_clusters": int(label_strings.nunique()),
-                "cluster_between_fraction_invariant_axis": _between_fraction(
-                    geometry["invariant_axis_score"],
+                "cluster_between_fraction_leading_axis": _between_fraction(
+                    geometry["leading_axis_score"],
                     label_strings,
                 ),
-                "cluster_between_fraction_equivariant_radius": _between_fraction(
-                    geometry["equivariant_radius"],
+                "cluster_between_fraction_following_radius": _between_fraction(
+                    geometry["following_radius"],
                     label_strings,
                 ),
-                "celltype_between_fraction_invariant_axis": _between_fraction(
-                    geometry["invariant_axis_score"],
+                "celltype_between_fraction_leading_axis": _between_fraction(
+                    geometry["leading_axis_score"],
                     geometry["celltype"],
                 ),
-                "celltype_between_fraction_equivariant_radius": _between_fraction(
-                    geometry["equivariant_radius"],
+                "celltype_between_fraction_following_radius": _between_fraction(
+                    geometry["following_radius"],
                     geometry["celltype"],
                 ),
             }
@@ -386,7 +374,7 @@ def _axis_loadings(
 ) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     for axis_index, vector in enumerate(axes):
-        role = "invariant" if axis_index == 0 else "equivariant"
+        role = "leading" if axis_index == 0 else "following"
         for feature, loading in zip(columns, vector, strict=True):
             rows.append(
                 {
@@ -409,8 +397,8 @@ def _plot_dataset_space(geometry: pd.DataFrame, path: Path) -> None:
     codes = categories.cat.codes.to_numpy()
     fig, ax = plt.subplots(figsize=(9.2, 6.4))
     scatter = ax.scatter(
-        geometry["invariant_axis_score"],
-        geometry["equivariant_radius"],
+        geometry["leading_axis_score"],
+        geometry["following_radius"],
         c=codes,
         cmap="tab20",
         s=12,
@@ -418,8 +406,8 @@ def _plot_dataset_space(geometry: pd.DataFrame, path: Path) -> None:
         linewidths=0,
     )
     ax.set_title(f"{geometry['dataset_id'].iloc[0]} space decomposition")
-    ax.set_xlabel("Invariant axis score")
-    ax.set_ylabel("Equivariant radius")
+    ax.set_xlabel("Leading PCA axis score")
+    ax.set_ylabel("Radius in following PCA axes")
     handles, _ = scatter.legend_elements(num=min(12, len(categories.cat.categories)))
     labels = list(categories.cat.categories[: len(handles)])
     if handles:
@@ -441,23 +429,23 @@ def _plot_method_summary(summary: pd.DataFrame, path: Path) -> None:
     if summary.empty:
         return
     table = summary.sort_values(
-        "cluster_between_fraction_equivariant_radius",
+        "cluster_between_fraction_following_radius",
         ascending=False,
     )
     fig, ax = plt.subplots(figsize=(10.5, max(4.0, 0.42 * len(table))))
     y = np.arange(len(table))
     ax.barh(
         y - 0.18,
-        table["cluster_between_fraction_invariant_axis"],
+        table["cluster_between_fraction_leading_axis"],
         height=0.34,
-        label="invariant axis",
+        label="leading PCA axis",
         color="#2563eb",
     )
     ax.barh(
         y + 0.18,
-        table["cluster_between_fraction_equivariant_radius"],
+        table["cluster_between_fraction_following_radius"],
         height=0.34,
-        label="equivariant radius",
+        label="radius in following PCA axes",
         color="#dc2626",
     )
     ax.set_yticks(y)
@@ -476,13 +464,13 @@ def analyze_dataset(
     config: DatasetConfig,
     *,
     output_dir: Path,
-    equivariant_dim: int,
+    following_dim: int,
 ) -> dict[str, object]:
     pca = _load_pca(config.input_dir)
     assignments = _load_assignments(config.input_dir, pca.index)
-    decomposition = decompose_invariant_equivariant_space(
+    decomposition = decompose_leading_axes_space(
         pca.to_numpy(dtype=float),
-        equivariant_dim=equivariant_dim,
+        following_dim=following_dim,
     )
     coords = decomposition.coordinates
     axes = decomposition.axes
@@ -536,15 +524,15 @@ def analyze_dataset(
         "input_dir": config.input_dir,
         "n_cells": int(len(geometry)),
         "n_pca_features": int(pca.shape[1]),
-        "equivariant_dim": int(equivariant_dim),
-        "invariant_axis_energy_fraction": float(energy_fraction[0]),
-        "equivariant_axes_energy_fraction": float(energy_fraction[1:].sum()),
-        "celltype_between_fraction_invariant_axis": _between_fraction(
-            geometry["invariant_axis_score"],
+        "following_dim": int(following_dim),
+        "leading_axis_energy_fraction": float(energy_fraction[0]),
+        "following_axes_energy_fraction": float(energy_fraction[1:].sum()),
+        "celltype_between_fraction_leading_axis": _between_fraction(
+            geometry["leading_axis_score"],
             geometry["celltype"],
         ),
-        "celltype_between_fraction_equivariant_radius": _between_fraction(
-            geometry["equivariant_radius"],
+        "celltype_between_fraction_following_radius": _between_fraction(
+            geometry["following_radius"],
             geometry["celltype"],
         ),
         "outputs": {
@@ -561,14 +549,14 @@ def analyze_dataset(
 
 def main() -> None:
     args = parse_args()
-    output_dir: Path = args.output_dir
+    output_dir: Path = args.output_dir or timestamped_results_dir("scrna_space_decomposition")
     output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now(UTC).isoformat()
     dataset_summaries = [
         analyze_dataset(
             config,
             output_dir=output_dir,
-            equivariant_dim=args.equivariant_dim,
+            following_dim=args.following_dim,
         )
         for config in _dataset_configs(args.datasets)
     ]
@@ -588,20 +576,21 @@ def main() -> None:
         "output_dir": str(output_dir),
         "datasets": dataset_summaries,
         "config": {
-            "equivariant_dim": int(args.equivariant_dim),
+            "following_dim": int(args.following_dim),
             "axis_contract": (
                 "standardize saved benchmark PCA coordinates; decompose centered "
-                "cell-by-PC matrix by SVD; axis 1 is the common/invariant axis; "
-                "axes 2..k are the orthogonal/equivariant axes"
+                "cell-by-PC matrix by SVD; axis 1 is the leading PCA axis; "
+                "axes 2..k are the following orthogonal PCA axes; "
+                "no transformation or group action is declared"
             ),
             "formal_cartan_claim": False,
         },
     }
     (output_dir / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, default=_json_default) + "\n",
+        json.dumps(manifest, indent=2, default=json_default) + "\n",
         encoding="utf-8",
     )
-    print(json.dumps(manifest, indent=2, default=_json_default))
+    print(json.dumps(manifest, indent=2, default=json_default))
 
 
 if __name__ == "__main__":

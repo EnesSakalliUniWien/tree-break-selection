@@ -1,0 +1,11 @@
+covariance_profile,covariance_estimator,projection_kind,matched_datasets,baseline_rejections_at_0.01,rejections_at_0.01,new_rejections,lost_rejections,median_p,median_p_difference_from_oracle_full,min_df,max_df
+ar1_0.6,oracle_covariance,fixed_full,1000,15,15,0,0,0.49851837293302176,0.0,8.0,8.0
+ar1_0.6,oracle_covariance,same_data_pca_mp,1000,15,37,30,8,0.405082724323914,-0.08672270985346275,1.0,1.0
+ar1_0.6,pooled_sample_covariance,fixed_full,1000,15,10,0,5,0.48751934788797957,-0.0013464429851597903,8.0,8.0
+ar1_0.6,pooled_sample_covariance,same_data_pca_mp,1000,15,10,0,5,0.48751934788797946,-0.0013464429851598458,8.0,8.0
+ar1_0.6,oracle_covariance,selected_root_full,1000,15,762,756,9,0.0006697083079459,-0.48151349316061276,8.0,8.0
+identity,oracle_covariance,fixed_full,1000,12,12,0,0,0.49979387437143286,0.0,8.0,8.0
+identity,oracle_covariance,same_data_pca_mp,1000,12,33,25,4,0.4193626513999946,-0.07049355552568562,1.0,1.0
+identity,pooled_sample_covariance,fixed_full,1000,12,11,4,5,0.5097774240384751,-0.003930943050068597,8.0,8.0
+identity,pooled_sample_covariance,same_data_pca_mp,1000,12,11,4,5,0.5097774240384753,-0.0039309430500686525,8.0,8.0
+identity,oracle_covariance,selected_root_full,1000,12,765,756,3,0.0023116095453735,-0.49696921405077765,8.0,8.0

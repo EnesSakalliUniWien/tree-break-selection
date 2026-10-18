@@ -2,9 +2,11 @@
 title: Wiki Schema
 type: control
 status: reviewed
-updated: 2026-05-24
+updated: 2026-09-28
 sources:
   - raw/inbox/wiki-construction-brief.md
+  - scripts/wiki/lint.py
+  - docs/generated-files.md
 tags:
   - wiki
   - schema
@@ -43,7 +45,9 @@ Required keys:
   `question`, `tool`, or `control`.
 - `status`: one of `draft`, `reviewed`, `stable`, or `deprecated`.
 - `updated`: ISO date in `YYYY-MM-DD` form.
-- `sources`: YAML list of existing local source paths.
+- `sources`: YAML list of existing local source paths, or exact generated-output
+  paths with finalized storage decisions in `reports/artifacts.json`. A catalog
+  entry preserves evidence identity but does not establish byte availability.
 - `tags`: YAML list of short lowercase terms.
 
 ### Body Sections
@@ -81,3 +85,4 @@ Use lowercase kebab-case filenames, such as `projected-wald-statistic.md`.
 - [[maintenance]]
 - [[wiki-search]]
 - [[wiki-construction]]
+- [[generated-report-files]]

@@ -7,7 +7,6 @@ import argparse
 import colorsys
 import json
 import math
-import re
 import shutil
 import sys
 from pathlib import Path
@@ -30,16 +29,20 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (  # noqa: E402
+from applications.endotypes._shared import load_binary_feature_matrix, parse_go_term
+from applications.endotypes.reports.artifact_index import load_artifact_index
+
+# The PDF builder reads the subspace folders this script writes, so both use its naming rule.
+from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
     gene_annotation_blurbs,
-    load_binary_matrix,
     load_cache,
     local_top_terms_for_cluster,
     protein_label,
     representative_genes_for_cluster,
+    subspace_dir_name,
 )
+from benchmarks.shared.util.values import finite_float
 
-GO_ID_RE = re.compile(r"(GO:\d{7})")
 COPY_ARTIFACTS = {
     "cluster_assignments": "cluster_assignments.csv",
     "cluster_coherence": "cluster_coherence.csv",
@@ -75,14 +78,6 @@ def safe_name(value: object) -> str:
     return "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in str(value)).strip("_")
 
 
-def parse_go_term(value: object) -> tuple[str, str]:
-    text = "" if pd.isna(value) else str(value)
-    match = GO_ID_RE.search(text)
-    go_id = match.group(1) if match else ""
-    term = text.replace(f"({go_id})", "").strip() if go_id else text.strip()
-    return term, go_id
-
-
 def safe_int(value: object, default: int = 0) -> int:
     try:
         if pd.isna(value):
@@ -90,24 +85,6 @@ def safe_int(value: object, default: int = 0) -> int:
         return int(float(value))
     except (TypeError, ValueError):
         return default
-
-
-def safe_float(value: object) -> float:
-    try:
-        if pd.isna(value):
-            return math.nan
-        return float(value)
-    except (TypeError, ValueError):
-        return math.nan
-
-
-def display_number(value: object, digits: int = 3) -> str:
-    number = safe_float(value)
-    if math.isnan(number):
-        return ""
-    if abs(number) < 0.001 and number != 0:
-        return f"{number:.2e}"
-    return f"{number:.{digits}f}"
 
 
 def resolve_path(value: object, experiment_dir: Path) -> Path | None:
@@ -124,43 +101,6 @@ def path_text(path: Path | None) -> str:
     return "" if path is None else str(path)
 
 
-def subspace_dir_name(row: dict[str, object] | pd.Series) -> str:
-    rank = safe_int(row.get("_rank", row.get("specificity_aware_rank", row.get("display_rank"))))
-    status = str(row.get("status", ""))
-    if rank:
-        prefix = f"rank{rank:02d}"
-    elif status and status != "ok":
-        block_id = safe_int(row.get("block_id"))
-        prefix = f"failed{block_id:02d}" if block_id or block_id == 0 else "failed"
-    else:
-        prefix = "rankNA"
-    return f"{prefix}_{safe_name(row.get('weighting', ''))}_{safe_name(row.get('block_name', ''))}"
-
-
-def load_artifact_index(experiment_dir: Path) -> pd.DataFrame:
-    path = experiment_dir / "artifact_index.csv"
-    if not path.exists():
-        raise FileNotFoundError(path)
-    frame = pd.read_csv(path)
-    rank_col = (
-        "specificity_aware_rank" if "specificity_aware_rank" in frame.columns else "display_rank"
-    )
-    frame["_rank"] = pd.to_numeric(frame.get(rank_col), errors="coerce")
-    if "run_id" not in frame.columns:
-        if "method_run_id" in frame.columns:
-            frame["run_id"] = frame["method_run_id"].astype(str)
-        else:
-            frame["run_id"] = (
-                "current__adaptive_diffusion_cosine_subspace__"
-                + frame["weighting"].astype(str)
-                + "__"
-                + frame["block_name"].astype(str)
-            )
-    return frame.sort_values(["_rank", "weighting", "block_name"], na_position="last").reset_index(
-        drop=True
-    )
-
-
 def load_optional_table(path: Path | None) -> pd.DataFrame:
     if path is None or not path.exists() or path.is_dir():
         return pd.DataFrame()
@@ -171,10 +111,7 @@ def load_linkage_matrix(path: Path | None) -> np.ndarray | None:
     if path is None or not path.exists():
         return None
     frame = pd.read_csv(path)
-    cols = ["left", "right", "distance", "count"]
-    if all(col in frame.columns for col in cols):
-        return frame[cols].to_numpy(dtype=float)
-    return frame.iloc[:, :4].to_numpy(dtype=float)
+    return frame[["left", "right", "distance", "count"]].to_numpy(dtype=float)
 
 
 def cluster_lookup(frame: pd.DataFrame) -> dict[int, dict[str, object]]:
@@ -362,7 +299,7 @@ def diagnostic_linkage_assignments(
     return frame.merge(sizes, on="cluster_id", how="left")
 
 
-def plot_radial_tree(
+def plot_polar_linkage_tree(
     linkage_matrix: np.ndarray,
     assignments: pd.DataFrame,
     output_path: Path,
@@ -654,13 +591,13 @@ def build_rosters(
             assignments.to_csv(accepted_assignment_path, index=False)
         if has_assignments and render_radial_trees:
             if linkage_matrix is not None:
-                plot_radial_tree(
+                plot_polar_linkage_tree(
                     linkage_matrix,
                     assignments,
                     radial_path,
                     title=f"{assignment_source}: {weighting} / {block_name}",
                 )
-                plot_radial_tree(
+                plot_polar_linkage_tree(
                     linkage_matrix,
                     assignments,
                     radial_compact_path,
@@ -697,23 +634,7 @@ def build_rosters(
                 tree_distance_frame.to_csv(tree_distance_embedding_coordinates_path, index=False)
                 tree_distance_embedding_rendered = True
 
-        status_record = {
-            "run_id": run_id,
-            "specificity_aware_rank": rank if rank else math.nan,
-            "display_rank": safe_int(row.get("display_rank")) or math.nan,
-            "weighting": weighting,
-            "block_name": block_name,
-            "status": status,
-            "assignment_source": assignment_source,
-            "has_cluster_assignments": bool(has_assignments),
-            "n_genes": len(assignments) if has_assignments else 0,
-            "n_unique_genes": assignments["gene"].nunique() if has_assignments else 0,
-            "linkage_leaves": int(linkage_matrix.shape[0] + 1) if linkage_matrix is not None else 0,
-            "n_clusters": assignments["cluster_id"].nunique()
-            if has_assignments
-            else safe_int(row.get("n_clusters")),
-            "coherent_cluster_count": safe_int(row.get("coherent_cluster_count")),
-            "organized_subspace_dir": str(organized_subspace_dir),
+        rendered_artifact_paths = {
             "radial_tree_clusters_png": str(radial_path) if radial_rendered else "",
             "radial_tree_clusters_compact_png": str(radial_compact_path) if radial_rendered else "",
             "full_space_embedding_clusters_png": str(full_space_path)
@@ -736,6 +657,25 @@ def build_rosters(
             )
             if tree_distance_embedding_rendered
             else "",
+        }
+        status_record = {
+            "run_id": run_id,
+            "specificity_aware_rank": rank if rank else math.nan,
+            "display_rank": safe_int(row.get("display_rank")) or math.nan,
+            "weighting": weighting,
+            "block_name": block_name,
+            "status": status,
+            "assignment_source": assignment_source,
+            "has_cluster_assignments": bool(has_assignments),
+            "n_genes": len(assignments) if has_assignments else 0,
+            "n_unique_genes": assignments["gene"].nunique() if has_assignments else 0,
+            "linkage_leaves": int(linkage_matrix.shape[0] + 1) if linkage_matrix is not None else 0,
+            "n_clusters": assignments["cluster_id"].nunique()
+            if has_assignments
+            else safe_int(row.get("n_clusters")),
+            "coherent_cluster_count": safe_int(row.get("coherent_cluster_count")),
+            "organized_subspace_dir": str(organized_subspace_dir),
+            **rendered_artifact_paths,
             "diagnostic_linkage_cluster_assignments": str(diagnostic_assignment_path)
             if assignment_source == "diagnostic_linkage_cut"
             else "",
@@ -790,42 +730,19 @@ def build_rosters(
                 "status": status,
                 "assignment_source": assignment_source,
                 "organized_subspace_dir": str(organized_subspace_dir),
-                "radial_tree_clusters_png": str(radial_path) if radial_rendered else "",
-                "radial_tree_clusters_compact_png": str(radial_compact_path)
-                if radial_rendered
-                else "",
-                "full_space_embedding_clusters_png": str(full_space_path)
-                if full_space_rendered
-                else "",
-                "full_space_embedding_cluster_coordinates": str(full_space_coordinates_path)
-                if full_space_rendered
-                else "",
-                "subspace_embedding_clusters_png": str(subspace_embedding_path)
-                if subspace_embedding_rendered
-                else "",
-                "subspace_embedding_cluster_coordinates": str(subspace_embedding_coordinates_path)
-                if subspace_embedding_rendered
-                else "",
-                "tree_distance_embedding_clusters_png": str(tree_distance_embedding_path)
-                if tree_distance_embedding_rendered
-                else "",
-                "tree_distance_embedding_cluster_coordinates": str(
-                    tree_distance_embedding_coordinates_path
-                )
-                if tree_distance_embedding_rendered
-                else "",
+                **rendered_artifact_paths,
                 "cluster_id": safe_int(cluster_id),
                 "cluster_size": cluster_size,
                 "recorded_cluster_size": recorded_size,
                 "coherent_by_rule": coherence_row.get("coherent_by_rule", ""),
                 "n_significant_terms_q05": safe_int(coherence_row.get("n_significant_terms_q05")),
-                "min_q_value": safe_float(coherence_row.get("min_q_value")),
+                "min_q_value": finite_float(coherence_row.get("min_q_value")),
                 "top_term": top_term,
                 "top_go_id": top_go_id,
-                "top_term_prevalence_delta": safe_float(
+                "top_term_prevalence_delta": finite_float(
                     coherence_row.get("top_term_prevalence_delta")
                 ),
-                "mean_within_tfidf_cosine": safe_float(tfidf_row.get("mean_within_tfidf_cosine")),
+                "mean_within_tfidf_cosine": finite_float(tfidf_row.get("mean_within_tfidf_cosine")),
                 **annotation,
             }
             cluster_record = {**base, "member_genes": ";".join(genes)}
@@ -1049,14 +966,15 @@ def main() -> None:
     args = parse_args()
     experiment_dir = args.experiment_dir
     output_dir = args.output_dir or experiment_dir / "systematic_subspace_gene_annotations"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    if (output_dir / "subspaces").exists():
-        shutil.rmtree(output_dir / "subspaces")
     dataset_label = args.dataset_label or experiment_dir.name
 
     artifact_index = load_artifact_index(experiment_dir)
-    data = load_binary_matrix(args.feature_matrix)
+    data = load_binary_feature_matrix(args.feature_matrix)
     full_space_coordinates = compute_full_space_embedding(data)
+    # Replace earlier rosters only once every input has loaded.
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if (output_dir / "subspaces").exists():
+        shutil.rmtree(output_dir / "subspaces")
     full_space_coordinates.to_csv(output_dir / "full_space_embedding_coordinates.csv", index=False)
     cache = load_cache(output_dir / "life_science_lookup_cache.json")
     clusters, genes, status = build_rosters(

@@ -1,9 +1,14 @@
-"""Data-independent fixed-subspace sibling gate annotation.
+"""Sibling gate annotation with fixed projection coordinates and rank.
 
 This module provides an opt-in sibling gate that avoids learning parent PCA
 projection rows and projection dimension from the same sample being tested.
-It evaluates fixed covariance-whitened sibling contrasts with predeclared
-coordinate-wise or feature-block BH aggregation.
+It evaluates covariance-whitened sibling contrasts with predeclared global,
+coordinate-wise or feature-block tests. Fixed coordinates and rank do not make
+the complete test data-independent: continuous covariance can be estimated
+from the same observations, and the tested groups can come from a selected
+tree. Chi-square tails here are nominal unless the full reference-law
+assumptions are established; this module does not establish selected-tail or
+whole-tree error control.
 """
 
 from __future__ import annotations
@@ -13,7 +18,7 @@ from typing import Literal
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy.stats import chi2
+from scipy.stats import chi2, false_discovery_control
 
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_SIBLING_ALPHA,
@@ -39,47 +44,32 @@ FixedSubspaceSiblingGateMethod = Literal[
     "fixed_global_chi_square",
     "fixed_coordinate_bh",
     "fixed_coordinate_by",
-    "fixed_coordinate_holm",
     "fixed_coordinate_bonferroni",
     "fixed_block_bh",
     "fixed_block_simes_bh",
 ]
-CoordinateFdrMethod = Literal["bh", "by", "holm", "bonferroni"]
+CoordinateAdjustmentMethod = Literal["bh", "by", "bonferroni"]
 
 FIXED_SUBSPACE_SIBLING_GATE_METHODS: tuple[FixedSubspaceSiblingGateMethod, ...] = (
     "fixed_global_chi_square",
     "fixed_coordinate_bh",
     "fixed_coordinate_by",
-    "fixed_coordinate_holm",
     "fixed_coordinate_bonferroni",
     "fixed_block_bh",
     "fixed_block_simes_bh",
 )
 
 
-def _bh_adjusted_minimum(p_values: np.ndarray) -> float:
-    values = np.asarray(p_values, dtype=float)
-    if values.ndim != 1:
-        raise ValueError(f"p_values must be one-dimensional; got {values.shape}.")
-    if values.size == 0:
-        return 1.0
-    if not np.isfinite(values).all() or np.any((values < 0.0) | (values > 1.0)):
-        raise ValueError("p_values must be finite values in [0, 1].")
-    order = np.argsort(values)
-    sorted_p = values[order]
-    n_tests = float(sorted_p.size)
-    adjusted_sorted = np.minimum.accumulate(
-        (n_tests / np.arange(1, sorted_p.size + 1, dtype=float) * sorted_p)[::-1]
-    )[::-1]
-    return float(np.clip(np.min(adjusted_sorted), 0.0, 1.0))
-
-
-def coordinate_fdr_adjusted_minimum(
+def coordinate_adjusted_minimum(
     p_values: np.ndarray,
     *,
-    method: CoordinateFdrMethod = "bh",
+    method: CoordinateAdjustmentMethod = "bh",
 ) -> float:
-    """Return the minimum adjusted p-value for fixed coordinate evidence."""
+    """Return the minimum adjusted p-value for fixed coordinate evidence.
+
+    BH and BY are FDR procedures; Bonferroni is an FWER procedure. Holm is not
+    offered because its minimum adjusted p-value always equals Bonferroni's.
+    """
     values = np.asarray(p_values, dtype=float)
     if values.ndim != 1:
         raise ValueError(f"p_values must be one-dimensional; got {values.shape}.")
@@ -87,37 +77,19 @@ def coordinate_fdr_adjusted_minimum(
         return 1.0
     if not np.isfinite(values).all() or np.any((values < 0.0) | (values > 1.0)):
         raise ValueError("p_values must be finite values in [0, 1].")
-
-    method_name = str(method)
-    if method_name == "bh":
-        return _bh_adjusted_minimum(values)
-
-    sorted_p = np.sort(values)
-    n_tests = float(sorted_p.size)
-    if method_name == "by":
-        harmonic = float(np.sum(1.0 / np.arange(1, sorted_p.size + 1, dtype=float)))
-        return float(np.clip(harmonic * _bh_adjusted_minimum(sorted_p), 0.0, 1.0))
-    if method_name == "bonferroni":
-        return float(np.clip(n_tests * sorted_p[0], 0.0, 1.0))
-    if method_name == "holm":
-        adjusted_sorted = np.maximum.accumulate(
-            (n_tests - np.arange(sorted_p.size, dtype=float)) * sorted_p
-        )
-        return float(np.clip(np.min(adjusted_sorted), 0.0, 1.0))
+    if method in ("bh", "by"):
+        return float(false_discovery_control(values, method=method).min())
+    if method == "bonferroni":
+        return float(min(1.0, values.size * values.min()))
     raise ValueError(
-        f"Unknown coordinate FDR method {method!r}; allowed=('bh', 'by', 'holm', 'bonferroni')."
+        f"Unknown coordinate adjustment method {method!r}; allowed=('bh', 'by', 'bonferroni')."
     )
 
 
-def fixed_coordinate_bh_p_value(z: np.ndarray) -> float:
-    """Return the coordinate-wise BH p-value for a whitened contrast."""
-    return fixed_coordinate_fdr_p_value(z, method="bh")
-
-
-def fixed_coordinate_fdr_p_value(
+def fixed_coordinate_adjusted_p_value(
     z: np.ndarray,
     *,
-    method: CoordinateFdrMethod = "bh",
+    method: CoordinateAdjustmentMethod = "bh",
 ) -> float:
     """Return a coordinate-wise adjusted p-value for a whitened contrast."""
     vector = np.asarray(z, dtype=float)
@@ -128,7 +100,23 @@ def fixed_coordinate_fdr_p_value(
     if not np.isfinite(vector).all():
         raise ValueError("z must contain only finite values.")
     coordinate_p = chi2.sf(vector * vector, df=1.0)
-    return coordinate_fdr_adjusted_minimum(coordinate_p, method=method)
+    return coordinate_adjusted_minimum(coordinate_p, method=method)
+
+
+def _block_starts(feature_space: FeatureSpace, z_dimension: int) -> np.ndarray:
+    """Return each feature block's start offset in the whitened contrast vector."""
+    widths = np.array([int(block.contrast_dimension) for block in feature_space.blocks], dtype=int)
+    if np.any(widths <= 0):
+        block = feature_space.blocks[int(np.flatnonzero(widths <= 0)[0])]
+        raise ValueError(
+            f"Feature block {block.name!r} has invalid contrast_dimension={block.contrast_dimension}."
+        )
+    if int(widths.sum()) != int(z_dimension):
+        raise ValueError(
+            "Feature blocks do not cover the whitened contrast vector: "
+            f"covered={int(widths.sum())}, z_dimension={z_dimension}."
+        )
+    return np.concatenate(([0], np.cumsum(widths)[:-1])).astype(int)
 
 
 def fixed_block_simes_bh_p_value(
@@ -144,26 +132,13 @@ def fixed_block_simes_bh_p_value(
     if vector.size == 0:
         return 1.0
 
-    block_p_values: list[float] = []
-    offset = 0
-    for block in feature_space.blocks:
-        width = int(block.contrast_dimension)
-        block_z = vector[offset : offset + width]
-        if block_z.shape[0] != width:
-            raise ValueError(
-                "Feature blocks do not cover the whitened contrast vector: "
-                f"block={block.name!r}, offset={offset}, width={width}, "
-                f"z_dimension={vector.shape[0]}."
-            )
-        coordinate_p = chi2.sf(block_z * block_z, df=1.0)
-        block_p_values.append(_bh_adjusted_minimum(coordinate_p))
-        offset += width
-    if offset != vector.shape[0]:
-        raise ValueError(
-            "Feature blocks do not cover the whitened contrast vector: "
-            f"covered={offset}, z_dimension={vector.shape[0]}."
-        )
-    return _bh_adjusted_minimum(np.asarray(block_p_values, dtype=float))
+    starts = _block_starts(feature_space, vector.shape[0])
+    coordinate_p = chi2.sf(vector * vector, df=1.0)
+    block_p_values = [
+        coordinate_adjusted_minimum(block, method="bh")
+        for block in np.split(coordinate_p, starts[1:])
+    ]
+    return coordinate_adjusted_minimum(np.asarray(block_p_values, dtype=float), method="bh")
 
 
 def _feature_block_p_values(
@@ -176,29 +151,16 @@ def _feature_block_p_values(
     if not np.isfinite(vector).all():
         raise ValueError("z must contain only finite values.")
 
-    p_values: list[float] = []
-    offset = 0
-    for block in feature_space.blocks:
-        width = int(block.contrast_dimension)
-        if width <= 0:
-            raise ValueError(
-                f"Feature block {block.name!r} has invalid contrast_dimension={width}."
-            )
-        block_z = vector[offset : offset + width]
-        if block_z.shape[0] != width:
+    if not feature_space.blocks:
+        if vector.size:
             raise ValueError(
                 "Feature blocks do not cover the whitened contrast vector: "
-                f"block={block.name!r}, offset={offset}, width={width}, "
-                f"z_dimension={vector.shape[0]}."
+                f"covered=0, z_dimension={vector.shape[0]}."
             )
-        p_values.append(float(chi2.sf(float(np.dot(block_z, block_z)), df=width)))
-        offset += width
-    if offset != vector.shape[0]:
-        raise ValueError(
-            "Feature blocks do not cover the whitened contrast vector: "
-            f"covered={offset}, z_dimension={vector.shape[0]}."
-        )
-    return np.asarray(p_values, dtype=float)
+        return np.zeros(0, dtype=float)
+    starts = _block_starts(feature_space, vector.shape[0])
+    widths = np.diff(np.append(starts, vector.shape[0]))
+    return np.asarray(chi2.sf(np.add.reduceat(vector * vector, starts), df=widths), dtype=float)
 
 
 def fixed_subspace_sibling_p_value(
@@ -219,15 +181,15 @@ def fixed_subspace_sibling_p_value(
     if method == "fixed_global_chi_square":
         return float(chi2.sf(float(np.dot(vector, vector)), df=vector.size))
     if method == "fixed_coordinate_bh":
-        return fixed_coordinate_bh_p_value(vector)
+        return fixed_coordinate_adjusted_p_value(vector, method="bh")
     if method == "fixed_coordinate_by":
-        return fixed_coordinate_fdr_p_value(vector, method="by")
-    if method == "fixed_coordinate_holm":
-        return fixed_coordinate_fdr_p_value(vector, method="holm")
+        return fixed_coordinate_adjusted_p_value(vector, method="by")
     if method == "fixed_coordinate_bonferroni":
-        return fixed_coordinate_fdr_p_value(vector, method="bonferroni")
+        return fixed_coordinate_adjusted_p_value(vector, method="bonferroni")
     if method == "fixed_block_bh":
-        return _bh_adjusted_minimum(_feature_block_p_values(vector, feature_space))
+        return coordinate_adjusted_minimum(
+            _feature_block_p_values(vector, feature_space), method="bh"
+        )
     if method == "fixed_block_simes_bh":
         return fixed_block_simes_bh_p_value(vector, feature_space)
     raise ValueError(
@@ -236,7 +198,7 @@ def fixed_subspace_sibling_p_value(
     )
 
 
-def _sibling_fixed_subspace_contrast(
+def sibling_fixed_subspace_contrast(
     tree: nx.DiGraph,
     feature_space: FeatureSpace,
     parent: object,
@@ -248,6 +210,12 @@ def _sibling_fixed_subspace_contrast(
         DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT
     ),
 ) -> np.ndarray:
+    """Return the whitened sibling contrast used by the fixed-subspace gates and guards.
+
+    It carries no branch-time factor: only the projected-Wald sibling test scales
+    its variance by the sibling branch time. With no calibration step behind
+    these gates, that factor removed true root splits of well-separated clusters.
+    """
     return compute_whitened_wald_contrast(
         np.asarray(tree.nodes[left]["distribution"], dtype=float),
         np.asarray(tree.nodes[right]["distribution"], dtype=float),
@@ -273,7 +241,7 @@ def _fixed_subspace_channel_values(
     statistic = float(np.dot(vector, vector))
     degrees_of_freedom = float(feature_space.contrast_dimension)
     return {
-        "fixed_coordinate_bh": fixed_coordinate_bh_p_value(vector),
+        "fixed_coordinate_bh": fixed_coordinate_adjusted_p_value(vector, method="bh"),
         "fixed_block_bh": fixed_subspace_sibling_p_value(
             vector,
             feature_space,
@@ -318,12 +286,13 @@ def annotate_fixed_subspace_sibling_evidence_channels(
         )
 
     out = annotations_df.copy()
+    rows: dict[object, dict[str, object]] = {}
     for parent in tree.nodes:
         children = identify_binary_sibling_children(tree, parent)
         if children is None:
             continue
         left, right = children
-        z = _sibling_fixed_subspace_contrast(
+        z = sibling_fixed_subspace_contrast(
             tree,
             feature_space,
             parent,
@@ -333,19 +302,24 @@ def annotate_fixed_subspace_sibling_evidence_channels(
             continuous_covariance_min_child_leaf_count=(continuous_covariance_min_child_leaf_count),
         )
         values = _fixed_subspace_channel_values(z, feature_space)
+        rows[parent] = {
+            "Sibling_Fixed_Coordinate_BH_P_Value": values["fixed_coordinate_bh"],
+            "Sibling_Fixed_Block_BH_P_Value": values["fixed_block_bh"],
+            "Sibling_Fixed_Global_P_Value": values["fixed_global_chi_square"],
+            "Sibling_Sparse_Evidence_P_Value": values[str(sparse_method)],
+            "Sibling_Sparse_Evidence_Method": str(sparse_method),
+            "Sibling_Sparse_Evidence_Calibration": "fixed_subspace_bh",
+            "Sibling_Dense_Evidence_P_Value": values[str(dense_method)],
+            "Sibling_Dense_Evidence_Method": str(dense_method),
+            "Sibling_Dense_Evidence_Calibration": "fixed_subspace_chi_square",
+            "Sibling_Dense_Evidence_Test_Statistic": values["statistic"],
+            "Sibling_Dense_Evidence_Degrees_of_Freedom": values["degrees_of_freedom"],
+        }
 
-        out.loc[parent, "Sibling_Fixed_Coordinate_BH_P_Value"] = values["fixed_coordinate_bh"]
-        out.loc[parent, "Sibling_Fixed_Block_BH_P_Value"] = values["fixed_block_bh"]
-        out.loc[parent, "Sibling_Fixed_Global_P_Value"] = values["fixed_global_chi_square"]
-        out.loc[parent, "Sibling_Sparse_Evidence_P_Value"] = values[str(sparse_method)]
-        out.loc[parent, "Sibling_Sparse_Evidence_Method"] = str(sparse_method)
-        out.loc[parent, "Sibling_Sparse_Evidence_Calibration"] = "fixed_subspace_bh"
-        out.loc[parent, "Sibling_Dense_Evidence_P_Value"] = values[str(dense_method)]
-        out.loc[parent, "Sibling_Dense_Evidence_Method"] = str(dense_method)
-        out.loc[parent, "Sibling_Dense_Evidence_Calibration"] = "fixed_subspace_chi_square"
-        out.loc[parent, "Sibling_Dense_Evidence_Test_Statistic"] = values["statistic"]
-        out.loc[parent, "Sibling_Dense_Evidence_Degrees_of_Freedom"] = values["degrees_of_freedom"]
-
+    if rows:
+        parents = list(rows)
+        for column in next(iter(rows.values())):
+            out.loc[parents, column] = [rows[parent][column] for parent in parents]
     return out
 
 
@@ -369,7 +343,7 @@ def _fixed_subspace_sibling_results(
             skipped.append(parent)
             continue
         left, right = children
-        z = _sibling_fixed_subspace_contrast(
+        z = sibling_fixed_subspace_contrast(
             tree,
             feature_space,
             parent,
@@ -433,14 +407,14 @@ def annotate_fixed_subspace_sibling_divergence(
 
 
 __all__ = [
-    "CoordinateFdrMethod",
+    "CoordinateAdjustmentMethod",
     "FIXED_SUBSPACE_SIBLING_GATE_METHODS",
     "FixedSubspaceSiblingGateMethod",
     "annotate_fixed_subspace_sibling_evidence_channels",
     "annotate_fixed_subspace_sibling_divergence",
-    "coordinate_fdr_adjusted_minimum",
+    "coordinate_adjusted_minimum",
     "fixed_block_simes_bh_p_value",
-    "fixed_coordinate_bh_p_value",
-    "fixed_coordinate_fdr_p_value",
+    "fixed_coordinate_adjusted_p_value",
     "fixed_subspace_sibling_p_value",
+    "sibling_fixed_subspace_contrast",
 ]

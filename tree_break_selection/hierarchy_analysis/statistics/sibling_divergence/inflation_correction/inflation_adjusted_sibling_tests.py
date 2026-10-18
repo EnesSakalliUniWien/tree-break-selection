@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -11,7 +11,6 @@ from .empirical_null_inflation_estimation import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     decide_empirical_null_calibration,
 )
-from .external_selected_tail_calibration import ExternalSelectedTailCalibrationModel
 from .types.inflation_model import (
     CalibrationSupportThresholds,
     EmpiricalNullInflationModel,
@@ -26,8 +25,7 @@ def _compute_inflation_adjusted_sibling_test(
     model: EmpiricalNullInflationModel | None,
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
-    external_selected_tail_model: ExternalSelectedTailCalibrationModel | None = None,
-    external_selected_tail_context: Mapping[str, object] | None = None,
+    family_support_cache: dict[str, dict[str, float | int]] | None = None,
 ) -> tuple[InflationAdjustedSiblingTestSummary, str]:
     """Return one inflation-adjusted sibling-test summary."""
     if not np.isfinite(sibling_test_record.stat):
@@ -50,34 +48,19 @@ def _compute_inflation_adjusted_sibling_test(
         )
 
     if model is None:
-        if external_selected_tail_model is None:
-            raise ValueError(
-                "Sibling empirical calibration has no internal model and no "
-                "external selected-tail model; "
-                f"parent={sibling_test_record.parent!r}."
-            )
-        decision = external_selected_tail_model.decision_for(
-            sibling_test_record,
-            external_context=external_selected_tail_context,
-            internal_decision=None,
+        raise ValueError(
+            "Sibling empirical calibration has no internal model; "
+            f"parent={sibling_test_record.parent!r}."
         )
-    else:
-        decision = decide_empirical_null_calibration(
-            model,
-            sibling_test_record,
-            enforce_support_thresholds=enforce_support_thresholds,
-            support_thresholds=support_thresholds,
-            external_selected_tail_model=external_selected_tail_model,
-            external_selected_tail_context=(
-                None
-                if external_selected_tail_context is None
-                else dict(external_selected_tail_context)
-            ),
-        )
+    decision = decide_empirical_null_calibration(
+        model,
+        sibling_test_record,
+        enforce_support_thresholds=enforce_support_thresholds,
+        support_thresholds=support_thresholds,
+        family_support_cache=family_support_cache,
+    )
     admissible_statuses = {
         "internal_admissible",
-        "external_admissible_scalar",
-        "external_admissible_tail_law",
     }
     if decision.status not in admissible_statuses or decision.c_hat is None:
         raise ValueError(
@@ -123,13 +106,12 @@ def compute_inflation_adjusted_sibling_tests(
     model: EmpiricalNullInflationModel | None,
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
-    external_selected_tail_model: ExternalSelectedTailCalibrationModel | None = None,
-    external_selected_tail_context_by_parent: Mapping[object, Mapping[str, object]] | None = None,
 ) -> tuple[list[str], list[InflationAdjustedSiblingTestSummary], list[str]]:
     """Return inflation-adjusted sibling-test summaries for tested parents."""
     tested_parent_ids: list[str] = []
     inflation_adjusted_test_summaries: list[InflationAdjustedSiblingTestSummary] = []
     inflation_adjustment_method_labels: list[str] = []
+    family_support_cache: dict[str, dict[str, float | int]] = {}
 
     for sibling_test_record in sibling_test_records:
         if sibling_test_record.is_null_like:
@@ -140,12 +122,7 @@ def compute_inflation_adjusted_sibling_tests(
             model=model,
             enforce_support_thresholds=enforce_support_thresholds,
             support_thresholds=support_thresholds,
-            external_selected_tail_model=external_selected_tail_model,
-            external_selected_tail_context=(
-                None
-                if external_selected_tail_context_by_parent is None
-                else external_selected_tail_context_by_parent.get(sibling_test_record.parent)
-            ),
+            family_support_cache=family_support_cache,
         )
         tested_parent_ids.append(sibling_test_record.parent)
         inflation_adjusted_test_summaries.append(test_summary)

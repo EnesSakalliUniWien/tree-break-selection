@@ -4,14 +4,14 @@ import importlib
 import sys
 
 
-def _load_pancreas_module():
+def _load_pancreas_module(monkeypatch):
     module_name = "applications.scrna.pancreas_benchmark"
-    sys.modules.pop(module_name, None)
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
     return importlib.import_module(module_name)
 
 
-def test_distance_time_model_report_records_generated_timestamp(tmp_path):
-    module = _load_pancreas_module()
+def test_distance_time_model_report_records_generated_timestamp(monkeypatch, tmp_path):
+    module = _load_pancreas_module(monkeypatch)
 
     module._write_distance_time_model_analysis(
         output_dir=tmp_path,

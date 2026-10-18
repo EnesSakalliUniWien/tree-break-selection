@@ -1,0 +1,483 @@
+{
+  "review_date": "2026-09-28",
+  "python": "3.11.12 (main, Apr  8 2025, 14:15:29) [Clang 16.0.0 (clang-1600.0.26.6)]",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "packages": {
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "pandas": "2.3.3",
+    "matplotlib": "3.10.7",
+    "pytest": "8.4.2",
+    "scikit-learn": "1.7.2",
+    "pydiffmap": "0.2.0.1"
+  },
+  "source_sha256": {
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py": "75cdc4c41ba653df6dbe6f65522ad20b8b484128367911ffb5fb0c93b69ce19a",
+    "tree_break_selection/space_separation/diffusion.py": "19ee963590a0c9fa52dfb7da42db662b20e0e46efb9b88770c70e728afe9cb2f",
+    "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/decomposition.py": "c1d4c124d4e9ea93dfbe46a0bd976a6bf30a8230283eb265c1d36a33d9250a63",
+    "tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/projection.py": "044063bc236679af3ee093ac3c4a2f82499de4ed263ad1ff43eee8a32d7b826e",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projection_dimension_estimation/projection_dimension_estimators.py": "c089559760f62ac6a3290a1f92c77c9fa93b755200ca3da94c4af3bf92f0d0a4",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/spectral/marchenko_pastur.py": "d8a8ee8dc5f6d61ae01e91eb019dc35aae838477dfb894bdac789630f4125942",
+    "benchmarks/diagnostics/path_b/recursive_pvalue_geometry.py": "eb68c8d285bda2cd91b5a1ce715697b48f7f7a9c4f8f752af3eba11494ba0042",
+    "README.md": "c37041622e7b4cfa210262ae9ad3f427c39220eb73104fdfb44f83fea8f56c1e",
+    "pyproject.toml": "42da50b3c00b258feafec2b7ff3eaba89e5b11e89c5ed235ac5a5450024a3350",
+    "uv.lock": "228d52df17a87ea4b3638ef0e74f440f6b35eb0203527cd3dcf1306466102e4d",
+    "Makefile": "be88d2d3ff34467f00ee14c518dfc27023543b85cf6cea59a9d6cc460e5e2619",
+    "tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py": "b1c7c2e6d49837d544dea5b9ce1c8cdb9acb97b354fadd18f39daf0312290f00",
+    "tree_break_selection/tree/distributions.py": "16177aebd9b1f8246027dbee5ff84d419ea80a65c6608bca262f96d7b2051257",
+    "tree_break_selection/space_separation/adaptive_cosine.py": "e315014d28a915c61524d1d7b9b7d7026c3a80780216dfdde0479fdc79319a48",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py": "c1648985583f44e9edf7cfb3b7dad20bf28b6bac38c4f8a294b432648df514d1",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py": "b59159ec2cd6ae6c6e96db822c13d15012178a9be6aaef867cb3fdf7d9c1997d",
+    "reports/mathematical_construction_review_20260928/reproduce_findings.py": "e675fa2b5a1087e97379e565dd5c70777d5f4e94a4167a040674d7a6cf1799b1"
+  },
+  "adaptive_wald": {
+    "rotations": [
+      {
+        "angle_degrees": 0.0,
+        "statistic": 9.0,
+        "projection_dimension": 1,
+        "reference_scale": 1.0,
+        "degrees_of_freedom": 1.0,
+        "p_value": 0.00269979606326019
+      },
+      {
+        "angle_degrees": 45.0,
+        "statistic": 9.0,
+        "projection_dimension": 2,
+        "reference_scale": 1.0,
+        "degrees_of_freedom": 2.0,
+        "p_value": 0.011108996538242308
+      }
+    ],
+    "seed": 1907,
+    "independent_contrasts": 1000000,
+    "kernel_cross_checks": 128,
+    "null_rates": [
+      {
+        "alpha": 0.001,
+        "adaptive_rejections": 1525,
+        "adaptive_rate": 0.001525,
+        "monte_carlo_standard_error": 3.9021460441659536e-05,
+        "fixed_rank_two_rejections": 1027
+      },
+      {
+        "alpha": 0.01,
+        "adaptive_rejections": 14720,
+        "adaptive_rate": 0.01472,
+        "monte_carlo_standard_error": 0.00012042973719144288,
+        "fixed_rank_two_rejections": 10070
+      },
+      {
+        "alpha": 0.05,
+        "adaptive_rejections": 67820,
+        "adaptive_rate": 0.06782,
+        "monte_carlo_standard_error": 0.0002514367666034544,
+        "fixed_rank_two_rejections": 49963
+      }
+    ]
+  },
+  "diffusion": {
+    "six_cycle_normalized_spectrum": [
+      -0.9999999999999999,
+      -0.5000000000000002,
+      -0.49999999999999994,
+      0.4999999999999998,
+      0.5,
+      1.0
+    ],
+    "permutation": [
+      2,
+      5,
+      0,
+      4,
+      1,
+      3
+    ],
+    "permutation_distance_errors": {
+      "1": 0.21650635094611065,
+      "2": 9.71445146547012e-16
+    },
+    "hamming_k_one_distances": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "path_three_clipped_symmetric_distances": [
+      8.71576399210523e-31,
+      1.7431527984210494e-30,
+      8.715763992105265e-31
+    ],
+    "path_three_markov_power_row_distances": [
+      1.224744871391589,
+      0.0,
+      1.224744871391589
+    ]
+  },
+  "pca": {
+    "tied_covariance": [
+      {
+        "feature_permutation": [
+          0,
+          1
+        ],
+        "eigenvalues": [
+          0.5,
+          0.5
+        ],
+        "dimension": {
+          "raw_mp_signal_count": 0,
+          "test_projection_dimension": 1,
+          "effective_independent_rows": 4,
+          "mp_threshold_rows": 4
+        },
+        "physical_projector": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "feature_permutation": [
+          1,
+          0
+        ],
+        "eigenvalues": [
+          0.5,
+          0.5
+        ],
+        "dimension": {
+          "raw_mp_signal_count": 0,
+          "test_projection_dimension": 1,
+          "effective_independent_rows": 4,
+          "mp_threshold_rows": 4
+        },
+        "physical_projector": [
+          [
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ]
+      }
+    ],
+    "projector_difference_frobenius": 1.4142135623730951,
+    "continuous_whitening_seed": 104,
+    "continuous_whitening": [
+      {
+        "separation": 0.0,
+        "raw_eigenvalues": [
+          0.43633258897168703,
+          1.174249649129431
+        ],
+        "whitened_eigenvalues": [
+          0.9499999999991909,
+          0.949999999997823
+        ],
+        "raw_mp_signal_count": 0,
+        "test_projection_dimension": 1
+      },
+      {
+        "separation": 10.0,
+        "raw_eigenvalues": [
+          0.49452757278392545,
+          102.79164886650153
+        ],
+        "whitened_eigenvalues": [
+          0.9499999999999909,
+          0.9499999999980789
+        ],
+        "raw_mp_signal_count": 0,
+        "test_projection_dimension": 1
+      }
+    ]
+  },
+  "principal_angles": {
+    "original_basis": {
+      "subspace_common_dimension": 1.0,
+      "subspace_largest_cosine": 0.0,
+      "subspace_mean_squared_cosine": 0.0,
+      "subspace_chordal_distance_normalized": 1.0
+    },
+    "reordered_parent_basis": {
+      "subspace_common_dimension": 1.0,
+      "subspace_largest_cosine": 1.0,
+      "subspace_mean_squared_cosine": 1.0,
+      "subspace_chordal_distance_normalized": 0.0
+    },
+    "full_rectangular_cross_gram_singular_values": [
+      1.0
+    ],
+    "scipy_full_subspace_angles_degrees": [
+      0.0
+    ]
+  },
+  "paired_eigenvectors": {
+    "illustrative_operator_not_benchmark_data": true,
+    "weights": [
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0,
+        2.0,
+        0.0
+      ],
+      [
+        0.0,
+        2.0,
+        0.0,
+        3.0
+      ],
+      [
+        0.0,
+        0.0,
+        3.0,
+        0.0
+      ]
+    ],
+    "degrees": [
+      1.0,
+      3.0,
+      5.0,
+      3.0
+    ],
+    "eigenvalues_ascending": [
+      -1.0,
+      -0.447213595499958,
+      0.44721359549995804,
+      1.0
+    ],
+    "right_vectors": [
+      [
+        0.288675134594813,
+        -0.6454972243679028,
+        -0.6454972243679025,
+        0.2886751345948129
+      ],
+      [
+        -0.2886751345948128,
+        0.2886751345948128,
+        -0.2886751345948127,
+        0.28867513459481287
+      ],
+      [
+        0.2886751345948128,
+        0.1290994448735806,
+        0.12909944487358047,
+        0.2886751345948128
+      ],
+      [
+        -0.28867513459481264,
+        -0.2886751345948128,
+        0.28867513459481287,
+        0.28867513459481275
+      ]
+    ],
+    "left_vectors": [
+      [
+        0.288675134594813,
+        -0.6454972243679028,
+        -0.6454972243679025,
+        0.2886751345948129
+      ],
+      [
+        -0.8660254037844384,
+        0.8660254037844384,
+        -0.866025403784438,
+        0.8660254037844385
+      ],
+      [
+        1.443375672974064,
+        0.645497224367903,
+        0.6454972243679025,
+        1.443375672974064
+      ],
+      [
+        -0.8660254037844378,
+        -0.8660254037844384,
+        0.8660254037844385,
+        0.8660254037844383
+      ]
+    ],
+    "left_right_gram": [
+      [
+        0.9999999999999992,
+        -1.974162619522059e-16,
+        -1.4833326047198338e-16,
+        2.7755575615628914e-16
+      ],
+      [
+        -1.885580317072583e-16,
+        0.9999999999999998,
+        5.551115123125783e-17,
+        9.173244013445253e-17
+      ],
+      [
+        -1.1543799664724129e-16,
+        5.551115123125783e-17,
+        0.9999999999999991,
+        -2.631838050424864e-17
+      ],
+      [
+        2.7755575615628914e-16,
+        5.511863427387604e-17,
+        -2.716426622259807e-17,
+        0.9999999999999996
+      ]
+    ],
+    "left_left_gram": [
+      [
+        3.666666666666664,
+        0.7453559924999295,
+        0.7453559924999293,
+        0.6666666666666671
+      ],
+      [
+        0.7453559924999295,
+        2.3333333333333326,
+        -0.6666666666666659,
+        0.7453559924999301
+      ],
+      [
+        0.7453559924999293,
+        -0.6666666666666659,
+        2.3333333333333313,
+        0.7453559924999295
+      ],
+      [
+        0.6666666666666671,
+        0.7453559924999301,
+        0.7453559924999295,
+        3.666666666666665
+      ]
+    ],
+    "right_right_gram": [
+      [
+        0.33333333333333315,
+        -0.1490711984999861,
+        -0.14907119849998599,
+        1.2893404496020356e-16
+      ],
+      [
+        -0.1490711984999861,
+        0.5999999999999999,
+        0.2666666666666665,
+        -0.14907119849998599
+      ],
+      [
+        -0.14907119849998599,
+        0.2666666666666665,
+        0.5999999999999994,
+        -0.1490711984999859
+      ],
+      [
+        1.2893404496020356e-16,
+        -0.14907119849998599,
+        -0.1490711984999859,
+        0.33333333333333326
+      ]
+    ],
+    "right_right_line_angles_degrees": [
+      [
+        0.0,
+        70.5287793655093,
+        70.5287793655093,
+        89.99999999999997
+      ],
+      [
+        70.5287793655093,
+        0.0,
+        63.612200038757,
+        70.52877936550931
+      ],
+      [
+        70.5287793655093,
+        63.612200038757,
+        0.0,
+        70.52877936550931
+      ],
+      [
+        89.99999999999997,
+        70.52877936550931,
+        70.52877936550931,
+        1.2074182697257333e-06
+      ]
+    ],
+    "left_left_line_angles_degrees": [
+      [
+        8.537736462515939e-07,
+        75.23686737636845,
+        75.23686737636845,
+        79.52431830361007
+      ],
+      [
+        75.23686737636845,
+        0.0,
+        73.39845040097977,
+        75.23686737636844
+      ],
+      [
+        75.23686737636845,
+        73.39845040097977,
+        1.2074182697257333e-06,
+        75.23686737636845
+      ],
+      [
+        79.52431830361007,
+        75.23686737636844,
+        75.23686737636845,
+        0.0
+      ]
+    ],
+    "left_right_line_angles_degrees": [
+      [
+        25.23940182067893,
+        90.0,
+        90.0,
+        89.99999999999999
+      ],
+      [
+        89.99999999999999,
+        32.31153323742385,
+        90.0,
+        90.0
+      ],
+      [
+        90.0,
+        90.0,
+        32.31153323742385,
+        90.0
+      ],
+      [
+        89.99999999999999,
+        90.0,
+        90.0,
+        25.23940182067893
+      ]
+    ],
+    "right_residual": 3.6188843062238402e-16,
+    "left_residual": 1.3311106448512298e-15,
+    "biorthogonality_residual": 1.3864805797417882e-15,
+    "right_degree_metric_residual": 1.3087578229385792e-15,
+    "left_inverse_degree_metric_residual": 1.4093244340466801e-15,
+    "paired_middle_subspaces_angles_degrees": [
+      33.69006752597981,
+      1.124495891598735e-14
+    ]
+  }
+}

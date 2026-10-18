@@ -18,15 +18,14 @@ from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
-from tree_break_selection.plot.cluster_color_mapping import (
-    build_cluster_color_spec,
-    present_cluster_ids,
-)
-
 from benchmarks.shared.util.pdf.layout import (
     PDF_PAGE_SIZE_INCHES,
     PDF_WIDE_PAGE_SIZE_INCHES,
     set_pdf_page_size,
+)
+from tree_break_selection.plot.cluster_color_mapping import (
+    build_cluster_color_spec,
+    present_cluster_ids,
 )
 
 # Reduce noisy but expected warnings emitted during visualization
@@ -61,7 +60,7 @@ def _max_assigned_label(labels: np.ndarray | None) -> int:
     return int(arr.max())
 
 
-def _color_cluster_count(expected: int, found: int, *label_arrays: np.ndarray) -> int:
+def color_cluster_count(expected: int, found: int, *label_arrays: np.ndarray) -> int:
     """
     Determine how many cluster colors are needed to cover all label arrays.
 
@@ -75,7 +74,7 @@ def _color_cluster_count(expected: int, found: int, *label_arrays: np.ndarray) -
     return base
 
 
-def _coerce_nonnegative_cluster_count(raw_count: object) -> int | None:
+def coerce_nonnegative_cluster_count(raw_count: object) -> int | None:
     """Convert a raw cluster-count value to a non-negative integer, if possible."""
     if raw_count is None:
         return None
@@ -88,7 +87,7 @@ def _coerce_nonnegative_cluster_count(raw_count: object) -> int | None:
     return parsed
 
 
-def _infer_cluster_count_from_labels(*label_arrays: np.ndarray | None) -> int | None:
+def infer_cluster_count_from_labels(*label_arrays: np.ndarray | None) -> int | None:
     """Infer cluster count from labels by counting unique non-negative assignments."""
     inferred_count = 0
     for labels in label_arrays:
@@ -109,16 +108,16 @@ def _infer_cluster_count_from_labels(*label_arrays: np.ndarray | None) -> int | 
     return inferred_count if inferred_count > 0 else None
 
 
-def _resolve_expected_cluster_count(
+def resolve_expected_cluster_count(
     meta: dict,
     *label_arrays: np.ndarray | None,
 ) -> tuple[int | None, str]:
     """Resolve expected cluster count from metadata, else infer from available labels."""
-    explicit_count = _coerce_nonnegative_cluster_count(meta.get("n_clusters"))
+    explicit_count = coerce_nonnegative_cluster_count(meta.get("n_clusters"))
     if explicit_count is not None and explicit_count > 0:
         return explicit_count, str(explicit_count)
 
-    inferred_count = _infer_cluster_count_from_labels(*label_arrays)
+    inferred_count = infer_cluster_count_from_labels(*label_arrays)
     if inferred_count is not None:
         return inferred_count, f"{inferred_count} (inferred)"
 
@@ -239,8 +238,6 @@ _PARAM_KEY_ALIASES = {
 }
 
 _PARAM_VALUE_ALIASES = {
-    "tree_distribution_kl": "tree_kl",
-    "tree_distribution_js": "tree_js",
     "average": "avg",
     "complete": "complete",
     "single": "single",
@@ -380,7 +377,7 @@ def create_clustering_comparison_plots(
     X_embedded = _fit_embedding_2d(X_scaled, cache_key=cache_key)
 
     labels_to_plot = dict(labels_dict)
-    expected_clusters, expected_clusters_label = _resolve_expected_cluster_count(
+    expected_clusters, expected_clusters_label = resolve_expected_cluster_count(
         meta,
         *labels_to_plot.values(),
     )
@@ -403,7 +400,7 @@ def create_clustering_comparison_plots(
         labels_to_plot["Spectral"] = spectral.fit_predict(X_scaled)
 
     all_labels = [labels for labels in labels_to_plot.values() if labels is not None]
-    color_clusters = _color_cluster_count(expected_clusters or 0, -1, *all_labels)
+    color_clusters = color_cluster_count(expected_clusters or 0, -1, *all_labels)
     spec = build_cluster_color_spec(color_clusters, unassigned_color="#CCCCCC")
     colors = spec.colors
 
@@ -530,163 +527,9 @@ def create_clustering_comparison_plots(
 
 
 __all__ = [
+    "coerce_nonnegative_cluster_count",
+    "color_cluster_count",
     "create_clustering_comparison_plots",
-    "_color_cluster_count",
-    "create_clustering_comparison_plot_3d",
+    "infer_cluster_count_from_labels",
+    "resolve_expected_cluster_count",
 ]
-
-
-def _fit_embedding_3d(
-    X_scaled: np.ndarray,
-    *,
-    cache_key: str | None = None,
-) -> np.ndarray:
-    """Return a 3D embedding using UMAP when available, else t-SNE, else PCA."""
-    cache_dir = _embedding_cache_dir()
-    ck = _cache_key_for_array(X_scaled, 3, cache_key)
-    cached = _load_cached_embedding(cache_dir, ck)
-    if cached is not None:
-        return cached
-
-    backend = (os.getenv("TBS_EMBEDDING_BACKEND_3D") or "umap").strip().lower()
-
-    if backend in {"umap", "auto"}:
-        import umap
-
-        reducer = umap.UMAP(
-            n_components=3,
-            random_state=42,
-            n_neighbors=min(15, max(2, len(X_scaled) - 1)),
-            min_dist=0.1,
-            low_memory=True,
-        )
-        result = reducer.fit_transform(X_scaled)
-        _save_cached_embedding(cache_dir, ck, result)
-        return result
-
-    if backend == "tsne":
-        from sklearn.manifold import TSNE
-
-        tsne = TSNE(
-            n_components=3,
-            random_state=42,
-            perplexity=min(30, max(2, len(X_scaled) - 1)),
-        )
-        result = tsne.fit_transform(X_scaled)
-        _save_cached_embedding(cache_dir, ck, result)
-        return result
-
-    raise ValueError(f"Unknown TBS_EMBEDDING_BACKEND_3D={backend!r}.")
-
-
-def create_clustering_comparison_plot_3d(
-    X_original: np.ndarray,
-    y_true: np.ndarray,
-    y_kl: np.ndarray,
-    test_case_num: int,
-    meta: dict,
-):
-    """Create a 3D embedding plot (UMAP/TSNE) comparing clusterings."""
-    X = np.asarray(X_original, dtype=float)
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    embedding = _fit_embedding_3d(X_scaled)
-
-    expected_clusters, expected_clusters_label = _resolve_expected_cluster_count(
-        meta,
-        y_true,
-        y_kl,
-    )
-    baseline_cluster_count = expected_clusters if expected_clusters is not None else 1
-    found_clusters = _coerce_nonnegative_cluster_count(meta.get("found_clusters"))
-    if found_clusters is None:
-        inferred_found_clusters = _infer_cluster_count_from_labels(y_kl)
-        found_clusters = inferred_found_clusters if inferred_found_clusters is not None else 0
-
-    kmeans = KMeans(n_clusters=baseline_cluster_count, random_state=42, n_init=10)
-    y_kmeans = kmeans.fit_predict(X_scaled)
-
-    spectral = SpectralClustering(
-        n_clusters=baseline_cluster_count,
-        random_state=42,
-        affinity="nearest_neighbors",
-        assign_labels="cluster_qr",
-    )
-    y_spectral = spectral.fit_predict(X_scaled)
-
-    fig = plt.figure(figsize=(18, 12))
-    meta_text = (
-        f"samples={meta['n_samples']}, "
-        f"features={meta['n_features']}, "
-        f"generator={meta['generator']}, "
-        f"noise={meta['noise']}"
-    )
-    fig.suptitle(
-        (
-            f"3D Embedding – Test {test_case_num}: expected {expected_clusters_label} clusters "
-            f"(TBS found {found_clusters})\n{meta_text}"
-        ),
-        fontsize=16,
-        weight="bold",
-        y=0.97,
-    )
-
-    methods = [
-        ("Ground Truth", y_true),
-        ("TBS Divergence", y_kl),
-        ("K-Means", y_kmeans),
-        ("Spectral", y_spectral),
-    ]
-
-    color_clusters = _color_cluster_count(
-        expected_clusters or 0,
-        found_clusters,
-        y_true,
-        y_kl,
-        y_kmeans,
-        y_spectral,
-    )
-    spec = build_cluster_color_spec(color_clusters, unassigned_color="#CCCCCC")
-    colors = spec.colors
-
-    for i, (method_name, labels) in enumerate(methods, start=1):
-        ax = fig.add_subplot(2, 2, i, projection="3d")
-        labels_array = np.asarray(labels)
-        ax.scatter(
-            embedding[:, 0],
-            embedding[:, 1],
-            embedding[:, 2],
-            c=labels_array,
-            cmap=spec.cmap,
-            norm=spec.norm,
-            alpha=0.7,
-            s=40,
-            edgecolors="black",
-            linewidth=0.3,
-        )
-        for cluster_id in present_cluster_ids(labels_array):
-            if cluster_id >= len(colors):
-                continue
-            mask = labels_array == cluster_id
-            if np.sum(mask) > 0:
-                center_x = np.mean(embedding[mask, 0])
-                center_y = np.mean(embedding[mask, 1])
-                center_z = np.mean(embedding[mask, 2])
-                ax.scatter(
-                    center_x,
-                    center_y,
-                    center_z,
-                    c=[colors[cluster_id]],
-                    marker="x",
-                    s=90,
-                    linewidth=3,
-                )
-        ax.set_title(method_name, fontsize=11, weight="bold")
-        ax.set_xlabel("dim 1")
-        ax.set_ylabel("dim 2")
-        ax.set_zlabel("dim 3")
-        ax.grid(True, alpha=0.2)
-
-    plt.tight_layout()
-    return fig

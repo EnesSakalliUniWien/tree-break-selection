@@ -13,16 +13,12 @@ repo_root = Path(__file__).resolve().parents[3]
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.datasets import fetch_openml
 from sklearn.decomposition import PCA
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
-from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
-    run_gate_annotation_pipeline,
-)
-from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
-from tree_break_selection.tree.construction import tree_from_linkage
+
+from benchmarks.shared.util.decomposition import tbs_decompose
 
 
 def load_mnist_subset(
@@ -79,45 +75,15 @@ def run_tbs_clustering(
     sample_names = [f"Sample_{j}" for j in range(X.shape[0])]
     data = pd.DataFrame(X_binary, index=sample_names)
 
-    # Build hierarchy
-    Z = linkage(
+    labels, results = tbs_decompose(
+        data,
         pdist(data.values, metric=distance_metric),
-        method=linkage_method,
+        linkage_method=linkage_method,
+        alpha=0.05,
     )
-
     if verbose:
         print(f"  Built hierarchy with {distance_metric} + {linkage_method}")
-
-    # Create PosetTree
-    tree = tree_from_linkage(Z, leaf_names=sample_names)
-
-    # Decompose
-    significance_level = 0.05
-    tree.populate_node_divergences(data)
-    gate_bundle = run_gate_annotation_pipeline(
-        tree,
-        tree.annotations_df.copy(),
-        leaf_data=data,
-        edge_alpha=significance_level,
-        sibling_alpha=significance_level,
-    )
-    results = TreeDecomposition(
-        tree=tree,
-        gate_annotation_bundle=gate_bundle,
-    ).decompose_tree()
-
-    cluster_assignments = results.get("cluster_assignments", {})
-    n_clusters = results.get("num_clusters", 0)
-
-    if verbose:
-        print(f"  Found {n_clusters} clusters")
-
-    label_map = {}
-    for cluster_id, info in cluster_assignments.items():
-        for leaf in info["leaves"]:
-            label_map[leaf] = cluster_id
-
-    labels = np.array([label_map.get(name, -1) for name in sample_names])
+        print(f"  Found {results.get('num_clusters', 0)} clusters")
 
     return labels
 

@@ -7,10 +7,11 @@ from scipy.special import logsumexp
 from scipy.stats import chi2
 
 from ..pair_testing.types.sibling_pair_record import SiblingPairRecord
-from .external_selected_tail_calibration import ExternalSelectedTailCalibrationModel
 from .types.inflation_model import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     CalibrationDecision,
+    CalibrationFitDiagnostics,
+    CalibrationSample,
     CalibrationSupportThresholds,
     EmpiricalNullInflationModel,
 )
@@ -69,27 +70,12 @@ def _validate_calibration_record(record: SiblingPairRecord) -> None:
         )
 
 
-def _weighted_mean_columns(values: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    return np.sum(values * weights[:, None], axis=0) / np.sum(weights)
-
-
-def _weighted_std_columns(values: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    center = _weighted_mean_columns(values, weights)
-    variances = np.sum(((values - center) ** 2) * weights[:, None], axis=0) / np.sum(weights)
-    return np.sqrt(np.maximum(variances, 0.0))
-
-
 def _inflation_mle(
     statistics: np.ndarray,
     reference_expectations: np.ndarray,
     weights: np.ndarray,
 ) -> float:
     return float(np.sum(weights * statistics) / np.sum(weights * reference_expectations))
-
-
-def _has_internal_empirical_null_support(record: SiblingPairRecord) -> bool:
-    """Return whether a record is admissible empirical-null calibration."""
-    return bool(record.is_null_like or record.is_edge_blocked)
 
 
 def _effective_sample_size(weights: np.ndarray) -> float:
@@ -107,19 +93,20 @@ def _max_weight_share(weights: np.ndarray) -> float:
     return float(np.max(positive_weights) / np.sum(positive_weights))
 
 
-def _leave_one_record_max_delta_log_c(
+def _leave_one_group_max_delta_log_c(
     statistics: np.ndarray,
     reference_expectations: np.ndarray,
     weights: np.ndarray,
+    dependency_group_ids: tuple[object, ...],
     baseline_c_hat: float,
 ) -> float:
-    if weights.size <= 1:
+    unique_groups = tuple(dict.fromkeys(dependency_group_ids))
+    if len(unique_groups) <= 1:
         return float("inf")
     deltas: list[float] = []
     baseline_log_c = float(np.log(max(baseline_c_hat, 1e-300)))
-    for index in range(weights.size):
-        keep = np.ones(weights.size, dtype=bool)
-        keep[index] = False
+    for group_id in unique_groups:
+        keep = np.array([candidate != group_id for candidate in dependency_group_ids])
         if float(np.sum(weights[keep])) <= 0.0:
             return float("inf")
         c_hat = max(
@@ -134,14 +121,67 @@ def _leave_one_record_max_delta_log_c(
     return float(max(deltas)) if deltas else float("inf")
 
 
+def _dependency_group_support_weights(
+    model: EmpiricalNullInflationModel,
+    *,
+    family_mask: np.ndarray | None = None,
+    local_record_weights: np.ndarray | None = None,
+) -> np.ndarray:
+    sample = model.sample
+    selected_indices = (
+        np.arange(sample.n_records, dtype=int)
+        if family_mask is None
+        else np.flatnonzero(family_mask)
+    )
+    if local_record_weights is not None and local_record_weights.shape != selected_indices.shape:
+        raise ValueError("Local calibration weights must align to the selected sample records.")
+
+    representative_by_group: dict[object, int] = {}
+    selected_position_by_index = {
+        int(sample_index): position for position, sample_index in enumerate(selected_indices)
+    }
+    for sample_index in selected_indices:
+        index = int(sample_index)
+        group_id = sample.dependency_group_ids[index]
+        representative_by_group.setdefault(group_id, index)
+        if sample.parent_ids[index] == group_id:
+            representative_by_group[group_id] = index
+
+    group_weights: list[float] = []
+    for sample_index in representative_by_group.values():
+        weight = float(sample.dependency_group_weights[sample_index])
+        if local_record_weights is not None:
+            selected_position = selected_position_by_index[sample_index]
+            kernel_multiplier = float(
+                local_record_weights[selected_position] / sample.weights[sample_index]
+            )
+            weight *= kernel_multiplier
+        group_weights.append(weight)
+    return np.asarray(group_weights, dtype=float)
+
+
 def fit_empirical_null_inflation_model(
     records: list[SiblingPairRecord],
 ) -> EmpiricalNullInflationModel:
-    """Fit the context-weighted empirical-null inflation model."""
+    """Fit the empirical-null scale model; its selected-tail law remains unvalidated."""
     if not records:
         raise ValueError("Cannot fit sibling inflation model: no sibling calibration records.")
     for record in records:
         _validate_calibration_record(record)
+    if any(
+        not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12) for record in records
+    ):
+        first_non_unit = next(
+            record
+            for record in records
+            if not np.isclose(record.reference_scale, 1.0, rtol=1e-12, atol=1e-12)
+        )
+        raise ValueError(
+            "Sibling empirical-null inflation currently requires unit reference_scale "
+            "from the orthonormal projected-Wald reference law; "
+            f"parent={first_non_unit.parent!r}, "
+            f"reference_scale={first_non_unit.reference_scale!r}."
+        )
 
     positive_df_records = [record for record in records if record.degrees_of_freedom > 0]
     if not positive_df_records:
@@ -157,12 +197,12 @@ def fit_empirical_null_inflation_model(
             "Cannot fit sibling inflation model: no positive sibling-null calibration weight."
         )
 
-    supported_records = [
-        record for record in positive_weight_records if _has_internal_empirical_null_support(record)
+    role_supported_records = [
+        record for record in positive_weight_records if record.has_internal_empirical_null_support
     ]
-    if not supported_records:
+    if not role_supported_records:
         selected_nonnull_count = sum(
-            not _has_internal_empirical_null_support(record) for record in positive_weight_records
+            not record.has_internal_empirical_null_support for record in positive_weight_records
         )
         raise ValueError(
             "Cannot fit sibling inflation model: no strict-null or stopped-edge "
@@ -170,6 +210,7 @@ def fit_empirical_null_inflation_model(
             f"Found {selected_nonnull_count} selected non-null positive-weight "
             "record(s), which are not valid empirical-null calibration support."
         )
+    supported_records = role_supported_records
 
     statistics = np.array([record.stat for record in supported_records], dtype=float)
     reference_scales = np.array(
@@ -185,7 +226,7 @@ def fit_empirical_null_inflation_model(
         dtype=float,
     )
     is_strict_null = np.array(
-        [record.is_null_like for record in supported_records],
+        [record.is_null_like and not record.is_edge_blocked for record in supported_records],
         dtype=bool,
     )
     is_edge_blocked = np.array(
@@ -202,16 +243,28 @@ def fit_empirical_null_inflation_model(
     )
     calibration_feature_families = tuple(record.feature_family for record in supported_records)
     calibration_parent_ids = tuple(record.parent for record in supported_records)
+    calibration_dependency_group_ids = tuple(
+        record.parent
+        if record.calibration_dependency_group is None
+        else record.calibration_dependency_group
+        for record in supported_records
+    )
+    calibration_dependency_group_weights = np.array(
+        [
+            record.sibling_null_weight
+            if record.calibration_dependency_weight is None
+            else record.calibration_dependency_weight
+            for record in supported_records
+        ],
+        dtype=float,
+    )
     reference_expectations = reference_scales * degrees_of_freedom
 
-    baseline_empirical_inflation_factor = _inflation_mle(
+    baseline_scale_estimate = _inflation_mle(
         statistics,
         reference_expectations,
         null_weights,
     )
-
-    # One-sided post-selection correction: never increase the sibling statistic.
-    baseline_empirical_inflation_factor = max(baseline_empirical_inflation_factor, 1.0)
 
     sample_contexts = np.column_stack(
         [
@@ -219,36 +272,70 @@ def fit_empirical_null_inflation_model(
             np.log(calibration_parent_sample_sizes),
         ]
     )
-    context_center = _weighted_mean_columns(sample_contexts, null_weights)
-    context_bandwidth = _weighted_std_columns(sample_contexts, null_weights)
-    context_bandwidth = np.where(context_bandwidth <= 1e-12, 0.0, context_bandwidth)
-
-    effective_sample_size = _effective_sample_size(null_weights)
-
     return EmpiricalNullInflationModel(
         method="context_weighted_supported_empirical_null_inflation",
-        n_calibration=int(len(statistics)),
-        n_positive_weight_records=int(len(positive_weight_records)),
-        n_selected_nonnull_positive_weight_records=sum(
-            not _has_internal_empirical_null_support(record) for record in positive_weight_records
+        sample=CalibrationSample(
+            contexts=sample_contexts,
+            feature_families=calibration_feature_families,
+            weights=null_weights,
+            parent_ids=calibration_parent_ids,
+            dependency_group_ids=calibration_dependency_group_ids,
+            dependency_group_weights=calibration_dependency_group_weights,
+            is_strict_null=is_strict_null,
+            is_edge_blocked=is_edge_blocked,
+            statistics=statistics,
+            reference_scales=reference_scales,
+            degrees_of_freedom=degrees_of_freedom,
         ),
-        n_strict_null_calibration=sum(record.is_null_like for record in supported_records),
-        n_edge_blocked_calibration=sum(record.is_edge_blocked for record in supported_records),
-        n_stopped_or_null_calibration=len(supported_records),
-        baseline_empirical_inflation_factor=baseline_empirical_inflation_factor,
-        effective_sample_size=effective_sample_size,
-        context_center=context_center,
-        context_bandwidth=context_bandwidth,
-        sample_contexts=sample_contexts,
-        sample_feature_families=calibration_feature_families,
-        sample_weights=null_weights,
-        sample_parent_ids=calibration_parent_ids,
-        sample_is_strict_null=is_strict_null,
-        sample_is_edge_blocked=is_edge_blocked,
-        sample_statistics=statistics,
-        sample_reference_scales=reference_scales,
-        sample_degrees_of_freedom=degrees_of_freedom,
+        baseline_scale_estimate=baseline_scale_estimate,
+        fit_diagnostics=CalibrationFitDiagnostics(
+            n_positive_weight_records=int(len(positive_weight_records)),
+        ),
     )
+
+
+def _family_support(
+    model: EmpiricalNullInflationModel,
+    family_mask: np.ndarray,
+) -> dict[str, float | int]:
+    """Return support diagnostics that depend only on the model and feature family."""
+    support: dict[str, float | int] = {"n_family_supported_records": int(np.sum(family_mask))}
+    if not np.any(family_mask):
+        return support
+    family_weights = model.sample_weights[family_mask]
+    family_group_weights = _dependency_group_support_weights(
+        model,
+        family_mask=family_mask,
+    )
+    support["n_family_supported_groups"] = int(family_group_weights.size)
+    support["family_effective_sample_size"] = _effective_sample_size(family_group_weights)
+    family_dependency_group_ids = tuple(
+        group_id
+        for group_id, include in zip(
+            model.sample.dependency_group_ids,
+            family_mask,
+            strict=True,
+        )
+        if include
+    )
+    family_reference_expectations = (
+        model.sample_reference_scales[family_mask] * model.sample_degrees_of_freedom[family_mask]
+    )
+    support["leave_one_group_max_delta_log_c"] = _leave_one_group_max_delta_log_c(
+        model.sample_statistics[family_mask],
+        family_reference_expectations,
+        family_weights,
+        family_dependency_group_ids,
+        max(
+            _inflation_mle(
+                model.sample_statistics[family_mask],
+                family_reference_expectations,
+                family_weights,
+            ),
+            1.0,
+        ),
+    )
+    return support
 
 
 def _decision_support(
@@ -257,57 +344,47 @@ def _decision_support(
     record: SiblingPairRecord,
     family_mask: np.ndarray | None = None,
     local_weights: np.ndarray | None = None,
+    family_support_cache: dict[str, dict[str, float | int]] | None = None,
 ) -> dict[str, float | int | str | bool]:
     support: dict[str, float | int | str | bool] = {
         "n_positive_weight_records": int(model.n_positive_weight_records),
         "n_supported_records": int(model.n_calibration),
+        "n_supported_groups": len(model.sample.unique_dependency_group_ids),
         "n_selected_nonnull_positive_weight_records": int(
             model.n_selected_nonnull_positive_weight_records
         ),
         "n_strict_null_records": int(model.n_strict_null_calibration),
         "n_edge_blocked_records": int(model.n_edge_blocked_calibration),
-        "n_stopped_or_null_records": int(model.n_stopped_or_null_calibration),
         "model_effective_sample_size": float(model.effective_sample_size),
-        "model_max_weight_share": _max_weight_share(model.sample_weights),
+        "model_max_group_weight_share": _max_weight_share(
+            model.sample.unique_dependency_group_weights
+        ),
         "feature_family": str(record.feature_family),
     }
     if family_mask is not None:
-        support["n_family_supported_records"] = int(np.sum(family_mask))
-        if np.any(family_mask):
-            family_weights = model.sample_weights[family_mask]
-            support["n_family_strict_null_records"] = int(
-                np.sum(model.sample_is_strict_null[family_mask])
-            )
-            support["n_family_edge_blocked_records"] = int(
-                np.sum(model.sample_is_edge_blocked[family_mask])
-            )
-            support["family_effective_sample_size"] = _effective_sample_size(family_weights)
-            support["family_max_weight_share"] = _max_weight_share(family_weights)
-            support["leave_one_record_max_delta_log_c"] = _leave_one_record_max_delta_log_c(
-                model.sample_statistics[family_mask],
-                (
-                    model.sample_reference_scales[family_mask]
-                    * model.sample_degrees_of_freedom[family_mask]
-                ),
-                family_weights,
-                max(
-                    _inflation_mle(
-                        model.sample_statistics[family_mask],
-                        (
-                            model.sample_reference_scales[family_mask]
-                            * model.sample_degrees_of_freedom[family_mask]
-                        ),
-                        family_weights,
-                    ),
-                    1.0,
-                ),
-            )
-    if local_weights is not None:
-        support["local_weight_sum"] = float(np.sum(local_weights))
-        support["local_effective_sample_size"] = (
-            _effective_sample_size(local_weights) if float(np.sum(local_weights)) > 0.0 else 0.0
+        # Family diagnostics are identical for every record of one family under one model.
+        family_support = (
+            family_support_cache.get(record.feature_family)
+            if family_support_cache is not None
+            else None
         )
-        support["local_max_weight_share"] = _max_weight_share(local_weights)
+        if family_support is None:
+            family_support = _family_support(model, family_mask)
+            if family_support_cache is not None:
+                family_support_cache[record.feature_family] = family_support
+        support.update(family_support)
+    if local_weights is not None:
+        local_group_weights = _dependency_group_support_weights(
+            model,
+            family_mask=family_mask,
+            local_record_weights=local_weights,
+        )
+        support["local_effective_sample_size"] = (
+            _effective_sample_size(local_group_weights)
+            if float(np.sum(local_group_weights)) > 0.0
+            else 0.0
+        )
+        support["local_max_group_weight_share"] = _max_weight_share(local_group_weights)
     return support
 
 
@@ -317,14 +394,10 @@ def _support_contract_failures(
     thresholds: CalibrationSupportThresholds,
 ) -> tuple[str, ...]:
     failures: list[str] = []
-    if int(support.get("n_supported_records", 0)) < thresholds.min_supported_records:
-        failures.append("supported_records_below_threshold")
-    if int(support.get("n_family_supported_records", 0)) < (
-        thresholds.min_family_supported_records
-    ):
-        failures.append("family_supported_records_below_threshold")
-    if int(support.get("n_stopped_or_null_records", 0)) < (thresholds.min_stopped_or_null_records):
-        failures.append("stopped_or_null_records_below_threshold")
+    if int(support.get("n_supported_groups", 0)) < thresholds.min_supported_groups:
+        failures.append("supported_groups_below_threshold")
+    if int(support.get("n_family_supported_groups", 0)) < (thresholds.min_family_supported_groups):
+        failures.append("family_supported_groups_below_threshold")
     if float(support.get("family_effective_sample_size", 0.0)) < (
         thresholds.min_family_effective_sample_size
     ):
@@ -333,12 +406,12 @@ def _support_contract_failures(
         thresholds.min_local_effective_sample_size
     ):
         failures.append("local_effective_sample_size_below_threshold")
-    if float(support.get("local_max_weight_share", 1.0)) > thresholds.max_weight_share:
-        failures.append("local_max_weight_share_above_threshold")
-    if float(support.get("leave_one_record_max_delta_log_c", float("inf"))) > (
-        thresholds.max_leave_one_record_delta_log_c
+    if float(support.get("local_max_group_weight_share", 1.0)) > thresholds.max_weight_share:
+        failures.append("local_max_group_weight_share_above_threshold")
+    if float(support.get("leave_one_group_max_delta_log_c", float("inf"))) > (
+        thresholds.max_leave_one_group_delta_log_c
     ):
-        failures.append("leave_one_record_delta_log_c_above_threshold")
+        failures.append("leave_one_group_delta_log_c_above_threshold")
     return tuple(failures)
 
 
@@ -355,25 +428,6 @@ def _with_support_contract(
         else "below_internal_support_thresholds"
     )
     annotated_support["support_contract_failure_reasons"] = ";".join(failures)
-    annotated_support["support_threshold_min_supported_records"] = int(
-        thresholds.min_supported_records
-    )
-    annotated_support["support_threshold_min_family_supported_records"] = int(
-        thresholds.min_family_supported_records
-    )
-    annotated_support["support_threshold_min_stopped_or_null_records"] = int(
-        thresholds.min_stopped_or_null_records
-    )
-    annotated_support["support_threshold_min_family_effective_sample_size"] = float(
-        thresholds.min_family_effective_sample_size
-    )
-    annotated_support["support_threshold_min_local_effective_sample_size"] = float(
-        thresholds.min_local_effective_sample_size
-    )
-    annotated_support["support_threshold_max_weight_share"] = float(thresholds.max_weight_share)
-    annotated_support["support_threshold_max_leave_one_record_delta_log_c"] = float(
-        thresholds.max_leave_one_record_delta_log_c
-    )
     return annotated_support, failures
 
 
@@ -385,31 +439,17 @@ def _decision_context(record: SiblingPairRecord) -> dict[str, object]:
     }
 
 
-def _adjusted_p_value(record: SiblingPairRecord, inflation_factor: float) -> float:
-    if record.degrees_of_freedom == 0:
-        return 1.0
+def _adjusted_p_value(record: SiblingPairRecord, c_hat: float) -> float:
+    """Evaluate the historical plug-in chi-square tail after empirical inflation."""
     if not np.isfinite(record.reference_scale) or record.reference_scale <= 0.0:
-        raise ValueError(
-            "Sibling reference_scale must be finite and positive before adjustment; "
-            f"parent={record.parent!r}."
+        raise ValueError("Empirical-null adjustment requires a finite positive reference scale.")
+    if record.degrees_of_freedom == 0.0:
+        return 1.0
+    return float(
+        chi2.sf(
+            record.stat / (record.reference_scale * c_hat),
+            df=record.degrees_of_freedom,
         )
-    adjusted_statistic = float(record.stat / (record.reference_scale * inflation_factor))
-    return float(chi2.sf(adjusted_statistic, df=float(record.degrees_of_freedom)))
-
-
-def _with_external_selected_tail_fallback(
-    internal_decision: CalibrationDecision,
-    record: SiblingPairRecord,
-    *,
-    external_selected_tail_model: ExternalSelectedTailCalibrationModel | None,
-    external_selected_tail_context: dict[str, object] | None,
-) -> CalibrationDecision:
-    if external_selected_tail_model is None:
-        return internal_decision
-    return external_selected_tail_model.decision_for(
-        record,
-        external_context=external_selected_tail_context,
-        internal_decision=internal_decision,
     )
 
 
@@ -419,11 +459,14 @@ def decide_empirical_null_calibration(
     *,
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
-    external_selected_tail_model: ExternalSelectedTailCalibrationModel | None = None,
-    external_selected_tail_context: dict[str, object] | None = None,
+    family_support_cache: dict[str, dict[str, float | int]] | None = None,
 ) -> CalibrationDecision:
-    """Return the focal empirical-null calibration decision for one sibling record."""
-    exact_context = _decision_context(record)
+    """Return the historical empirical rule, without claiming selected-tail validity.
+
+    ``internal_admissible`` denotes availability under the internal support policy.
+    The plug-in chi-square p-value does not establish selective error control.
+    """
+    decision_context = _decision_context(record)
     if record.degrees_of_freedom == 0:
         return CalibrationDecision(
             status="internal_admissible",
@@ -431,7 +474,7 @@ def decide_empirical_null_calibration(
             p_value=1.0,
             estimator="zero_dimensional_sibling_record",
             support=_decision_support(model=model, record=record),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={"degrees_of_freedom": 0.0},
         )
     if (
@@ -443,20 +486,14 @@ def decide_empirical_null_calibration(
             f"for empirical-null inflation prediction; parent={record.parent!r}."
         )
     if model.n_calibration == 0:
-        decision = CalibrationDecision(
+        return CalibrationDecision(
             status="undefined_no_internal_support",
             c_hat=None,
             p_value=None,
             estimator=model.method,
             support=_decision_support(model=model, record=record),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={"reason": "empty_calibration_model"},
-        )
-        return _with_external_selected_tail_fallback(
-            decision,
-            record,
-            external_selected_tail_model=external_selected_tail_model,
-            external_selected_tail_context=external_selected_tail_context,
         )
     if record.feature_family not in {"bernoulli", "categorical", "continuous", "mixed"}:
         raise ValueError(
@@ -473,7 +510,7 @@ def decide_empirical_null_calibration(
         dtype=bool,
     )
     if not np.any(family_mask):
-        decision = CalibrationDecision(
+        return CalibrationDecision(
             status="undefined_no_family_support",
             c_hat=None,
             p_value=None,
@@ -482,15 +519,10 @@ def decide_empirical_null_calibration(
                 model=model,
                 record=record,
                 family_mask=family_mask,
+                family_support_cache=family_support_cache,
             ),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={"reason": "no_matching_feature_family"},
-        )
-        return _with_external_selected_tail_fallback(
-            decision,
-            record,
-            external_selected_tail_model=external_selected_tail_model,
-            external_selected_tail_context=external_selected_tail_context,
         )
     family_reference_expectations = (
         model.sample_reference_scales[family_mask] * model.sample_degrees_of_freedom[family_mask]
@@ -516,12 +548,6 @@ def decide_empirical_null_calibration(
         if model.context_bandwidth.size > 1
         else 0.0,
     }
-    dropped_axes = []
-    if not bool(active_context_axes[0]):
-        dropped_axes.append("sibling_projection_dimension")
-    if not bool(active_context_axes[1]):
-        dropped_axes.append("parent_sample_size")
-    descriptive_strata["dropped_context_axes"] = ",".join(dropped_axes)
     if not np.any(active_context_axes):
         c_hat = float(max(family_baseline_inflation_factor, 1.0))
         local_weights = model.sample_weights[family_mask]
@@ -531,27 +557,22 @@ def decide_empirical_null_calibration(
                 record=record,
                 family_mask=family_mask,
                 local_weights=local_weights,
+                family_support_cache=family_support_cache,
             ),
             thresholds=support_thresholds,
         )
         if enforce_support_thresholds and failures:
-            decision = CalibrationDecision(
+            return CalibrationDecision(
                 status="undefined_sparse_context",
                 c_hat=None,
                 p_value=None,
                 estimator=f"{model.method}:family_baseline",
                 support=support,
-                exact_context=exact_context,
+                decision_context=decision_context,
                 descriptive_strata={
                     **descriptive_strata,
                     "reason": "internal_support_thresholds_failed",
                 },
-            )
-            return _with_external_selected_tail_fallback(
-                decision,
-                record,
-                external_selected_tail_model=external_selected_tail_model,
-                external_selected_tail_context=external_selected_tail_context,
             )
         return CalibrationDecision(
             status="internal_admissible",
@@ -559,8 +580,11 @@ def decide_empirical_null_calibration(
             p_value=_adjusted_p_value(record, c_hat),
             estimator=f"{model.method}:family_baseline",
             support=support,
-            exact_context=exact_context,
-            descriptive_strata=descriptive_strata,
+            decision_context=decision_context,
+            descriptive_strata={
+                **descriptive_strata,
+                "reason": "same_selected_hierarchy_reference_law_unvalidated",
+            },
         )
 
     if record.n_parent <= 0:
@@ -585,7 +609,7 @@ def decide_empirical_null_calibration(
     log_kernel_weights = log_kernel_weights - float(np.max(log_kernel_weights))
     local_weights = family_weights * np.exp(log_kernel_weights)
     if float(np.sum(local_weights)) <= 0.0:
-        decision = CalibrationDecision(
+        return CalibrationDecision(
             status="undefined_sparse_context",
             c_hat=None,
             p_value=None,
@@ -595,18 +619,13 @@ def decide_empirical_null_calibration(
                 record=record,
                 family_mask=family_mask,
                 local_weights=local_weights,
+                family_support_cache=family_support_cache,
             ),
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={
                 **descriptive_strata,
                 "reason": "zero_local_calibration_weight",
             },
-        )
-        return _with_external_selected_tail_fallback(
-            decision,
-            record,
-            external_selected_tail_model=external_selected_tail_model,
-            external_selected_tail_context=external_selected_tail_context,
         )
 
     reference_expectations = family_reference_expectations
@@ -622,27 +641,22 @@ def decide_empirical_null_calibration(
             record=record,
             family_mask=family_mask,
             local_weights=local_weights,
+            family_support_cache=family_support_cache,
         ),
         thresholds=support_thresholds,
     )
     if enforce_support_thresholds and failures:
-        decision = CalibrationDecision(
+        return CalibrationDecision(
             status="undefined_sparse_context",
             c_hat=None,
             p_value=None,
             estimator=f"{model.method}:local_kernel",
             support=support,
-            exact_context=exact_context,
+            decision_context=decision_context,
             descriptive_strata={
                 **descriptive_strata,
                 "reason": "internal_support_thresholds_failed",
             },
-        )
-        return _with_external_selected_tail_fallback(
-            decision,
-            record,
-            external_selected_tail_model=external_selected_tail_model,
-            external_selected_tail_context=external_selected_tail_context,
         )
     return CalibrationDecision(
         status="internal_admissible",
@@ -650,32 +664,12 @@ def decide_empirical_null_calibration(
         p_value=_adjusted_p_value(record, c_hat),
         estimator=f"{model.method}:local_kernel",
         support=support,
-        exact_context=exact_context,
-        descriptive_strata=descriptive_strata,
+        decision_context=decision_context,
+        descriptive_strata={
+            **descriptive_strata,
+            "reason": "same_selected_hierarchy_reference_law_unvalidated",
+        },
     )
-
-
-def predict_empirical_inflation_factor(
-    model: EmpiricalNullInflationModel,
-    record: SiblingPairRecord,
-    *,
-    enforce_support_thresholds: bool = False,
-    support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
-) -> float:
-    """Predict the empirical post-selection inflation for one sibling record."""
-    decision = decide_empirical_null_calibration(
-        model,
-        record,
-        enforce_support_thresholds=enforce_support_thresholds,
-        support_thresholds=support_thresholds,
-    )
-    if decision.status != "internal_admissible" or decision.c_hat is None:
-        reason = decision.descriptive_strata.get("reason", decision.status)
-        raise ValueError(
-            "Empirical-null inflation prediction is not internally admissible: "
-            f"{decision.status}; parent={record.parent!r}; reason={reason!r}."
-        )
-    return decision.c_hat
 
 
 __all__ = [
@@ -685,5 +679,4 @@ __all__ = [
     "DEFAULT_INTERNAL_SUPPORT_THRESHOLDS",
     "decide_empirical_null_calibration",
     "fit_empirical_null_inflation_model",
-    "predict_empirical_inflation_factor",
 ]

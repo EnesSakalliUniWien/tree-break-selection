@@ -6,8 +6,8 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 from benchmarks.shared.types.method_run_result import MethodRunResult
-from benchmarks.shared.util.core import _normalize_labels, _resolve_requested_cluster_count
-from benchmarks.shared.util.decomposition import _ok_result_from_labels
+from benchmarks.shared.util.core import normalize_labels
+from benchmarks.shared.util.decomposition import ok_result_from_labels
 
 
 def _run_kmeans_method(
@@ -21,9 +21,9 @@ def _run_kmeans_method(
 
     if n_samples <= 1:
         labels = np.zeros(n_samples, dtype=int)
-        return _ok_result_from_labels(labels, range(n_samples))
+        return ok_result_from_labels(labels, range(n_samples))
 
-    n_clusters = _resolve_requested_cluster_count(n_samples, params)
+    n_clusters = int(params["n_clusters"])
     n_init = int(params["n_init"])
     random_state = 42 if seed is None else int(seed)
     model = KMeans(
@@ -31,5 +31,5 @@ def _run_kmeans_method(
         n_init=n_init,
         random_state=random_state,
     )
-    labels = _normalize_labels(model.fit_predict(X))
-    return _ok_result_from_labels(labels, range(n_samples))
+    labels = normalize_labels(model.fit_predict(X))
+    return ok_result_from_labels(labels, range(n_samples))

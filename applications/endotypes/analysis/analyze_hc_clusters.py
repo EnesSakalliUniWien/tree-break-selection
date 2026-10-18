@@ -43,7 +43,7 @@ configure_matplotlib_backend()
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import fisher_exact
+from scipy.stats import false_discovery_control, fisher_exact
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -200,21 +200,6 @@ def gene_lists_per_cluster(
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-def _bh_correct(pvals: np.ndarray) -> np.ndarray:
-    """Benjamini-Hochberg FDR correction."""
-    n = len(pvals)
-    if n == 0:
-        return pvals
-    order = np.argsort(pvals)
-    ranked = np.empty(n)
-    ranked[order] = np.arange(1, n + 1)
-    adjusted = pvals * n / ranked
-    # Enforce monotonicity (step-up)
-    adjusted = np.minimum.accumulate(adjusted[np.argsort(ranked)[::-1]])[::-1]
-    adjusted = np.clip(adjusted, 0, 1)
-    return adjusted[np.argsort(np.argsort(ranked))]
-
-
 def pathway_enrichment(
     fm: pd.DataFrame,
     assign: pd.DataFrame,
@@ -264,7 +249,7 @@ def pathway_enrichment(
             continue
 
         pvals_arr = np.array(pvals)
-        qvals = _bh_correct(pvals_arr)
+        qvals = false_discovery_control(pvals_arr, method="bh")
 
         for pw, p, q, odds in zip(pathways, pvals, qvals, odds_ratios):
             a = int(cluster_data[pw].sum())
@@ -413,7 +398,7 @@ def top_pathways_chart(
     cmap = plt.cm.tab20(np.linspace(0, 1, min(20, len(cluster_ids))))
     y_pos = np.arange(n_top)
     left = np.zeros(n_top)
-    for i, cid in enumerate(cluster_ids):
+    for i, _cid in enumerate(cluster_ids):
         bar_vals = matrix[i]
         colour = cmap[i % 20]
         ax.barh(y_pos, bar_vals, left=left, color=colour, height=0.8)

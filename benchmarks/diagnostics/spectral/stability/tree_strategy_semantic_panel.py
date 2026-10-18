@@ -13,8 +13,9 @@ import math
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+
+from benchmarks.shared.util.values import finite_float
 
 SCHEMA_VERSION = "tree_strategy_semantic_panel/v1"
 
@@ -82,11 +83,6 @@ def read_table(path: Path) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
-def finite_float(value: object) -> float:
-    parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
-    return float(parsed) if np.isfinite(parsed) else math.nan
-
-
 def format_float(value: object, digits: int = 6) -> str:
     parsed = finite_float(value)
     return "" if not math.isfinite(parsed) else f"{parsed:.{digits}g}"
@@ -115,15 +111,6 @@ def method_to_lens(method: str) -> tuple[str, str, str]:
         lens = f"{weighting}__adaptive_modes_{start}_{end}"
         return "sep_adaptive_diffusion", lens, f"sep_adaptive_diffusion__{lens}"
     return "unknown", method, method
-
-
-def lens_id_from_parts(lens_family: object, weighting: object, block_name: object) -> str:
-    family = str(lens_family)
-    return f"{family}__{weighting}__{block_name}"
-
-
-def lens_id_from_lens(family: object, lens: object) -> str:
-    return f"{family}__{lens}"
 
 
 def lens_key_from_id(lens_id: object) -> tuple[str, str]:
@@ -306,26 +293,22 @@ def alpha_rows(
     if alpha_summary.empty:
         return rows
     for record in alpha_summary.itertuples(index=False):
-        status = str(getattr(record, "status", getattr(record, "row_status", "ok")))
+        status = str(record.status)
         if status != "ok" and not include_failed:
             continue
-        lens_id = str(getattr(record, "lens_id", ""))
+        lens_id = str(record.lens_id)
         family, lens = lens_key_from_id(lens_id)
         linkage = str(getattr(record, "tree_linkage_method", "average"))
         if linkage == "nan":
             linkage = "average"
         alpha = (
-            f"edge={format_float(getattr(record, 'edge_alpha', math.nan), digits=4)}; "
-            f"sibling={format_float(getattr(record, 'sibling_alpha', math.nan), digits=4)}"
+            f"edge={format_float(record.edge_alpha, digits=4)}; "
+            f"sibling={format_float(record.sibling_alpha, digits=4)}"
         )
-        score = finite_float(getattr(record, "alpha_lens_score", math.nan))
+        score = finite_float(record.alpha_lens_score)
         if not math.isfinite(score):
             score = refinement_lookup.get((family, lens), math.nan)
-        run_id = ""
-        if hasattr(record, "weighting") and hasattr(record, "block_name"):
-            run_id = f"{record.weighting}__{record.block_name}"
-        elif "__" in lens:
-            run_id = lens
+        run_id = f"{record.weighting}__{record.block_name}"
         rows.append(
             row_with_defaults(
                 tree_strategy="lens_alpha_sweep",
@@ -333,9 +316,7 @@ def alpha_rows(
                 linkage=linkage,
                 alpha=alpha,
                 n_clusters=finite_float(getattr(record, "n_clusters", math.nan)),
-                singleton_fraction=finite_float(
-                    getattr(record, "gene_singleton_fraction", math.nan)
-                ),
+                singleton_fraction=finite_float(record.gene_singleton_fraction),
                 medium_contexts="",
                 **{
                     "GO Jaccard": math.nan,
@@ -373,10 +354,10 @@ def feature_axis_rows(
             row_with_defaults(
                 tree_strategy="feature_axis_clustered_lens",
                 lens_family=family,
-                linkage=str(getattr(record, "tree_linkage_method", "average")),
+                linkage=str(record.tree_linkage_method),
                 alpha=(
-                    f"edge={format_float(getattr(record, 'edge_alpha', math.nan), digits=4)}; "
-                    f"sibling={format_float(getattr(record, 'sibling_alpha', math.nan), digits=4)}"
+                    f"edge={format_float(record.edge_alpha, digits=4)}; "
+                    f"sibling={format_float(record.sibling_alpha, digits=4)}"
                 ),
                 n_clusters=int(getattr(record, "n_clusters")),
                 singleton_fraction=finite_float(getattr(record, "singleton_gene_fraction")),

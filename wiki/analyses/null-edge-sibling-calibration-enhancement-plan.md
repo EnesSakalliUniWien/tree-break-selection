@@ -2,10 +2,9 @@
 title: Null Edge Sibling Calibration Enhancement Plan
 type: analysis
 status: reviewed
-updated: 2026-06-06
+updated: 2026-08-08
 sources:
   - docs/superpowers/specs/2026-06-06-path-conditioned-barycentric-action-diagnostics-design.md
-  - wiki/sources/path-conditioned-barycentric-action-diagnostics-20260606.md
   - wiki/sources/barycentric-action-equation-diagnostic-20260606.md
   - wiki/sources/root-selected-region-margins-20260603.md
   - wiki/sources/selected-tail-promotion-gate-debug-20260605.md
@@ -63,8 +62,6 @@ support, precision, and held-out tail validation pass in predeclared contexts.
 
 ## Evidence
 
-- [[path-conditioned-barycentric-action-diagnostics-20260606]] records the
-  implemented diagnostic outputs and guard-panel result.
 - [[barycentric-action-equation-diagnostic-20260606]] separates selected-tail
   calibration from KAK traversal fragmentation.
 - [[root-selected-region-margins-20260603]] records edge-opening and selected

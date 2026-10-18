@@ -18,93 +18,20 @@ from scipy.stats import norm, spearmanr
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
 from benchmarks.shared.plots.cover_page import GROUP_ORDER, category_group
-from benchmarks.shared.result_records import RESULT_COLUMNS
+from benchmarks.shared.result_records import NUMERIC_RESULT_COLUMNS, RESULT_COLUMNS
 from benchmarks.shared.util.pdf.layout import PDF_PAGE_SIZE_INCHES, prepare_pdf_figure
-
-_NUMERIC_COLUMNS = (
-    "test_case",
-    "true_clusters",
-    "found_clusters",
-    "samples",
-    "features",
-    "noise",
-    "ari",
-    "nmi",
-    "ami",
-    "purity",
-    "homogeneity",
-    "completeness",
-    "v_measure",
-    "fowlkes_mallows",
-    "macro_recall",
-    "macro_f1",
-    "worst_cluster_recall",
-    "n_singleton_clusters",
-    "singleton_fraction",
-    "median_cluster_size",
-    "largest_cluster_fraction",
-    "effective_cluster_count",
-    "cluster_size_entropy",
-    "cluster_size_gini",
-    "noise_label_fraction",
-    "silhouette_score",
-    "davies_bouldin_index",
-    "calinski_harabasz_index",
-    "outlier_precision",
-    "outlier_recall",
-    "outlier_f1",
-    "singleton_outlier_isolated",
-    "grouped_outlier_cluster_recovered",
-    "cluster_count_abs_error",
-    "over_split",
-    "under_split",
-    "tree_build_sec",
-    "populate_divergences_sec",
-    "edge_gate_sec",
-    "edge_gate_contrast_covariance_sec",
-    "edge_gate_projection_sec",
-    "edge_gate_wald_statistic_sec",
-    "edge_gate_tree_bh_sec",
-    "spectral_context_sec",
-    "tangent_whitening_sec",
-    "eigensolve_sec",
-    "pca_projection_sec",
-    "sibling_gate_sec",
-    "sibling_gate_pair_record_collection_sec",
-    "sibling_gate_inflation_fit_sec",
-    "sibling_gate_adjusted_tests_sec",
-    "sibling_gate_fdr_sec",
-    "traversal_sec",
-    "labels_length",
-    "benchmark_repeat",
-)
-
-_OLD_RESULT_COLUMNS = frozenset(
-    {
-        "Test",
-        "Case_Name",
-        "Case_Category",
-        "Method",
-        "Params",
-        "True",
-        "Found",
-        "Samples",
-        "Features",
-        "Noise",
-        "ARI",
-        "NMI",
-        "Purity",
-        "Status",
-        "Skip_Reason",
-        "Labels_Length",
-    }
-)
+from benchmarks.shared.util.values import bool_series
 
 _AUDIT_SUMMARY_REQUIRED_COLUMNS = frozenset(
     {
         "node_id",
         "leaf_count",
+        "is_leaf",
         "parent_node",
+        "branch_length",
+        "Child_Parent_Divergence_Significant",
+        "Sibling_Divergence_Skipped",
+        "Sibling_Divergence_Invalid",
         "Sibling_Divergence_P_Value",
         "Sibling_BH_Different",
     }
@@ -191,12 +118,6 @@ class BenchmarkRelationshipArtifacts:
 
 def normalize_results_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize current-schema result columns."""
-    old_columns = sorted(_OLD_RESULT_COLUMNS.intersection(df.columns))
-    if old_columns:
-        raise ValueError(
-            "Benchmark results must use canonical snake_case columns; "
-            f"found old result columns: {old_columns}."
-        )
     unknown_columns = sorted(set(df.columns).difference(RESULT_COLUMNS))
     if unknown_columns:
         raise ValueError(
@@ -209,7 +130,7 @@ def normalize_results_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     for column in RESULT_COLUMNS:
         normalized[column] = df[column] if column in df.columns else np.nan
 
-    for col in _NUMERIC_COLUMNS:
+    for col in NUMERIC_RESULT_COLUMNS:
         normalized[col] = pd.to_numeric(normalized[col], errors="coerce")
 
     for col in (
@@ -221,6 +142,9 @@ def normalize_results_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         "benchmark_grid",
         "params",
         "skip_reason",
+        "unsupported_reason_code",
+        "unsupported_stage",
+        "unsupported_reason",
     ):
         normalized[col] = normalized[col].fillna("").astype(str)
 
@@ -719,44 +643,33 @@ def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
     root_p = _select_root_split_pvalue(root_row)
     root_split_rejected = _root_split_rejected_from_sibling_decision(root_row)
 
-    sibling_valid = pd.Series(True, index=df.index, dtype=bool)
-    if "Sibling_Divergence_Skipped" in df.columns:
-        sibling_valid &= ~_coerce_bool_series(df["Sibling_Divergence_Skipped"])
-    if "Sibling_Divergence_Invalid" in df.columns:
-        sibling_valid &= ~_coerce_bool_series(df["Sibling_Divergence_Invalid"])
-    sibling_valid &= df["Sibling_BH_Different"].notna()
+    sibling_valid = (
+        ~bool_series(df["Sibling_Divergence_Skipped"])
+        & ~bool_series(df["Sibling_Divergence_Invalid"])
+        & df["Sibling_BH_Different"].notna()
+    )
     sibling_total = int(sibling_valid.sum())
     if sibling_total > 0:
         sig_sibling_fraction = float(
-            _coerce_bool_series(df.loc[sibling_valid, "Sibling_BH_Different"]).mean()
+            bool_series(df.loc[sibling_valid, "Sibling_BH_Different"]).mean()
         )
     else:
         sig_sibling_fraction = np.nan
 
-    edge_valid = pd.Series(df["parent_node"].notna(), index=df.index, dtype=bool)
-    if "Child_Parent_Divergence_Invalid" in df.columns:
-        edge_valid &= ~_coerce_bool_series(df["Child_Parent_Divergence_Invalid"])
-    if "Child_Parent_Divergence_Significant" in df.columns:
-        edge_valid &= df["Child_Parent_Divergence_Significant"].notna()
+    edge_valid = df["parent_node"].notna() & df["Child_Parent_Divergence_Significant"].notna()
     edge_total = int(edge_valid.sum())
-    if "Child_Parent_Divergence_Significant" in df.columns and edge_total > 0:
+    if edge_total > 0:
         sig_edge_fraction = float(
-            _coerce_bool_series(df.loc[edge_valid, "Child_Parent_Divergence_Significant"]).mean()
+            bool_series(df.loc[edge_valid, "Child_Parent_Divergence_Significant"]).mean()
         )
     else:
         sig_edge_fraction = np.nan
 
-    is_leaf = (
-        _coerce_bool_series(df["is_leaf"]) if "is_leaf" in df.columns else df["leaf_count"].eq(1)
+    internal_nodes = float((~bool_series(df["is_leaf"])).sum())
+    branch_lengths = pd.to_numeric(df["branch_length"], errors="coerce")
+    mean_branch_length = (
+        float(branch_lengths.dropna().mean()) if branch_lengths.notna().any() else np.nan
     )
-    internal_nodes = float((~is_leaf).sum())
-    if "branch_length" in df.columns:
-        branch_lengths = pd.to_numeric(df["branch_length"], errors="coerce")
-        mean_branch_length = (
-            float(branch_lengths.dropna().mean()) if branch_lengths.notna().any() else np.nan
-        )
-    else:
-        mean_branch_length = np.nan
     neglog_root_p = (
         float(-np.log10(max(root_p, 1e-12))) if np.isfinite(root_p) and root_p > 0.0 else np.nan
     )
@@ -788,14 +701,7 @@ def _select_root_split_pvalue(root_row: pd.Series) -> float:
 def _root_split_rejected_from_sibling_decision(root_row: pd.Series) -> bool:
     if "Sibling_BH_Different" not in root_row.index or pd.isna(root_row["Sibling_BH_Different"]):
         return True
-    return not bool(_coerce_bool_series(pd.Series([root_row["Sibling_BH_Different"]])).iloc[0])
-
-
-def _coerce_bool_series(series: pd.Series) -> pd.Series:
-    if series.dtype == bool:
-        return series.fillna(False)
-    lowered = series.astype(str).str.strip().str.lower()
-    return lowered.isin({"1", "true", "t", "yes"})
+    return not bool(bool_series(pd.Series([root_row["Sibling_BH_Different"]])).iloc[0])
 
 
 def _fit_relationship_model(

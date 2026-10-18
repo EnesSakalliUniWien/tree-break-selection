@@ -1,7 +1,7 @@
 """Data-independent sibling gate diagnostics.
 
 This panel tests same-data fixes for the selected sibling null-law failure
-without cross-fitting. The candidate repair removes PCA rows and projection
+under the same-data selected topology. The candidate repair removes PCA rows and projection
 dimension learned from the tested sample, then evaluates predeclared fixed
 global, coordinate-wise, or feature-block Wald gates with a selected-topology
 penalty.
@@ -20,11 +20,25 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2
+
+from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
+    evaluate_production_admissibility_components,
+    summarize_production_admissibility_contracts,
+)
+from benchmarks.shared.generators.generate_case_data import generate_case_data
+from benchmarks.shared.util.values import parse_csv_list
+from benchmarks.validation.statistics.selected_edge_type1_geometry import (
+    build_tree_from_data,
+    case_contract,
+    regenerate_null_case,
+)
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     build_contrast_covariance,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
-    fixed_coordinate_bh_p_value,
+    fixed_coordinate_adjusted_p_value,
     fixed_subspace_sibling_p_value,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
@@ -33,19 +47,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     bernoulli_feature_space_from_columns,
-)
-
-from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
-    evaluate_production_admissibility_components,
-    summarize_production_admissibility_contracts,
-)
-from benchmarks.shared.generators.generate_case_data import generate_case_data
-from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _build_tree_from_data,
-    _case_contract,
-    _select_cases,
-    parse_names,
-    regenerate_null_case,
 )
 
 STUDY_ROLE = "diagnostic_data_independent_sibling_gate_not_calibration"
@@ -169,7 +170,7 @@ def data_independent_coordinate_gate_p_value(
     if candidate_method == "coordinate_bonferroni":
         return float(min(1.0, vector.size * float(np.min(coordinate_p))))
     if candidate_method == "coordinate_bh":
-        return fixed_coordinate_bh_p_value(vector)
+        return fixed_coordinate_adjusted_p_value(vector, method="bh")
     raise ValueError(f"Unknown candidate_method: {candidate_method!r}.")
 
 
@@ -337,8 +338,8 @@ def _rows_for_replicate(
         data_role=data_role,
         seed=data_seed,
     )
-    tree = _build_tree_from_data(data)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree = build_tree_from_data(data)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     rows: list[dict[str, object]] = []
     for parent in tree.nodes:
         children = identify_binary_sibling_children(tree, parent)
@@ -615,7 +616,7 @@ def run_data_independent_sibling_gate_panel(
         f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     )
     rows: list[dict[str, object]] = []
-    for case in _select_cases(suite=config.suite, case_names=config.case_names):
+    for case in select_cases(suite=config.suite, case_names=config.case_names):
         (
             case_id,
             source_family,
@@ -623,7 +624,7 @@ def run_data_independent_sibling_gate_panel(
             n_samples,
             n_features,
             n_categories,
-        ) = _case_contract(case)
+        ) = case_contract(case)
         if source_family not in {"binary_template", "categorical_multinomial"}:
             raise ValueError(
                 "Data-independent sibling gate V1 supports binary and direct "
@@ -736,15 +737,15 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse_args(argv)
     selected_topology_penalties = tuple(
-        float(value) for value in parse_names(args.selected_topology_penalties)
+        float(value) for value in parse_csv_list(args.selected_topology_penalties)
     )
     outputs = run_data_independent_sibling_gate_panel(
         DataIndependentSiblingGateConfig(
             output_dir=args.output_dir,
             suite=str(args.suite),
-            case_names=parse_names(args.case_names),
-            data_roles=validate_data_roles(parse_names(args.data_roles)),
-            candidate_methods=validate_candidate_methods(parse_names(args.candidate_methods)),
+            case_names=parse_csv_list(args.case_names),
+            data_roles=validate_data_roles(parse_csv_list(args.data_roles)),
+            candidate_methods=validate_candidate_methods(parse_csv_list(args.candidate_methods)),
             sibling_alpha=float(args.sibling_alpha),
             selected_topology_penalties=validate_selected_topology_penalties(
                 selected_topology_penalties
@@ -755,7 +756,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             min_signal_rejection_rate=float(args.min_signal_rejection_rate),
         )
     )
-    print(json.dumps({key: str(value) for key, value in outputs.items()}, indent=2))
+    print_diagnostic_output_paths(outputs)
 
 
 if __name__ == "__main__":

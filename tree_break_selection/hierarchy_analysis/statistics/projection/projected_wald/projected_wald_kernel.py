@@ -45,6 +45,11 @@ def run_projected_wald_kernel(
 ) -> ProjectedWaldResult:
     """Project a standardized vector and compute Wald statistic/p-value.
 
+    Both nominal and contrast-energy rank targets are extended through complete
+    numerical eigenvalue groups by the projection-basis helper. This makes
+    selection invariant to rotations inside an exact repeated eigenspace; it
+    does not establish a chi-square law for contrast-selected rank.
+
     Returns
     -------
     ProjectedWaldResult

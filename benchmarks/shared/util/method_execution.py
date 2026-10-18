@@ -5,6 +5,25 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
+
+from benchmarks.shared.benchmark_grid import (
+    benchmark_param_metadata,
+    strip_benchmark_metadata,
+)
+from benchmarks.shared.metrics import calculate_clustering_metrics, nan_clustering_metrics
+from benchmarks.shared.result_records import (
+    BenchmarkResultRow,
+    ComputedResultRecord,
+    build_benchmark_result_row,
+    build_computed_result_record,
+)
+from benchmarks.shared.runners.dispatch import run_clustering_result
+from benchmarks.shared.types import MethodSpec
+from benchmarks.shared.util.decomposition import create_report_dataframe_from_labels
+from benchmarks.shared.util.execution_mode import coerce_bool_param
+from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
+from benchmarks.shared.util.time import BENCHMARK_STAGE_TIMING_KEYS
+from tree_break_selection.tree.construction import DEFAULT_BINARY_TREE_DISTANCE_METRIC
 from tree_break_selection.tree.continuous_distance import (
     CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
     CONTINUOUS_TREE_DISTANCE_METRIC,
@@ -14,36 +33,15 @@ from tree_break_selection.tree.continuous_distance import (
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
-
-from benchmarks.shared.benchmark_grid import (
-    benchmark_param_metadata,
-    strip_benchmark_metadata,
-)
-from benchmarks.shared.metrics import _calculate_ari_nmi_purity_metrics
-from benchmarks.shared.result_records import (
-    BenchmarkResultRow,
-    ComputedResultRecord,
-    build_benchmark_result_row,
-    build_computed_result_record,
-)
-from benchmarks.shared.runners.dispatch import run_clustering_result
-from benchmarks.shared.types import MethodSpec
-from benchmarks.shared.util.decomposition import _create_report_dataframe_from_labels
-from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
-from benchmarks.shared.util.time import BENCHMARK_STAGE_TIMING_KEYS
 
 TBS_TREE_DISTANCE_SOURCE_KEY = "tree_distance_source"
 TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC = "feature_metric"
 TBS_TREE_DISTANCE_SOURCE_PRECOMPUTED = "precomputed"
 
 
-def _slugify(value: str) -> str:
-    return "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in value)
-
-
-def _require_precomputed_tbs_distance_metric(
+def require_precomputed_tbs_distance_metric(
     *,
     meta: dict[str, object],
     case_name: str,
@@ -69,7 +67,7 @@ def _report_for_metric_evaluation(
 ) -> pd.DataFrame:
     """Return a report table aligned to the sample index used for metrics."""
     if report_df is None:
-        return _create_report_dataframe_from_labels(labels, sample_index)
+        return create_report_dataframe_from_labels(labels, sample_index)
     if "cluster_id" not in report_df.columns:
         raise ValueError("Runner report_df must include a 'cluster_id' column.")
     if len(report_df.index) != len(sample_index):
@@ -93,54 +91,6 @@ def _report_for_metric_evaluation(
     raise ValueError(
         "Runner report_df index must match sample ids. "
         f"Missing={list(missing[:5])}, extra={list(extras[:5])}."
-    )
-
-
-def _build_method_failure_row(
-    *,
-    method_id: str,
-    benchmark_metadata: dict[str, object],
-    recorded_run_params: dict[str, object],
-    case_idx: int,
-    case_name: str,
-    meta: dict[str, object],
-    error: Exception,
-) -> BenchmarkResultRow:
-    """Represent a method runtime failure as a benchmark skip row."""
-    return build_benchmark_result_row(
-        test_case=case_idx,
-        case_id=case_name,
-        case_category=meta["category"],
-        source_family=meta["source_family"],
-        feature_representation=meta["feature_representation"],
-        method=method_id,
-        run_params=recorded_run_params,
-        run_id=str(benchmark_metadata["run_id"]),
-        benchmark_class=str(benchmark_metadata["benchmark_class"]),
-        benchmark_grid=str(benchmark_metadata["benchmark_grid"]),
-        benchmark_repeat=int(benchmark_metadata["benchmark_repeat"]),
-        true_clusters=int(meta["n_clusters"]),
-        found_clusters=0,
-        samples=int(meta["n_samples"]),
-        features=int(meta["n_features"]),
-        noise=float(meta["noise"]),
-        ari=np.nan,
-        nmi=np.nan,
-        purity=np.nan,
-        macro_recall=np.nan,
-        macro_f1=np.nan,
-        worst_cluster_recall=np.nan,
-        outlier_precision=np.nan,
-        outlier_recall=np.nan,
-        outlier_f1=np.nan,
-        singleton_outlier_isolated=np.nan,
-        grouped_outlier_cluster_recovered=np.nan,
-        cluster_count_abs_error=np.nan,
-        over_split=np.nan,
-        under_split=np.nan,
-        status="skip",
-        skip_reason=str(error),
-        labels_length=0,
     )
 
 
@@ -181,9 +131,15 @@ def _should_fail_closed_hard_overlap_internal_filter(
         return False
     if not str(method_id).startswith("tbs"):
         return False
-    if not bool(recorded_run_params.get("enforce_internal_support_thresholds", False)):
+    if not coerce_bool_param(
+        recorded_run_params.get("enforce_internal_support_thresholds", False),
+        name="enforce_internal_support_thresholds",
+    ):
         return False
-    if not bool(recorded_run_params.get("spectral_include_internal_barycenters", False)):
+    if not coerce_bool_param(
+        recorded_run_params.get("spectral_include_internal_barycenters", False),
+        name="spectral_include_internal_barycenters",
+    ):
         return False
     if true_clusters <= 1:
         return False
@@ -210,8 +166,7 @@ def run_single_method_once(
     meta: dict[str, object],
     distance_matrix: np.ndarray | None,
     distance_condensed: np.ndarray | None,
-    matrix_audit: bool,
-) -> tuple[BenchmarkResultRow, ComputedResultRecord | None, tuple[str, dict[str, object]] | None]:
+) -> tuple[BenchmarkResultRow, ComputedResultRecord | None]:
     """Execute one method+params run and return typed outputs."""
     benchmark_metadata = benchmark_param_metadata(
         method_id,
@@ -248,10 +203,14 @@ def run_single_method_once(
         if branch_length_method == BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS:
             recorded_run_params.setdefault(
                 "branch_length_optimization_target_metric",
-                BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+                BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
             )
             recorded_run_params.setdefault("branch_length_optimization_pair_sample_size", 100_000)
             recorded_run_params.setdefault("branch_length_optimization_random_state", 0)
+            recorded_run_params.setdefault(
+                "branch_length_optimization_apply_nonconverged",
+                False,
+            )
     if method_id in TBS_DISTANCE_TREE_METHODS:
         metric = str(run_params["tree_distance_metric"])
         requires_precomputed_tbs_distance = bool(meta["requires_precomputed_tbs_distance"])
@@ -262,7 +221,7 @@ def run_single_method_once(
                     "'precomputed_distance_condensed' for TBS but it is missing."
                 )
             distance_condensed_for_run = distance_condensed
-            recorded_run_params["tree_distance_metric"] = _require_precomputed_tbs_distance_metric(
+            recorded_run_params["tree_distance_metric"] = require_precomputed_tbs_distance_metric(
                 meta=meta,
                 case_name=str(meta["name"]),
             )
@@ -286,6 +245,8 @@ def run_single_method_once(
                     data_t.values,
                     feature_space,
                 )
+            elif metric == DEFAULT_BINARY_TREE_DISTANCE_METRIC and distance_condensed is not None:
+                distance_condensed_for_run = distance_condensed
             else:
                 distance_condensed_for_run = pdist(data_t.values, metric=metric)
             recorded_run_params["tree_distance_metric"] = metric
@@ -293,32 +254,17 @@ def run_single_method_once(
                 TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC
             )
 
-    try:
-        result = run_clustering_result(
-            data_df=data_t,
-            method_id=method_id,
-            params=run_params,
-            seed=run_seed,
-            significance_level=significance_level,
-            edge_alpha=edge_alpha,
-            distance_matrix=distance_matrix,
-            distance_condensed=distance_condensed_for_run,
-            feature_space=feature_space,
-        )
-    except Exception as exc:
-        return (
-            _build_method_failure_row(
-                method_id=method_id,
-                benchmark_metadata=benchmark_metadata,
-                recorded_run_params=recorded_run_params,
-                case_idx=case_idx,
-                case_name=case_name,
-                meta=meta,
-                error=exc,
-            ),
-            None,
-            None,
-        )
+    result = run_clustering_result(
+        data_df=data_t,
+        method_id=method_id,
+        params=run_params,
+        seed=run_seed,
+        significance_level=significance_level,
+        edge_alpha=edge_alpha,
+        distance_matrix=distance_matrix,
+        distance_condensed=distance_condensed_for_run,
+        feature_space=feature_space,
+    )
 
     true_clusters_raw = meta["n_clusters"]
     true_clusters = int(true_clusters_raw)
@@ -335,22 +281,10 @@ def run_single_method_once(
         result=result,
         recorded_run_params=recorded_run_params,
     ):
-        return (
-            _build_method_failure_row(
-                method_id=method_id,
-                benchmark_metadata=benchmark_metadata,
-                recorded_run_params=recorded_run_params,
-                case_idx=case_idx,
-                case_name=case_name,
-                meta=meta,
-                error=ValueError(
-                    "Fail-closed hard-overlap internal support guard: "
-                    "guarded internal-barycenter TBS returned one cluster without "
-                    "admissible split support."
-                ),
-            ),
-            None,
-            None,
+        raise ValueError(
+            "Fail-closed hard-overlap internal support guard: "
+            "guarded internal-barycenter TBS returned one cluster without "
+            "admissible split support."
         )
 
     if result.status == "ok" and result.labels is not None:
@@ -358,65 +292,17 @@ def run_single_method_once(
         report_df = _report_for_metric_evaluation(result.report_df, labels, data_t.index)
         found_clusters = result.found_clusters
         labels_len = len(labels)
-        metrics = _calculate_ari_nmi_purity_metrics(
+        metrics = calculate_clustering_metrics(
             report_df,
             data_t.index,
             y_t,
             meta,
             feature_matrix=data_t,
         )
-        ari = metrics.ari
-        nmi = metrics.nmi
-        ami = metrics.ami
-        purity = metrics.purity
-        homogeneity = metrics.homogeneity
-        completeness = metrics.completeness
-        v_measure = metrics.v_measure
-        fowlkes_mallows = metrics.fowlkes_mallows
-        macro_recall = metrics.macro_recall
-        macro_f1 = metrics.macro_f1
-        worst_cluster_recall = metrics.worst_cluster_recall
-        n_singleton_clusters = metrics.n_singleton_clusters
-        singleton_fraction = metrics.singleton_fraction
-        median_cluster_size = metrics.median_cluster_size
-        largest_cluster_fraction = metrics.largest_cluster_fraction
-        effective_cluster_count = metrics.effective_cluster_count
-        cluster_size_entropy = metrics.cluster_size_entropy
-        cluster_size_gini = metrics.cluster_size_gini
-        noise_label_fraction = metrics.noise_label_fraction
-        internal_silhouette = metrics.silhouette_score
-        davies_bouldin = metrics.davies_bouldin_index
-        calinski_harabasz = metrics.calinski_harabasz_index
-        outlier_precision = metrics.outlier_precision
-        outlier_recall = metrics.outlier_recall
-        outlier_f1 = metrics.outlier_f1
-        singleton_outlier_isolated = metrics.singleton_outlier_isolated
-        grouped_outlier_cluster_recovered = metrics.grouped_outlier_cluster_recovered
     else:
         labels_len = 0
         found_clusters = 0
-        ari, nmi, ami, purity = np.nan, np.nan, np.nan, np.nan
-        homogeneity, completeness, v_measure, fowlkes_mallows = (
-            np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
-        )
-        macro_recall, macro_f1, worst_cluster_recall = np.nan, np.nan, np.nan
-        n_singleton_clusters = np.nan
-        singleton_fraction = np.nan
-        median_cluster_size = np.nan
-        largest_cluster_fraction = np.nan
-        effective_cluster_count = np.nan
-        cluster_size_entropy = np.nan
-        cluster_size_gini = np.nan
-        noise_label_fraction = np.nan
-        internal_silhouette = np.nan
-        davies_bouldin = np.nan
-        calinski_harabasz = np.nan
-        outlier_precision, outlier_recall, outlier_f1 = np.nan, np.nan, np.nan
-        singleton_outlier_isolated = np.nan
-        grouped_outlier_cluster_recovered = np.nan
+        metrics = nan_clustering_metrics()
 
     if result.status == "ok":
         cluster_count_abs_error = float(abs(int(found_clusters) - true_clusters))
@@ -433,6 +319,11 @@ def run_single_method_once(
         case_category=meta["category"],
         source_family=meta["source_family"],
         feature_representation=meta["feature_representation"],
+        simulation_model=meta["simulation_model"],
+        observation_model=meta["observation_model"],
+        benchmark_intent=meta["benchmark_intent"],
+        scientific_caution=meta["scientific_caution"],
+        recommended_simulation_family=meta["recommended_simulation_family"],
         method=method_id,
         run_params=recorded_run_params,
         run_id=str(benchmark_metadata["run_id"]),
@@ -444,38 +335,13 @@ def run_single_method_once(
         samples=meta["n_samples"],
         features=meta["n_features"],
         noise=meta["noise"],
-        ari=ari,
-        nmi=nmi,
-        ami=ami,
-        purity=purity,
-        homogeneity=homogeneity,
-        completeness=completeness,
-        v_measure=v_measure,
-        fowlkes_mallows=fowlkes_mallows,
-        macro_recall=macro_recall,
-        macro_f1=macro_f1,
-        worst_cluster_recall=worst_cluster_recall,
-        n_singleton_clusters=n_singleton_clusters,
-        singleton_fraction=singleton_fraction,
-        median_cluster_size=median_cluster_size,
-        largest_cluster_fraction=largest_cluster_fraction,
-        effective_cluster_count=effective_cluster_count,
-        cluster_size_entropy=cluster_size_entropy,
-        cluster_size_gini=cluster_size_gini,
-        noise_label_fraction=noise_label_fraction,
-        silhouette_score=internal_silhouette,
-        davies_bouldin_index=davies_bouldin,
-        calinski_harabasz_index=calinski_harabasz,
-        outlier_precision=outlier_precision,
-        outlier_recall=outlier_recall,
-        outlier_f1=outlier_f1,
-        singleton_outlier_isolated=singleton_outlier_isolated,
-        grouped_outlier_cluster_recovered=grouped_outlier_cluster_recovered,
+        metrics=metrics,
         cluster_count_abs_error=cluster_count_abs_error,
         over_split=over_split,
         under_split=under_split,
         status=result.status,
         skip_reason=result.skip_reason,
+        unsupported_reason=result.unsupported_reason,
         labels_length=labels_len,
         stage_timings=stage_timings,
     )
@@ -494,24 +360,14 @@ def run_single_method_once(
             benchmark_grid=str(benchmark_metadata["benchmark_grid"]),
             benchmark_repeat=int(benchmark_metadata["benchmark_repeat"]),
             params=recorded_run_params,
-            ari=float(ari) if np.isfinite(ari) else np.nan,
-            nmi=float(nmi) if np.isfinite(nmi) else np.nan,
-            purity=float(purity) if np.isfinite(purity) else np.nan,
-            outlier_precision=float(outlier_precision)
-            if np.isfinite(outlier_precision)
-            else np.nan,
-            outlier_recall=float(outlier_recall) if np.isfinite(outlier_recall) else np.nan,
-            outlier_f1=float(outlier_f1) if np.isfinite(outlier_f1) else np.nan,
-            singleton_outlier_isolated=(
-                float(singleton_outlier_isolated)
-                if np.isfinite(singleton_outlier_isolated)
-                else np.nan
-            ),
-            grouped_outlier_cluster_recovered=(
-                float(grouped_outlier_cluster_recovered)
-                if np.isfinite(grouped_outlier_cluster_recovered)
-                else np.nan
-            ),
+            ari=metrics.ari,
+            nmi=metrics.nmi,
+            purity=metrics.purity,
+            outlier_precision=metrics.outlier_precision,
+            outlier_recall=metrics.outlier_recall,
+            outlier_f1=metrics.outlier_f1,
+            singleton_outlier_isolated=metrics.singleton_outlier_isolated,
+            grouped_outlier_cluster_recovered=metrics.grouped_outlier_cluster_recovered,
             labels=result.labels,
             data=data_t,
             meta=meta_run,
@@ -522,20 +378,7 @@ def run_single_method_once(
             annotations=result.extra.get("annotations") if result.extra else None,
         )
 
-    method_audit = None
-    if matrix_audit:
-        method_name = _slugify(method_id)
-        params_slug = _slugify(result_row.params_display)
-        method_tag = method_name if not params_slug else f"{method_name}__{params_slug}"
-        matrices: dict[str, object] = {}
-        if method_id.startswith("tbs"):
-            matrices["distance_condensed"] = distance_condensed_for_run
-        if result.extra and result.extra.get("linkage_matrix") is not None:
-            matrices["linkage_matrix"] = result.extra.get("linkage_matrix")
-        if matrices:
-            method_audit = (method_tag, matrices)
-
-    return result_row, computed_result, method_audit
+    return result_row, computed_result
 
 
-__all__ = ["run_single_method_once"]
+__all__ = ["require_precomputed_tbs_distance_metric", "run_single_method_once"]

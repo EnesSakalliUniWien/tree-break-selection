@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "completed_manifest_required": true,
+  "datasets_and_input_hashes_regenerated": 4200,
+  "unique_dataset_seeds": 4200,
+  "method_alpha_runs_checked": 23800,
+  "node_rows_checked": 1184337,
+  "raw_p_value_law_checks": 1184337,
+  "executed_p_value_law_checks": 337175,
+  "audited_run_aggregates_reconstructed": 19595,
+  "summary_and_tail_numeric_checks": 4140,
+  "holm_partition_family_size": 34,
+  "holm_root_tail_family_size": 272,
+  "unavailable_results_kept_separate": true,
+  "actual_split_and_pass_through_distinguished": true,
+  "integer_population_mixture_truth_verified": true,
+  "rank_equals_df_verified_all_nodes": true,
+  "deterministic_reruns": 39,
+  "source_hashes_unchanged": true,
+  "limitations": [
+    "Node tables contain sibling ranks, not all edge spectral ranks or raw MP counts; edge-rank aggregate fields are verified on deterministic reruns only.",
+    "This verifies extraction and calculations, not a mathematical error-control theorem."
+  ],
+  "raw_artifact_sha256": {
+    "runs.csv": "bf29764c3879980837fa10bc0a8b502c00bdef958c8b34ec36d44e4f19dacf79",
+    "nodes.csv.gz": "5150a5ac81f2e0c504deeab7f401fb0d3f274ce9f6e268ad0b73d38dcf8dc544",
+    "summary.csv": "3304dbc7a372ce6adc95ca770c2343252f161424e7a475894d29d9644fba6028",
+    "root_tails.csv": "d17cdfc1f54f4632891a2e8e61957d57006700b4ea3597ef9a17997f4f3e6a60"
+  }
+}

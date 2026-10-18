@@ -2,7 +2,7 @@
 title: Full Graphtools Tree Consensus Gate 2026-07-06
 type: source
 status: reviewed
-updated: 2026-07-14
+updated: 2026-10-14
 sources:
   - benchmarks/results/run_20260706_170815Z_full_graphtools_tree_consensus/full_benchmark_comparison.csv
   - benchmarks/results/run_20260706_170815Z_full_graphtools_tree_consensus/benchmark_performance_grid_summary.csv
@@ -49,10 +49,7 @@ sources:
   - reports/selected_node_adaptive_law_replay_20260709/selected_node_adaptive_law_method_summary.csv
   - reports/selected_node_adaptive_law_replay_20260709/selected_node_adaptive_law_case_summary.csv
   - reports/selected_node_adaptive_law_replay_20260709/selected_node_adaptive_law_external_audit.csv
-  - .gitmodules
   - pyproject.toml
-  - benchmarks/validation/tree/brancharchitect_tree_comparison.py
-  - tests/validation/tree/194_test_brancharchitect_tree_comparison.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/runners/tbs_diffusion_runner.py
   - benchmarks/shared/runners/tbs_runner.py
@@ -211,12 +208,11 @@ but it is not by itself a production-default promotion for the broader method.
   records BranchArchitect distance metrics for all `315` pairwise comparisons;
   interpolation movement events are computed for `140` leaf-limited pairs and
   skipped by the explicit leaf cap for `175` larger pairs.
-- The repository now pins that external implementation at a concrete commit
-  under `vendor/BranchArchitect` as a git submodule. The optional
-  `brancharchitect` dependency extra contains only the additional runtime
-  packages required by the distance/interpolation adapter. BranchArchitect is
-  MIT-licensed; the previously recorded GPL concern remains specific to the
-  graphtools/tasklogger stack.
+- The repository pinned that external implementation as the
+  `vendor/BranchArchitect` git submodule with a `brancharchitect` extra until
+  2026-10-14, when the submodule, the extra and the comparison adapter were
+  removed. BranchArchitect is MIT-licensed; the previously recorded GPL concern
+  remains specific to the graphtools/tasklogger stack.
 - The BranchArchitect comparison supports the diagnosis that the real
   fail-closed under-splits are not solved by choosing among the current
   topology cells or by inspecting NNLS branch lengths after the fact: the gate

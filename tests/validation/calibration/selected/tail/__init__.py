@@ -1,1 +1,0 @@
-"""Selected-tail calibration tests."""

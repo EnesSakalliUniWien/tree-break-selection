@@ -11,19 +11,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
 import pandas as pd
-from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
-    DEFAULT_EDGE_ALPHA,
-    DEFAULT_SIBLING_ALPHA,
-)
 
+from benchmarks.cloud import sharding
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_geometry_covariates import (
     CANDIDATE_EQUATIONS,
     EDGE_ACTION_BIN_LABELS,
@@ -45,11 +40,17 @@ from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_ge
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
 )
-from benchmarks.shared.env import resolve_aws_batch_shard_index as resolve_shard_index
+from benchmarks.shared.env import resolve_aws_batch_shard_index
+from benchmarks.shared.util.provenance import current_git_state
+from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
+    DEFAULT_EDGE_ALPHA,
+    DEFAULT_SIBLING_ALPHA,
+)
 
 AWS_SELECTED_TAIL_STUDY_ROLE = "aws_distributed_selected_tail_equation_diagnostic"
 SHARD_RECORDS_NAME = "selected_geometry_records.csv"
 SHARD_MANIFEST_NAME = "aws_shard_manifest.json"
+SHARD_CASE_SUMMARY_NAME = "case_summary.csv"
 COMBINED_MANIFEST_NAME = "aws_selected_tail_equation_study_manifest.json"
 
 
@@ -94,15 +95,9 @@ def validate_shard_contract(
     *, shard_index: int, shard_count: int, replicates_per_shard: int
 ) -> None:
     """Validate shard dimensions before launching compute."""
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
+    sharding.validate_shard_contract(shard_index=shard_index, shard_count=shard_count)
     if replicates_per_shard <= 0:
         raise ValueError(f"replicates_per_shard must be positive; got {replicates_per_shard!r}.")
-    if not 0 <= shard_index < shard_count:
-        raise ValueError(
-            f"shard_index must satisfy 0 <= index < shard_count; got "
-            f"{shard_index!r} with shard_count={shard_count!r}."
-        )
 
 
 def make_shard_spec(configured: AwsSelectedTailStudyConfig, shard_index: int) -> ShardSpec:
@@ -116,54 +111,7 @@ def make_shard_spec(configured: AwsSelectedTailStudyConfig, shard_index: int) ->
         shard_index=int(shard_index),
         shard_count=int(configured.shard_count),
         seed=shard_seed(base_seed=configured.base_seed, shard_index=shard_index),
-        output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
-    )
-
-
-def current_git_state() -> dict[str, object]:
-    """Capture reproducibility state without failing the benchmark."""
-    state: dict[str, object] = {
-        "build_commit": os.environ.get("TBS_GIT_COMMIT", "unknown"),
-        "build_branch": os.environ.get("TBS_GIT_BRANCH", "unknown"),
-    }
-    commands = {
-        "commit": ("git", "rev-parse", "HEAD"),
-        "branch": ("git", "branch", "--show-current"),
-        "status_short": ("git", "status", "--short"),
-    }
-    for key, command in commands.items():
-        try:
-            completed = subprocess.run(
-                command,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except (OSError, subprocess.CalledProcessError) as exc:
-            state[key] = f"unavailable:{exc}"
-        else:
-            state[key] = completed.stdout.strip()
-    return state
-
-
-def _write_json(path: Path, payload: dict[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-
-
-def sync_path_to_s3(local_path: Path, s3_uri: str) -> None:
-    """Sync a local shard or merged output directory to S3 with the AWS CLI."""
-    subprocess.run(
-        ("aws", "s3", "sync", str(local_path), s3_uri),
-        check=True,
-    )
-
-
-def sync_s3_to_path(s3_uri: str, local_path: Path) -> None:
-    """Sync S3 shard outputs into the merge job's local filesystem."""
-    local_path.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        ("aws", "s3", "sync", s3_uri, str(local_path)),
-        check=True,
+        output_dir=sharding.shard_dir(configured.output_dir, shard_index),
     )
 
 
@@ -196,19 +144,10 @@ def run_shard(configured: AwsSelectedTailStudyConfig, shard_index: int) -> dict[
             "with the merge command before interpreting tail-law support."
         ),
     }
-    _write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
+    sharding.write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(
-            spec.output_dir, f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}"
-        )
+        sharding.publish_shard(spec.output_dir, configured.s3_uri, shard_index)
     return outputs
-
-
-def iter_expected_shard_dirs(output_dir: Path, shard_count: int) -> tuple[Path, ...]:
-    """Return the canonical shard directories for a completed array job."""
-    if shard_count <= 0:
-        raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    return tuple(output_dir / "shards" / f"shard_{index:04d}" for index in range(shard_count))
 
 
 def load_shard_records(shard_dir: Path) -> pd.DataFrame:
@@ -219,6 +158,12 @@ def load_shard_records(shard_dir: Path) -> pd.DataFrame:
         raise FileNotFoundError(f"Missing shard records: {records_path}")
     if not manifest_path.exists():
         raise FileNotFoundError(f"Missing shard manifest: {manifest_path}")
+
+    case_summary = pd.read_csv(shard_dir / SHARD_CASE_SUMMARY_NAME)
+    failed = case_summary.loc[case_summary["status"].astype(str).ne("ok")]
+    if not failed.empty:
+        reasons = dict(zip(failed["case_id"].astype(str), failed["skip_reason"].astype(str)))
+        raise ValueError(f"Shard {shard_dir} has cases that did not run: {reasons!r}")
 
     manifest = json.loads(manifest_path.read_text())
     shard_index = int(manifest["shard_index"])
@@ -344,18 +289,15 @@ def write_combined_outputs(
             "fallback."
         ),
     }
-    _write_json(output_dir / COMBINED_MANIFEST_NAME, manifest)
+    sharding.write_json(output_dir / COMBINED_MANIFEST_NAME, manifest)
     return outputs
 
 
 def merge_shards(configured: AwsSelectedTailStudyConfig) -> dict[str, pd.DataFrame]:
     """Merge all expected shard directories for a selected-tail cloud run."""
     if configured.s3_uri is not None:
-        sync_s3_to_path(
-            f"{configured.s3_uri.rstrip('/')}/shards",
-            configured.output_dir / "shards",
-        )
-    shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
+        sharding.fetch_shards(configured.s3_uri, configured.output_dir)
+    shard_dirs = sharding.iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     records = load_combined_shard_records(shard_dirs)
     merged_dir = configured.output_dir / "merged"
     outputs = write_combined_outputs(
@@ -365,7 +307,7 @@ def merge_shards(configured: AwsSelectedTailStudyConfig) -> dict[str, pd.DataFra
         configured=configured,
     )
     if configured.s3_uri is not None:
-        sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
+        sharding.publish_merged(merged_dir, configured.s3_uri)
     return outputs
 
 
@@ -411,7 +353,7 @@ def main() -> None:
     args = _parse_args()
     configured = _config_from_args(args)
     if args.command == "run-shard":
-        shard_index = resolve_shard_index(args.shard_index)
+        shard_index = resolve_aws_batch_shard_index(args.shard_index)
         run_shard(configured, shard_index)
         print(f"Wrote shard {shard_index} to {make_shard_spec(configured, shard_index).output_dir}")
     elif args.command == "merge":
@@ -432,17 +374,14 @@ __all__ = [
     "SHARD_MANIFEST_NAME",
     "SHARD_RECORDS_NAME",
     "ShardSpec",
-    "iter_expected_shard_dirs",
     "load_combined_shard_records",
     "load_shard_records",
     "make_shard_spec",
     "merge_shards",
     "parse_case_names",
     "recompute_outputs_from_records",
-    "resolve_shard_index",
     "run_shard",
     "shard_seed",
-    "sync_s3_to_path",
     "validate_shard_contract",
     "write_combined_outputs",
 ]

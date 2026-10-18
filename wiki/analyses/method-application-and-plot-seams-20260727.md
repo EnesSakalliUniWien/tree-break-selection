@@ -31,7 +31,7 @@ backend.
 ## Details
 
 `tree_break_selection/space_separation/` is the method module. It owns adaptive
-cosine weighting and spectral blocks, invariant/equivariant decomposition, and
+cosine weighting and spectral blocks, leading/following PCA-axis decomposition, and
 fixed/adaptive diffusion coordinates and distances. Its interface accepts
 in-memory matrices and has no dataset paths, labels, plots, or report layout.
 

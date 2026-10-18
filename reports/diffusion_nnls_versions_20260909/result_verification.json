@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "unique_outcomes": 1220,
+  "configurations": 10,
+  "cases_per_configuration": 122,
+  "all_expected_case_ids_present": true,
+  "independently_rescored_saved_label_files": 137,
+  "unchanged_source_files": 398,
+  "distinct_input_signatures": 121,
+  "repeated_input_signatures_match": true,
+  "input_signature_limit": "The first case's ten rows predate the continuation and have no input signature. They are all unsupported and are covered by original invocation/source/seed records.",
+  "ok_cluster_count_distribution": {
+    "1": 137
+  }
+}

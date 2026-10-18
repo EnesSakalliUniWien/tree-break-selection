@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import math
-import re
 from pathlib import Path
 
 import matplotlib
@@ -20,7 +19,7 @@ from scipy.spatial.distance import pdist
 from sklearn.decomposition import TruncatedSVD
 from sklearn.metrics.pairwise import cosine_similarity
 
-GO_ID_RE = re.compile(r"(GO:\d{7})")
+from applications.endotypes._shared import parse_go_term
 
 
 def parse_args() -> argparse.Namespace:
@@ -76,15 +75,6 @@ def load_matrix(path: Path) -> pd.DataFrame:
     data.index = data.index.astype(str)
     data.columns = data.columns.astype(str)
     return data.apply(pd.to_numeric, errors="raise")
-
-
-def parse_go_term(column: str) -> tuple[str, str | None]:
-    match = GO_ID_RE.search(column)
-    go_id = match.group(1) if match else None
-    if go_id is None:
-        return column, None
-    term = column.replace(f"({go_id})", "").strip()
-    return term, go_id
 
 
 def packed_pattern_groups(binary: np.ndarray, labels: pd.Index, *, axis: int) -> pd.DataFrame:
@@ -207,8 +197,6 @@ def write_report(
     duplicate_gene_groups: pd.DataFrame,
     duplicate_term_groups: pd.DataFrame,
     entropy_summary: pd.DataFrame,
-    term_entropy_bins: pd.DataFrame,
-    gene_entropy_bins: pd.DataFrame,
 ) -> None:
     with PdfPages(output_path) as pdf:
         fig, ax = plt.subplots(figsize=(11, 8.5))
@@ -583,8 +571,6 @@ def main() -> None:
         duplicate_gene_groups=duplicate_gene_groups,
         duplicate_term_groups=duplicate_term_groups,
         entropy_summary=entropy_summary,
-        term_entropy_bins=term_entropy_bins,
-        gene_entropy_bins=gene_entropy_bins,
     )
 
     readme = [

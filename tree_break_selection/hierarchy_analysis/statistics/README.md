@@ -5,13 +5,17 @@ pipeline.
 
 ## Public Entrypoints
 
+Import each entrypoint from the path shown. `child_parent_divergence`, `multiple_testing`,
+`multiple_testing.tree_bh` and `projection.projected_wald` re-export their public names; the
+`statistics`, `projection` and `sibling_divergence` package `__init__.py` files do not.
+
 | Entrypoint | Purpose |
 | ---------- | ------- |
-| `annotate_child_parent_divergence` | Annotate child-parent edge evidence for tree traversal. |
-| `annotate_sibling_divergence` | Annotate sibling split evidence with projected-Wald testing, inflation, and FDR. |
-| `annotate_fixed_subspace_sibling_divergence` | Opt-in sibling gate using fixed covariance-whitened coordinate or feature-block BH aggregation without parent PCA adaptation. |
-| `benjamini_hochberg_correction` | Flat BH correction helper. |
-| `apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
+| `child_parent_divergence.annotate_child_parent_divergence` | Annotate child-parent edge evidence for tree traversal. |
+| `sibling_divergence.inflated_projected_wald_annotation.pipeline.annotate_sibling_divergence` | Annotate projected-Wald sibling evidence using empirical inflation and traversal-aligned BH; selected-tail validity remains open. |
+| `sibling_divergence.fixed_subspace_annotation.annotate_fixed_subspace_sibling_divergence` | Opt-in sibling gate using fixed covariance-whitened coordinate or feature-block BH aggregation without parent PCA adaptation. |
+| `multiple_testing.benjamini_hochberg_correction` | Flat BH correction helper. |
+| `multiple_testing.apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
 
 ## Directory Map
 
@@ -23,8 +27,9 @@ pipeline.
 | `projection/projection_dimension_estimation/` | Projection dimension estimators. |
 | `child_parent_divergence/` | Child-parent projected-Wald tests and tree-level edge annotation. |
 | `sibling_divergence/` | Sibling pair collection, projected-Wald testing, fixed-subspace gates, empirical-null inflation, and sibling FDR. |
-| `multiple_testing/` | Flat BH, tree-BH, and stopping-edge recovery helpers. |
+| `multiple_testing/` | Flat BH and tree-BH helpers. |
 | `branch_length_utils.py` | Branch-length validation and normalized tree-time variance utilities. |
+| `data_utils.py` | Node-attribute extraction and edge/sibling gate annotation-column initialization shared by the gate statistics. |
 
 ## Active Method Flow
 
@@ -32,8 +37,9 @@ pipeline.
 2. Build spectral/projection context for each node.
 3. Run branch-time-inflated child-parent projected-Wald tests.
 4. Run the configured sibling gate. The default path collects sibling pair
-   records, estimates empirical-null inflation from valid calibration support,
-   and applies sibling FDR. The opt-in fixed-subspace path skips parent PCA and
+   records, estimates empirical-null inflation, and applies the historical
+   plug-in chi-square tail before sibling FDR. The same-selected-hierarchy
+   reference law remains unvalidated. The opt-in fixed-subspace path skips parent PCA and
    edge-derived sibling dimensions, then applies either the full fixed
    chi-square statistic or coordinate-wise/feature-block BH p-value
    aggregation before traversal-aligned sibling FDR. A positive
@@ -58,9 +64,32 @@ pipeline.
 
 - Feature-space covariance and contrast dimensions come from the active
   `FeatureSpace`; tests should not infer alternate schema names.
-- Unsupported calibration support is an explicit method status. It is not
-  replaced with a neutral inflation value.
+- Missing support closes sibling gates without substituting a neutral inflation
+  value. With support, `internal_admissible` means the empirical rule is
+  available; it does not certify the selected-tail reference law.
 - Projection quantities and raw feature coordinates are separate objects.
+- Only the projected-Wald sibling test (the default `projected_wald_inflation`
+  gate) uses branch length: it always scales its contrast variance by
+  `1 + (L_left + L_right) / (2 * mean positive branch length)`, and a tree
+  without branch lengths gives a multiplier of 1. The fixed-subspace sibling
+  gates, their evidence channels and the selected-root permutation guards use
+  no branch time; without a calibration step the factor removed true root
+  splits of well-separated clusters. `edge_branch_length_variance_policy`
+  (default `none`) governs only the child-parent edge test.
+- Spectral rank targets extend through complete numerical eigenvalue groups,
+  using the shared `tree_break_selection/eigenvalue_groups.py` rule. The raw MP
+  signal count is distinct from the extended test dimension, and Wald degrees
+  of freedom use the returned basis dimension. A supplied PCA basis cannot
+  silently omit known tied directions. This geometric requirement does not
+  establish a null reference law for contrast-selected rank or selected trees.
+- The selected Gaussian radial prototype supports a fixed scalar branch-time
+  covariance multiplier through radius rescaling. Recomputed linkage/NNLS
+  branch lengths and `branch_length_state` projections are not fixed by the
+  current merge-signature event and remain outside its chi-radial law.
+- Adaptive pydiffmap replay refits its data-dependent diffusion geometry at
+  every radius. Hamming diffusion replay is defined only at binary or one-hot
+  reconstructed matrices; a continuous Gaussian radial interval is therefore
+  unsupported for that geometry.
 - Fixed-subspace sibling gates are opt-in method choices, not automatic
   production promotion.
 - Selected-permutation guard scopes are validation diagnostics, not TBS method

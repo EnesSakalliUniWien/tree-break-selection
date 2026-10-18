@@ -2,10 +2,9 @@
 title: Legacy Internal Spectral Comparison Panel 2026-06-16
 type: source
 status: reviewed
-updated: 2026-06-16
+updated: 2026-08-10
 sources:
-  - tests/test_methodology_fixes.py
-  - tests/pipeline/51_test_dispatch_contract.py
+  - tests/statistics/48_test_spectral_context_regressions.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/runners/dispatch.py
   - benchmarks/shared/runners/tbs_runner.py
@@ -75,7 +74,7 @@ spectral perturbation, not as a production rescue rule.
   benchmark dispatch.
 - `151_test_legacy_internal_spectral_comparison_panel.py` verifies the
   pairwise comparison and output-writing contract.
-- `test_methodology_fixes.py` verifies that the copied internal-row mode
+- `48_test_spectral_context_regressions.py` verifies that the copied internal-row mode
   changes MP threshold rows without changing effective independent rows.
 - The output manifest records the run parameters: suite `binary`, one
   replicate, base seed `20260613`, edge alpha `0.001`, sibling alpha `0.01`,
@@ -85,4 +84,3 @@ spectral perturbation, not as a production rescue rule.
 
 - [[local-marchenko-pastur-rule]]
 - [[selected-neighborhood-measurability-law]]
-- [[spectral-vs-bandwidth-tradeoff-panel-20260616]]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 
-def _normalize_labels(labels: np.ndarray) -> np.ndarray:
+def normalize_labels(labels: np.ndarray) -> np.ndarray:
     """Map non-negative labels to contiguous IDs while keeping noise at -1."""
     labels_arr = np.asarray(labels, dtype=int)
     unique = sorted({int(x) for x in labels_arr if x >= 0})
@@ -13,7 +13,7 @@ def _normalize_labels(labels: np.ndarray) -> np.ndarray:
     return np.array([mapping[int(x)] if x >= 0 else -1 for x in labels_arr], dtype=int)
 
 
-def _estimate_dbscan_eps(distance_matrix: np.ndarray, min_samples: int) -> float:
+def estimate_dbscan_eps(distance_matrix: np.ndarray, min_samples: int) -> float:
     """Estimate eps via the median k-distance heuristic."""
     n_samples = distance_matrix.shape[0]
     if n_samples <= 1:
@@ -24,21 +24,13 @@ def _estimate_dbscan_eps(distance_matrix: np.ndarray, min_samples: int) -> float
     return eps if eps > 0 else 1e-9
 
 
-def _resolve_n_neighbors(n_samples: int, n_neighbors: int) -> int:
+def resolve_n_neighbors(n_samples: int, n_neighbors: int) -> int:
     if n_samples <= 1:
         return 0
     return int(n_neighbors)
 
 
-def _resolve_requested_cluster_count(n_samples: int, params: dict[str, object]) -> int:
-    """Resolve the explicit requested cluster count."""
-    del n_samples
-    return int(params["n_clusters"])
-
-
-def _knn_edge_weights(
-    distance_matrix: np.ndarray, n_neighbors: int
-) -> list[tuple[int, int, float]]:
+def knn_edge_weights(distance_matrix: np.ndarray, n_neighbors: int) -> list[tuple[int, int, float]]:
     """Build undirected k-NN edge list with inverse-distance weights."""
     n_samples = distance_matrix.shape[0]
     if n_samples <= 1 or n_neighbors <= 0:
@@ -61,9 +53,8 @@ def _knn_edge_weights(
 
 
 __all__ = [
-    "_normalize_labels",
-    "_estimate_dbscan_eps",
-    "_resolve_n_neighbors",
-    "_resolve_requested_cluster_count",
-    "_knn_edge_weights",
+    "normalize_labels",
+    "estimate_dbscan_eps",
+    "resolve_n_neighbors",
+    "knn_edge_weights",
 ]

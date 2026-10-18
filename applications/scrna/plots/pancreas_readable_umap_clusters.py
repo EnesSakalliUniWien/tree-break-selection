@@ -3,7 +3,6 @@
 Every final TBS cluster is colored. Labels are restricted to larger clusters so
 the plot remains readable, but small clusters are not greyed out or hidden.
 """
-# ruff: noqa: I001
 
 from __future__ import annotations
 
@@ -17,7 +16,6 @@ matplotlib.use("Agg")
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import pandas as pd
-
 
 METHODS = [
     (
@@ -45,10 +43,6 @@ METHODS = [
         "Adaptive diffusion raw-linkage branch-time diagnostic TBS",
     ),
 ]
-
-
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
 
 
 def label_positions(frame: pd.DataFrame, cluster_column: str) -> pd.DataFrame:
@@ -88,13 +82,8 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=(
-            project_root()
-            / "raw"
-            / "assets"
-            / "benchmark-results"
-            / "pancreas_scrna_cluster_benchmark_20260623"
-        ),
+        required=True,
+        help="Benchmark run directory to read and write; pass a raw/assets/ path explicitly.",
     )
     args = parser.parse_args()
 

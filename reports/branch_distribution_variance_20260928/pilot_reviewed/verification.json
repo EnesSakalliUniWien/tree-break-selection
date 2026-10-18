@@ -1,0 +1,20 @@
+{
+  "run_count": 486,
+  "dataset_count": 9,
+  "status_counts": {
+    "ok": 486
+  },
+  "node_count": 5022,
+  "contexts": {
+    "geometry": 9,
+    "current_configuration": 108,
+    "independent_fit": 18,
+    "independent_context": 54
+  },
+  "warning_counts": {},
+  "corrected_scale_max_absolute_p_error": 6.106226635438361e-16,
+  "shared_data_topology_and_per_source_lengths": true,
+  "independent_row_counts_preserved": true,
+  "edge_variance_preserves_raw_sibling_statistics_and_spectra": true,
+  "analysis_source_sha256": "028936aa4bed4eb58c699de6770c9c30e11c15358cf59130cc7777052af31685"
+}

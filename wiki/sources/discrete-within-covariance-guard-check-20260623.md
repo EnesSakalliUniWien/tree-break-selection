@@ -2,9 +2,8 @@
 title: Discrete Within-Covariance Guard Check 2026-06-23
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/statistics/discrete_covariance_guard.py
   - raw/assets/benchmark-results/discrete_covariance_guard_check_20260623/manifest.json
   - raw/assets/benchmark-results/discrete_covariance_guard_check_20260623/node_covariance_comparison.csv
   - raw/assets/benchmark-results/discrete_covariance_guard_check_20260623/case_context_summary.csv
@@ -80,6 +79,7 @@ pooled null covariance with a Jeffreys-smoothed within-child analogue and a
   records root-only comparisons for all `71` binary/categorical suite cases.
 - `raw/assets/benchmark-results/discrete_covariance_guard_check_20260623/all_suite_roots/case_context_summary.csv`
   summarizes the all-suite root replay.
+- `benchmarks/diagnostics/calibration/statistics/discrete_covariance_guard.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
+import networkx as nx
 import numpy as np
 import pandas as pd
+import pytest
+from scipy.optimize import nnls
+
+from tree_break_selection.tree import optimized_branch_lengths
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
@@ -35,6 +42,37 @@ def _small_binary_tree() -> PosetTree:
     return tree
 
 
+def _prepared_geometry() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "left": [1.0, 1.0, 0.0, 0.0],
+            "right": [0.0, 0.0, 1.0, 1.0],
+            "leaf_a": [1.0, 0.0, 0.0, 0.0],
+            "leaf_b": [0.0, 1.0, 0.0, 0.0],
+            "leaf_c": [0.0, 0.0, 1.0, 0.0],
+            "leaf_d": [0.0, 0.0, 0.0, 1.0],
+        },
+        index=["a", "b", "c", "d"],
+    )
+
+
+def _dense_path_design(tree: PosetTree, leaf_labels: list[str]) -> np.ndarray:
+    edge_index_by_pair = {edge: index for index, edge in enumerate(tree.edges())}
+    rows: list[np.ndarray] = []
+    undirected_tree = tree.to_undirected()
+    for left_position, left_label in enumerate(leaf_labels):
+        for right_label in leaf_labels[left_position + 1 :]:
+            row = np.zeros(len(edge_index_by_pair), dtype=float)
+            path = nx.shortest_path(undirected_tree, left_label, right_label)
+            for parent, child in zip(path[:-1], path[1:], strict=True):
+                directed_edge = (
+                    (parent, child) if (parent, child) in edge_index_by_pair else (child, parent)
+                )
+                row[edge_index_by_pair[directed_edge]] = 1.0
+            rows.append(row)
+    return np.vstack(rows)
+
+
 def test_fixed_topology_nnls_recovers_additive_tree_distances() -> None:
     tree = _small_binary_tree()
     # A continuous path-incidence embedding: each coordinate is active for
@@ -63,8 +101,23 @@ def test_fixed_topology_nnls_recovers_additive_tree_distances() -> None:
 
     assert result.status == "ok"
     assert result.n_pairs_used == 6
+    assert result.design_nnz == 20
+    assert np.isclose(result.design_density, 20.0 / 36.0)
+    assert result.n_zero_design_columns == 0
+    assert result.zero_design_column_fraction == 0.0
+    assert result.applied_to_tree is True
+    assert result.apply_nonconverged is False
     assert result.residual_rmse < 1e-8
+    assert result.residual_rmse_to_target_mean < 1e-8
     assert result.branch_length_min >= -1e-10
+    assert result.target_normalization == "divide_by_total_feature_count"
+    assert result.target_normalization_divisor == data.shape[1]
+    # Each nonconstant column has sample variance one after standardization:
+    # the all-pair mean squared difference is two, also after feature averaging.
+    assert result.target_mean == pytest.approx(2.0)
+    assert result.target_definition.startswith("mean squared standardized Euclidean distance")
+    for key in ("target_definition", "target_normalization", "target_normalization_divisor"):
+        assert tree.graph["branch_length_optimization"][key] == result.to_dict()[key]
     assert {
         tree.edges[parent, child]["branch_length_source"] for parent, child in tree.edges()
     } == {BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS}
@@ -79,17 +132,7 @@ def test_fixed_topology_nnls_recovers_additive_tree_distances() -> None:
 
 def test_fixed_topology_nnls_uses_prepared_geometry_without_restandardizing() -> None:
     tree = _small_binary_tree()
-    geometry = pd.DataFrame(
-        {
-            "left": [1.0, 1.0, 0.0, 0.0],
-            "right": [0.0, 0.0, 1.0, 1.0],
-            "leaf_a": [1.0, 0.0, 0.0, 0.0],
-            "leaf_b": [0.0, 1.0, 0.0, 0.0],
-            "leaf_c": [0.0, 0.0, 1.0, 0.0],
-            "leaf_d": [0.0, 0.0, 0.0, 1.0],
-        },
-        index=["a", "b", "c", "d"],
-    )
+    geometry = _prepared_geometry()
 
     result = fit_fixed_topology_nnls_branch_lengths(
         tree,
@@ -101,5 +144,154 @@ def test_fixed_topology_nnls_uses_prepared_geometry_without_restandardizing() ->
 
     assert result.status == "ok"
     assert result.target_metric == BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN
+    assert result.target_normalization == "none"
+    assert result.target_normalization_divisor == 1
+    assert (
+        result.to_dict()["target_definition"]
+        == "squared Euclidean distance in the supplied geometry"
+    )
+    assert tree.graph["branch_length_optimization"]["target_normalization_divisor"] == 1
     assert result.residual_rmse < 1e-8
     assert np.isclose(result.target_mean, 10.0 / 3.0)
+
+
+def test_fixed_topology_nnls_matches_dense_scipy_nnls_on_tiny_tree() -> None:
+    tree = _small_binary_tree()
+    geometry = _prepared_geometry()
+    design = _dense_path_design(tree, list(geometry.index))
+    values = geometry.to_numpy(dtype=float)
+    pair_targets = []
+    for left_position in range(len(values)):
+        for right_position in range(left_position + 1, len(values)):
+            diff = values[left_position] - values[right_position]
+            pair_targets.append(float(np.sum(diff * diff)))
+    dense_solution, _ = nnls(design, np.asarray(pair_targets, dtype=float))
+
+    result = fit_fixed_topology_nnls_branch_lengths(
+        tree,
+        geometry,
+        target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+        pair_sample_size=None,
+        solver_tolerance=1e-10,
+    )
+    fitted_lengths = np.asarray(
+        [tree.edges[parent, child]["branch_length"] for parent, child in tree.edges()],
+        dtype=float,
+    )
+
+    assert result.status == "ok"
+    assert np.allclose(design @ fitted_lengths, design @ dense_solution, atol=1e-8)
+    assert np.isclose(
+        np.linalg.norm((design @ fitted_lengths) - np.asarray(pair_targets, dtype=float)),
+        np.linalg.norm((design @ dense_solution) - np.asarray(pair_targets, dtype=float)),
+        atol=1e-8,
+    )
+
+
+@pytest.mark.parametrize(
+    ("apply_nonconverged", "expected_applied", "expected_branch_length"),
+    [
+        pytest.param(None, False, 0.5, id="default-rejects-solution"),
+        pytest.param(True, True, 9.0, id="explicitly-applies-solution"),
+    ],
+)
+def test_fixed_topology_nnls_nonconverged_solution_policy(
+    monkeypatch: pytest.MonkeyPatch,
+    apply_nonconverged: bool | None,
+    expected_applied: bool,
+    expected_branch_length: float,
+) -> None:
+    tree = _small_binary_tree()
+    geometry = _prepared_geometry()
+
+    def fake_lsq_linear(design: object, *_args: object, **_kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(
+            x=np.full(design.shape[1], 9.0, dtype=float),
+            success=False,
+            cost=123.0,
+            optimality=456.0,
+            nit=7,
+            message="forced non-convergence",
+        )
+
+    monkeypatch.setattr(
+        "tree_break_selection.tree.optimized_branch_lengths.lsq_linear",
+        fake_lsq_linear,
+    )
+
+    kwargs = {} if apply_nonconverged is None else {"apply_nonconverged": apply_nonconverged}
+    result = fit_fixed_topology_nnls_branch_lengths(
+        tree,
+        geometry,
+        target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+        pair_sample_size=None,
+        **kwargs,
+    )
+
+    assert result.status == "solver_not_converged"
+    assert result.applied_to_tree is expected_applied
+    assert result.apply_nonconverged is expected_applied
+    assert {attrs["branch_length"] for _, _, attrs in tree.edges(data=True)} == {
+        expected_branch_length
+    }
+    assert tree.graph["branch_length_optimization"]["applied_to_tree"] is expected_applied
+    if expected_applied:
+        assert {
+            tree.edges[parent, child]["branch_length_source"] for parent, child in tree.edges()
+        } == {BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS}
+    else:
+        assert all("linkage_branch_length" not in attrs for _, _, attrs in tree.edges(data=True))
+        assert all("branch_length_source" not in attrs for _, _, attrs in tree.edges(data=True))
+
+
+def test_fixed_topology_nnls_adds_a_crossing_pair_for_every_unsampled_edge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tree = _small_binary_tree()
+    geometry = _prepared_geometry()
+    real_lsq_linear = optimized_branch_lengths.lsq_linear
+    designs: list[object] = []
+
+    def capture_lsq_linear(design: object, *args: object, **kwargs: object) -> object:
+        designs.append(design)
+        return real_lsq_linear(design, *args, **kwargs)
+
+    monkeypatch.setattr(optimized_branch_lengths, "lsq_linear", capture_lsq_linear)
+
+    result = fit_fixed_topology_nnls_branch_lengths(
+        tree,
+        geometry,
+        target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+        pair_sample_size=1,
+        random_state=0,
+    )
+
+    # One sampled pair cannot cross all six edges; each missed edge gets a crossing pair.
+    assert result.n_zero_design_columns > 0
+    assert result.n_pairs_used > 1
+    assert np.all(designs[0].getnnz(axis=0) > 0)
+
+
+def test_fixed_topology_nnls_splits_the_root_pair_by_linkage_lengths() -> None:
+    even_tree = _small_binary_tree()
+    skewed_tree = _small_binary_tree()
+    skewed_tree.edges["root", "A"]["branch_length"] = 0.3
+    skewed_tree.edges["root", "B"]["branch_length"] = 0.1
+    for tree in (even_tree, skewed_tree):
+        fit_fixed_topology_nnls_branch_lengths(
+            tree,
+            _prepared_geometry(),
+            target_metric=BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
+            pair_sample_size=None,
+            solver_tolerance=1e-10,
+        )
+
+    def root_pair(tree: PosetTree) -> tuple[float, float]:
+        return tree.edges["root", "A"]["branch_length"], tree.edges["root", "B"]["branch_length"]
+
+    # Only the root-pair sum is identified; it is split 3:1 like the linkage lengths.
+    even_a, even_b = root_pair(even_tree)
+    skewed_a, skewed_b = root_pair(skewed_tree)
+    assert even_a == pytest.approx(even_b)
+    assert skewed_a + skewed_b == pytest.approx(even_a + even_b)
+    assert skewed_a == pytest.approx(3.0 * skewed_b)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import networkx as nx
 import numpy as np
 import pytest
+
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     compute_mean_branch_length,
 )
@@ -55,9 +56,9 @@ def _run_edge_projection_with_capture(
         mean_branch_length: float | None = None,
         adaptive_projection_dimension_energy_fraction: float | None = None,
         stage_timings: object | None = None,
-    ) -> tuple[float, float, float, bool]:
+    ) -> tuple[float, float, float]:
         captured.append((n_child, n_parent, branch_length, mean_branch_length))
-        return 0.0, 1.0, 1.0, False
+        return 0.0, 1.0, 1.0
 
     monkeypatch.setattr(
         "tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.tree_testing.run_child_parent_projected_wald_test",

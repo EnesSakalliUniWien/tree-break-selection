@@ -1,0 +1,128 @@
+{
+  "started_at": "2026-09-09T15:16:43.148118+00:00",
+  "script_sha256": "913c5d0b2b1763047268771da9cdf0063cac5373ccc16c697bb9b698f5ff2f40",
+  "cases": [
+    "gauss_clear_small",
+    "gauss_dense_signal_highd",
+    "overlap_extreme_4c",
+    "gauss_null_small",
+    "gauss_null_large",
+    "binary_null_small",
+    "binary_null_medium"
+  ],
+  "method_params": {
+    "tbs_diffusion_adaptive_nnls": {
+      "diffusion_method": "adaptive_pydiffmap_diffusion",
+      "k_neighbors": 10,
+      "diffusion_time": 3,
+      "n_components": 30,
+      "metric": "hamming",
+      "bandwidth_type": "-1/(d+2)",
+      "epsilon": "median",
+      "tree_linkage_method": "average",
+      "edge_branch_length_variance_policy": "normalized_branch_length",
+      "branch_length_optimization_method": "fixed_topology_nnls",
+      "branch_length_optimization_target_metric": "squared_standardized_euclidean",
+      "branch_length_optimization_pair_sample_size": 50000,
+      "branch_length_optimization_random_state": 0,
+      "branch_length_optimization_solver_tolerance": 1e-05,
+      "branch_length_optimization_max_iterations": 1000
+    },
+    "tbs_diffusion_graphtools_nnls": {
+      "diffusion_method": "graphtools_kernel_diffusion",
+      "k_neighbors": 10,
+      "diffusion_time": 3,
+      "n_components": 30,
+      "metric": "hamming",
+      "decay": 40,
+      "anisotropy": 0.0,
+      "kernel_symm": "+",
+      "random_state": 0,
+      "tree_builder": "linkage",
+      "tree_rooting": "linkage_root",
+      "tree_linkage_method": "average",
+      "edge_branch_length_variance_policy": "normalized_branch_length",
+      "branch_length_optimization_method": "fixed_topology_nnls",
+      "branch_length_optimization_target_metric": "squared_standardized_euclidean",
+      "branch_length_optimization_pair_sample_size": 50000,
+      "branch_length_optimization_random_state": 0,
+      "branch_length_optimization_solver_tolerance": 1e-05,
+      "branch_length_optimization_max_iterations": 1000
+    },
+    "tbs_diffusion_graphtools_adaptive_nnls": {
+      "diffusion_method": "graphtools_kernel_diffusion",
+      "k_neighbors": 10,
+      "diffusion_time": 3,
+      "n_components": 30,
+      "metric": "hamming",
+      "decay": 40,
+      "anisotropy": 0.0,
+      "kernel_symm": "+",
+      "random_state": 0,
+      "tree_builder": "linkage",
+      "tree_rooting": "linkage_root",
+      "tree_linkage_method": "average",
+      "adaptive_neighbor_profile": "fragmentation_guard",
+      "adaptive_neighbor_grid": [
+        5,
+        10,
+        15,
+        25,
+        40,
+        80,
+        160
+      ],
+      "edge_branch_length_variance_policy": "normalized_branch_length",
+      "branch_length_optimization_method": "fixed_topology_nnls",
+      "branch_length_optimization_target_metric": "squared_standardized_euclidean",
+      "branch_length_optimization_pair_sample_size": 50000,
+      "branch_length_optimization_random_state": 0,
+      "branch_length_optimization_solver_tolerance": 1e-05,
+      "branch_length_optimization_max_iterations": 1000,
+      "benchmark_class": "optional_gpl",
+      "benchmark_grid": "graphtools_adaptive_k_tree_strategy",
+      "benchmark_repeat": 0,
+      "benchmark_run_id": "graphtools_adaptive_k_tree_strategy__tree_linkage_method_average__r0"
+    }
+  },
+  "variants": [
+    [
+      "production",
+      0.01
+    ],
+    [
+      "status_rule_bypassed",
+      0.01
+    ],
+    [
+      "fixed_coordinate_bh",
+      0.005
+    ],
+    [
+      "fixed_coordinate_bh",
+      0.01
+    ],
+    [
+      "fixed_coordinate_bh",
+      0.05
+    ],
+    [
+      "fixed_coordinate_by",
+      0.005
+    ],
+    [
+      "fixed_coordinate_by",
+      0.01
+    ],
+    [
+      "fixed_coordinate_by",
+      0.05
+    ]
+  ],
+  "expected_outcomes": 168,
+  "edge_alpha": 0.001,
+  "design": "Reuse captured diffusion distances; refit the same NNLS tree for every gate. Verify identical topology and branch lengths by SHA256. Truth used only for ARI.",
+  "inference_limit": "Fixed-coordinate gates are diagnostics on a selected hierarchy, without a validated selected-tail law. Four null seeds do not establish error control.",
+  "skip_policy": "A production input-contract skip applies to every downstream gate variant. Propagated cells have execution_kind=input_contract_skip and zero execution time; no gate was run for them.",
+  "reused_completed_outcomes": 120
+}

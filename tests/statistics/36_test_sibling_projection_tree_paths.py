@@ -3,14 +3,15 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence import (
     annotate_child_parent_divergence,
 )
-from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
-    SpectralContext,
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
@@ -250,6 +251,10 @@ def test_cherry_with_leaf_data_uses_parent_dimension_for_leaf_pair_parent() -> N
         == test_projection_dimensions_by_node
     )
     assert bundle.annotated_df.loc["root", "Sibling_BH_Different"]
+    assert (
+        bundle.annotated_df.loc["root", "Sibling_Projection_Dimension"]
+        == (sibling_projection_dimensions_from_edge_comparisons["root"])
+    )
 
 
 def test_mixed_parent_with_leaf_data_keeps_internal_parent_in_edge_derived_sibling_projection_dimensions() -> (
@@ -313,13 +318,18 @@ def test_decompose_without_leaf_data_raises_for_missing_spectral_contract() -> N
 
 def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions() -> None:
     tree, _annotations_df, _leaf_data = _build_cherry_tree()
-    spectral_context = SpectralContext(
+    spectral_context = SpectralDecompositionResult(
         test_projection_dimensions_by_node={"A": 1},
         raw_mp_signal_counts_by_node={"A": 0},
         effective_independent_rows_by_node={"A": 1},
         mp_threshold_rows_by_node={"A": 1},
         principal_component_projections_by_node={},
         principal_component_eigenvalues_by_node={},
+        descendant_leaf_row_counts_by_node={},
+        internal_distribution_row_counts_by_node={},
+        spectral_matrix_row_counts_by_node={},
+        active_feature_counts_by_node={},
+        stage_timings={},
     )
 
     with pytest.raises(ValueError, match="missing 'root'"):
@@ -327,3 +337,39 @@ def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions()
             tree,
             spectral_context=spectral_context,
         )
+
+
+def test_only_the_projected_wald_sibling_test_uses_branch_length() -> None:
+    def annotate(root_pair_scale: float, **gate_kwargs: str) -> tuple[pd.DataFrame, float]:
+        tree, annotations_df, leaf_data = _build_cherry_tree()
+        for child in ("A", "B"):
+            tree.edges["root", child]["branch_length"] *= root_pair_scale
+        lengths = [length for *_, length in tree.edges(data="branch_length")]
+        multiplier = 1.0 + (
+            tree.edges["root", "A"]["branch_length"] + tree.edges["root", "B"]["branch_length"]
+        ) / (2.0 * float(np.mean(lengths)))
+        bundle = run_gate_annotation_pipeline(
+            tree, annotations_df.copy(), leaf_data=leaf_data, **gate_kwargs
+        )
+        assert bundle.metadata.config.edge_branch_length_variance_policy == "none"
+        return bundle.annotated_df, multiplier
+
+    base_df, base_multiplier = annotate(1.0)
+    long_df, long_multiplier = annotate(4.0)
+
+    pd.testing.assert_series_equal(
+        base_df["Child_Parent_Divergence_Test_Statistic"],
+        long_df["Child_Parent_Divergence_Test_Statistic"],
+    )
+    assert (
+        long_df.loc["root", "Sibling_Test_Statistic"]
+        < base_df.loc["root", "Sibling_Test_Statistic"]
+    )
+    assert long_df.loc["root", "Sibling_Test_Statistic"] * long_multiplier == pytest.approx(
+        base_df.loc["root", "Sibling_Test_Statistic"] * base_multiplier
+    )
+
+    fixed_base_df, _ = annotate(1.0, sibling_gate_method="fixed_coordinate_bh")
+    fixed_long_df, _ = annotate(4.0, sibling_gate_method="fixed_coordinate_bh")
+    for column in ("Sibling_Test_Statistic", "Sibling_Dense_Evidence_Test_Statistic"):
+        assert fixed_long_df.loc["root", column] == pytest.approx(fixed_base_df.loc["root", column])

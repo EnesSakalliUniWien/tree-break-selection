@@ -2,26 +2,19 @@
 title: Selected Neighborhood Bottleneck Law
 type: analysis
 status: draft
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
   - wiki/analyses/traversal-neighborhood-method-comparison.md
   - wiki/sources/selected-neighborhood-signal-flow-literature-20260617.md
   - wiki/sources/graph-neural-geometry-spectral-artifact-literature-20260617.md
-  - wiki/sources/selected-neighborhood-conditional-support-panel-20260617.md
-  - wiki/sources/selected-neighborhood-internal-spectral-flow-panel-20260617.md
   - wiki/sources/old-vs-current-method-stack-comparison-20260615.md
   - wiki/sources/sibling-null-prior-interpolation-audit-20260604.md
-  - wiki/sources/specific-small-method-benchmark-20260615.md
   - wiki/sources/selected-neighborhood-distribution-panel-20260615.md
   - wiki/sources/overlap-conditional-topology-law-panel-20260615.md
   - wiki/sources/retained-pass-through-topology-likelihood-panel-20260615.md
-  - wiki/sources/selected-neighborhood-spectral-flow-diagnostic-20260616.md
-  - wiki/sources/spectral-transport-passthrough-guard-20260616.md
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
-  - benchmarks/diagnostics/calibration/overlap/overlap_conditional_topology_law_panel.py
-  - benchmarks/diagnostics/calibration/selected/neighborhood/selected_neighborhood_distribution_panel.py
 tags:
   - analysis
   - traversal
@@ -203,10 +196,6 @@ of these support statuses:
   topology-neighborhood evidence.
 - `guard_bottleneck`: the selected-family guard blocks the candidate and no
   null-side pass-through law has been validated.
-- `spectral_bottleneck`: MP-supported eigenvectors rotate, eigenvalues drift,
-  or the shared MP-certified dimension disappears across the local
-  parent-child neighborhood.
-
 This gives the method two outputs for every ambiguous node: a conservative
 traversal action and a localized reason why the bandwidth inference could not
 support recovery. High fragmentation is then controlled by selected-family
@@ -262,43 +251,12 @@ pass-through signal once the missing topology likelihood is identifiable.
   `25%` signal, `5%` null-leak target. On `overlap_extreme_4c`, branch-length
   interpolation catches `426` signal positives but also opens `939`
   selected-null positives.
-- [[selected-neighborhood-conditional-support-panel-20260617]] records the
-  first root-conditioned support join over the expanded overlap candidates.
-  With strict root validity, topology, local support, and spectral-flow checks,
-  the run reports `0` conditional neighborhood support passes, `0`
-  selected-null neighborhood leaks, and `0` hard-negative leaks. This keeps
-  `overlap_extreme_4c` blocked and localizes the current gap to topology/root
-  context rather than raw bandwidth availability.
-- [[selected-neighborhood-internal-spectral-flow-panel-20260617]] records that
-  internal barycenters do recover many MP-supported spectral-flow edges, but
-  the gain is mirrored on selected-null rows: `710` selected-null support
-  creations versus `702` signal support creations in the three-case overlap
-  run. The angular/radial node-pairwise layer shows mostly internal-only spike
-  creation and stable shared objects, with no whole-object rotations observed
-  and only rare single-mode rotations. This supports internal distributions as
-  a tree-filter diagnostic, not as an unconditional rescue rule.
-- The same panel now includes graph Dirichlet-style neighborhood energy over
-  selected parent-child edges. Strict shared MP transport improves in only one
-  of three overlap cases and degrades in two, while internal-only support
-  remains large and mirrored on selected-null rows. This makes angle/radius
-  energy a bottleneck localizer and coherence diagnostic, not a split rescue.
-- [[selected-neighborhood-internal-spectral-flow-conditional-energy-20260617]]
-  records the larger seven-case overlap run and the root-conditioned
-  postprocess. Internal MP support reacts strongly, but `0/7` signal rows are
-  admissible rescue candidates after root validity, root-tail support, strict
-  shared energy improvement, hard-negative blocking, and paired selected-null
-  checks. This does not contradict the empirical fact that older bandwidth and
-  internal-node mechanisms helped some clustering rows; it says those
-  mechanisms are not yet valid unconditional rescue evidence.
 - [[old-vs-current-method-stack-comparison-20260615]] records the old
   `tau_b`, `tau_t`, `tau_s`, and `h_k` bandwidth layer and why it cannot be
   restored as a permissive prior update.
 - [[sibling-null-prior-interpolation-audit-20260604]] records that the old
   interpolated sibling-null priors borrowed selected non-null rows and were
   descriptive, not strict production calibration.
-- [[specific-small-method-benchmark-20260615]] records that the bandwidth
-  component is useful local context but not a standalone separator; coherent
-  outgoing topology and `balance_product` carry the recovery signal.
 - [[selected-neighborhood-distribution-panel-20260615]] records that signal
   pass-through rows lack joined old/current neighborhood evidence, turning the
   issue into an explicit coverage and selected-neighborhood law problem.
@@ -308,28 +266,16 @@ pass-through signal once the missing topology likelihood is identifiable.
   retained pass-through likelihood is not identifiable on the compact run
   because finite topology evidence is missing on the matched signal/control
   rows.
-- [[selected-neighborhood-spectral-flow-diagnostic-20260616]] records that
-  MP-supported eigenspace flow has weak signal-vs-selected-null separation and
-  many floor-only edges, supporting spectral flow as a bottleneck localizer
-  rather than a standalone split rule.
-- [[spectral-transport-passthrough-guard-20260616]] records the first
-  traversal integration of that bottleneck: the spectral term is fail-closed
-  and applies only to pass-through support, not sibling split creation.
 
 ## Links
 
 - [[traversal-neighborhood-method-comparison]]
 - [[selected-neighborhood-signal-flow-literature-20260617]]
 - [[graph-neural-geometry-spectral-artifact-literature-20260617]]
-- [[selected-neighborhood-conditional-support-panel-20260617]]
-- [[selected-neighborhood-internal-spectral-flow-panel-20260617]]
 - [[old-vs-current-method-stack-comparison-20260615]]
-- [[specific-small-method-benchmark-20260615]]
 - [[selected-neighborhood-distribution-panel-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
 - [[retained-pass-through-topology-likelihood-panel-20260615]]
-- [[selected-neighborhood-spectral-flow-diagnostic-20260616]]
-- [[spectral-transport-passthrough-guard-20260616]]
 
 ## Open Questions
 
@@ -339,11 +285,6 @@ pass-through signal once the missing topology likelihood is identifiable.
   non-null exclusion removes nearly all local support?
 - Can the bandwidth bottleneck statuses be validated on full Julia without
   making the diagnostic as expensive as the old uncached tree-distance loop?
-- Can MP-supported spectral flow define a stable enough stratum to condition
-  bandwidth interpolation, despite most overlap edges being floor-only?
-- Can internal-barycenter spectral flow be conditioned by topology/root
-  geometry strongly enough to keep its signal support gain while removing the
-  mirrored selected-null support gain?
 - Can the selected-neighborhood distance cache be upgraded from unit
   parent-link distance to branch-length distance without breaking the
   selected-row joins or making the benchmark prohibitively expensive?
@@ -351,7 +292,3 @@ pass-through signal once the missing topology likelihood is identifiable.
   neighborhoods can be conditioned by root validity, selected action geometry,
   and spectral-tail support strongly enough to reverse the observed
   selected-null-first ordering.
-- What generator or analytic law can produce topology-coherent, strict
-  spectral-flow-supported non-direct rows without reopening selected-null
-  neighborhoods, given that the first root-conditioned support panel reports
-  `0` conditional support passes?

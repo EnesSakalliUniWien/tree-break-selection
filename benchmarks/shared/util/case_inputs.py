@@ -7,12 +7,6 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist, squareform
-from tree_break_selection.tree.construction import DEFAULT_BINARY_TREE_DISTANCE_METRIC
-from tree_break_selection.tree.feature_space import (
-    FeatureSpace,
-    contains_categorical_feature_columns,
-    validate_feature_space,
-)
 
 from benchmarks.shared.generators import generate_case_data
 from benchmarks.shared.util.method_sets import (
@@ -20,6 +14,12 @@ from benchmarks.shared.util.method_sets import (
 )
 from benchmarks.shared.util.method_sets import (
     TBS_DISTANCE_TREE_METHODS as _TBS_DISTANCE_TREE_METHODS,
+)
+from tree_break_selection.tree.construction import DEFAULT_BINARY_TREE_DISTANCE_METRIC
+from tree_break_selection.tree.feature_space import (
+    FeatureSpace,
+    contains_categorical_feature_columns,
+    validate_feature_space,
 )
 
 

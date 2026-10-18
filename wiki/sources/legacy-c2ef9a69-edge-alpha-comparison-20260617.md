@@ -2,7 +2,7 @@
 title: Legacy c2ef9a69 Edge Alpha Comparison 2026-06-17
 type: source
 status: reviewed
-updated: 2026-06-17
+updated: 2026-08-08
 sources:
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/legacy_c2ef9a69_edge_alpha_overlap_comparison_20260617
 tags:
@@ -65,4 +65,3 @@ directory remains as historical evidence.
 - [[legacy-c2ef9a69-root-tail-overlap-comparison-20260617]]
 - [[legacy-c2ef9a69-method-package-20260616]]
 - [[root-conditional-kernel-spectral-law]]
-- [[spectral-vs-bandwidth-tradeoff-panel-20260616]]

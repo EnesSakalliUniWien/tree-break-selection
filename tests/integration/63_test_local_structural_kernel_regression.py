@@ -3,10 +3,12 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-from benchmarks.shared.cases import get_default_test_cases
-from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
 from scipy.spatial.distance import pdist
+
+from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_SIBLING_ALPHA,
 )
@@ -15,39 +17,64 @@ from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils impo
 )
 
 
-@pytest.mark.slow
-def test_strict_sibling_calibration_rejects_gauss_null_large_without_support() -> None:
-    case = next(case for case in get_default_test_cases() if case["name"] == "gauss_null_large")
-    context = build_tbs_tree_context(case, populate_node_distributions=False)
-
-    with pytest.raises(ValueError, match="selected non-null"):
-        run_tbs_on_distance(context.data, context.distance_condensed, DEFAULT_SIBLING_ALPHA)
-
-
-@pytest.mark.slow
-def test_leaf_only_cat_highcard_requires_explicit_calibration_support() -> None:
-    case = next(
-        case for case in get_default_test_cases() if case["name"] == "cat_highcard_20cat_4c"
+def _case_tbs_inputs(case_name: str):
+    """Return a default case's data, TBS tree distance and feature space."""
+    case = next(case for case in get_default_test_cases() if case["name"] == case_name)
+    inputs = prepare_case_inputs(case, ["tbs"])
+    metric = METHOD_SPECS["tbs"].param_grid[0]["tree_distance_metric"]
+    return (
+        inputs.data,
+        pdist(inputs.data.values, metric=metric),
+        inputs.metadata.get("feature_space"),
     )
-    context = build_tbs_tree_context(case, populate_node_distributions=False)
 
-    with pytest.raises(ValueError, match="selected non-null"):
-        run_tbs_on_distance(
-            context.data,
-            context.distance_condensed,
-            DEFAULT_SIBLING_ALPHA,
-            feature_space=context.feature_space,
-        )
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    ("case_name", "forward_feature_space"),
+    [
+        pytest.param("gauss_null_large", False, id="untyped-gaussian-binary"),
+        pytest.param("cat_highcard_20cat_4c", True, id="categorical-feature-space"),
+    ],
+)
+def test_strict_sibling_calibration_fails_closed_without_internal_support(
+    case_name: str,
+    forward_feature_space: bool,
+) -> None:
+    data, distance, feature_space = _case_tbs_inputs(case_name)
+
+    kwargs = {"feature_space": feature_space} if forward_feature_space else {}
+    result = run_tbs_on_distance(
+        data,
+        distance,
+        DEFAULT_SIBLING_ALPHA,
+        **kwargs,
+    )
+
+    assert result.status == "unsupported"
+    assert result.labels is None
+    assert result.found_clusters == 0
+    assert result.unsupported_reason is not None
+    assert result.unsupported_reason.evidence.admissible_support_count == 0
+    annotations = result.extra["annotations"]
+    fail_closed = annotations[
+        annotations["Sibling_Gate_P_Value_Calibration"].eq("undefined_no_internal_support")
+    ]
+    assert not fail_closed.empty
+    assert fail_closed["Sibling_Test_Method"].eq("empirical_null_no_internal_support").all()
+    assert fail_closed["Sibling_Gate_P_Value_Role"].eq("fail_closed_sibling_gate").all()
+    assert fail_closed["Sibling_Divergence_Skipped"].eq(True).all()
+    assert fail_closed["Sibling_Divergence_Invalid"].eq(True).all()
+    assert not fail_closed["Sibling_BH_Different"].any()
 
 
 @pytest.mark.slow
 def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
-    case = next(case for case in get_default_test_cases() if case["name"] == "gauss_clear_small")
-    context = build_tbs_tree_context(case, populate_node_distributions=False)
+    data, distance, _feature_space = _case_tbs_inputs("gauss_clear_small")
 
     result = run_tbs_on_distance(
-        context.data,
-        context.distance_condensed,
+        data,
+        distance,
         DEFAULT_SIBLING_ALPHA,
         edge_branch_length_variance_policy=EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
         allow_linkage_ultrametric_branch_time=True,
@@ -71,8 +98,8 @@ def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
     assert len(conservative_boundaries) == 1
 
     relaxed_result = run_tbs_on_distance(
-        context.data,
-        context.distance_condensed,
+        data,
+        distance,
         0.03,
         edge_branch_length_variance_policy=EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
         allow_linkage_ultrametric_branch_time=True,
@@ -103,7 +130,7 @@ def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
         assert stage_timings[key] >= 0.0
 
 
-def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
+def test_tbs_runner_accepts_explicit_fixed_sibling_gate_config() -> None:
     rng = np.random.default_rng(123)
     data = pd.DataFrame(
         rng.integers(0, 2, size=(16, 8)),
@@ -115,7 +142,12 @@ def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
         pdist(data.to_numpy(), metric="hamming"),
         DEFAULT_SIBLING_ALPHA,
         tree_linkage_method="average",
-        sibling_gate_profile="fixed_global_guarded_v1",
+        sibling_gate_method="fixed_global_chi_square",
+        sibling_gate_alpha_penalty=50.0,
+        root_stability_guard_threshold=0.24,
+        root_stability_subsample_replicates=12,
+        root_stability_feature_fraction=0.8,
+        root_stability_seed=0,
         root_selective_permutation_guard_replicates=1,
         root_selective_permutation_guard_seed=19,
         root_selective_permutation_guard_alpha=0.01,
@@ -124,7 +156,7 @@ def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
 
     metadata = result.extra["gate_bundle"].metadata.config
     assert result.status == "ok"
-    assert metadata.sibling_gate_profile_id == "fixed_global_guarded_v1"
+    assert metadata.sibling_gate_profile_id is None
     assert metadata.sibling_gate_method == "fixed_global_chi_square"
     assert metadata.sibling_gate_alpha_penalty == 50.0
     assert metadata.root_stability_guard_threshold == 0.24
@@ -133,30 +165,19 @@ def test_tbs_runner_accepts_fixed_sibling_gate_profile() -> None:
     assert metadata.root_selective_permutation_guard_replicates == 1
     assert metadata.root_selective_permutation_guard_seed == 19
     assert metadata.root_selective_permutation_guard_alpha == 0.01
-    assert result.extra["sibling_gate_profile"] == "fixed_global_guarded_v1"
     assert result.extra["sibling_gate_method"] == "fixed_global_chi_square"
-    assert result.extra["sibling_gate_alpha_penalty"] == 50.0
-    assert result.extra["root_stability_subsample_replicates"] == 12
-    assert result.extra["root_stability_tree_distance_metric"] == "hamming"
-    assert result.extra["root_stability_tree_linkage_method"] == "average"
-    assert result.extra["root_selective_permutation_guard_tree_distance_metric"] == ("hamming")
-    assert result.extra["root_selective_permutation_guard_tree_linkage_method"] == ("average")
-    assert result.extra["spectral_transport_passthrough_guard"] is False
-    assert result.extra["spectral_transport_max_cost"] == 1.2
-    assert result.extra["spectral_transport_require_mp_blocks"] is True
 
 
 def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() -> None:
+    from sklearn.metrics import adjusted_rand_score
+
     from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_traversal_panel import (
         _generate_data_with_truth,
     )
-    from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-        _case_contract,
-        _select_cases,
-    )
-    from sklearn.metrics import adjusted_rand_score
+    from benchmarks.validation.statistics.selected_edge_type1_geometry import case_contract
+    from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 
-    case = next(case for case in _select_cases(suite="full", case_names=("cat_clear_3cat_4c",)))
+    case = next(case for case in select_cases(suite="full", case_names=("cat_clear_3cat_4c",)))
     (
         case_id,
         source_family,
@@ -164,7 +185,7 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
         n_samples,
         n_features,
         n_categories,
-    ) = _case_contract(case)
+    ) = case_contract(case)
     seed = 20309045
     results = {}
     for role in ("null", "signal"):
@@ -186,22 +207,30 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
             tree_linkage_method="average",
             edge_alpha=0.001,
             feature_space=feature_space,
-            sibling_gate_profile="fixed_coordinate_selective_root_v1",
+            sibling_gate_method="fixed_coordinate_bh",
+            sibling_gate_alpha_penalty=50.0,
+            root_stability_guard_threshold=0.24,
+            root_stability_subsample_replicates=12,
+            root_stability_feature_fraction=0.8,
+            root_stability_seed=0,
+            root_selective_permutation_guard_replicates=99,
+            root_selective_permutation_guard_seed=0,
+            root_selective_permutation_guard_alpha=0.01,
+            root_selective_permutation_guard_scope="root",
             trace_level="full",
         )
         annotations = run.extra["annotations"]
         root = run.extra["tree"].root()
         metadata = run.extra["gate_bundle"].metadata.config
-        assert metadata.sibling_gate_profile_id == "fixed_coordinate_selective_root_v1"
+        assert metadata.sibling_gate_profile_id is None
         assert metadata.root_selective_permutation_guard_replicates == 99
         assert metadata.root_selective_permutation_guard_seed == 0
         assert metadata.root_selective_permutation_guard_alpha == 0.01
-        assert run.extra["root_selective_permutation_guard_replicates"] == 99
         results[role] = {
             "found_clusters": int(run.found_clusters),
             "ari": float(adjusted_rand_score(np.asarray(truth, dtype=int), np.asarray(run.labels))),
-            "root_selective_p": float(annotations.at[root, "Root_Selective_Permutation_P_Value"]),
-            "blocked": bool(annotations.at[root, "Root_Selective_Permutation_Guard_Blocked"]),
+            "root_selective_p": float(annotations.at[root, "Selective_Permutation_P_Value"]),
+            "blocked": bool(annotations.at[root, "Selective_Permutation_Guard_Blocked"]),
         }
 
     assert results["null"]["found_clusters"] == 1

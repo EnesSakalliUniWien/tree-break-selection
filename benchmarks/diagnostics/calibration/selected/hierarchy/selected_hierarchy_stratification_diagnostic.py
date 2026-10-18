@@ -15,27 +15,27 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
+    DEFAULT_CASE_NAMES,
+    run_edge_and_sibling_records,
+    simulate_null_data,
+)
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import parse_csv_list
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
 
-from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
-    DEFAULT_CASE_NAMES,
-    _parse_csv_list,
-    _run_edge_and_sibling_records,
-    _selected_cases,
-    _simulate_null_data,
-)
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
-from benchmarks.shared.util.time import format_timestamp_utc
-
 SIZE_BIN_EDGES = (0.0, 0.25, 0.5, 0.75, 1.0)
 SIZE_BIN_LABELS = ("small_0_0.25", "medium_0.25_0.5", "large_0.5_0.75", "root_0.75_1")
 
 
-def _parent_size_bin(parent_fraction: float) -> str:
+def parent_size_bin(parent_fraction: float) -> str:
     if not 0.0 < parent_fraction <= 1.0:
         raise ValueError(f"Parent-size fraction must lie in (0, 1]; got {parent_fraction!r}.")
     for lower, upper, label in zip(SIZE_BIN_EDGES, SIZE_BIN_EDGES[1:], SIZE_BIN_LABELS):
@@ -74,7 +74,7 @@ def _selected_record_rows(
                 "parent_depth": int(record_sample.parent_depth),
                 "parent_sample_size": int(record.n_parent),
                 "parent_size_fraction": parent_fraction,
-                "parent_size_bin": _parent_size_bin(parent_fraction),
+                "parent_size_bin": parent_size_bin(parent_fraction),
                 "statistic": float(record.stat),
                 "reference_scale": float(record.reference_scale),
                 "degrees_of_freedom": float(record.degrees_of_freedom),
@@ -185,8 +185,8 @@ def _diagnose_case(
     tree_metric = ""
 
     for replicate_index in range(int(n_replicates)):
-        simulated = _simulate_null_data(inputs.data, feature_space, rng=rng)
-        sample, tree_metric = _run_edge_and_sibling_records(
+        simulated = simulate_null_data(inputs.data, feature_space, rng=rng)
+        sample, tree_metric = run_edge_and_sibling_records(
             simulated,
             inputs.metadata,
             feature_space,
@@ -234,6 +234,8 @@ def run_selected_hierarchy_stratification_diagnostic(
     seed: int,
     write_selected_records: bool = False,
 ) -> dict[str, pd.DataFrame]:
+    if not case_names:
+        raise ValueError("case_names must not be empty.")
     if n_replicates <= 0:
         raise ValueError("n_replicates must be positive.")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -241,7 +243,7 @@ def run_selected_hierarchy_stratification_diagnostic(
 
     record_tables: list[pd.DataFrame] = []
     case_summaries: list[dict[str, object]] = []
-    for index, case in enumerate(_selected_cases(case_names), start=1):
+    for index, case in enumerate(select_cases(suite="full", case_names=case_names), start=1):
         print(f"[{index}/{len(case_names)}] {case['name']}", flush=True)
         try:
             records, case_summary = _diagnose_case(
@@ -364,7 +366,7 @@ def main() -> None:
             / f"selected_hierarchy_stratification_{format_timestamp_utc()}"
         )
     outputs = run_selected_hierarchy_stratification_diagnostic(
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         output_dir=output_dir,
         n_replicates=int(args.n_replicates),
         seed=int(args.seed),

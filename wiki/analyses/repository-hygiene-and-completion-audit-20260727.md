@@ -2,9 +2,9 @@
 title: Repository Hygiene and Completion Audit 2026-07-27
 type: analysis
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-15
 sources:
-  - docs/repository_hygiene_audit_20260727.md
+  - raw/inbox/repository_hygiene_audit_20260727.md
   - README.md
   - pyproject.toml
   - tests/README.md
@@ -36,7 +36,8 @@ blockers.
 The cleanup establishes one project-health interface through `make check`, one
 Pytest configuration in `pyproject.toml`, complete ordered-test coverage, an
 explicit MIT license, truthful research-software status, and a root lint seam
-that treats the pinned BranchArchitect submodule as external implementation.
+that treated the BranchArchitect submodule, removed on 2026-10-14, as external
+implementation.
 The follow-up responsibility pass separates importable methods, dataset
 applications, benchmark diagnostics, manuscript figure composition, and
 maintenance commands into named directories with README entry maps.
@@ -59,7 +60,7 @@ explicit, CI/release automation exists, and a release is versioned and tagged.
 
 ## Evidence
 
-- `docs/repository_hygiene_audit_20260727.md` records Git ancestry, remote
+- `raw/inbox/repository_hygiene_audit_20260727.md` records Git ancestry, remote
   state, executable checks, cleanup, and ranked follow-up work.
 - `README.md` now states the active-research status and exposes `make check`.
 - `pyproject.toml` owns package, Pytest, license, and Ruff configuration.

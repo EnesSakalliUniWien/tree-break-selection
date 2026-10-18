@@ -9,7 +9,6 @@ clustering pipeline.
 | ---- | ------- |
 | `tree_decomposition.py` | Public decomposition engine. Prepares or accepts explicit gate annotation bundles, evaluates gates, and emits cluster assignments. |
 | `cluster_assignments.py` | Builds cluster-root and per-sample assignment tables from explicit final tree boundaries. |
-| `bootstrap_consensus.py` | Bootstrap-based stability helpers layered on top of decomposition results. |
 | `decomposition/gates/orchestrator.py` | Runs the edge-divergence gate then the configured sibling-divergence gate and returns a node-indexed annotation bundle. |
 | `decomposition/gates/profiles.py` | Named sibling-gate profile registry and profile-resolution contract. |
 | `decomposition/gates/guards.py` | Optional root-stability and selected-permutation guard layers used by auditable profiles. |
@@ -33,9 +32,12 @@ clustering pipeline.
 - The default sibling gate remains `projected_wald_inflation`. Opt-in
   `fixed_global_chi_square`, `fixed_coordinate_bh`, and `fixed_block_bh` gates
   avoid learning parent PCA projection rows and projection dimension from the
-  same sibling contrast. `fixed_global_chi_square` is the full fixed-subspace
-  chi-square reference; the BH variants aggregate predeclared coordinates or
-  feature blocks. `sibling_gate_alpha_penalty` can be used to apply the
+  same sibling contrast. `fixed_global_chi_square` applies a nominal chi-square
+  tail to the full fixed-coordinate contrast; the BH variants aggregate
+  predeclared coordinates or feature blocks. Continuous covariance can still
+  be estimated from the same observations, and the tree can still be selected
+  from those data. Fixed projection/rank alone therefore does not establish
+  the reference law. `sibling_gate_alpha_penalty` can be used to apply the
   selected-topology alpha penalty validated in diagnostics while keeping the
   public `sibling_alpha` value recorded in metadata.
   `root_stability_guard_threshold` and its subsampling settings expose the
@@ -44,7 +46,7 @@ clustering pipeline.
   `root_selective_permutation_guard_replicates` exposes a default-off
   validation diagnostic for fixed-subspace sibling gates. It is not part of the
   TBS runtime method: when explicitly enabled for a validation run, it records
-  `Root_Selective_Permutation_*` diagnostics and can close an open root whose
+  `Selective_Permutation_*` diagnostics and can close an open root whose
   selected-root p-value is above the diagnostic guard alpha. The guard scope
   defaults to `root`; validation profiles can also request selected subtree
   checks for `open_internal` nodes or for the narrower `passthrough_descendant`
@@ -52,24 +54,9 @@ clustering pipeline.
   The `global_sibling_min_passthrough_descendant` scope evaluates those
   pass-through candidates against a whole selected-family minimum sibling
   p-value under feature-block permutations.
-- `sibling_gate_profile="fixed_coordinate_guarded_v1"` and
-  `sibling_gate_profile="fixed_global_guarded_v1"` package the non-cross-fit
-  fixed-gate repair as named diagnostic candidates. The profile id is recorded
-  in gate annotation metadata and participates in cache reuse checks.
-- `sibling_gate_profile="fixed_coordinate_selective_root_v1"` packages a
-  validation stress profile: fixed coordinate BH, selected-topology alpha
-  penalty, selected-root stability, and an explicit selected-root permutation
-  diagnostic. It is not the TBS method and is not a default runtime path.
-- `sibling_gate_profile="fixed_coordinate_selective_passthrough_v1"` adds the
-  narrower pass-through descendant guard. It targets the observed null sibling
-  leak without applying the broad selected-subtree permutation check to every
-  internal split.
-- `sibling_gate_profile="fixed_coordinate_global_passthrough_v1"` is the
-  diagnostic follow-up for pass-through leaks below closed roots. It uses the
-  conservative global selected-family sibling-min permutation check for
-  pass-through descendants and remains validation-only because TBS itself should
-  not depend on runtime resampling, and broad signal sensitivity and runtime
-  cost are not production-certified.
+- `sibling_gate_profile="fixed_coordinate_guarded_v1"` packages the same-data
+  fixed-coordinate repair as a named diagnostic candidate. The profile id is
+  recorded in gate annotation metadata and participates in cache reuse checks.
 - `sibling_gate_profile="fixed_coordinate_global_passthrough_refined_v1"` adds
   a higher-resolution replay for global pass-through families that land on the
   base Monte Carlo p-value floor. It is the current diagnostic follow-up after

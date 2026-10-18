@@ -4,15 +4,13 @@ Provides estimators used by the local spectral context to determine how many
 dimensions to project onto when computing projected Wald statistics for each
 internal tree node:
 
-- ``effective_rank``: continuous measure of spectral spread; used to set the
-  global minimum projection dimension from the full dataset's covariance.
 - ``marchenko_pastur_signal_count``: core per-node estimator; counts
   eigenvalues above the Marchenko-Pastur noise threshold.
 - ``estimate_marchenko_pastur_dimension``: canonical MP dimension contract;
   exposes raw signal count, test dimension, effective independent rows, and the
   row count actually used by the MP threshold.
 
-All three operate on eigenvalues produced by the eigendecomposition backend in
+Both operate on eigenvalues produced by the eigendecomposition backend in
 ``spectral/marchenko_pastur.py`` and are called once per internal node.
 """
 
@@ -21,6 +19,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+
+from tree_break_selection.eigenvalue_groups import extend_rank_through_ties
+from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.projection import (
+    _positive_eigenvalue_count,
+)
 
 
 @dataclass(frozen=True)
@@ -31,68 +34,6 @@ class MarchenkoPasturDimensionEstimate:
     test_projection_dimension: int
     effective_independent_rows: int
     mp_threshold_rows: int
-
-
-def effective_rank(eigenvalues: np.ndarray) -> float:
-    """Estimate how many dimensions carry meaningful information in a dataset.
-
-    Eigenvalues describe how much variance each dimension accounts for. If one
-    dimension dominates (e.g. one eigenvalue is 1000, the rest near 0), the
-    effective rank approaches 1 — the data is essentially one-dimensional. If
-    all dimensions contribute equally, the effective rank equals the total
-    number of dimensions.
-
-    The measure is the exponentiated Shannon entropy of the normalized spectrum,
-    which quantifies how spread out energy is across dimensions::
-
-        effective_rank = exp( -Σᵢ pᵢ · ln(pᵢ) ),   pᵢ = λᵢ / Σⱼ λⱼ
-
-    Args:
-        eigenvalues (np.ndarray): Eigenvalues from a covariance or correlation
-            matrix. Negative values (numerical noise from eigen-solvers) are
-            clamped to zero before processing.
-
-    Returns:
-        float: Continuous value in [1, len(eigenvalues)].
-
-            - ``1.0`` — all variance concentrated in a single dimension, or
-              input is degenerate / all-zero.
-            - ``len(eigenvalues)`` — all dimensions contribute equally.
-            - Values in between reflect partial concentration.
-
-    Examples:
-        >>> effective_rank(np.array([100.0, 0.0, 0.0]))  # one dominant dim
-        1.0
-        >>> effective_rank(np.array([1.0, 1.0, 1.0]))    # three equal dims
-        3.0
-    """
-    # Clamp negatives to zero: eigen-solvers can produce small negative values
-    # due to floating-point error; these carry no variance and must be excluded.
-    nonneg_eigenvalues = np.maximum(np.asarray(eigenvalues, dtype=np.float64), 0.0)
-
-    # Total variance across all dimensions — used to convert to a probability
-    # distribution over which Shannon entropy is computed.
-    eigenvalue_sum = float(np.sum(nonneg_eigenvalues))
-    if eigenvalue_sum <= 0:
-        return 1.0
-
-    # Full normalized spectrum: each entry is the fraction of total variance
-    # explained by that dimension, i.e. pᵢ = λᵢ / Σⱼ λⱼ.
-    normalized_spectrum = nonneg_eigenvalues / eigenvalue_sum
-
-    # Drop zero-weight entries before taking log to avoid -inf in the entropy
-    # sum. These are zero eigenvalues that contribute nothing to the spread.
-    nonzero_spectrum_weights = normalized_spectrum[normalized_spectrum > 0]
-    if nonzero_spectrum_weights.size == 0:
-        return 1.0
-
-    # Shannon entropy H = -Σᵢ pᵢ ln(pᵢ): high when energy is evenly spread
-    # across many dimensions, low when one dimension dominates.
-    shannon_entropy = -float(np.sum(nonzero_spectrum_weights * np.log(nonzero_spectrum_weights)))
-
-    # exp(H) maps entropy back to a "number of effective dimensions" scale:
-    # exp(0) = 1 (single dominant dimension), exp(ln d) = d (all equal).
-    return float(np.exp(shannon_entropy))
 
 
 def marchenko_pastur_signal_count(
@@ -157,19 +98,6 @@ def marchenko_pastur_signal_count(
     return int(np.sum(eigenvalues_f64 > mp_upper_bound))
 
 
-def _positive_eigenvalue_count(eigenvalues: np.ndarray) -> int:
-    """Count numerically positive eigenvalues that expose PCA directions."""
-    eigenvalues_f64 = np.asarray(eigenvalues, dtype=np.float64)
-    if eigenvalues_f64.size == 0:
-        return 0
-    tolerance = (
-        np.finfo(np.float64).eps
-        * max(eigenvalues_f64.shape[0], 1)
-        * max(float(np.max(eigenvalues_f64)), 1.0)
-    )
-    return int(np.count_nonzero(eigenvalues_f64 > tolerance))
-
-
 def estimate_marchenko_pastur_dimension(
     eigenvalues: np.ndarray,
     *,
@@ -186,6 +114,10 @@ def estimate_marchenko_pastur_dimension(
     ``mp_threshold_rows`` records the row count actually used in the MP aspect
     ratio. In the production leaf-only spectral contract these counts are the
     same; diagnostics may vary them explicitly.
+
+    The test dimension extends through the complete numerical eigenvalue group
+    at its boundary, within positive available directions. The raw MP count
+    remains the unmodified threshold count.
     """
     independent_row_count = (
         int(n_samples) if effective_independent_rows is None else int(effective_independent_rows)
@@ -224,9 +156,9 @@ def estimate_marchenko_pastur_dimension(
         int(n_features),
         _positive_eigenvalue_count(np.asarray(eigenvalues, dtype=np.float64)),
     )
-    test_projection_dimension = min(
+    test_projection_dimension = extend_rank_through_ties(
+        np.asarray(eigenvalues, dtype=np.float64)[:available_projection_directions],
         test_projection_dimension,
-        int(available_projection_directions),
     )
     return MarchenkoPasturDimensionEstimate(
         raw_mp_signal_count=int(raw_mp_signal_count),
@@ -238,7 +170,6 @@ def estimate_marchenko_pastur_dimension(
 
 __all__ = [
     "MarchenkoPasturDimensionEstimate",
-    "effective_rank",
     "estimate_marchenko_pastur_dimension",
     "marchenko_pastur_signal_count",
 ]

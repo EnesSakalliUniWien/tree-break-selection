@@ -2,10 +2,8 @@
 title: Selected Candidate Truth Law Panel 2026-06-15
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/family/selected_candidate_truth_law_panel.py
-  - tests/validation/calibration/selected/family/141_test_selected_candidate_truth_law_panel.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_candidate_truth_law_stress
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_candidate_truth_law_generated_support
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/selected_candidate_truth_law_overlap_expanded
@@ -208,7 +206,7 @@ in the selected tree before asking whether pass-through should be promoted.
   zero-negative threshold and still requires a selected-family law over the
   frontier surface.
 - The selected-family frontier-law extension makes that law explicit without
-  permutations or sample splitting. For a clean family vector \(x\), with all
+  permutation replay. For a clean family vector \(x\), with all
   frontier coordinates oriented so larger is better, it computes
   \(m(x)=\min_{y\in\mathcal N}\max_j(x_j-y_j)\) against fragment controls
   \(\mathcal N\). The indicator \(1\{m(x)>0\}\) feeds a
@@ -341,6 +339,7 @@ in the selected tree before asking whether pass-through should be promoted.
   separate fail-closed law.
 - `selected_candidate_sibling_rescue_guard_summary.csv` records how many clean
   families remain after blocking unsupported sibling-p rescues.
+- `benchmarks/diagnostics/calibration/selected/family/selected_candidate_truth_law_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

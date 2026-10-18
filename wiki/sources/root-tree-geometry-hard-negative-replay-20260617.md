@@ -2,11 +2,9 @@
 title: Root Tree Geometry Hard Negative Replay 2026-06-17
 type: source
 status: draft
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/root/center/root_tree_geometry_hard_negative_replay_panel.py
-  - tests/validation/calibration/root/center/186_test_root_tree_geometry_hard_negative_replay_panel.py
-  - tests/pipeline/51_test_dispatch_contract.py
+  - tests/pipeline/dispatch/test_parameter_forwarding.py
   - benchmarks/shared/runners/tbs_runner.py
   - benchmarks/shared/runners/dispatch.py
   - raw/assets/benchmark-results/specific_small_method_benchmark_20260615/root_tree_geometry_hard_negative_overlap_extreme_4c_v1
@@ -25,9 +23,10 @@ tags:
 
 `root_tree_geometry_hard_negative_replay_panel.py` replays the warning case
 `overlap_extreme_4c` across alternative selected-tree geometries. The panel
-uses the same signal seed and `fixed_coordinate_selective_root_v1` guard
-settings as the prior all-seven root-validity artifact, but varies tree
-construction and distance:
+uses the same signal seed and explicit selected-root guard settings as the prior
+all-seven root-validity artifact, but varies tree construction and distance.
+The original artifact recorded those settings under the now-retired
+`fixed_coordinate_selective_root_v1` profile ID:
 
 - linkage/Hamming/average,
 - linkage/Hamming/complete,
@@ -92,7 +91,7 @@ distance/linkage/rooting families.
 - `186_test_root_tree_geometry_hard_negative_replay_panel.py` checks geometry
   parsing, fail-closed unstable-root classification, leak classification, and
   summary failure when any geometry leaks.
-- `51_test_dispatch_contract.py` verifies that root replay distance/linkage
+- `test_parameter_forwarding.py` verifies that root replay distance/linkage
   parameters are forwarded through the shared TBS dispatcher.
 - `root_tree_geometry_hard_negative_replay_summary.csv` records
   `row_count = 6`, `ok_geometry_count = 6`,
@@ -109,10 +108,9 @@ distance/linkage/rooting families.
   `skipped_geometry_count = 2`, `hard_negative_leak_count = 0`, and
   `legacy_invalid_root_fragmentation_count = 1`, while its rootless edge scan
   also records `rootless_truth_aligned_geometry_count = 0`.
+- `benchmarks/diagnostics/calibration/root/center/root_tree_geometry_hard_negative_replay_panel.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 
-- [[root-selected-validity-replay-panel-20260617]]
-- [[root-selected-kernel-spectral-tail-law-20260617]]
 - [[root-conditional-kernel-spectral-law]]
 - [[selected-neighborhood-measurability-law]]

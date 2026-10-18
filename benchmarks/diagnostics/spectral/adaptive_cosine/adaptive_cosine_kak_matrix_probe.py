@@ -16,6 +16,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
+    SCHEMA_VERSION,
+    run_block_tree,
+    sibling_method_counts,
+)
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -24,12 +30,6 @@ from tree_break_selection.space_separation import (
     adaptive_spectral_blocks,
     cosine_eigendecomposition,
     weight_feature_matrix,
-)
-
-from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchmark_probe import (
-    SCHEMA_VERSION,
-    run_block_tree,
-    sibling_method_counts,
 )
 
 MATRIX_SCHEMA_VERSION = f"{SCHEMA_VERSION}/matrix"
@@ -63,9 +63,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--weightings",
         nargs="+",
-        default=["binary", "tfidf"],
-        choices=["binary", "tfidf"],
-        help="'binary' means raw matrix values, matching the historical script name.",
+        default=["raw", "tfidf"],
+        choices=["raw", "tfidf"],
+        help="'raw' uses the input matrix without feature weighting.",
     )
     return parser.parse_args()
 
@@ -130,7 +130,7 @@ def main() -> None:
                 min_segment_length=args.min_segment_length,
                 max_segments=args.max_segments,
             )
-        except Exception as exc:  # noqa: BLE001 - diagnostic records failures.
+        except Exception as exc:
             rows.append(
                 {
                     **base,
@@ -221,7 +221,7 @@ def main() -> None:
                         "error": "",
                     }
                 )
-            except Exception as exc:  # noqa: BLE001 - diagnostic records failures.
+            except Exception as exc:
                 rows.append(
                     {
                         **block_record,

@@ -9,9 +9,10 @@ from pathlib import Path
 import pandas as pd
 
 
-def _load_script(name: str):
+def _load_script(name: str, monkeypatch):
     module_name = f"applications.scrna.analysis.{Path(name).stem}"
-    sys.modules.pop(module_name, None)
+    # Restored after the test, so later tests keep the original module object.
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
     return importlib.import_module(module_name)
 
 
@@ -24,8 +25,7 @@ def _assert_generated_at(path: Path) -> None:
 
 
 def test_branch_length_audit_report_records_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_script("audit_branch_length_effects.py")
-    monkeypatch.setattr(module, "OUTPUT_ROOT", tmp_path)
+    module = _load_script("audit_branch_length_effects.py", monkeypatch)
     effects = pd.DataFrame(
         [
             {
@@ -63,17 +63,16 @@ def test_branch_length_audit_report_records_generated_timestamp(monkeypatch, tmp
         ]
     )
 
-    module._write_report(effects, sensitivity, {"adult_pancreas": {"seed": 0}})
+    module._write_report(tmp_path, effects, sensitivity, {"adult_pancreas": {"seed": 0}})
 
     _assert_generated_at(tmp_path / "scrna_branch_length_effect_audit.md")
 
 
 def test_branch_length_audit_manifest_records_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_script("audit_branch_length_effects.py")
+    module = _load_script("audit_branch_length_effects.py", monkeypatch)
     output_root = tmp_path / "branch-audit"
     output_root.mkdir()
     monkeypatch.setattr(module, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(module, "OUTPUT_ROOT", output_root)
     monkeypatch.setattr(
         module,
         "DATASETS",
@@ -99,7 +98,7 @@ def test_branch_length_audit_manifest_records_generated_timestamp(monkeypatch, t
     ]:
         (output_root / name).write_bytes(b"artifact")
 
-    module._write_manifest("2026-06-24T20:50:00+02:00")
+    module._write_manifest(output_root, "2026-06-24T20:50:00+02:00")
 
     manifest = json.loads((output_root / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["generated_at"] == "2026-06-24T20:50:00+02:00"
@@ -115,8 +114,7 @@ def test_branch_length_audit_manifest_records_generated_timestamp(monkeypatch, t
 
 
 def test_distributional_action_audit_report_records_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_script("audit_distributional_action.py")
-    monkeypatch.setattr(module, "OUTPUT_ROOT", tmp_path)
+    module = _load_script("audit_distributional_action.py", monkeypatch)
     summary = pd.DataFrame(
         [
             {
@@ -156,7 +154,7 @@ def test_distributional_action_audit_report_records_generated_timestamp(monkeypa
         ]
     )
 
-    module._write_report(edges, summary)
+    module._write_report(tmp_path, edges, summary)
 
     _assert_generated_at(tmp_path / "scrna_distributional_action_audit.md")
 
@@ -165,11 +163,10 @@ def test_distributional_action_audit_manifest_records_generated_timestamp(
     monkeypatch,
     tmp_path,
 ):
-    module = _load_script("audit_distributional_action.py")
+    module = _load_script("audit_distributional_action.py", monkeypatch)
     output_root = tmp_path / "action-audit"
     output_root.mkdir()
     monkeypatch.setattr(module, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(module, "OUTPUT_ROOT", output_root)
     monkeypatch.setattr(
         module,
         "DATASETS",
@@ -194,7 +191,7 @@ def test_distributional_action_audit_manifest_records_generated_timestamp(
     ]:
         (output_root / name).write_bytes(b"artifact")
 
-    module._write_manifest("2026-06-24T20:51:00+02:00")
+    module._write_manifest(output_root, "2026-06-24T20:51:00+02:00")
 
     manifest = json.loads((output_root / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["generated_at"] == "2026-06-24T20:51:00+02:00"

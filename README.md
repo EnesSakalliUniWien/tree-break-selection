@@ -12,7 +12,8 @@ This is active research software at version `0.1.0`, not a finished production
 or publication release. The implementation is executable and extensively
 tested, but selected-hierarchy calibration, high-cardinality categorical
 transfer, and promotion of several method constants remain open research
-questions. Unsupported calibration contexts intentionally fail closed. See
+questions. Missing internal calibration support still closes sibling gates. With support, the
+historical empirical p-value rule is active; its selected-tail validity remains unproven. See
 `wiki/questions/open-mathematical-questions.md` for the maintained evidence and
 remaining gaps.
 
@@ -43,9 +44,9 @@ surfaces with their own contracts.
   contrast coordinates before any projected-Wald test is evaluated.
 - **Projected-Wald statistic** – edge and sibling tests compare distributions in
   a projection basis with an explicit covariance model.
-- **Empirical-null inflation** – sibling split p-values are corrected only when
-  the calibration support is valid. Invalid support produces an unsupported
-  status, not a neutral fallback.
+- **Empirical-null inflation** – same-selected-hierarchy scale estimates adjust
+  sibling statistics before a plug-in chi-square tail and traversal-aligned BH.
+  This restored empirical rule does not establish selected-tail error control.
 - **Top-down decomposition** – cluster boundaries appear at the first node where
   the traversal contract says the split is not supported.
 
@@ -55,7 +56,7 @@ surfaces with their own contracts.
 - Decomposition entrypoint and traversal: `tree_break_selection/hierarchy_analysis/tree_decomposition.py`.
 - Gate orchestration and split/merge evaluation: `tree_break_selection/hierarchy_analysis/decomposition/gates/`.
 - Statistical tests, projection helpers, and FDR correction: `tree_break_selection/hierarchy_analysis/statistics/`.
-- Reusable invariant/equivariant and adaptive-cosine space separation:
+- Reusable leading-axis and adaptive-cosine space separation:
   `tree_break_selection/space_separation/`.
 - Reusable plotting engines and backend selection: `tree_break_selection/plot/`.
 - Benchmark harness and report generation: `benchmarks/`.
@@ -83,8 +84,6 @@ surfaces with their own contracts.
 - `reports/`: policy marker for deliberately retained evidence. Routine logs,
   profiling outputs, scan reports, and notebook image exports should stay local
   unless they are intentionally cited.
-- `notebooks/`: notebooks only; reusable Python code belongs in package,
-  benchmark, or script directories.
 - `raw/`: captured primary material before synthesis into the wiki.
 - `local_data/`: ignored local-only data.
 
@@ -105,8 +104,9 @@ proceeds through four checkpoints:
    in the projected-Wald geometry, then apply tree-aware multiplicity control.
 
 4. **Sibling split tests** – evaluate whether sibling subtrees should remain
-   separated after projected-Wald testing, empirical-null inflation, and sibling
-   FDR control.
+   separated after projected-Wald testing. The default empirical-inflation
+   path applies plug-in chi-square p-values and traversal-aligned sibling BH
+   when internal support is available. Selected-tail validity remains unproven.
 
 ## Statistical Gates and Traversal
 
@@ -117,8 +117,12 @@ are satisfied.
 - **Binary structure prerequisite**: the node must have exactly two children.
 - **Edge divergence gate**: at least one child-parent edge must have supported
   and significant child-parent divergence evidence.
-- **Sibling divergence gate**: the sibling pair must have a supported and
-  significant sibling split after empirical-null inflation and sibling FDR.
+- **Sibling divergence gate**: the sibling pair must have an available p-value
+  and a significant sibling split after the configured sibling correction.
+  The default same-data empirical-inflation path computes plug-in p-values
+  when internal support is available; missing support closes the focal gate.
+  Availability does not establish a valid selected-tail reference law or
+  whole-tree error control.
 
 If the split is not supported, the algorithm labels the parent node as a
 cluster boundary and stops there. When the split is supported, it continues the
@@ -181,16 +185,6 @@ uv venv --python 3.11 .venv
 uv sync --extra dev --extra benchmark --extra viz --locked
 ```
 
-Graph-diffusion and temporal-trajectory experiments are isolated in named
-extras:
-
-```bash
-uv sync --extra diffusion --extra trajectory --locked
-```
-
-`diffusion` installs PyGSP. `trajectory` installs deeptime. PHATE is GPLv2 and
-therefore remains isolated with graphtools in `experimental-gpl`.
-
 For the full repository test suite, include the scRNA and optional GPL extras.
 Several full-suite tests import or exercise Scanpy/AnnData and graphtools
 paths that are intentionally outside the lean development environment.
@@ -237,8 +231,8 @@ performed without cleanup.
 
 - After the full test environment sync above, run the automated tests with
   `uv run pytest`.
-- Run `make check` for the repository hygiene gate: Ruff, wiki lint, and the
-  purpose-ordered full test suite.
+- Run `make check` for Ruff, dependency and dead-code audits, wiki lint, the
+  generated report files check, and the purpose-ordered full test suite.
 - In the lean development environment, run targeted tests for the code you
   changed. scRNA-only tests are skipped when their optional dependencies are
   absent, but full-suite parity expects the full environment.

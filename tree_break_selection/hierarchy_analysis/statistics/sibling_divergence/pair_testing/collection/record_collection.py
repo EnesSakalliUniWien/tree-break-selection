@@ -6,10 +6,10 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from tree_break_selection.core_utils.data_utils import extract_node_sample_size
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     compute_mean_branch_length,
 )
+from tree_break_selection.hierarchy_analysis.statistics.data_utils import extract_node_sample_size
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
     DEFAULT_CONTINUOUS_COVARIANCE_POLICY,
@@ -29,6 +29,7 @@ from .child_parent_edge_metadata import (
     extract_child_parent_edge_p_values_by_node,
     extract_child_parent_edge_significance_by_node,
     extract_child_parent_edge_testing_status_by_node,
+    resolve_sibling_calibration_dependency_group,
     validate_child_parent_edge_annotation_requirements,
 )
 from .pair_observations import (
@@ -132,6 +133,12 @@ def collect_sibling_pair_records(
                 adaptive_projection_dimension_energy_fraction
             ),
         )
+        parent_eigenvalues = np.asarray(
+            parent_principal_component_eigenvalues_for_parent, dtype=float
+        )
+        parent_positive_eigenvalue_count = float(
+            np.count_nonzero(np.isfinite(parent_eigenvalues) & (parent_eigenvalues > 0.0))
+        )
 
         is_edge_blocked = determine_whether_sibling_pair_is_edge_blocked(
             left_child_id,
@@ -152,6 +159,31 @@ def collect_sibling_pair_records(
             child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
             child_parent_edge_ancestor_blocked_by_node=(child_parent_edge_ancestor_blocked_by_node),
         )
+        calibration_dependency_group = resolve_sibling_calibration_dependency_group(
+            tree,
+            parent_node_id,
+            is_edge_blocked=is_edge_blocked,
+            child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
+            child_parent_edge_significance_by_node=child_parent_edge_significance_by_node,
+        )
+        dependency_owner_children = identify_binary_sibling_children(
+            tree,
+            calibration_dependency_group,
+        )
+        if dependency_owner_children is None:
+            raise ValueError(
+                "Sibling calibration dependency group must own exactly two children; "
+                f"group={calibration_dependency_group!r}."
+            )
+        dependency_left_child_id, dependency_right_child_id = dependency_owner_children
+        calibration_dependency_weight = estimate_sibling_null_weight_from_child_parent_edges(
+            dependency_left_child_id,
+            dependency_right_child_id,
+            child_parent_edge_p_values_by_node=child_parent_edge_p_values_by_node,
+            child_parent_edge_significance_by_node=child_parent_edge_significance_by_node,
+            child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
+            child_parent_edge_ancestor_blocked_by_node=(child_parent_edge_ancestor_blocked_by_node),
+        )
         records.append(
             build_sibling_pair_record(
                 parent_node_id=parent_node_id,
@@ -166,7 +198,10 @@ def collect_sibling_pair_records(
                 is_null_like=is_null_like,
                 is_edge_blocked=is_edge_blocked,
                 sibling_null_weight=sibling_null_weight,
+                calibration_dependency_group=calibration_dependency_group,
+                calibration_dependency_weight=calibration_dependency_weight,
                 sibling_projection_dimension=float(degrees_of_freedom),
+                parent_positive_eigenvalue_count=parent_positive_eigenvalue_count,
                 feature_family=(
                     "bernoulli" if feature_space is None else feature_space.family_label
                 ),

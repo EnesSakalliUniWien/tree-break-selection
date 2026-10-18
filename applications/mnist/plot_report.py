@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 from datetime import datetime
 from pathlib import Path
 
@@ -14,37 +13,21 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-from applications.mnist._shared import best_rows, parse_digit_counts
+from applications.mnist._shared import (
+    DIGIT_COLORS,
+    alpha_label,
+    best_rows,
+    parse_digit_counts,
+    sweep_assignment_key,
+)
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = ROOT / "benchmarks/results/experiments/mnist"
 SWEEP_DIR = SOURCE_DIR / "alpha_sweep_continuous_pca50_20260605"
-OUT_DIR = ROOT / "raw/assets/benchmark-results/mnist_tbs_analysis_20260624"
-
-OUT_PDF = OUT_DIR / "mnist_tbs_analysis_one_plot_per_page.pdf"
-OUT_MAIN = OUT_DIR / "mnist_tbs_analysis_summary.png"
-OUT_CSV = OUT_DIR / "mnist_tbs_analysis_summary.csv"
-
-DIGIT_COLORS = {
-    0: "#4e79a7",
-    1: "#f28e2b",
-    2: "#e15759",
-    3: "#76b7b2",
-    4: "#59a14f",
-    5: "#edc948",
-    6: "#b07aa1",
-    7: "#ff9da7",
-    8: "#9c755f",
-    9: "#bab0ab",
-}
-
-
-def _alpha_label(value: float) -> str:
-    return f"{value:g}"
-
-
-def _assignment_key(linkage: str, edge_alpha: float, sibling_alpha: float) -> str:
-    return f"{linkage}_e{_alpha_label(edge_alpha)}_s{_alpha_label(sibling_alpha)}"
+OUT_PDF = "mnist_tbs_analysis_one_plot_per_page.pdf"
+OUT_MAIN = "mnist_tbs_analysis_summary.png"
+OUT_CSV = "mnist_tbs_analysis_summary.csv"
 
 
 def _add_generated_at(fig: plt.Figure, generated_at: str) -> None:
@@ -103,9 +86,9 @@ def _plot_heatmap(
     matrix, edges, siblings = _heatmap_matrix(summary, linkage, value)
     image = ax.imshow(matrix, cmap=cmap, origin="lower", aspect="auto")
     ax.set_xticks(np.arange(len(edges)))
-    ax.set_xticklabels([_alpha_label(v) for v in edges], rotation=35, ha="right")
+    ax.set_xticklabels([alpha_label(v) for v in edges], rotation=35, ha="right")
     ax.set_yticks(np.arange(len(siblings)))
-    ax.set_yticklabels([_alpha_label(v) for v in siblings])
+    ax.set_yticklabels([alpha_label(v) for v in siblings])
     ax.set_xlabel("edge alpha")
     ax.set_ylabel("sibling alpha")
     ax.set_title(title, weight="bold")
@@ -187,21 +170,22 @@ def _plot_failure_baseline(
     ax.spines["right"].set_visible(False)
 
 
-def main() -> None:
-    OUT_PDF.parent.mkdir(parents=True, exist_ok=True)
+def main(output_dir: Path | None = None) -> None:
+    output_dir = output_dir or timestamped_results_dir("mnist_tbs_analysis")
+    output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     summary = pd.read_csv(SWEEP_DIR / "alpha_sweep_summary.csv")
     binary = pd.read_csv(SOURCE_DIR / "mnist_benchmark_summary.csv")
     continuous = pd.read_csv(SOURCE_DIR / "mnist_continuous_pca50_summary.csv")
     best = summary.sort_values("ARI", ascending=False).iloc[0]
-    best_key = _assignment_key(
+    best_key = sweep_assignment_key(
         str(best["linkage"]), float(best["edge_alpha"]), float(best["sibling_alpha"])
     )
     composition = pd.read_csv(SWEEP_DIR / f"{best_key}_top_cluster_digit_composition.csv")
 
     analysis_summary = best_rows(summary)
     analysis_summary.insert(0, "generated_at", generated_at)
-    analysis_summary.to_csv(OUT_CSV, index=False)
+    analysis_summary.to_csv(output_dir / OUT_CSV, index=False)
 
     fig, ax = plt.subplots(figsize=(9, 6.2), facecolor="white")
     _plot_best_summary(ax, summary)
@@ -213,11 +197,11 @@ def main() -> None:
         color="#374151",
     )
     _add_generated_at(fig, generated_at)
-    fig.savefig(OUT_MAIN, dpi=220, bbox_inches="tight")
+    fig.savefig(output_dir / OUT_MAIN, dpi=220, bbox_inches="tight")
     plt.close(fig)
 
     with PdfPages(
-        OUT_PDF,
+        output_dir / OUT_PDF,
         metadata={
             "Title": "MNIST TBS static analysis report",
             "Subject": f"Generated at: {generated_at}",
@@ -246,16 +230,15 @@ def main() -> None:
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
-    print(OUT_PDF)
-    print(OUT_MAIN)
-    print(OUT_CSV)
+    print(output_dir / OUT_PDF)
+    print(output_dir / OUT_MAIN)
+    print(output_dir / OUT_CSV)
 
 
 def run_cli() -> None:
-    """Validate command-line arguments before generating retained figures."""
+    """Parse ``--output-dir`` and generate the report."""
 
-    argparse.ArgumentParser(description=__doc__).parse_args()
-    main()
+    main(parse_output_dir(__doc__))
 
 
 if __name__ == "__main__":

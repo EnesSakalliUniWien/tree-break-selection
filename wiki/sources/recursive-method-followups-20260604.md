@@ -2,18 +2,14 @@
 title: Recursive Method Followups 2026-06-04
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-17
 sources:
   - raw/inbox/recursive-method-program-20260604.txt
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/types/inflation_model.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
   - tests/statistics/35_test_empirical_null_inflation_estimation.py
-  - benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py
-  - tests/validation/calibration/sibling/nulls/69_test_sibling_null_weight_rule_validation.py
   - raw/assets/benchmark-results/sibling_null_weight_rule_validation_20260604/manifest.json
   - raw/assets/benchmark-results/sibling_null_weight_rule_validation_20260604/sibling_null_weight_rule_summary.csv
-  - benchmarks/diagnostics/spectral/mp/sibling_projection_dimension_rule_grid.py
-  - tests/validation/spectral/mp/70_test_sibling_projection_dimension_rule_grid.py
   - raw/assets/benchmark-results/sibling_projection_dimension_rule_grid_20260604/manifest.json
   - raw/assets/benchmark-results/sibling_projection_dimension_rule_grid_20260604/sibling_projection_dimension_rule_grid.csv
   - raw/assets/benchmark-results/mp_kmin_q14_q15_smoke_20260604/mp_kmin_contract_smoke.csv
@@ -88,6 +84,7 @@ are recorded as ideas and validation tracks rather than production changes.
 - `sibling_null_weight_rule_summary.csv`,
   `sibling_projection_dimension_rule_grid.csv`, and
   `mp_kmin_contract_smoke.csv` record the current diagnostic outputs.
+- `benchmarks/diagnostics/calibration/sibling/nulls/sibling_null_weight_rule_validation.py` was retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
 

@@ -2,7 +2,7 @@
 title: Traversal Neighborhood Method Comparison
 type: analysis
 status: reviewed
-updated: 2026-06-15
+updated: 2026-08-10
 sources:
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/gate_evaluator.py
@@ -12,7 +12,6 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
   - wiki/sources/old-vs-current-method-stack-comparison-20260615.md
   - wiki/sources/overlap-conditional-topology-law-panel-20260615.md
-  - wiki/sources/specific-small-method-benchmark-20260615.md
   - wiki/sources/selected-neighborhood-distribution-panel-20260615.md
   - wiki/sources/retained-pass-through-topology-likelihood-panel-20260615.md
   - wiki/sources/overlap-selected-pass-through-fixture-miner-20260615.md
@@ -192,7 +191,7 @@ current stack:
   neighborhood role:
     strict support over log(k) and log(parent size), plus diagnostic topology rows
   strength:
-    fail-closed support and fixed-coordinate non-cross-fit sibling gates
+    fail-closed support and fixed-coordinate same-data sibling gates
   weakness:
     insufficient explicit distribution law for internal selected neighborhoods
 ```
@@ -240,8 +239,9 @@ same selected-root stability settings. The concrete configuration difference is
 that `fixed_coordinate_global_passthrough_refined_v1` enables a selected-family
 global sibling-min pass-through guard with `99` draws, alpha `0.01`, and scope
 `global_sibling_min_passthrough_descendant_refined`, while
-`fixed_coordinate_conditional_topology_diagnostic_v1` leaves that guard off and
-emits topology-law evidence diagnostically.
+the canonical `fixed_coordinate_guarded_v1` profile leaves that guard off. The
+conditional-topology panel emits the topology-law evidence diagnostically; its
+former behavior-identical profile id has been retired.
 
 The readiness summary gives the working verdict. Both profiles are ready only
 as diagnostics for the shared traversal skeleton. The refined profile is ready
@@ -398,15 +398,11 @@ repeatable selected-neighborhood distribution, or whether the focused
   and a log projection-dimension/log parent-size neighborhood kernel.
 - [[old-vs-current-method-stack-comparison-20260615]] records the old c2ef
   topology-aware bandwidth variables and the current strict support path.
-- [[specific-small-method-benchmark-20260615]] records that focused
-  `balance_product` recovery works on synthetic positives but not yet on the
-  real sparse context-negative slice.
 
 ## Links
 
 - [[old-vs-current-method-stack-comparison-20260615]]
 - [[overlap-conditional-topology-law-panel-20260615]]
-- [[specific-small-method-benchmark-20260615]]
 - [[open-mathematical-questions]]
 
 ## Open Questions

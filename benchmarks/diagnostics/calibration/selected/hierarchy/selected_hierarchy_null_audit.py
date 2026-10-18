@@ -11,7 +11,6 @@ fallback in production code.
 
 from __future__ import annotations
 
-import argparse
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,10 +18,17 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
-from tree_break_selection.core_utils.tree_utils import compute_node_depths
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.cli import (
+    parse_selected_hierarchy_args,
+)
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+from benchmarks.shared.util.time import format_timestamp_utc
+from benchmarks.shared.util.values import parse_csv_list
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_EDGE_ALPHA,
     DEFAULT_SIBLING_ALPHA,
@@ -42,14 +48,10 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.shared.cases import get_default_test_cases
-from benchmarks.shared.runners.method_registry import METHOD_SPECS
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
-from benchmarks.shared.util.time import format_timestamp_utc
+from tree_break_selection.tree.topology import compute_node_depths
 
 DEFAULT_CASE_NAMES = (
     "gauss_null_large",
@@ -94,19 +96,9 @@ class SiblingRecordSample:
     significant_edges: int
 
 
-def _parse_csv_list(raw: str) -> list[str]:
-    return [part.strip() for part in raw.split(",") if part.strip()]
-
-
-def _selected_cases(case_names: list[str]) -> list[dict[str, object]]:
-    case_by_name = {str(case["name"]): case for case in get_default_test_cases()}
-    missing = [case_name for case_name in case_names if case_name not in case_by_name]
-    if missing:
-        raise ValueError(f"Unknown benchmark case name(s): {missing!r}.")
-    return [case_by_name[case_name].copy() for case_name in case_names]
-
-
-def _build_tree(data: pd.DataFrame, metadata: dict[str, object]) -> tuple[PosetTree, str]:
+def build_selected_hierarchy_tree(
+    data: pd.DataFrame, metadata: dict[str, object]
+) -> tuple[PosetTree, str]:
     if bool(metadata["requires_precomputed_tbs_distance"]):
         raise ValueError(
             "Selected-hierarchy null audit does not support cases requiring "
@@ -116,20 +108,17 @@ def _build_tree(data: pd.DataFrame, metadata: dict[str, object]) -> tuple[PosetT
     params = METHOD_SPECS["tbs"].param_grid[0]
     metric = str(params["tree_distance_metric"])
     linkage_method = str(params["tree_linkage_method"])
-    tree = tree_from_linkage(
-        linkage(pdist(data.values, metric=metric), method=linkage_method),
-        leaf_names=data.index.tolist(),
-    )
+    tree = build_tree(data, pdist(data.values, metric=metric), linkage_method=linkage_method).tree
     return tree, metric
 
 
-def _run_edge_and_sibling_records(
+def run_edge_and_sibling_records(
     data: pd.DataFrame,
     metadata: dict[str, object],
     feature_space: FeatureSpace | None,
 ) -> tuple[SiblingRecordSample, str]:
-    tree, tree_metric = _build_tree(data, metadata)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree, tree_metric = build_selected_hierarchy_tree(data, metadata)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     edge_df, spectral_context = annotate_child_parent_divergence(
         tree,
         tree.annotations_df,
@@ -192,12 +181,11 @@ def _choose_observed_target(
         raise ValueError(f"Case {case_id!r} has no sibling records selected by the edge path.")
 
     if target_mode == "root":
-        max_parent_sample_size = max(record.record.n_parent for record in focal_records)
-        candidates = [
-            record for record in focal_records if record.record.n_parent == max_parent_sample_size
-        ]
+        candidates = [record for record in focal_records if record.parent_depth == 0]
         if not candidates:
-            raise ValueError(f"Case {case_id!r} has no focal root-like sibling record.")
+            raise ValueError(
+                f"Case {case_id!r} has no root sibling record selected by the edge path."
+            )
         target = candidates[0]
     elif target_mode == "strongest":
         target = min(focal_records, key=lambda item: item.record.p_value)
@@ -205,20 +193,14 @@ def _choose_observed_target(
         ordered = sorted(focal_records, key=lambda item: item.record.n_parent)
         target = ordered[len(ordered) // 2]
     elif target_mode == "non_root_strongest":
-        max_parent_sample_size = max(record.record.n_parent for record in focal_records)
-        non_root_records = [
-            record for record in focal_records if record.record.n_parent < max_parent_sample_size
-        ]
+        non_root_records = [record for record in focal_records if record.parent_depth > 0]
         if not non_root_records:
             raise ValueError(
                 f"Case {case_id!r} has no non-root sibling record selected by the edge path."
             )
         target = min(non_root_records, key=lambda item: item.record.p_value)
     elif target_mode == "non_root_median_parent_size":
-        max_parent_sample_size = max(record.record.n_parent for record in focal_records)
-        non_root_records = [
-            record for record in focal_records if record.record.n_parent < max_parent_sample_size
-        ]
+        non_root_records = [record for record in focal_records if record.parent_depth > 0]
         if not non_root_records:
             raise ValueError(
                 f"Case {case_id!r} has no non-root sibling record selected by the edge path."
@@ -281,7 +263,7 @@ def _categorical_null(
     return pd.DataFrame(simulated, index=data.index, columns=data.columns)
 
 
-def _simulate_null_data(
+def simulate_null_data(
     data: pd.DataFrame,
     feature_space: FeatureSpace | None,
     *,
@@ -517,7 +499,7 @@ def _diagnose_case(
             "tree-distance contract before use."
         )
 
-    observed_sample, tree_metric = _run_edge_and_sibling_records(
+    observed_sample, tree_metric = run_edge_and_sibling_records(
         inputs.data,
         inputs.metadata,
         feature_space,
@@ -531,8 +513,8 @@ def _diagnose_case(
     rng = np.random.default_rng(int(seed))
     samples: list[SiblingRecordSample] = []
     for _replicate in range(int(n_replicates)):
-        simulated = _simulate_null_data(inputs.data, feature_space, rng=rng)
-        sample, _tree_metric = _run_edge_and_sibling_records(
+        simulated = simulate_null_data(inputs.data, feature_space, rng=rng)
+        sample, _tree_metric = run_edge_and_sibling_records(
             simulated,
             inputs.metadata,
             feature_space,
@@ -583,12 +565,14 @@ def run_selected_hierarchy_null_audit(
     target_mode: str,
     context_match: str,
 ) -> pd.DataFrame:
+    if not case_names:
+        raise ValueError("case_names must not be empty.")
     if n_replicates <= 0:
         raise ValueError("n_replicates must be positive.")
     output_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, object]] = []
     started_at = perf_counter()
-    for index, case in enumerate(_selected_cases(case_names), start=1):
+    for index, case in enumerate(select_cases(suite="full", case_names=case_names), start=1):
         print(f"[{index}/{len(case_names)}] {case['name']}", flush=True)
         try:
             row = _diagnose_case(
@@ -635,44 +619,16 @@ def run_selected_hierarchy_null_audit(
     return summary
 
 
-def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+def main() -> None:
+    args = parse_selected_hierarchy_args(
         description=(
             "Estimate selected-hierarchy sibling-null behavior by regenerating "
             "null data, rebuilding the hierarchy, and collecting selected focal "
             "sibling statistics."
-        )
-    )
-    parser.add_argument("--case-names", default=",".join(DEFAULT_CASE_NAMES))
-    parser.add_argument("--n-replicates", type=int, default=25)
-    parser.add_argument("--seed", type=int, default=20260601)
-    parser.add_argument(
-        "--target-mode",
-        choices=(
-            "root",
-            "strongest",
-            "median_parent_size",
-            "non_root_strongest",
-            "non_root_median_parent_size",
         ),
-        default="root",
+        default_case_names=DEFAULT_CASE_NAMES,
+        default_seed=20260601,
     )
-    parser.add_argument(
-        "--context-match",
-        choices=(
-            "any",
-            "projection",
-            "projection_and_parent_size",
-            "projection_parent_size_depth",
-        ),
-        default="projection",
-    )
-    parser.add_argument("--output-dir", type=Path, default=None)
-    return parser.parse_args()
-
-
-def main() -> None:
-    args = _parse_args()
     output_dir = args.output_dir
     if output_dir is None:
         output_dir = (
@@ -681,7 +637,7 @@ def main() -> None:
             / f"selected_hierarchy_null_audit_{format_timestamp_utc()}"
         )
     summary = run_selected_hierarchy_null_audit(
-        case_names=_parse_csv_list(str(args.case_names)),
+        case_names=parse_csv_list(str(args.case_names)),
         output_dir=output_dir,
         n_replicates=int(args.n_replicates),
         seed=int(args.seed),

@@ -18,6 +18,8 @@ import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
+from tree_break_selection.tree.topology import tree_root
+
 from .cluster_color_mapping import build_cluster_color_spec, present_cluster_ids
 
 CHILD_PARENT_SIGNIFICANT_COL = "Child_Parent_Divergence_Significant"
@@ -93,11 +95,10 @@ def _group_internal_nodes_for_halo(
     significant: list[object] = []
     tested_not_significant: list[object] = []
 
+    root = tree_root(G)
     for node in G.nodes():
-        if node in leaves:
-            continue
         # Root has no parent; child-parent test is undefined there.
-        if G.in_degree(node) == 0:
+        if node in leaves or node == root:
             continue
 
         flag = bool(_lookup_annotation_value(annotations_df, node, CHILD_PARENT_SIGNIFICANT_COL))
@@ -138,7 +139,6 @@ def _group_edges_for_sibling_style(
 def _map_nodes_to_clusters(
     cluster_assignments: Dict,
     label_to_node: Dict,
-    tree,
 ) -> Dict:
     """Map tree nodes to their cluster IDs."""
     node_to_cluster: Dict = {}
@@ -153,19 +153,14 @@ def _map_nodes_to_clusters(
 
 
 def _build_label_to_node(tree) -> Dict:
-    """Map display labels back to node ids."""
-    label_to_node: Dict = {}
-    for node in tree.nodes():
-        label = tree.nodes[node]["label"]
-        label_to_node[label] = node
-    return label_to_node
+    """Map leaf labels back to leaf node ids; internal labels can repeat sample names."""
+    return {tree.nodes[node]["label"]: node for node in tree.nodes() if tree.out_degree(node) == 0}
 
 
 def _build_leaf_node_colors(
     leaf_nodes: list[object],
     node_to_cluster: Dict,
     cluster_id_to_color: Dict[int, str],
-    unassigned_color: str,
 ) -> list[str]:
     """Return leaf colors keyed by cluster assignment."""
     leaf_node_colors: list[str] = []
@@ -179,8 +174,11 @@ def _sorted_children(G: nx.DiGraph, node: object) -> list[object]:
     children = list(G.successors(node))
     try:
         return sorted(children)
-    except TypeError:
-        return sorted(children, key=lambda x: str(x))
+    except TypeError as exc:
+        raise ValueError(
+            "Tree visualization requires mutually orderable child node identifiers; "
+            f"node={node!r}, children={children!r}."
+        ) from exc
 
 
 def _rectangular_tree_layout(
@@ -189,7 +187,7 @@ def _rectangular_tree_layout(
     x_gap: float = 1.0,
     y_gap: float = 1.0,
 ) -> Dict[object, Tuple[float, float]]:
-    """Deterministic rectangular layout for a rooted directed tree (or forest).
+    """Deterministic rectangular layout for a rooted directed tree.
 
     Invariant
     ---------
@@ -199,69 +197,44 @@ def _rectangular_tree_layout(
     Notes
     -----
     - Works without Graphviz and is deterministic by construction.
-    - If ``G`` is a forest, each root is laid out left-to-right with spacing.
     """
-    if not isinstance(G, nx.DiGraph):
-        G = nx.DiGraph(G)
+    root = tree_root(G)
 
-    roots = [n for n in G.nodes if G.in_degree(n) == 0]
-    if not roots:
-        roots = [sorted(G.nodes, key=str)[0]] if G.nodes else []
-    else:
-        roots = sorted(roots, key=str)
+    depth: Dict[object, int] = {root: 0}
+    queue = deque([root])
+    while queue:
+        node = queue.popleft()
+        for child in _sorted_children(G, node):
+            if child not in depth:
+                depth[child] = depth[node] + 1
+                queue.append(child)
 
-    pos: Dict[object, Tuple[float, float]] = {}
-    x_offset = 0.0
+    postorder: list[object] = []
+    stack: list[tuple[object, bool]] = [(root, False)]
+    seen: set[object] = set()
+    while stack:
+        node, expanded = stack.pop()
+        if expanded:
+            postorder.append(node)
+            continue
+        if node in seen:
+            continue
+        seen.add(node)
+        stack.append((node, True))
+        for child in reversed(_sorted_children(G, node)):
+            stack.append((child, False))
 
-    for root in roots:
-        component_nodes = {root} | nx.descendants(G, root)
+    x_by_node: Dict[object, float] = {}
+    leaf_cursor = 0.0
+    for node in postorder:
+        children = _sorted_children(G, node)
+        if not children:
+            x_by_node[node] = leaf_cursor
+            leaf_cursor += x_gap
+        else:
+            x_by_node[node] = float(np.mean([x_by_node[c] for c in children]))
 
-        depth: Dict[object, int] = {root: 0}
-        queue = deque([root])
-        while queue:
-            node = queue.popleft()
-            d0 = depth[node]
-            for child in _sorted_children(G, node):
-                if child in component_nodes and child not in depth:
-                    depth[child] = d0 + 1
-                    queue.append(child)
-
-        postorder: list[object] = []
-        stack: list[tuple[object, bool]] = [(root, False)]
-        seen: set[object] = set()
-        while stack:
-            node, expanded = stack.pop()
-            if node not in component_nodes:
-                continue
-            if expanded:
-                postorder.append(node)
-                continue
-            if node in seen:
-                continue
-            seen.add(node)
-            stack.append((node, True))
-            for child in reversed(_sorted_children(G, node)):
-                stack.append((child, False))
-
-        x_by_node: Dict[object, float] = {}
-        leaf_cursor = x_offset
-        for node in postorder:
-            children = [c for c in _sorted_children(G, node) if c in component_nodes]
-            if not children:
-                x_by_node[node] = leaf_cursor
-                leaf_cursor += x_gap
-            else:
-                x_by_node[node] = float(np.mean([x_by_node[c] for c in children]))
-
-        for node in component_nodes:
-            pos[node] = (
-                x_by_node[node],
-                -float(depth[node]) * y_gap,
-            )
-
-        x_offset = leaf_cursor + x_gap
-
-    return pos
+    return {node: (x_by_node[node], -float(depth[node]) * y_gap) for node in depth}
 
 
 def _graphviz_twopi_layout(G: nx.Graph, args: str = "") -> Dict:
@@ -282,17 +255,12 @@ def _create_figure_and_axes(
     *,
     width: int,
     height: int,
-    figsize: Optional[Tuple[float, float]],
     ax: Optional["plt.Axes"],
 ):
     """Create a new figure when an axes object was not supplied."""
     if ax is not None:
         return ax.figure, ax
-
-    resolved_figsize = figsize
-    if resolved_figsize is None:
-        resolved_figsize = (max(width, 1) / 100.0, max(height, 1) / 100.0)
-    return plt.subplots(figsize=resolved_figsize)
+    return plt.subplots(figsize=(max(width, 1) / 100.0, max(height, 1) / 100.0))
 
 
 def _draw_rectangular_elbow_edges(
@@ -567,10 +535,8 @@ def plot_tree_with_clusters(
     height: int = 600,
     node_size: int = 20,
     font_size: int = 10,
-    colormap: Optional[str] = None,
     title: Optional[str] = None,
     layout: str = "rectangular",
-    figsize: Optional[Tuple[float, float]] = None,
     ax: Optional["plt.Axes"] = None,
     show_legend: bool = True,
     max_cluster_legend_entries: int = 20,
@@ -584,15 +550,12 @@ def plot_tree_with_clusters(
     cluster_assignments = decomposition_results["cluster_assignments"]
     num_clusters = decomposition_results["num_clusters"]
 
-    spec = build_cluster_color_spec(
-        num_clusters, base_cmap=colormap, unassigned_color=UNASSIGNED_NODE_COLOR
-    )
+    spec = build_cluster_color_spec(num_clusters, unassigned_color=UNASSIGNED_NODE_COLOR)
     cluster_id_to_color = spec.id_to_color
-    unassigned_color = spec.unassigned_color
 
     label_to_node = _build_label_to_node(tree)
 
-    node_to_cluster = _map_nodes_to_clusters(cluster_assignments, label_to_node, tree)
+    node_to_cluster = _map_nodes_to_clusters(cluster_assignments, label_to_node)
 
     G = nx.DiGraph()
     G.add_nodes_from(tree.nodes())
@@ -605,7 +568,6 @@ def plot_tree_with_clusters(
         leaf_nodes,
         node_to_cluster,
         cluster_id_to_color,
-        unassigned_color,
     )
     pos = _resolve_layout(G, layout)
 
@@ -618,7 +580,6 @@ def plot_tree_with_clusters(
     fig, ax = _create_figure_and_axes(
         width=width,
         height=height,
-        figsize=figsize,
         ax=ax,
     )
     _draw_styled_edges(G, pos, annotations_df, ax, layout=layout)

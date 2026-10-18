@@ -2,7 +2,7 @@
 title: Calibration Contract Enhancement Request 2026-06-04
 type: source
 status: reviewed
-updated: 2026-06-04
+updated: 2026-08-08
 sources:
   - raw/inbox/calibration-contract-enhancement-request-20260604.txt
 tags:
@@ -48,6 +48,5 @@ descendant distributions to the local spectral matrix.
 ## Links
 
 - [[selected-hierarchy-null-support-contract]]
-- [[selected-tail-admissibility-domain-20260603]]
 - [[selected-pca-projected-wald-validation]]
 - [[local-marchenko-pastur-rule]]

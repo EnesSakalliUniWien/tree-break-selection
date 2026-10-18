@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import inspect
 import os
 import subprocess
@@ -36,7 +35,7 @@ def test_plot_package_selects_file_safe_backend_before_pyplot() -> None:
             sys.executable,
             "-c",
             (
-                "from tree_break_selection.plot.multiscale_umap import plt; "
+                "from tree_break_selection.plot.cluster_tree_visualization import plt; "
                 "fig, _ = plt.subplots(); "
                 "print(plt.get_backend()); "
                 "plt.close(fig)"
@@ -48,14 +47,6 @@ def test_plot_package_selects_file_safe_backend_before_pyplot() -> None:
         env=environment,
     )
     assert completed.stdout.strip().lower() == "agg"
-
-
-def test_runtime_config_modules_are_removed() -> None:
-    assert importlib.util.find_spec("tree_break_selection.config") is None
-    assert (
-        importlib.util.find_spec("tree_break_selection.hierarchy_analysis.decomposition.config")
-        is None
-    )
 
 
 def test_owned_defaults_are_explicit_and_runner_trace_is_compact() -> None:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import MutableMapping
 from time import perf_counter
 
 import networkx as nx
@@ -22,9 +22,6 @@ from ..inflation_correction.empirical_null_inflation_estimation import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     fit_empirical_null_inflation_model,
 )
-from ..inflation_correction.external_selected_tail_calibration import (
-    ExternalSelectedTailCalibrationModel,
-)
 from ..inflation_correction.inflation_adjusted_sibling_tests import (
     compute_inflation_adjusted_sibling_tests,
 )
@@ -37,6 +34,7 @@ from .fdr_annotation import (
     mark_non_binary_as_skipped,
 )
 from .projection_dimension_annotation import (
+    write_record_calibration_evidence,
     write_record_projection_dimensions,
 )
 
@@ -58,6 +56,49 @@ def _validate_focal_sibling_records(records: list[SiblingPairRecord]) -> None:
             )
 
 
+def _mark_empirical_calibration_as_fail_closed(
+    annotations_df: pd.DataFrame,
+    focal_records: list[SiblingPairRecord],
+    *,
+    method: str,
+    calibration_status: str,
+) -> pd.DataFrame:
+    """Preserve raw focal evidence while withholding unresolved calibrated p-values."""
+    if not focal_records:
+        return annotations_df
+
+    focal_parents = [record.parent for record in focal_records]
+    annotations_df.loc[focal_parents, "Sibling_Divergence_Skipped"] = True
+    annotations_df.loc[focal_parents, "Sibling_Divergence_Invalid"] = True
+    annotations_df.loc[focal_parents, "Sibling_BH_Different"] = False
+    annotations_df.loc[focal_parents, "Sibling_BH_Same"] = False
+    annotations_df.loc[focal_parents, "Sibling_Test_Statistic"] = [
+        float(record.stat) for record in focal_records
+    ]
+    annotations_df.loc[focal_parents, "Sibling_Degrees_of_Freedom"] = [
+        float(record.degrees_of_freedom) for record in focal_records
+    ]
+    annotations_df.loc[focal_parents, "Sibling_Divergence_P_Value"] = [
+        float(record.p_value) for record in focal_records
+    ]
+    annotations_df.loc[focal_parents, "Sibling_Test_Method"] = method
+    annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Calibration"] = calibration_status
+    annotations_df.loc[focal_parents, "Sibling_Gate_P_Value_Role"] = "fail_closed_sibling_gate"
+    return annotations_df
+
+
+def _mark_no_internal_support_as_fail_closed(
+    annotations_df: pd.DataFrame,
+    records: list[SiblingPairRecord],
+) -> pd.DataFrame:
+    return _mark_empirical_calibration_as_fail_closed(
+        annotations_df,
+        [record for record in records if not record.is_null_like],
+        method="empirical_null_no_internal_support",
+        calibration_status="undefined_no_internal_support",
+    )
+
+
 def annotate_sibling_divergence(
     tree: nx.DiGraph,
     annotations_df: pd.DataFrame,
@@ -73,8 +114,6 @@ def annotate_sibling_divergence(
     ),
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
-    external_selected_tail_model: ExternalSelectedTailCalibrationModel | None = None,
-    external_selected_tail_context_by_parent: Mapping[object, Mapping[str, object]] | None = None,
     adaptive_projection_dimension_energy_fraction: float | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
 ) -> pd.DataFrame:
@@ -108,6 +147,7 @@ def annotate_sibling_divergence(
         return annotations_df
 
     write_record_projection_dimensions(annotations_df, records)
+    write_record_calibration_evidence(annotations_df, records)
     _validate_focal_sibling_records(records)
     n_focal = sum(not record.is_null_like for record in records)
 
@@ -128,13 +168,11 @@ def annotate_sibling_divergence(
             ) + float(perf_counter() - sibling_fdr_start_sec)
         return result_df
 
+    if not any(record.has_internal_empirical_null_support for record in records):
+        return _mark_no_internal_support_as_fail_closed(annotations_df, records)
+
     inflation_fit_start_sec = perf_counter()
-    try:
-        model = fit_empirical_null_inflation_model(records)
-    except ValueError:
-        if external_selected_tail_model is None:
-            raise
-        model = None
+    model = fit_empirical_null_inflation_model(records)
     if stage_timings is not None:
         stage_timings["sibling_gate_inflation_fit_sec"] = float(
             stage_timings.get("sibling_gate_inflation_fit_sec", 0.0)
@@ -150,8 +188,6 @@ def annotate_sibling_divergence(
         model=model,
         enforce_support_thresholds=enforce_support_thresholds,
         support_thresholds=support_thresholds,
-        external_selected_tail_model=external_selected_tail_model,
-        external_selected_tail_context_by_parent=external_selected_tail_context_by_parent,
     )
     if stage_timings is not None:
         stage_timings["sibling_gate_adjusted_tests_sec"] = float(

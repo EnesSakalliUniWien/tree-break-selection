@@ -31,7 +31,6 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
-from tree_break_selection.core_utils.tree_utils import bottom_up_nodes
 from tree_break_selection.tree.distributions import (
     require_node_continuous_covariance_by_block,
 )
@@ -40,13 +39,13 @@ from tree_break_selection.tree.feature_space import (
     resolve_feature_space,
     validate_feature_matrix,
 )
+from tree_break_selection.tree.topology import bottom_up_nodes, is_leaf
 
 from .marchenko_pastur import _get_n_jobs, _process_node
 from .node_spectral_result import NodeSpectralResult
 from .node_spectral_task import NodeSpectralTask
 from .spectral_decomposition_result import SpectralDecompositionResult
 from .tree_helpers import (
-    is_leaf,
     precompute_descendant_internal_nodes,
     precompute_descendants,
 )
@@ -59,7 +58,6 @@ INTERNAL_DISTRIBUTION_MODES = (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
     INTERNAL_DISTRIBUTION_BRANCH_LENGTH_STATE,
 )
-_EDGE_LENGTH_KEYS = ("branch_length", "length", "weight")
 _BRANCH_LENGTH_STATE_RELATIVE_FLOOR = 1e-6
 
 
@@ -75,35 +73,31 @@ def _validate_internal_distribution_mode(internal_distribution_mode: str) -> str
 
 def _edge_length(tree: nx.DiGraph, parent_id: object, child_id: object) -> float:
     attrs = tree.edges[parent_id, child_id]
-    for key in _EDGE_LENGTH_KEYS:
-        if key not in attrs:
-            continue
-        value = float(attrs[key])
-        if not math.isfinite(value) or value < 0.0:
-            raise ValueError(
-                "Branch-length internal spectral state requires finite "
-                f"non-negative edge lengths; edge {(parent_id, child_id)!r} "
-                f"has {key}={attrs[key]!r}."
-            )
-        return value
-    return 1.0
+    if "branch_length" not in attrs:
+        return 1.0
+    value = float(attrs["branch_length"])
+    if not math.isfinite(value) or value < 0.0:
+        raise ValueError(
+            "Branch-length internal spectral state requires finite "
+            f"non-negative edge lengths; edge {(parent_id, child_id)!r} "
+            f"has branch_length={attrs['branch_length']!r}."
+        )
+    return value
 
 
 def _branch_length_floor(tree: nx.DiGraph) -> float:
     positive_lengths: list[float] = []
     for _parent_id, _child_id, attrs in tree.edges(data=True):
-        for key in _EDGE_LENGTH_KEYS:
-            if key not in attrs:
-                continue
-            value = float(attrs[key])
-            if not math.isfinite(value) or value < 0.0:
-                raise ValueError(
-                    "Branch-length internal spectral state requires finite "
-                    f"non-negative edge lengths; got {key}={attrs[key]!r}."
-                )
-            if value > 0.0:
-                positive_lengths.append(value)
-            break
+        if "branch_length" not in attrs:
+            continue
+        value = float(attrs["branch_length"])
+        if not math.isfinite(value) or value < 0.0:
+            raise ValueError(
+                "Branch-length internal spectral state requires finite "
+                f"non-negative edge lengths; got branch_length={attrs['branch_length']!r}."
+            )
+        if value > 0.0:
+            positive_lengths.append(value)
     if not positive_lengths:
         return 1.0
     median_positive_length = float(np.median(np.asarray(positive_lengths, dtype=float)))
@@ -242,7 +236,6 @@ def _run_spectral_tasks_parallel(
     minimum_projection_dimension: int,
     projection_basis_dimension: int | None,
     feature_count: int,
-    compute_eigendecomposition_outputs: bool,
 ) -> list[NodeSpectralResult]:
     """Execute node spectral tasks in parallel (or sequentially for small workloads)."""
     n_jobs = _get_n_jobs(len(node_spectral_tasks))
@@ -253,7 +246,6 @@ def _run_spectral_tasks_parallel(
             minimum_projection_dimension,
             projection_basis_dimension,
             feature_count,
-            compute_eigendecomposition_outputs,
         )
         for task in node_spectral_tasks
     )
@@ -267,9 +259,11 @@ def _aggregate_spectral_results(
     raw_mp_signal_counts: dict[str, int],
     effective_independent_rows: dict[str, int],
     mp_threshold_rows: dict[str, int],
+    descendant_leaf_row_counts: dict[str, int],
+    internal_distribution_row_counts: dict[str, int],
+    spectral_matrix_row_counts: dict[str, int],
     pca_projections: dict[str, np.ndarray],
     pca_eigenvalues: dict[str, np.ndarray],
-    full_eigenvalues: dict[str, np.ndarray],
     active_feature_counts: dict[str, int],
 ) -> None:
     """Write per-node worker outputs into decomposition result dicts."""
@@ -278,18 +272,13 @@ def _aggregate_spectral_results(
         raw_mp_signal_counts[node_result.node_id] = node_result.raw_mp_signal_count
         effective_independent_rows[node_result.node_id] = node_result.effective_independent_rows
         mp_threshold_rows[node_result.node_id] = node_result.mp_threshold_rows
-        if node_result.projection_matrix is None or node_result.eigenvalues is None:
-            raise ValueError(
-                "Spectral decomposition must return PCA projection and eigenvalues for "
-                f"internal node {node_result.node_id!r}."
-            )
+        descendant_leaf_row_counts[node_result.node_id] = node_result.descendant_leaf_row_count
+        internal_distribution_row_counts[node_result.node_id] = (
+            node_result.internal_distribution_row_count
+        )
+        spectral_matrix_row_counts[node_result.node_id] = node_result.spectral_matrix_row_count
         pca_projections[node_result.node_id] = node_result.projection_matrix
         pca_eigenvalues[node_result.node_id] = node_result.eigenvalues
-        full_eigenvalues[node_result.node_id] = (
-            node_result.full_eigenvalues
-            if node_result.full_eigenvalues is not None
-            else node_result.eigenvalues
-        )
         active_feature_counts[node_result.node_id] = int(node_result.active_feature_count)
 
 
@@ -358,9 +347,11 @@ def compute_spectral_decomposition(
     raw_mp_signal_counts: Dict[str, int] = {}
     effective_independent_rows: Dict[str, int] = {}
     mp_threshold_rows: Dict[str, int] = {}
+    descendant_leaf_row_counts: Dict[str, int] = {}
+    internal_distribution_row_counts: Dict[str, int] = {}
+    spectral_matrix_row_counts: Dict[str, int] = {}
     pca_projections: Dict[str, np.ndarray] = {}
     pca_eigenvalues: Dict[str, np.ndarray] = {}
-    full_eigenvalues: Dict[str, np.ndarray] = {}
     active_feature_counts: Dict[str, int] = {}
 
     # Separate leaves (trivial) from internal nodes (expensive).
@@ -371,7 +362,9 @@ def compute_spectral_decomposition(
             raw_mp_signal_counts[node_id] = 0
             effective_independent_rows[node_id] = 1
             mp_threshold_rows[node_id] = 1
-            full_eigenvalues[node_id] = np.zeros(0, dtype=np.float64)
+            descendant_leaf_row_counts[node_id] = 1
+            internal_distribution_row_counts[node_id] = 0
+            spectral_matrix_row_counts[node_id] = 1
             active_feature_counts[node_id] = 0
         else:
             internal_node_ids.append(node_id)
@@ -394,7 +387,6 @@ def compute_spectral_decomposition(
         minimum_projection_dimension=minimum_projection_dimension,
         projection_basis_dimension=projection_basis_dimension,
         feature_count=feature_count,
-        compute_eigendecomposition_outputs=True,
     )
 
     _aggregate_spectral_results(
@@ -403,9 +395,11 @@ def compute_spectral_decomposition(
         raw_mp_signal_counts=raw_mp_signal_counts,
         effective_independent_rows=effective_independent_rows,
         mp_threshold_rows=mp_threshold_rows,
+        descendant_leaf_row_counts=descendant_leaf_row_counts,
+        internal_distribution_row_counts=internal_distribution_row_counts,
+        spectral_matrix_row_counts=spectral_matrix_row_counts,
         pca_projections=pca_projections,
         pca_eigenvalues=pca_eigenvalues,
-        full_eigenvalues=full_eigenvalues,
         active_feature_counts=active_feature_counts,
     )
     spectral_wall_sec = float(perf_counter() - spectral_start_sec)
@@ -455,9 +449,11 @@ def compute_spectral_decomposition(
         raw_mp_signal_counts_by_node=raw_mp_signal_counts,
         effective_independent_rows_by_node=effective_independent_rows,
         mp_threshold_rows_by_node=mp_threshold_rows,
+        descendant_leaf_row_counts_by_node=descendant_leaf_row_counts,
+        internal_distribution_row_counts_by_node=internal_distribution_row_counts,
+        spectral_matrix_row_counts_by_node=spectral_matrix_row_counts,
         principal_component_projections_by_node=pca_projections,
         principal_component_eigenvalues_by_node=pca_eigenvalues,
-        full_component_eigenvalues_by_node=full_eigenvalues,
         active_feature_counts_by_node=active_feature_counts,
         stage_timings=stage_timings,
     )

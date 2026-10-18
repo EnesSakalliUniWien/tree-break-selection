@@ -1,5 +1,4 @@
 """One-page NNLS branch-length fit summary for the selected scRNA application."""
-# ruff: noqa: I001
 
 from __future__ import annotations
 
@@ -14,13 +13,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
-from tree_break_selection.tree.optimized_branch_lengths import (
-    _sample_leaf_pairs,
-    _squared_standardized_targets,
-)
 
+from applications.output_dirs import parse_output_dir, timestamped_results_dir
+from applications.scrna._shared import add_generated_at
 from applications.scrna.plots.selected_nnls_report import (
-    BASE,
     DATASETS,
     METHOD_TITLE,
     SELECTED,
@@ -29,10 +25,14 @@ from applications.scrna.plots.selected_nnls_report import (
     plot_full_radial_tree,
     plot_umap,
 )
+from tree_break_selection.tree.optimized_branch_lengths import (
+    _mean_squared_standardized_targets,
+    _sample_leaf_pairs,
+)
 
-OUT_FIG = BASE / "scrna_selected_adaptive_diffusion_nnls_fit_summary.png"
-OUT_PDF = BASE / "scrna_selected_adaptive_diffusion_nnls_fit_summary_one_plot_per_page.pdf"
-OUT_CSV = BASE / "scrna_selected_adaptive_diffusion_nnls_fit_summary.csv"
+OUT_FIG = "scrna_selected_adaptive_diffusion_nnls_fit_summary.png"
+OUT_PDF = "scrna_selected_adaptive_diffusion_nnls_fit_summary_one_plot_per_page.pdf"
+OUT_CSV = "scrna_selected_adaptive_diffusion_nnls_fit_summary.csv"
 
 
 def _root_depths(edges: pd.DataFrame) -> tuple[dict[str, str], dict[str, float], str]:
@@ -98,7 +98,7 @@ def _tree_pair_distances(
     return distances
 
 
-def _fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> dict[str, object]:
+def fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> dict[str, object]:
     output_dir = Path(cfg["dir"])
     pca = pd.read_csv(output_dir / "benchmark_subset_pca.csv", index_col=0)
     assignments = pd.read_csv(output_dir / "method_assignments.csv")
@@ -110,7 +110,7 @@ def _fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> d
         pair_sample_size=pair_sample_size,
         random_state=0,
     )
-    target = _squared_standardized_targets(pca, left, right)
+    target = _mean_squared_standardized_targets(pca, left, right)
     edges = pd.read_csv(output_dir / f"{SELECTED}_tree_edges.csv")
     fitted = _tree_pair_distances(edges=edges, left=left, right=right)
     residual = fitted - target
@@ -139,7 +139,7 @@ def _fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> d
     }
 
 
-def _plot_fit(ax, diagnostic: dict[str, object]) -> None:
+def plot_fit(ax, diagnostic: dict[str, object]) -> None:
     target = np.asarray(diagnostic["target"], dtype=float)
     fitted = np.asarray(diagnostic["fitted"], dtype=float)
     max_value = float(np.nanmax(np.concatenate([target, fitted]))) * 1.03
@@ -196,21 +196,11 @@ def _plot_metrics(ax, diagnostic: dict[str, object]) -> None:
     )
 
 
-def _add_generated_at(fig: plt.Figure, generated_at: str) -> None:
-    fig.text(
-        0.99,
-        0.01,
-        f"Generated at: {generated_at}",
-        ha="right",
-        va="bottom",
-        fontsize=7,
-        color="#6b7280",
-    )
-
-
-def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: str) -> None:
+def _save_single_plot_pages(
+    diagnostics: list[dict[str, object]], generated_at: str, output_dir: Path
+) -> None:
     with PdfPages(
-        OUT_PDF,
+        output_dir / OUT_PDF,
         metadata={
             "Title": "Selected scRNA NNLS-TBS fitting results",
             "Subject": f"Generated at: {generated_at}",
@@ -230,7 +220,7 @@ def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: 
                 annotate_clusters=True,
                 point_size=6,
             )
-            _add_generated_at(fig, generated_at)
+            add_generated_at(fig, generated_at)
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
@@ -248,12 +238,12 @@ def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: 
                 fontsize=9,
                 color="#374151",
             )
-            _add_generated_at(fig, generated_at)
+            add_generated_at(fig, generated_at)
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
             fig, ax = plt.subplots(figsize=(8.8, 8.2), facecolor="white")
-            _plot_fit(ax, diagnostic)
+            plot_fit(ax, diagnostic)
             text = (
                 f"cells / clusters: {diagnostic['n_cells']:,} / {diagnostic['n_clusters']}\n"
                 f"sampled pairs: {diagnostic['n_pairs_used']:,}\n"
@@ -276,14 +266,18 @@ def _save_single_plot_pages(diagnostics: list[dict[str, object]], generated_at: 
                     "alpha": 0.92,
                 },
             )
-            _add_generated_at(fig, generated_at)
+            add_generated_at(fig, generated_at)
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
 
-def main() -> None:
+def main(output_dir: Path | None = None) -> None:
+    output_dir = output_dir or timestamped_results_dir(
+        "scrna_selected_adaptive_diffusion_nnls_fit_summary"
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
-    diagnostics = [_fit_diagnostic(cfg) for cfg in DATASETS]
+    diagnostics = [fit_diagnostic(cfg) for cfg in DATASETS]
     summary = pd.DataFrame(
         [
             {
@@ -295,7 +289,7 @@ def main() -> None:
         ]
     )
     summary.insert(0, "generated_at", generated_at)
-    summary.to_csv(OUT_CSV, index=False)
+    summary.to_csv(output_dir / OUT_CSV, index=False)
 
     fig = plt.figure(figsize=(18, 13), facecolor="white")
     gs = GridSpec(
@@ -327,7 +321,7 @@ def main() -> None:
         plot_full_radial_tree(ax_tree, full_info, palette, "real full tree")
         for text in list(ax_tree.texts):
             text.remove()
-        _plot_fit(ax_fit, diagnostic)
+        plot_fit(ax_fit, diagnostic)
         _plot_metrics(ax_metrics, diagnostic)
 
     fig.suptitle(
@@ -339,18 +333,19 @@ def main() -> None:
     fig.text(
         0.012,
         0.012,
-        "Fit check uses the saved selected NNLS tree edges and the saved benchmark PCA matrix. "
-        "Target is squared standardized Euclidean pair distance; fitted value is summed branch time along the real tree path. "
+        "Fit check uses saved NNLS tree edges and the saved benchmark PCA matrix. "
+        "Target: mean squared standardized Euclidean distance (divided by feature count).\n"
+        "Fitted value: summed fitted branch length along the tree path, not calibrated stochastic time. "
         f"Generated at: {generated_at}",
         fontsize=9,
         color="#374151",
     )
-    fig.savefig(OUT_FIG, dpi=220, bbox_inches="tight")
-    _save_single_plot_pages(diagnostics, generated_at)
-    print(OUT_FIG)
-    print(OUT_PDF)
-    print(OUT_CSV)
+    fig.savefig(output_dir / OUT_FIG, dpi=220, bbox_inches="tight")
+    _save_single_plot_pages(diagnostics, generated_at, output_dir)
+    print(output_dir / OUT_FIG)
+    print(output_dir / OUT_PDF)
+    print(output_dir / OUT_CSV)
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_output_dir(__doc__))

@@ -22,9 +22,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -45,11 +47,8 @@ from tree_break_selection.space_separation import (
     coordinates_for_block,
     separate_adaptive_cosine_space,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import FeatureSpace
-
-from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.util.case_inputs import prepare_case_inputs
 
 SCHEMA_VERSION = "adaptive_cosine_kak_benchmark_probe/v1"
 
@@ -91,9 +90,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--weightings",
         nargs="+",
-        default=["binary"],
-        choices=["binary", "tfidf"],
-        help="'binary' means raw matrix values, matching the historical script name.",
+        default=["raw"],
+        choices=["raw", "tfidf"],
+        help="'raw' uses the input matrix without feature weighting.",
     )
     return parser.parse_args()
 
@@ -129,9 +128,8 @@ def run_block_tree(
     if not np.isfinite(distances).all() or np.allclose(distances, 0.0):
         raise ValueError("degenerate spectral block distances")
 
-    linkage_matrix = linkage(distances, method="average")
-    tree = tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree = build_tree(data, distances, linkage_method="average").tree
+    tree.populate_node_distributions(data, feature_space=feature_space)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),
@@ -210,7 +208,7 @@ def run_case(
             total_energy = float(np.sum(eigvals))
             blocks = space.blocks
             diagnostics = space.diagnostics
-        except Exception as exc:  # noqa: BLE001 - diagnostic records failures.
+        except Exception as exc:
             rows.append(
                 {
                     **base,
@@ -291,7 +289,7 @@ def run_case(
                         "error": "",
                     }
                 )
-            except Exception as exc:  # noqa: BLE001 - diagnostic records failures.
+            except Exception as exc:
                 elapsed = time.perf_counter() - start
                 rows.append(
                     {

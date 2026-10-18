@@ -21,21 +21,15 @@ class _FakeAdata:
         self.n_vars = 2
 
 
-def _load_benchmark_module():
+def _load_benchmark_module(monkeypatch):
     module_name = "applications.scrna.pancreas_benchmark"
-    sys.modules.pop(module_name, None)
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
     return importlib.import_module(module_name)
 
 
 def test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp(monkeypatch, tmp_path):
-    module = _load_benchmark_module()
-    output_dir = (
-        tmp_path
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623"
-    )
+    module = _load_benchmark_module(monkeypatch)
+    output_dir = tmp_path / "out"
     fake_adata = _FakeAdata()
     qc_summary = {
         "batches": 2,
@@ -73,13 +67,13 @@ def test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp(monk
 
     monkeypatch.setattr(module, "_project_root", lambda: tmp_path)
     monkeypatch.setattr(module, "_prepare_adata", lambda *_args, **_kwargs: fake_adata)
-    monkeypatch.setattr(module, "_write_qc_outputs", lambda *_args, **_kwargs: qc_summary)
+    monkeypatch.setattr(module, "write_qc_outputs", lambda *_args, **_kwargs: qc_summary)
     monkeypatch.setattr(
         module,
-        "_run_benchmarks",
+        "run_benchmarks",
         lambda *_args, **_kwargs: (results, pd.DataFrame(), [], None, []),
     )
-    monkeypatch.setattr(module, "_write_plots", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(module, "write_plots", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -91,6 +85,8 @@ def test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp(monk
             "2",
             "--seed",
             "0",
+            "--output-dir",
+            str(output_dir),
         ],
     )
 

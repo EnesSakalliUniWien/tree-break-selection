@@ -2,7 +2,7 @@
 title: Graph Neural Geometry Spectral Artifact Literature 2026-06-17
 type: source
 status: reviewed
-updated: 2026-06-17
+updated: 2026-08-10
 sources:
   - raw/inbox
 tags:
@@ -96,6 +96,4 @@ selected-topology conditioning before they can support a decision.
 ## Links
 
 - [[selected-neighborhood-bottleneck-law]]
-- [[selected-neighborhood-internal-spectral-flow-panel-20260617]]
-- [[selected-neighborhood-spectral-flow-diagnostic-20260616]]
 - [[root-conditional-kernel-spectral-law]]

@@ -1,5 +1,4 @@
 """Render all-method pancreas UMAP panels with every cluster colored."""
-# ruff: noqa: I001
 
 from __future__ import annotations
 
@@ -14,7 +13,6 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 
 METADATA_COLUMNS = {"cell_id", "celltype", "umap1", "umap2"}
 METHOD_LABELS = {
@@ -40,10 +38,6 @@ METHOD_LABELS = {
     "spectral_true_k": "Spectral true K",
     "hdbscan": "HDBSCAN",
 }
-
-
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
 
 
 def assignment_key(label: str) -> str:
@@ -75,11 +69,6 @@ def categorical_palette(ids: list[str]) -> dict[str, tuple[float, float, float]]
         value = [0.72, 0.86, 0.62, 0.78][index % 4]
         palette[item_id] = tuple(mcolors.hsv_to_rgb((hue, saturation, value)))
     return palette
-
-
-def sorted_cluster_ids(values: pd.Series) -> list[str]:
-    ids = [str(int(value)) for value in sorted(pd.to_numeric(values).dropna().astype(int).unique())]
-    return ids
 
 
 def cluster_label(cluster_id: str) -> str:
@@ -167,13 +156,8 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=(
-            project_root()
-            / "raw"
-            / "assets"
-            / "benchmark-results"
-            / "pancreas_scrna_cluster_benchmark_20260623"
-        ),
+        required=True,
+        help="Benchmark run directory to read and write; pass a raw/assets/ path explicitly.",
     )
     parser.add_argument("--title", default="Pancreas scRNA clustering UMAPs")
     args = parser.parse_args()

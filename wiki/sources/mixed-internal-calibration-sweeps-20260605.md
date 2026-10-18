@@ -2,9 +2,8 @@
 title: Mixed Internal Calibration Sweeps 2026-06-05
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-17
 sources:
-  - benchmarks/diagnostics/calibration/statistics/mixed_internal_calibration_sweep.py
   - benchmarks/results/diagnostics/mixed_internal_calibration_sweep_method_proof_20260605/mixed_q10_weight_rule_summary.csv
   - benchmarks/results/diagnostics/mixed_internal_calibration_sweep_method_proof_20260605/mixed_internal_support_threshold_summary.csv
   - benchmarks/results/diagnostics/mixed_internal_calibration_sweep_binary_20260605/mixed_q10_weight_rule_summary.csv
@@ -28,6 +27,11 @@ collects sibling records from production TBS trees, attaches internal support
 labels (`is_null_like`, `is_edge_blocked`), derives conservative true
 null/signal context labels from benchmark cluster labels, and runs the Q9/Q10
 diagnostics over the resulting panels.
+
+The runner `benchmarks/diagnostics/calibration/statistics/mixed_internal_calibration_sweep.py`
+and its Q9/Q10 helpers `internal_support_threshold_validation.py` and
+`sibling/nulls/sibling_null_weight_rule_validation.py` were retired on
+2026-10-17 (last present at commit 5c554bc5).
 
 ## Key Points
 

@@ -11,17 +11,9 @@ The wiki is not a replacement for the project source tree. Treat it as a cited
 index of what is known, where the evidence lives, and which questions remain
 open.
 
-## Mex Compatibility
-
-The `.mex/` directory is a compatibility bridge for the `mex-agent` CLI, not a
-second memory system. Root `AGENTS.md`, `wiki/index.md`, `wiki/schema.md`,
-`wiki/maintenance.md`, and `wiki/log.md` remain authoritative.
-
-When using mex, keep `.mex/` as a thin router into the wiki. Do not record
-durable project events in mex event files; append them to `wiki/log.md`.
-Mex scanner output may under-report this Python project's `pyproject.toml`
-dependencies, so inspect `pyproject.toml` directly for setup and dependency
-decisions.
+`wiki/` is the only project memory system. Do not add a second memory layer
+(router, agent scaffold or tool-specific notes); record durable events in
+`wiki/log.md`.
 
 ## Source Surfaces
 
@@ -32,8 +24,8 @@ synthesis:
 - `README.md`, `CHANGELOG.md`, and root configuration files for current project
   intent.
 - `manuscript/` for the paper, derivations, terminology, and submission gaps.
-- `tree_break_selection/`, `benchmarks/`, `tests/`, `scripts/`, and
-  `notebooks/` for implementation and validation behavior.
+- `tree_break_selection/`, `benchmarks/`, `tests/`, and `scripts/` for
+  implementation and validation behavior.
 - `data/`, `reports/`, `docs/`, and `local_data/` for datasets, outputs,
   audits, and local notes.
 - root `analysis/` is ignored local workspace if present; do not treat it as

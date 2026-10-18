@@ -19,15 +19,15 @@ import shutil
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Sequence
 
-from applications.endotypes._shared import matrix_slug
+from applications.endotypes._shared import default_output_dir, matrix_slug
 from applications.endotypes.analysis.audit_go_annotation_analysis_levels import (
     audit_paths,
     write_audit_outputs,
 )
+from applications.endotypes.pipelines.tree_analysis_args import add_tree_analysis_arguments
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -77,29 +77,10 @@ def parse_args() -> argparse.Namespace:
         default=[],
         help="Additional existing result directories to include in the level audit.",
     )
-    parser.add_argument("--edge-alpha", type=float, default=None)
-    parser.add_argument("--sibling-alpha", type=float, default=None)
-    parser.add_argument("--max-rank", type=int, default=80)
-    parser.add_argument("--min-segment-length", type=int, default=4)
-    parser.add_argument("--max-segments", type=int, default=8)
-    parser.add_argument("--diffusion-k-neighbors", type=int, default=15)
-    parser.add_argument("--diffusion-time", type=int, default=3)
-    parser.add_argument("--diffusion-components", type=int, default=30)
-    parser.add_argument("--adaptive-bandwidth-type", default="-1/(d+2)")
-    parser.add_argument("--adaptive-epsilon", default="median")
-    parser.add_argument("--adaptive-metric", default="euclidean")
-    parser.add_argument(
-        "--weightings",
-        nargs="+",
-        default=["binary", "tfidf"],
-        choices=["binary", "tfidf"],
-    )
-    parser.add_argument("--block-names", nargs="*", default=None)
-    parser.add_argument(
-        "--method-versions",
-        nargs="+",
-        default=["current"],
-        choices=["current"],
+    add_tree_analysis_arguments(
+        parser,
+        edge_alpha_default=None,
+        sibling_alpha_default=None,
     )
     parser.add_argument(
         "--tree-geometries",
@@ -118,14 +99,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def default_output_dir(input_path: Path, dataset_label: str | None = None) -> Path:
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return (
-        Path("results/analyses")
-        / f"{matrix_slug(input_path, dataset_label)}_go_annotation_pipeline_{stamp}"
-    )
-
-
 def _append_if_present(command: list[str], flag: str, value: object | None) -> None:
     if value is not None:
         command.extend([flag, str(value)])
@@ -135,6 +108,47 @@ def _append_many(command: list[str], flag: str, values: Sequence[object] | None)
     if values:
         command.append(flag)
         command.extend(str(value) for value in values)
+
+
+def _tree_analysis_command(
+    args: argparse.Namespace,
+    *,
+    script: Path,
+    output_dir: Path,
+    dataset_label: str | None = None,
+) -> list[str]:
+    command = [
+        args.python,
+        str(script),
+        "--input",
+        str(args.input),
+        "--output-dir",
+        str(output_dir),
+        "--max-rank",
+        str(args.max_rank),
+        "--min-segment-length",
+        str(args.min_segment_length),
+        "--max-segments",
+        str(args.max_segments),
+        "--diffusion-k-neighbors",
+        str(args.diffusion_k_neighbors),
+        "--diffusion-time",
+        str(args.diffusion_time),
+        "--diffusion-components",
+        str(args.diffusion_components),
+        f"--adaptive-bandwidth-type={args.adaptive_bandwidth_type}",
+        "--adaptive-epsilon",
+        str(args.adaptive_epsilon),
+        "--adaptive-metric",
+        str(args.adaptive_metric),
+    ]
+    if dataset_label is not None:
+        command.extend(["--dataset-label", dataset_label])
+    _append_if_present(command, "--edge-alpha", args.edge_alpha)
+    _append_if_present(command, "--sibling-alpha", args.sibling_alpha)
+    _append_many(command, "--weightings", args.weightings)
+    _append_many(command, "--block-names", args.block_names)
+    return command
 
 
 def current_subspace_dir(root: Path) -> Path:
@@ -148,7 +162,11 @@ def annotation_package_dir(root: Path) -> Path:
 def build_pipeline_plan(
     args: argparse.Namespace, output_dir: Path | None = None
 ) -> list[PipelineStage]:
-    root = output_dir or args.output_dir or default_output_dir(args.input, args.dataset_label)
+    root = (
+        output_dir
+        or args.output_dir
+        or default_output_dir(args.input, args.dataset_label, "go_annotation_pipeline")
+    )
     artifact_prefix = matrix_slug(args.input, args.dataset_label)
     stages: list[PipelineStage] = []
 
@@ -179,7 +197,10 @@ def build_pipeline_plan(
                 output_dir=root / "05_matrix_quality",
                 command=[
                     args.python,
-                    str(REPO_ROOT / "applications/endotypes/analysis/feature_matrix_quality_analysis.py"),
+                    str(
+                        REPO_ROOT
+                        / "applications/endotypes/analysis/feature_matrix_quality_analysis.py"
+                    ),
                     "--input",
                     str(args.input),
                     "--output-dir",
@@ -189,47 +210,22 @@ def build_pipeline_plan(
         )
 
     if not args.skip_current_subspace:
-        command = [
-            args.python,
-            str(
+        command = _tree_analysis_command(
+            args,
+            script=(
                 REPO_ROOT
-                / "applications/endotypes/pipelines/run_current_adaptive_diffusion_subspace_tree_experiment.py"
+                / "applications/endotypes/pipelines/run_adaptive_diffusion_cosine_subspace_clustering_go_ic_analysis.py"
             ),
-            "--input",
-            str(args.input),
-            "--output-dir",
-            str(root / "10_current_adaptive_diffusion_subspace_tree"),
-            "--dataset-label",
-            artifact_prefix,
-            "--max-rank",
-            str(args.max_rank),
-            "--min-segment-length",
-            str(args.min_segment_length),
-            "--max-segments",
-            str(args.max_segments),
-            "--diffusion-k-neighbors",
-            str(args.diffusion_k_neighbors),
-            "--diffusion-time",
-            str(args.diffusion_time),
-            "--diffusion-components",
-            str(args.diffusion_components),
-            f"--adaptive-bandwidth-type={args.adaptive_bandwidth_type}",
-            "--adaptive-epsilon",
-            str(args.adaptive_epsilon),
-            "--adaptive-metric",
-            str(args.adaptive_metric),
-        ]
-        _append_if_present(command, "--edge-alpha", args.edge_alpha)
-        _append_if_present(command, "--sibling-alpha", args.sibling_alpha)
-        _append_many(command, "--weightings", args.weightings)
-        _append_many(command, "--block-names", args.block_names)
+            output_dir=root / "10_current_adaptive_diffusion_subspace_tree",
+            dataset_label=artifact_prefix,
+        )
         stages.append(
             PipelineStage(
                 stage_id="10_current_adaptive_diffusion_subspace_tree",
                 analysis_level="30_canonical_current_subspace_pipeline",
                 description=(
-                    "Run the canonical current TBS adaptive-diffusion cosine-subspace "
-                    "tree pipeline with connected PDFs, rankings, and manifests."
+                    "Run adaptive diffusion cosine subspace tree construction, "
+                    "TBS clustering, and extended GO-IC analysis with connected reports."
                 ),
                 output_dir=root / "10_current_adaptive_diffusion_subspace_tree",
                 command=command,
@@ -237,36 +233,12 @@ def build_pipeline_plan(
         )
 
     if args.include_method_matrix:
-        command = [
-            args.python,
-            str(REPO_ROOT / "applications/endotypes/pipelines/run_allgo_method_version_tree_matrix.py"),
-            "--input",
-            str(args.input),
-            "--output-dir",
-            str(root / "20_method_tree_matrix_audit"),
-            "--max-rank",
-            str(args.max_rank),
-            "--min-segment-length",
-            str(args.min_segment_length),
-            "--max-segments",
-            str(args.max_segments),
-            "--diffusion-k-neighbors",
-            str(args.diffusion_k_neighbors),
-            "--diffusion-time",
-            str(args.diffusion_time),
-            "--diffusion-components",
-            str(args.diffusion_components),
-            f"--adaptive-bandwidth-type={args.adaptive_bandwidth_type}",
-            "--adaptive-epsilon",
-            str(args.adaptive_epsilon),
-            "--adaptive-metric",
-            str(args.adaptive_metric),
-        ]
-        _append_if_present(command, "--edge-alpha", args.edge_alpha)
-        _append_if_present(command, "--sibling-alpha", args.sibling_alpha)
-        _append_many(command, "--weightings", args.weightings)
-        _append_many(command, "--block-names", args.block_names)
-        _append_many(command, "--method-versions", args.method_versions)
+        command = _tree_analysis_command(
+            args,
+            script=REPO_ROOT
+            / "applications/endotypes/pipelines/run_allgo_method_version_tree_matrix.py",
+            output_dir=root / "20_method_tree_matrix_audit",
+        )
         _append_many(command, "--tree-geometries", args.tree_geometries)
         stages.append(
             PipelineStage(
@@ -293,7 +265,10 @@ def build_pipeline_plan(
                 output_dir=annotation_dir,
                 command=[
                     args.python,
-                    str(REPO_ROOT / "applications/endotypes/reports/export_subspace_cluster_rosters.py"),
+                    str(
+                        REPO_ROOT
+                        / "applications/endotypes/reports/export_subspace_cluster_rosters.py"
+                    ),
                     "--experiment-dir",
                     str(experiment_dir),
                     "--feature-matrix",
@@ -332,7 +307,10 @@ def build_pipeline_plan(
                 output_dir=annotation_dir / "cluster_meaningfulness_audit",
                 command=[
                     args.python,
-                    str(REPO_ROOT / "applications/endotypes/analysis/audit_go_cluster_meaningfulness.py"),
+                    str(
+                        REPO_ROOT
+                        / "applications/endotypes/analysis/audit_go_cluster_meaningfulness.py"
+                    ),
                     "--dataset-label",
                     artifact_prefix,
                     "--feature-matrix",
@@ -380,14 +358,12 @@ def write_pipeline_files(
     input_path: Path,
     stages: Sequence[PipelineStage],
     stage_results: Sequence[dict[str, object]],
-    dry_run: bool,
     audit_outputs: dict[str, str] | None = None,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest = {
         "input": str(input_path),
         "output_dir": str(output_dir),
-        "dry_run": dry_run,
         "canonical_level": "30_canonical_current_subspace_pipeline",
         "stages": [asdict(stage) for stage in stages],
         "stage_results": list(stage_results),
@@ -401,7 +377,6 @@ def write_pipeline_files(
         "# GO Annotation Feature-Matrix Pipeline",
         "",
         f"Input: `{input_path}`",
-        f"Dry run: `{dry_run}`",
         "",
         "Canonical interpretation level:",
         "- `30_canonical_current_subspace_pipeline`: current TBS gates on adaptive-diffusion cosine subspace trees.",
@@ -741,17 +716,9 @@ def _parse_internal_finalize_command(command: Sequence[str]) -> tuple[Path, Path
     return Path(values["--input"]), Path(values["--output-dir"]), values["--dataset-label"]
 
 
-def run_stage(stage: PipelineStage, *, repo_root: Path, dry_run: bool) -> dict[str, object]:
+def run_stage(stage: PipelineStage, *, repo_root: Path) -> dict[str, object]:
     stage.output_dir.mkdir(parents=True, exist_ok=True)
     log_path = stage.output_dir / f"{stage.stage_id}.log"
-    if dry_run:
-        log_path.write_text(_command_to_text(stage.command) + "\n", encoding="utf-8")
-        return {
-            "stage_id": stage.stage_id,
-            "status": "planned",
-            "returncode": 0,
-            "log_path": str(log_path),
-        }
     if stage.command and stage.command[0] == "internal:finalize_go_annotation_results":
         with log_path.open("w", encoding="utf-8") as log_file:
             try:
@@ -802,14 +769,21 @@ def run_stage(stage: PipelineStage, *, repo_root: Path, dry_run: bool) -> dict[s
 
 def main() -> None:
     args = parse_args()
-    output_dir = args.output_dir or default_output_dir(args.input, args.dataset_label)
+    output_dir = args.output_dir or default_output_dir(
+        args.input, args.dataset_label, "go_annotation_pipeline"
+    )
     stages = build_pipeline_plan(args, output_dir)
+    if args.dry_run:
+        # Print the plan only; a dry run must not touch an existing run's logs or manifest.
+        for stage in stages:
+            print(f"[{stage.stage_id}] {stage.description}\n  {_command_to_text(stage.command)}")
+        return
     output_dir.mkdir(parents=True, exist_ok=True)
 
     stage_results = []
     for stage in stages:
         print(f"[{stage.stage_id}] {stage.description}", flush=True)
-        result = run_stage(stage, repo_root=REPO_ROOT, dry_run=args.dry_run)
+        result = run_stage(stage, repo_root=REPO_ROOT)
         stage_results.append(result)
         if result["status"] == "failed":
             write_pipeline_files(
@@ -817,16 +791,11 @@ def main() -> None:
                 input_path=args.input,
                 stages=stages,
                 stage_results=stage_results,
-                dry_run=args.dry_run,
             )
             raise SystemExit(int(result["returncode"]))
 
     audit_dir = output_dir / "30_analysis_level_audit"
-    audit_targets = (
-        []
-        if args.dry_run
-        else [stage.output_dir for stage in stages if not _is_packaging_stage(stage)]
-    )
+    audit_targets = [stage.output_dir for stage in stages if not _is_packaging_stage(stage)]
     audit_targets.extend(args.audit_paths)
     audit_frame = audit_paths(audit_targets)
     audit_outputs = write_audit_outputs(audit_frame, audit_dir)
@@ -835,7 +804,6 @@ def main() -> None:
         input_path=args.input,
         stages=stages,
         stage_results=stage_results,
-        dry_run=args.dry_run,
         audit_outputs=audit_outputs,
     )
     print(json.dumps({"output_dir": str(output_dir), "audit_outputs": audit_outputs}, indent=2))

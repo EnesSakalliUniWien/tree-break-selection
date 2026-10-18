@@ -17,25 +17,6 @@ def annotation_bool(
     return bool(pd.notna(value) and bool(value))
 
 
-def node_split_prerequisites(
-    tree,
-    annotations_df: pd.DataFrame,
-    node: object,
-) -> bool:
-    """Return whether a binary node has child-parent evidence to consider splitting."""
-    children = list(tree.successors(node))
-    if len(children) != 2:
-        return False
-    return any(
-        annotation_bool(
-            annotations_df,
-            child,
-            "Child_Parent_Divergence_Significant",
-        )
-        for child in children
-    )
-
-
 def node_sibling_gate_open(
     annotations_df: pd.DataFrame,
     node: object,
@@ -55,5 +36,4 @@ def node_sibling_gate_open(
 __all__ = [
     "annotation_bool",
     "node_sibling_gate_open",
-    "node_split_prerequisites",
 ]

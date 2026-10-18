@@ -2,10 +2,8 @@
 title: Selected Tail Parent Size Balance Stability 2026-06-04
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/selected/tail/selected_tail_parent_size_balance_stability.py
-  - tests/validation/calibration/selected/tail/73_test_selected_tail_parent_size_balance_stability.py
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_contexts.csv
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_parent_folds.csv
   - raw/assets/benchmark-results/selected_tail_parent_size_balance_stability_20260604/parent_size_balance_summary.csv
@@ -65,5 +63,4 @@ parent-size holdout.
 ## Links
 
 - [[open-mathematical-questions]]
-- [[selected-tail-promotion-gate-20260604]]
 - [[barycentric-method-literature-request-20260604]]

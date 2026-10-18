@@ -1,0 +1,148 @@
+{
+  "schema_version": "isolated_wald_rank_calibration/v1",
+  "created_at": "2026-09-28T12:52:41.424104+00:00",
+  "contrast_count_per_seed_dimension": 1000000,
+  "seeds": [
+    1907,
+    2026092801,
+    2026092802
+  ],
+  "dimension_4_seed_offset": 4000000000,
+  "seed_roles": {
+    "1907": "historical replay",
+    "2026092801": "held-out",
+    "2026092802": "held-out"
+  },
+  "null": "Independent N(0,I_d) contrasts; eigenvalues label selection groups only.",
+  "spectra": [
+    {
+      "name": "fully_tied_2",
+      "eigenvalues": [
+        1.0,
+        1.0
+      ],
+      "fixed_cutoff": 1,
+      "rotation_start": 0
+    },
+    {
+      "name": "distinct_2",
+      "eigenvalues": [
+        2.0,
+        1.0
+      ],
+      "fixed_cutoff": 1,
+      "rotation_start": null
+    },
+    {
+      "name": "partial_tie_4",
+      "eigenvalues": [
+        4.0,
+        2.0,
+        2.0,
+        1.0
+      ],
+      "fixed_cutoff": 2,
+      "rotation_start": 1
+    }
+  ],
+  "selections": [
+    "fixed_cutoff",
+    "fixed_full",
+    "adaptive_90"
+  ],
+  "versions": [
+    "legacy_prefix",
+    "current_complete_groups"
+  ],
+  "alphas": [
+    0.001,
+    0.005,
+    0.01,
+    0.05
+  ],
+  "legacy_ref": "f34f59cacd09b19c34fafa3a4a6e783dd3973f72",
+  "current_source_hashes": {
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py": "3e2534d0ab7c066a3ca0ab4ad7514598b234a860e74a29b5d53ddca30a7583b2",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py": "673dfa4322bcb9a6a6ecaafa1af9ae5da79a44f44c9d57bc5940b02a6522bb1d",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py": "c1648985583f44e9edf7cfb3b7dad20bf28b6bac38c4f8a294b432648df514d1",
+    "tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303"
+  },
+  "legacy_source_hashes": {
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py": "75cdc4c41ba653df6dbe6f65522ad20b8b484128367911ffb5fb0c93b69ce19a",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py": "b59159ec2cd6ae6c6e96db822c13d15012178a9be6aaef867cb3fdf7d9c1997d"
+  },
+  "git_head": "f34f59cacd09b19c34fafa3a4a6e783dd3973f72",
+  "git_status_at_start": [
+    " M applications/endotypes/pipelines/tree_analysis_args.py",
+    " M benchmarks/diagnostics/spectral/README.md",
+    " M tests/statistics/39_test_projected_wald_statistics.py",
+    " M tests/statistics/48_test_space_separation.py",
+    " M tree_break_selection/hierarchy_analysis/decomposition/backends/eigen/projection.py",
+    " M tree_break_selection/hierarchy_analysis/statistics/README.md",
+    " M tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py",
+    " M tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_projection_basis.py",
+    " M tree_break_selection/hierarchy_analysis/statistics/projection/projection_dimension_estimation/projection_dimension_estimators.py",
+    " M tree_break_selection/space_separation/README.md",
+    " M tree_break_selection/space_separation/adaptive_cosine.py",
+    " M tree_break_selection/space_separation/diffusion.py",
+    " M wiki/index.md",
+    " M wiki/log.md",
+    " M wiki/tools/current-adaptive-diffusion-subspace-tree-pipeline.md",
+    "?? benchmarks/diagnostics/spectral/adaptive_cosine/compare_spectral_blocks.py",
+    "?? raw/inbox/eigensystem-reference-notes-20260928.md",
+    "?? reports/eigenspace_reassessment_20260928/",
+    "?? reports/eigenvalue_block_comparison_20260926/",
+    "?? reports/mathematical_construction_review_20260928/",
+    "?? tests/statistics/55_test_eigenspace_invariance.py",
+    "?? tree_break_selection/eigenvalue_groups.py",
+    "?? wiki/analyses/eigenvalue-block-tree-comparison.md",
+    "?? wiki/analyses/eigenvector-calibration-construction-review.md",
+    "?? wiki/sources/eigensystem-api-reference-notes.md"
+  ],
+  "script_sha256": "76752131177f0c819dd4dc724f60fb9f5ddcf99e4801608dfa00b62196c2c58f",
+  "python": "3.11.12 (main, Apr  8 2025, 14:15:29) [Clang 16.0.0 (clang-1600.0.26.6)]",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "dependencies": {
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "pandas": "2.3.3"
+  },
+  "command": ".venv/bin/python reports/eigenspace_reassessment_20260928/wald_rank/run_calibration.py",
+  "inference": "Exact binomial upper-tail tests of rejection probability <= alpha; Holm FWER .05 over all216 seed/spectrum/selection/version/alpha cells. Pointwise95 and Bonferroni simultaneous95 Clopper-Pearson intervals. Held-out current-rule cells are the primary reassessment; replay is descriptive.",
+  "frozen_before_results": true,
+  "limitations": [
+    "Isolated selected-rank null experiment, not a full pipeline calibration study.",
+    "No covariance/PCA fitting, tree construction, diffusion, branch lengths, edge selection, empirical inflation, sibling BH or traversal.",
+    "Shared contrasts across spectra and rules are paired comparisons; multiplicity correction does not require cell independence.",
+    "Fixed spectra are metadata, not covariance eigenvalues of the isotropic null.",
+    "No rule or parameter is tuned to held-out outcomes."
+  ],
+  "finished_at": "2026-09-28T12:52:52.282758+00:00",
+  "all_kernel_checks_match": true,
+  "kernel_check_count": 2688,
+  "production_sources_unchanged_during_run": true,
+  "multiplicity_family_size": 216,
+  "raw_outcome_format": "npz rank uint8 and bitpacked rejection flags; replicate identifier is zero-based vector index; np.unpackbits(...,bitorder='little')[:n_contrasts]",
+  "outcome_archive_sha256": {
+    "replicate_outcomes_seed_1907.npz": "4853ef6ebce54a172dc0c0bb83fb89225ea3b0c7e5d2a400e77f5037c7b7dd8f",
+    "replicate_outcomes_seed_2026092801.npz": "113ab49f5739c46d3cd649052893d43551a99a7bbf2e56c4a01c98a09ee99a37",
+    "replicate_outcomes_seed_2026092802.npz": "67550e4288e27c6c52d4ac8f0d5477462b08061ae1e97b22d46dd9bef397d9e7"
+  },
+  "generated_at": "2026-09-28T12:52:52.301159+00:00",
+  "outputs": {
+    "counts": "/Users/berksakalli/Projects/kl-te-cluster/reports/eigenspace_reassessment_20260928/wald_rank/counts.csv",
+    "rank_counts": "/Users/berksakalli/Projects/kl-te-cluster/reports/eigenspace_reassessment_20260928/wald_rank/rank_counts.csv",
+    "paired_decisions": "/Users/berksakalli/Projects/kl-te-cluster/reports/eigenspace_reassessment_20260928/wald_rank/paired_decisions.csv",
+    "rotation_audit": "/Users/berksakalli/Projects/kl-te-cluster/reports/eigenspace_reassessment_20260928/wald_rank/rotation_audit.csv",
+    "kernel_checks": "/Users/berksakalli/Projects/kl-te-cluster/reports/eigenspace_reassessment_20260928/wald_rank/kernel_checks.csv",
+    "outcome_index": "/Users/berksakalli/Projects/kl-te-cluster/reports/eigenspace_reassessment_20260928/wald_rank/outcome_index.csv"
+  },
+  "row_counts": {
+    "counts": 216,
+    "rank_counts": 78,
+    "paired_decisions": 108,
+    "rotation_audit": 18,
+    "kernel_checks": 2688,
+    "outcome_index": 54
+  }
+}

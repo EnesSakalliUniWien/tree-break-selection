@@ -2,12 +2,10 @@
 title: Covariance Laplacian Panel 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
   - benchmarks/diagnostics/calibration/statistics/covariance_laplacian_panel.py
-  - tests/validation/calibration/statistics/94_test_covariance_laplacian_panel.py
   - benchmarks/validation/statistics/selected_edge_type1_geometry.py
-  - benchmarks/diagnostics/calibration/statistics/differential_statistic_validity_panel.py
   - tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py
   - tree_break_selection/hierarchy_analysis/statistics/projection/spectral/tree_estimator.py
   - wiki/questions/open-mathematical-questions.md
@@ -88,7 +86,6 @@ effective rank, and Laplacian status.
 ## Links
 
 - [[statistic-distribution-shape-panel-20260613]]
-- [[selected-edge-sibling-null-equation-20260613]]
 - [[differential-statistic-validity-panel-20260613]]
 - [[local-marchenko-pastur-rule]]
 - [[open-mathematical-questions]]

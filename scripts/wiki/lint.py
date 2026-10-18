@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.generated_files import CATALOG, declared_outputs, load_catalog
+
 WIKI_DIR = ROOT / "wiki"
 INDEX = WIKI_DIR / "index.md"
 
@@ -118,11 +121,21 @@ def body_headings(body: str) -> set[str]:
     return headings
 
 
-def has_h1(body: str) -> bool:
-    return any(re.match(r"^#\s+\S", line) for line in body.splitlines())
+def h1_count(body: str) -> int:
+    """Count H1 headings outside fenced code blocks."""
+    count = 0
+    in_fence = False
+    for line in body.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+        elif not in_fence and re.match(r"^#\s+\S", line):
+            count += 1
+    return count
 
 
-def check_page(path: Path, stems: set[str], index_text: str) -> list[str]:
+def check_page(
+    path: Path, stems: set[str], index_text: str, catalogued_outputs: set[str] | None = None
+) -> list[str]:
     rel = path.relative_to(ROOT)
     errors: list[str] = []
 
@@ -171,11 +184,12 @@ def check_page(path: Path, stems: set[str], index_text: str) -> list[str]:
             except ValueError:
                 errors.append(f"{rel}: source escapes repository: {source}")
                 continue
-            if not source_path.exists():
+            if not source_path.exists() and source not in (catalogued_outputs or set()):
                 errors.append(f"{rel}: source path does not exist: {source}")
 
-    if not has_h1(body):
-        errors.append(f"{rel}: missing H1")
+    headings = h1_count(body)
+    if headings != 1:
+        errors.append(f"{rel}: must have exactly one H1; found {headings}")
 
     if isinstance(page_type, str) and page_type in REQUIRED_SECTIONS:
         missing_sections = REQUIRED_SECTIONS[page_type] - body_headings(body)
@@ -184,9 +198,12 @@ def check_page(path: Path, stems: set[str], index_text: str) -> list[str]:
                 f"{rel}: missing required sections: {', '.join(sorted(missing_sections))}"
             )
 
-    for target in WIKILINK_RE.findall(body):
-        if target not in stems:
-            errors.append(f"{rel}: dangling wikilink [[{target}]]")
+    # The chronology is append-only, so removed pages may remain named in old
+    # log entries. Current synthesis pages must still resolve every wikilink.
+    if path.name != "log.md":
+        for target in WIKILINK_RE.findall(body):
+            if target not in stems:
+                errors.append(f"{rel}: dangling wikilink [[{target}]]")
 
     if path.name not in {"index.md", "README.md"}:
         stem = path.stem
@@ -210,6 +227,12 @@ def main() -> int:
         stems.setdefault(path.stem, []).append(path)
 
     errors: list[str] = []
+    catalogued_outputs: set[str] = set()
+    if (ROOT / CATALOG).exists():
+        try:
+            catalogued_outputs = declared_outputs(load_catalog(ROOT))
+        except (ValueError, KeyError, OSError) as exc:
+            errors.append(f"Invalid generated-file catalog: {exc}")
     for stem, paths in stems.items():
         if len(paths) > 1:
             rel_paths = ", ".join(str(path.relative_to(ROOT)) for path in paths)
@@ -218,7 +241,7 @@ def main() -> int:
     index_text = INDEX.read_text(encoding="utf-8")
     stem_set = set(stems)
     for path in pages:
-        errors.extend(check_page(path, stem_set, index_text))
+        errors.extend(check_page(path, stem_set, index_text, catalogued_outputs))
 
     if errors:
         print("wiki-lint failed:")

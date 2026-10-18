@@ -2,13 +2,11 @@
 title: Fixed Sibling Gate Profile Validation 2026-06-13
 type: source
 status: reviewed
-updated: 2026-07-28
+updated: 2026-10-16
 sources:
-  - benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py
   - benchmarks/shared/runners/tbs_runner.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/tree_decomposition.py
-  - tests/validation/calibration/sibling/gates/101_test_fixed_sibling_gate_profile_validation.py
   - benchmarks/diagnostics/calibration/traversal/production_admissibility_contract.py
   - raw/inbox/fixed-sibling-gate-profile-validation-20260613.md
 tags:
@@ -27,11 +25,23 @@ sibling-gate profiles through the shared TBS benchmark runner. It is a
 diagnostic artifact for routing and evidence fields, not a production
 calibration rule.
 
+The selected-root and selective-pass-through profile IDs described below are
+historical provenance. They were retired from the runtime registry on
+2026-08-10; their default-off guard behaviors remain reproducible through
+explicit settings, while the refined global selected-family profile remains the
+packaged candidate.
+
+The historical `fixed_global_guarded_v1` routing profile was also retired after
+its fixed-global runner regression was migrated to explicit settings. The fixed
+global statistic remains available through `sibling_gate_method`; raw profile
+validation captures retain the old ID as provenance.
+
 ## Key Points
 
 - The panel runs selected binary or direct categorical null/signal cases
-  through `_run_tbs_method` with a named profile such as
-  `fixed_coordinate_guarded_v1` or `fixed_global_guarded_v1`.
+  through `_run_tbs_method`; its default profile is now
+  `fixed_coordinate_guarded_v1`. Historical runs also compared the retired
+  fixed-global profile.
 - It records gate config metadata, observed `Sibling_Test_Method` values,
   whether any `projected_wald_inflation` sibling rows were used, traversal
   cluster counts, ARI, null false-split flags, root-stability guard blocking,
@@ -72,16 +82,16 @@ calibration rule.
   CLI forwards guard replicates, seed, and alpha into the shared TBS runner,
   records `Root_Selective_Permutation_*` audit columns, and summarizes
   selected-root p-values and guard block rates.
-- The selected-root method layer is now packaged as
-  `fixed_coordinate_selective_root_v1`. This profile sets fixed coordinate BH,
+- The selected-root method layer was packaged as
+  `fixed_coordinate_selective_root_v1`. This profile set fixed coordinate BH,
   selected-topology penalty `50`, root-stability threshold `0.24`, `12`
   stability subsamples, feature fraction `0.8`, selected-root permutation
   replicates `99`, selected-root guard seed `0`, and selected-root guard alpha
   `0.01`.
-- The older `fixed_coordinate_guarded_v1` and `fixed_global_guarded_v1`
-  profiles keep selected-root permutation disabled by default, so existing
-  profile-validation smoke runs remain compatible. They can still accept
-  explicit selected-root guard settings for targeted replay.
+- `fixed_coordinate_guarded_v1` keeps selected-root permutation disabled by
+  default and can accept explicit selected-root guard settings for targeted
+  replay. The equivalent fixed-global settings are supplied explicitly when
+  that statistic is needed.
 - The guard is deliberately limited to fixed-subspace sibling methods. It
   raises with `projected_wald_inflation` because the same-sample adaptive PCA
   statistic is the layer being avoided, not a valid input to repair.
@@ -90,8 +100,9 @@ calibration rule.
   sibling method, selected-topology penalty, stability constants, and
   selected-root guard constants rather than only raw explicit kwargs.
 - The method-constant evidence builder also uses resolved profile settings.
-  A profile-validation run that asks only for `fixed_coordinate_selective_root_v1`
-  now reports selected-root permutation grids `[99]` and `[0.01]` in evidence
+  A historical profile-validation run asking only for
+  `fixed_coordinate_selective_root_v1` reports selected-root permutation grids
+  `[99]` and `[0.01]` in evidence
   JSON, rather than incorrectly treating the guard as disabled because the CLI
   override knobs were left at defaults.
 - A targeted profile replay at data seed `20309045`, guard seed `20318458`,
@@ -118,8 +129,8 @@ calibration rule.
   conservative for signal. In the same two-replicate mixed smoke it has zero
   observed null false splits, but binary signal mean ARI is `0.651330` and
   categorical signal mean ARI is `0.521072`.
-- The narrowed scope is packaged as
-  `fixed_coordinate_selective_passthrough_v1`. It runs selected-subtree
+- The narrowed scope was packaged as
+  `fixed_coordinate_selective_passthrough_v1`. It ran selected-subtree
   permutation only for open descendant splits reachable through an ordinary
   closed sibling ancestor, and skips descendant compounding below roots already
   closed by explicit root-stability or selected-permutation guards.
@@ -152,7 +163,7 @@ calibration rule.
   to ARI `0.0`. Increasing local selected-subtree permutation resolution also
   does not solve it: with `999` draws, the false descendant remains selected at
   p-value `0.002`, while the strong signal roots are at p-value `0.001`.
-- The next viable non-cross-fit fix is a global selected-family null for
+- The next viable same-data fix is a global selected-family null for
   pass-through descendants. On the observed false row, a full-tree
   pass-through replay gives global p-value about `0.06` with `49` draws, and a
   conservative global-min sibling-family replay gives p-value about `0.05`
@@ -232,13 +243,11 @@ calibration rule.
 
 ## Evidence
 
-- `tests/validation/calibration/sibling/gates/101_test_fixed_sibling_gate_profile_validation.py` checks
-  profile validation, adaptive-projection detection, fail-closed production
-  components for missing coverage, and a tiny `binary_2clusters` output run.
 - `raw/inbox/fixed-sibling-gate-profile-validation-20260613.md` records the
   diagnostic purpose, command shape, outputs, targeted root replay, runtime
   selected-root guard replay, narrowed pass-through descendant replay, and
   interpretation.
+- `benchmarks/diagnostics/calibration/sibling/gates/fixed_sibling_gate_profile_validation.py` was retired on 2026-10-16 (last present at commit 7cc4e1c0).
 
 ## Links
 

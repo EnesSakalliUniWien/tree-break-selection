@@ -1,7 +1,7 @@
 # Tests Overview
 
-The suite is organized by pipeline layer so you can validate fast structural behavior first, then
-statistics, traversal, pipeline contracts, integration, and visualization.
+The suite is organized by supported product and artifact contracts so you can validate fast
+structural behavior first, then statistics, traversal, pipelines, integration, and visualization.
 
 ## Directory Structure
 
@@ -10,10 +10,15 @@ tests/
 ├── conftest.py
 ├── core/
 ├── tree/
+├── hierarchy_analysis/
 ├── statistics/
 ├── localization/
 ├── validation/
+│   ├── calibration/
+│   ├── contracts/
+│   └── diagnostics/
 ├── pipeline/
+├── applications/
 ├── integration/
 ├── visualization/
 └── wiki/
@@ -21,72 +26,30 @@ tests/
 
 ## Current Suite Map
 
-### Shared fixtures and repo-wide regressions
+The ordered gate currently collects 893 test cases:
 
-- `conftest.py`
-- `test_methodology_fixes.py`
+| Stage | Responsibility | Tests |
+| --- | --- | ---: |
+| 1 | Core structure and decomposition (`core/`, `tree/`, `hierarchy_analysis/`) | 172 |
+| 2 | Statistical engines and calibration (`statistics/`) | 283 |
+| 3 | Localization and post-hoc merge behavior (`localization/`) | 1 |
+| 4 | Validation artifact contracts (`validation/`) | 236 |
+| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 156 |
+| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 42 |
+| 7 | Wiki memory contracts (`wiki/`) | 3 |
 
-### Core tree/decomposition primitives (`core/`)
+Stage 4 protects artifact contracts: 24 cases in `calibration/` cover diagnostic
+reporting, CLI, and calibration-diagnostic contracts; 201 in `contracts/` cover the
+method-constant manifest, the generated-file catalog, and an import check of every
+`benchmarks/` module (179 cases); 14 in `diagnostics/` cover shared diagnostic helpers. Research
+simulations, calibration panels, sweeps, and one-off diagnostic studies are
+evidence-generating tools rather than production contracts and are not part of
+the project test gate.
 
-- `10_test_poset_tree.py`
-- `12_test_cluster_assignments.py`
-- `13_test_cluster_decomposer_threshold.py`
-- `16_test_data_utils_bool_extraction.py`
-
-### Linkage and branch-time contracts (`tree/`)
-
-- `test_linkage_branch_time_contract.py`
-- `test_optimized_branch_lengths.py`
-
-### Statistical kernels and config wiring (`statistics/`)
-
-- `22_test_edge_branch_length_regression.py`
-- `25_test_per_test_projection_seeding.py`
-- `26_test_invalid_nonfinite_handling.py`
-- `27_test_categorical_distributions.py`
-- `29_test_method_k_estimators_parity.py`
-- `30_test_gate_annotation_pipeline_parity.py`
-- `31_test_registry_config_wiring.py`
-
-### Traversal and localization behavior (`localization/`)
-
-- `33_test_skip_reason_propagation_integration.py`
-- `35_test_gates_traversal.py`
-
-### Cluster validation stack (`validation/`)
-
-- `40_test_cluster_validation_core.py`
-- `41_test_independent_cluster_validation.py`
-- `42_test_cluster_validation_integration.py`
-- `43_test_result_status_validation.py`
-
-### Pipeline contracts and reporting artifacts (`pipeline/`)
-
-- `50_test_attention_pipeline.py`
-- `51_test_dispatch_contract.py`
-- `52_test_method_execution_index_alignment.py`
-- `53_test_runner_contract_alignment.py`
-- `55_test_case_run_audit_env_restore.py`
-- `57_test_pdf_utils.py`
-- `58_test_pipeline_pdf_behavior.py`
-- `59_test_pipeline_pdf_naming.py`
-- `60_test_case_execution_pdf_cover_mode.py`
-- `61_test_benchmark_relationship_analysis.py`
-
-### Benchmark and generator smoke tests (`integration/`)
-
-- `60_test_benchmark_methods_smoke.py`
-- `61_test_sbm_integration.py`
-- `62_test_phylogenetic_generator.py`
-
-### Wiki memory contracts (`wiki/`)
-
-- `test_memory_contract.py`
-
-### Visualization and layout (`visualization/`)
-
-- `70_test_cluster_tree_layout.py`
-- `71_test_cluster_tree_visualization.py`
+`conftest.py` is the only shared root test module. Tests otherwise belong to
+the directory matching the supported production or artifact responsibility
+they protect. Direct tests of production statistical behavior live in
+`statistics/`; end-to-end method behavior lives in `integration/`.
 
 ## Recommended Test Execution Order
 
@@ -96,9 +59,9 @@ Use the lean development environment for targeted suites:
 uv sync --extra dev --extra benchmark --extra viz --locked
 ```
 
-Use the full test environment before running the full suite. The full suite
-includes scRNA and optional GPL paths backed by `scanpy`, `anndata`, and
-`graphtools`.
+Use the full test environment before running optional scRNA and GPL tests.
+Optional tests are marked by runtime so the lean suite and each optional
+dependency surface can be selected explicitly.
 
 ```bash
 uv sync --extra all --extra experimental-gpl --locked
@@ -116,19 +79,19 @@ Or run the suites directly:
 
 ```bash
 # 1) Core structure + decomposition
-uv run pytest tests/core/ tests/tree/
+uv run pytest tests/core/ tests/tree/ tests/hierarchy_analysis/
 
 # 2) Statistical engines + calibration
 uv run pytest tests/statistics/
 
-# 3) Traversal and gate behavior
+# 3) Localization + post-hoc merge behavior
 uv run pytest tests/localization/
 
-# 4) Cluster validation stack
+# 4) Validation artifact contracts
 uv run pytest tests/validation/
 
-# 5) Pipeline contracts + reporting artifacts
-uv run pytest tests/pipeline/
+# 5) Pipeline + application contracts and reporting artifacts
+uv run pytest tests/pipeline/ tests/applications/
 
 # 6) Integration smoke + visualization
 uv run pytest tests/integration/ tests/visualization/
@@ -138,6 +101,20 @@ uv run pytest tests/wiki/
 
 # Full suite
 uv run pytest
+
+# Fast lean suite
+uv run pytest -m "not optional and not slow"
+
+# Complete suite without optional runtimes
+uv run pytest -m "not optional"
+
+# Expensive regression and catalog-wide contracts
+uv run pytest -m slow
+
+# Optional dependency surfaces
+uv run pytest -m scrna
+uv run pytest -m graphtools
+uv run pytest -m r_runtime
 ```
 
 ## Notes
@@ -145,5 +122,6 @@ uv run pytest
 - Grouping is by intent, not by a strict import dependency graph.
 - If you touched decomposition logic, start with `tests/core/`, `tests/statistics/`, and `tests/localization/`.
 - For benchmark or artifact-generation changes, prioritize `tests/pipeline/` and `tests/integration/`.
-- Research diagnostics belong in `benchmarks/diagnostics/` with focused
-  validation tests under `tests/validation/` or `tests/pipeline/`.
+- Research diagnostics belong in `benchmarks/diagnostics/`. Promote a test into
+  the project gate only when it protects a supported production or artifact
+  contract independent of the diagnostic implementation.

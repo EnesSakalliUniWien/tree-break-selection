@@ -8,7 +8,7 @@ coordinates needed to inspect:
 
 * global embedding position,
 * within-block embedding position,
-* radius relative to the common/invariant cosine axis,
+* radius relative to the common (leading) cosine axis,
 * angle to the leading block axis,
 * independent/orthogonal radius inside the selected block,
 * tree leaf order and TreeDecomposition cluster labels.
@@ -19,15 +19,10 @@ It does not run clustering and does not make production calibration claims.
 from __future__ import annotations
 
 import argparse
-import csv
-import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
-from urllib.error import URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
 import matplotlib
 
@@ -43,14 +38,19 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+from applications.endotypes._shared import (
+    load_feature_matrix,
+    map_symbols_to_entrez,
+    parse_reference_endotypes,
+    safe_name,
+)
 from tree_break_selection.space_separation import (
     SpectralBlock,
     coordinates_for_block,
     cosine_eigendecomposition,
     weight_feature_matrix,
 )
-
-from applications.endotypes._shared import load_feature_matrix, safe_name
 
 EmbeddingMethod = Literal["umap", "svd"]
 
@@ -114,14 +114,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--global-weighting",
-        choices=["binary", "tfidf"],
-        default="binary",
+        choices=["raw", "tfidf"],
+        default="raw",
         help="Feature weighting used when computing a global embedding.",
     )
     parser.add_argument(
         "--weightings",
         nargs="+",
-        choices=["binary", "tfidf"],
+        choices=["raw", "tfidf"],
         default=None,
         help="Optional weighting filter.",
     )
@@ -168,6 +168,12 @@ def load_probe_summary(results_dir: Path, weightings: list[str] | None) -> pd.Da
     if missing:
         raise ValueError(f"Probe summary missing required columns: {sorted(missing)!r}")
     summary = summary[summary["status"].eq("ok")].copy()
+    unsupported_weightings = set(summary["weighting"].astype(str)) - {"raw", "tfidf"}
+    if unsupported_weightings:
+        raise ValueError(
+            f"Unsupported saved weighting labels: {sorted(unsupported_weightings)!r}; "
+            "regenerate the probe with raw or tfidf weighting."
+        )
     if weightings is not None:
         summary = summary[summary["weighting"].isin(weightings)].copy()
     if summary.empty:
@@ -207,73 +213,6 @@ def load_assignment(path: Path, data_index: pd.Index) -> pd.DataFrame:
             f"for example {missing_genes[:5].tolist()!r}."
         )
     return assignment.loc[data_index].reset_index(drop=True)
-
-
-def parse_reference_endotypes(path: Path) -> dict[str, dict[str, object]]:
-    entrez_to_endotype: dict[str, dict[str, object]] = {}
-    with path.open(encoding="utf-8") as handle:
-        reader = csv.reader(handle, delimiter="\t")
-        for row in reader:
-            if not row:
-                continue
-            first_cell = row[0].strip()
-            if first_cell.startswith("#") or first_cell in {"SUM", "AVERAGE"}:
-                continue
-            if len(row) < 10:
-                continue
-            cluster_id_text = row[4].strip()
-            if not cluster_id_text.isdigit():
-                continue
-            endotype = {
-                "reference_cluster_id": int(cluster_id_text),
-                "reference_cluster_color": row[5].strip() or "#808080",
-                "reference_cluster_rank": row[6].strip(),
-                "reference_cluster_name": row[7].strip() or f"Cluster {cluster_id_text}",
-                "reference_cluster_type": row[8].strip() or "cluster",
-            }
-            for gene_id in (cell.strip() for cell in row[9:] if cell.strip()):
-                entrez_to_endotype[str(gene_id)] = endotype
-    return entrez_to_endotype
-
-
-def map_symbols_to_entrez(symbols: list[str], *, batch_size: int = 200) -> dict[str, str | None]:
-    mapped: dict[str, str | None] = {}
-    endpoint = "https://mygene.info/v3/query"
-    for start in range(0, len(symbols), batch_size):
-        batch = symbols[start : start + batch_size]
-        body = urlencode(
-            {
-                "q": ",".join(batch),
-                "scopes": "symbol",
-                "fields": "symbol,entrezgene,taxid",
-                "species": "human",
-            }
-        ).encode("utf-8")
-        request = Request(
-            endpoint,
-            data=body,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            method="POST",
-        )
-        try:
-            with urlopen(request, timeout=60) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-        except URLError as exc:
-            raise RuntimeError(
-                "Failed to query mygene.info for gene symbol -> Entrez mapping."
-            ) from exc
-
-        if isinstance(payload, dict):
-            payload = [payload]
-        for record in payload:
-            query = record.get("query")
-            if not query:
-                continue
-            entrez = record.get("entrezgene") or record.get("_id")
-            mapped[str(query)] = None if entrez is None else str(entrez)
-        for symbol in batch:
-            mapped.setdefault(symbol, None)
-    return mapped
 
 
 def build_reference_labels(data_index: pd.Index, reference_endotypes_path: Path) -> pd.DataFrame:
@@ -717,7 +656,6 @@ def compute_block_geometry(
     row: pd.Series,
     coords: np.ndarray,
     eigvals: np.ndarray,
-    eigvecs: np.ndarray,
     common_axis_score: np.ndarray,
     assignment: pd.DataFrame,
 ) -> tuple[pd.DataFrame, dict[str, object]]:
@@ -748,7 +686,7 @@ def compute_block_geometry(
             "block_name": row["block_name"],
             "cluster_id": assignment["cluster_id"].astype(int).to_numpy(),
             "cluster_size": assignment["cluster_size"].astype(int).to_numpy(),
-            "common_invariant_axis_score": common_axis_score,
+            "common_axis_score": common_axis_score,
             "block_radius": radius,
             "leading_axis_coordinate": leading_coord,
             "signed_cosine_to_leading_axis": signed_cos_to_axis,
@@ -872,7 +810,7 @@ def build_artifacts(
                     "fraction_of_kept_operator_energy": (
                         float(eigval / total_energy) if total_energy > 0 else math.nan
                     ),
-                    "is_common_invariant_axis": component == 1,
+                    "is_common_axis": component == 1,
                 }
             )
 
@@ -906,7 +844,6 @@ def build_artifacts(
             row=row,
             coords=coords,
             eigvals=eigvals,
-            eigvecs=eigvecs,
             common_axis_score=common_axis_score,
             assignment=assignment,
         )
@@ -1143,7 +1080,7 @@ def draw_consolidated_page(
 
         geom = artifact.sample_geometry
         ax_geom.scatter(
-            geom["common_invariant_axis_score"],
+            geom["common_axis_score"],
             geom["block_radius"],
             c=colors,
             cmap=cmap,
@@ -1151,8 +1088,8 @@ def draw_consolidated_page(
             alpha=0.78,
             linewidths=0,
         )
-        ax_geom.set_title("Invariant axis vs radius", fontsize=9)
-        ax_geom.set_xlabel("Common/invariant axis score", fontsize=8)
+        ax_geom.set_title("Common axis vs radius", fontsize=9)
+        ax_geom.set_xlabel("Common (leading) axis score", fontsize=8)
         ax_geom.set_ylabel("Block radius", fontsize=8)
         ax_geom.tick_params(labelsize=7)
 
@@ -1267,15 +1204,15 @@ def draw_per_block_pages(
         axes[1].set_ylabel("Block embedding axis 2")
 
         axes[2].scatter(
-            geom["common_invariant_axis_score"],
+            geom["common_axis_score"],
             geom["block_radius"],
             c=colors,
             cmap=cmap,
             s=16,
             alpha=0.80,
         )
-        axes[2].set_title("Radius against common/invariant axis")
-        axes[2].set_xlabel("Common/invariant axis score")
+        axes[2].set_title("Radius against common (leading) axis")
+        axes[2].set_xlabel("Common (leading) axis score")
         axes[2].set_ylabel("Block radius")
 
         ax_angle.scatter(
@@ -1356,7 +1293,7 @@ def write_interactive_html(
                     geom.loc[row_indices, "block_radius"].to_numpy(),
                     geom.loc[row_indices, "angle_to_leading_axis_deg"].to_numpy(),
                     geom.loc[row_indices, "independent_radius_fraction"].to_numpy(),
-                    geom.loc[row_indices, "common_invariant_axis_score"].to_numpy(),
+                    geom.loc[row_indices, "common_axis_score"].to_numpy(),
                 ],
                 axis=1,
             )
@@ -1379,7 +1316,7 @@ def write_interactive_html(
                         "radius=%{customdata[3]:.4f}<br>"
                         "angle=%{customdata[4]:.2f} deg<br>"
                         "indep radius frac=%{customdata[5]:.3f}<br>"
-                        "invariant score=%{customdata[6]:.4f}<br>"
+                        "common axis score=%{customdata[6]:.4f}<br>"
                         "x=%{x:.3f}<br>y=%{y:.3f}<br>z=%{z:.3f}"
                         "<extra></extra>"
                     ),
@@ -1583,7 +1520,7 @@ def main() -> None:
         "- `kak_signal_adaptive_umap_tree_page.png/pdf`: consolidated visual page.",
         "- `kak_signal_adaptive_per_block_pages.pdf`: one detailed page per block.",
         "- `kak_signal_adaptive_subembedding_3d.html`: interactive block embedding.",
-        "- `kak_signal_adaptive_block_geometry_summary.csv`: radius/angle/invariant-axis diagnostics.",
+        "- `kak_signal_adaptive_block_geometry_summary.csv`: radius/angle/common-axis diagnostics.",
         "- `kak_signal_adaptive_sample_geometry_long.csv`: per-gene geometry diagnostics.",
         "- `kak_signal_adaptive_internal_tree_geometry.csv`: per-merge internal tree geometry.",
         "- `kak_signal_adaptive_reference_nmi_metrics.csv`: optional reference NMI ordering metrics.",

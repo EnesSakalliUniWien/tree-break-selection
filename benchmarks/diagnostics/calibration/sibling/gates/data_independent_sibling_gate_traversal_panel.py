@@ -17,10 +17,32 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import fcluster, linkage
+from scipy.cluster.hierarchy import fcluster
 from scipy.spatial.distance import pdist
 from scipy.stats import norm, t
 from sklearn.metrics import adjusted_rand_score
+
+from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
+from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
+    DEFAULT_CANDIDATE_METHODS,
+    DEFAULT_DATA_ROLES,
+    DEFAULT_SELECTED_TOPOLOGY_PENALTIES,
+    data_independent_gate_p_value,
+    validate_candidate_methods,
+    validate_data_roles,
+    validate_selected_topology_penalties,
+)
+from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
+    evaluate_production_admissibility_components,
+    summarize_production_admissibility_contracts,
+)
+from benchmarks.shared.generators.generate_case_data import generate_case_data
+from benchmarks.shared.util.values import bool_series, parse_csv_list
+from benchmarks.validation.statistics.selected_edge_type1_geometry import (
+    case_contract,
+    regenerate_null_case,
+)
+from benchmarks.validation.sweeps.alpha_grid_search import select_cases
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     ClusterBoundary,
     build_cluster_assignments,
@@ -44,33 +66,13 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     identify_binary_sibling_children,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.branch_lengths import node_id
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     bernoulli_feature_space_from_columns,
 )
 from tree_break_selection.tree.poset_tree import PosetTree
-
-from benchmarks.diagnostics.calibration.sibling.gates.data_independent_sibling_gate_panel import (
-    DEFAULT_CANDIDATE_METHODS,
-    DEFAULT_DATA_ROLES,
-    DEFAULT_SELECTED_TOPOLOGY_PENALTIES,
-    data_independent_gate_p_value,
-    validate_candidate_methods,
-    validate_data_roles,
-    validate_selected_topology_penalties,
-)
-from benchmarks.diagnostics.calibration.traversal.production_admissibility_contract import (
-    evaluate_production_admissibility_components,
-    summarize_production_admissibility_contracts,
-)
-from benchmarks.shared.generators.generate_case_data import generate_case_data
-from benchmarks.validation.statistics.selected_edge_type1_geometry import (
-    _case_contract,
-    _select_cases,
-    parse_names,
-    regenerate_null_case,
-)
 
 STUDY_ROLE = "diagnostic_data_independent_sibling_gate_traversal_not_calibration"
 SCHEMA_VERSION = "data_independent_sibling_gate_traversal_panel/v1"
@@ -199,10 +201,7 @@ def _build_tree_from_leaf_data(
     tree_linkage_method: str = SELECTED_TREE_LINKAGE_METHOD,
 ) -> PosetTree:
     distance = pdist(data.to_numpy(dtype=float), metric=str(tree_distance_metric))
-    return tree_from_linkage(
-        linkage(distance, method=str(tree_linkage_method)),
-        leaf_names=data.index.tolist(),
-    )
+    return build_tree(data, distance, linkage_method=str(tree_linkage_method)).tree
 
 
 def selected_tree_oracle_cut_ari(
@@ -216,12 +215,14 @@ def selected_tree_oracle_cut_ari(
     if int(true_clusters) <= 1:
         return float(adjusted_rand_score(labels, np.zeros(labels.shape[0], dtype=int)))
     distance = pdist(data.to_numpy(dtype=float), metric=SELECTED_TREE_DISTANCE_METRIC)
-    clusters = fcluster(
-        linkage(distance, method=SELECTED_TREE_LINKAGE_METHOD),
-        t=int(true_clusters),
-        criterion="maxclust",
-    )
-    return float(adjusted_rand_score(labels, clusters))
+    built = build_tree(data, distance, linkage_method=SELECTED_TREE_LINKAGE_METHOD)
+    clusters = fcluster(built.linkage_matrix, t=int(true_clusters), criterion="maxclust")
+    # build_tree links samples in its own sorted order; map clusters back to rows by label.
+    leaf_labels = [
+        built.tree.nodes[node_id(i, len(clusters))]["label"] for i in range(len(clusters))
+    ]
+    row_clusters = pd.Series(clusters, index=leaf_labels).reindex(data.index).to_numpy()
+    return float(adjusted_rand_score(labels, row_clusters))
 
 
 def _root_split_labels(
@@ -365,7 +366,7 @@ def _selected_root_sibling_p_value(
     candidate_method: str,
 ) -> float:
     tree = _build_tree_from_leaf_data(data)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     parents, results_by_method, _skipped = _sibling_results_by_method(
         tree,
         feature_space,
@@ -608,7 +609,7 @@ def _rows_for_replicate(
         truth_labels,
         true_clusters=int(true_clusters),
     )
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     base_annotations = _base_edge_annotations(
         tree,
         data,
@@ -1148,15 +1149,15 @@ def summarize_root_stability_threshold_sensitivity(
         return pd.DataFrame()
     records: list[dict[str, object]] = []
     base = rows.copy()
-    root_split = base["root_split"].astype(str).str.lower().isin({"true", "1"})
-    root_blocked = base["root_stability_guard_blocked"].astype(str).str.lower().isin({"true", "1"})
+    root_split = bool_series(base["root_split"])
+    root_blocked = bool_series(base["root_stability_guard_blocked"])
     root_was_open = root_split | root_blocked
     stability = pd.to_numeric(
         base["root_stability_subsample_mean_ari"],
         errors="coerce",
     )
     original_ari = pd.to_numeric(base["ari"], errors="coerce")
-    original_false = base["false_split"].astype(str).str.lower().isin({"true", "1"})
+    original_false = bool_series(base["false_split"])
     group_columns = (
         "case_id",
         "source_family",
@@ -1288,11 +1289,11 @@ def summarize_root_selective_guard_sensitivity(
     if not bool(root_selective_p.notna().any()):
         return pd.DataFrame()
 
-    root_split = base["root_split"].astype(str).str.lower().isin({"true", "1"})
-    root_blocked = base["root_stability_guard_blocked"].astype(str).str.lower().isin({"true", "1"})
+    root_split = bool_series(base["root_split"])
+    root_blocked = bool_series(base["root_stability_guard_blocked"])
     root_was_open = root_split | root_blocked
     sibling_alpha = pd.to_numeric(base["sibling_alpha"], errors="coerce")
-    original_false = base["false_split"].astype(str).str.lower().isin({"true", "1"})
+    original_false = bool_series(base["false_split"])
     original_ari = pd.to_numeric(base["ari"], errors="coerce")
     selected_root_blocked = (
         root_was_open
@@ -1332,6 +1333,7 @@ def summarize_root_selective_guard_sensitivity(
         row = dict(zip(group_columns, key))
         false_count = int(group["selected_root_guard_false_split"].astype(bool).sum())
         root_p = pd.to_numeric(group["root_selective_p_value"], errors="coerce")
+        valid_root_p = root_p.dropna()
         row.update(
             {
                 "n_replicates": int(group.shape[0]),
@@ -1344,9 +1346,15 @@ def summarize_root_selective_guard_sensitivity(
                 "selected_root_guard_block_rate": float(
                     group["selected_root_guard_blocked"].mean()
                 ),
-                "root_selective_p_value_min": float(root_p.min()),
-                "root_selective_p_value_median": float(root_p.median()),
-                "root_selective_p_value_max": float(root_p.max()),
+                "root_selective_p_value_min": (
+                    float(valid_root_p.min()) if not valid_root_p.empty else np.nan
+                ),
+                "root_selective_p_value_median": (
+                    float(valid_root_p.median()) if not valid_root_p.empty else np.nan
+                ),
+                "root_selective_p_value_max": (
+                    float(valid_root_p.max()) if not valid_root_p.empty else np.nan
+                ),
                 "false_split_rate": float(group["selected_root_guard_false_split"].mean()),
                 "false_split_rate_upper_confidence": _wilson_upper_bound(
                     false_count,
@@ -1453,7 +1461,7 @@ def run_data_independent_sibling_gate_traversal_panel(
     )
     rows: list[dict[str, object]] = []
     checkpoint_paths: list[Path] = []
-    for case in _select_cases(suite=config.suite, case_names=config.case_names):
+    for case in select_cases(suite=config.suite, case_names=config.case_names):
         (
             case_id,
             source_family,
@@ -1461,7 +1469,7 @@ def run_data_independent_sibling_gate_traversal_panel(
             n_samples,
             n_features,
             n_categories,
-        ) = _case_contract(case)
+        ) = case_contract(case)
         if source_family not in {"binary_template", "categorical_multinomial"}:
             raise ValueError(
                 "Data-independent traversal panel supports binary and direct "
@@ -1643,13 +1651,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         DataIndependentSiblingGateTraversalConfig(
             output_dir=args.output_dir,
             suite=str(args.suite),
-            case_names=parse_names(args.case_names),
-            data_roles=validate_data_roles(parse_names(args.data_roles)),
-            candidate_methods=validate_candidate_methods(parse_names(args.candidate_methods)),
+            case_names=parse_csv_list(args.case_names),
+            data_roles=validate_data_roles(parse_csv_list(args.data_roles)),
+            candidate_methods=validate_candidate_methods(parse_csv_list(args.candidate_methods)),
             sibling_alpha=float(args.sibling_alpha),
             edge_alpha=float(args.edge_alpha),
             selected_topology_penalties=validate_selected_topology_penalties(
-                tuple(float(value) for value in parse_names(args.selected_topology_penalties))
+                tuple(float(value) for value in parse_csv_list(args.selected_topology_penalties))
             ),
             replicates=int(args.replicates),
             base_seed=int(args.base_seed),
@@ -1666,7 +1674,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             min_signal_mean_ari=float(args.min_signal_mean_ari),
         )
     )
-    print(json.dumps({key: str(value) for key, value in outputs.items()}, indent=2))
+    print_diagnostic_output_paths(outputs)
 
 
 if __name__ == "__main__":

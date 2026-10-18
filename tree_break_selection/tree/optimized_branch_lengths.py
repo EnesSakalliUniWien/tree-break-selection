@@ -7,8 +7,10 @@ non-negative least-squares fit for continuous data:
 
     D_ij ~= sum_{e in path(i, j)} tau_e,  tau_e >= 0
 
-where ``D_ij`` is either a squared standardized continuous distance or a
-squared distance from an already prepared Euclidean geometry.
+where ``D_ij`` is either the mean squared standardized Euclidean distance
+across all input features or the unnormalized squared Euclidean distance
+from an already prepared geometry. The target identifier
+``mean_squared_standardized_euclidean`` explicitly includes that normalization.
 """
 
 from __future__ import annotations
@@ -22,6 +24,8 @@ import pandas as pd
 from scipy import sparse
 from scipy.optimize import lsq_linear
 
+from tree_break_selection.tree.topology import tree_root
+
 BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC = "linkage_ultrametric"
 BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS = "fixed_topology_nnls"
 BRANCH_LENGTH_OPTIMIZATION_METHODS = (
@@ -29,10 +33,10 @@ BRANCH_LENGTH_OPTIMIZATION_METHODS = (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
 )
 
-BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN = "squared_standardized_euclidean"
+BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN = "mean_squared_standardized_euclidean"
 BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN = "squared_euclidean"
 BRANCH_LENGTH_TARGET_METRICS = (
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
 )
 
@@ -48,8 +52,14 @@ class BranchLengthOptimizationResult:
     n_edges: int
     n_pairs_total: int
     n_pairs_used: int
+    design_nnz: int
+    design_density: float
+    n_zero_design_columns: int
+    zero_design_column_fraction: float
     pair_sample_size: int | None
     random_state: int
+    applied_to_tree: bool
+    apply_nonconverged: bool
     elapsed_sec: float
     cost: float
     optimality: float
@@ -60,11 +70,16 @@ class BranchLengthOptimizationResult:
     fitted_median: float
     residual_rmse: float
     residual_mae: float
+    residual_rmse_to_target_mean: float
+    residual_mae_to_target_mean: float
     branch_length_mean: float
     branch_length_median: float
     branch_length_min: float
     branch_length_max: float
     solver_message: str
+    target_definition: str
+    target_normalization: str
+    target_normalization_divisor: int
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -84,8 +99,8 @@ def validate_branch_length_optimization_method(value: str) -> str:
 def _leaf_nodes_for_data(tree: nx.DiGraph, data_index: pd.Index) -> list[object]:
     label_to_node: dict[str, object] = {}
     for node_id, attrs in tree.nodes(data=True):
-        if bool(attrs.get("is_leaf", False)):
-            label = str(attrs.get("label", node_id))
+        if attrs["is_leaf"]:
+            label = str(attrs["label"])
             if label in label_to_node:
                 raise ValueError(f"Duplicate tree leaf label {label!r}.")
             label_to_node[label] = node_id
@@ -104,26 +119,24 @@ def _leaf_nodes_for_data(tree: nx.DiGraph, data_index: pd.Index) -> list[object]
     return leaf_nodes
 
 
+_PAIR_CHUNK_SIZE = 4096
+
+
 def _edge_indices(tree: nx.DiGraph) -> dict[tuple[object, object], int]:
     return {(parent, child): index for index, (parent, child) in enumerate(tree.edges())}
 
 
-def _root_path_edge_sets(
+def _leaf_edge_incidence(
     tree: nx.DiGraph,
     leaf_nodes: list[object],
     edge_index_by_pair: dict[tuple[object, object], int],
-) -> list[frozenset[int]]:
-    path_sets: list[frozenset[int]] = []
-    root = tree.graph.get("root")
-    if root is None:
-        roots = [node for node, degree in tree.in_degree() if degree == 0]
-        if len(roots) != 1:
-            raise ValueError(f"Expected one tree root, got {roots!r}.")
-        root = roots[0]
-
+) -> sparse.csr_matrix:
+    """Return a leaf-by-edge 0/1 matrix marking the edges on each leaf's root path."""
+    root = tree_root(tree)
+    indptr = [0]
+    edge_ids: list[int] = []
     for leaf in leaf_nodes:
         current = leaf
-        edge_ids: list[int] = []
         while current != root:
             parents = list(tree.predecessors(current))
             if len(parents) != 1:
@@ -133,8 +146,11 @@ def _root_path_edge_sets(
             parent = parents[0]
             edge_ids.append(edge_index_by_pair[(parent, current)])
             current = parent
-        path_sets.append(frozenset(edge_ids))
-    return path_sets
+        indptr.append(len(edge_ids))
+    return sparse.csr_matrix(
+        (np.ones(len(edge_ids), dtype=np.float64), edge_ids, indptr),
+        shape=(len(leaf_nodes), len(edge_index_by_pair)),
+    )
 
 
 def _sample_leaf_pairs(
@@ -171,11 +187,73 @@ def _sample_leaf_pairs(
     return ordered_pairs[:, 0], ordered_pairs[:, 1], total_pairs
 
 
-def _squared_standardized_targets(
+def _edge_crossing_pairs(
+    leaf_edge_incidence: sparse.csr_matrix,
+    edges: np.ndarray,
+    edge_by_index: dict[int, tuple[object, object]],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return one leaf pair across each edge: its first leaf below and first leaf outside."""
+    below = leaf_edge_incidence.tocsc()
+    all_leaves = np.arange(below.shape[0])
+    pairs: set[tuple[int, int]] = set()
+    for edge in edges.tolist():
+        inside = below.indices[below.indptr[edge] : below.indptr[edge + 1]]
+        outside = np.setdiff1d(all_leaves, inside)
+        if inside.size == 0 or outside.size == 0:
+            raise ValueError(
+                f"Edge {edge_by_index[edge]!r} has data leaves on one side only; "
+                "no leaf pair crosses it, so its length cannot be fit."
+            )
+        pairs.add((int(inside.min()), int(outside[0])))
+    ordered = np.array(sorted(pairs), dtype=np.int32)
+    return ordered[:, 0], ordered[:, 1]
+
+
+def _split_root_pair_by_linkage(
+    tree: nx.DiGraph,
+    lengths: np.ndarray,
+    edge_index_by_pair: dict[tuple[object, object], int],
+) -> np.ndarray:
+    """Split the fitted root-pair sum in the ratio of the root edges' linkage lengths.
+
+    Every leaf pair crosses both root edges or neither, so NNLS identifies only
+    their sum. The pre-fit linkage lengths carry the tree builder's root
+    placement; missing, non-finite or all-zero linkage lengths split evenly.
+    """
+    root = tree_root(tree)
+    children = list(tree.successors(root))
+    if len(children) != 2:
+        return lengths
+    indices = [edge_index_by_pair[(root, child)] for child in children]
+    weights = np.array(
+        [
+            float(
+                tree.edges[root, child].get(
+                    "linkage_branch_length", tree.edges[root, child].get("branch_length", 0.0)
+                )
+            )
+            for child in children
+        ]
+    )
+    if not np.all(np.isfinite(weights)) or np.any(weights < 0.0) or weights.sum() <= 0.0:
+        weights = np.ones(2)
+    split = lengths.copy()
+    split[indices] = lengths[indices].sum() * weights / weights.sum()
+    return split
+
+
+def _mean_squared_standardized_targets(
     data: pd.DataFrame,
     left: np.ndarray,
     right: np.ndarray,
 ) -> np.ndarray:
+    """Return mean squared standardized Euclidean distances for sample pairs.
+
+    Each feature is centered and scaled by its sample standard deviation
+    (``ddof=1``); non-finite or non-positive scales are replaced by one. Sum
+    the squared standardized differences and divide by the total number of
+    input features, including constant features.
+    """
     matrix = data.to_numpy(dtype=np.float64, copy=True)
     if matrix.ndim != 2 or matrix.shape[0] < 2 or matrix.shape[1] < 1:
         raise ValueError("Branch-length optimization requires a 2-D continuous data matrix.")
@@ -200,42 +278,45 @@ def _squared_euclidean_targets(
 
 
 def _path_incidence_matrix(
-    root_path_sets: list[frozenset[int]],
+    leaf_edge_incidence: sparse.csr_matrix,
     left: np.ndarray,
     right: np.ndarray,
-    n_edges: int,
 ) -> sparse.csr_matrix:
-    row_indices: list[int] = []
-    col_indices: list[int] = []
-    for row_index, (left_index, right_index) in enumerate(zip(left, right, strict=True)):
-        path_edges = root_path_sets[int(left_index)] ^ root_path_sets[int(right_index)]
-        row_indices.extend([row_index] * len(path_edges))
-        col_indices.extend(path_edges)
-    data = np.ones(len(row_indices), dtype=np.float64)
-    return sparse.coo_matrix(
-        (data, (row_indices, col_indices)),
-        shape=(len(left), n_edges),
-        dtype=np.float64,
-    ).tocsr()
+    """Mark the edges on each leaf pair's path: the symmetric difference of root paths."""
+    # Chunked so the shared root-path prefixes of a chunk are the only transient copies.
+    blocks = []
+    for start in range(0, len(left), _PAIR_CHUNK_SIZE):
+        stop = start + _PAIR_CHUNK_SIZE
+        block = abs(leaf_edge_incidence[left[start:stop]] - leaf_edge_incidence[right[start:stop]])
+        block.eliminate_zeros()
+        blocks.append(block)
+    return sparse.vstack(blocks, format="csr")
 
 
 def fit_fixed_topology_nnls_branch_lengths(
     tree: nx.DiGraph,
     continuous_data: pd.DataFrame,
     *,
-    target_metric: str = BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    target_metric: str = BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
     pair_sample_size: int | None = 100_000,
     random_state: int = 0,
     solver_tolerance: float = 1e-6,
     max_iterations: int | None = None,
+    apply_nonconverged: bool = False,
 ) -> BranchLengthOptimizationResult:
     """Fit non-negative edge lengths on a fixed tree topology.
 
     The function mutates ``tree`` by replacing each edge's ``branch_length``
     with the fitted value.  The previous value is preserved as
-    ``linkage_branch_length`` when present. ``continuous_data`` is interpreted
+    ``linkage_branch_length`` when present. Only the sum of the root's two edge
+    lengths is identified; it is split in the ratio of their linkage lengths.
+    An edge no sampled pair crosses gets one crossing pair, so every edge
+    length is fit; ``n_zero_design_columns`` counts those edges. ``continuous_data`` is interpreted
     as raw continuous observations for the standardized target and as a
-    prepared Euclidean embedding for the unstandardized target.
+    prepared Euclidean embedding for the unstandardized target. The
+    ``mean_squared_standardized_euclidean`` target divides the sum of squared
+    sample-standardized differences by the total input feature count;
+    ``squared_euclidean`` uses the unnormalized sum in the supplied geometry.
     """
     start_sec = perf_counter()
     if target_metric not in BRANCH_LENGTH_TARGET_METRICS:
@@ -254,17 +335,44 @@ def fit_fixed_topology_nnls_branch_lengths(
     if n_edges == 0:
         raise ValueError("Branch-length optimization requires a non-empty tree.")
 
-    root_path_sets = _root_path_edge_sets(tree, leaf_nodes, edge_index_by_pair)
+    leaf_edge_incidence = _leaf_edge_incidence(tree, leaf_nodes, edge_index_by_pair)
+    edge_by_index = {index: edge for edge, index in edge_index_by_pair.items()}
     left, right, total_pairs = _sample_leaf_pairs(
         len(leaf_nodes),
         pair_sample_size=pair_sample_size,
         random_state=random_state,
     )
-    if target_metric == BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN:
-        targets = _squared_standardized_targets(continuous_data, left, right)
+    design = _path_incidence_matrix(leaf_edge_incidence, left, right)
+    # An edge no sampled pair crosses has a zero design column; the solver would
+    # leave it at its starting value. Add one crossing pair for each such edge.
+    uncovered_edges = np.flatnonzero(design.getnnz(axis=0) == 0)
+    n_zero_design_columns = int(uncovered_edges.size)
+    if n_zero_design_columns:
+        extra_left, extra_right = _edge_crossing_pairs(
+            leaf_edge_incidence, uncovered_edges, edge_by_index
+        )
+        left = np.concatenate([left, extra_left])
+        right = np.concatenate([right, extra_right])
+        design = sparse.vstack(
+            [design, _path_incidence_matrix(leaf_edge_incidence, extra_left, extra_right)],
+            format="csr",
+        )
+    if target_metric == BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN:
+        targets = _mean_squared_standardized_targets(continuous_data, left, right)
+        target_definition = (
+            "mean squared standardized Euclidean distance "
+            "(sample standard deviation with ddof=1; "
+            "non-finite or non-positive scales replaced by 1)"
+        )
+        target_normalization = "divide_by_total_feature_count"
+        target_normalization_divisor = int(continuous_data.shape[1])
     else:
         targets = _squared_euclidean_targets(continuous_data, left, right)
-    design = _path_incidence_matrix(root_path_sets, left, right, n_edges)
+        target_definition = "squared Euclidean distance in the supplied geometry"
+        target_normalization = "none"
+        target_normalization_divisor = 1
+    design_nnz = int(design.nnz)
+    design_density = float(design_nnz / (design.shape[0] * design.shape[1]))
 
     solution = lsq_linear(
         design,
@@ -276,51 +384,85 @@ def fit_fixed_topology_nnls_branch_lengths(
         lsmr_tol="auto",
         verbose=0,
     )
-    lengths = np.asarray(solution.x, dtype=float)
+    lengths = _split_root_pair_by_linkage(
+        tree, np.asarray(solution.x, dtype=float), edge_index_by_pair
+    )
     fitted = np.asarray(design @ lengths, dtype=float)
     residuals = fitted - targets
+    solver_converged = bool(solution.success)
+    applied_to_tree = solver_converged or bool(apply_nonconverged)
 
-    edge_by_index = {index: edge for edge, index in edge_index_by_pair.items()}
-    for index, length in enumerate(lengths):
-        parent, child = edge_by_index[index]
-        attrs = tree.edges[parent, child]
-        if "branch_length" in attrs and "linkage_branch_length" not in attrs:
-            attrs["linkage_branch_length"] = attrs["branch_length"]
-        attrs["branch_length"] = float(length)
-        attrs["branch_length_source"] = BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS
+    if applied_to_tree:
+        for index, length in enumerate(lengths):
+            parent, child = edge_by_index[index]
+            attrs = tree.edges[parent, child]
+            if "branch_length" in attrs and "linkage_branch_length" not in attrs:
+                attrs["linkage_branch_length"] = attrs["branch_length"]
+            attrs["branch_length"] = float(length)
+            attrs["branch_length_source"] = BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS
 
     tree.graph["branch_length_optimization"] = {
         "method": BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
         "target_metric": target_metric,
+        "target_definition": target_definition,
+        "target_normalization": target_normalization,
+        "target_normalization_divisor": target_normalization_divisor,
+        "status": "ok" if solver_converged else "solver_not_converged",
         "pair_sample_size": None if pair_sample_size is None else int(pair_sample_size),
         "random_state": int(random_state),
+        "applied_to_tree": bool(applied_to_tree),
+        "apply_nonconverged": bool(apply_nonconverged),
     }
+    target_mean = float(np.mean(targets))
+    residual_rmse = float(np.sqrt(np.mean(residuals * residuals)))
+    residual_mae = float(np.mean(np.abs(residuals)))
+    residual_rmse_to_target_mean = (
+        float(residual_rmse / target_mean)
+        if np.isfinite(target_mean) and target_mean > 0.0
+        else float("nan")
+    )
+    residual_mae_to_target_mean = (
+        float(residual_mae / target_mean)
+        if np.isfinite(target_mean) and target_mean > 0.0
+        else float("nan")
+    )
 
     return BranchLengthOptimizationResult(
         method=BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
         target_metric=target_metric,
-        status="ok" if bool(solution.success) else "solver_not_converged",
+        status="ok" if solver_converged else "solver_not_converged",
         n_leaves=len(leaf_nodes),
         n_edges=n_edges,
         n_pairs_total=total_pairs,
         n_pairs_used=len(left),
+        design_nnz=design_nnz,
+        design_density=design_density,
+        n_zero_design_columns=n_zero_design_columns,
+        zero_design_column_fraction=float(n_zero_design_columns / n_edges),
         pair_sample_size=None if pair_sample_size is None else int(pair_sample_size),
         random_state=int(random_state),
+        applied_to_tree=bool(applied_to_tree),
+        apply_nonconverged=bool(apply_nonconverged),
         elapsed_sec=perf_counter() - start_sec,
         cost=float(solution.cost),
         optimality=float(solution.optimality),
         iterations=int(solution.nit),
-        target_mean=float(np.mean(targets)),
+        target_mean=target_mean,
         target_median=float(np.median(targets)),
         fitted_mean=float(np.mean(fitted)),
         fitted_median=float(np.median(fitted)),
-        residual_rmse=float(np.sqrt(np.mean(residuals * residuals))),
-        residual_mae=float(np.mean(np.abs(residuals))),
+        residual_rmse=residual_rmse,
+        residual_mae=residual_mae,
+        residual_rmse_to_target_mean=residual_rmse_to_target_mean,
+        residual_mae_to_target_mean=residual_mae_to_target_mean,
         branch_length_mean=float(np.mean(lengths)),
         branch_length_median=float(np.median(lengths)),
         branch_length_min=float(np.min(lengths)),
         branch_length_max=float(np.max(lengths)),
         solver_message=str(solution.message),
+        target_definition=target_definition,
+        target_normalization=target_normalization,
+        target_normalization_divisor=target_normalization_divisor,
     )
 
 
@@ -330,7 +472,7 @@ __all__ = [
     "BRANCH_LENGTH_OPTIMIZATION_METHODS",
     "BRANCH_LENGTH_TARGET_METRICS",
     "BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN",
-    "BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN",
+    "BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN",
     "BranchLengthOptimizationResult",
     "fit_fixed_topology_nnls_branch_lengths",
     "validate_branch_length_optimization_method",

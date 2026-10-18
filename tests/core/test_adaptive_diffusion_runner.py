@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
+
 from benchmarks.shared.runners.tbs_diffusion_runner import (
     GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_CONNECTIVITY_MINIMUM,
     GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_FRAGMENTATION_GUARD,
@@ -9,13 +11,28 @@ from benchmarks.shared.runners.tbs_diffusion_runner import (
     _resolve_graphtools_neighbor_search_k,
 )
 from tree_break_selection.space_separation import adaptive_diffusion_geometry
+from tree_break_selection.space_separation.diffusion import (
+    _resolve_pydiffmap_neighbor_search_k,
+    compute_diffusion_coordinates,
+)
 from tree_break_selection.tree.feature_space import (
     continuous_feature_space_from_columns,
     infer_feature_space_from_columns,
 )
 
 
-def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix():
+def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix(monkeypatch):
+    calls = []
+
+    def record_coordinate_call(weights, **kwargs):
+        coordinates = compute_diffusion_coordinates(weights, **kwargs)
+        calls.append(coordinates.copy())
+        return coordinates
+
+    monkeypatch.setattr(
+        "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates",
+        record_coordinate_call,
+    )
     rng = np.random.default_rng(42)
     data = pd.DataFrame(
         rng.integers(0, 2, size=(12, 18)),
@@ -38,8 +55,108 @@ def test_build_adaptive_diffusion_geometry_returns_finite_condensed_matrix():
     assert geometry.coordinates.shape == (12, 5)
     assert np.isfinite(geometry.distance_condensed).all()
     assert geometry.metadata["backend"] == "pydiffmap"
+    assert geometry.metadata["coordinate_implementation"] == (
+        "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates"
+    )
+    assert geometry.metadata["coordinate_operator"] == "symmetric_normalized_operator"
+    assert geometry.metadata["coordinate_operator_definition"] == "D^(-1/2) W D^(-1/2)"
+    assert geometry.metadata["coordinate_eigensolver"] == "scipy.linalg.eigh"
+    assert len(calls) == 1
+    np.testing.assert_array_equal(geometry.coordinates, calls[0])
     assert 2 <= geometry.metadata["neighbor_search_k"] < data.shape[0]
     assert geometry.metadata["epsilon"] > 0
+
+
+def _duplicate_neighbor_values() -> np.ndarray:
+    return np.vstack(
+        [
+            np.zeros((4, 5)),
+            np.column_stack(
+                [
+                    np.arange(1, 57, dtype=float),
+                    np.arange(101, 157, dtype=float),
+                    np.arange(201, 257, dtype=float),
+                    np.arange(301, 357, dtype=float),
+                    np.arange(401, 457, dtype=float),
+                ]
+            ),
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    ("bandwidth_type", "expected_k"),
+    [
+        pytest.param("-1/(d+2)", 11, id="adaptive-bandwidth-offsets-duplicates"),
+        pytest.param(None, 10, id="fixed-bandwidth-preserves-requested-k"),
+    ],
+)
+def test_pydiffmap_neighbor_resolver_handles_duplicate_rows_by_bandwidth_policy(
+    bandwidth_type: str | None,
+    expected_k: int,
+) -> None:
+    selected_k = _resolve_pydiffmap_neighbor_search_k(
+        _duplicate_neighbor_values(),
+        k_neighbors=10,
+        bandwidth_type=bandwidth_type,
+    )
+
+    assert selected_k == expected_k
+
+
+def test_pydiffmap_neighbor_resolver_rejects_insufficient_positive_neighbors():
+    values = np.vstack([np.zeros((4, 3)), np.eye(3), np.ones((1, 3))])
+
+    with np.testing.assert_raises_regex(
+        ValueError,
+        "needs at least 7 positive nonzero neighbors",
+    ):
+        _resolve_pydiffmap_neighbor_search_k(
+            values,
+            k_neighbors=10,
+            bandwidth_type="-1/(d+2)",
+        )
+
+
+def test_pydiffmap_neighbor_resolver_rejects_zero_bandwidth_duplicate_block():
+    values = np.vstack([np.zeros((8, 5)), np.eye(5)])
+
+    with np.testing.assert_raises_regex(
+        ValueError,
+        "zero local bandwidths",
+    ):
+        _resolve_pydiffmap_neighbor_search_k(
+            values,
+            k_neighbors=10,
+            bandwidth_type="-1/(d+2)",
+        )
+
+
+def test_adaptive_diffusion_geometry_expands_k_for_duplicate_binary_rows():
+    values = np.vstack(
+        [
+            np.zeros((4, 5)),
+            np.eye(5),
+            np.tile([1.0, 1.0, 0.0, 0.0, 0.0], (7, 1)),
+            np.tile([0.0, 0.0, 1.0, 1.0, 0.0], (7, 1)),
+        ]
+    )
+    data = pd.DataFrame(values, columns=[f"f{i}" for i in range(values.shape[1])])
+
+    geometry = adaptive_diffusion_geometry(
+        data,
+        k_neighbors=10,
+        diffusion_time=2,
+        n_components=3,
+        metric="hamming",
+        bandwidth_type="-1/(d+2)",
+        epsilon="median",
+    )
+
+    assert geometry.metadata["requested_neighbor_search_k"] == 10
+    assert geometry.metadata["neighbor_search_k"] == 14
+    assert geometry.metadata["max_duplicate_count"] == 7
+    assert np.isfinite(geometry.distance_condensed).all()
 
 
 def test_adaptive_diffusion_rejects_hamming_for_continuous_feature_space() -> None:

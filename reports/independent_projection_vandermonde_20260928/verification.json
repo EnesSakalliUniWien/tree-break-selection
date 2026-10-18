@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "regenerated_input_streams": 30000,
+  "matched_original_node_tests": 30000,
+  "chi_square_rows": 486000,
+  "independent_numpy_projection_checks": 1944,
+  "summary_cells": 486,
+  "frozen_source_hashes": 117,
+  "status_counts": {
+    "ok": 486000
+  }
+}

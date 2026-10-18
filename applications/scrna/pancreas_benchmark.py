@@ -25,8 +25,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from benchmarks.shared.runners.dispatch import run_clustering_result
-from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from scipy.cluster.hierarchy import dendrogram
 from scipy.spatial.distance import pdist, squareform
 from scipy.stats import chi2
@@ -39,6 +37,11 @@ from sklearn.metrics import (
     silhouette_score,
     v_measure_score,
 )
+
+from applications.output_dirs import timestamped_results_dir
+from applications.scrna._shared import json_default
+from benchmarks.shared.runners.dispatch import run_clustering_result
+from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
     GateAnnotationBundle,
 )
@@ -70,13 +73,13 @@ AMBIGUOUS_LABELS = {
 }
 
 
-def _scanpy_module() -> Any:
+def scanpy_module() -> Any:
     import scanpy as sc
 
     return sc
 
 
-def _scanpy_version() -> str:
+def scanpy_version() -> str:
     try:
         return version("scanpy")
     except PackageNotFoundError as exc:
@@ -112,20 +115,8 @@ def _project_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _json_default(value: Any) -> Any:
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        return float(value)
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    if isinstance(value, Path):
-        return str(value)
-    return str(value)
-
-
 def _prepare_adata(input_h5ad: Path, output_dir: Path, n_pcs: int) -> Any:
-    sc = _scanpy_module()
+    sc = scanpy_module()
     adata = sc.read(input_h5ad, backup_url=DATA_URL)
     adata.var_names_make_unique()
 
@@ -154,7 +145,7 @@ def _prepare_adata(input_h5ad: Path, output_dir: Path, n_pcs: int) -> Any:
     return adata
 
 
-def _write_qc_outputs(adata: Any, output_dir: Path) -> dict[str, object]:
+def write_qc_outputs(adata: Any, output_dir: Path) -> dict[str, object]:
     qc = pd.DataFrame(
         {
             "cell_id": adata.obs_names.astype(str),
@@ -271,11 +262,11 @@ def _method_configs(true_k: int) -> list[MethodConfig]:
         **_base_tbs_params(),
         "edge_branch_length_variance_policy": "normalized_branch_length",
         "branch_length_optimization_method": "fixed_topology_nnls",
-        "branch_length_optimization_target_metric": "squared_standardized_euclidean",
+        "branch_length_optimization_target_metric": "mean_squared_standardized_euclidean",
         "branch_length_optimization_pair_sample_size": 50_000,
         "branch_length_optimization_random_state": 0,
         "branch_length_optimization_solver_tolerance": 1e-5,
-        "branch_length_optimization_max_iterations": 300,
+        "branch_length_optimization_max_iterations": 1000,
     }
     tbs_adaptive_topology_params = {
         **_base_tbs_params(),
@@ -290,11 +281,11 @@ def _method_configs(true_k: int) -> list[MethodConfig]:
         **tbs_adaptive_topology_params,
         "edge_branch_length_variance_policy": "normalized_branch_length",
         "branch_length_optimization_method": "fixed_topology_nnls",
-        "branch_length_optimization_target_metric": "squared_standardized_euclidean",
+        "branch_length_optimization_target_metric": "mean_squared_standardized_euclidean",
         "branch_length_optimization_pair_sample_size": 50_000,
         "branch_length_optimization_random_state": 0,
         "branch_length_optimization_solver_tolerance": 1e-5,
-        "branch_length_optimization_max_iterations": 300,
+        "branch_length_optimization_max_iterations": 1000,
     }
     return [
         MethodConfig(
@@ -408,7 +399,7 @@ def _score_labels(
     row: dict[str, object] = {
         "method": method_label,
         "method_id": method_id,
-        "params": json.dumps(params, sort_keys=True, default=_json_default),
+        "params": json.dumps(params, sort_keys=True, default=json_default),
         "significance_level": params.get("_significance_level"),
         "edge_alpha": params.get("_edge_alpha"),
         "status": status,
@@ -656,9 +647,9 @@ def _branch_time_multipliers(
 
 def _serialize_trace_value(value: object) -> object:
     if isinstance(value, tuple | list):
-        return json.dumps(list(value), default=_json_default)
+        return json.dumps(list(value), default=json_default)
     if isinstance(value, dict):
-        return json.dumps(value, sort_keys=True, default=_json_default)
+        return json.dumps(value, sort_keys=True, default=json_default)
     return value
 
 
@@ -743,8 +734,6 @@ def _write_tbs_tree_diagnostics(
     *,
     config: MethodConfig,
     result_extra: dict[str, object],
-    leaf_data: pd.DataFrame,
-    feature_space: object,
     sample_ids: np.ndarray,
     y_true: np.ndarray,
     output_dir: Path,
@@ -795,14 +784,6 @@ def _write_tbs_tree_diagnostics(
             for column in EDGE_GATE_COLUMNS:
                 if column in annotations_df.columns:
                     row[column] = annotations_df.loc[child, column]
-            for column in annotations_df.columns:
-                if (
-                    column == "Distributional_Action"
-                    or column.startswith("Distributional_Action_")
-                    or column == "Distributional_Split_Action"
-                    or column.startswith("Distributional_Split_Action_")
-                ):
-                    row[column] = annotations_df.loc[child, column]
         rows.append(row)
 
     edge_df = pd.DataFrame(rows)
@@ -839,7 +820,6 @@ def _write_tbs_tree_diagnostics(
         "adaptive_projection_dimension_energy_fraction": result_extra.get(
             "adaptive_projection_dimension_energy_fraction"
         ),
-        "tree_builder": result_extra.get("tree_builder"),
         "branch_length_optimization_method": result_extra.get(
             "branch_length_optimization_method",
             config.params.get("branch_length_optimization_method", "linkage_ultrametric"),
@@ -997,7 +977,7 @@ def _write_distance_time_model_analysis(
         tree_table = "_No TBS tree diagnostics were produced._"
 
     adaptive_text = (
-        json.dumps(adaptive_metadata, indent=2, sort_keys=True, default=_json_default)
+        json.dumps(adaptive_metadata, indent=2, sort_keys=True, default=json_default)
         if adaptive_metadata is not None
         else "adaptive diffusion distance was unavailable in this run"
     )
@@ -1076,7 +1056,7 @@ Generated at: {generated_at}
     (output_dir / "edge_gate_distance_time_model_analysis.md").write_text(analysis)
 
 
-def _run_benchmarks(
+def run_benchmarks(
     adata: Any,
     output_dir: Path,
     *,
@@ -1219,8 +1199,6 @@ def _run_benchmarks(
             summary = _write_tbs_tree_diagnostics(
                 config=config,
                 result_extra=result.extra,
-                leaf_data=X_df,
-                feature_space=feature_space,
                 sample_ids=sample_ids,
                 y_true=y_true,
                 output_dir=output_dir,
@@ -1286,7 +1264,7 @@ def _run_benchmarks(
     return results, assignments, tree_summaries, adaptive_metadata, length_sensitivity_rows
 
 
-def _write_plots(
+def write_plots(
     adata: Any,
     results: pd.DataFrame,
     assignments: pd.DataFrame,
@@ -1420,7 +1398,6 @@ def _write_report(
     length_sensitivity_rows: list[dict[str, object]],
     max_cells: int,
     n_pcs: int,
-    seed: int,
     generated_at: str,
 ) -> None:
     label_counts = adata.obs["celltype"].astype(str).value_counts()
@@ -1454,7 +1431,7 @@ def _write_report(
         else "_No TBS tree summaries were produced._"
     )
     adaptive_summary = (
-        json.dumps(adaptive_metadata, sort_keys=True, default=_json_default)
+        json.dumps(adaptive_metadata, sort_keys=True, default=json_default)
         if adaptive_metadata is not None
         else "adaptive diffusion distance unavailable"
     )
@@ -1599,28 +1576,26 @@ def main() -> None:
         "--output-dir",
         type=Path,
         default=None,
-        help="Output directory for benchmark artifacts.",
+        help="Output directory (default: a new results/analyses/ folder).",
     )
     args = parser.parse_args()
 
     root = _project_root()
     input_h5ad = root / "raw" / "inbox" / "pancreas.h5ad"
-    output_dir = args.output_dir or (
-        root / "raw" / "assets" / "benchmark-results" / "pancreas_scrna_cluster_benchmark_20260623"
-    )
+    output_dir = args.output_dir or timestamped_results_dir("pancreas_scrna_cluster_benchmark")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
     start = time.perf_counter()
     adata = _prepare_adata(input_h5ad, output_dir, args.n_pcs)
-    qc_summary = _write_qc_outputs(adata, output_dir)
+    qc_summary = write_qc_outputs(adata, output_dir)
     (
         results,
         _assignments,
         tree_summaries,
         adaptive_metadata,
         length_sensitivity_rows,
-    ) = _run_benchmarks(
+    ) = run_benchmarks(
         adata,
         output_dir,
         max_cells=args.max_cells,
@@ -1628,7 +1603,7 @@ def main() -> None:
         seed=args.seed,
         generated_at=generated_at,
     )
-    _write_plots(adata, results, _assignments, output_dir)
+    write_plots(adata, results, _assignments, output_dir)
 
     manifest = {
         "generated_at": generated_at,
@@ -1640,14 +1615,14 @@ def main() -> None:
         "seed": args.seed,
         "elapsed_sec": time.perf_counter() - start,
         "python": platform.python_version(),
-        "scanpy": _scanpy_version(),
+        "scanpy": scanpy_version(),
         "qc_summary": qc_summary,
         "adaptive_diffusion_metadata": adaptive_metadata,
         "tbs_tree_summaries": tree_summaries,
         "tbs_branch_time_sensitivity_rows": length_sensitivity_rows,
     }
     (output_dir / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, default=_json_default)
+        json.dumps(manifest, indent=2, sort_keys=True, default=json_default)
     )
     _write_report(
         output_dir=output_dir,
@@ -1660,7 +1635,6 @@ def main() -> None:
         length_sensitivity_rows=length_sensitivity_rows,
         max_cells=args.max_cells,
         n_pcs=args.n_pcs,
-        seed=args.seed,
         generated_at=generated_at,
     )
     print(results.to_string(index=False))

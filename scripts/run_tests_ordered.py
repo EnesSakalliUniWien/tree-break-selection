@@ -29,35 +29,30 @@ STAGES: tuple[Stage, ...] = (
         (
             "tests/core",
             "tests/tree",
+            "tests/hierarchy_analysis",
         ),
     ),
     Stage(
         2,
         "Statistical engines + calibration",
-        (
-            "tests/statistics",
-            "tests/test_methodology_fixes.py",
-        ),
+        ("tests/statistics",),
     ),
     Stage(
         3,
         "Localization + post-hoc merge behavior",
-        (
-            "tests/localization",
-        ),
+        ("tests/localization",),
     ),
     Stage(
         4,
-        "Cluster validation stack",
-        (
-            "tests/validation",
-        ),
+        "Validation artifact contracts",
+        ("tests/validation",),
     ),
     Stage(
         5,
-        "Pipeline contracts + reporting artifacts",
+        "Pipeline + application contracts and reporting artifacts",
         (
             "tests/pipeline",
+            "tests/applications",
         ),
     ),
     Stage(
@@ -71,9 +66,7 @@ STAGES: tuple[Stage, ...] = (
     Stage(
         7,
         "Wiki memory contracts",
-        (
-            "tests/wiki",
-        ),
+        ("tests/wiki",),
     ),
 )
 

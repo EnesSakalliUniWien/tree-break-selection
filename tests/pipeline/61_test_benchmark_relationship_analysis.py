@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from benchmarks.shared.relationship_analysis import (
     analyze_benchmark_relationships,
     normalize_results_dataframe,
@@ -107,6 +108,31 @@ def _make_synthetic_results() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _minimal_result_row(
+    *,
+    method: str = "tbs",
+    ari: float = 0.8,
+    nmi: float = 0.8,
+    purity: float = 0.9,
+) -> dict[str, object]:
+    return {
+        "test_case": 1,
+        "case_id": "case_1",
+        "case_category": "improved_gaussian",
+        "method": method,
+        "params": "",
+        "true_clusters": 2,
+        "found_clusters": 2,
+        "samples": 10,
+        "features": 5,
+        "noise": 0.1,
+        "ari": ari,
+        "nmi": nmi,
+        "purity": purity,
+        "status": "ok",
+    }
+
+
 def _write_synthetic_audit(
     output_dir: Path, *, case_num: int, method_slug: str, accepted: bool
 ) -> None:
@@ -123,7 +149,6 @@ def _write_synthetic_audit(
                 "leaf_count": 4,
                 "is_leaf": False,
                 "Child_Parent_Divergence_Significant": False,
-                "Child_Parent_Divergence_Invalid": False,
                 "Sibling_Divergence_Skipped": False,
                 "Sibling_Divergence_Invalid": False,
                 "Sibling_Divergence_P_Value": sibling_p,
@@ -139,7 +164,6 @@ def _write_synthetic_audit(
                 "leaf_count": 2,
                 "is_leaf": False,
                 "Child_Parent_Divergence_Significant": True,
-                "Child_Parent_Divergence_Invalid": False,
                 "Sibling_Divergence_Skipped": False,
                 "Sibling_Divergence_Invalid": False,
                 "Sibling_Divergence_P_Value": sibling_p,
@@ -155,7 +179,6 @@ def _write_synthetic_audit(
                 "leaf_count": 2,
                 "is_leaf": False,
                 "Child_Parent_Divergence_Significant": accepted,
-                "Child_Parent_Divergence_Invalid": False,
                 "Sibling_Divergence_Skipped": False,
                 "Sibling_Divergence_Invalid": False,
                 "Sibling_Divergence_P_Value": sibling_p * 1.5,
@@ -171,7 +194,6 @@ def _write_synthetic_audit(
                 "leaf_count": 1,
                 "is_leaf": True,
                 "Child_Parent_Divergence_Significant": False,
-                "Child_Parent_Divergence_Invalid": False,
                 "Sibling_Divergence_Skipped": True,
                 "Sibling_Divergence_Invalid": False,
                 "Sibling_Divergence_P_Value": None,
@@ -187,7 +209,6 @@ def _write_synthetic_audit(
                 "leaf_count": 1,
                 "is_leaf": True,
                 "Child_Parent_Divergence_Significant": False,
-                "Child_Parent_Divergence_Invalid": False,
                 "Sibling_Divergence_Skipped": True,
                 "Sibling_Divergence_Invalid": False,
                 "Sibling_Divergence_P_Value": None,
@@ -212,6 +233,10 @@ def test_relationship_audit_summary_uses_root_row_for_root_split(tmp_path: Path)
                 "leaf_count": 4,
                 "is_leaf": False,
                 "parent_node": None,
+                "Child_Parent_Divergence_Significant": False,
+                "Sibling_Divergence_Skipped": False,
+                "Sibling_Divergence_Invalid": False,
+                "branch_length": None,
                 "Sibling_Divergence_P_Value": 0.001,
                 "Sibling_Divergence_P_Value_Corrected": 0.001,
                 "Sibling_BH_Different": True,
@@ -221,6 +246,10 @@ def test_relationship_audit_summary_uses_root_row_for_root_split(tmp_path: Path)
                 "leaf_count": 2,
                 "is_leaf": False,
                 "parent_node": "root",
+                "Child_Parent_Divergence_Significant": False,
+                "Sibling_Divergence_Skipped": False,
+                "Sibling_Divergence_Invalid": False,
+                "branch_length": None,
                 "Sibling_Divergence_P_Value": 0.9,
                 "Sibling_Divergence_P_Value_Corrected": 0.9,
                 "Sibling_BH_Different": False,
@@ -230,6 +259,10 @@ def test_relationship_audit_summary_uses_root_row_for_root_split(tmp_path: Path)
                 "leaf_count": 2,
                 "is_leaf": False,
                 "parent_node": "root",
+                "Child_Parent_Divergence_Significant": False,
+                "Sibling_Divergence_Skipped": False,
+                "Sibling_Divergence_Invalid": False,
+                "branch_length": None,
                 "Sibling_Divergence_P_Value": 0.8,
                 "Sibling_Divergence_P_Value_Corrected": 0.8,
                 "Sibling_BH_Different": False,
@@ -287,38 +320,6 @@ def test_normalize_results_dataframe_rejects_unrecognized_columns() -> None:
     )
 
     with pytest.raises(ValueError, match="found unknown columns: \\['Custom_Label'\\]"):
-        normalize_results_dataframe(df)
-
-
-def test_normalize_results_dataframe_rejects_old_full_runner_csv_columns() -> None:
-    df = pd.DataFrame(
-        {
-            "Test": [1],
-            "Case_Name": ["case_1"],
-            "Case_Category": ["improved_gaussian"],
-            "Method": ["TBS Divergence"],
-            "Params": ["tree_distance_metric=hamming"],
-            "True": [3],
-            "Found": [3],
-            "Samples": [30],
-            "Features": [20],
-            "Noise": [0.4],
-            "ARI": [0.75],
-            "NMI": [0.8],
-            "Purity": [0.9],
-            "Macro_Recall": [0.7],
-            "Macro_F1": [0.72],
-            "Worst_Cluster_Recall": [0.6],
-            "Cluster_Count_Abs_Error": [0],
-            "Over_Split": [0],
-            "Under_Split": [0],
-            "Status": ["ok"],
-            "Skip_Reason": [""],
-            "Labels_Length": [30],
-        }
-    )
-
-    with pytest.raises(ValueError, match="canonical snake_case columns"):
         normalize_results_dataframe(df)
 
 
@@ -396,38 +397,8 @@ def test_attach_audit_factors_does_not_cross_assign_single_method_audits(tmp_pat
     artifacts = analyze_benchmark_relationships(
         pd.DataFrame(
             [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                },
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "kmeans",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.9,
-                    "nmi": 0.9,
-                    "purity": 0.95,
-                    "status": "ok",
-                },
+                _minimal_result_row(),
+                _minimal_result_row(method="kmeans", ari=0.9, nmi=0.9, purity=0.95),
             ]
         ),
         tmp_path,
@@ -439,38 +410,6 @@ def test_attach_audit_factors_does_not_cross_assign_single_method_audits(tmp_pat
     kmeans_row = augmented_rows.loc[augmented_rows["method"] == "kmeans"].iloc[0]
     assert tbs_row["audit_available"] == 1.0
     assert kmeans_row["audit_available"] == 0.0
-
-
-def test_attach_audit_factors_rejects_old_kl_divergence_audit_filename(tmp_path: Path) -> None:
-    _write_synthetic_audit(tmp_path, case_num=1, method_slug="kl_divergence", accepted=True)
-
-    artifacts = analyze_benchmark_relationships(
-        pd.DataFrame(
-            [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                }
-            ]
-        ),
-        tmp_path,
-        include_plots=False,
-    )
-
-    augmented_rows = pd.read_csv(artifacts.augmented_rows_csv)
-    assert augmented_rows.loc[0, "audit_available"] == 0.0
 
 
 def test_attach_audit_factors_rejects_missing_sibling_decision_column(tmp_path: Path) -> None:
@@ -500,100 +439,10 @@ def test_attach_audit_factors_rejects_missing_sibling_decision_column(tmp_path: 
     ).to_csv(audit_dir / "case_1_tbs_stats.csv", index=False)
 
     artifacts = analyze_benchmark_relationships(
-        pd.DataFrame(
-            [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                }
-            ]
-        ),
+        pd.DataFrame([_minimal_result_row()]),
         tmp_path,
         include_plots=False,
     )
 
     augmented_rows = pd.read_csv(artifacts.augmented_rows_csv)
     assert augmented_rows.loc[0, "audit_available"] == 0.0
-
-
-def test_analyze_benchmark_relationships_handles_missing_branch_length_column(
-    tmp_path: Path,
-) -> None:
-    audit_dir = tmp_path / "audit"
-    audit_dir.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(
-        [
-            {
-                "node_id": "N0",
-                "node_label": "root",
-                "leaf_count": 2,
-                "is_leaf": False,
-                "Child_Parent_Divergence_Significant": False,
-                "Child_Parent_Divergence_Invalid": False,
-                "Sibling_Divergence_Skipped": True,
-                "Sibling_Divergence_Invalid": False,
-                "Sibling_Divergence_P_Value": None,
-                "Sibling_Divergence_P_Value_Corrected": None,
-                "Sibling_BH_Different": False,
-                "parent_node": None,
-                "parent_label": "",
-            },
-            {
-                "node_id": "N1",
-                "node_label": "left",
-                "leaf_count": 1,
-                "is_leaf": True,
-                "Child_Parent_Divergence_Significant": True,
-                "Child_Parent_Divergence_Invalid": False,
-                "Sibling_Divergence_Skipped": False,
-                "Sibling_Divergence_Invalid": False,
-                "Sibling_Divergence_P_Value": 0.01,
-                "Sibling_Divergence_P_Value_Corrected": 0.01,
-                "Sibling_BH_Different": True,
-                "parent_node": "N0",
-                "parent_label": "root",
-            },
-        ]
-    ).to_csv(audit_dir / "case_1_tbs_stats.csv", index=False)
-
-    artifacts = analyze_benchmark_relationships(
-        pd.DataFrame(
-            [
-                {
-                    "test_case": 1,
-                    "case_id": "case_1",
-                    "case_category": "improved_gaussian",
-                    "method": "tbs",
-                    "params": "",
-                    "true_clusters": 2,
-                    "found_clusters": 2,
-                    "samples": 10,
-                    "features": 5,
-                    "noise": 0.1,
-                    "ari": 0.8,
-                    "nmi": 0.8,
-                    "purity": 0.9,
-                    "status": "ok",
-                }
-            ]
-        ),
-        tmp_path,
-        include_plots=False,
-    )
-
-    augmented_rows = pd.read_csv(artifacts.augmented_rows_csv)
-    row = augmented_rows.iloc[0]
-    assert row["audit_available"] == 1.0
-    assert pd.isna(row["audit_mean_branch_length"])
