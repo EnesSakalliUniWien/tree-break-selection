@@ -76,7 +76,7 @@ def main() -> None:
         adaptive_metric="hamming",
     )
     tree = tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
-    tree.populate_node_divergences(data)
+    tree.populate_node_distributions(data)
     bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),

@@ -142,7 +142,7 @@ python -m benchmarks.cloud.aws_kak_lens_linkage_alpha_sweep run-shard \
   --shard-index 0 \
   --edge-alphas 0.001 \
   --sibling-alphas 0.01 \
-  --lenses raw_kak:binary:adaptive_modes_10_15 \
+  --lenses raw_kak:raw:adaptive_modes_10_15 \
   --tree-linkage-methods average,complete,ward
 
 python -m benchmarks.cloud.aws_kak_lens_linkage_alpha_sweep run-shard \
@@ -151,7 +151,7 @@ python -m benchmarks.cloud.aws_kak_lens_linkage_alpha_sweep run-shard \
   --shard-index 1 \
   --edge-alphas 0.001 \
   --sibling-alphas 0.01 \
-  --lenses raw_kak:binary:adaptive_modes_10_15 \
+  --lenses raw_kak:raw:adaptive_modes_10_15 \
   --tree-linkage-methods average,complete,ward
 
 python -m benchmarks.cloud.aws_kak_lens_linkage_alpha_sweep merge \
@@ -159,7 +159,7 @@ python -m benchmarks.cloud.aws_kak_lens_linkage_alpha_sweep merge \
   --shard-count 2 \
   --edge-alphas 0.001 \
   --sibling-alphas 0.01 \
-  --lenses raw_kak:binary:adaptive_modes_10_15 \
+  --lenses raw_kak:raw:adaptive_modes_10_15 \
   --tree-linkage-methods average,complete,ward
 ```
 
