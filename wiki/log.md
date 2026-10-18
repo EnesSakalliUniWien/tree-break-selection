@@ -8229,3 +8229,49 @@ version comparison report and wiki source summary. Production code unchanged.
   a weighting call on later source. Their guards now state this, and comments
   and both READMEs mark `binary` as today's `raw`. Retained results unchanged.
 
+## 2026-10-17 — Dead code, duplication and library-replacement cleanup
+
+- A whole-repository audit reported 20 findings; findings 1, 2, 4-9 and 11-16
+  were implemented. `CHANGELOG.md` lists every rename and removal.
+- Statistics: fixed-coordinate BH/BY use `scipy.stats.false_discovery_control`
+  (exact equality on 20,005 inputs). Holm was removed because its minimum
+  adjusted p-value always equals Bonferroni's. The always-false edge invalid
+  flag, 15 unread parent-spectrum record fields, `SpectralContext` and the
+  test-only full eigenvalue map were removed.
+- Trees from sample data go through `build_tree` in the quick start, the
+  selected-root permutation guard, experiments and diagnostics, so tied
+  distances resolve one way. `run_feature_matrix_with_umap.py` keeps its
+  row-order linkage because its dendrogram and `cut_tree` labels reuse it.
+- Benchmarks: the result schema is derived from `BenchmarkResultRow` and
+  `ClusteringMetrics`; a two-case, three-method results table was identical
+  before and after. Plot export is PDF-only, AWS drivers share one shard
+  layout (S3 paths unchanged), experiments share `tbs_decompose`, and the KAK
+  sweep uses the production block diffusion code (identical coordinates on
+  random blocks without duplicate rows).
+- Kept on purpose: `reference_scale`, which a rerunnable retained report
+  reads; `tree_from_linkage` and `compute_descendant_sets(use_labels=...)`,
+  which retained reports call; `recursive_pvalue_geometry.py`, which a
+  retained report imports and hashes.
+- `make test` passed with 890 tests; removed test-only code took six tests
+  with it. No commit or push occurred.
+
+## 2026-10-17 — Review fixes for the cleanup
+
+- An area-by-area review of the cleanup found two must-fix items and five
+  should-fix items; all seven were fixed.
+- The data-independent gate panel's oracle cut now cuts the same `build_tree`
+  tree the panel tests, mapping clusters back to rows by label. On a
+  topology-changing tie its ARI against the selected root split went from
+  -0.5 to 1.0.
+- The root-stability guard builds its feature-subsample trees with
+  `build_tree`, like the observed tree; on identical tied data its stability
+  ARI is 1.0 instead of -0.07.
+- `reports/passthrough_pvalue_normalisation_20260928/pvalue_probe.py` calls
+  `populate_node_distributions`. README commands no longer unpack two values
+  from `benchmark_cluster_algorithm` or pass the retired `binary` lens
+  weighting.
+- The REST lookup turns list or null `results` bodies into warnings. Stale
+  wiki, README and CHANGELOG lines were corrected.
+- New tests pin the shard S3 layout, `tbs_decompose` label order, the BY cap
+  at 1 and the full `get_env_bool` error text. `make check` passed with 893
+  tests. No commit or push occurred.
