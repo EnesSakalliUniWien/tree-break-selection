@@ -78,6 +78,8 @@ def test_diffusion_and_nnls_consume_only_discovery_and_are_not_refit():
     assert before == model.tree_branch_lengths
     assert result.tests.p_value.between(0, 1).all()
     assert len(result.decomposition["traversal_trace"]) > 0
+    # Edge BH values use the pipeline's column name, so traversal traces can read them.
+    assert result.annotations["Child_Parent_Divergence_P_Value_BH"].notna().any()
 
 
 def test_nnls_changes_geometry_but_not_known_covariance_pvalues():

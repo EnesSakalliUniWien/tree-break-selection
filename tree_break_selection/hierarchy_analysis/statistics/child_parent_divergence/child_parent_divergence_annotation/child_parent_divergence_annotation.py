@@ -25,13 +25,13 @@ from tree_break_selection.tree.distributions import (
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
 
+from ...projection.spectral.spectral_decomposition_result import SpectralDecompositionResult
 from .child_parent_divergence_tree_bh import (
     apply_child_parent_divergence_tree_bh_correction,
 )
 from .spectral_context import (
     EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION,
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
-    SpectralContext,
     compute_child_parent_spectral_context,
 )
 from .tree_testing import run_child_parent_tests_across_tree
@@ -55,7 +55,7 @@ def annotate_child_parent_divergence(
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
     adaptive_projection_dimension_energy_fraction: float | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
-) -> tuple[pd.DataFrame, SpectralContext]:
+) -> tuple[pd.DataFrame, SpectralDecompositionResult]:
     """Test child-parent divergence and return typed edge-gate spectral context."""
     annotations_df = annotations_df.copy()
     edge_alpha = float(significance_level_alpha)
@@ -109,19 +109,7 @@ def annotate_child_parent_divergence(
         edge_test_statistics,
         edge_degrees_of_freedom,
         edge_p_values,
-        invalid_test_flags,
     ) = run_child_parent_tests_across_tree(**test_kwargs)
-
-    if invalid_test_flags.any():
-        invalid_child_ids = [
-            child_ids[edge_index]
-            for edge_index, invalid in enumerate(invalid_test_flags)
-            if invalid
-        ]
-        raise ValueError(
-            "Child-parent projected Wald tests returned invalid result flags for "
-            f"child node(s): {invalid_child_ids[:5]!r}."
-        )
 
     edge_result_arrays = {
         "test statistics": edge_test_statistics,
@@ -165,7 +153,6 @@ def annotate_child_parent_divergence(
         p_values_corrected=child_parent_edge_corrected_p_values_by_tree_bh,
         reject_null=child_parent_edge_null_rejected_by_tree_bh,
         degrees_of_freedom=edge_degrees_of_freedom,
-        invalid_test_flags=invalid_test_flags,
         tested_edge_flags=child_parent_edge_tested_by_tree_bh,
         ancestor_blocked_edge_flags=ancestor_blocked_edge_flags,
     )

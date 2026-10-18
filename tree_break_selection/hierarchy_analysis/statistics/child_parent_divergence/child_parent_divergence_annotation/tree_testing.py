@@ -43,13 +43,12 @@ def run_child_parent_tests_across_tree(
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
     adaptive_projection_dimension_energy_fraction: float | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Compute projected Wald results for all child-parent edges in the tree."""
     n_edge_tests = len(child_ids)
     test_statistics = np.full(n_edge_tests, np.nan)
     degrees_of_freedom = np.full(n_edge_tests, np.nan)
     p_values = np.full(n_edge_tests, np.nan)
-    invalid_test_flags = np.zeros(n_edge_tests, dtype=bool)
     branch_policy = validate_edge_branch_length_variance_policy(edge_branch_length_variance_policy)
     use_branch_time = branch_policy == EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED
     mean_branch_length = compute_mean_branch_length(tree) if use_branch_time else None
@@ -95,7 +94,6 @@ def run_child_parent_tests_across_tree(
             edge_test_statistic,
             edge_degrees_of_freedom,
             edge_p_value,
-            edge_test_invalid,
         ) = run_child_parent_projected_wald_test(
             np.asarray(child_dist, dtype=np.float64),
             np.asarray(parent_dist, dtype=np.float64),
@@ -110,9 +108,7 @@ def run_child_parent_tests_across_tree(
             edge_p_value,
         )
 
-        invalid_test_flags[edge_index] = bool(edge_test_invalid)
-
-    return test_statistics, degrees_of_freedom, p_values, invalid_test_flags
+    return test_statistics, degrees_of_freedom, p_values
 
 
 __all__ = ["run_child_parent_tests_across_tree"]

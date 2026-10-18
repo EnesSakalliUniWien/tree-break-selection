@@ -18,7 +18,7 @@ from typing import Literal
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy.stats import chi2
+from scipy.stats import chi2, false_discovery_control
 
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_SIBLING_ALPHA,
@@ -44,39 +44,20 @@ FixedSubspaceSiblingGateMethod = Literal[
     "fixed_global_chi_square",
     "fixed_coordinate_bh",
     "fixed_coordinate_by",
-    "fixed_coordinate_holm",
     "fixed_coordinate_bonferroni",
     "fixed_block_bh",
     "fixed_block_simes_bh",
 ]
-CoordinateAdjustmentMethod = Literal["bh", "by", "holm", "bonferroni"]
+CoordinateAdjustmentMethod = Literal["bh", "by", "bonferroni"]
 
 FIXED_SUBSPACE_SIBLING_GATE_METHODS: tuple[FixedSubspaceSiblingGateMethod, ...] = (
     "fixed_global_chi_square",
     "fixed_coordinate_bh",
     "fixed_coordinate_by",
-    "fixed_coordinate_holm",
     "fixed_coordinate_bonferroni",
     "fixed_block_bh",
     "fixed_block_simes_bh",
 )
-
-
-def _bh_adjusted_minimum(p_values: np.ndarray) -> float:
-    values = np.asarray(p_values, dtype=float)
-    if values.ndim != 1:
-        raise ValueError(f"p_values must be one-dimensional; got {values.shape}.")
-    if values.size == 0:
-        return 1.0
-    if not np.isfinite(values).all() or np.any((values < 0.0) | (values > 1.0)):
-        raise ValueError("p_values must be finite values in [0, 1].")
-    order = np.argsort(values)
-    sorted_p = values[order]
-    n_tests = float(sorted_p.size)
-    adjusted_sorted = np.minimum.accumulate(
-        (n_tests / np.arange(1, sorted_p.size + 1, dtype=float) * sorted_p)[::-1]
-    )[::-1]
-    return float(np.clip(np.min(adjusted_sorted), 0.0, 1.0))
 
 
 def coordinate_adjusted_minimum(
@@ -86,7 +67,8 @@ def coordinate_adjusted_minimum(
 ) -> float:
     """Return the minimum adjusted p-value for fixed coordinate evidence.
 
-    BH and BY are FDR procedures; Holm and Bonferroni are FWER procedures.
+    BH and BY are FDR procedures; Bonferroni is an FWER procedure. Holm is not
+    offered because its minimum adjusted p-value always equals Bonferroni's.
     """
     values = np.asarray(p_values, dtype=float)
     if values.ndim != 1:
@@ -95,25 +77,12 @@ def coordinate_adjusted_minimum(
         return 1.0
     if not np.isfinite(values).all() or np.any((values < 0.0) | (values > 1.0)):
         raise ValueError("p_values must be finite values in [0, 1].")
-
-    method_name = str(method)
-    if method_name == "bh":
-        return _bh_adjusted_minimum(values)
-
-    sorted_p = np.sort(values)
-    n_tests = float(sorted_p.size)
-    if method_name == "by":
-        harmonic = float(np.sum(1.0 / np.arange(1, sorted_p.size + 1, dtype=float)))
-        return float(np.clip(harmonic * _bh_adjusted_minimum(sorted_p), 0.0, 1.0))
-    if method_name == "bonferroni":
-        return float(np.clip(n_tests * sorted_p[0], 0.0, 1.0))
-    if method_name == "holm":
-        adjusted_sorted = np.maximum.accumulate(
-            (n_tests - np.arange(sorted_p.size, dtype=float)) * sorted_p
-        )
-        return float(np.clip(np.min(adjusted_sorted), 0.0, 1.0))
+    if method in ("bh", "by"):
+        return float(false_discovery_control(values, method=method).min())
+    if method == "bonferroni":
+        return float(min(1.0, values.size * values.min()))
     raise ValueError(
-        f"Unknown coordinate adjustment method {method!r}; allowed=('bh', 'by', 'holm', 'bonferroni')."
+        f"Unknown coordinate adjustment method {method!r}; allowed=('bh', 'by', 'bonferroni')."
     )
 
 
@@ -165,8 +134,11 @@ def fixed_block_simes_bh_p_value(
 
     starts = _block_starts(feature_space, vector.shape[0])
     coordinate_p = chi2.sf(vector * vector, df=1.0)
-    block_p_values = [_bh_adjusted_minimum(block) for block in np.split(coordinate_p, starts[1:])]
-    return _bh_adjusted_minimum(np.asarray(block_p_values, dtype=float))
+    block_p_values = [
+        coordinate_adjusted_minimum(block, method="bh")
+        for block in np.split(coordinate_p, starts[1:])
+    ]
+    return coordinate_adjusted_minimum(np.asarray(block_p_values, dtype=float), method="bh")
 
 
 def _feature_block_p_values(
@@ -212,12 +184,12 @@ def fixed_subspace_sibling_p_value(
         return fixed_coordinate_adjusted_p_value(vector, method="bh")
     if method == "fixed_coordinate_by":
         return fixed_coordinate_adjusted_p_value(vector, method="by")
-    if method == "fixed_coordinate_holm":
-        return fixed_coordinate_adjusted_p_value(vector, method="holm")
     if method == "fixed_coordinate_bonferroni":
         return fixed_coordinate_adjusted_p_value(vector, method="bonferroni")
     if method == "fixed_block_bh":
-        return _bh_adjusted_minimum(_feature_block_p_values(vector, feature_space))
+        return coordinate_adjusted_minimum(
+            _feature_block_p_values(vector, feature_space), method="bh"
+        )
     if method == "fixed_block_simes_bh":
         return fixed_block_simes_bh_p_value(vector, feature_space)
     raise ValueError(

@@ -264,7 +264,6 @@ def _aggregate_spectral_results(
     spectral_matrix_row_counts: dict[str, int],
     pca_projections: dict[str, np.ndarray],
     pca_eigenvalues: dict[str, np.ndarray],
-    full_eigenvalues: dict[str, np.ndarray],
     active_feature_counts: dict[str, int],
 ) -> None:
     """Write per-node worker outputs into decomposition result dicts."""
@@ -280,7 +279,6 @@ def _aggregate_spectral_results(
         spectral_matrix_row_counts[node_result.node_id] = node_result.spectral_matrix_row_count
         pca_projections[node_result.node_id] = node_result.projection_matrix
         pca_eigenvalues[node_result.node_id] = node_result.eigenvalues
-        full_eigenvalues[node_result.node_id] = node_result.full_eigenvalues
         active_feature_counts[node_result.node_id] = int(node_result.active_feature_count)
 
 
@@ -354,7 +352,6 @@ def compute_spectral_decomposition(
     spectral_matrix_row_counts: Dict[str, int] = {}
     pca_projections: Dict[str, np.ndarray] = {}
     pca_eigenvalues: Dict[str, np.ndarray] = {}
-    full_eigenvalues: Dict[str, np.ndarray] = {}
     active_feature_counts: Dict[str, int] = {}
 
     # Separate leaves (trivial) from internal nodes (expensive).
@@ -368,7 +365,6 @@ def compute_spectral_decomposition(
             descendant_leaf_row_counts[node_id] = 1
             internal_distribution_row_counts[node_id] = 0
             spectral_matrix_row_counts[node_id] = 1
-            full_eigenvalues[node_id] = np.zeros(0, dtype=np.float64)
             active_feature_counts[node_id] = 0
         else:
             internal_node_ids.append(node_id)
@@ -404,7 +400,6 @@ def compute_spectral_decomposition(
         spectral_matrix_row_counts=spectral_matrix_row_counts,
         pca_projections=pca_projections,
         pca_eigenvalues=pca_eigenvalues,
-        full_eigenvalues=full_eigenvalues,
         active_feature_counts=active_feature_counts,
     )
     spectral_wall_sec = float(perf_counter() - spectral_start_sec)
@@ -459,7 +454,6 @@ def compute_spectral_decomposition(
         spectral_matrix_row_counts_by_node=spectral_matrix_row_counts,
         principal_component_projections_by_node=pca_projections,
         principal_component_eigenvalues_by_node=pca_eigenvalues,
-        full_component_eigenvalues_by_node=full_eigenvalues,
         active_feature_counts_by_node=active_feature_counts,
         stage_timings=stage_timings,
     )

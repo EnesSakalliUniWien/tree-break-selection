@@ -94,7 +94,6 @@ def _process_node(
             descendant_leaf_row_count=descendant_leaf_row_count,
             internal_distribution_row_count=0,
             spectral_matrix_row_count=descendant_leaf_row_count,
-            full_eigenvalues=np.zeros(0, dtype=np.float64),
             active_feature_count=0,
             stage_timings=stage_timings,
         )
@@ -147,7 +146,6 @@ def _process_node(
             descendant_leaf_row_count=descendant_leaf_row_count,
             internal_distribution_row_count=internal_distribution_row_count,
             spectral_matrix_row_count=spectral_matrix_row_count,
-            full_eigenvalues=np.zeros(0, dtype=np.float64),
             active_feature_count=0,
             stage_timings=stage_timings,
         )
@@ -198,10 +196,6 @@ def _process_node(
         descendant_leaf_row_count=descendant_leaf_row_count,
         internal_distribution_row_count=internal_distribution_row_count,
         spectral_matrix_row_count=spectral_matrix_row_count,
-        full_eigenvalues=np.asarray(
-            eigendecomposition_result.eigenvalues,
-            dtype=np.float64,
-        ),
         active_feature_count=int(eigendecomposition_result.active_feature_count),
         stage_timings=stage_timings,
     )

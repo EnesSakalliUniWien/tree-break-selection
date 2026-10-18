@@ -30,8 +30,8 @@ def run_child_parent_projected_wald_test(
     mean_branch_length: float | None = None,
     adaptive_projection_dimension_energy_fraction: float | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
-) -> tuple[float, float, float, bool]:
-    """Compute projected Wald test for one child-parent edge."""
+) -> tuple[float, float, float]:
+    """Return the projected Wald statistic, degrees of freedom and p-value for one edge."""
     contrast_start_sec = perf_counter()
     standardized_z_scores = compute_child_parent_standardized_z_scores(
         child_dist,
@@ -60,7 +60,7 @@ def run_child_parent_projected_wald_test(
         timing_prefix="edge_gate",
     )
 
-    return result.statistic, float(result.degrees_of_freedom), result.p_value, False
+    return result.statistic, float(result.degrees_of_freedom), result.p_value
 
 
 __all__ = [

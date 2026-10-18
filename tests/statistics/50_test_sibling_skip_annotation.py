@@ -42,7 +42,6 @@ def _edge_annotations(tree: nx.DiGraph) -> pd.DataFrame:
     annotations["Child_Parent_Divergence_P_Value"] = 0.01
     annotations["Child_Parent_Divergence_Test_Statistic"] = 5.0
     annotations["Child_Parent_Divergence_df"] = 1.0
-    annotations["Child_Parent_Divergence_Invalid"] = False
     annotations["Child_Parent_Divergence_Tested"] = True
     annotations["Child_Parent_Divergence_Ancestor_Blocked"] = False
     annotations.loc[["L2", "L3"], "Child_Parent_Divergence_Significant"] = False

@@ -12,8 +12,8 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.column_contract
 from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
     run_gate_annotation_pipeline,
 )
-from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
-    SpectralContext,
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
 )
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 from tree_break_selection.tree.poset_tree import PosetTree
@@ -112,7 +112,7 @@ def test_fixed_coordinate_sibling_gate_does_not_raise_edge_projection_floor_to_f
 
     def fake_edge_annotation(*args, **kwargs):
         captured["spectral_minimum_dimension"] = int(kwargs["spectral_minimum_dimension"])
-        spectral_context = SpectralContext(
+        spectral_context = SpectralDecompositionResult(
             test_projection_dimensions_by_node={"root": captured["spectral_minimum_dimension"]},
             raw_mp_signal_counts_by_node={"root": 0},
             effective_independent_rows_by_node={"root": len(leaf_data)},
@@ -126,7 +126,6 @@ def test_fixed_coordinate_sibling_gate_does_not_raise_edge_projection_floor_to_f
             descendant_leaf_row_counts_by_node={},
             internal_distribution_row_counts_by_node={},
             spectral_matrix_row_counts_by_node={},
-            full_component_eigenvalues_by_node={},
             active_feature_counts_by_node={},
             stage_timings={},
         )
@@ -178,7 +177,7 @@ def test_projected_gates_share_adaptive_projection_fraction_and_full_candidate_b
         test_dims = {node_id: 2 for node_id in tree.nodes}
         for leaf_id in ["a0", "a1", "b0", "b1"]:
             test_dims[leaf_id] = 0
-        spectral_context = SpectralContext(
+        spectral_context = SpectralDecompositionResult(
             test_projection_dimensions_by_node=test_dims,
             raw_mp_signal_counts_by_node={node_id: 0 for node_id in tree.nodes},
             effective_independent_rows_by_node={node_id: len(leaf_data) for node_id in tree.nodes},
@@ -192,7 +191,6 @@ def test_projected_gates_share_adaptive_projection_fraction_and_full_candidate_b
             descendant_leaf_row_counts_by_node={},
             internal_distribution_row_counts_by_node={},
             spectral_matrix_row_counts_by_node={},
-            full_component_eigenvalues_by_node={},
             active_feature_counts_by_node={},
             stage_timings={},
         )

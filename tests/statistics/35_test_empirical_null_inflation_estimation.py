@@ -12,7 +12,6 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
     CalibrationSupportThresholds,
     decide_empirical_null_calibration,
     fit_empirical_null_inflation_model,
-    predict_empirical_inflation_factor,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.inflation_adjusted_sibling_tests import (
     compute_inflation_adjusted_sibling_tests,
@@ -309,13 +308,7 @@ def test_fit_empirical_null_inflation_model_uses_context_weighted_inflation() ->
     assert model.method == "context_weighted_supported_empirical_null_inflation"
     assert model.sample_statistics.tolist() == [2.0, 9.0, 20.0]
     assert model.sample_degrees_of_freedom.tolist() == [1.0, 3.0, 5.0]
-    assert (
-        predict_empirical_inflation_factor(
-            model,
-            records[0],
-        )
-        >= 1.0
-    )
+    assert decide_empirical_null_calibration(model, records[0]).c_hat >= 1.0
 
 
 def test_selected_hierarchy_decision_restores_empirical_tail_and_preserves_diagnostics() -> None:
@@ -382,12 +375,6 @@ def test_decide_empirical_null_calibration_can_enforce_support_thresholds() -> N
     assert decision.c_hat is None
     assert decision.support["support_contract_status"] == "below_internal_support_thresholds"
     assert decision.descriptive_strata["reason"] == "internal_support_thresholds_failed"
-    with pytest.raises(ValueError, match="undefined_sparse_context"):
-        predict_empirical_inflation_factor(
-            model,
-            target,
-            enforce_support_thresholds=True,
-        )
 
 
 def test_selected_hierarchy_decision_with_passing_support_returns_empirical_p_value() -> None:
@@ -484,11 +471,9 @@ def test_decide_empirical_null_calibration_reports_missing_family_support() -> N
     assert decision.p_value is None
     assert decision.support["n_supported_records"] == 1
     assert decision.support["n_family_supported_records"] == 0
-    with pytest.raises(ValueError, match="undefined_no_family_support"):
-        predict_empirical_inflation_factor(model, target)
 
 
-def test_predict_empirical_inflation_conditions_on_parent_sample_size() -> None:
+def test_empirical_inflation_conditions_on_parent_sample_size() -> None:
     records = [
         _make_record(
             "small_0",
@@ -518,14 +503,8 @@ def test_predict_empirical_inflation_conditions_on_parent_sample_size() -> None:
 
     model = fit_empirical_null_inflation_model(records)
 
-    small_parent_inflation = predict_empirical_inflation_factor(
-        model,
-        records[0],
-    )
-    large_parent_inflation = predict_empirical_inflation_factor(
-        model,
-        records[2],
-    )
+    small_parent_inflation = decide_empirical_null_calibration(model, records[0]).c_hat
+    large_parent_inflation = decide_empirical_null_calibration(model, records[2]).c_hat
 
     assert large_parent_inflation < small_parent_inflation
     assert large_parent_inflation < model.baseline_empirical_inflation_factor

@@ -110,14 +110,6 @@ def _make_sibling_tree() -> tuple[nx.DiGraph, pd.DataFrame]:
                 "CL": 1.0,
                 "CR": 1.0,
             },
-            "Child_Parent_Divergence_Invalid": {
-                "root": False,
-                "L": False,
-                "R": False,
-                "cal": False,
-                "CL": False,
-                "CR": False,
-            },
             "Child_Parent_Divergence_Tested": {
                 "root": False,
                 "L": True,
@@ -156,12 +148,11 @@ def test_child_parent_nonfinite_results_raise_before_correction(
         pca_eigenvalues=None,
         feature_space=None,
         **_unused_kwargs,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         return (
             np.array([np.nan, 3.0], dtype=float),  # stats
             np.array([np.nan, 1.0], dtype=float),  # dfs
             np.array([np.nan, 0.01], dtype=float),  # pvals
-            np.array([True, False], dtype=bool),  # invalid mask
         )
 
     monkeypatch.setattr(
@@ -169,7 +160,7 @@ def test_child_parent_nonfinite_results_raise_before_correction(
         _fake_compute_p_values_via_projection,
     )
 
-    with pytest.raises(ValueError, match="invalid result flags"):
+    with pytest.raises(ValueError, match="must be finite for every edge"):
         annotate_child_parent_divergence(
             tree=tree,
             annotations_df=nodes_df,
@@ -303,11 +294,6 @@ def test_collect_sibling_pair_records_requires_edge_derived_dimension_and_parent
                 "L": 1.0,
                 "R": 1.0,
             },
-            "Child_Parent_Divergence_Invalid": {
-                "root": False,
-                "L": False,
-                "R": False,
-            },
             "Child_Parent_Divergence_Tested": {
                 "root": False,
                 "L": True,
@@ -371,23 +357,7 @@ def test_collect_sibling_pair_records_requires_edge_derived_dimension_and_parent
         np.array([4.0, 1.0], dtype=float),
     )
     assert records[0].sibling_projection_dimension == records[0].degrees_of_freedom == 1.0
-    assert records[0].parent_spectral_eigenvalue_count == 2.0
     assert records[0].parent_positive_eigenvalue_count == 2.0
-    assert records[0].parent_spectral_rank == 2.0
-    assert records[0].parent_eigenvalue_sum == 5.0
-    assert records[0].parent_top_eigenvalue == 4.0
-    assert records[0].parent_top_eigenvalue_share == pytest.approx(0.8)
-    expected_entropy = float(-(0.8 * np.log(0.8) + 0.2 * np.log(0.2)))
-    assert records[0].parent_spectral_entropy == pytest.approx(expected_entropy)
-    assert records[0].parent_effective_rank == pytest.approx(float(np.exp(expected_entropy)))
-    assert records[0].parent_retained_eigenvalue_sum == 4.0
-    assert records[0].parent_retained_eigenvalue_share == pytest.approx(0.8)
-    assert records[0].parent_top_spectral_gap == 3.0
-    assert records[0].parent_eigengap_at_projection_dimension == 4.0
-    assert records[0].parent_spectral_gap_at_projection_dimension == 3.0
-    assert records[0].parent_spectral_pseudodeterminant == 4.0
-    assert records[0].parent_spectral_log_pseudodeterminant == pytest.approx(float(np.log(4.0)))
-    assert records[0].parent_spectral_geometric_mean == pytest.approx(2.0)
 
 
 def test_collect_sibling_pair_records_uses_unit_projected_wald_reference_scale() -> None:

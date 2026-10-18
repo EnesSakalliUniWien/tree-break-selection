@@ -24,22 +24,7 @@ def build_sibling_pair_record(
     sibling_projection_dimension: float,
     calibration_dependency_group: object | None = None,
     calibration_dependency_weight: float | None = None,
-    parent_spectral_eigenvalue_count: float = 0.0,
     parent_positive_eigenvalue_count: float = 0.0,
-    parent_spectral_rank: float = 0.0,
-    parent_eigenvalue_sum: float = 0.0,
-    parent_top_eigenvalue: float = 0.0,
-    parent_top_eigenvalue_share: float = 0.0,
-    parent_spectral_entropy: float = 0.0,
-    parent_effective_rank: float = 0.0,
-    parent_retained_eigenvalue_sum: float = 0.0,
-    parent_retained_eigenvalue_share: float = 0.0,
-    parent_top_spectral_gap: float = 0.0,
-    parent_eigengap_at_projection_dimension: float = 0.0,
-    parent_spectral_gap_at_projection_dimension: float = 0.0,
-    parent_spectral_pseudodeterminant: float = 0.0,
-    parent_spectral_log_pseudodeterminant: float = 0.0,
-    parent_spectral_geometric_mean: float = 0.0,
     feature_family: str = "bernoulli",
 ) -> SiblingPairRecord:
     """Construct a sibling-pair record from resolved statistical inputs."""
@@ -71,33 +56,10 @@ def build_sibling_pair_record(
             "Sibling pair record requires a finite non-negative sibling_projection_dimension; "
             f"parent={parent_node_id!r}."
         )
-    spectral_values = {
-        "parent_spectral_eigenvalue_count": parent_spectral_eigenvalue_count,
-        "parent_positive_eigenvalue_count": parent_positive_eigenvalue_count,
-        "parent_spectral_rank": parent_spectral_rank,
-        "parent_eigenvalue_sum": parent_eigenvalue_sum,
-        "parent_top_eigenvalue": parent_top_eigenvalue,
-        "parent_top_eigenvalue_share": parent_top_eigenvalue_share,
-        "parent_spectral_entropy": parent_spectral_entropy,
-        "parent_effective_rank": parent_effective_rank,
-        "parent_retained_eigenvalue_sum": parent_retained_eigenvalue_sum,
-        "parent_retained_eigenvalue_share": parent_retained_eigenvalue_share,
-        "parent_top_spectral_gap": parent_top_spectral_gap,
-        "parent_eigengap_at_projection_dimension": parent_eigengap_at_projection_dimension,
-        "parent_spectral_gap_at_projection_dimension": parent_spectral_gap_at_projection_dimension,
-        "parent_spectral_pseudodeterminant": parent_spectral_pseudodeterminant,
-        "parent_spectral_geometric_mean": parent_spectral_geometric_mean,
-    }
-    for name, value in spectral_values.items():
-        if not np.isfinite(value) or value < 0.0:
-            raise ValueError(
-                f"Sibling pair record requires finite non-negative {name}; "
-                f"parent={parent_node_id!r}, value={value!r}."
-            )
-    if not np.isfinite(parent_spectral_log_pseudodeterminant):
+    if not np.isfinite(parent_positive_eigenvalue_count) or parent_positive_eigenvalue_count < 0:
         raise ValueError(
-            "Sibling pair record requires finite parent_spectral_log_pseudodeterminant; "
-            f"parent={parent_node_id!r}, value={parent_spectral_log_pseudodeterminant!r}."
+            "Sibling pair record requires finite non-negative parent_positive_eigenvalue_count; "
+            f"parent={parent_node_id!r}, value={parent_positive_eigenvalue_count!r}."
         )
     if feature_family not in {"bernoulli", "categorical", "continuous", "mixed"}:
         raise ValueError(
@@ -121,24 +83,7 @@ def build_sibling_pair_record(
         calibration_dependency_group=calibration_dependency_group,
         calibration_dependency_weight=calibration_dependency_weight,
         sibling_projection_dimension=sibling_projection_dimension,
-        parent_spectral_eigenvalue_count=float(parent_spectral_eigenvalue_count),
         parent_positive_eigenvalue_count=float(parent_positive_eigenvalue_count),
-        parent_spectral_rank=float(parent_spectral_rank),
-        parent_eigenvalue_sum=float(parent_eigenvalue_sum),
-        parent_top_eigenvalue=float(parent_top_eigenvalue),
-        parent_top_eigenvalue_share=float(parent_top_eigenvalue_share),
-        parent_spectral_entropy=float(parent_spectral_entropy),
-        parent_effective_rank=float(parent_effective_rank),
-        parent_retained_eigenvalue_sum=float(parent_retained_eigenvalue_sum),
-        parent_retained_eigenvalue_share=float(parent_retained_eigenvalue_share),
-        parent_top_spectral_gap=float(parent_top_spectral_gap),
-        parent_eigengap_at_projection_dimension=float(parent_eigengap_at_projection_dimension),
-        parent_spectral_gap_at_projection_dimension=float(
-            parent_spectral_gap_at_projection_dimension
-        ),
-        parent_spectral_pseudodeterminant=float(parent_spectral_pseudodeterminant),
-        parent_spectral_log_pseudodeterminant=float(parent_spectral_log_pseudodeterminant),
-        parent_spectral_geometric_mean=float(parent_spectral_geometric_mean),
         feature_family=feature_family,
     )
 

@@ -42,4 +42,4 @@ def test_nnls_sweep_counts_restored_empirical_tests(
 def test_nnls_sweep_marks_changed_reporting_contract_as_v5(
     nnls_linkage_row: dict[str, object],
 ) -> None:
-    assert nnls_linkage_row["schema_version"] == "nnls_null_calibration_sweep/v5"
+    assert nnls_linkage_row["schema_version"] == "nnls_null_calibration_sweep/v6"

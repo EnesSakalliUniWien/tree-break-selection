@@ -113,7 +113,6 @@ def assign_divergence_results(
     p_values_corrected: np.ndarray,
     reject_null: np.ndarray,
     degrees_of_freedom: np.ndarray,
-    invalid_test_flags: np.ndarray,
     tested_edge_flags: np.ndarray,
     ancestor_blocked_edge_flags: np.ndarray,
 ) -> pd.DataFrame:
@@ -138,9 +137,6 @@ def assign_divergence_results(
         Boolean array indicating significant edges
     degrees_of_freedom
         Effective degrees of freedom for each edge
-    invalid_test_flags
-        Boolean flags aligned to ``child_ids`` indicating tests that were
-        invalid and routed through the conservative p-value path.
     tested_edge_flags
         Boolean flags aligned to ``child_ids`` indicating whether the edge was
         actually tested by the multiple-testing procedure.
@@ -159,7 +155,6 @@ def assign_divergence_results(
     annotations_df["Child_Parent_Divergence_P_Value_BH"] = np.nan
     annotations_df["Child_Parent_Divergence_Significant"] = False
     annotations_df["Child_Parent_Divergence_df"] = np.nan
-    annotations_df["Child_Parent_Divergence_Invalid"] = False
     annotations_df["Child_Parent_Divergence_Tested"] = False
     annotations_df["Child_Parent_Divergence_Ancestor_Blocked"] = False
 
@@ -193,15 +188,6 @@ def assign_divergence_results(
             f"len(ancestor_blocked_edge_flags)={blocked_array.shape[0]}, len(child_ids)={len(child_ids)}."
         )
     annotations_df.loc[child_ids, "Child_Parent_Divergence_Ancestor_Blocked"] = blocked_array
-
-    invalid_array = np.asarray(invalid_test_flags, dtype=bool)
-    if invalid_array.shape[0] != len(child_ids):
-        raise ValueError(
-            "invalid_test_flags must be aligned to child_ids. "
-            "Got "
-            f"len(invalid_test_flags)={invalid_array.shape[0]}, len(child_ids)={len(child_ids)}."
-        )
-    annotations_df.loc[child_ids, "Child_Parent_Divergence_Invalid"] = invalid_array
 
     return annotations_df
 

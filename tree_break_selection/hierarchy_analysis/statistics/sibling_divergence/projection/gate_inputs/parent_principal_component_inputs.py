@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
-    SpectralContext,
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
 )
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def collect_parent_principal_component_inputs_for_sibling_tests(
     sibling_projection_dimensions_from_child_edge_comparisons: dict[str, int],
     *,
-    spectral_context: SpectralContext,
+    spectral_context: SpectralDecompositionResult,
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
     """Collect parent principal-component inputs for sibling tests.
 

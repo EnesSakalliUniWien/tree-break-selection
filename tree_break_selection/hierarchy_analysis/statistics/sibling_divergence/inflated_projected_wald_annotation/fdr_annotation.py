@@ -61,7 +61,6 @@ def _sibling_gate_calibration_label(method_label: str) -> str:
         "fixed_global_chi_square": "fixed_subspace_chi_square",
         "fixed_coordinate_bh": "fixed_subspace_bh",
         "fixed_coordinate_by": "fixed_subspace_by",
-        "fixed_coordinate_holm": "fixed_subspace_holm",
         "fixed_coordinate_bonferroni": "fixed_subspace_bonferroni",
         "fixed_block_bh": "fixed_subspace_bh",
         "fixed_block_simes_bh": "fixed_subspace_simes_bh",

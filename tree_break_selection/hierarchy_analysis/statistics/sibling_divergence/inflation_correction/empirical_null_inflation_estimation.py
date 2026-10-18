@@ -672,29 +672,6 @@ def decide_empirical_null_calibration(
     )
 
 
-def predict_empirical_inflation_factor(
-    model: EmpiricalNullInflationModel,
-    record: SiblingPairRecord,
-    *,
-    enforce_support_thresholds: bool = False,
-    support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
-) -> float:
-    """Predict the empirical post-selection inflation for one sibling record."""
-    decision = decide_empirical_null_calibration(
-        model,
-        record,
-        enforce_support_thresholds=enforce_support_thresholds,
-        support_thresholds=support_thresholds,
-    )
-    if decision.status != "internal_admissible" or decision.c_hat is None:
-        reason = decision.descriptive_strata.get("reason", decision.status)
-        raise ValueError(
-            "Empirical-null diagnostic inflation prediction is unavailable: "
-            f"{decision.status}; parent={record.parent!r}; reason={reason!r}."
-        )
-    return decision.c_hat
-
-
 __all__ = [
     "CalibrationDecision",
     "CalibrationSupportThresholds",
@@ -702,5 +679,4 @@ __all__ = [
     "DEFAULT_INTERNAL_SUPPORT_THRESHOLDS",
     "decide_empirical_null_calibration",
     "fit_empirical_null_inflation_model",
-    "predict_empirical_inflation_factor",
 ]

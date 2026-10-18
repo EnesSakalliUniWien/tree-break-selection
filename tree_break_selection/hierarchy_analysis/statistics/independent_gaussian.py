@@ -385,7 +385,7 @@ def _annotate_tests(model, tests, *, alpha, edge_alpha, passthrough):
         edge.child_parent_edge_null_rejected_by_tree_bh
     )
     annotations.loc[edge_children, "Child_Parent_Divergence_P_Value"] = edge_p
-    annotations.loc[edge_children, "Child_Parent_Divergence_P_Value_Corrected"] = (
+    annotations.loc[edge_children, "Child_Parent_Divergence_P_Value_BH"] = (
         edge.child_parent_edge_corrected_p_values_by_tree_bh
     )
     annotations = apply_traversal_aligned_sibling_bh_results(

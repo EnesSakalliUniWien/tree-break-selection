@@ -20,7 +20,6 @@ class SpectralDecompositionResult:
     descendant_leaf_row_counts_by_node: dict[str, int]
     internal_distribution_row_counts_by_node: dict[str, int]
     spectral_matrix_row_counts_by_node: dict[str, int]
-    full_component_eigenvalues_by_node: dict[str, np.ndarray]
     active_feature_counts_by_node: dict[str, int]
     stage_timings: dict[str, float]
 

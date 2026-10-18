@@ -28,16 +28,14 @@ def test_bh_reacts_to_repeated_moderate_coordinate_evidence() -> None:
 
     assert coordinate_adjusted_minimum(p_values, method="bh") < 0.05
     assert coordinate_adjusted_minimum(p_values, method="by") > 0.05
-    assert coordinate_adjusted_minimum(p_values, method="holm") > 0.05
     assert coordinate_adjusted_minimum(p_values, method="bonferroni") > 0.05
 
 
-def test_bonferroni_and_holm_only_react_to_very_strong_sparse_evidence() -> None:
+def test_bonferroni_only_reacts_to_very_strong_sparse_evidence() -> None:
     p_values = np.ones(100, dtype=np.float64)
     p_values[0] = 0.0004
 
     assert coordinate_adjusted_minimum(p_values, method="bh") < 0.05
-    assert coordinate_adjusted_minimum(p_values, method="holm") < 0.05
     assert coordinate_adjusted_minimum(p_values, method="bonferroni") < 0.05
 
 
@@ -92,6 +90,10 @@ def test_fixed_block_gate_aggregates_categorical_feature_blocks() -> None:
     )
 
     assert 0.0 < coordinate_p < block_p < 1.0
+
+
+def test_benjamini_yekutieli_minimum_is_capped_at_one() -> None:
+    assert coordinate_adjusted_minimum(np.full(50, 0.5), method="by") == 1.0
 
 
 def test_coordinate_adjustment_rejects_invalid_method() -> None:

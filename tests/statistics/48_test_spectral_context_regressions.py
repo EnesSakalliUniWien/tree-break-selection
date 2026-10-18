@@ -48,7 +48,6 @@ class TestSpectralContextRegressions:
                 descendant_leaf_row_counts_by_node={},
                 internal_distribution_row_counts_by_node={},
                 spectral_matrix_row_counts_by_node={},
-                full_component_eigenvalues_by_node={},
                 active_feature_counts_by_node={},
                 stage_timings={},
             )
@@ -105,7 +104,6 @@ class TestSpectralContextRegressions:
                 descendant_leaf_row_counts_by_node={},
                 internal_distribution_row_counts_by_node={},
                 spectral_matrix_row_counts_by_node={},
-                full_component_eigenvalues_by_node={},
                 active_feature_counts_by_node={},
                 stage_timings={},
             )
@@ -119,20 +117,12 @@ class TestSpectralContextRegressions:
         with pytest.raises(ValueError, match=message):
             spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
 
-    def test_spectral_context_mirrors_every_decomposition_field(
+    def test_spectral_context_returns_decomposition_with_context_timing(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """The projection-to-gate boundary must forward every field, not silently default it."""
-        import dataclasses
-
+        """The edge gate reuses the decomposition result and only adds its own timing."""
         import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context as spectral_module
-
-        names = {field.name for field in dataclasses.fields(SpectralDecompositionResult)}
-        context_names = {
-            field.name for field in dataclasses.fields(spectral_module.SpectralContext)
-        }
-        assert names <= context_names
 
         decomposition = SpectralDecompositionResult(
             test_projection_dimensions_by_node={"root": 1},
@@ -144,7 +134,6 @@ class TestSpectralContextRegressions:
             descendant_leaf_row_counts_by_node={"root": 7},
             internal_distribution_row_counts_by_node={"root": 8},
             spectral_matrix_row_counts_by_node={"root": 9},
-            full_component_eigenvalues_by_node={"root": np.array([3.0, 0.25])},
             active_feature_counts_by_node={"root": 2},
             stage_timings={"spectral_decomposition_sec": 0.5},
         )
@@ -160,12 +149,9 @@ class TestSpectralContextRegressions:
 
         context = spectral_module.compute_child_parent_spectral_context(tree, leaf_data)
 
-        for name in sorted(names - {"stage_timings"}):
-            actual = getattr(context, name)
-            assert actual, f"SpectralContext dropped {name!r} from the decomposition result"
-            assert np.array_equal(
-                np.asarray(actual["root"]), np.asarray(getattr(decomposition, name)["root"])
-            )
+        assert context.test_projection_dimensions_by_node is (
+            decomposition.test_projection_dimensions_by_node
+        )
         assert context.stage_timings["spectral_decomposition_sec"] == 0.5
         assert "spectral_context_sec" in context.stage_timings
 
@@ -272,8 +258,8 @@ class TestSpectralContextRegressions:
         assert branch_length.internal_distribution_row_counts_by_node["root"] == 1
         assert branch_length.spectral_matrix_row_counts_by_node["root"] == 4
         assert not np.allclose(
-            empirical.full_component_eigenvalues_by_node["root"],
-            branch_length.full_component_eigenvalues_by_node["root"],
+            empirical.principal_component_eigenvalues_by_node["root"],
+            branch_length.principal_component_eigenvalues_by_node["root"],
         )
 
     def test_spectral_decomposition_requires_leaf_data_for_every_leaf_label(self):

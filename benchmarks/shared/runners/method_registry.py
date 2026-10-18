@@ -166,17 +166,6 @@ METHOD_SPECS: dict[str, MethodSpec] = {
             },
         ],
     ),
-    "tbs_fixed_coordinate_holm": MethodSpec(
-        name="TBS Fixed Coordinate Holm",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "sibling_gate_method": "fixed_coordinate_holm",
-            },
-        ],
-    ),
     "tbs_fixed_coordinate_bonferroni": MethodSpec(
         name="TBS Fixed Coordinate Bonferroni",
         runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
@@ -242,18 +231,6 @@ METHOD_SPECS: dict[str, MethodSpec] = {
                 "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
                 "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
                 "sibling_gate_method": "fixed_coordinate_by",
-            },
-        ],
-    ),
-    "tbs_fixed_coordinate_holm_nnls": MethodSpec(
-        name="TBS Fixed Coordinate Holm (NNLS branch lengths)",
-        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
-        param_grid=[
-            {
-                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
-                "tree_distance_metric": DEFAULT_BINARY_TREE_DISTANCE_METRIC,
-                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
-                "sibling_gate_method": "fixed_coordinate_holm",
             },
         ],
     ),

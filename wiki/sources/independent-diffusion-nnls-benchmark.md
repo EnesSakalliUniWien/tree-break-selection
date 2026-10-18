@@ -5,7 +5,7 @@ status: reviewed
 updated: 2026-09-28
 sources:
   - tree_break_selection/hierarchy_analysis/statistics/independent_gaussian.py
-  - tests/statistics/57_test_independent_diffusion_nnls.py
+  - tests/statistics/57_test_independent_gaussian_diffusion_nnls.py
   - reports/independent_diffusion_nnls_20260928/README.md
   - reports/independent_diffusion_nnls_20260928/protocol.md
   - reports/independent_diffusion_nnls_20260928/evaluation/manifest.json

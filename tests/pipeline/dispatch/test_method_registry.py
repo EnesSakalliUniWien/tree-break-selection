@@ -37,7 +37,6 @@ def test_method_registry_exposes_fixed_fdr_benchmark_variants():
     expected_methods = {
         "tbs_fixed_coordinate_bh": "fixed_coordinate_bh",
         "tbs_fixed_coordinate_by": "fixed_coordinate_by",
-        "tbs_fixed_coordinate_holm": "fixed_coordinate_holm",
         "tbs_fixed_coordinate_bonferroni": "fixed_coordinate_bonferroni",
         "tbs_fixed_block_bh": "fixed_block_bh",
         "tbs_fixed_block_simes_bh": "fixed_block_simes_bh",

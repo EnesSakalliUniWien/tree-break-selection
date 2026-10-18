@@ -10,8 +10,8 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator im
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence import (
     annotate_child_parent_divergence,
 )
-from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
-    SpectralContext,
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
@@ -318,7 +318,7 @@ def test_decompose_without_leaf_data_raises_for_missing_spectral_contract() -> N
 
 def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions() -> None:
     tree, _annotations_df, _leaf_data = _build_cherry_tree()
-    spectral_context = SpectralContext(
+    spectral_context = SpectralDecompositionResult(
         test_projection_dimensions_by_node={"A": 1},
         raw_mp_signal_counts_by_node={"A": 0},
         effective_independent_rows_by_node={"A": 1},
@@ -328,7 +328,6 @@ def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions()
         descendant_leaf_row_counts_by_node={},
         internal_distribution_row_counts_by_node={},
         spectral_matrix_row_counts_by_node={},
-        full_component_eigenvalues_by_node={},
         active_feature_counts_by_node={},
         stage_timings={},
     )

@@ -42,11 +42,11 @@ from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
 from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.child_parent_divergence_annotation import (
     annotate_child_parent_divergence,
 )
-from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
-    SpectralContext,
-)
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
     compute_whitened_wald_contrast,
+)
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.spectral_decomposition_result import (
+    SpectralDecompositionResult,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     compute_sibling_branch_length_sum,
@@ -459,7 +459,7 @@ def _spectral_geometry(
     parent: object,
     projection_dimension: int,
     z_scores: np.ndarray,
-    spectral_context: SpectralContext,
+    spectral_context: SpectralDecompositionResult,
 ) -> dict[str, object]:
     node_id = str(parent)
     if node_id not in spectral_context.principal_component_projections_by_node:
@@ -597,7 +597,7 @@ def _selected_geometry_rows(
     *,
     tree,
     edge_df: pd.DataFrame,
-    spectral_context: SpectralContext,
+    spectral_context: SpectralDecompositionResult,
     records: Sequence[SiblingPairRecord],
     case_id: str,
     case_category: str,

@@ -30,7 +30,6 @@ _AUDIT_SUMMARY_REQUIRED_COLUMNS = frozenset(
         "parent_node",
         "branch_length",
         "Child_Parent_Divergence_Significant",
-        "Child_Parent_Divergence_Invalid",
         "Sibling_Divergence_Skipped",
         "Sibling_Divergence_Invalid",
         "Sibling_Divergence_P_Value",
@@ -657,11 +656,7 @@ def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
     else:
         sig_sibling_fraction = np.nan
 
-    edge_valid = (
-        df["parent_node"].notna()
-        & ~bool_series(df["Child_Parent_Divergence_Invalid"])
-        & df["Child_Parent_Divergence_Significant"].notna()
-    )
+    edge_valid = df["parent_node"].notna() & df["Child_Parent_Divergence_Significant"].notna()
     edge_total = int(edge_valid.sum())
     if edge_total > 0:
         sig_edge_fraction = float(

@@ -58,7 +58,7 @@ from tree_break_selection.tree.optimized_branch_lengths import (
 )
 from tree_break_selection.tree.topology import tree_root
 
-SCHEMA_VERSION = "nnls_null_calibration_sweep/v5"
+SCHEMA_VERSION = "nnls_null_calibration_sweep/v6"
 GENERATED_BY = "benchmarks.validation.sweeps.nnls_null_calibration_sweep"
 DEFAULT_OUTPUT_DIR = Path("reports/nnls_null_calibration_sweep")
 DEFAULT_CASE_NAMES = (
@@ -108,28 +108,7 @@ def _record_row(
         "is_role_supported": bool(record.has_null_role),
         "sibling_null_weight": float(record.sibling_null_weight),
         "sibling_projection_dimension": float(record.sibling_projection_dimension),
-        "parent_spectral_eigenvalue_count": float(record.parent_spectral_eigenvalue_count),
         "parent_positive_eigenvalue_count": float(record.parent_positive_eigenvalue_count),
-        "parent_spectral_rank": float(record.parent_spectral_rank),
-        "parent_eigenvalue_sum": float(record.parent_eigenvalue_sum),
-        "parent_top_eigenvalue": float(record.parent_top_eigenvalue),
-        "parent_top_eigenvalue_share": float(record.parent_top_eigenvalue_share),
-        "parent_spectral_entropy": float(record.parent_spectral_entropy),
-        "parent_effective_rank": float(record.parent_effective_rank),
-        "parent_retained_eigenvalue_sum": float(record.parent_retained_eigenvalue_sum),
-        "parent_retained_eigenvalue_share": float(record.parent_retained_eigenvalue_share),
-        "parent_top_spectral_gap": float(record.parent_top_spectral_gap),
-        "parent_eigengap_at_projection_dimension": float(
-            record.parent_eigengap_at_projection_dimension
-        ),
-        "parent_spectral_gap_at_projection_dimension": float(
-            record.parent_spectral_gap_at_projection_dimension
-        ),
-        "parent_spectral_pseudodeterminant": float(record.parent_spectral_pseudodeterminant),
-        "parent_spectral_log_pseudodeterminant": float(
-            record.parent_spectral_log_pseudodeterminant
-        ),
-        "parent_spectral_geometric_mean": float(record.parent_spectral_geometric_mean),
         "feature_family": str(record.feature_family),
         "decision_status": "" if decision is None else decision.status,
         "decision_c_hat": math.nan

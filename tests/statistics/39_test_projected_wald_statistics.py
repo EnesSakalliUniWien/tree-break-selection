@@ -20,7 +20,7 @@ def test_child_parent_projected_wald_uses_projection_dimension_as_df() -> None:
     pca_projection = np.eye(3, dtype=np.float64)[:2]
     pca_eigenvalues = np.array([9.0, 1.0])
 
-    statistic, degrees_of_freedom, p_value, is_invalid = run_child_parent_projected_wald_test(
+    statistic, degrees_of_freedom, p_value = run_child_parent_projected_wald_test(
         child_distribution,
         parent_distribution,
         n_child=20,
@@ -30,7 +30,6 @@ def test_child_parent_projected_wald_uses_projection_dimension_as_df() -> None:
         pca_eigenvalues=pca_eigenvalues,
     )
 
-    assert not is_invalid
     assert np.isfinite(statistic)
     assert np.isfinite(p_value)
     assert np.isclose(degrees_of_freedom, 2.0)
