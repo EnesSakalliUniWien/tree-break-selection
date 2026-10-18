@@ -455,10 +455,6 @@ Binary subcategories use the `binary` generator with high `entropy_param` (0.22�
 | `overlapping_binary_unbalanced` | 4     | 400–1000  | 100–1000   | 4–10 | entropy 0.28–0.35 |
 | `overlapping_gaussian`          | 8     | 300–1000  | 30–300     | 3–10 | std 3.0–6.0       |
 
-### Real Data (1 case)
-
-Loads `data/feature_matrices/feature_matrix.tsv` from the repo root — a pre-existing binary GO-term feature matrix. No ground-truth labels; used for qualitative evaluation only.
-
 ---
 
 ## Evaluation Methods
@@ -560,7 +556,7 @@ from benchmarks.shared.pipeline import benchmark_cluster_algorithm
 from benchmarks.my_suite.cases import ALL_CASES
 
 if __name__ == "__main__":
-    results_df, fig = benchmark_cluster_algorithm(
+    results_df = benchmark_cluster_algorithm(
         test_cases=ALL_CASES,
         methods=["tbs", "tbs_diffusion"],
     )
@@ -636,7 +632,7 @@ from benchmarks.shared.pipeline import benchmark_cluster_algorithm
 # Benchmark runs use the canonical edge threshold and an explicit sibling
 # threshold argument. Tree geometry and linkage are explicit entries in each
 # registered method specification.
-df_results, _ = benchmark_cluster_algorithm(
+df_results = benchmark_cluster_algorithm(
     significance_level=DEFAULT_SIBLING_ALPHA,
 )
 

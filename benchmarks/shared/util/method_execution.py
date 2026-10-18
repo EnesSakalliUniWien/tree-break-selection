@@ -10,7 +10,7 @@ from benchmarks.shared.benchmark_grid import (
     benchmark_param_metadata,
     strip_benchmark_metadata,
 )
-from benchmarks.shared.metrics import calculate_clustering_metrics
+from benchmarks.shared.metrics import calculate_clustering_metrics, nan_clustering_metrics
 from benchmarks.shared.result_records import (
     BenchmarkResultRow,
     ComputedResultRecord,
@@ -299,58 +299,10 @@ def run_single_method_once(
             meta,
             feature_matrix=data_t,
         )
-        ari = metrics.ari
-        nmi = metrics.nmi
-        ami = metrics.ami
-        purity = metrics.purity
-        homogeneity = metrics.homogeneity
-        completeness = metrics.completeness
-        v_measure = metrics.v_measure
-        fowlkes_mallows = metrics.fowlkes_mallows
-        macro_recall = metrics.macro_recall
-        macro_f1 = metrics.macro_f1
-        worst_cluster_recall = metrics.worst_cluster_recall
-        n_singleton_clusters = metrics.n_singleton_clusters
-        singleton_fraction = metrics.singleton_fraction
-        median_cluster_size = metrics.median_cluster_size
-        largest_cluster_fraction = metrics.largest_cluster_fraction
-        effective_cluster_count = metrics.effective_cluster_count
-        cluster_size_entropy = metrics.cluster_size_entropy
-        cluster_size_gini = metrics.cluster_size_gini
-        noise_label_fraction = metrics.noise_label_fraction
-        internal_silhouette = metrics.silhouette_score
-        davies_bouldin = metrics.davies_bouldin_index
-        calinski_harabasz = metrics.calinski_harabasz_index
-        outlier_precision = metrics.outlier_precision
-        outlier_recall = metrics.outlier_recall
-        outlier_f1 = metrics.outlier_f1
-        singleton_outlier_isolated = metrics.singleton_outlier_isolated
-        grouped_outlier_cluster_recovered = metrics.grouped_outlier_cluster_recovered
     else:
         labels_len = 0
         found_clusters = 0
-        ari, nmi, ami, purity = np.nan, np.nan, np.nan, np.nan
-        homogeneity, completeness, v_measure, fowlkes_mallows = (
-            np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
-        )
-        macro_recall, macro_f1, worst_cluster_recall = np.nan, np.nan, np.nan
-        n_singleton_clusters = np.nan
-        singleton_fraction = np.nan
-        median_cluster_size = np.nan
-        largest_cluster_fraction = np.nan
-        effective_cluster_count = np.nan
-        cluster_size_entropy = np.nan
-        cluster_size_gini = np.nan
-        noise_label_fraction = np.nan
-        internal_silhouette = np.nan
-        davies_bouldin = np.nan
-        calinski_harabasz = np.nan
-        outlier_precision, outlier_recall, outlier_f1 = np.nan, np.nan, np.nan
-        singleton_outlier_isolated = np.nan
-        grouped_outlier_cluster_recovered = np.nan
+        metrics = nan_clustering_metrics()
 
     if result.status == "ok":
         cluster_count_abs_error = float(abs(int(found_clusters) - true_clusters))
@@ -383,33 +335,7 @@ def run_single_method_once(
         samples=meta["n_samples"],
         features=meta["n_features"],
         noise=meta["noise"],
-        ari=ari,
-        nmi=nmi,
-        ami=ami,
-        purity=purity,
-        homogeneity=homogeneity,
-        completeness=completeness,
-        v_measure=v_measure,
-        fowlkes_mallows=fowlkes_mallows,
-        macro_recall=macro_recall,
-        macro_f1=macro_f1,
-        worst_cluster_recall=worst_cluster_recall,
-        n_singleton_clusters=n_singleton_clusters,
-        singleton_fraction=singleton_fraction,
-        median_cluster_size=median_cluster_size,
-        largest_cluster_fraction=largest_cluster_fraction,
-        effective_cluster_count=effective_cluster_count,
-        cluster_size_entropy=cluster_size_entropy,
-        cluster_size_gini=cluster_size_gini,
-        noise_label_fraction=noise_label_fraction,
-        silhouette_score=internal_silhouette,
-        davies_bouldin_index=davies_bouldin,
-        calinski_harabasz_index=calinski_harabasz,
-        outlier_precision=outlier_precision,
-        outlier_recall=outlier_recall,
-        outlier_f1=outlier_f1,
-        singleton_outlier_isolated=singleton_outlier_isolated,
-        grouped_outlier_cluster_recovered=grouped_outlier_cluster_recovered,
+        metrics=metrics,
         cluster_count_abs_error=cluster_count_abs_error,
         over_split=over_split,
         under_split=under_split,
@@ -434,24 +360,14 @@ def run_single_method_once(
             benchmark_grid=str(benchmark_metadata["benchmark_grid"]),
             benchmark_repeat=int(benchmark_metadata["benchmark_repeat"]),
             params=recorded_run_params,
-            ari=float(ari) if np.isfinite(ari) else np.nan,
-            nmi=float(nmi) if np.isfinite(nmi) else np.nan,
-            purity=float(purity) if np.isfinite(purity) else np.nan,
-            outlier_precision=float(outlier_precision)
-            if np.isfinite(outlier_precision)
-            else np.nan,
-            outlier_recall=float(outlier_recall) if np.isfinite(outlier_recall) else np.nan,
-            outlier_f1=float(outlier_f1) if np.isfinite(outlier_f1) else np.nan,
-            singleton_outlier_isolated=(
-                float(singleton_outlier_isolated)
-                if np.isfinite(singleton_outlier_isolated)
-                else np.nan
-            ),
-            grouped_outlier_cluster_recovered=(
-                float(grouped_outlier_cluster_recovered)
-                if np.isfinite(grouped_outlier_cluster_recovered)
-                else np.nan
-            ),
+            ari=metrics.ari,
+            nmi=metrics.nmi,
+            purity=metrics.purity,
+            outlier_precision=metrics.outlier_precision,
+            outlier_recall=metrics.outlier_recall,
+            outlier_f1=metrics.outlier_f1,
+            singleton_outlier_isolated=metrics.singleton_outlier_isolated,
+            grouped_outlier_cluster_recovered=metrics.grouped_outlier_cluster_recovered,
             labels=result.labels,
             data=data_t,
             meta=meta_run,

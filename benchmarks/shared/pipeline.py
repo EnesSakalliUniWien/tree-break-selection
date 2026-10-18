@@ -100,10 +100,8 @@ def benchmark_cluster_algorithm(
 
     Returns
     -------
-    df_results : pd.DataFrame
+    pd.DataFrame
         Results dataframe using the canonical snake_case benchmark result schema.
-    fig : None
-        Plotting has been removed; always returns None.
     """
 
     # Default test cases
@@ -136,10 +134,6 @@ def benchmark_cluster_algorithm(
             "plot_umap/plot_manifold require concat_plots_pdf=True and a PDF output path; "
             "plot requests are no longer converted into skipped plot metadata."
         )
-    plot_generation_status = "pdf_requested" if concat_plots_pdf else "not_requested"
-
-    # PDF-only plotting mode.
-    stream_pdf = bool(concat_plots_pdf)
 
     # Run test cases
     selected_methods, param_sets = resolve_selected_methods_and_param_sets(
@@ -155,7 +149,7 @@ def benchmark_cluster_algorithm(
     pdf_pages = None
 
     try:
-        if stream_pdf:
+        if concat_plots_pdf:
             output_pdf, pdf_pages = open_pdf_pages(
                 output_pdf,
                 plots_root=plots_root,
@@ -184,28 +178,18 @@ def benchmark_cluster_algorithm(
             log_validation_completion(total_runs, len(test_cases))
 
         df_results = benchmark_rows_to_dataframe(result_rows)
-        df_results.attrs["plot_generation_status"] = plot_generation_status
-
-        should_generate_plots = bool(concat_plots_pdf)
-        if not should_generate_plots:
-            return df_results, None
-
-        plot_kwargs = {} if pdf_pages is None else {"pdf": pdf_pages}
-
-        fig, _new_figs_by_category = generate_benchmark_plots(
-            df_results,
-            computed_results,
-            plots_root,
-            verbose,
-            plot_umap,
-            plot_manifold,
-            include_cover_pages=include_cover_pages,
-            include_validation_page=include_validation_page,
-            **plot_kwargs,
-        )
-
-        df_results.attrs["plot_generation_status"] = "pdf_generated"
-        return df_results, fig
+        if pdf_pages is not None:
+            generate_benchmark_plots(
+                df_results,
+                computed_results,
+                pdf=pdf_pages,
+                verbose=verbose,
+                plot_umap=plot_umap,
+                plot_manifold=plot_manifold,
+                include_cover_pages=include_cover_pages,
+                include_validation_page=include_validation_page,
+            )
+        return df_results
 
     finally:
         if pdf_pages is not None:

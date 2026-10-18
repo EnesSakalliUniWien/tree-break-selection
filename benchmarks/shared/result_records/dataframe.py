@@ -2,119 +2,25 @@
 
 from __future__ import annotations
 
+from dataclasses import fields
 from typing import Iterable
 
 import pandas as pd
 
 from benchmarks.shared.result_records.models import BenchmarkResultRow
 
-RESULT_COLUMNS = [
-    "test_case",
-    "case_id",
-    "case_category",
-    "source_family",
-    "feature_representation",
-    "simulation_model",
-    "observation_model",
-    "benchmark_intent",
-    "scientific_caution",
-    "recommended_simulation_family",
-    "method",
-    "run_id",
-    "benchmark_class",
-    "benchmark_grid",
-    "benchmark_repeat",
-    "params",
-    "true_clusters",
-    "found_clusters",
-    "samples",
-    "features",
-    "noise",
-    "ari",
-    "nmi",
-    "ami",
-    "purity",
-    "homogeneity",
-    "completeness",
-    "v_measure",
-    "fowlkes_mallows",
-    "macro_recall",
-    "macro_f1",
-    "worst_cluster_recall",
-    "n_singleton_clusters",
-    "singleton_fraction",
-    "median_cluster_size",
-    "largest_cluster_fraction",
-    "effective_cluster_count",
-    "cluster_size_entropy",
-    "cluster_size_gini",
-    "noise_label_fraction",
-    "silhouette_score",
-    "davies_bouldin_index",
-    "calinski_harabasz_index",
-    "outlier_precision",
-    "outlier_recall",
-    "outlier_f1",
-    "singleton_outlier_isolated",
-    "grouped_outlier_cluster_recovered",
-    "cluster_count_abs_error",
-    "over_split",
-    "under_split",
-    "tree_build_sec",
-    "populate_divergences_sec",
-    "edge_gate_sec",
-    "edge_gate_contrast_covariance_sec",
-    "edge_gate_projection_sec",
-    "edge_gate_wald_statistic_sec",
-    "edge_gate_tree_bh_sec",
-    "spectral_context_sec",
-    "tangent_whitening_sec",
-    "eigensolve_sec",
-    "pca_projection_sec",
-    "sibling_gate_sec",
-    "sibling_gate_pair_record_collection_sec",
-    "sibling_gate_inflation_fit_sec",
-    "sibling_gate_adjusted_tests_sec",
-    "sibling_gate_fdr_sec",
-    "traversal_sec",
-    "status",
-    "skip_reason",
-    "unsupported_reason_code",
-    "unsupported_stage",
-    "unsupported_reason",
-    "unsupported_focal_record_count",
-    "unsupported_admissible_support_count",
-    "unsupported_invalid_record_count",
-    "unsupported_upstream_tested_count",
-    "unsupported_upstream_rejected_count",
-    "labels_length",
-]
+_ROW_FIELDS = tuple(field for field in fields(BenchmarkResultRow) if field.name != "params_raw")
 
-_TEXT_RESULT_COLUMNS = frozenset(
-    {
-        "case_id",
-        "case_category",
-        "source_family",
-        "feature_representation",
-        "simulation_model",
-        "observation_model",
-        "benchmark_intent",
-        "scientific_caution",
-        "recommended_simulation_family",
-        "method",
-        "run_id",
-        "benchmark_class",
-        "benchmark_grid",
-        "params",
-        "status",
-        "skip_reason",
-        "unsupported_reason_code",
-        "unsupported_stage",
-        "unsupported_reason",
-    }
-)
+
+def _column_name(field_name: str) -> str:
+    return "params" if field_name == "params_display" else field_name
+
+
+RESULT_COLUMNS = [_column_name(field.name) for field in _ROW_FIELDS]
 NUMERIC_RESULT_COLUMNS = tuple(
-    column for column in RESULT_COLUMNS if column not in _TEXT_RESULT_COLUMNS
+    _column_name(field.name)
+    for field in _ROW_FIELDS
+    if field.type not in {"str", "BenchmarkRunStatus"}
 )
 
 
@@ -122,85 +28,10 @@ def benchmark_rows_to_dataframe(rows: Iterable[BenchmarkResultRow]) -> pd.DataFr
     """Convert typed benchmark rows to the stable output DataFrame schema."""
     records = [
         {
-            "test_case": row.test_case,
-            "case_id": row.case_id,
-            "case_category": row.case_category,
-            "source_family": row.source_family,
-            "feature_representation": row.feature_representation,
-            "simulation_model": row.simulation_model,
-            "observation_model": row.observation_model,
-            "benchmark_intent": row.benchmark_intent,
-            "scientific_caution": row.scientific_caution,
-            "recommended_simulation_family": row.recommended_simulation_family,
-            "method": row.method,
-            "run_id": row.run_id,
-            "benchmark_class": row.benchmark_class,
-            "benchmark_grid": row.benchmark_grid,
-            "benchmark_repeat": row.benchmark_repeat,
-            "params": row.params_display,
-            "true_clusters": row.true_clusters,
-            "found_clusters": row.found_clusters,
-            "samples": row.samples,
-            "features": row.features,
-            "noise": row.noise,
-            "ari": row.ari,
-            "nmi": row.nmi,
-            "ami": row.ami,
-            "purity": row.purity,
-            "homogeneity": row.homogeneity,
-            "completeness": row.completeness,
-            "v_measure": row.v_measure,
-            "fowlkes_mallows": row.fowlkes_mallows,
-            "macro_recall": row.macro_recall,
-            "macro_f1": row.macro_f1,
-            "worst_cluster_recall": row.worst_cluster_recall,
-            "n_singleton_clusters": row.n_singleton_clusters,
-            "singleton_fraction": row.singleton_fraction,
-            "median_cluster_size": row.median_cluster_size,
-            "largest_cluster_fraction": row.largest_cluster_fraction,
-            "effective_cluster_count": row.effective_cluster_count,
-            "cluster_size_entropy": row.cluster_size_entropy,
-            "cluster_size_gini": row.cluster_size_gini,
-            "noise_label_fraction": row.noise_label_fraction,
-            "silhouette_score": row.silhouette_score,
-            "davies_bouldin_index": row.davies_bouldin_index,
-            "calinski_harabasz_index": row.calinski_harabasz_index,
-            "outlier_precision": row.outlier_precision,
-            "outlier_recall": row.outlier_recall,
-            "outlier_f1": row.outlier_f1,
-            "singleton_outlier_isolated": row.singleton_outlier_isolated,
-            "grouped_outlier_cluster_recovered": row.grouped_outlier_cluster_recovered,
-            "cluster_count_abs_error": row.cluster_count_abs_error,
-            "over_split": row.over_split,
-            "under_split": row.under_split,
-            "tree_build_sec": row.tree_build_sec,
-            "populate_divergences_sec": row.populate_divergences_sec,
-            "edge_gate_sec": row.edge_gate_sec,
-            "edge_gate_contrast_covariance_sec": row.edge_gate_contrast_covariance_sec,
-            "edge_gate_projection_sec": row.edge_gate_projection_sec,
-            "edge_gate_wald_statistic_sec": row.edge_gate_wald_statistic_sec,
-            "edge_gate_tree_bh_sec": row.edge_gate_tree_bh_sec,
-            "spectral_context_sec": row.spectral_context_sec,
-            "tangent_whitening_sec": row.tangent_whitening_sec,
-            "eigensolve_sec": row.eigensolve_sec,
-            "pca_projection_sec": row.pca_projection_sec,
-            "sibling_gate_sec": row.sibling_gate_sec,
-            "sibling_gate_pair_record_collection_sec": row.sibling_gate_pair_record_collection_sec,
-            "sibling_gate_inflation_fit_sec": row.sibling_gate_inflation_fit_sec,
-            "sibling_gate_adjusted_tests_sec": row.sibling_gate_adjusted_tests_sec,
-            "sibling_gate_fdr_sec": row.sibling_gate_fdr_sec,
-            "traversal_sec": row.traversal_sec,
-            "status": row.status.value,
-            "skip_reason": row.skip_reason,
-            "unsupported_reason_code": row.unsupported_reason_code,
-            "unsupported_stage": row.unsupported_stage,
-            "unsupported_reason": row.unsupported_reason,
-            "unsupported_focal_record_count": row.unsupported_focal_record_count,
-            "unsupported_admissible_support_count": (row.unsupported_admissible_support_count),
-            "unsupported_invalid_record_count": row.unsupported_invalid_record_count,
-            "unsupported_upstream_tested_count": row.unsupported_upstream_tested_count,
-            "unsupported_upstream_rejected_count": row.unsupported_upstream_rejected_count,
-            "labels_length": row.labels_length,
+            _column_name(field.name): (
+                row.status.value if field.name == "status" else getattr(row, field.name)
+            )
+            for field in _ROW_FIELDS
         }
         for row in rows
     ]

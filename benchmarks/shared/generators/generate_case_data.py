@@ -37,7 +37,6 @@ from benchmarks.shared.generators.graph_cases import generate_sbm_case
 from benchmarks.shared.generators.phylogenetic_nulls import (
     generate_phylogenetic_brownian_continuous,
 )
-from benchmarks.shared.generators.preloaded_cases import generate_preloaded_case
 from benchmarks.shared.generators.spiked_covariance import (
     generate_continuous_spiked_covariance,
 )
@@ -62,7 +61,6 @@ GENERATOR_DISPATCH: dict[str, CaseGenerator] = {
     "phylogenetic_brownian_continuous": generate_phylogenetic_brownian_continuous,
     "planted_hierarchy_deep_signal": generate_planted_hierarchy_deep_signal,
     "temporal_evolution": generate_temporal_evolution_case,
-    "preloaded": generate_preloaded_case,
 }
 
 
@@ -74,9 +72,7 @@ def generate_case_data(test_case: dict) -> CaseDataResult:
         raise ValueError(f"Unknown generator: {generator}")
     generator_fn = GENERATOR_DISPATCH[generator]
 
-    seed = None
-    if generator != "preloaded":
-        seed = int(require_case_value(test_case, "seed", generator))
+    seed = int(require_case_value(test_case, "seed", generator))
     data_df, y, x_original, metadata = generator_fn(test_case, seed)
 
     if "category" in test_case:

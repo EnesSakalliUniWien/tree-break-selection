@@ -146,7 +146,7 @@ def run_regression_gate(
     metadata_json = resolved_output_dir / "regression_gate_metadata.json"
 
     started_at = time.perf_counter()
-    df_results, _ = benchmark_cluster_algorithm(
+    df_results = benchmark_cluster_algorithm(
         test_cases=test_cases,
         verbose=False,
         plot_umap=False,

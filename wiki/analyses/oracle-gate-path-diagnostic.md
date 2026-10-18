@@ -2,9 +2,8 @@
 title: Oracle Gate-Path Diagnostic
 type: analysis
 status: reviewed
-updated: 2026-10-16
+updated: 2026-10-17
 sources:
-  - benchmarks/shared/tbs_tree_context.py
   - benchmarks/shared/runners/tbs_support.py
   - benchmarks/shared/types/unsupported_reason.py
   - benchmarks/shared/cases/gaussian.py
@@ -678,9 +677,10 @@ partition.
 - `benchmarks/diagnostics/calibration/sibling/nulls/run_tree_bh_selection_conditioned_sibling_null.py` runs the
   fixed-tree root Tree-BH edge-path diagnostic without fitting unsupported
   sibling calibration.
-- `benchmarks/shared/tbs_tree_context.py` centralizes the benchmark TBS tree
-  construction contract so oracle and trace diagnostics use the same distance
-  and linkage path.
+- `benchmarks/shared/tbs_tree_context.py` once centralized the benchmark TBS
+  tree construction. It skipped `build_tree`'s canonical sample order, so tied
+  distances could give a different tree; only one test still used it, and it
+  was removed on 2026-10-17 (last present at `bc38f16c`).
 - `raw/assets/benchmark-results/oracle_tree_recoverability_20260524_155532Z/oracle_tree_recoverability.csv`
   records the corrected five-way classification for the full TBS benchmark.
 - `raw/assets/benchmark-results/gate_path_trace_20260524_155551Z/gate_path_trace.csv`

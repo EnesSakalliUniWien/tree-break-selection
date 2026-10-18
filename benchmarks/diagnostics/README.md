@@ -12,8 +12,7 @@ here only when they are diagnostic entrypoints or diagnostic-only helpers.
 - `calibration/`: responsibility-grouped calibration diagnostics; see
   `calibration/README.md` for the source and mirrored-test map.
 - `spectral/`: adaptive-cosine, tree-strategy stability, and Vandermonde diagnostics.
-- `math_trace/`: trace-schema validation and deterministic mathematical
-  failure attribution for benchmark run artifacts.
+- `math_trace/`: the required node-trace column list for method-proof cases.
 - `failure/`: benchmark failure-report tracing used by the full benchmark.
 - `analysis/`: post-run result analysis and durable diagnostic notes.
 

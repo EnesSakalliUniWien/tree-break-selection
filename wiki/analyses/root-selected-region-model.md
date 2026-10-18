@@ -13,7 +13,6 @@ sources:
   - wiki/sources/selected-ratio-tail-law-diagnostic-20260602.md
   - wiki/sources/root-selected-region-margins-20260603.md
   - benchmarks/diagnostics/calibration/selected/hierarchy/selected_hierarchy_geometry_covariates.py
-  - benchmarks/shared/tbs_tree_context.py
 tags:
   - analysis
   - selection

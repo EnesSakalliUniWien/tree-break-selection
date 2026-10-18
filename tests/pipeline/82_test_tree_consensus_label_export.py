@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -8,6 +9,7 @@ import pandas as pd
 import pytest
 
 import benchmarks.shared.util.case_execution as case_execution
+from benchmarks.shared.metrics import nan_clustering_metrics
 from benchmarks.shared.result_records import ComputedResultRecord
 from benchmarks.shared.result_records.factory import build_benchmark_result_row
 from benchmarks.shared.tree_consensus import (
@@ -227,17 +229,15 @@ def test_run_single_case_exports_tree_consensus_labels(
         samples=4,
         features=1,
         noise=np.nan,
-        ari=1.0,
-        nmi=1.0,
-        purity=1.0,
-        macro_recall=1.0,
-        macro_f1=1.0,
-        worst_cluster_recall=1.0,
-        outlier_precision=np.nan,
-        outlier_recall=np.nan,
-        outlier_f1=np.nan,
-        singleton_outlier_isolated=np.nan,
-        grouped_outlier_cluster_recovered=np.nan,
+        metrics=replace(
+            nan_clustering_metrics(),
+            ari=1.0,
+            nmi=1.0,
+            purity=1.0,
+            macro_recall=1.0,
+            macro_f1=1.0,
+            worst_cluster_recall=1.0,
+        ),
         cluster_count_abs_error=0.0,
         over_split=0.0,
         under_split=0.0,
@@ -293,7 +293,7 @@ def test_isolated_worker_passes_tree_consensus_label_dir(
 
     def _fake_benchmark_cluster_algorithm(**kwargs):
         captured.update(kwargs)
-        return pd.DataFrame([{"case_id": "case_worker"}]), None
+        return pd.DataFrame([{"case_id": "case_worker"}])
 
     monkeypatch.setattr(
         case_execution,

@@ -42,7 +42,7 @@ def _run_case_worker(
     configure_matplotlib_backend()
 
     try:
-        df_res, _ = _get_benchmark_fn()(
+        df_res = _get_benchmark_fn()(
             test_cases=[case],
             methods=methods_to_test,
             method_params=method_params,
@@ -158,7 +158,7 @@ def run_case_with_optional_isolation(
             tree_consensus_label_dir=tree_consensus_label_dir,
         )
 
-    df_res, _ = _get_benchmark_fn()(
+    df_res = _get_benchmark_fn()(
         test_cases=[case],
         methods=methods_to_test,
         method_params=method_params,

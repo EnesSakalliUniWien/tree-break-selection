@@ -24,7 +24,7 @@ all_cases = get_default_test_cases()
 subset = select_smoke_cases(all_cases)
 print_smoke_case_manifest(subset, total_cases=len(all_cases), spectral_jobs=spectral_jobs)
 
-df_results, fig = benchmark_cluster_algorithm(
+df_results = benchmark_cluster_algorithm(
     test_cases=subset,
     verbose=True,
     plot_umap=True,

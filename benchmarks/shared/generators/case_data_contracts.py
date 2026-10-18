@@ -57,7 +57,6 @@ _SIMULATION_MODELS = {
     "phylogenetic_brownian": "brownian_like_phylogenetic_continuous_model",
     "phylogenetic_sequence": "branchwise_jukes_cantor_like_categorical_model",
     "planted_hierarchy_binary": "hierarchical_bernoulli_latent_class",
-    "preloaded_matrix": "external_preloaded_matrix",
     "stochastic_block_model": "stochastic_block_model_graph",
     "temporal_sequence": "sequential_categorical_drift_model",
 }
@@ -68,7 +67,6 @@ _OBSERVATION_MODELS = {
     "continuous": "continuous_feature_matrix",
     "graph_adjacency": "node_by_node_graph_adjacency_matrix",
     "median_binary": "per_feature_median_thresholded_continuous_matrix",
-    "preloaded_matrix": "preloaded_matrix",
     "quantile_one_hot": "quantile_discretized_continuous_one_hot_blocks",
 }
 
@@ -78,7 +76,6 @@ _RECOMMENDED_SIMULATION_FAMILIES = {
     "continuous": "gaussian_mixture_or_sparse_subspace_gaussian",
     "graph_adjacency": "graph_sbm_or_lfr_with_graph_native_distances",
     "median_binary": "explicit_bernoulli_threshold_model_or_continuous_gaussian_variant",
-    "preloaded_matrix": "documented_external_data_contract",
     "quantile_one_hot": "ordinal_or_categorical_discretization_model",
 }
 

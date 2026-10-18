@@ -2,11 +2,11 @@
 title: Traceable Mathematical Benchmark Suite
 type: analysis
 status: draft
-updated: 2026-08-08
+updated: 2026-10-17
 sources:
   - raw/inbox/traceable-benchmark-suite-request-20260604.txt
   - benchmarks/shared/cases/method_proof.py
-  - benchmarks/diagnostics/math_trace/failure_classifier.py
+  - benchmarks/diagnostics/math_trace/trace_schema.py
 tags:
   - benchmarks
   - traceability
@@ -20,10 +20,10 @@ tags:
 
 The method-proof benchmark suite turns Tree-Break Selection benchmark cases into explicit
 mathematical probes. Each case declares the contract it is meant to validate or
-falsify, and the math-trace tool classifies each trace row by the first failed
-layer: tree recoverability, covariance, projected-Wald, selected MP,
-calibration support, external selected-tail admissibility, sibling FDR,
-traversal, or solved/unattributed.
+falsify. `benchmarks/diagnostics/math_trace/trace_schema.py` lists the trace
+columns each case requires; the failure classifier that labelled trace rows by
+first failed layer was removed on 2026-10-17 because nothing produced the
+trace it read.
 
 ## Details
 
@@ -45,8 +45,11 @@ family-specific diagnostics recorded elsewhere in the wiki.
   and metamorphic checks.
 - `benchmarks/shared/cases/method_proof.py` records mathematical targets and
   required trace columns for the first ten method-proof cases.
-- `benchmarks/diagnostics/math_trace/failure_classifier.py` implements the
-  deterministic failure hierarchy.
+- `benchmarks/diagnostics/math_trace/failure_classifier.py` implemented the
+  deterministic failure hierarchy. Nothing produced a node-decision trace for
+  it, so it was removed on 2026-10-17 (last present at `bc38f16c`).
+  `trace_schema.py` keeps the required column list.
+
 ## Links
 
 - [[benchmark-pipeline-contract]]

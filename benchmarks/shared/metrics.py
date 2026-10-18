@@ -5,7 +5,7 @@ Contains helpers for computing clustering metrics and outlier-isolation metrics.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import numpy as np
 import pandas as pd
@@ -60,36 +60,9 @@ class ClusteringMetrics:
     grouped_outlier_cluster_recovered: float
 
 
-def _nan_metrics() -> ClusteringMetrics:
-    return ClusteringMetrics(
-        ari=np.nan,
-        nmi=np.nan,
-        ami=np.nan,
-        purity=np.nan,
-        homogeneity=np.nan,
-        completeness=np.nan,
-        v_measure=np.nan,
-        fowlkes_mallows=np.nan,
-        macro_recall=np.nan,
-        macro_f1=np.nan,
-        worst_cluster_recall=np.nan,
-        n_singleton_clusters=np.nan,
-        singleton_fraction=np.nan,
-        median_cluster_size=np.nan,
-        largest_cluster_fraction=np.nan,
-        effective_cluster_count=np.nan,
-        cluster_size_entropy=np.nan,
-        cluster_size_gini=np.nan,
-        noise_label_fraction=np.nan,
-        silhouette_score=np.nan,
-        davies_bouldin_index=np.nan,
-        calinski_harabasz_index=np.nan,
-        outlier_precision=np.nan,
-        outlier_recall=np.nan,
-        outlier_f1=np.nan,
-        singleton_outlier_isolated=np.nan,
-        grouped_outlier_cluster_recovered=np.nan,
-    )
+def nan_clustering_metrics() -> ClusteringMetrics:
+    """Return the all-NaN metrics recorded for runs without usable labels."""
+    return ClusteringMetrics(**{field.name: np.nan for field in fields(ClusteringMetrics)})
 
 
 def _unit_interval_score(value: float) -> float:
@@ -328,27 +301,27 @@ def calculate_clustering_metrics(
     """Calculate external, fragmentation, internal, and outlier metrics."""
 
     if report_df is None or report_df.empty:
-        return _nan_metrics()
+        return nan_clustering_metrics()
     if "cluster_id" not in report_df.columns:
-        return _nan_metrics()
+        return nan_clustering_metrics()
 
     sample_index = pd.Index(sample_names)
     true_arr = np.asarray(true_labels)
 
     # Metrics are only valid when predicted labels and truth align by sample.
     if len(sample_index) != len(true_arr):
-        return _nan_metrics()
+        return nan_clustering_metrics()
     if len(report_df.index) != len(sample_index):
-        return _nan_metrics()
+        return nan_clustering_metrics()
     if sample_index.has_duplicates or report_df.index.has_duplicates:
-        return _nan_metrics()
+        return nan_clustering_metrics()
 
     true_lookup = pd.Series(true_arr, index=sample_index)
     true_cluster = report_df.index.to_series().map(true_lookup)
     pred_cluster = report_df["cluster_id"]
 
     if true_cluster.isna().any() or pred_cluster.isna().any():
-        return _nan_metrics()
+        return nan_clustering_metrics()
 
     y_true = true_cluster.to_numpy()
     y_pred = pred_cluster.to_numpy()
@@ -424,7 +397,7 @@ def calculate_clustering_metrics(
                 outlier_indices_raw,
             )
     except ValueError:
-        return _nan_metrics()
+        return nan_clustering_metrics()
 
     return ClusteringMetrics(
         ari=float(ari),

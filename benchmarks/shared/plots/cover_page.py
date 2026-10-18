@@ -108,7 +108,6 @@ _register(
     "overlapping_gaussian_quantile",
 )
 _register("method_proof", "method_proof")
-_register("real_data", "real_data")
 
 
 def category_group(subcategory: str) -> str:
@@ -342,18 +341,6 @@ _OVERLAPPING_TEXT = dedent(
 """
 )
 
-_REALDATA_TEXT = dedent(
-    """\
-    Real Data
-
-    Source:  data/feature_matrices/feature_matrix.tsv -- a binary Gene Ontology term annotation
-    matrix from the repository root.
-
-    No ground-truth cluster labels are available.  This case is included
-    for qualitative evaluation only (tree structure, cluster sizes).
-"""
-)
-
 _METHOD_PROOF_TEXT = dedent(
     """\
     Method-Proof Cases
@@ -413,7 +400,6 @@ _SECTION_TEXTS: dict[str, str] = {
     "phylogenetic": _PHYLOGENETIC_TEXT,
     "overlapping": _OVERLAPPING_TEXT,
     "method_proof": _METHOD_PROOF_TEXT,
-    "real_data": _REALDATA_TEXT,
 }
 
 # Canonical group order (controls insertion order in merged PDF)
@@ -425,7 +411,6 @@ GROUP_ORDER: list[str] = [
     "phylogenetic",
     "overlapping",
     "method_proof",
-    "real_data",
 ]
 
 
@@ -512,8 +497,8 @@ def generate_section_page(group: str) -> plt.Figure | None:
     text = _SECTION_TEXTS.get(group)
     if text is None:
         return None
-    # Evaluation metrics appended to the last section page (real_data)
-    if group == "real_data":
+    # Evaluation metrics appended to the last section page.
+    if group == GROUP_ORDER[-1]:
         text = text + "\n" + _EVALUATION_TEXT
     return _text_page(text, fontsize=9.5)
 

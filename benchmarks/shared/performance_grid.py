@@ -21,14 +21,6 @@ CASE_COLUMNS = [
 ]
 
 METRIC_COLUMNS = ["ari", "nmi", "purity"]
-SUMMARY_METRICS = [
-    "mean_ari",
-    "median_ari",
-    "mean_nmi",
-    "mean_purity",
-    "exact_k_rate",
-    "mean_cluster_count_abs_error",
-]
 
 
 @dataclass(frozen=True)
@@ -113,15 +105,6 @@ def _case_metadata(frame: pd.DataFrame) -> pd.DataFrame:
 def _metric_grid(frame: pd.DataFrame, metric: str) -> pd.DataFrame:
     metadata = _case_metadata(frame)
     values = frame.pivot(index="case_id", columns="run_id", values=metric)
-    values = values.reindex(metadata["case_id"])
-    values = values.reindex(sorted(values.columns), axis=1)
-    values = values.reset_index(drop=True)
-    return pd.concat([metadata, values], axis=1)
-
-
-def _status_grid(frame: pd.DataFrame) -> pd.DataFrame:
-    metadata = _case_metadata(frame)
-    values = frame.pivot(index="case_id", columns="run_id", values="status")
     values = values.reindex(metadata["case_id"])
     values = values.reindex(sorted(values.columns), axis=1)
     values = values.reset_index(drop=True)
@@ -245,7 +228,7 @@ def write_benchmark_performance_grid(
     ari_grid = _metric_grid(frame, "ari")
     nmi_grid = _metric_grid(frame, "nmi")
     purity_grid = _metric_grid(frame, "purity")
-    status_grid = _status_grid(frame)
+    status_grid = _metric_grid(frame, "status")
 
     summary_csv = output / "benchmark_performance_grid_summary.csv"
     ari_grid_csv = output / "benchmark_performance_grid_ari.csv"

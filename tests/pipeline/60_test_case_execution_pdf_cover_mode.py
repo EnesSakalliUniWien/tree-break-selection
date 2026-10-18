@@ -6,7 +6,7 @@ import benchmarks.shared.util.case_execution as case_execution
 
 
 def _successful_benchmark():
-    return pd.DataFrame([{"method": "tbs", "ari": 1.0}]), None
+    return pd.DataFrame([{"method": "tbs", "ari": 1.0}])
 
 
 class _Queue:
@@ -49,7 +49,7 @@ def test_run_case_with_optional_isolation_disables_cover_pages(monkeypatch):
 
     def _fake_benchmark_fn(**kwargs):
         captured.update(kwargs)
-        return pd.DataFrame(), None
+        return pd.DataFrame()
 
     monkeypatch.setattr(case_execution, "_get_benchmark_fn", lambda: _fake_benchmark_fn)
 

@@ -20,7 +20,7 @@ SMOKE_CASE = {
 def test_benchmark_graph_and_density_methods_smoke():
     """Run one graph method and one density method on a single test case."""
     case = SMOKE_CASE.copy()
-    df_results, _ = benchmark_cluster_algorithm(
+    df_results = benchmark_cluster_algorithm(
         test_cases=[case],
         verbose=False,
         plot_umap=False,
@@ -41,7 +41,7 @@ def test_benchmark_graph_and_density_methods_smoke():
 def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
     """Run the previously nonfunctional methods through one benchmark case."""
     case = SMOKE_CASE.copy()
-    df_results, _ = benchmark_cluster_algorithm(
+    df_results = benchmark_cluster_algorithm(
         test_cases=[case],
         verbose=False,
         plot_umap=False,
@@ -61,7 +61,7 @@ def test_benchmark_graphtools_diffusion_method_smoke(require_optional_dependenci
     require_optional_dependencies("graphtools")
     case = SMOKE_CASE.copy()
     with pytest.warns(RuntimeWarning, match="Detected zero distance between samples"):
-        df_results, _ = benchmark_cluster_algorithm(
+        df_results = benchmark_cluster_algorithm(
             test_cases=[case],
             verbose=False,
             plot_umap=False,
@@ -95,7 +95,7 @@ def test_hamming_diffusion_rejects_continuous_benchmark_input():
         for case in get_default_test_cases()
         if case["name"] == "gauss_clear_medium_continuous"
     )
-    df_results, _ = benchmark_cluster_algorithm(
+    df_results = benchmark_cluster_algorithm(
         test_cases=[case],
         verbose=False,
         plot_umap=False,

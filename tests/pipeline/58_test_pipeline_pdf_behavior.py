@@ -6,28 +6,13 @@ from benchmarks.shared import pipeline
 def test_concat_pdf_streams_and_no_pngs(monkeypatch, tmp_path: Path):
     called = {}
 
-    def fake_generate_benchmark_plots(
-        df_results,
-        computed_results,
-        plots_root,
-        verbose,
-        plot_umap,
-        plot_manifold,
-        include_cover_pages=True,
-        include_validation_page=True,
-        *,
-        pdf=None,
-    ):
-        del computed_results, plot_umap, plot_manifold
-        called["include_cover_pages"] = include_cover_pages
-        called["include_validation_page"] = include_validation_page
-        called["pdf"] = pdf
-        return None, {"validation": [], "trees": [], "umap": [], "manifold": []}
+    def fake_generate_benchmark_plots(df_results, computed_results, **kwargs):
+        called.update(kwargs)
 
     monkeypatch.setattr(pipeline, "generate_benchmark_plots", fake_generate_benchmark_plots)
 
     # With concat_plots_pdf=True, pipeline streams to PdfPages and never emits PNGs.
-    _df, _fig = pipeline.benchmark_cluster_algorithm(
+    pipeline.benchmark_cluster_algorithm(
         test_cases=[],
         verbose=True,
         concat_plots_pdf=True,
@@ -50,7 +35,7 @@ def test_pipeline_preserves_explicit_case_identity(monkeypatch):
     monkeypatch.setattr(
         pipeline,
         "generate_benchmark_plots",
-        lambda *args, **kwargs: (None, {"validation": [], "trees": [], "umap": [], "manifold": []}),
+        lambda *args, **kwargs: None,
     )
 
     pipeline.benchmark_cluster_algorithm(

@@ -23,7 +23,6 @@ sources:
   - benchmarks/shared/plots/export.py
   - benchmarks/shared/runners/method_registry.py
   - benchmarks/shared/runners/tbs_runner.py
-  - benchmarks/shared/tbs_tree_context.py
   - tests/visualization/73_test_report_export_layout.py
 tags:
   - code-audit
@@ -179,9 +178,12 @@ Several high-ranked matches should not be mechanically consolidated:
 - `benchmarks/shared/metrics.py`,
   `benchmarks/shared/result_records/models.py`,
   `benchmarks/shared/result_records/dataframe.py`, and plot/runtime modules
-  repeat record-field sequences that define aligned schemas.
-- `SpectralContext` and `SpectralDecompositionResult` share fields but have
-  different ownership and lifecycle semantics.
+  repeat record-field sequences that define aligned schemas. On 2026-10-17
+  the result columns and row builder were derived from `BenchmarkResultRow`
+  and `ClusteringMetrics` instead, with identical column names and order.
+- `SpectralContext` and `SpectralDecompositionResult` shared fields. On
+  2026-10-17 `SpectralContext` was removed: the edge gate returns the
+  decomposition result with its own timing added.
 - Bernoulli and grouped-categorical covariance validators share structural
   checks but enforce different feature-family invariants.
 - Test setup that looks alike can cover different public contracts.

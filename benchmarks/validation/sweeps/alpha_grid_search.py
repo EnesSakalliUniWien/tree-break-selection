@@ -170,7 +170,7 @@ def run_alpha_grid_search(config: AlphaGridConfig) -> dict[str, object]:
             continue
 
         started = perf_counter()
-        result, _ = benchmark_cluster_algorithm(
+        result = benchmark_cluster_algorithm(
             test_cases=[case.copy() for case in cases],
             significance_level=sibling_alpha,
             edge_alpha=edge_alpha,

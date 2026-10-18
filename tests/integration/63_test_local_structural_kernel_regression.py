@@ -6,14 +6,27 @@ import pytest
 from scipy.spatial.distance import pdist
 
 from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
 from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
-from benchmarks.shared.tbs_tree_context import build_tbs_tree_context
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
 from tree_break_selection.hierarchy_analysis.statistics.alpha_contract import (
     DEFAULT_SIBLING_ALPHA,
 )
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
 )
+
+
+def _case_tbs_inputs(case_name: str):
+    """Return a default case's data, TBS tree distance and feature space."""
+    case = next(case for case in get_default_test_cases() if case["name"] == case_name)
+    inputs = prepare_case_inputs(case, ["tbs"])
+    metric = METHOD_SPECS["tbs"].param_grid[0]["tree_distance_metric"]
+    return (
+        inputs.data,
+        pdist(inputs.data.values, metric=metric),
+        inputs.metadata.get("feature_space"),
+    )
 
 
 @pytest.mark.slow
@@ -28,13 +41,12 @@ def test_strict_sibling_calibration_fails_closed_without_internal_support(
     case_name: str,
     forward_feature_space: bool,
 ) -> None:
-    case = next(case for case in get_default_test_cases() if case["name"] == case_name)
-    context = build_tbs_tree_context(case, populate_node_distributions=False)
+    data, distance, feature_space = _case_tbs_inputs(case_name)
 
-    kwargs = {"feature_space": context.feature_space} if forward_feature_space else {}
+    kwargs = {"feature_space": feature_space} if forward_feature_space else {}
     result = run_tbs_on_distance(
-        context.data,
-        context.distance_condensed,
+        data,
+        distance,
         DEFAULT_SIBLING_ALPHA,
         **kwargs,
     )
@@ -58,12 +70,11 @@ def test_strict_sibling_calibration_fails_closed_without_internal_support(
 
 @pytest.mark.slow
 def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
-    case = next(case for case in get_default_test_cases() if case["name"] == "gauss_clear_small")
-    context = build_tbs_tree_context(case, populate_node_distributions=False)
+    data, distance, _feature_space = _case_tbs_inputs("gauss_clear_small")
 
     result = run_tbs_on_distance(
-        context.data,
-        context.distance_condensed,
+        data,
+        distance,
         DEFAULT_SIBLING_ALPHA,
         edge_branch_length_variance_policy=EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
         allow_linkage_ultrametric_branch_time=True,
@@ -87,8 +98,8 @@ def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
     assert len(conservative_boundaries) == 1
 
     relaxed_result = run_tbs_on_distance(
-        context.data,
-        context.distance_condensed,
+        data,
+        distance,
         0.03,
         edge_branch_length_variance_policy=EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
         allow_linkage_ultrametric_branch_time=True,

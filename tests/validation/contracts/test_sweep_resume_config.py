@@ -30,7 +30,7 @@ def test_alpha_grid_resume_reuses_only_the_same_case_set(
                 "skip_reason": [None] * rows,
             }
         )
-        return result, None
+        return result
 
     monkeypatch.setattr(alpha_grid_search, "benchmark_cluster_algorithm", fake_benchmark)
     config = alpha_grid_search.AlphaGridConfig(

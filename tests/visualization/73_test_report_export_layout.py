@@ -45,7 +45,17 @@ def _record() -> ComputedResultRecord:
     )
 
 
-def test_case_report_exports_tree_pages_before_umap_pages(monkeypatch, tmp_path):
+class _PdfPages:
+    """Collects saved figures in order, standing in for matplotlib's PdfPages."""
+
+    def __init__(self) -> None:
+        self.pages: list[plt.Figure] = []
+
+    def savefig(self, fig: plt.Figure) -> None:
+        self.pages.append(fig)
+
+
+def test_case_report_exports_tree_pages_before_umap_pages(monkeypatch):
     calls: list[str] = []
 
     def fake_tree_figures(*, case_num, case_results):
@@ -60,19 +70,8 @@ def test_case_report_exports_tree_pages_before_umap_pages(monkeypatch, tmp_path)
     monkeypatch.setattr(export, "_create_tree_figures_for_case", fake_tree_figures)
     monkeypatch.setattr(export, "create_clustering_comparison_plots", fake_umap_figures)
 
-    collected: list = []
-    figs = export.create_case_report_pages_from_results(
-        [_record()],
-        tmp_path,
-        verbose=False,
-        save=False,
-        collect=True,
-        collected=collected,
-    )
+    pdf = _PdfPages()
+    export.create_case_report_pages_from_results([_record()], pdf=pdf, verbose=False)
 
-    assert figs is collected
     assert calls == ["tree", "umap"]
-    assert len(collected) == 2
-
-    for item in collected:
-        plt.close(item["figure"])
+    assert len(pdf.pages) == 2
