@@ -199,6 +199,7 @@ def compute_diffusion_coordinates(
     *,
     diffusion_time: int,
     n_components: int,
+    record: dict[str, object] | None = None,
 ) -> np.ndarray:
     """Project a symmetric diffusion operator without cutting numerical ties.
 
@@ -211,7 +212,8 @@ def compute_diffusion_coordinates(
     ``DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES`` rows; larger sparse operators use
     ``eigsh`` for the leading modes. Negative retained eigenvalues are clipped
     to zero before taking the ``diffusion_time`` power; at time zero, the
-    resulting ``0**0`` is one.
+    resulting ``0**0`` is one. When ``record`` is given, its ``"eigensolver"``
+    entry is set to the solver that produced the coordinates.
     """
 
     if sparse.issparse(weights):
@@ -251,11 +253,15 @@ def compute_diffusion_coordinates(
         leading = _sparse_leading_eigenpairs(transition, n_components)
         if leading is None:
             matrix = matrix.toarray()
+    eigensolver = "scipy.sparse.linalg.eigsh"
     if leading is None:
+        eigensolver = "scipy.linalg.eigh"
         transition = matrix * inv_sqrt_degrees[:, None] * inv_sqrt_degrees[None, :]
         eigenvalues, eigenvectors = eigh(transition)
         order = np.argsort(eigenvalues)[::-1]
         leading = eigenvalues[order], eigenvectors[:, order]
+    if record is not None:
+        record["eigensolver"] = eigensolver
     eigenvalues, eigenvectors = leading
     start, end = _leading_diffusion_spectrum(eigenvalues, n_components)
     eigenvalues = np.maximum(eigenvalues[start:end], 0.0)
@@ -387,10 +393,12 @@ def adaptive_diffusion_geometry(
     )
     kernel_object.epsilon_fitted = epsilon_value
     adaptive_kernel = kernel_object.compute()
+    solver_record: dict[str, object] = {}
     coordinates = compute_diffusion_coordinates(
         adaptive_kernel,
         diffusion_time=diffusion_time,
         n_components=n_components,
+        record=solver_record,
     )
     return _diffusion_geometry(
         coordinates,
@@ -401,7 +409,7 @@ def adaptive_diffusion_geometry(
             ),
             "coordinate_operator": "symmetric_normalized_operator",
             "coordinate_operator_definition": "D^(-1/2) W D^(-1/2)",
-            "coordinate_eigensolver": "scipy.linalg.eigh",
+            "coordinate_eigensolver": solver_record["eigensolver"],
             "coordinate_eigenvalue_policy": (
                 "negative_eigenvalues_clipped_to_zero_before_diffusion_time_power"
             ),

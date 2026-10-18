@@ -227,21 +227,21 @@ dual-geometry, solver, stability, and scaling audit.
 The 2026-07-28 construction correction moved the enforceable assumptions into
 the deep construction and diffusion interfaces:
 
-- `build_tree(...)` now validates the condensed-vector size and values, unique
-  sample labels, a single directed root, exact leaf-label coverage, finite
-  non-negative branch lengths, and exactly two children at every internal
-  node. A malformed construction result can no longer become an ordinary
-  traversal boundary.
-- Samples are placed in natural label order before linkage input. Numbered strings use numeric-aware ordering; incomparable
-  mixed label types use a stable type/representation fallback. Exact-tie
+- `build_tree(...)` validates the condensed-vector size and values, unique
+  sample labels and the linkage method. The rooted full-binary shape holds by
+  construction from a SciPy linkage, and `branch_lengths.py` rejects
+  non-finite, negative or non-monotone heights.
+- Samples are placed in natural label order before linkage input. Numbered
+  strings use numeric-aware ordering; labels of mixed types that cannot be
+  ordered raise `ValueError`. Exact-tie
   resolution is therefore invariant to DataFrame row order without changing
   the established `S0`, `S1`, ..., `S10` order. This makes the arbitrary
   resolution reproducible; it does not turn tied discrete states into
   statistical evidence.
-- `TreeBuildDiagnostics` records zero-distance pairs, repeated distance
-  values, repeated merge heights, zero-length branches, and tree shape on
-  every construction result. Tie-heavy runs are now auditable without
-  rebuilding the tree.
+- `TreeBuildDiagnostics` and the post-build tree validator were removed on
+  2026-10-17: nothing read the diagnostics, and every validator check already
+  held for a tree built from a SciPy linkage. `TreeBuildResult` now holds the
+  tree and its linkage matrix.
 - Diffusion methods return one `DiffusionGeometry` result containing
   coordinates, condensed distances, and backend evidence. The old
   distance-only interfaces were removed rather than retained as aliases.

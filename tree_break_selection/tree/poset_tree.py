@@ -54,34 +54,14 @@ class PosetTree(nx.DiGraph):
         self.graph["root"] = root
         return root
 
-    def get_leaves(
-        self,
-        node: object | None = None,
-        return_labels: bool = True,
-        sort: bool = True,
-    ) -> list[str]:
-        """Collect leaf nodes globally or within a subtree.
-
-        Parameters
-        ----------
-        node
-            When ``None`` (default), returns all leaves. Otherwise restricts the search
-            to the descendants of ``node``.
-        return_labels
-            If ``True`` (default) return the ``label`` attribute; otherwise return raw
-            node ids.
-        sort
-            Whether to sort the returned values in ascending order.
-
-        Returns
-        -------
-        list[str]
-            Leaf labels or ids, depending on ``return_labels``.
-        """
-        return get_leaf_values(self, node=node, use_labels=return_labels, sort=sort)
+    def get_leaves(self, node: object | None = None, sort: bool = True) -> list[object]:
+        """Return leaf labels, globally or under ``node``; the method form of
+        ``topology.get_leaf_values``."""
+        return get_leaf_values(self, node=node, sort=sort)
 
     def compute_descendant_sets(self, use_labels: bool = True) -> dict[object, frozenset]:
-        """Map each node to the set of leaf labels under it.
+        """Map each node to the set of leaf labels under it; the method form of
+        ``topology.compute_descendant_leaf_sets``.
 
         Parameters
         ----------

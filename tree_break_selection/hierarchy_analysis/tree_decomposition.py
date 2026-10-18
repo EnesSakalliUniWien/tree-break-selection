@@ -615,7 +615,7 @@ class TreeDecomposition:
             "cluster_assignments": cluster_assignments,
             "num_clusters": len(cluster_assignments),
             "traversal_counters": traversal_counters,
-            "independence_analysis": {
+            "gate_alphas": {
                 "edge_alpha": self._annotation_edge_alpha,
                 "sibling_alpha": self._annotation_sibling_alpha,
                 "sibling_alpha_effective": self._annotation_effective_sibling_alpha,

@@ -22,7 +22,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
@@ -48,7 +47,7 @@ from tree_break_selection.space_separation import (
     coordinates_for_block,
     separate_adaptive_cosine_space,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import FeatureSpace
 
 SCHEMA_VERSION = "adaptive_cosine_kak_benchmark_probe/v1"
@@ -129,8 +128,7 @@ def run_block_tree(
     if not np.isfinite(distances).all() or np.allclose(distances, 0.0):
         raise ValueError("degenerate spectral block distances")
 
-    linkage_matrix = linkage(distances, method="average")
-    tree = tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
+    tree = build_tree(data, distances, linkage_method="average").tree
     tree.populate_node_distributions(data, feature_space=feature_space)
     gate_bundle = run_gate_annotation_pipeline(
         tree,

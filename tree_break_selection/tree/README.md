@@ -40,7 +40,7 @@ The durable, cross-application audit is in
 
 | Module | Responsibility |
 | --- | --- |
-| `construction/build.py` | Validates linkage inputs, builds the tree rooted at the final merge, and returns construction evidence |
+| `construction/build.py` | Validates linkage inputs, fixes the sample order, and returns the tree rooted at the final merge with its linkage matrix |
 | `construction/defaults.py` | Immutable canonical binary-distance and linkage defaults; callers pass alternatives explicitly |
 | `construction/hierarchical.py` | Promote monotone linkage merge output into `PosetTree`; non-monotone heights fail closed |
 | `poset_tree.py` | Stable rooted-tree representation and hierarchy operations |
@@ -59,7 +59,7 @@ NetworkX `DiGraph` subclass. Central data structure for the entire pipeline.
 | Method                                      | What it does                                                                                   |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `root()`                                    | Return the root node (in-degree 0), cached after first call.                                   |
-| `get_leaves(node, return_labels)`           | Collect leaf labels globally or under a subtree.                                               |
+| `get_leaves(node)`                          | Collect leaf labels globally or under a subtree.                                               |
 | `compute_descendant_sets()`                 | Map every node → frozenset of its descendant leaf labels.                                      |
 | `find_lca_for_set(nodes)`                   | LCA for a non-empty collection of nodes.                                                       |
 | `populate_node_distributions(leaf_data, feature_space=None)` | Populate flat raw-coordinate distributions and leaf counts. Categorical and continuous data require an explicit feature-space contract. Stores result in `annotations_df`. |
@@ -71,7 +71,7 @@ Strict rooted-tree topology helpers used by `PosetTree`, the gates, and Tree-BH.
 | Function                             | What it does                                                                 |
 | ------------------------------------ | ---------------------------------------------------------------------------- |
 | `is_leaf(tree, node)`                | Read the explicit `is_leaf` node attribute.                                   |
-| `get_leaf_values(tree, ...)`         | Collect leaf labels or ids without label/id fallback coercion.                |
+| `get_leaf_values(tree, ...)`         | Collect leaf labels without label/id fallback coercion.                       |
 | `compute_descendant_leaf_sets(tree)` | Bottom-up descendant leaf-set aggregation.                                    |
 | `lowest_common_ancestor(tree, a, b)` | Depth-based LCA for nodes in the same rooted tree.                            |
 | `lowest_common_ancestor_for_set(...)` | LCA for a non-empty node collection.                                          |

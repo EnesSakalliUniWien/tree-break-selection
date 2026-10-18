@@ -7,7 +7,6 @@ from collections.abc import Callable, Mapping
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import adjusted_rand_score
 
@@ -19,7 +18,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     identify_binary_sibling_children,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.construction.defaults import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     DEFAULT_TREE_LINKAGE_METHOD,
@@ -144,10 +143,7 @@ def _build_selected_linkage_tree(
     if not np.isfinite(values).all():
         raise ValueError("leaf_data contains non-finite values.")
     distances = pdist(values, metric=str(distance_metric))
-    return tree_from_linkage(
-        linkage(distances, method=str(linkage_method)),
-        leaf_names=data.index.tolist(),
-    )
+    return build_tree(data, distances, linkage_method=str(linkage_method)).tree
 
 
 def _fixed_root_sibling_p_value(
@@ -378,30 +374,12 @@ def _selected_linkage_root_split_labels(
     distance_metric: str,
     linkage_method: str,
 ) -> np.ndarray | None:
-    values = data.to_numpy(dtype=float)
-    if values.ndim != 2:
-        raise ValueError("leaf_data must be a 2D feature matrix.")
-    n_rows = int(values.shape[0])
-    if n_rows < 2:
+    if data.shape[0] < 2:
         return None
-    if not np.isfinite(values).all():
-        raise ValueError("leaf_data contains non-finite values.")
-
-    distances = pdist(values, metric=str(distance_metric))
-    linkage_matrix = linkage(distances, method=str(linkage_method))
-    clusters: dict[int, set[int]] = {index: {index} for index in range(n_rows)}
-    for step_index, row in enumerate(linkage_matrix):
-        left_id = int(row[0])
-        right_id = int(row[1])
-        clusters[n_rows + step_index] = clusters[left_id] | clusters[right_id]
-
-    left_child = int(linkage_matrix[-1, 0])
-    right_child = int(linkage_matrix[-1, 1])
-    labels = np.zeros(n_rows, dtype=int)
-    labels[list(clusters[right_child])] = 1
-    if not clusters[left_child] or not clusters[right_child]:
-        return None
-    return labels
+    tree = _build_selected_linkage_tree(
+        data, distance_metric=distance_metric, linkage_method=linkage_method
+    )
+    return _tree_root_split_labels(tree, data.index)
 
 
 def compute_root_feature_subsample_stability(

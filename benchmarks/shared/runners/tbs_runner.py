@@ -5,7 +5,6 @@ Builds a PosetTree and performs TBS decomposition.
 
 from __future__ import annotations
 
-from dataclasses import asdict
 from time import perf_counter
 
 import numpy as np
@@ -247,7 +246,6 @@ def run_tbs_on_distance(
                 "annotations": gate_annotation_bundle.annotated_df,
                 "gate_bundle": gate_annotation_bundle,
                 "linkage_matrix": tree_build.linkage_matrix,
-                "tree_build_diagnostics": asdict(tree_build.diagnostics),
                 "stage_timings": stage_timings,
                 "sibling_gate_method": str(resolved_gate_config.sibling_gate_method),
                 **branch_length_optimization_metadata,
@@ -282,7 +280,6 @@ def run_tbs_on_distance(
         "annotations": tree.annotations_df,
         "gate_bundle": gate_annotation_bundle,
         "linkage_matrix": tree_build.linkage_matrix,
-        "tree_build_diagnostics": asdict(tree_build.diagnostics),
         "stage_timings": stage_timings,
         **branch_length_optimization_metadata,
         "spectral_minimum_dimension": int(resolved_gate_config.spectral_minimum_dimension),

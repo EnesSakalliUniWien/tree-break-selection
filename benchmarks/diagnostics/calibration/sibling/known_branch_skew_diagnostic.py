@@ -26,7 +26,6 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.stats import chi2
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
@@ -55,7 +54,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
     init_sibling_annotation_df,
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
 from tree_break_selection.tree.poset_tree import PosetTree
 
@@ -280,9 +279,9 @@ def _selected_root_test(
     # Average-linkage Euclidean hierarchy is selected from these same rows.
     from scipy.spatial.distance import pdist
 
-    tree = tree_from_linkage(
-        linkage(pdist(z, metric="euclidean"), method="average"), leaf_names=names
-    )
+    tree = build_tree(
+        pd.DataFrame(z, index=names), pdist(z, metric="euclidean"), linkage_method="average"
+    ).tree
     root = tree.root()
     children = list(tree.successors(root))
     if len(children) != 2:

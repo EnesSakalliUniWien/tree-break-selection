@@ -104,14 +104,10 @@ def get_leaf_values(
     tree: nx.DiGraph,
     *,
     node: object | None = None,
-    use_labels: bool = True,
     sort: bool = True,
 ) -> list[object]:
-    """Collect leaf labels or ids globally or inside one subtree."""
-    leaf_nodes = get_leaf_nodes(tree, node)
-    values = [
-        tree.nodes[leaf_node]["label"] if use_labels else leaf_node for leaf_node in leaf_nodes
-    ]
+    """Collect leaf labels globally or inside one subtree."""
+    values = [tree.nodes[leaf_node]["label"] for leaf_node in get_leaf_nodes(tree, node)]
     return sorted(values) if sort else values
 
 

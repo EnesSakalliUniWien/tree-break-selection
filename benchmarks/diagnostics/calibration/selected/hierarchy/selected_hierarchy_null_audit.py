@@ -18,7 +18,6 @@ from time import perf_counter
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
 
@@ -49,7 +48,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.poset_tree import PosetTree
 from tree_break_selection.tree.topology import compute_node_depths
@@ -109,10 +108,7 @@ def build_selected_hierarchy_tree(
     params = METHOD_SPECS["tbs"].param_grid[0]
     metric = str(params["tree_distance_metric"])
     linkage_method = str(params["tree_linkage_method"])
-    tree = tree_from_linkage(
-        linkage(pdist(data.values, metric=metric), method=linkage_method),
-        leaf_names=data.index.tolist(),
-    )
+    tree = build_tree(data, pdist(data.values, metric=metric), linkage_method=linkage_method).tree
     return tree, metric
 
 

@@ -89,9 +89,9 @@ def test_bundle_is_the_complete_traversal_input() -> None:
     ).decompose_tree()
 
     assert result["num_clusters"] >= 1
-    assert result["independence_analysis"]["edge_alpha"] == 0.007
-    assert result["independence_analysis"]["sibling_alpha"] == 0.123
-    assert result["independence_analysis"]["sibling_alpha_effective"] == 0.123
+    assert result["gate_alphas"]["edge_alpha"] == 0.007
+    assert result["gate_alphas"]["sibling_alpha"] == 0.123
+    assert result["gate_alphas"]["sibling_alpha_effective"] == 0.123
 
 
 def test_traversal_reports_penalized_sibling_alpha() -> None:
@@ -107,8 +107,8 @@ def test_traversal_reports_penalized_sibling_alpha() -> None:
 
     result = TreeDecomposition(tree=tree, gate_annotation_bundle=bundle).decompose_tree()
 
-    assert result["independence_analysis"]["sibling_alpha"] == 0.123
-    assert result["independence_analysis"]["sibling_alpha_effective"] == pytest.approx(0.0123)
+    assert result["gate_alphas"]["sibling_alpha"] == 0.123
+    assert result["gate_alphas"]["sibling_alpha_effective"] == pytest.approx(0.0123)
 
 
 def test_direct_annotations_do_not_invent_alpha_provenance() -> None:
@@ -120,9 +120,9 @@ def test_direct_annotations_do_not_invent_alpha_provenance() -> None:
     ).decompose_tree()
 
     assert result["num_clusters"] >= 1
-    assert result["independence_analysis"]["edge_alpha"] is None
-    assert result["independence_analysis"]["sibling_alpha"] is None
-    assert result["independence_analysis"]["sibling_alpha_effective"] is None
+    assert result["gate_alphas"]["edge_alpha"] is None
+    assert result["gate_alphas"]["sibling_alpha"] is None
+    assert result["gate_alphas"]["sibling_alpha_effective"] is None
 
 
 def test_traversal_requires_exactly_one_annotation_input() -> None:

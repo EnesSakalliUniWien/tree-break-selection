@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
@@ -12,7 +11,7 @@ from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecom
 from tree_break_selection.tree.construction import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     DEFAULT_TREE_LINKAGE_METHOD,
-    tree_from_linkage,
+    build_tree,
 )
 
 
@@ -41,18 +40,16 @@ def main():
     print(f"Ground truth contains {len(np.unique(y_true))} clusters.")
 
     # --- Execute the Core Pipeline ---
-    # 2. linkage() - using Hamming distance + average linkage
-    Z = linkage(
+    # 2-3. Build the PosetTree hierarchy with Hamming distance + average linkage.
+    tree = build_tree(
+        data,
         pdist(data.values, metric=DEFAULT_BINARY_TREE_DISTANCE_METRIC),
-        method=DEFAULT_TREE_LINKAGE_METHOD,
-    )
+        linkage_method=DEFAULT_TREE_LINKAGE_METHOD,
+    ).tree
     print(
         f"\nStep 2: Created hierarchy with {DEFAULT_BINARY_TREE_DISTANCE_METRIC} + "
         f"{DEFAULT_TREE_LINKAGE_METHOD} linkage."
     )
-
-    # 3. Build the hierarchy representation.
-    tree = tree_from_linkage(Z, leaf_names=data.index.tolist())
     print("Step 3: Converted hierarchy to PosetTree structure.")
 
     # 4. Compute node distributions, gate annotations, then traverse the tree.

@@ -77,6 +77,10 @@ def tree_from_linkage(
 ) -> "PosetTree":
     """Build a :class:`PosetTree` from a SciPy linkage matrix.
 
+    This keeps the linkage's own leaf order, so tied distances resolve by input
+    row order. Build trees from sample data with :func:`build_tree`, which fixes
+    a row-order-independent sample order first.
+
     Parameters
     ----------
     linkage_matrix

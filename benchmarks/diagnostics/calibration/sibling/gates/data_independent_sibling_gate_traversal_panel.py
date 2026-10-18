@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import fcluster, linkage
+from scipy.cluster.hierarchy import fcluster
 from scipy.spatial.distance import pdist
 from scipy.stats import norm, t
 from sklearn.metrics import adjusted_rand_score
@@ -66,7 +66,8 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.infla
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
     identify_binary_sibling_children,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.branch_lengths import node_id
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     bernoulli_feature_space_from_columns,
@@ -200,10 +201,7 @@ def _build_tree_from_leaf_data(
     tree_linkage_method: str = SELECTED_TREE_LINKAGE_METHOD,
 ) -> PosetTree:
     distance = pdist(data.to_numpy(dtype=float), metric=str(tree_distance_metric))
-    return tree_from_linkage(
-        linkage(distance, method=str(tree_linkage_method)),
-        leaf_names=data.index.tolist(),
-    )
+    return build_tree(data, distance, linkage_method=str(tree_linkage_method)).tree
 
 
 def selected_tree_oracle_cut_ari(
@@ -217,12 +215,14 @@ def selected_tree_oracle_cut_ari(
     if int(true_clusters) <= 1:
         return float(adjusted_rand_score(labels, np.zeros(labels.shape[0], dtype=int)))
     distance = pdist(data.to_numpy(dtype=float), metric=SELECTED_TREE_DISTANCE_METRIC)
-    clusters = fcluster(
-        linkage(distance, method=SELECTED_TREE_LINKAGE_METHOD),
-        t=int(true_clusters),
-        criterion="maxclust",
-    )
-    return float(adjusted_rand_score(labels, clusters))
+    built = build_tree(data, distance, linkage_method=SELECTED_TREE_LINKAGE_METHOD)
+    clusters = fcluster(built.linkage_matrix, t=int(true_clusters), criterion="maxclust")
+    # build_tree links samples in its own sorted order; map clusters back to rows by label.
+    leaf_labels = [
+        built.tree.nodes[node_id(i, len(clusters))]["label"] for i in range(len(clusters))
+    ]
+    row_clusters = pd.Series(clusters, index=leaf_labels).reindex(data.index).to_numpy()
+    return float(adjusted_rand_score(labels, row_clusters))
 
 
 def _root_split_labels(

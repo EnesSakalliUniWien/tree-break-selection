@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import re
-from collections import Counter
 from dataclasses import dataclass
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
@@ -20,26 +18,10 @@ from tree_break_selection.tree.poset_tree import PosetTree
 
 
 @dataclass(frozen=True)
-class TreeBuildDiagnostics:
-    """Structural and distance evidence for one constructed tree."""
-
-    leaf_count: int
-    internal_node_count: int
-    edge_count: int
-    root_child_count: int
-    distance_pair_count: int
-    zero_distance_pair_count: int
-    repeated_distance_pair_count: int
-    repeated_distance_value_count: int
-    repeated_linkage_height_count: int
-
-
-@dataclass(frozen=True)
 class TreeBuildResult:
-    """Tree plus construction evidence needed by runners and reports."""
+    """Tree plus the linkage matrix it was built from."""
 
     tree: PosetTree
-    diagnostics: TreeBuildDiagnostics
     linkage_matrix: np.ndarray
 
 
@@ -99,79 +81,6 @@ def _reorder_condensed_distance(
     return squareform(reordered, checks=False)
 
 
-def _validate_decomposition_tree(
-    tree: PosetTree,
-    *,
-    expected_leaf_labels: list[object],
-) -> None:
-    """Enforce the rooted full-binary contract required by TBS traversal."""
-    if not nx.is_arborescence(tree):
-        raise ValueError("Tree construction must return one directed rooted arborescence.")
-
-    roots = [node for node, degree in tree.in_degree() if degree == 0]
-    if len(roots) != 1 or roots[0] != tree.root():
-        raise ValueError(
-            "Tree construction must return one cached root matching the directed root; "
-            f"roots={roots!r}, cached_root={tree.root()!r}."
-        )
-
-    invalid_internal_nodes = [node for node in tree.nodes if tree.out_degree(node) not in {0, 2}]
-    if invalid_internal_nodes:
-        raise ValueError(
-            "TBS tree construction requires every internal node to have exactly two children; "
-            f"invalid_nodes={invalid_internal_nodes[:5]!r}."
-        )
-
-    observed_leaf_labels = [
-        tree.nodes[node].get("label") for node in tree.nodes if tree.out_degree(node) == 0
-    ]
-    if Counter(observed_leaf_labels) != Counter(expected_leaf_labels):
-        raise ValueError(
-            "Constructed tree leaves do not match the input sample labels exactly; "
-            f"expected={expected_leaf_labels!r}, observed={observed_leaf_labels!r}."
-        )
-
-    invalid_edges: list[tuple[object, object, object]] = []
-    for parent, child, attrs in tree.edges(data=True):
-        branch_length = attrs.get("branch_length")
-        if branch_length is None:
-            invalid_edges.append((parent, child, None))
-            continue
-        value = float(branch_length)
-        if not np.isfinite(value) or value < 0.0:
-            invalid_edges.append((parent, child, branch_length))
-    if invalid_edges:
-        raise ValueError(
-            "Constructed tree branch lengths must be finite and non-negative; "
-            f"invalid_edges={invalid_edges[:5]!r}."
-        )
-
-
-def _build_diagnostics(
-    tree: PosetTree,
-    *,
-    distances: np.ndarray,
-    linkage_matrix: np.ndarray,
-) -> TreeBuildDiagnostics:
-    """Summarize tree shape and exact tie burden without another tree fit."""
-    leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
-    _values, counts = np.unique(distances, return_counts=True)
-    repeated = counts > 1
-    _heights, height_counts = np.unique(linkage_matrix[:, 2], return_counts=True)
-
-    return TreeBuildDiagnostics(
-        leaf_count=len(leaves),
-        internal_node_count=tree.number_of_nodes() - len(leaves),
-        edge_count=tree.number_of_edges(),
-        root_child_count=tree.out_degree(tree.root()),
-        distance_pair_count=int(len(distances)),
-        zero_distance_pair_count=int(np.count_nonzero(distances == 0.0)),
-        repeated_distance_pair_count=int(counts[repeated].sum()),
-        repeated_distance_value_count=int(np.count_nonzero(repeated)),
-        repeated_linkage_height_count=int(height_counts[height_counts > 1].sum()),
-    )
-
-
 def build_tree(
     data: pd.DataFrame,
     distance_condensed: np.ndarray,
@@ -200,26 +109,10 @@ def build_tree(
         linkage_matrix,
         leaf_names=canonical_data.index.tolist(),
     )
-    expected_leaf_labels = canonical_data.index.tolist()
-
-    _validate_decomposition_tree(
-        tree,
-        expected_leaf_labels=expected_leaf_labels,
-    )
-    diagnostics = _build_diagnostics(
-        tree,
-        distances=distances,
-        linkage_matrix=linkage_matrix,
-    )
-    return TreeBuildResult(
-        tree=tree,
-        diagnostics=diagnostics,
-        linkage_matrix=linkage_matrix,
-    )
+    return TreeBuildResult(tree=tree, linkage_matrix=linkage_matrix)
 
 
 __all__ = [
-    "TreeBuildDiagnostics",
     "TreeBuildResult",
     "build_tree",
 ]
