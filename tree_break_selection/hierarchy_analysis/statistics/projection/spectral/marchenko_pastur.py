@@ -8,7 +8,6 @@ via joblib ``Parallel``.
 
 from __future__ import annotations
 
-import logging
 import os
 from time import perf_counter
 
@@ -22,8 +21,6 @@ from ..projection_dimension_estimation.projection_dimension_estimators import (
 )
 from .node_spectral_result import NodeSpectralResult
 from .node_spectral_task import NodeSpectralTask
-
-logger = logging.getLogger(__name__)
 
 # Default thread count for joblib.Parallel eigendecomposition.
 # Set TBS_N_JOBS env var to override (e.g. "1" to disable parallelism).

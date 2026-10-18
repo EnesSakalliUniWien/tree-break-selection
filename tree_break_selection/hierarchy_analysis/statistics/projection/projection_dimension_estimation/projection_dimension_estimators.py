@@ -21,6 +21,9 @@ from dataclasses import dataclass
 import numpy as np
 
 from tree_break_selection.eigenvalue_groups import extend_rank_through_ties
+from tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.projection import (
+    _positive_eigenvalue_count,
+)
 
 
 @dataclass(frozen=True)
@@ -93,19 +96,6 @@ def marchenko_pastur_signal_count(
     mp_upper_bound = (1.0 + np.sqrt(node_aspect_ratio)) ** 2
 
     return int(np.sum(eigenvalues_f64 > mp_upper_bound))
-
-
-def _positive_eigenvalue_count(eigenvalues: np.ndarray) -> int:
-    """Count numerically positive eigenvalues that expose PCA directions."""
-    eigenvalues_f64 = np.asarray(eigenvalues, dtype=np.float64)
-    if eigenvalues_f64.size == 0:
-        return 0
-    tolerance = (
-        np.finfo(np.float64).eps
-        * max(eigenvalues_f64.shape[0], 1)
-        * max(float(np.max(eigenvalues_f64)), 1.0)
-    )
-    return int(np.count_nonzero(eigenvalues_f64 > tolerance))
 
 
 def estimate_marchenko_pastur_dimension(
