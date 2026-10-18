@@ -1,11 +1,13 @@
 """AWS shard merges refuse shards whose work did not run or used an old schema."""
 
 import json
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 
 from benchmarks.cloud import aws_traversal_sibling_fdr_null as fdr_null
+from benchmarks.cloud import sharding
 from benchmarks.cloud.aws_selected_tail_equation_study import (
     SHARD_CASE_SUMMARY_NAME,
     SHARD_MANIFEST_NAME,
@@ -68,3 +70,26 @@ def test_traversal_fdr_merge_rejects_shard_from_old_schema(tmp_path):
     with pytest.raises(ValueError, match="shard_0001 must use source schema"):
         fdr_null.merge_shards(configured)
 
+
+def test_shard_helpers_keep_the_s3_and_local_layout(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        sharding, "subprocess", SimpleNamespace(run=lambda cmd, check: calls.append(cmd))
+    )
+
+    sharding.publish_shard(tmp_path / "shards" / "shard_0003", "s3://bucket/run/", 3)
+    sharding.fetch_shards("s3://bucket/run", tmp_path)
+    sharding.publish_merged(tmp_path / "merged", "s3://bucket/run/")
+
+    assert calls == [
+        (
+            "aws",
+            "s3",
+            "sync",
+            str(tmp_path / "shards" / "shard_0003"),
+            "s3://bucket/run/shards/shard_0003",
+        ),
+        ("aws", "s3", "sync", "s3://bucket/run/shards", str(tmp_path / "shards")),
+        ("aws", "s3", "sync", str(tmp_path / "merged"), "s3://bucket/run/merged"),
+    ]
+    assert sharding.shard_dir(tmp_path, 12) == tmp_path / "shards" / "shard_0012"

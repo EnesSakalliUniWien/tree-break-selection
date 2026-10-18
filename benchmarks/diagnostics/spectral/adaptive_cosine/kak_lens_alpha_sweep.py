@@ -21,7 +21,6 @@ configure_matplotlib_backend()
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import (
     adjusted_rand_score,
@@ -49,14 +48,13 @@ from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecom
 from tree_break_selection.space_separation import (
     SpectralBlock,
     adaptive_spectral_blocks,
-    compute_diffusion_coordinates,
+    block_adaptive_diffusion_geometry,
+    block_diffusion_geometry,
     coordinates_for_block,
     cosine_eigendecomposition,
-    resolve_adaptive_epsilon,
-    resolve_neighbor_search_k,
     weight_feature_matrix,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.poset_tree import PosetTree
 
 SCHEMA = f"{SCHEMA_VERSION}/kak_lens_alpha_sweep"
@@ -226,120 +224,6 @@ def find_block(blocks: list[SpectralBlock], name: str) -> SpectralBlock:
     raise ValueError(f"Block {name!r} not found. Available: {available}")
 
 
-def block_diffusion_coordinates(
-    coords: np.ndarray,
-    *,
-    k_neighbors: int,
-    diffusion_time: int,
-    n_components: int,
-) -> tuple[np.ndarray, dict[str, object]]:
-    from scipy.sparse import lil_matrix
-    from sklearn.neighbors import NearestNeighbors
-
-    x = np.asarray(coords, dtype=float)
-    if x.ndim != 2 or x.shape[0] < 3:
-        raise ValueError("Block diffusion requires at least three coordinate rows.")
-    if not np.isfinite(x).all():
-        raise ValueError("Block coordinates contain non-finite values.")
-
-    n_samples = x.shape[0]
-    neighbor_count = min(max(2, int(k_neighbors) + 1), n_samples)
-    nn = NearestNeighbors(n_neighbors=neighbor_count, metric="euclidean")
-    nn.fit(x)
-    knn_dist, knn_idx = nn.kneighbors(x)
-
-    positive_sq = (knn_dist[knn_dist > 0.0]) ** 2
-    if positive_sq.size == 0:
-        raise ValueError("Degenerate block coordinates for diffusion.")
-    epsilon = float(np.median(positive_sq))
-    if not np.isfinite(epsilon) or epsilon <= 0.0:
-        raise ValueError("Could not resolve a positive block diffusion epsilon.")
-
-    weights = lil_matrix((n_samples, n_samples), dtype=float)
-    for i in range(n_samples):
-        for distance, j in zip(knn_dist[i], knn_idx[i], strict=False):
-            if int(j) == i:
-                continue
-            similarity = math.exp(-float(distance * distance) / epsilon)
-            similarity = max(similarity, 1e-12)
-            weights[i, int(j)] = max(float(weights[i, int(j)]), similarity)
-            weights[int(j), i] = max(float(weights[int(j), i]), similarity)
-
-    diffusion_coords = compute_diffusion_coordinates(
-        weights.toarray(),
-        diffusion_time=diffusion_time,
-        n_components=n_components,
-    )
-    metadata = {
-        "kernel": "knn_gaussian",
-        "metric": "euclidean",
-        "neighbor_search_k": int(neighbor_count - 1),
-        "epsilon": epsilon,
-        "diffusion_time": int(diffusion_time),
-        "diffusion_components": int(min(n_components, n_samples - 1)),
-    }
-    return diffusion_coords, metadata
-
-
-def block_adaptive_diffusion_coordinates(
-    coords: np.ndarray,
-    *,
-    k_neighbors: int,
-    diffusion_time: int,
-    n_components: int,
-    metric: str,
-    bandwidth_type: str | float | None,
-    epsilon: str | float,
-) -> tuple[np.ndarray, dict[str, object]]:
-    from pydiffmap import kernel
-
-    x = np.asarray(coords, dtype=float)
-    if x.ndim != 2 or x.shape[0] < 3:
-        raise ValueError("Adaptive block diffusion requires at least three coordinate rows.")
-    if not np.isfinite(x).all():
-        raise ValueError("Block coordinates contain non-finite values.")
-
-    neighbor_k = resolve_neighbor_search_k(x.shape[0], k_neighbors)
-    kernel_object = kernel.Kernel(
-        epsilon=1.0 if not isinstance(epsilon, (float, int)) else float(epsilon),
-        k=neighbor_k,
-        metric=metric,
-        neighbor_params={"n_jobs": -1},
-        bandwidth_type=bandwidth_type,
-    )
-    kernel_object.fit(x)
-    epsilon_value, epsilon_method = resolve_adaptive_epsilon(
-        kernel_object,
-        epsilon,
-        metric=metric,
-    )
-    kernel_object.epsilon_fitted = epsilon_value
-
-    adaptive_kernel = kernel_object.compute()
-    weights = (
-        adaptive_kernel.toarray()
-        if hasattr(adaptive_kernel, "toarray")
-        else np.asarray(adaptive_kernel, dtype=float)
-    )
-    diffusion_coords = compute_diffusion_coordinates(
-        weights,
-        diffusion_time=diffusion_time,
-        n_components=n_components,
-    )
-    metadata = {
-        "kernel": "pydiffmap_adaptive",
-        "backend": "pydiffmap",
-        "metric": metric,
-        "neighbor_search_k": int(neighbor_k),
-        "bandwidth_type": bandwidth_type,
-        "epsilon": float(epsilon_value),
-        "epsilon_method": epsilon_method,
-        "diffusion_time": int(diffusion_time),
-        "diffusion_components": int(min(n_components, x.shape[0] - 1)),
-    }
-    return diffusion_coords, metadata
-
-
 def build_lens_coordinates(
     *,
     eigvals: np.ndarray,
@@ -352,14 +236,15 @@ def build_lens_coordinates(
     if spec.family == "raw_kak":
         return coords, {"tree_metric": "raw_kak_block_euclidean"}
     elif spec.family == "sep_fixed_diffusion":
-        return block_diffusion_coordinates(
+        geometry = block_diffusion_geometry(
             coords,
             k_neighbors=args.diffusion_k_neighbors,
             diffusion_time=args.diffusion_time,
             n_components=args.diffusion_components,
         )
+        return geometry.coordinates, geometry.metadata
     elif spec.family == "sep_adaptive_diffusion":
-        return block_adaptive_diffusion_coordinates(
+        geometry = block_adaptive_diffusion_geometry(
             coords,
             k_neighbors=args.diffusion_k_neighbors,
             diffusion_time=args.diffusion_time,
@@ -368,6 +253,7 @@ def build_lens_coordinates(
             bandwidth_type=args.adaptive_bandwidth_type,
             epsilon=args.adaptive_epsilon,
         )
+        return geometry.coordinates, geometry.metadata
 
     raise ValueError(f"unknown lens family {spec.family!r}")
 
@@ -385,22 +271,16 @@ def build_lens_tree(
         raise ValueError(f"invalid coordinates for {spec.lens_id}")
 
     if tree_linkage_method in {"average", "complete"}:
-        distances = pdist(coords, metric="euclidean")
-        if not np.isfinite(distances).all() or np.allclose(distances, 0.0):
-            raise ValueError(f"degenerate distances for {spec.lens_id}")
-        linkage_matrix = linkage(distances, method=tree_linkage_method)
         tree_metric = "euclidean_condensed"
     elif tree_linkage_method == "ward":
-        if np.allclose(coords, coords[0]):
-            raise ValueError(f"degenerate ward coordinates for {spec.lens_id}")
-        linkage_matrix = linkage(coords, method="ward", metric="euclidean")
         tree_metric = "euclidean_observations"
     else:
         raise ValueError(f"unsupported tree_linkage_method={tree_linkage_method!r}")
-
-    if not np.isfinite(linkage_matrix).all():
+    distances = pdist(coords, metric="euclidean")
+    if not np.isfinite(distances).all() or np.allclose(distances, 0.0):
         raise ValueError(f"degenerate distances for {spec.lens_id}")
-    tree = tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
+    # Ward on Euclidean observations equals Ward on their condensed Euclidean distances.
+    tree = build_tree(data, distances, linkage_method=tree_linkage_method).tree
     tree.populate_node_distributions(data)
     return tree, {
         **metadata,

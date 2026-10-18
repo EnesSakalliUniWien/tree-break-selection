@@ -17,12 +17,15 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import chi2
 
 from benchmarks.diagnostics.calibration.statistics.covariance_laplacian_panel import (
     analyze_covariance_laplacian,
+)
+from benchmarks.diagnostics.calibration.statistics.spectral_summary import (
+    effective_rank,
+    spectral_entropy,
 )
 from benchmarks.diagnostics.calibration.statistics.statistic_distribution_shape_panel import (
     infer_satterthwaite_reference_from_eigenvalues,
@@ -52,7 +55,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.proje
     derive_sibling_projection_dimensions_from_child_edge_comparisons,
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 from tree_break_selection.tree.feature_space import (
     FeatureSpace,
     bernoulli_feature_space_from_columns,
@@ -235,22 +238,6 @@ def edge_statistic_margin(statistic: float, degrees_of_freedom: float, edge_alph
     return float(np.sqrt(statistic) - np.sqrt(chi2.isf(float(edge_alpha), degrees_of_freedom)))
 
 
-def _spectral_entropy(eigenvalues: np.ndarray) -> float:
-    finite = np.asarray(eigenvalues, dtype=float)
-    finite = finite[np.isfinite(finite) & (finite > 0.0)]
-    if finite.size == 0:
-        return float("nan")
-    weights = finite / np.sum(finite)
-    return float(-np.sum(weights * np.log(weights)))
-
-
-def _effective_rank(eigenvalues: np.ndarray) -> float:
-    entropy = _spectral_entropy(eigenvalues)
-    if not np.isfinite(entropy):
-        return float("nan")
-    return float(np.exp(entropy))
-
-
 def _tree_balance(tree: nx.DiGraph, parent: object) -> float:
     children = list(tree.successors(parent))
     if len(children) != 2:
@@ -264,8 +251,7 @@ def _tree_balance(tree: nx.DiGraph, parent: object) -> float:
 
 def build_tree_from_data(data: pd.DataFrame) -> PosetTree:
     distances = pdist(data.to_numpy(dtype=float), metric="hamming")
-    linkage_matrix = linkage(distances, method="average")
-    return tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
+    return build_tree(data, distances, linkage_method="average").tree
 
 
 def prepare_tree_for_mode(
@@ -431,8 +417,8 @@ def extract_edge_geometry_rows(
                     if np.isfinite(leading) and np.isfinite(mp_upper_edge) and mp_upper_edge > 0.0
                     else float("nan")
                 ),
-                "effective_rank": _effective_rank(eigenvalues),
-                "spectral_entropy": _spectral_entropy(eigenvalues),
+                "effective_rank": effective_rank(eigenvalues),
+                "spectral_entropy": spectral_entropy(eigenvalues),
                 "edge_z_norm": float("nan"),
                 "edge_projected_norm": float(np.sqrt(stat)) if np.isfinite(stat) else float("nan"),
                 "edge_projection_energy_ratio": float("nan"),

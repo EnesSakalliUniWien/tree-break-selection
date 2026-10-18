@@ -137,7 +137,7 @@ def make_shard_spec(
     return KakLensSweepShardSpec(
         shard_index=int(shard_index),
         shard_count=int(configured.shard_count),
-        output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
+        output_dir=sharding.shard_dir(configured.output_dir, shard_index),
         groups=selected,
     )
 
@@ -258,10 +258,7 @@ def run_shard(configured: AwsKakLensSweepConfig, shard_index: int) -> pd.DataFra
     }
     sharding.write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sharding.sync_path_to_s3(
-            spec.output_dir,
-            f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}",
-        )
+        sharding.publish_shard(spec.output_dir, configured.s3_uri, shard_index)
     return summary
 
 
@@ -280,10 +277,7 @@ def load_shard_summary(shard_dir: Path) -> pd.DataFrame:
 
 def merge_shards(configured: AwsKakLensSweepConfig) -> pd.DataFrame:
     if configured.s3_uri is not None:
-        sharding.sync_s3_to_path(
-            f"{configured.s3_uri.rstrip('/')}/shards",
-            configured.output_dir / "shards",
-        )
+        sharding.fetch_shards(configured.s3_uri, configured.output_dir)
 
     shard_dirs = sharding.iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     summary = pd.concat(
@@ -331,7 +325,7 @@ def merge_shards(configured: AwsKakLensSweepConfig) -> pd.DataFrame:
     }
     sharding.write_json(merged_dir / COMBINED_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sharding.sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
+        sharding.publish_merged(merged_dir, configured.s3_uri)
     return summary
 
 

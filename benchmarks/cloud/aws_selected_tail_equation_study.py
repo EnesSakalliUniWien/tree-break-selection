@@ -111,7 +111,7 @@ def make_shard_spec(configured: AwsSelectedTailStudyConfig, shard_index: int) ->
         shard_index=int(shard_index),
         shard_count=int(configured.shard_count),
         seed=shard_seed(base_seed=configured.base_seed, shard_index=shard_index),
-        output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
+        output_dir=sharding.shard_dir(configured.output_dir, shard_index),
     )
 
 
@@ -146,9 +146,7 @@ def run_shard(configured: AwsSelectedTailStudyConfig, shard_index: int) -> dict[
     }
     sharding.write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sharding.sync_path_to_s3(
-            spec.output_dir, f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}"
-        )
+        sharding.publish_shard(spec.output_dir, configured.s3_uri, shard_index)
     return outputs
 
 
@@ -298,10 +296,7 @@ def write_combined_outputs(
 def merge_shards(configured: AwsSelectedTailStudyConfig) -> dict[str, pd.DataFrame]:
     """Merge all expected shard directories for a selected-tail cloud run."""
     if configured.s3_uri is not None:
-        sharding.sync_s3_to_path(
-            f"{configured.s3_uri.rstrip('/')}/shards",
-            configured.output_dir / "shards",
-        )
+        sharding.fetch_shards(configured.s3_uri, configured.output_dir)
     shard_dirs = sharding.iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     records = load_combined_shard_records(shard_dirs)
     merged_dir = configured.output_dir / "merged"
@@ -312,7 +307,7 @@ def merge_shards(configured: AwsSelectedTailStudyConfig) -> dict[str, pd.DataFra
         configured=configured,
     )
     if configured.s3_uri is not None:
-        sharding.sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
+        sharding.publish_merged(merged_dir, configured.s3_uri)
     return outputs
 
 

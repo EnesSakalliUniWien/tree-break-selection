@@ -37,11 +37,31 @@ def validate_replicate_coverage(
         raise ValueError(f"Missing replicate index assignment after merge: {missing!r}")
 
 
+def shard_dir(output_dir: Path, shard_index: int) -> Path:
+    """Return one shard's local output directory."""
+    return output_dir / "shards" / f"shard_{shard_index:04d}"
+
+
 def iter_expected_shard_dirs(output_dir: Path, shard_count: int) -> tuple[Path, ...]:
     """Return the canonical shard directories for a completed array job."""
     if shard_count <= 0:
         raise ValueError(f"shard_count must be positive; got {shard_count!r}.")
-    return tuple(output_dir / "shards" / f"shard_{index:04d}" for index in range(shard_count))
+    return tuple(shard_dir(output_dir, index) for index in range(shard_count))
+
+
+def publish_shard(local_dir: Path, s3_uri: str, shard_index: int) -> None:
+    """Upload one shard's outputs to its S3 prefix."""
+    sync_path_to_s3(local_dir, f"{s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}")
+
+
+def fetch_shards(s3_uri: str, output_dir: Path) -> None:
+    """Download every uploaded shard into ``output_dir / "shards"``."""
+    sync_s3_to_path(f"{s3_uri.rstrip('/')}/shards", output_dir / "shards")
+
+
+def publish_merged(merged_dir: Path, s3_uri: str) -> None:
+    """Upload merged outputs to the run's S3 ``merged`` prefix."""
+    sync_path_to_s3(merged_dir, f"{s3_uri.rstrip('/')}/merged")
 
 
 def sync_path_to_s3(local_path: Path, s3_uri: str) -> None:
@@ -83,6 +103,10 @@ def resolve_synced_input(path: Path, input_work_dir: Path, *, use_synced_input: 
 
 
 __all__ = [
+    "fetch_shards",
+    "publish_merged",
+    "publish_shard",
+    "shard_dir",
     "load_shard_manifest",
     "load_shard_table",
     "resolve_synced_input",

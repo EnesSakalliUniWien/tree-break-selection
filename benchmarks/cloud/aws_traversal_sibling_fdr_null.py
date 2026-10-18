@@ -13,8 +13,6 @@ import pandas as pd
 from benchmarks.cloud import sharding
 from benchmarks.cloud.sharding import (
     iter_expected_shard_dirs,
-    sync_path_to_s3,
-    sync_s3_to_path,
     validate_replicate_coverage,
     validate_shard_contract,
     write_json,
@@ -82,7 +80,7 @@ def make_shard_spec(
     return TraversalSiblingFdrShardSpec(
         shard_index=int(shard_index),
         shard_count=int(configured.shard_count),
-        output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
+        output_dir=sharding.shard_dir(configured.output_dir, shard_index),
         replicate_indices=replicate_indices,
     )
 
@@ -128,10 +126,7 @@ def run_shard(configured: AwsTraversalSiblingFdrConfig, shard_index: int) -> dic
     }
     write_json(spec.output_dir / SHARD_MANIFEST_NAME, shard_manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(
-            spec.output_dir,
-            f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}",
-        )
+        sharding.publish_shard(spec.output_dir, configured.s3_uri, shard_index)
     return shard_manifest
 
 
@@ -201,10 +196,7 @@ def _combined_summary(
 def merge_shards(configured: AwsTraversalSiblingFdrConfig) -> dict[str, pd.DataFrame]:
     """Merge all expected traversal sibling FDR shard outputs."""
     if configured.s3_uri is not None:
-        sync_s3_to_path(
-            f"{configured.s3_uri.rstrip('/')}/shards",
-            configured.output_dir / "shards",
-        )
+        sharding.fetch_shards(configured.s3_uri, configured.output_dir)
     shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     manifests = [
         sharding.load_shard_manifest(shard_dir, SHARD_MANIFEST_NAME) for shard_dir in shard_dirs
@@ -243,7 +235,7 @@ def merge_shards(configured: AwsTraversalSiblingFdrConfig) -> dict[str, pd.DataF
     }
     write_json(merged_dir / COMBINED_MANIFEST_NAME, combined_manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
+        sharding.publish_merged(merged_dir, configured.s3_uri)
     return {"simulations": simulations, "summary": summary}
 
 

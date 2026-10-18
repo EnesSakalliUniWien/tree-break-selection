@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from scipy.spatial.distance import pdist
 
 from benchmarks.shared.util.decomposition import (
     labels_and_report_from_decomposition,
     ok_result_from_labels,
+    tbs_decompose,
 )
 
 
@@ -48,3 +50,25 @@ def test_ok_result_from_labels_counts_non_noise_clusters() -> None:
     assert np.array_equal(result.labels, np.array([2, 2, -1, 4], dtype=int))
     assert result.report_df is not None
     assert result.report_df.loc["noise", "cluster_size"] == 1
+
+
+def test_tbs_decompose_returns_labels_in_data_row_order() -> None:
+    rng = np.random.default_rng(0)
+    centers = rng.uniform(size=(2, 30)) > 0.5
+    rows = np.vstack(
+        [np.where(rng.uniform(size=(20, 30)) < 0.05, ~center, center) for center in centers]
+    ).astype(float)
+    # Names out of natural order, so build_tree links samples in a different order.
+    names = [f"cell_{index}" for index in rng.permutation(40)]
+    data = pd.DataFrame(rows, index=names)
+
+    labels, decomposition = tbs_decompose(
+        data, pdist(rows, "hamming"), linkage_method="average", alpha=0.05
+    )
+
+    cluster_by_leaf = {
+        leaf: cluster_id
+        for cluster_id, info in decomposition["cluster_assignments"].items()
+        for leaf in info["leaves"]
+    }
+    assert labels.tolist() == [cluster_by_leaf[name] for name in names]

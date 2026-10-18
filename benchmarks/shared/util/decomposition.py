@@ -11,6 +11,11 @@ from benchmarks.shared.types.method_run_result import MethodRunResult
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
+from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
+    run_gate_annotation_pipeline,
+)
+from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
+from tree_break_selection.tree.construction import build_tree
 
 
 def _empty_report_dataframe() -> pd.DataFrame:
@@ -49,6 +54,35 @@ def labels_and_report_from_decomposition(
     labels = _labels_from_assignment_table(assignments_table, sample_index)
     report_df = _report_dataframe_from_assignments(assignments_table)
     return labels, report_df
+
+
+def tbs_decompose(
+    data: pd.DataFrame,
+    distance_condensed: np.ndarray,
+    *,
+    linkage_method: str,
+    alpha: float,
+) -> tuple[np.ndarray, dict]:
+    """Build the TBS tree, run both gates at ``alpha`` and decompose it.
+
+    Returns labels in ``data`` row order (``-1`` for unassigned samples) and the
+    decomposition result.
+    """
+    tree = build_tree(data, distance_condensed, linkage_method=linkage_method).tree
+    tree.populate_node_distributions(data)
+    gate_bundle = run_gate_annotation_pipeline(
+        tree,
+        tree.annotations_df.copy(),
+        leaf_data=data,
+        edge_alpha=alpha,
+        sibling_alpha=alpha,
+    )
+    decomposition = TreeDecomposition(
+        tree=tree,
+        gate_annotation_bundle=gate_bundle,
+    ).decompose_tree()
+    labels, _report = labels_and_report_from_decomposition(decomposition, data.index)
+    return labels, decomposition
 
 
 def create_report_dataframe_from_labels(
@@ -93,6 +127,7 @@ def ok_result_from_labels(
 
 
 __all__ = [
+    "tbs_decompose",
     "labels_and_report_from_decomposition",
     "create_report_dataframe_from_labels",
     "ok_result_from_labels",

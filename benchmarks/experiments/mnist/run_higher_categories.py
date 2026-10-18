@@ -23,18 +23,13 @@ repo_root = Path(__file__).resolve().parents[3]
 
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutual_info_score
 from sklearn.mixture import BayesianGaussianMixture
 
 from benchmarks.experiments.mnist.run import load_mnist_subset, run_tbs_clustering
-from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import (
-    run_gate_annotation_pipeline,
-)
-from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
+from benchmarks.shared.util.decomposition import tbs_decompose
 from tree_break_selection.space_separation import hamming_knn_diffusion_geometry
-from tree_break_selection.tree.construction import tree_from_linkage
 
 HIGHER_CATEGORY_SCHEMES: dict[str, dict[int, str]] = {
     "shape_3": {
@@ -197,94 +192,24 @@ def run_tree_decomposition_on_preprocessed_data(
     if tree_construction == "diffusion":
         if verbose:
             print("  Building hierarchy with diffusion HAC")
-        diffusion_geometry = hamming_knn_diffusion_geometry(
+        distances = hamming_knn_diffusion_geometry(
             annotations_df,
             k_neighbors=15,
             diffusion_time=3,
             n_components=30,
-        )
-        linkage_matrix = linkage(diffusion_geometry.distance_condensed, method="average")
+        ).distance_condensed
+        linkage_method = "average"
     else:
         if verbose:
             print(f"  Building hierarchy with {distance_metric} + {linkage_method}")
-        linkage_matrix = linkage(
-            pdist(annotations_df.values, metric=distance_metric),
-            method=linkage_method,
-        )
-    tree = tree_from_linkage(linkage_matrix, leaf_names=sample_names)
-    tree.populate_node_distributions(annotations_df)
-    gate_bundle = run_gate_annotation_pipeline(
-        tree,
-        tree.annotations_df.copy(),
-        leaf_data=annotations_df,
-        edge_alpha=significance_level,
-        sibling_alpha=significance_level,
+        distances = pdist(annotations_df.values, metric=distance_metric)
+    labels, _decomposition = tbs_decompose(
+        annotations_df,
+        distances,
+        linkage_method=linkage_method,
+        alpha=significance_level,
     )
-    decomposition_results = TreeDecomposition(
-        tree=tree,
-        gate_annotation_bundle=gate_bundle,
-    ).decompose_tree()
-
-    cluster_assignments = decomposition_results.get("cluster_assignments", {})
-    label_map: dict[str, int] = {}
-    for cluster_identifier, cluster_metadata in cluster_assignments.items():
-        for leaf_name in cluster_metadata["leaves"]:
-            label_map[leaf_name] = int(cluster_identifier)
-    return np.array([label_map[sample_name] for sample_name in sample_names], dtype=int)
-
-
-def _run_diffusion_tbs_clustering(
-    X: np.ndarray,
-    verbose: bool = True,
-    binarize_threshold: float = 0.1,
-) -> np.ndarray:
-    """Run TBS divergence clustering with diffusion HAC tree construction."""
-    if verbose:
-        print("\nRunning TBS Divergence clustering (diffusion HAC)...")
-        print(f"  Data shape: {X.shape}")
-
-    X_binary = (X > binarize_threshold).astype(int)
-    if verbose:
-        sparsity = 1 - X_binary.mean()
-        print(f"  Binarized with threshold={binarize_threshold}, sparsity={sparsity:.1%}")
-
-    sample_names = [f"Sample_{j}" for j in range(X.shape[0])]
-    data = pd.DataFrame(X_binary, index=sample_names)
-
-    if verbose:
-        print("  Building hierarchy with diffusion HAC")
-    diffusion_geometry = hamming_knn_diffusion_geometry(
-        data,
-        k_neighbors=15,
-        diffusion_time=3,
-        n_components=30,
-    )
-    Z = linkage(diffusion_geometry.distance_condensed, method="average")
-
-    tree = tree_from_linkage(Z, leaf_names=sample_names)
-    tree.populate_node_distributions(data)
-    gate_bundle = run_gate_annotation_pipeline(
-        tree,
-        tree.annotations_df.copy(),
-        leaf_data=data,
-        edge_alpha=0.05,
-        sibling_alpha=0.05,
-    )
-    results = TreeDecomposition(
-        tree=tree,
-        gate_annotation_bundle=gate_bundle,
-    ).decompose_tree()
-
-    cluster_assignments = results.get("cluster_assignments", {})
-    n_clusters = results.get("num_clusters", 0)
-    if verbose:
-        print(f"  Found {n_clusters} clusters")
-
-    label_map: dict[str, int] = {}
-    for cluster_id, info in cluster_assignments.items():
-        for leaf in info["leaves"]:
-            label_map[leaf] = cluster_id
-    return np.array([label_map.get(name, -1) for name in sample_names])
+    return labels
 
 
 def _fit_bayesian_gmm_for_pixel(
@@ -870,10 +795,13 @@ def main() -> None:
 
     if arguments.pixel_categorization == "binary_threshold":
         if arguments.tree_construction == "diffusion":
-            cluster_labels = _run_diffusion_tbs_clustering(
-                feature_matrix,
+            cluster_labels = run_tree_decomposition_on_preprocessed_data(
+                (feature_matrix > arguments.binarize_threshold).astype(int),
+                distance_metric=arguments.distance_metric,
+                linkage_method="average",
+                significance_level=0.05,
                 verbose=True,
-                binarize_threshold=arguments.binarize_threshold,
+                tree_construction="diffusion",
             )
         else:
             cluster_labels = run_tbs_clustering(

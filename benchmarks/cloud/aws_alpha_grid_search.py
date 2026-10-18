@@ -15,10 +15,9 @@ from time import perf_counter
 
 import pandas as pd
 
+from benchmarks.cloud import sharding
 from benchmarks.cloud.sharding import (
     iter_expected_shard_dirs,
-    sync_path_to_s3,
-    sync_s3_to_path,
     validate_shard_contract,
     write_json,
 )
@@ -86,7 +85,7 @@ def make_shard_spec(configured: AwsAlphaGridConfig, shard_index: int) -> AlphaGr
     return AlphaGridShardSpec(
         shard_index=int(shard_index),
         shard_count=int(configured.shard_count),
-        output_dir=configured.output_dir / "shards" / f"shard_{shard_index:04d}",
+        output_dir=sharding.shard_dir(configured.output_dir, shard_index),
         alpha_pairs=tuple(pair for _index, pair in selected),
         alpha_pair_indices=tuple(index for index, _pair in selected),
     )
@@ -130,10 +129,7 @@ def run_shard(configured: AwsAlphaGridConfig, shard_index: int) -> dict[str, obj
     }
     write_json(spec.output_dir / SHARD_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(
-            spec.output_dir,
-            f"{configured.s3_uri.rstrip('/')}/shards/shard_{shard_index:04d}",
-        )
+        sharding.publish_shard(spec.output_dir, configured.s3_uri, shard_index)
     return outputs
 
 
@@ -164,10 +160,7 @@ def load_shard_results(shard_dir: Path) -> pd.DataFrame:
 def merge_shards(configured: AwsAlphaGridConfig) -> dict[str, pd.DataFrame]:
     """Merge all expected alpha-grid shard directories."""
     if configured.s3_uri is not None:
-        sync_s3_to_path(
-            f"{configured.s3_uri.rstrip('/')}/shards",
-            configured.output_dir / "shards",
-        )
+        sharding.fetch_shards(configured.s3_uri, configured.output_dir)
 
     shard_dirs = iter_expected_shard_dirs(configured.output_dir, configured.shard_count)
     summary = pd.concat(
@@ -221,7 +214,7 @@ def merge_shards(configured: AwsAlphaGridConfig) -> dict[str, pd.DataFrame]:
     }
     write_json(merged_dir / COMBINED_MANIFEST_NAME, manifest)
     if configured.s3_uri is not None:
-        sync_path_to_s3(merged_dir, f"{configured.s3_uri.rstrip('/')}/merged")
+        sharding.publish_merged(merged_dir, configured.s3_uri)
     return {"summary": summary, "results": results}
 
 
