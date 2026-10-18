@@ -8,7 +8,7 @@ import pandas as pd
 
 
 def wrap_labels(values: pd.Series, width: int = 38) -> list[str]:
-    return ["\n".join(textwrap.wrap(str(value), width=width)) for value in values]
+    return [textwrap.fill(str(value), width=width) for value in values]
 
 
 def wrap_annotation_lines(lines: list[str], *, width: int = 58) -> str:

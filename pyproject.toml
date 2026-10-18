@@ -2,7 +2,7 @@
 name = "tree-break-selection"
 version = "0.1.0"
 description = "Tree-Break Selection hierarchy decomposition with projected-Wald gate testing"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     {name = "Tree-Break Selection contributors"}
 ]
@@ -81,7 +81,7 @@ markers = [
 ]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 force-exclude = true
 extend-exclude = [

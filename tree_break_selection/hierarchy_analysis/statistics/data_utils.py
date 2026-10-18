@@ -5,40 +5,6 @@ import numpy as np
 import pandas as pd
 
 
-def extract_leaf_counts(annotations_df: pd.DataFrame, node_ids: list[str]) -> np.ndarray:
-    """Extract leaf counts for specified nodes.
-
-    Parameters
-    ----------
-    annotations_df
-        DataFrame with node statistics including 'leaf_count' column
-    node_ids
-        List of node identifiers
-
-    Returns
-    -------
-    np.ndarray
-        Leaf counts aligned to node_ids
-
-    Raises
-    ------
-    KeyError
-        If 'leaf_count' column is missing
-    ValueError
-        If any nodes have missing leaf counts
-    """
-    if "leaf_count" not in annotations_df.columns:
-        raise KeyError("Missing required column 'leaf_count' in annotations dataframe.")
-
-    leaf_counts = annotations_df["leaf_count"].reindex(node_ids).to_numpy()
-    if np.isnan(leaf_counts).any():
-        missing = [node_ids[i] for i, v in enumerate(leaf_counts) if np.isnan(v)]
-        preview = ", ".join(map(repr, missing[:5]))
-        raise ValueError(f"Missing leaf_count values for nodes: {preview}.")
-
-    return leaf_counts
-
-
 def extract_node_distribution(tree: nx.DiGraph, node_id: object) -> np.ndarray:
     """Extract distribution for a single node, converted to float64.
 

@@ -32,6 +32,8 @@ def run_child_parent_tests_across_tree(
     parent_ids: list[str],
     child_leaf_counts: np.ndarray,
     parent_leaf_counts: np.ndarray,
+    child_distributions: list[np.ndarray],
+    parent_distributions: list[np.ndarray],
     spectral_dims: dict[str, int],
     pca_projections: dict[str, np.ndarray],
     pca_eigenvalues: dict[str, np.ndarray],
@@ -44,7 +46,12 @@ def run_child_parent_tests_across_tree(
     adaptive_projection_dimension_energy_fraction: float | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Compute projected Wald results for all child-parent edges in the tree."""
+    """Compute projected Wald results for all child-parent edges in the tree.
+
+    Each edge compares the given child and parent distributions, built from
+    ``child_leaf_counts`` and ``parent_leaf_counts`` leaves. An edge whose
+    parent has a zero-dimensional basis has no test: statistic 0, df 0, p 1.
+    """
     n_edge_tests = len(child_ids)
     test_statistics = np.full(n_edge_tests, np.nan)
     degrees_of_freedom = np.full(n_edge_tests, np.nan)
@@ -54,10 +61,14 @@ def run_child_parent_tests_across_tree(
     mean_branch_length = compute_mean_branch_length(tree) if use_branch_time else None
 
     for edge_index in range(n_edge_tests):
-        child_dist = tree.nodes[child_ids[edge_index]]["distribution"]
-        parent_dist = tree.nodes[parent_ids[edge_index]]["distribution"]
+        child_dist = child_distributions[edge_index]
+        parent_dist = parent_distributions[edge_index]
 
         node_spectral_dimension = spectral_dims[parent_ids[edge_index]]
+        if node_spectral_dimension == 0:
+            test_statistics[edge_index], degrees_of_freedom[edge_index] = 0.0, 0.0
+            p_values[edge_index] = 1.0
+            continue
         node_pca_projection = pca_projections[parent_ids[edge_index]]
         node_pca_eigenvalues = pca_eigenvalues[parent_ids[edge_index]]
         continuous_covariance_by_block = resolve_node_continuous_covariance_by_block(

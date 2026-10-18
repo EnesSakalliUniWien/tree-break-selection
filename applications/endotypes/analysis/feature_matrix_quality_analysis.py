@@ -16,10 +16,11 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.spatial.distance import pdist
+from scipy.stats import entropy
 from sklearn.decomposition import TruncatedSVD
 from sklearn.metrics.pairwise import cosine_similarity
 
-from applications.endotypes._shared import parse_go_term
+from applications.endotypes._shared import binary_entropy_bits, parse_go_term
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,43 +32,34 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+QUANTILE_LEVELS = {
+    "min": 0.0,
+    "p01": 0.01,
+    "p05": 0.05,
+    "p25": 0.25,
+    "p50": 0.50,
+    "p75": 0.75,
+    "p95": 0.95,
+    "p99": 0.99,
+    "max": 1.0,
+}
+
+
 def quantiles(values: np.ndarray, prefix: str) -> dict[str, float]:
     values = np.asarray(values, dtype=float)
     values = values[np.isfinite(values)]
-    if values.size == 0:
-        return {
-            f"{prefix}_{q}": math.nan
-            for q in ("min", "p01", "p05", "p25", "p50", "p75", "p95", "p99", "max")
-        }
-    return {
-        f"{prefix}_min": float(np.min(values)),
-        f"{prefix}_p01": float(np.quantile(values, 0.01)),
-        f"{prefix}_p05": float(np.quantile(values, 0.05)),
-        f"{prefix}_p25": float(np.quantile(values, 0.25)),
-        f"{prefix}_p50": float(np.quantile(values, 0.50)),
-        f"{prefix}_p75": float(np.quantile(values, 0.75)),
-        f"{prefix}_p95": float(np.quantile(values, 0.95)),
-        f"{prefix}_p99": float(np.quantile(values, 0.99)),
-        f"{prefix}_max": float(np.max(values)),
-    }
-
-
-def binary_entropy_bits(probabilities: np.ndarray) -> np.ndarray:
-    probabilities = np.asarray(probabilities, dtype=float)
-    entropy = np.zeros_like(probabilities, dtype=float)
-    valid = (probabilities > 0.0) & (probabilities < 1.0)
-    p = probabilities[valid]
-    entropy[valid] = -(p * np.log2(p) + (1.0 - p) * np.log2(1.0 - p))
-    return entropy
+    found = (
+        np.quantile(values, list(QUANTILE_LEVELS.values()))
+        if values.size
+        else [math.nan] * len(QUANTILE_LEVELS)
+    )
+    return {f"{prefix}_{name}": float(value) for name, value in zip(QUANTILE_LEVELS, found)}
 
 
 def shannon_entropy_bits(weights: np.ndarray) -> float:
+    """Return the Shannon entropy in bits of non-negative weights; 0.0 when all are zero."""
     weights = np.asarray(weights, dtype=float)
-    total = float(weights.sum())
-    if total <= 0.0:
-        return 0.0
-    probabilities = weights[weights > 0.0] / total
-    return float(-(probabilities * np.log2(probabilities)).sum())
+    return float(entropy(weights, base=2)) if weights.sum() > 0 else 0.0
 
 
 def load_matrix(path: Path) -> pd.DataFrame:

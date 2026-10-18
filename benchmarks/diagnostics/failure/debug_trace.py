@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from benchmarks.shared.util.values import bool_series
+from benchmarks.shared.util.values import bool_series, bool_value
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +129,11 @@ def analyze_single_case(csv_path: Path) -> dict:
     sig_splits = df[sibling_different & (df.index != root_idx)]
 
     # Classification
+    root_state = _root_test_skipped_or_invalid(root_row)
+    if root_state:
+        method = root_row.get("Sibling_Test_Method")
+        detail = f" ({method})" if isinstance(method, str) and method.strip() else ""
+        return {"mode": "**UNDER-SPLIT**", "reason": f"Root sibling test {root_state}{detail}"}
     if root_split_rejected:
         return {
             "mode": "**UNDER-SPLIT**",
@@ -155,6 +160,18 @@ def _root_sibling_pvalue(root_row: pd.Series) -> float:
         if pd.notna(value):
             return float(value)
     return float("nan")
+
+
+def _root_test_skipped_or_invalid(root_row: pd.Series) -> str | None:
+    """Return "skipped" or "invalid" when the root sibling test made no decision."""
+    # Audit files written before these columns existed count as tested.
+    for column, state in (
+        ("Sibling_Divergence_Skipped", "skipped"),
+        ("Sibling_Divergence_Invalid", "invalid"),
+    ):
+        if column in root_row.index and bool_value(root_row[column]):
+            return state
+    return None
 
 
 def _root_split_rejected(root_row: pd.Series) -> bool:

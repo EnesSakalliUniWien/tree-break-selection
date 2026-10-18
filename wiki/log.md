@@ -8276,6 +8276,122 @@ version comparison report and wiki source summary. Production code unchanged.
   at 1 and the full `get_env_bool` error text. `make check` passed with 893
   tests. No commit or push occurred.
 
+## 2026-10-18 — Library calls replace hand-rolled numerics
+
+- The remaining rows of the hand-rolled-code audit finding were replaced,
+  except LCA and node depths, where networkx was about 200 times slower.
+- BH q-values, Wilson intervals, the one-sided mean bound, six application
+  entropy copies, standardized Euclidean distance, both diffusion neighbour
+  graphs, label normalization, one-hot encoding, per-case ranks, file digests
+  and label wrapping now call SciPy, NumPy, pandas or the standard library.
+- Each swap was compared with the old code on random and edge-case inputs.
+  All matched to 2e-15 or better. The evolution JS divergence uses `rel_entr`
+  on the clipped rows and matches to 8e-17; `jensenshannon` was dropped
+  because it renormalizes the rows after the epsilon clip (2e-11 off).
+- A review of these swaps found five more problems, now fixed: the mean
+  bound returns the constant for constant input instead of NaN, the Wilson
+  replicate search bisects instead of stepping one replicate at a time,
+  `count_entropy` imports SciPy only when called, and the two copies of the
+  Bernoulli entropy in bits became `binary_entropy_bits` in
+  `applications/endotypes/_shared.py`. The changelog no longer says the
+  results are unchanged; it says they agree up to floating-point rounding.
+
+## 2026-10-18 — Python 3.12 and the remaining library swaps
+
+- Python 3.12 is the minimum version (`pyproject.toml`, ruff target,
+  `benchmarks/cloud/aws/Dockerfile`, `asv.conf.json`, `README.md`,
+  `docs/onboarding.md`), so `itertools.batched` replaces the `chunked`
+  helper. `uv.lock` was relocked and lost its Python 3.11 entries; the
+  environment was rebuilt on Python 3.12.11 and gets scanpy 1.12.1.
+- The 15 swaps from the leftover hand-rolled-code scan were applied. Each was
+  compared with the HEAD code on random and edge-case inputs:
+  - Bitwise equal: HC pathway enrichment (`hypergeom`), the two
+    cluster-size entropies, feature-matrix quantiles, the one-hot encoder,
+    holdout fold ids, the df and edge-action bins, lens purity, the
+    logistic log-likelihood (`log_loss`) and duplicate case names.
+  - Equal up to rounding: HC Jaccard (1e-16), covariance-Laplacian
+    eigenvalues (2e-15), pancreas split/merge entropies (3e-15), the
+    cos² entropy (4e-16), the holdout AUC (1e-16), the GO log-likelihood
+    (relative 4e-16), Spearman (1e-16) and direction-cosine quantiles
+    (3e-16).
+  - Same values, different form: subtree nodes now come in depth-first
+    order (same node set), and the radial-tree circular mean returns the
+    same direction as an angle in [-π, π).
+- The three links in
+  `reports/passthrough_pvalue_normalisation_20260928/normalisation_audit.md`
+  now point at the installed pydiffmap 0.2.0.1 under `python3.12`; the file is
+  byte-identical to the Python 3.11 copy, so the line anchors still hold.
+- On Python 3.12, `make check` passed with 893 tests and the quick start
+  still reports 6 clusters with ARI 0.9530. No commit or push occurred.
+
+## 2026-10-18 — Status of the benchmark cases where TBS fails
+
+- Reran canonical `tbs` (Python 3.12, current working tree) on the 49 cases
+  that were `unsupported` or had ARI below 0.5 in
+  `benchmarks/results/run_20261016_163716Z_full/`. Only `binary_perfect_2c`,
+  `_4c` and `_8c` changed: they now report `unsupported`, confirming the
+  2026-10-16 support fix. The other 46 rows are unchanged.
+- Now 29 of the 49 are `unsupported` (`empirical_null_no_internal_support`,
+  the July "calibration starvation" fail-closed path). 20 still return a
+  partition with ARI below 0.5; 10 of them are one cluster on multi-cluster
+  truth, including the four July degenerate-root cases
+  (`dim_consolidated_4c_72f_continuous`, `dim_diffuse_6c_136f_continuous`,
+  `mp_spike_above_bbp_continuous`, `phylo_brownian_null_16taxa`).
+- `benchmarks/diagnostics/failure/debug_trace.py` still labels skipped root
+  tests "Root split rejected" and prints the raw p-value when the corrected
+  one is NaN (the July reporting defects); no change was made.
+
+## 2026-10-18 — Failure report labels for skipped root tests
+
+- `benchmarks/diagnostics/failure/debug_trace.py` now reports a root whose
+  sibling test was skipped or invalid as "Root sibling test skipped" or
+  "invalid", with `Sibling_Test_Method` when present, instead of "Root split
+  rejected" with the raw p-value. Missing skip and invalid columns count as
+  tested, so older audit files and the pinned rejection string are unchanged.
+- Rebuilding the 2026-10-16 failure report changed 9 of its 19 rows: the
+  three `binary_perfect` fail-closed roots and six roots with no sibling
+  test. The five remaining "Root split rejected" rows are tested roots with
+  corrected p-values; the other five rows are unchanged "MIXED" rows. New cases in
+  `tests/pipeline/62_test_debug_trace_contract.py` failed before the fix.
+- `relationship_analysis._select_root_split_pvalue` keeps its raw p-value
+  fallback; it feeds the relationship tables, not the failure labels.
+
+## 2026-10-18 — Failing cases by split separation and subspace
+
+- Analysed the 49 failing `tbs` cases on the distance TBS used for each:
+  near-equidistance, separating features per true cluster pair, oracle cuts
+  on the TBS tree, on the separating subspace and under other metrics,
+  held-out pair subspaces, and the features behind the top TBS splits.
+  Scripts and tables are in `reports/failing_case_subspace_analysis_20261018/`
+  (catalogued in `reports/artifacts.json`); [[failing-case-subspace-separation]]
+  summarizes them.
+- 21 cases have a tree that holds every true cluster; the gate fails, in 12 of
+  them because the edge test rejects every edge and leaves nothing to
+  calibrate. 4 `dim_consolidated` cases separate in one subspace drowned by
+  noise features, 4 `dim_diffuse` cases in pair-specific subspaces, 2 depend
+  on the metric or linkage, 5 spread the separation over many weak features,
+  11 have no location signal any distance tree recovers, and 2 are null cases.
+- A second run reproduced all tables byte for byte. No production code changed.
+
+## 2026-10-18 — Bug check of the failing cases
+
+- Reran canonical `tbs` on the 49 failing cases through
+  `run_single_method_once` with every stage captured
+  (`reports/failing_case_subspace_analysis_20261018/bug_check/`). Data,
+  distances, trees, label mapping, ARI and the `unsupported` support count all
+  check out for every case.
+- Three method defects, each confirmed by an experiment: the edge test fits its
+  projection basis to the leaves it tests (98-100% of null-data edges rejected;
+  0-3% with an independent basis; 73-80% even on a random tree), the continuous
+  edge statistic is capped at n_parent - 1 (four roots can never reject), and
+  `mahalanobis_time` removes mean separation (ARI 0 where Euclidean gives 1.0).
+  They cause 17 failures and are present in 22 more; 8 cases implicate none.
+  [[failing-case-subspace-separation]] records the verdicts.
+- Side finding: `tests/integration/60_test_benchmark_methods_smoke.py` writes
+  `case_1_tbs_diffusion_*` audit files into `benchmarks/results/audit/` on every
+  `make check`; the earlier reruns for the report overwrote 20 gitignored
+  `case_*_tbs_stats.csv` files there. No production code changed.
+
 ## 2026-10-18 — ChunkHound semantic search setup
 
 - Added `.chunkhound.json`: ChunkHound 6.0.0 indexes the repository into
@@ -8315,3 +8431,28 @@ version comparison report and wiki source summary. Production code unchanged.
   the edge and sibling projected-Wald tests pass the gate option
   `adaptive_projection_dimension_energy_fraction` to it, and the pancreas
   scRNA benchmark sets it to 0.90.
+
+## 2026-10-18 — Edge-test power fixes and comparison with leiden
+
+- After the edge split, two TBS cases regressed. `dim_consolidated_4c_24f_continuous`
+  lost an accidental full-space test: whitening by the total covariance left no
+  Marchenko-Pastur signal, and only tied eigenvalues had extended the old basis to
+  all 24 features. `phylo_conserved_4taxa` keeps its root edges, but the calibrated
+  edge gate feeds 97 instead of 77 null-like sibling records into the empirical-null
+  calibration, whose inflation divisor grew about 6.5x (statistic 55.7 to 8.6).
+- Two fixes for the continuous case were built in separate worktrees. A full-space
+  fallback rejected 18-23% of null edges on parents above 30 leaves and made three
+  cases worse; within-child whitening of the edge basis changed only the target case.
+  The second was adopted. Its continuous null test now counts every tested edge:
+  70/7,672 = 0.9% at alpha 0.05, upper bound 2 alpha, no lower bound because small
+  parents fall back to conservative parent-total whitening.
+- A node with fewer leaves than features stored a singular dense covariance; whitening
+  by it puts the leaves on a simplex where the two halves of the edge split are exactly
+  orthogonal, so the statistic was 0 (2.5e-18 on 13 df at a 30-leaf, 40-feature node).
+  Such nodes now store per-feature variances, and pooling handles them.
+- Full benchmark `run_20261018_185025Z_full` (unsupported counted as ARI 0): TBS mean
+  ARI 0.794 vs leiden 0.808, exact K 74.6% vs 75.4%, 12 wins, 89 ties and 21 losses
+  at a 0.05 margin; TBS returns one cluster on all 6 null cases, leiden on 2. The 21
+  losses are 14 trees that do not separate the true clusters at the stopping node,
+  5 sibling-calibration deflations of strong raw evidence and 2 mixed cases. The
+  uncalibrated `fixed_coordinate_guarded_v1` sibling profile scores lower (0.770).

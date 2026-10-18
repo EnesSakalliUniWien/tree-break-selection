@@ -50,9 +50,9 @@ constructs a density estimate `q`, applies its `q^(-alpha)` normalization,
 row-normalizes to a Markov matrix, and builds a generator. The production
 helper instead uses the kernel affinity followed by symmetric degree
 normalization, with no `q^(-alpha)` step ([installed
-diffusion_map.py](../../.venv/lib/python3.11/site-packages/pydiffmap/diffusion_map.py#L117),
-[installed diffusion_map.py](../../.venv/lib/python3.11/site-packages/pydiffmap/diffusion_map.py#L135),
-[installed diffusion_map.py](../../.venv/lib/python3.11/site-packages/pydiffmap/diffusion_map.py#L142)).
+diffusion_map.py](../../.venv/lib/python3.12/site-packages/pydiffmap/diffusion_map.py#L117),
+[installed diffusion_map.py](../../.venv/lib/python3.12/site-packages/pydiffmap/diffusion_map.py#L135),
+[installed diffusion_map.py](../../.venv/lib/python3.12/site-packages/pydiffmap/diffusion_map.py#L142)).
 This is a demonstrable implementation distinction and a valid alternative
 geometry; the inspected code does not establish that it is a defect. Its
 effect is on tree topology and distances, not a direct change to a fixed

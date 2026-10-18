@@ -2,30 +2,26 @@
 
 from __future__ import annotations
 
-import math
 import subprocess
 from datetime import datetime, timezone
+
+from scipy.stats import binomtest
 
 
 def wilson_interval(
     successes: int,
     total: int,
     *,
-    z_value: float = 1.959963984540054,
+    confidence_level: float = 0.95,
 ) -> tuple[float, float]:
-    """Return the bounded Wilson score interval for a binomial proportion."""
+    """Return the two-sided Wilson score interval for a binomial proportion."""
 
     if total <= 0:
         raise ValueError("total must be positive.")
-    proportion = successes / total
-    denominator = 1.0 + z_value**2 / total
-    center = (proportion + z_value**2 / (2.0 * total)) / denominator
-    half_width = (
-        z_value
-        * math.sqrt((proportion * (1.0 - proportion) + z_value**2 / (4.0 * total)) / total)
-        / denominator
+    interval = binomtest(int(successes), int(total)).proportion_ci(
+        confidence_level=confidence_level, method="wilson"
     )
-    return max(0.0, center - half_width), min(1.0, center + half_width)
+    return float(interval.low), float(interval.high)
 
 
 def read_git_commit() -> str:

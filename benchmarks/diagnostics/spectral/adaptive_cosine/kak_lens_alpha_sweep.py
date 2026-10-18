@@ -34,6 +34,7 @@ from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_benchma
 from benchmarks.diagnostics.spectral.adaptive_cosine.adaptive_cosine_kak_matrix_probe import (
     load_matrix,
 )
+from benchmarks.shared.metrics import _cluster_purity
 from tree_break_selection.hierarchy_analysis.cluster_assignments import (
     build_sample_cluster_assignments,
 )
@@ -293,13 +294,6 @@ def labels_from_assignments(assignments: pd.DataFrame, index: pd.Index) -> np.nd
     return assignments.reindex(index)["cluster_id"].astype(int).to_numpy()
 
 
-def weighted_purity(labels: np.ndarray, reference: np.ndarray) -> float:
-    table = pd.crosstab(pd.Series(labels, name="labels"), pd.Series(reference, name="reference"))
-    if table.empty:
-        return math.nan
-    return float(table.max(axis=1).sum() / table.to_numpy().sum())
-
-
 def split_counts(labels: np.ndarray, reference: np.ndarray) -> dict[str, int]:
     frame = pd.DataFrame({"lens": labels, "main": reference})
     cluster_sizes = frame["lens"].value_counts()
@@ -342,8 +336,8 @@ def score_assignments(
     labels = labels_from_assignments(assignments, index)
     sizes = pd.Series(labels).value_counts()
     split = split_counts(labels, main_labels)
-    lens_purity = weighted_purity(labels, main_labels)
-    main_purity = weighted_purity(main_labels, labels)
+    lens_purity = _cluster_purity(main_labels, labels)
+    main_purity = _cluster_purity(labels, main_labels)
     singleton_genes = int((sizes == 1).sum())
     score = (
         lens_purity

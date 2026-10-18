@@ -10,6 +10,7 @@ Features:
 from __future__ import annotations
 
 import numpy as np
+from scipy.special import rel_entr
 
 
 def jukes_cantor_transition_matrix(
@@ -79,15 +80,8 @@ def compute_expected_divergence(branch_length: float, n_categories: int) -> floa
 
 
 def compute_js_divergence_per_feature(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> float:
-    """Compute mean Jensen-Shannon divergence between two distributions."""
+    """Return the mean natural-log Jensen-Shannon divergence over feature rows."""
     p = np.clip(p, eps, 1.0)
     q = np.clip(q, eps, 1.0)
-
-    js_per_feature = []
-    for f in range(p.shape[0]):
-        m = 0.5 * (p[f] + q[f])
-        kl_pm = np.sum(p[f] * np.log(p[f] / m))
-        kl_qm = np.sum(q[f] * np.log(q[f] / m))
-        js_per_feature.append(0.5 * (kl_pm + kl_qm))
-
-    return np.mean(js_per_feature)
+    m = 0.5 * (p + q)
+    return float(np.mean(0.5 * (rel_entr(p, m) + rel_entr(q, m)).sum(axis=1)))

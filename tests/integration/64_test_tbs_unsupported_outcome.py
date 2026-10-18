@@ -113,16 +113,14 @@ def test_dense_high_dimensional_fixed_coordinate_control_remains_ok(
     assert len(np.unique(result.labels)) == 4
 
 
-def test_duplicate_only_binary_case_reports_no_internal_support() -> None:
-    # Merges of identical rows have df 0, so no sibling record can calibrate the null.
+def test_near_duplicate_binary_case_recovers_both_clusters() -> None:
+    # The two clusters hold only five distinct rows. Their few non-identical merges have
+    # df > 0 and, with calibrated edge tests, are null-like enough to calibrate the sibling null.
     case = next(case for case in get_default_test_cases() if case["name"] == "binary_perfect_2c")
     data, _truth, _original, _metadata = generate_case_data(case)
 
     result = run_tbs_on_distance(data, pdist(data.to_numpy(), metric="hamming"), 0.01)
 
-    assert result.status == "unsupported"
-    assert result.unsupported_reason is not None
-    assert (
-        result.unsupported_reason.code is UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT
-    )
-    assert result.unsupported_reason.evidence.admissible_support_count == 0
+    assert result.status == "ok"
+    assert result.unsupported_reason is None
+    assert result.found_clusters == 2

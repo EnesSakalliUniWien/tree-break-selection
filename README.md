@@ -169,7 +169,7 @@ The repository keeps the durable entrypoint docs in a small set of files:
 
 ### Prerequisites
 
-- Python `>=3.11`
+- Python `>=3.12`
 - `uv`
 
 New contributors should read `docs/onboarding.md` after this README. It gives a
@@ -181,7 +181,7 @@ Use the locked `uv` environment. This is the lean install path for ordinary
 development, benchmarks, visualization, and manuscript-adjacent checks.
 
 ```bash
-uv venv --python 3.11 .venv
+uv venv --python 3.12 .venv
 uv sync --extra dev --extra benchmark --extra viz --locked
 ```
 

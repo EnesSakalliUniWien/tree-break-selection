@@ -26,7 +26,12 @@ import pandas as pd
 import requests
 from scipy import sparse
 
-from applications.scrna._shared import add_generated_at, json_default, top_counts_text
+from applications.scrna._shared import (
+    add_generated_at,
+    count_entropy,
+    json_default,
+    top_counts_text,
+)
 
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
 PROGENITOR_POPULATIONS = {"trunk", "tip", "proliferating"}
@@ -143,15 +148,6 @@ def add_signature_scores(expression: pd.DataFrame) -> tuple[pd.DataFrame, pd.Dat
     return scored, pd.DataFrame(signature_rows)
 
 
-def entropy(counts: np.ndarray) -> float:
-    values = np.asarray(counts, dtype=float)
-    total = float(values.sum())
-    if total <= 0.0:
-        return 0.0
-    probabilities = values[values > 0] / total
-    return float(-(probabilities * np.log(probabilities)).sum())
-
-
 def summarize_group(
     *,
     label: str,
@@ -173,7 +169,7 @@ def summarize_group(
         "dominant_population": str(population_counts.index[0]),
         "dominant_population_fraction": float(population_counts.iloc[0] / n_cells),
         "n_populations": int(len(population_counts)),
-        "effective_populations": float(np.exp(entropy(population_counts.to_numpy()))),
+        "effective_populations": float(np.exp(count_entropy(population_counts.to_numpy()))),
         "top_populations": top_counts_text(group_populations),
         "progenitor_population_fraction": float(
             group_populations.isin(PROGENITOR_POPULATIONS).mean()
@@ -512,7 +508,7 @@ def main() -> None:
                     "child_nodes": ",".join(children[node]),
                     "child_count": len(children[node]),
                     "is_root": node == root,
-                    "population_entropy": entropy(pop_values.value_counts().to_numpy()),
+                    "population_entropy": count_entropy(pop_values.value_counts().to_numpy()),
                 },
             )
         )

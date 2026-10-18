@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from scipy.spatial.distance import squareform
 
 import tree_break_selection.hierarchy_analysis.statistics.contrast_covariance as contrast_covariance_module
 from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (
@@ -369,6 +370,19 @@ def test_continuous_time_distance_matches_scaled_mahalanobis_formula() -> None:
         distances,
         np.array([0.5, 0.5, 1.0], dtype=np.float64),
     )
+
+
+def test_continuous_time_distance_keeps_mean_separation_between_clusters() -> None:
+    labels = np.repeat([0, 1], 60)
+    observations = np.random.default_rng(3).normal(size=(120, 40))
+    observations[labels == 1] += 3.0
+    feature_space = continuous_feature_space_from_columns(tuple(f"F{j}" for j in range(40)))
+
+    distances = squareform(continuous_time_distance_condensed(observations, feature_space))
+
+    same_cluster = labels[:, None] == labels[None, :]
+    off_diagonal = ~np.eye(labels.size, dtype=bool)
+    assert distances[same_cluster & off_diagonal].max() < distances[~same_cluster].min()
 
 
 def test_standardized_euclidean_distance_matches_zscore_formula() -> None:

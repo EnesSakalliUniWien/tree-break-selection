@@ -8,16 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import normalize
 
-from applications.endotypes._shared import parse_go_term
-
-
-def binary_entropy_bits(probabilities: np.ndarray) -> np.ndarray:
-    p = np.asarray(probabilities, dtype=float)
-    out = np.zeros_like(p)
-    valid = (p > 0.0) & (p < 1.0)
-    q = p[valid]
-    out[valid] = -(q * np.log2(q) + (1.0 - q) * np.log2(1.0 - q))
-    return out
+from applications.endotypes._shared import binary_entropy_bits, parse_go_term
 
 
 def component_feature_loadings(

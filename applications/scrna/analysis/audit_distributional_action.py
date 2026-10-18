@@ -14,6 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import spearmanr
 
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import AUDIT_METHODS as METHODS
@@ -103,7 +104,7 @@ def _spearman(left: pd.Series, right: pd.Series) -> float:
     data = data.dropna()
     if len(data) < 3 or data["left"].nunique() < 2 or data["right"].nunique() < 2:
         return float("nan")
-    return float(data["left"].rank().corr(data["right"].rank()))
+    return float(spearmanr(data["left"], data["right"]).statistic)
 
 
 def _load_goncalves_progenitor_tables(output_dir: Path) -> dict[str, dict[str, object]]:

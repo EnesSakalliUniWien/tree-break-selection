@@ -284,12 +284,13 @@ def _add_case_rank(
     rank_column: str,
     ascending: bool,
 ) -> None:
-    frame[rank_column] = np.nan
-    for _case_id, index in frame.groupby("case_id").groups.items():
-        subset = frame.loc[index]
-        valid = subset["valid_internal_metrics"] & subset[source].notna()
-        ranks = subset.loc[valid, source].rank(method="average", ascending=ascending)
-        frame.loc[ranks.index, rank_column] = ranks
+    valid = frame["valid_internal_metrics"] & frame[source].notna()
+    frame[rank_column] = (
+        frame[source]
+        .where(valid)
+        .groupby(frame["case_id"])
+        .rank(method="average", ascending=ascending)
+    )
 
 
 def _rank_and_select(

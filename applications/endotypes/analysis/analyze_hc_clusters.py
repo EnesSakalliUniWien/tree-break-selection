@@ -43,7 +43,8 @@ configure_matplotlib_backend()
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import false_discovery_control, fisher_exact
+from scipy.spatial.distance import pdist, squareform
+from scipy.stats import false_discovery_control, hypergeom
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -229,45 +230,34 @@ def pathway_enrichment(
 
         k = int(cluster_idx.size)
         n_bg = int(bg_idx.size)
-        cluster_data = fm.loc[cluster_idx]
-        bg_data = fm.loc[bg_idx]
-
-        pvals, odds_ratios, pathways = [], [], []
-        for pw in fm.columns:
-            a = int(cluster_data[pw].sum())  # in-cluster & in-pathway
-            b = k - a  # in-cluster & NOT in-pathway
-            c = int(bg_data[pw].sum())  # NOT in-cluster & in-pathway
-            d = n_bg - c  # NOT in-cluster & NOT in-pathway
-            if a == 0:
-                continue  # skip pathways absent from cluster
-            odds, p = fisher_exact([[a, b], [c, d]], alternative="greater")
-            pathways.append(pw)
-            pvals.append(p)
-            odds_ratios.append(odds)
-
-        if not pvals:
+        a = fm.loc[cluster_idx].sum(axis=0).astype(int)  # in-cluster & in-pathway
+        c = fm.loc[bg_idx].sum(axis=0).astype(int)  # NOT in-cluster & in-pathway
+        present = a > 0  # skip pathways absent from cluster
+        if not present.any():
             continue
-
-        pvals_arr = np.array(pvals)
-        qvals = false_discovery_control(pvals_arr, method="bh")
-
-        for pw, p, q, odds in zip(pathways, pvals, qvals, odds_ratios):
-            a = int(cluster_data[pw].sum())
-            all_results.append(
+        a, c = a[present].to_numpy(), c[present].to_numpy()
+        b, d = k - a, n_bg - c
+        # One-sided Fisher exact test, written the way scipy.stats.fisher_exact computes it.
+        pvals = np.minimum(hypergeom.cdf(b, k + n_bg, k, b + d), 1.0)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            odds_ratios = (a * d) / (c * b)
+        all_results.append(
+            pd.DataFrame(
                 {
                     "cluster_id": cid,
                     "n_genes": k,
-                    "pathway": pw,
+                    "pathway": fm.columns[present.to_numpy()],
                     "genes_in_pathway": a,
                     "frac_cluster": a / k,
-                    "frac_background": int(bg_data[pw].sum()) / n_bg,
-                    "odds_ratio": odds,
-                    "p_value": p,
-                    "q_value": q,
+                    "frac_background": c / n_bg,
+                    "odds_ratio": odds_ratios,
+                    "p_value": pvals,
+                    "q_value": false_discovery_control(pvals, method="bh"),
                 }
             )
+        )
 
-    df_enrich = pd.DataFrame(all_results)
+    df_enrich = pd.concat(all_results, ignore_index=True) if all_results else pd.DataFrame()
     if df_enrich.empty:
         print("  No enrichments found.")
         return df_enrich
@@ -318,35 +308,22 @@ def cluster_jaccard_heatmap(
     print("INTER-CLUSTER JACCARD SIMILARITY")
     print("=" * 70)
 
-    # Build cluster pathway profiles (mean across genes)
-    clusters = []
-    cids = []
-    for cid in sorted(assign.cluster_id.unique()):
-        genes = assign[assign.cluster_id == cid].index.tolist()
-        if len(genes) < min_size:
-            continue
-        profile = fm.loc[genes].mean(axis=0).values  # fraction of genes with each pathway
-        clusters.append(profile)
-        cids.append(cid)
-
+    sizes = assign.groupby("cluster_id").size()
+    cids = sizes.index[sizes >= min_size].tolist()
     if len(cids) < 2:
         print("  Too few non-singleton clusters for heatmap.")
         return
 
-    profiles = np.array(clusters)
-    # Binarize at 50% threshold for Jaccard
-    binary = (profiles >= 0.5).astype(int)
+    # Fraction of genes with each pathway, binarized at 50% for Jaccard
+    kept = assign[assign.cluster_id.isin(cids)]
+    profiles = fm.loc[kept.index].groupby(kept.cluster_id.to_numpy()).mean()
+    binary = profiles.to_numpy() >= 0.5
+    jaccard = 1.0 - squareform(pdist(binary, metric="jaccard"))
+    # Two clusters with no pathway at 50% share nothing; SciPy would call them identical.
+    empty = ~binary.any(axis=1)
+    jaccard[np.ix_(empty, empty)] = 0.0
 
     n = len(cids)
-    jaccard = np.zeros((n, n))
-    for i in range(n):
-        for j in range(n):
-            inter = (binary[i] & binary[j]).sum()
-            union = (binary[i] | binary[j]).sum()
-            jaccard[i, j] = inter / union if union > 0 else 0.0
-
-    # Cluster labels with size
-    sizes = assign.groupby("cluster_id").size()
     labels = [f"C{c} ({sizes[c]})" for c in cids]
 
     fig, ax = plt.subplots(figsize=(max(8, n * 0.5), max(6, n * 0.4)))

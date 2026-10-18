@@ -6,6 +6,8 @@ Import `get_default_test_cases()` to get all cases, or import specific
 category modules for targeted testing.
 """
 
+from collections import Counter
+
 from .binary import BINARY_CASES
 from .categorical import CATEGORICAL_CASES
 from .dimensionality import DIMENSIONALITY_CASES
@@ -83,21 +85,15 @@ ALL_CASE_CATEGORIES = {
 def _normalize_case_list(cases: list[dict], category: str) -> list[dict]:
     """Attach stable metadata and ensure names are present/unique in a category."""
     normalized: list[dict] = []
-    seen_names: dict[str, int] = {}
+    seen_names: Counter[str] = Counter()
 
-    for _idx, case in enumerate(cases, start=1):
+    for case in cases:
         item = case.copy()
         item["category"] = category
         base_name = item["name"]
-
-        if base_name not in seen_names:
-            seen_names[base_name] = 0
         seen_names[base_name] += 1
         if seen_names[base_name] > 1:
             item["name"] = f"{base_name}__{seen_names[base_name]}"
-        else:
-            item["name"] = base_name
-
         normalized.append(item)
 
     return normalized
@@ -106,13 +102,11 @@ def _normalize_case_list(cases: list[dict], category: str) -> list[dict]:
 def get_default_test_cases() -> list[dict]:
     """Flatten all test case groups into a single list with unique case names."""
     flattened: list[dict] = []
-    seen_global: dict[str, int] = {}
+    seen_global: Counter[str] = Counter()
 
     for category, group in ALL_CASE_CATEGORIES.items():
         for case in _normalize_case_list(group, category):
             name = str(case["name"])
-            if name not in seen_global:
-                seen_global[name] = 0
             seen_global[name] += 1
             if seen_global[name] > 1:
                 case["name"] = f"{name}__{seen_global[name]}"

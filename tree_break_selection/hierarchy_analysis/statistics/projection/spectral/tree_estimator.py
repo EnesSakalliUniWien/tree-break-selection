@@ -32,6 +32,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 
 from tree_break_selection.tree.distributions import (
+    pooled_within_child_covariance_by_block,
     require_node_continuous_covariance_by_block,
 )
 from tree_break_selection.tree.feature_space import (
@@ -179,9 +180,13 @@ def _build_spectral_tasks(
     feature_space: FeatureSpace,
     include_internal_barycenters: bool = False,
     internal_distribution_mode: str = INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
+    null_distributions_by_node: dict[str, np.ndarray] | None = None,
+    continuous_covariances_by_node: dict[str, dict[str, np.ndarray]] | None = None,
 ) -> list[NodeSpectralTask]:
     """Build per-node spectral tasks from precomputed descendant metadata."""
     feature_count = int(feature_space.raw_dimension)
+    null_distributions_by_node = null_distributions_by_node or {}
+    continuous_covariances_by_node = continuous_covariances_by_node or {}
     internal_distribution_mode = _validate_internal_distribution_mode(internal_distribution_mode)
     descendant_internal_nodes_by_node = (
         precompute_descendant_internal_nodes(tree) if include_internal_barycenters else {}
@@ -217,12 +222,15 @@ def _build_spectral_tasks(
             node_id=node_id,
             row_indices=tuple(descendant_leaf_indices_by_node[node_id]),
             internal_distributions=_internal_distributions(node_id),
-            null_distribution=np.asarray(tree.nodes[node_id]["distribution"], dtype=np.float64),
+            null_distribution=np.asarray(
+                null_distributions_by_node.get(node_id, tree.nodes[node_id]["distribution"]),
+                dtype=np.float64,
+            ),
             feature_space=feature_space,
-            continuous_covariance_by_block=require_node_continuous_covariance_by_block(
-                tree,
-                node_id,
-                feature_space,
+            continuous_covariance_by_block=(
+                continuous_covariances_by_node[node_id]
+                if node_id in continuous_covariances_by_node
+                else require_node_continuous_covariance_by_block(tree, node_id, feature_space)
             ),
         )
         for node_id in internal_node_ids
@@ -291,6 +299,7 @@ def compute_spectral_decomposition(
     include_internal_barycenters: bool = False,
     internal_distribution_mode: str = INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
     projection_basis_dimension: int | None = None,
+    basis_row_indices_by_node: dict[str, list[int]] | None = None,
 ) -> SpectralDecompositionResult:
     """Compute MP dimension metadata, PCA projections, and eigenvalues.
 
@@ -322,6 +331,13 @@ def compute_spectral_decomposition(
         child precision proportional to descendant support divided by edge
         length. The mode has no effect unless ``include_internal_barycenters``
         is true.
+    basis_row_indices_by_node
+        Optional leaf rows per internal node. When given, each listed node is
+        eigendecomposed from these rows only, null-whitened at their own mean,
+        so the basis does not depend on the node's other leaves. Continuous
+        blocks are whitened by the pooled within-child covariance of these rows,
+        so between-child signal is not whitened away. Cannot be combined with
+        internal barycenters, which average all descendants.
     Returns
     -------
     SpectralDecompositionResult
@@ -342,6 +358,34 @@ def compute_spectral_decomposition(
     leaf_label_to_index = {label: i for i, label in enumerate(leaf_data.index)}
 
     descendant_leaf_indices_by_node = precompute_descendants(tree, leaf_label_to_index)
+    basis_null_distributions: dict[str, np.ndarray] = {}
+    basis_continuous_covariances: dict[str, dict[str, np.ndarray]] = {}
+    if basis_row_indices_by_node is not None:
+        if include_internal_barycenters:
+            raise ValueError(
+                "basis_row_indices_by_node cannot be combined with internal barycenters, "
+                "which average every descendant leaf."
+            )
+        # Whitening by the node's total covariance would absorb the between-child signal.
+        if active_feature_space.has_continuous_blocks:
+            for node_id, rows in basis_row_indices_by_node.items():
+                basis_rows = set(rows)
+                basis_continuous_covariances[node_id] = pooled_within_child_covariance_by_block(
+                    tree,
+                    node_id,
+                    active_feature_space,
+                    leaf_feature_matrix,
+                    [
+                        [row for row in descendant_leaf_indices_by_node[child] if row in basis_rows]
+                        for child in tree.successors(node_id)
+                    ],
+                )
+        descendant_leaf_indices_by_node.update(basis_row_indices_by_node)
+        basis_null_distributions = {
+            node_id: leaf_feature_matrix[rows].mean(axis=0)
+            for node_id, rows in basis_row_indices_by_node.items()
+            if rows
+        }
 
     test_projection_dimensions: Dict[str, int] = {}
     raw_mp_signal_counts: Dict[str, int] = {}
@@ -376,6 +420,8 @@ def compute_spectral_decomposition(
         feature_space=active_feature_space,
         include_internal_barycenters=bool(include_internal_barycenters),
         internal_distribution_mode=internal_distribution_mode,
+        null_distributions_by_node=basis_null_distributions,
+        continuous_covariances_by_node=basis_continuous_covariances,
     )
 
     # Data is sliced lazily inside each worker (not pre-materialised here).

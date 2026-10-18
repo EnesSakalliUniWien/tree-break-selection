@@ -8,6 +8,7 @@ import json
 import math
 import textwrap
 from dataclasses import dataclass
+from itertools import batched
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -157,7 +158,7 @@ def truncate(value: object, width: int) -> str:
 
 
 def wrap(value: object, width: int = 90) -> str:
-    return "\n".join(textwrap.wrap(str(value), width=width)) or ""
+    return textwrap.fill(str(value), width=width)
 
 
 def resolve_path(value: object, experiment_dir: Path) -> Path:
@@ -252,11 +253,6 @@ def fetch_records(url: str, *, params: dict[str, object] | None = None) -> dict[
         return {"ok": False, "error": {"code": type(exc).__name__, "message": str(exc)}}
 
 
-def chunked(values: list[str], size: int) -> Iterable[list[str]]:
-    for idx in range(0, len(values), size):
-        yield values[idx : idx + size]
-
-
 def load_cache(path: Path) -> dict[str, Any]:
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
@@ -269,7 +265,7 @@ def save_cache(path: Path, cache: dict[str, Any]) -> None:
 
 def quickgo_lookup(go_ids: list[str], cache: dict[str, Any], limit: int) -> None:
     missing = [go_id for go_id in go_ids[:limit] if go_id and go_id not in cache["quickgo"]]
-    for ids in chunked(missing, 20):
+    for ids in batched(missing, 20):
         response = fetch_records(
             "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/" + ",".join(ids)
         )

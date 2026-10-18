@@ -1,0 +1,50 @@
+case_id,group,status,found,plumbing_checks_pass,internal_edges_rejected_share,bugs_implicated,role
+binary_balanced_low_noise__2,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+binary_low_noise_2c,1 tree holds clusters,ok,15,True,0.862,none,edge over-rejection possibly contributes
+binary_many_features,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+binary_noise_feat_30i_500n,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+binary_noise_feat_80i_400n,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+binary_perfect_2c,1 tree holds clusters,unsupported,0,True,0.714,none,no bug implicated
+binary_perfect_4c,1 tree holds clusters,unsupported,0,True,0.692,none,no bug implicated
+binary_perfect_8c,1 tree holds clusters,unsupported,0,True,0.724,none,no bug implicated
+cat_mod_4cat_6c,1 tree holds clusters,ok,3,True,0.994,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+gauss_clear_medium_continuous,1 tree holds clusters,ok,1,True,0.0,continuous root edge cannot reject (statistic capped at n-1),bug is the cause: the tree already holds the clusters
+gauss_dense_signal_highd,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+gauss_dense_signal_highd_continuous,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+gauss_extreme_noise_many,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+gauss_moderate_3c_continuous,1 tree holds clusters,ok,1,True,0.0,continuous root edge cannot reject (statistic capped at n-1),bug is the cause: the tree already holds the clusters
+gauss_outlier_cluster_4c_continuous,1 tree holds clusters,ok,2,True,0.462,none,no bug implicated
+gauss_single_outlier_4c_continuous,1 tree holds clusters,ok,1,True,0.6,none,no bug implicated
+phylo_divergent_8taxa,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+phylo_dna_16taxa_low_mut,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+phylo_large_32taxa,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+phylo_large_64taxa,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+phylo_protein_12taxa,1 tree holds clusters,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: the tree already holds the clusters
+dim_consolidated_4c_24f,2 shared subspace drowned,ok,12,True,0.975,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+dim_consolidated_4c_272f,2 shared subspace drowned,ok,2,True,0.984,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+dim_consolidated_4c_72f,2 shared subspace drowned,ok,2,True,0.978,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+dim_consolidated_4c_72f_continuous,2 shared subspace drowned,ok,1,True,0.0,none,no bug implicated
+dim_diffuse_6c_136f,3 pair-specific subspaces,ok,2,True,0.987,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+dim_diffuse_6c_136f_continuous,3 pair-specific subspaces,ok,1,True,0.0,continuous root edge cannot reject (statistic capped at n-1),bug present; the data or geometry would still limit recovery
+dim_diffuse_6c_36f,3 pair-specific subspaces,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+dim_diffuse_6c_536f,3 pair-specific subspaces,ok,2,True,0.993,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+cat_mod_3cat_4c,4 metric or linkage,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+phylo_brownian_null_16taxa,4 metric or linkage,ok,1,True,0.0,mahalanobis_time erases separation,bug present; the data or geometry would still limit recovery
+bar_binary_balanced_4c,5 spread over weak features,ok,1,True,0.991,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+bar_binary_unbalanced_95_5,5 spread over weak features,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+cat_highcard_10cat_4c,5 spread over weak features,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+cat_highcard_20cat_4c,5 spread over weak features,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+traversal_deep_signal_under_same_parent,5 spread over weak features,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+cat_dirichlet_overdispersed_20cat,6 no location signal,ok,1,True,0.96,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+cat_simplex_face_rare_20cat,6 no location signal,ok,1,True,0.875,none,edge over-rejection possibly contributes
+cont_lowrank_pggn_shrinkage,6 no location signal,unsupported,0,True,1.0,edge basis fitted to tested leaves; mahalanobis_time erases separation,bug present; the data or geometry would still limit recovery
+gauss_sparse_signal_highd_noise,6 no location signal,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+mp_spike_above_bbp_continuous,6 no location signal,ok,1,True,0.0,continuous root edge cannot reject (statistic capped at n-1); mahalanobis_time erases separation,bug present; the data or geometry would still limit recovery
+overlap_extreme_4c,6 no location signal,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+overlap_heavy_4c_med_feat,6 no location signal,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+overlap_heavy_4c_small_feat,6 no location signal,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+overlap_heavy_8c_large_feat,6 no location signal,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug present; the data or geometry would still limit recovery
+sbm_hard,6 no location signal,ok,4,True,0.483,none,no bug implicated
+sbm_moderate,6 no location signal,ok,8,True,0.657,none,no bug implicated
+gauss_null_large,7 null case,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: null data should give one cluster
+gauss_null_small,7 null case,unsupported,0,True,1.0,edge basis fitted to tested leaves,bug is the cause: null data should give one cluster

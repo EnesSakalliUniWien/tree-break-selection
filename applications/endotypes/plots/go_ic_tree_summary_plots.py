@@ -21,6 +21,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
+from scipy.special import xlog1py, xlogy
 from scipy.stats import false_discovery_control, hypergeom
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -98,7 +99,7 @@ def display_label(run_id: str) -> str:
 
 
 def wrapped_label(run_id: str, width: int = 48) -> str:
-    return "\n".join(textwrap.wrap(display_label(run_id), width=width))
+    return textwrap.fill(display_label(run_id), width=width)
 
 
 def tier_color(label: str) -> str:
@@ -303,10 +304,8 @@ def go_information_criterion(data: pd.DataFrame, labels: np.ndarray) -> dict[str
         full_params += p
         active_params += int(((counts > 0) & (counts < nk)).sum())
         probs = counts / max(nk, 1)
-        positive = counts > 0
-        negative = counts < nk
-        ll += float(np.sum(counts[positive] * np.log(probs[positive])))
-        ll += float(np.sum((nk - counts[negative]) * np.log1p(-probs[negative])))
+        ll += float(np.sum(xlogy(counts, probs)))
+        ll += float(np.sum(xlog1py(nk - counts, -probs)))
     return {
         "go_log_likelihood": ll,
         "go_bic_active": float(active_params * math.log(total_observations) - 2.0 * ll),

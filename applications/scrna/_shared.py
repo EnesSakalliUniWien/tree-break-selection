@@ -41,14 +41,19 @@ def top_counts_text(values: pd.Series, n: int = 8) -> str:
     return "; ".join(f"{label}:{count}" for label, count in counts.head(n).items())
 
 
+def count_entropy(counts: np.ndarray) -> float:
+    """Return the natural-log Shannon entropy of non-negative counts; 0.0 when all are zero."""
+    from scipy.stats import entropy  # imported here so digest-only importers skip SciPy
+
+    values = np.asarray(counts, dtype=float)
+    return float(entropy(values)) if values.sum() > 0 else 0.0
+
+
 def sha256_file(path: Path) -> str:
     """Return the SHA-256 digest for a generated artifact."""
 
-    digest = hashlib.sha256()
     with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+        return hashlib.file_digest(handle, "sha256").hexdigest()
 
 
 def artifact_record(

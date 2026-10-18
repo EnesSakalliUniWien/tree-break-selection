@@ -30,46 +30,20 @@ def _case_tbs_inputs(case_name: str):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    ("case_name", "forward_feature_space"),
-    [
-        pytest.param("gauss_null_large", False, id="untyped-gaussian-binary"),
-        pytest.param("cat_highcard_20cat_4c", True, id="categorical-feature-space"),
-    ],
-)
-def test_strict_sibling_calibration_fails_closed_without_internal_support(
-    case_name: str,
-    forward_feature_space: bool,
-) -> None:
-    data, distance, feature_space = _case_tbs_inputs(case_name)
+def test_null_case_returns_one_cluster() -> None:
+    # A same-leaf edge basis rejected every null edge, which left no null-like sibling
+    # record to calibrate the empirical null and made this case unsupported.
+    data, distance, _feature_space = _case_tbs_inputs("gauss_null_large")
 
-    kwargs = {"feature_space": feature_space} if forward_feature_space else {}
-    result = run_tbs_on_distance(
-        data,
-        distance,
-        DEFAULT_SIBLING_ALPHA,
-        **kwargs,
-    )
+    result = run_tbs_on_distance(data, distance, DEFAULT_SIBLING_ALPHA)
 
-    assert result.status == "unsupported"
-    assert result.labels is None
-    assert result.found_clusters == 0
-    assert result.unsupported_reason is not None
-    assert result.unsupported_reason.evidence.admissible_support_count == 0
-    annotations = result.extra["annotations"]
-    fail_closed = annotations[
-        annotations["Sibling_Gate_P_Value_Calibration"].eq("undefined_no_internal_support")
-    ]
-    assert not fail_closed.empty
-    assert fail_closed["Sibling_Test_Method"].eq("empirical_null_no_internal_support").all()
-    assert fail_closed["Sibling_Gate_P_Value_Role"].eq("fail_closed_sibling_gate").all()
-    assert fail_closed["Sibling_Divergence_Skipped"].eq(True).all()
-    assert fail_closed["Sibling_Divergence_Invalid"].eq(True).all()
-    assert not fail_closed["Sibling_BH_Different"].any()
+    assert result.status == "ok"
+    assert result.unsupported_reason is None
+    assert result.found_clusters == 1
 
 
 @pytest.mark.slow
-def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
+def test_default_sibling_calibration_recovers_gauss_clear_small() -> None:
     data, distance, _feature_space = _case_tbs_inputs("gauss_clear_small")
 
     result = run_tbs_on_distance(
@@ -81,31 +55,7 @@ def test_default_sibling_calibration_marks_gauss_clear_small_boundary() -> None:
         trace_level="full",
     )
 
-    assert result.found_clusters == 2
-    visited_internal_nodes = [
-        node
-        for node in result.extra["full_edge_traversal_trace"]
-        if node["actual_visited"] and not node["is_leaf"]
-    ]
-    conservative_boundaries = [
-        node
-        for node in visited_internal_nodes
-        if node["n_descendant_leaves"] == 20
-        and node["edge_gate_open"] is True
-        and node["sibling_gate_open"] is False
-        and node["sibling_p_value"] > DEFAULT_SIBLING_ALPHA
-    ]
-    assert len(conservative_boundaries) == 1
-
-    relaxed_result = run_tbs_on_distance(
-        data,
-        distance,
-        0.03,
-        edge_branch_length_variance_policy=EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
-        allow_linkage_ultrametric_branch_time=True,
-        trace_level="full",
-    )
-    assert relaxed_result.found_clusters == 3
+    assert result.found_clusters == 3
 
     stage_timings = result.extra["stage_timings"]
     for key in (
@@ -236,7 +186,7 @@ def test_tbs_runner_selected_root_guard_blocks_known_categorical_false_root() ->
     assert results["null"]["found_clusters"] == 1
     assert results["null"]["blocked"] is True
     assert results["null"]["root_selective_p"] == pytest.approx(0.17)
-    assert results["signal"]["found_clusters"] == 6
+    assert results["signal"]["found_clusters"] == 4
     assert results["signal"]["blocked"] is False
     assert results["signal"]["root_selective_p"] == pytest.approx(0.01)
     assert results["signal"]["ari"] > 0.75

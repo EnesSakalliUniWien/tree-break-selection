@@ -23,10 +23,12 @@ from tree_break_selection.tree.topology import bottom_up_nodes
 
 CONTINUOUS_COVARIANCE_BY_BLOCK = "continuous_covariance_by_block"
 ContinuousCovariancePolicy = Literal["parent_total", "guarded_within_child"]
-DEFAULT_CONTINUOUS_COVARIANCE_POLICY: ContinuousCovariancePolicy = "parent_total"
+PARENT_TOTAL_CONTINUOUS_COVARIANCE_POLICY: ContinuousCovariancePolicy = "parent_total"
 GUARDED_WITHIN_CHILD_CONTINUOUS_COVARIANCE_POLICY: ContinuousCovariancePolicy = (
     "guarded_within_child"
 )
+# Parent-total covariance contains the tested split, which caps the Wald statistic at n - 1.
+DEFAULT_CONTINUOUS_COVARIANCE_POLICY = GUARDED_WITHIN_CHILD_CONTINUOUS_COVARIANCE_POLICY
 DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT = 8
 _CONTINUOUS_SCATTER_BY_BLOCK = "_continuous_scatter_by_block"
 MAX_EXACT_CONTINUOUS_COVARIANCE_BLOCK_DIMENSION = 4096
@@ -69,7 +71,7 @@ def validate_continuous_covariance_policy(
     """Validate and normalize the continuous covariance policy name."""
     value = str(policy)
     if value not in {
-        DEFAULT_CONTINUOUS_COVARIANCE_POLICY,
+        PARENT_TOTAL_CONTINUOUS_COVARIANCE_POLICY,
         GUARDED_WITHIN_CHILD_CONTINUOUS_COVARIANCE_POLICY,
     }:
         raise ValueError(
@@ -271,6 +273,9 @@ def _finalize_continuous_covariances(
     Dense-feasible regimes store full covariance matrices. High-dimensional
     regimes store diagonal variance vectors, which keeps the continuous Gaussian
     model usable without allocating one dense ``p x p`` matrix per tree node.
+    A node with fewer leaves than a block has features also stores variances:
+    its dense estimate is singular, and whitening the leaves by it puts them on a
+    simplex where every contrast between disjoint leaf sets is orthogonal.
     """
     for node_id in tree.nodes:
         node_attrs = tree.nodes[node_id]
@@ -282,11 +287,13 @@ def _finalize_continuous_covariances(
         node_leaf_count = int(node_attrs["leaf_count"])
         scatter_by_block = node_attrs[_CONTINUOUS_SCATTER_BY_BLOCK]
         covariance_denominator = max(node_leaf_count - 1, 1)
-        node_attrs[CONTINUOUS_COVARIANCE_BY_BLOCK] = {
-            block.name: np.asarray(scatter_by_block[block.name], dtype=np.float64)
-            / float(covariance_denominator)
-            for block in feature_space.continuous_blocks
-        }
+        covariance_by_block: dict[str, npt.NDArray[np.float64]] = {}
+        for block in feature_space.continuous_blocks:
+            scatter = np.asarray(scatter_by_block[block.name], dtype=np.float64)
+            if scatter.ndim == 2 and node_leaf_count - 1 < block.raw_dimension:
+                scatter = np.diag(scatter)
+            covariance_by_block[block.name] = scatter / float(covariance_denominator)
+        node_attrs[CONTINUOUS_COVARIANCE_BY_BLOCK] = covariance_by_block
         node_attrs.pop(_CONTINUOUS_SCATTER_BY_BLOCK, None)
 
 
@@ -371,6 +378,28 @@ def require_node_continuous_covariance_by_block(
     return covariance_by_block
 
 
+def _pooled_residual_degrees_of_freedom(
+    child_leaf_counts: list[int],
+    parent_covariance_by_block: dict[str, npt.NDArray[np.float64]],
+    feature_space: FeatureSpace,
+    min_child_leaf_count: int,
+) -> int | None:
+    """Return the pooled within-child degrees of freedom, or None when the guard rejects them."""
+    if len(child_leaf_counts) != 2 or any(
+        count < min_child_leaf_count for count in child_leaf_counts
+    ):
+        return None
+    residual_denominator = sum(count - 1 for count in child_leaf_counts)
+    # Pooled child scatter has rank <= residual df, so a full block with more features is singular.
+    if residual_denominator <= 0 or any(
+        np.ndim(parent_covariance_by_block[block.name]) == 2
+        and residual_denominator < block.raw_dimension
+        for block in feature_space.continuous_blocks
+    ):
+        return None
+    return residual_denominator
+
+
 def resolve_node_continuous_covariance_by_block(
     tree: nx.DiGraph,
     node_id: object,
@@ -384,9 +413,10 @@ def resolve_node_continuous_covariance_by_block(
     """Resolve the continuous covariance blocks used by node-level Wald tests.
 
     ``parent_total`` preserves the historical empirical subtree covariance. The
-    guarded within-child candidate uses the immediate children's residual
-    covariance only when both child subtrees have enough leaves; otherwise it
-    falls back to parent-total covariance.
+    default guarded within-child policy uses the immediate children's residual
+    covariance only when both child subtrees have enough leaves and every full
+    covariance block has at least as many residual degrees of freedom as
+    features; otherwise it falls back to parent-total covariance.
     """
     if feature_space is None or not feature_space.has_continuous_blocks:
         return None
@@ -400,19 +430,18 @@ def resolve_node_continuous_covariance_by_block(
         node_id,
         feature_space,
     )
-    if policy == DEFAULT_CONTINUOUS_COVARIANCE_POLICY:
+    if policy == PARENT_TOTAL_CONTINUOUS_COVARIANCE_POLICY:
         return parent_covariance_by_block
 
     children = list(tree.successors(node_id))
-    if len(children) != 2:
-        return parent_covariance_by_block
-
     child_leaf_counts = [int(tree.nodes[child_id]["leaf_count"]) for child_id in children]
-    if any(count < min_child_leaf_count for count in child_leaf_counts):
-        return parent_covariance_by_block
-
-    residual_denominator = sum(count - 1 for count in child_leaf_counts)
-    if residual_denominator <= 0:
+    residual_denominator = _pooled_residual_degrees_of_freedom(
+        child_leaf_counts,
+        parent_covariance_by_block,
+        feature_space,
+        min_child_leaf_count,
+    )
+    if residual_denominator is None:
         return parent_covariance_by_block
 
     child_covariances_by_block = [
@@ -426,22 +455,66 @@ def resolve_node_continuous_covariance_by_block(
 
     within_covariance_by_block: dict[str, npt.NDArray[np.float64]] = {}
     for block in feature_space.continuous_blocks:
-        weighted_covariance_sum = np.zeros_like(
-            np.asarray(parent_covariance_by_block[block.name], dtype=np.float64),
-            dtype=np.float64,
+        child_blocks = [
+            np.asarray(child_covariance_by_block[block.name], dtype=np.float64)
+            for child_covariance_by_block in child_covariances_by_block
+        ]
+        # A child with fewer leaves than features stores only variances, so pool variances.
+        if any(child_block.ndim == 1 for child_block in child_blocks):
+            child_blocks = [
+                np.diag(child_block) if child_block.ndim == 2 else child_block
+                for child_block in child_blocks
+            ]
+        weighted_covariance_sum = sum(
+            float(child_leaf_count - 1) * child_block
+            for child_leaf_count, child_block in zip(child_leaf_counts, child_blocks, strict=True)
         )
-        for child_leaf_count, child_covariance_by_block in zip(
-            child_leaf_counts,
-            child_covariances_by_block,
-            strict=True,
-        ):
-            weighted_covariance_sum += float(child_leaf_count - 1) * np.asarray(
-                child_covariance_by_block[block.name], dtype=np.float64
-            )
         within_covariance_by_block[block.name] = weighted_covariance_sum / float(
             residual_denominator
         )
 
+    return within_covariance_by_block
+
+
+def pooled_within_child_covariance_by_block(
+    tree: nx.DiGraph,
+    node_id: object,
+    feature_space: FeatureSpace,
+    leaf_feature_matrix: npt.NDArray[np.float64],
+    child_row_groups: list[list[int]],
+    *,
+    min_child_leaf_count: int = DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
+) -> dict[str, npt.NDArray[np.float64]]:
+    """Pool the residuals of each child's listed leaf rows around that child's own mean.
+
+    Applies the guard of ``resolve_node_continuous_covariance_by_block`` to the listed
+    rows, and returns the node's parent-total covariance when the guard rejects them.
+    Requires a feature space with continuous blocks.
+    """
+    parent_covariance_by_block = require_node_continuous_covariance_by_block(
+        tree, node_id, feature_space
+    )
+    residual_denominator = _pooled_residual_degrees_of_freedom(
+        [len(rows) for rows in child_row_groups],
+        parent_covariance_by_block,
+        feature_space,
+        validate_continuous_covariance_min_child_leaf_count(min_child_leaf_count),
+    )
+    if residual_denominator is None:
+        return parent_covariance_by_block
+
+    within_covariance_by_block: dict[str, npt.NDArray[np.float64]] = {}
+    for block in feature_space.continuous_blocks:
+        child_blocks = [
+            leaf_feature_matrix[np.ix_(rows, list(block.column_indices))]
+            for rows in child_row_groups
+        ]
+        residuals = np.vstack([values - values.mean(axis=0) for values in child_blocks])
+        within_covariance_by_block[block.name] = (
+            residuals.T @ residuals
+            if np.ndim(parent_covariance_by_block[block.name]) == 2
+            else np.sum(residuals * residuals, axis=0)
+        ) / float(residual_denominator)
     return within_covariance_by_block
 
 
@@ -452,6 +525,7 @@ __all__ = [
     "GUARDED_WITHIN_CHILD_CONTINUOUS_COVARIANCE_POLICY",
     "MAX_EXACT_CONTINUOUS_COVARIANCE_BLOCK_DIMENSION_ENV",
     "MAX_EXACT_CONTINUOUS_COVARIANCE_WORK_MIB_ENV",
+    "pooled_within_child_covariance_by_block",
     "populate_distributions",
     "require_node_continuous_covariance_by_block",
     "resolve_node_continuous_covariance_by_block",

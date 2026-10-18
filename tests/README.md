@@ -26,22 +26,22 @@ tests/
 
 ## Current Suite Map
 
-The ordered gate currently collects 893 test cases:
+The ordered gate currently collects 878 test cases:
 
 | Stage | Responsibility | Tests |
 | --- | --- | ---: |
 | 1 | Core structure and decomposition (`core/`, `tree/`, `hierarchy_analysis/`) | 172 |
-| 2 | Statistical engines and calibration (`statistics/`) | 283 |
+| 2 | Statistical engines and calibration (`statistics/`) | 266 |
 | 3 | Localization and post-hoc merge behavior (`localization/`) | 1 |
 | 4 | Validation artifact contracts (`validation/`) | 236 |
-| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 156 |
-| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 42 |
+| 5 | Pipeline and application contracts (`pipeline/`, `applications/`) | 159 |
+| 6 | Integration smoke and visualization (`integration/`, `visualization/`) | 41 |
 | 7 | Wiki memory contracts (`wiki/`) | 3 |
 
 Stage 4 protects artifact contracts: 24 cases in `calibration/` cover diagnostic
-reporting, CLI, and calibration-diagnostic contracts; 201 in `contracts/` cover the
+reporting, CLI, and calibration-diagnostic contracts; 198 in `contracts/` cover the
 method-constant manifest, the generated-file catalog, and an import check of every
-`benchmarks/` module (179 cases); 14 in `diagnostics/` cover shared diagnostic helpers. Research
+`benchmarks/` module (176 cases); 14 in `diagnostics/` cover shared diagnostic helpers. Research
 simulations, calibration panels, sweeps, and one-off diagnostic studies are
 evidence-generating tools rather than production contracts and are not part of
 the project test gate.

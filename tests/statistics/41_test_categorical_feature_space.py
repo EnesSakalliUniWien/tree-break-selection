@@ -18,6 +18,8 @@ from tree_break_selection.tree.distributions import (
     CONTINUOUS_COVARIANCE_BY_BLOCK,
     MAX_EXACT_CONTINUOUS_COVARIANCE_BLOCK_DIMENSION_ENV,
     MAX_EXACT_CONTINUOUS_COVARIANCE_WORK_MIB_ENV,
+    _use_dense_continuous_covariance,
+    pooled_within_child_covariance_by_block,
     resolve_node_continuous_covariance_by_block,
 )
 from tree_break_selection.tree.feature_space import (
@@ -267,9 +269,10 @@ def test_populate_node_distributions_stores_continuous_means_and_covariances() -
         tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK]["X"],
         expected_covariance,
     )
+    # One leaf has no covariance degrees of freedom, so it stores variances only.
     np.testing.assert_allclose(
         tree.nodes["L0"][CONTINUOUS_COVARIANCE_BY_BLOCK]["X"],
-        np.zeros((2, 2), dtype=np.float64),
+        np.zeros(2, dtype=np.float64),
     )
 
 
@@ -291,6 +294,7 @@ def test_guarded_within_child_continuous_covariance_excludes_between_child_shift
         tree,
         "root",
         feature_space,
+        continuous_covariance_policy="parent_total",
     )
     left_covariance = tree.nodes["left"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"]
     right_covariance = tree.nodes["right"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"]
@@ -320,6 +324,93 @@ def test_guarded_within_child_continuous_covariance_falls_back_for_tiny_children
         tree,
         "root",
         feature_space,
+        continuous_covariance_policy="parent_total",
+    )
+
+    assert guarded is not None
+    assert parent_total is not None
+    np.testing.assert_allclose(guarded["continuous"], parent_total["continuous"])
+
+
+def test_pooled_within_child_covariance_of_all_rows_matches_guarded_resolver() -> None:
+    tree = _balanced_continuous_tree(n_per_child=8)
+    leaf_data = _balanced_continuous_leaf_data(n_per_child=8)
+    feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+
+    pooled = pooled_within_child_covariance_by_block(
+        tree, "root", feature_space, leaf_data.to_numpy(), [list(range(8)), list(range(8, 16))]
+    )
+    guarded = resolve_node_continuous_covariance_by_block(tree, "root", feature_space)
+
+    np.testing.assert_allclose(pooled["continuous"], guarded["continuous"])
+
+
+def test_pooled_within_child_covariance_falls_back_to_parent_total_for_small_row_groups() -> None:
+    tree = _balanced_continuous_tree(n_per_child=8)
+    leaf_data = _balanced_continuous_leaf_data(n_per_child=8)
+    feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+
+    pooled = pooled_within_child_covariance_by_block(
+        tree, "root", feature_space, leaf_data.to_numpy(), [list(range(0, 8, 2)), [8, 10, 12, 14]]
+    )
+
+    np.testing.assert_allclose(
+        pooled["continuous"], tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"]
+    )
+
+
+def _shifted_continuous_leaf_data(n_per_child: int, n_features: int) -> pd.DataFrame:
+    values = np.random.default_rng(0).normal(size=(2 * n_per_child, n_features))
+    values[n_per_child:] += 3.0
+    index = [f"L{i}" for i in range(n_per_child)] + [f"R{i}" for i in range(n_per_child)]
+    return pd.DataFrame(values, index=index, columns=[f"X{j}" for j in range(n_features)])
+
+
+def test_default_continuous_edge_statistic_is_not_capped_by_parent_covariance() -> None:
+    tree = _balanced_continuous_tree(n_per_child=10)
+    leaf_data = _shifted_continuous_leaf_data(n_per_child=10, n_features=5)
+    feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+
+    z_scores = compute_child_parent_standardized_z_scores(
+        tree.nodes["left"]["distribution"],
+        tree.nodes["root"]["distribution"],
+        10,
+        20,
+        feature_space=feature_space,
+        continuous_covariance_by_block=resolve_node_continuous_covariance_by_block(
+            tree,
+            "root",
+            feature_space,
+        ),
+    )
+
+    # Whitening by the parent's own covariance bounds this statistic by n_parent - 1.
+    assert float(z_scores @ z_scores) > 20 - 1
+
+
+def test_guarded_within_child_continuous_covariance_falls_back_when_singular() -> None:
+    # 8 + 8 leaves leave 14 residual degrees of freedom for 15 features; the dense
+    # 16-leaf parent covariance has 15 and stays invertible.
+    tree = _balanced_continuous_tree(n_per_child=8)
+    leaf_data = _shifted_continuous_leaf_data(n_per_child=8, n_features=15)
+    feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+
+    guarded = resolve_node_continuous_covariance_by_block(
+        tree,
+        "root",
+        feature_space,
+        continuous_covariance_policy="guarded_within_child",
+        continuous_covariance_min_child_leaf_count=8,
+    )
+    parent_total = resolve_node_continuous_covariance_by_block(
+        tree,
+        "root",
+        feature_space,
+        continuous_covariance_policy="parent_total",
     )
 
     assert guarded is not None
@@ -351,6 +442,41 @@ def test_guarded_within_child_continuous_covariance_supports_diagonal_blocks(
     assert guarded is not None
     assert guarded["continuous"].shape == (2,)
     np.testing.assert_allclose(guarded["continuous"], expected_within)
+
+
+def test_populate_node_distributions_stores_diagonal_covariance_when_dense_is_singular() -> None:
+    # 16 leaves give at most 15 covariance degrees of freedom for 20 features.
+    tree = _balanced_continuous_tree(n_per_child=8)
+    leaf_data = _shifted_continuous_leaf_data(n_per_child=8, n_features=20)
+    feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
+
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+
+    root_covariance = tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"]
+    assert root_covariance.shape == (20,)
+    np.testing.assert_allclose(root_covariance, leaf_data.to_numpy().var(axis=0, ddof=1))
+
+
+def test_guarded_within_child_covariance_pools_diagonal_children_under_dense_parent() -> None:
+    # 8-leaf children are singular in 10 features; their 14 pooled degrees of freedom are not.
+    tree = _balanced_continuous_tree(n_per_child=8)
+    leaf_data = _shifted_continuous_leaf_data(n_per_child=8, n_features=10)
+    feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
+
+    guarded = resolve_node_continuous_covariance_by_block(
+        tree,
+        "root",
+        feature_space,
+        continuous_covariance_policy="guarded_within_child",
+        continuous_covariance_min_child_leaf_count=8,
+    )
+
+    values = leaf_data.to_numpy()
+    expected = (7 * values[:8].var(axis=0, ddof=1) + 7 * values[8:].var(axis=0, ddof=1)) / 14
+    assert guarded is not None
+    assert guarded["continuous"].shape == (10,)
+    np.testing.assert_allclose(guarded["continuous"], expected)
 
 
 def test_guarded_continuous_covariance_policy_is_discrete_noop() -> None:
@@ -572,11 +698,12 @@ def test_continuous_covariance_memory_contract_selects_diagonal_or_dense(monkeyp
         len(columns),
     )
 
+    assert not _use_dense_continuous_covariance(diagonal_tree, feature_space)
+
+    # Four leaves cannot fill a dense 400-feature covariance, so every node still stores
+    # variances; the cap is visible in the storage mode itself.
     monkeypatch.setenv(MAX_EXACT_CONTINUOUS_COVARIANCE_WORK_MIB_ENV, "8")
     tree = _simple_binary_tree()
     tree.populate_node_distributions(leaf_data, feature_space=feature_space)
-    assert CONTINUOUS_COVARIANCE_BY_BLOCK in tree.nodes["root"]
-    assert tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"].shape == (
-        len(columns),
-        len(columns),
-    )
+    assert _use_dense_continuous_covariance(tree, feature_space)
+    assert tree.nodes["root"][CONTINUOUS_COVARIANCE_BY_BLOCK]["continuous"].shape == (len(columns),)

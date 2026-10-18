@@ -71,6 +71,8 @@ def _run_edge_projection_with_capture(
         parent_ids=["root", "root"],
         child_leaf_counts=np.array([5, 5], dtype=float),
         parent_leaf_counts=np.array([10, 10], dtype=float),
+        child_distributions=[tree.nodes["A"]["distribution"], tree.nodes["B"]["distribution"]],
+        parent_distributions=[tree.nodes["root"]["distribution"]] * 2,
         spectral_dims={"root": 1},
         pca_projections={"root": np.array([[1.0, 0.0]], dtype=float)},
         pca_eigenvalues={"root": np.array([1.0], dtype=float)},

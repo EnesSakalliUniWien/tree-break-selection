@@ -17,6 +17,7 @@ import pandas as pd
 from scipy import sparse
 
 from applications.output_dirs import parse_run_dir
+from applications.scrna._shared import count_entropy
 from applications.scrna.analysis.compare_pancreas_progenitor_signatures import build_tree_helpers
 
 METHOD_KEY = "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001"
@@ -82,15 +83,6 @@ class TreeReviewInputs:
     children: dict[str, list[str]]
     parent_nodes: set[str]
     descendant_leaves: object
-
-
-def entropy(values: np.ndarray) -> float:
-    counts = np.asarray(values, dtype=float)
-    total = float(counts.sum())
-    if total <= 0:
-        return 0.0
-    probabilities = counts[counts > 0] / total
-    return float(-(probabilities * np.log(probabilities)).sum())
 
 
 def format_counts(counts: pd.Series, n: int = 10) -> str:
@@ -261,7 +253,7 @@ def main() -> None:
                 "dominant_cluster": str(cluster_counts.index[0]),
                 "dominant_cluster_fraction": float(cluster_counts.iloc[0] / n_leaves),
                 "n_celltypes": int(len(celltype_counts)),
-                "effective_celltypes": float(np.exp(entropy(celltype_counts.to_numpy()))),
+                "effective_celltypes": float(np.exp(count_entropy(celltype_counts.to_numpy()))),
                 "dominant_celltype": dominant_celltype,
                 "dominant_celltype_fraction": dominant_celltype_fraction,
                 "top_celltypes": format_counts(celltype_counts, 10),
@@ -445,7 +437,7 @@ def build_terminal_cluster_review(
                 "dominant_celltype": str(counts.index[0]),
                 "dominant_celltype_fraction": float(counts.iloc[0] / n_leaves),
                 "n_celltypes": int(len(counts)),
-                "effective_celltypes": float(np.exp(entropy(counts.to_numpy()))),
+                "effective_celltypes": float(np.exp(count_entropy(counts.to_numpy()))),
                 "top_celltypes": format_counts(counts, 10),
                 "root_child_summary": root_inner.get("child_summary", ""),
                 **marker_values,
@@ -507,7 +499,7 @@ def build_two_three_cluster_junction_review(
         celltype_counts = pd.Series(celltypes[leaf_indices]).value_counts()
         cluster_counts = pd.Series(clusters[leaf_indices]).value_counts()
         dominant_fraction = float(celltype_counts.iloc[0] / len(leaf_indices))
-        effective_celltypes = float(np.exp(entropy(celltype_counts.to_numpy())))
+        effective_celltypes = float(np.exp(count_entropy(celltype_counts.to_numpy())))
         mixed_flag = bool(dominant_fraction < 0.90 or effective_celltypes > 1.50)
         marker_values = {
             marker: float(marker_frame.iloc[leaf_indices][marker].mean())
@@ -624,7 +616,7 @@ def build_monophyletic_subtree_meeting_review(
         cluster_counts = pd.Series(clusters[leaf_indices]).value_counts()
         dominant_celltype_fraction = float(celltype_counts.iloc[0] / len(leaf_indices))
         dominant_lineage_fraction = float(lineage_counts.iloc[0] / len(leaf_indices))
-        effective_celltypes = float(np.exp(entropy(celltype_counts.to_numpy())))
+        effective_celltypes = float(np.exp(count_entropy(celltype_counts.to_numpy())))
         child_n_clusters = [len(child_set) for child_set in child_cluster_sets]
         child_n_cells = [len(leaf_set(child)) for child in children[node]]
         child_dominant_celltypes: list[str] = []

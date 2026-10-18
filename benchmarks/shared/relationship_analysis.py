@@ -16,6 +16,7 @@ import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import norm, spearmanr
 from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.metrics import log_loss
 
 from benchmarks.shared.plots.cover_page import GROUP_ORDER, category_group
 from benchmarks.shared.result_records import NUMERIC_RESULT_COLUMNS, RESULT_COLUMNS
@@ -1861,8 +1862,8 @@ def _fit_point_estimate(
     if y_mean <= 0.0 or y_mean >= 1.0:
         score = float("nan")
     else:
-        ll_full = float(np.sum(y * np.log(probs) + (1.0 - y) * np.log(1.0 - probs)))
-        ll_null = float(np.sum(y * np.log(y_mean) + (1.0 - y) * np.log(1.0 - y_mean)))
+        ll_full = -float(log_loss(y, probs, normalize=False))
+        ll_null = -float(log_loss(y, np.full_like(probs, y_mean), normalize=False))
         score = 1.0 - (ll_full / ll_null) if ll_null != 0.0 else float("nan")
     return point, score
 

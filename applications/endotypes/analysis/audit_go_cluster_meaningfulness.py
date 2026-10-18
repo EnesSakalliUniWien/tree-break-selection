@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.stats import hypergeom
+from scipy.stats import false_discovery_control, hypergeom
 
 from benchmarks.shared.util.values import finite_float
 
@@ -62,18 +62,12 @@ def load_feature_matrix(path: Path) -> tuple[pd.DataFrame, list[str], list[str]]
 
 
 def bh_qvalues(p_values: np.ndarray) -> np.ndarray:
+    """Return BH q-values for the finite p-values; non-finite entries get 1."""
     p_values = np.asarray(p_values, dtype=float)
     q_values = np.ones_like(p_values)
     finite = np.isfinite(p_values)
-    if not finite.any():
-        return q_values
-    finite_indices = np.flatnonzero(finite)
-    p = p_values[finite]
-    order = np.argsort(p)
-    ranked = p[order] * len(p) / np.arange(1, len(p) + 1)
-    ranked = np.minimum.accumulate(ranked[::-1])[::-1]
-    ranked = np.clip(ranked, 0, 1)
-    q_values[finite_indices[order]] = ranked
+    if finite.any():
+        q_values[finite] = false_discovery_control(p_values[finite], method="bh")
     return q_values
 
 

@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
 from scipy.spatial.distance import pdist, squareform
-from scipy.stats import chi2
+from scipy.stats import chi2, entropy
 from sklearn.metrics import (
     adjusted_mutual_info_score,
     adjusted_rand_score,
@@ -39,7 +39,7 @@ from sklearn.metrics import (
 )
 
 from applications.output_dirs import timestamped_results_dir
-from applications.scrna._shared import json_default
+from applications.scrna._shared import count_entropy, json_default
 from benchmarks.shared.runners.dispatch import run_clustering_result
 from benchmarks.shared.util.decomposition import labels_and_report_from_decomposition
 from tree_break_selection.hierarchy_analysis.decomposition.gates.annotation_bundle import (
@@ -441,17 +441,6 @@ def _score_labels(
     return row
 
 
-def _entropy(values: np.ndarray) -> float:
-    weights = np.asarray(values, dtype=float)
-    total = float(weights.sum())
-    if total <= 0.0:
-        return 0.0
-    probabilities = weights[weights > 0.0] / total
-    if probabilities.size == 0:
-        return 0.0
-    return float(-np.sum(probabilities * np.log(probabilities)))
-
-
 def _contingency_table(y_true: np.ndarray, y_pred: np.ndarray) -> pd.DataFrame:
     return pd.crosstab(
         pd.Series(y_pred, name="cluster"),
@@ -464,53 +453,24 @@ def _split_merge_summary_metrics(
     y_true: np.ndarray,
     y_pred: np.ndarray,
 ) -> dict[str, float]:
-    table = _contingency_table(y_true, y_pred)
-    n_cells = float(table.to_numpy(dtype=float).sum())
+    counts = _contingency_table(y_true, y_pred).to_numpy(dtype=float)
+    n_cells = float(counts.sum())
     if n_cells <= 0.0:
         return {}
 
-    cluster_sizes = table.sum(axis=1).astype(float)
-    label_sizes = table.sum(axis=0).astype(float)
-    cluster_count = int(table.shape[0])
-    label_count = int(table.shape[1])
+    cluster_count, label_count = counts.shape
+    cluster_sizes = counts.sum(axis=1)
+    label_sizes = counts.sum(axis=0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        # An empty row or column gets NaN here; it holds no cells, so it adds nothing below.
+        cluster_entropy = np.nan_to_num(entropy(counts, axis=1))
+        label_entropy = np.nan_to_num(entropy(counts, axis=0))
+        cluster_dominant_share = counts.max(axis=1) / cluster_sizes
+        label_dominant_share = counts.max(axis=0) / label_sizes
+    labels_present = label_sizes > 0.0
 
-    purity = float(table.max(axis=1).sum() / n_cells)
-    dominant_cluster_recall = float(table.max(axis=0).sum() / n_cells)
-
-    cluster_entropies = []
-    effective_labels = []
-    mixed_cluster_cell_count = 0.0
-    for cluster_id, row in table.iterrows():
-        counts = row.to_numpy(dtype=float)
-        size = float(cluster_sizes.loc[cluster_id])
-        entropy = _entropy(counts)
-        cluster_entropies.append((size, entropy))
-        effective_labels.append((size, float(np.exp(entropy))))
-        if size > 0.0 and float(np.max(counts)) / size < 0.8:
-            mixed_cluster_cell_count += size
-
-    label_entropies = []
-    effective_clusters = []
-    fragmented_label_cell_count = 0.0
-    clusters_per_label_ge_5pct = []
-    clusters_per_label_ge_10pct = []
-    for label, column in table.items():
-        counts = column.to_numpy(dtype=float)
-        size = float(label_sizes.loc[label])
-        entropy = _entropy(counts)
-        label_entropies.append((size, entropy))
-        effective_clusters.append((size, float(np.exp(entropy))))
-        if size > 0.0:
-            dominant_recall = float(np.max(counts)) / size
-            if dominant_recall < 0.8:
-                fragmented_label_cell_count += size
-            clusters_per_label_ge_5pct.append(int(np.sum(counts >= 0.05 * size)))
-            clusters_per_label_ge_10pct.append(int(np.sum(counts >= 0.10 * size)))
-
-    weighted_cluster_entropy = sum(w * e for w, e in cluster_entropies) / n_cells
-    weighted_label_entropy = sum(w * e for w, e in label_entropies) / n_cells
-    weighted_effective_labels = sum(w * e for w, e in effective_labels) / n_cells
-    weighted_effective_clusters = sum(w * e for w, e in effective_clusters) / n_cells
+    purity = float(counts.max(axis=1).sum() / n_cells)
+    dominant_cluster_recall = float(counts.max(axis=0).sum() / n_cells)
 
     return {
         "n_true_labels": float(label_count),
@@ -519,14 +479,26 @@ def _split_merge_summary_metrics(
         "merge_error_rate": 1.0 - purity,
         "weighted_label_dominant_cluster_recall": dominant_cluster_recall,
         "split_error_rate": 1.0 - dominant_cluster_recall,
-        "weighted_cluster_label_entropy": weighted_cluster_entropy,
-        "weighted_label_cluster_entropy": weighted_label_entropy,
-        "weighted_effective_labels_per_cluster": weighted_effective_labels,
-        "weighted_effective_clusters_per_label": weighted_effective_clusters,
-        "mixed_cluster_cell_fraction": mixed_cluster_cell_count / n_cells,
-        "fragmented_label_cell_fraction": fragmented_label_cell_count / n_cells,
-        "mean_clusters_per_label_ge_5pct": float(np.mean(clusters_per_label_ge_5pct)),
-        "mean_clusters_per_label_ge_10pct": float(np.mean(clusters_per_label_ge_10pct)),
+        "weighted_cluster_label_entropy": float(cluster_sizes @ cluster_entropy / n_cells),
+        "weighted_label_cluster_entropy": float(label_sizes @ label_entropy / n_cells),
+        "weighted_effective_labels_per_cluster": float(
+            cluster_sizes @ np.exp(cluster_entropy) / n_cells
+        ),
+        "weighted_effective_clusters_per_label": float(
+            label_sizes @ np.exp(label_entropy) / n_cells
+        ),
+        "mixed_cluster_cell_fraction": float(
+            cluster_sizes[cluster_dominant_share < 0.8].sum() / n_cells
+        ),
+        "fragmented_label_cell_fraction": float(
+            label_sizes[label_dominant_share < 0.8].sum() / n_cells
+        ),
+        "mean_clusters_per_label_ge_5pct": float(
+            np.mean((counts >= 0.05 * label_sizes).sum(axis=0)[labels_present])
+        ),
+        "mean_clusters_per_label_ge_10pct": float(
+            np.mean((counts >= 0.10 * label_sizes).sum(axis=0)[labels_present])
+        ),
     }
 
 
@@ -552,7 +524,7 @@ def _split_merge_detail_tables(
                 "celltype": label,
                 "n_cells": int(size),
                 "n_predicted_clusters": int((counts > 0).sum()),
-                "effective_cluster_count": float(np.exp(_entropy(counts.to_numpy()))),
+                "effective_cluster_count": float(np.exp(count_entropy(counts.to_numpy()))),
                 "dominant_cluster": dominant_cluster,
                 "dominant_cluster_cells": int(counts.loc[dominant_cluster]),
                 "dominant_cluster_recall": float(counts.loc[dominant_cluster] / size),
@@ -573,7 +545,7 @@ def _split_merge_detail_tables(
                 "cluster": cluster_id,
                 "n_cells": int(size),
                 "n_celltypes": int((counts > 0).sum()),
-                "effective_celltype_count": float(np.exp(_entropy(counts.to_numpy()))),
+                "effective_celltype_count": float(np.exp(count_entropy(counts.to_numpy()))),
                 "dominant_celltype": dominant_label,
                 "dominant_celltype_cells": int(counts.loc[dominant_label]),
                 "cluster_purity": float(counts.loc[dominant_label] / size),

@@ -907,6 +907,9 @@ renamed, or promoted.
 - [[oracle-gate-path-diagnostic]] - mathematical recoverability and gate-path
   analysis separating tree failures, sibling-calibration under-splits, direct
   sibling false splits, and pass-through fragmentation.
+- [[failing-case-subspace-separation]] - why canonical `tbs` fails on 49
+  full-suite cases: gate failures on correct trees, subspaces drowned by noise
+  features, pair-specific subspaces, equidistance and metric choice.
 - [[empirical-null-calibration-reference-law-contract]] - exact-F derivation
   for the restricted independent common-scale mode, stopping-event dependency-
   group ownership, and fail-closed selected-hierarchy behavior.

@@ -12,15 +12,15 @@ import pandas as pd
 from numpy.polynomial.legendre import leggauss
 from scipy.integrate import quad
 from scipy.stats import chi2, gamma
+from tree_break_selection.hierarchy_analysis.statistics.projection.selected_gaussian_radial import (
+    RadialSelectionInterval,
+    compute_selected_gaussian_tail,
+)
 
 from benchmarks.diagnostics.calibration.reporting import write_diagnostic_bundle
 from benchmarks.validation.contracts.report_contract import wilson_interval
 from tree_break_selection.hierarchy_analysis.statistics.projection.projected_wald.projected_wald_kernel import (
     run_projected_wald_kernel,
-)
-from tree_break_selection.hierarchy_analysis.statistics.projection.selected_gaussian_radial import (
-    RadialSelectionInterval,
-    compute_selected_gaussian_tail,
 )
 
 matplotlib.use("Agg")

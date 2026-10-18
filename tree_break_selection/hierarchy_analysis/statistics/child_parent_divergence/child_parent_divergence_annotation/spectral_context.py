@@ -16,6 +16,7 @@ from ...projection.spectral.tree_estimator import (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
     compute_spectral_decomposition,
 )
+from ...projection.spectral.tree_helpers import precompute_descendants
 
 EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION = 2
 
@@ -89,6 +90,7 @@ def compute_child_parent_spectral_context(
     feature_space: FeatureSpace | None = None,
     include_internal_barycenters: bool = False,
     internal_distribution_mode: str = INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
+    basis_row_indices_by_node: dict[str, list[int]] | None = None,
 ) -> SpectralDecompositionResult:
     """Prepare Marchenko-Pastur spectral context for the edge gate."""
     start_sec = perf_counter()
@@ -100,6 +102,7 @@ def compute_child_parent_spectral_context(
         projection_basis_dimension=projection_basis_dimension,
         include_internal_barycenters=bool(include_internal_barycenters),
         internal_distribution_mode=str(internal_distribution_mode),
+        basis_row_indices_by_node=basis_row_indices_by_node,
     )
 
     _validate_spectral_context_outputs(
@@ -113,7 +116,39 @@ def compute_child_parent_spectral_context(
     return replace(spectral_decomposition, stage_timings=stage_timings)
 
 
+def split_edge_test_rows(
+    tree: nx.DiGraph,
+    leaf_data: pd.DataFrame,
+) -> tuple[dict[str, list[int]], dict[str, list[int]]]:
+    """Split every child's leaf rows into a test half and a basis half.
+
+    A PCA basis fitted to the leaves whose contrast it projects is not fixed:
+    it turns toward that contrast and breaks the chi-square law of the edge
+    test. Each child's rows, in leaf-label order, alternate between halves,
+    starting with the test half, so a single-leaf child is always tested. A
+    parent's basis rows are its children's basis halves. The split ignores
+    the data values and the row order of leaf_data, so under the null the
+    basis is independent of the test-half contrast.
+
+    Returns
+    -------
+    tuple
+        Test rows by child node, and basis rows by parent node.
+    """
+    leaf_rows_by_node = precompute_descendants(
+        tree, {label: row for row, label in enumerate(leaf_data.index)}
+    )
+    test_rows_by_child: dict[str, list[int]] = {}
+    basis_rows_by_parent: dict[str, list[int]] = {}
+    for parent_id, child_id in tree.edges():
+        child_rows = sorted(leaf_rows_by_node[child_id], key=lambda row: str(leaf_data.index[row]))
+        test_rows_by_child[child_id] = child_rows[0::2]
+        basis_rows_by_parent.setdefault(parent_id, []).extend(child_rows[1::2])
+    return test_rows_by_child, basis_rows_by_parent
+
+
 __all__ = [
     "EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION",
     "compute_child_parent_spectral_context",
+    "split_edge_test_rows",
 ]

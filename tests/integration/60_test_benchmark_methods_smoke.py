@@ -17,6 +17,13 @@ SMOKE_CASE = {
 }
 
 
+@pytest.fixture(autouse=True)
+def results_root(monkeypatch, tmp_path):
+    """Keep plots and decomposition audits out of the repository's benchmarks/results."""
+    monkeypatch.setattr("benchmarks.shared.pipeline.DEFAULT_PLOTS_ROOT", tmp_path / "plots")
+    return tmp_path
+
+
 def test_benchmark_graph_and_density_methods_smoke():
     """Run one graph method and one density method on a single test case."""
     case = SMOKE_CASE.copy()
@@ -38,7 +45,7 @@ def test_benchmark_graph_and_density_methods_smoke():
     assert (ok_rows["labels_length"] == ok_rows["samples"]).all()
 
 
-def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
+def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke(results_root):
     """Run the previously nonfunctional methods through one benchmark case."""
     case = SMOKE_CASE.copy()
     df_results = benchmark_cluster_algorithm(
@@ -52,6 +59,7 @@ def test_benchmark_louvain_and_adaptive_diffusion_methods_smoke():
     assert set(df_results["method"]) == {"louvain", "tbs_diffusion_adaptive"}
     assert set(df_results["status"]) == {"ok"}
     assert (df_results["labels_length"] == df_results["samples"]).all()
+    assert (results_root / "audit" / "case_1_tbs_diffusion_adaptive_stats.csv").is_file()
 
 
 @pytest.mark.optional

@@ -249,10 +249,7 @@ def one_hot_encode_categorical(
     """Encode category-index columns into explicit one-hot feature blocks."""
     n_rows, n_cols = matrix.shape
     n_binary = n_cols * n_categories
-    binary = np.zeros((n_rows, n_binary), dtype=int)
-    for j in range(n_cols):
-        for k in range(n_categories):
-            binary[:, j * n_categories + k] = (matrix[:, j] == k).astype(int)
+    binary = (matrix[:, :, None] == np.arange(n_categories)).reshape(n_rows, n_binary).astype(int)
     feature_names = [f"F{j}_c{k}" for j in range(n_cols) for k in range(n_categories)]
     data_df = pd.DataFrame(binary, index=sample_names, columns=feature_names)
     feature_space = infer_feature_space_from_columns(tuple(data_df.columns))

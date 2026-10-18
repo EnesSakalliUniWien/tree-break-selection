@@ -18,6 +18,7 @@ from matplotlib import colors as mcolors
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.gridspec import GridSpec
 from PIL import Image
+from scipy.stats import circmean
 
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from applications.scrna._shared import add_generated_at
@@ -435,8 +436,7 @@ def plot_radial_tree(ax, info, cluster_palette, title):
         radii[node] = y[node] / max_y
 
     def circular_mean(nodes):
-        vals = np.array([angles[node] for node in nodes], dtype=float)
-        return float(np.arctan2(np.sin(vals).mean(), np.cos(vals).mean()))
+        return float(circmean([angles[node] for node in nodes], low=-np.pi, high=np.pi))
 
     for node in sorted(x, key=lambda key: y[key], reverse=True):
         if children.get(node):

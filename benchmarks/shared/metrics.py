@@ -10,6 +10,7 @@ from dataclasses import dataclass, fields
 import numpy as np
 import pandas as pd
 from scipy.optimize import linear_sum_assignment
+from scipy.stats import entropy
 from sklearn.metrics import (
     adjusted_mutual_info_score,
     adjusted_rand_score,
@@ -85,10 +86,8 @@ def _is_noise_label(value: object) -> bool:
 def _effective_cluster_count_from_sizes(sizes: pd.Series) -> tuple[float, float]:
     if sizes.empty or float(sizes.sum()) <= 0.0:
         return np.nan, np.nan
-    probabilities = sizes.to_numpy(dtype=float) / float(sizes.sum())
-    probabilities = probabilities[probabilities > 0.0]
-    entropy = float(-(probabilities * np.log(probabilities)).sum())
-    return float(np.exp(entropy)), entropy
+    size_entropy = float(entropy(sizes.to_numpy(dtype=float)))
+    return float(np.exp(size_entropy)), size_entropy
 
 
 def _cluster_size_gini(sizes: pd.Series) -> float:
@@ -133,14 +132,14 @@ def _calculate_fragmentation_metrics(
 
     sizes = non_noise.value_counts()
     n_samples = float(len(pred_cluster))
-    effective_count, entropy = _effective_cluster_count_from_sizes(sizes)
+    effective_count, size_entropy = _effective_cluster_count_from_sizes(sizes)
     return (
         float((sizes == 1).sum()),
         float(sizes[sizes == 1].sum() / n_samples),
         float(sizes.median()),
         float(sizes.max() / n_samples),
         effective_count,
-        entropy,
+        size_entropy,
         _cluster_size_gini(sizes),
         noise_label_fraction,
     )

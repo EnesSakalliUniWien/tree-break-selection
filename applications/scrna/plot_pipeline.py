@@ -118,13 +118,8 @@ def current_assignment_columns(output_dir: Path) -> set[str]:
 
 
 def file_digest(path: Path) -> tuple[str, int]:
-    digest = hashlib.sha256()
-    size = 0
     with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-            size += len(chunk)
-    return digest.hexdigest(), size
+        return hashlib.file_digest(handle, "sha256").hexdigest(), path.stat().st_size
 
 
 def base_row(

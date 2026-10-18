@@ -37,8 +37,8 @@ def _stable_root(*_args, **_kwargs):
     }
 
 
-def test_pipeline_supports_current_gate_annotation_contract() -> None:
-    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
+def test_pipeline_supports_current_gate_annotation_contract(expand_leaves_into_rows) -> None:
+    tree, annotations_df, leaf_data = expand_leaves_into_rows(*_build_small_tree_with_leaf_data())
 
     bundle = run_gate_annotation_pipeline(
         tree,
@@ -256,10 +256,10 @@ def test_sibling_gate_alpha_penalty_is_passed_as_effective_alpha(monkeypatch) ->
     assert bundle.metadata.config.sibling_gate_alpha_penalty == 50.0
 
 
-def test_pipeline_runs_opt_in_root_stability_guard(monkeypatch) -> None:
+def test_pipeline_runs_opt_in_root_stability_guard(monkeypatch, expand_leaves_into_rows) -> None:
     import tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator as orchestrator
 
-    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
+    tree, annotations_df, leaf_data = expand_leaves_into_rows(*_build_small_tree_with_leaf_data())
 
     def unstable_root(*_args, **_kwargs):
         return {
@@ -298,10 +298,12 @@ def test_pipeline_runs_opt_in_root_stability_guard(monkeypatch) -> None:
     assert not bool(bundle.annotated_df.loc["root", "Sibling_BH_Different"])
 
 
-def test_pipeline_runs_opt_in_root_selective_permutation_guard(monkeypatch) -> None:
+def test_pipeline_runs_opt_in_root_selective_permutation_guard(
+    monkeypatch, expand_leaves_into_rows
+) -> None:
     import tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator as orchestrator
 
-    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
+    tree, annotations_df, leaf_data = expand_leaves_into_rows(*_build_small_tree_with_leaf_data())
     feature_space = infer_feature_space_from_columns(tuple(leaf_data.columns))
 
     fake_selected_root = _selected_root(0.50)

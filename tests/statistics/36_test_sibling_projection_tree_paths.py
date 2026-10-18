@@ -250,11 +250,9 @@ def test_cherry_with_leaf_data_uses_parent_dimension_for_leaf_pair_parent() -> N
         bundle.edge_gate_result.spectral_context.test_projection_dimensions_by_node
         == test_projection_dimensions_by_node
     )
-    assert bundle.annotated_df.loc["root", "Sibling_BH_Different"]
-    assert (
-        bundle.annotated_df.loc["root", "Sibling_Projection_Dimension"]
-        == (sibling_projection_dimensions_from_edge_comparisons["root"])
-    )
+    # One data row per child leaves no rows for the edge basis, so the leaf-pair parent stays closed.
+    assert bundle.annotated_df.loc[["A", "B"], "Child_Parent_Divergence_df"].eq(0).all()
+    assert bundle.annotated_df.loc["root", "Sibling_Divergence_Skipped"]
 
 
 def test_mixed_parent_with_leaf_data_keeps_internal_parent_in_edge_derived_sibling_projection_dimensions() -> (
@@ -339,9 +337,16 @@ def test_edge_derived_sibling_dimensions_require_all_child_spectral_dimensions()
         )
 
 
-def test_only_the_projected_wald_sibling_test_uses_branch_length() -> None:
+def test_only_the_projected_wald_sibling_test_uses_branch_length(
+    expand_leaves_into_rows,
+) -> None:
     def annotate(root_pair_scale: float, **gate_kwargs: str) -> tuple[pd.DataFrame, float]:
-        tree, annotations_df, leaf_data = _build_cherry_tree()
+        tree, annotations_df, leaf_data = expand_leaves_into_rows(*_build_cherry_tree())
+        # "top" differs from its children only in its stored distribution, which the row-based
+        # edge test ignores, so start the tree at "root" to keep the root pair tested.
+        tree.remove_node("top")
+        tree.graph["root"] = "root"
+        annotations_df = annotations_df.drop(index="top")
         for child in ("A", "B"):
             tree.edges["root", child]["branch_length"] *= root_pair_scale
         lengths = [length for *_, length in tree.edges(data="branch_length")]

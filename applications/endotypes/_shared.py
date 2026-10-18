@@ -167,3 +167,11 @@ def map_symbols_to_entrez(
         for symbol in batch:
             mapped.setdefault(symbol, None)
     return mapped
+
+
+def binary_entropy_bits(probabilities: np.ndarray) -> np.ndarray:
+    """Return the Bernoulli entropy in bits of each probability in [0, 1]."""
+    from scipy.special import entr
+
+    p = np.asarray(probabilities, dtype=float)
+    return (entr(p) + entr(1.0 - p)) / np.log(2.0)

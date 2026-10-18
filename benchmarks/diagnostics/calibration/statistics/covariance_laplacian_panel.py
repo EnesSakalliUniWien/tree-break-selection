@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.sparse.csgraph import connected_components, laplacian
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
 from benchmarks.shared.util.time import format_timestamp_utc
@@ -54,39 +55,6 @@ def _absolute_correlation_adjacency(
     np.fill_diagonal(adjacency, 0.0)
     adjacency[adjacency < float(correlation_threshold)] = 0.0
     return adjacency
-
-
-def _component_sizes(adjacency: np.ndarray) -> list[int]:
-    n_nodes = int(adjacency.shape[0])
-    seen = np.zeros(n_nodes, dtype=bool)
-    sizes: list[int] = []
-    neighbors = [np.flatnonzero(adjacency[index] > 0.0) for index in range(n_nodes)]
-    for start in range(n_nodes):
-        if seen[start]:
-            continue
-        stack = [start]
-        seen[start] = True
-        size = 0
-        while stack:
-            node = stack.pop()
-            size += 1
-            for neighbor in neighbors[node]:
-                if not seen[neighbor]:
-                    seen[neighbor] = True
-                    stack.append(int(neighbor))
-        sizes.append(size)
-    return sizes
-
-
-def _normalized_laplacian(adjacency: np.ndarray) -> np.ndarray:
-    degrees = adjacency.sum(axis=1)
-    inv_sqrt = np.zeros_like(degrees)
-    positive = degrees > 0.0
-    inv_sqrt[positive] = 1.0 / np.sqrt(degrees[positive])
-    normalized_adjacency = adjacency * np.outer(inv_sqrt, inv_sqrt)
-    laplacian = np.eye(adjacency.shape[0], dtype=float) - normalized_adjacency
-    laplacian[~positive, ~positive] = 0.0
-    return 0.5 * (laplacian + laplacian.T)
 
 
 def _laplacian_status(
@@ -142,21 +110,18 @@ def analyze_covariance_laplacian(
         matrix,
         correlation_threshold=correlation_threshold,
     )
-    component_sizes = _component_sizes(adjacency)
+    n_components, component_labels = connected_components(adjacency, directed=False)
     degrees = adjacency.sum(axis=1)
     edge_mask = adjacency > 0.0
     n_possible_edges = n_features * (n_features - 1)
     graph_density = (
         float(np.count_nonzero(edge_mask) / n_possible_edges) if n_possible_edges else 0.0
     )
-    laplacian = _normalized_laplacian(adjacency)
-    laplacian_eigenvalues = np.linalg.eigvalsh(laplacian)
+    laplacian_eigenvalues = np.linalg.eigvalsh(laplacian(adjacency, normed=True))
     laplacian_eigenvalues[np.abs(laplacian_eigenvalues) < 1e-12] = 0.0
     positive_laplacian = laplacian_eigenvalues[laplacian_eigenvalues > 1e-12]
     algebraic_connectivity = (
-        float(positive_laplacian[0])
-        if len(component_sizes) == 1 and positive_laplacian.size
-        else 0.0
+        float(positive_laplacian[0]) if n_components == 1 and positive_laplacian.size else 0.0
     )
     row: dict[str, object] = {
         "matrix_id": str(matrix_id),
@@ -183,13 +148,13 @@ def analyze_covariance_laplacian(
         "mean_abs_correlation_degree": float(np.mean(degrees)),
         "max_abs_correlation_degree": float(np.max(degrees)) if degrees.size else 0.0,
         "graph_density": graph_density,
-        "n_connected_components": int(len(component_sizes)),
-        "largest_component_fraction": float(max(component_sizes) / n_features),
+        "n_connected_components": int(n_components),
+        "largest_component_fraction": float(np.bincount(component_labels).max() / n_features),
         "normalized_laplacian_lambda2": algebraic_connectivity,
         "normalized_laplacian_lambda_max": float(np.max(laplacian_eigenvalues)),
         "laplacian_zero_eigenvalue_count": int(np.sum(laplacian_eigenvalues == 0.0)),
         "laplacian_status": _laplacian_status(
-            n_components=len(component_sizes),
+            n_components=int(n_components),
             off_diagonal_abs_mass_fraction=off_diagonal_abs_mass_fraction,
             algebraic_connectivity=algebraic_connectivity,
             min_algebraic_connectivity=float(min_algebraic_connectivity),

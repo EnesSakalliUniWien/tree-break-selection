@@ -115,7 +115,7 @@ def short_run_label(run_id: str) -> str:
 
 
 def wrapped_label(value: str, width: int = 38) -> str:
-    return "\n".join(textwrap.wrap(short_run_label(value), width=width))
+    return textwrap.fill(short_run_label(value), width=width)
 
 
 def read_required_csv(path: Path) -> pd.DataFrame:

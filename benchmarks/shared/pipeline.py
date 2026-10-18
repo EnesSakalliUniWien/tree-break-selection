@@ -42,6 +42,8 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:
     logger.addHandler(logging.NullHandler())
 
+DEFAULT_PLOTS_ROOT = Path(__file__).resolve().parents[2] / "benchmarks" / "results" / "plots"
+
 
 # PDF layout/merge helpers live under `benchmarks.shared.util.pdf.*`.
 def benchmark_cluster_algorithm(
@@ -106,8 +108,7 @@ def benchmark_cluster_algorithm(
 
     # Default test cases
     run_started_at = datetime.now(timezone.utc)
-    project_root = Path(__file__).resolve().parents[2]
-    plots_root = project_root / "benchmarks" / "results" / "plots"
+    plots_root = DEFAULT_PLOTS_ROOT
     if test_cases is None:
         test_cases = get_default_test_cases()
 

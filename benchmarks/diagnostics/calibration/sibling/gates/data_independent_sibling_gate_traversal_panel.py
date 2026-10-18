@@ -8,6 +8,7 @@ only and does not change production Tree-Break Selection behavior.
 from __future__ import annotations
 
 import argparse
+import bisect
 import json
 import math
 from collections.abc import Sequence
@@ -19,7 +20,7 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import fcluster
 from scipy.spatial.distance import pdist
-from scipy.stats import norm, t
+from scipy.stats import norm, ttest_1samp
 from sklearn.metrics import adjusted_rand_score
 
 from benchmarks.diagnostics.calibration.reporting import print_diagnostic_output_paths
@@ -38,6 +39,7 @@ from benchmarks.diagnostics.calibration.traversal.production_admissibility_contr
 )
 from benchmarks.shared.generators.generate_case_data import generate_case_data
 from benchmarks.shared.util.values import bool_series, parse_csv_list
+from benchmarks.validation.contracts.report_contract import wilson_interval
 from benchmarks.validation.statistics.selected_edge_type1_geometry import (
     case_contract,
     regenerate_null_case,
@@ -780,13 +782,7 @@ def _wilson_upper_bound(
 ) -> float:
     if int(n_observations) <= 0:
         return math.nan
-    z = float(norm.ppf(1.0 - (1.0 - float(confidence_level)) / 2.0))
-    n = float(n_observations)
-    p_hat = float(successes) / n
-    denominator = 1.0 + z * z / n
-    center = p_hat + z * z / (2.0 * n)
-    radius = z * math.sqrt((p_hat * (1.0 - p_hat) / n) + (z * z / (4.0 * n * n)))
-    return float(min(1.0, (center + radius) / denominator))
+    return wilson_interval(successes, n_observations, confidence_level=confidence_level)[1]
 
 
 def _required_zero_false_split_replicates(
@@ -815,17 +811,16 @@ def _required_replicates_for_wilson_upper_bound(
     target = float(max_null_split_rate)
     if not 0.0 < target < 1.0:
         raise ValueError("max_null_split_rate must lie in (0, 1).")
-    n = max(1, count)
-    while (
-        _wilson_upper_bound(
-            count,
-            n,
-            confidence_level=float(confidence_level),
-        )
-        > target
-    ):
-        n += 1
-    return int(n)
+
+    def meets_target(n: int) -> bool:
+        return _wilson_upper_bound(count, n, confidence_level=float(confidence_level)) <= target
+
+    start = max(1, count)
+    high = start
+    while not meets_target(high):
+        high *= 2
+    # The upper bound falls as n grows, so bisection finds the first n that meets it.
+    return start + bisect.bisect_left(range(start, high + 1), True, key=meets_target)
 
 
 def _mean_lower_bound(
@@ -837,10 +832,10 @@ def _mean_lower_bound(
     n = int(numeric.shape[0])
     if n <= 0:
         return math.nan
-    if n == 1:
+    if numeric.nunique() == 1:
         return float(numeric.iloc[0])
-    standard_error = float(numeric.std(ddof=1)) / math.sqrt(float(n))
-    return float(numeric.mean() - float(t.ppf(confidence_level, n - 1)) * standard_error)
+    result = ttest_1samp(numeric.to_numpy(dtype=float), 0.0, alternative="greater")
+    return float(result.confidence_interval(confidence_level).low)
 
 
 def summarize_traversal_rows(

@@ -8,9 +8,10 @@ import numpy as np
 def normalize_labels(labels: np.ndarray) -> np.ndarray:
     """Map non-negative labels to contiguous IDs while keeping noise at -1."""
     labels_arr = np.asarray(labels, dtype=int)
-    unique = sorted({int(x) for x in labels_arr if x >= 0})
-    mapping = {label: idx for idx, label in enumerate(unique)}
-    return np.array([mapping[int(x)] if x >= 0 else -1 for x in labels_arr], dtype=int)
+    normalized = np.full(labels_arr.shape, -1, dtype=int)
+    clustered = labels_arr >= 0
+    normalized[clustered] = np.unique(labels_arr[clustered], return_inverse=True)[1]
+    return normalized
 
 
 def estimate_dbscan_eps(distance_matrix: np.ndarray, min_samples: int) -> float:

@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
+from scipy.stats import entropy
 from sklearn.metrics import (
     adjusted_rand_score,
     homogeneity_completeness_v_measure,
@@ -136,9 +137,7 @@ def cluster_size_bin(size: int) -> str:
 
 
 def effective_cluster_count(sizes: pd.Series) -> float:
-    probs = sizes.to_numpy(dtype=float) / float(sizes.sum())
-    probs = probs[probs > 0.0]
-    return float(np.exp(-(probs * np.log(probs)).sum()))
+    return float(np.exp(entropy(sizes.to_numpy(dtype=float))))
 
 
 def gini(values: pd.Series) -> float:

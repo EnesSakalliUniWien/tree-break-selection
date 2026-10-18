@@ -17,7 +17,6 @@ from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils impo
 )
 from tree_break_selection.hierarchy_analysis.statistics.data_utils import (
     assign_divergence_results,
-    extract_leaf_counts,
 )
 from tree_break_selection.tree.distributions import (
     DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT,
@@ -33,6 +32,7 @@ from .spectral_context import (
     EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION,
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
     compute_child_parent_spectral_context,
+    split_edge_test_rows,
 )
 from .tree_testing import run_child_parent_tests_across_tree
 
@@ -56,7 +56,14 @@ def annotate_child_parent_divergence(
     adaptive_projection_dimension_energy_fraction: float | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
 ) -> tuple[pd.DataFrame, SpectralDecompositionResult]:
-    """Test child-parent divergence and return typed edge-gate spectral context."""
+    """Test child-parent divergence and return typed edge-gate spectral context.
+
+    The edge test splits each parent's leaves (see ``split_edge_test_rows``): it
+    fits the PCA basis on one half and tests the other half's child-parent
+    contrast, so the basis is fixed relative to the tested contrast and the
+    chi-square reference holds. The returned spectral context is fitted on all
+    leaves, as the sibling gate expects.
+    """
     annotations_df = annotations_df.copy()
     edge_alpha = float(significance_level_alpha)
 
@@ -72,9 +79,6 @@ def annotate_child_parent_divergence(
             "test projection dimensions and PCA bases."
         )
 
-    child_leaf_counts = extract_leaf_counts(annotations_df, child_ids)
-    parent_leaf_counts = extract_leaf_counts(annotations_df, parent_ids)
-
     spectral_context = compute_child_parent_spectral_context(
         tree,
         leaf_data,
@@ -84,16 +88,33 @@ def annotate_child_parent_divergence(
         include_internal_barycenters=bool(spectral_include_internal_barycenters),
         internal_distribution_mode=str(spectral_internal_distribution_mode),
     )
+    test_rows_by_child, basis_rows_by_parent = split_edge_test_rows(tree, leaf_data)
+    edge_basis = compute_child_parent_spectral_context(
+        tree,
+        leaf_data,
+        feature_space=feature_space,
+        minimum_projection_dimension=spectral_minimum_dimension,
+        projection_basis_dimension=spectral_projection_basis_dimension,
+        basis_row_indices_by_node=basis_rows_by_parent,
+    )
+    leaf_matrix = leaf_data.to_numpy(dtype=np.float64)
+    child_test_rows = [test_rows_by_child[child_id] for child_id in child_ids]
+    parent_test_rows = [
+        [row for sibling_id in tree.successors(parent_id) for row in test_rows_by_child[sibling_id]]
+        for parent_id in parent_ids
+    ]
 
     test_kwargs = {
         "tree": tree,
         "child_ids": child_ids,
         "parent_ids": parent_ids,
-        "child_leaf_counts": child_leaf_counts,
-        "parent_leaf_counts": parent_leaf_counts,
-        "spectral_dims": spectral_context.test_projection_dimensions_by_node,
-        "pca_projections": spectral_context.principal_component_projections_by_node,
-        "pca_eigenvalues": spectral_context.principal_component_eigenvalues_by_node,
+        "child_leaf_counts": np.array([len(rows) for rows in child_test_rows]),
+        "parent_leaf_counts": np.array([len(rows) for rows in parent_test_rows]),
+        "child_distributions": [leaf_matrix[rows].mean(axis=0) for rows in child_test_rows],
+        "parent_distributions": [leaf_matrix[rows].mean(axis=0) for rows in parent_test_rows],
+        "spectral_dims": edge_basis.test_projection_dimensions_by_node,
+        "pca_projections": edge_basis.principal_component_projections_by_node,
+        "pca_eigenvalues": edge_basis.principal_component_eigenvalues_by_node,
         "feature_space": feature_space,
         "continuous_covariance_policy": continuous_covariance_policy,
         "continuous_covariance_min_child_leaf_count": (continuous_covariance_min_child_leaf_count),

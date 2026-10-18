@@ -283,7 +283,6 @@ def hamming_knn_diffusion_geometry(
     condensed Euclidean distances.
     """
 
-    from scipy.sparse import lil_matrix
     from sklearn.neighbors import NearestNeighbors
 
     values = (
@@ -307,20 +306,12 @@ def hamming_knn_diffusion_geometry(
     neighbors.fit(values)
     neighbor_distances, neighbor_indices = neighbors.kneighbors(values)
 
-    weights = lil_matrix((n_samples, n_samples), dtype=float)
-    for row_index in range(n_samples):
-        for neighbor_position in range(neighbor_k):
-            column_index = int(neighbor_indices[row_index, neighbor_position])
-            similarity = max(
-                1.0 - float(neighbor_distances[row_index, neighbor_position]),
-                1e-10,
-            )
-            weights[row_index, column_index] = max(
-                float(weights[row_index, column_index]), similarity
-            )
-            weights[column_index, row_index] = max(
-                float(weights[column_index, row_index]), similarity
-            )
+    rows = np.repeat(np.arange(n_samples), neighbor_k)
+    similarities = np.maximum(1.0 - neighbor_distances.ravel(), 1e-10)
+    directed = sparse.csr_matrix(
+        (similarities, (rows, neighbor_indices.ravel())), shape=(n_samples, n_samples)
+    )
+    weights = directed.maximum(directed.T)
 
     diffusion_coordinates = compute_diffusion_coordinates(
         weights,
@@ -441,7 +432,6 @@ def block_diffusion_geometry(
 ) -> DiffusionGeometry:
     """Compute fixed k-NN Gaussian diffusion geometry in one spectral block."""
 
-    from scipy.sparse import lil_matrix
     from sklearn.neighbors import NearestNeighbors
 
     values = np.asarray(coordinates, dtype=float)
@@ -463,25 +453,16 @@ def block_diffusion_geometry(
     if not np.isfinite(epsilon_value) or epsilon_value <= 0.0:
         raise ValueError("Could not resolve a positive block diffusion epsilon.")
 
-    weights = lil_matrix((n_samples, n_samples), dtype=float)
-    for row_index in range(n_samples):
-        for distance, column_index in zip(
-            neighbor_distances[row_index],
-            neighbor_indices[row_index],
-            strict=False,
-        ):
-            if int(column_index) == row_index:
-                continue
-            similarity = max(
-                math.exp(-float(distance * distance) / epsilon_value),
-                1e-12,
-            )
-            weights[row_index, int(column_index)] = max(
-                float(weights[row_index, int(column_index)]), similarity
-            )
-            weights[int(column_index), row_index] = max(
-                float(weights[int(column_index), row_index]), similarity
-            )
+    rows = np.repeat(np.arange(n_samples), neighbor_indices.shape[1])
+    columns = neighbor_indices.ravel()
+    off_diagonal = rows != columns
+    similarities = np.maximum(
+        np.exp(-(neighbor_distances.ravel()[off_diagonal] ** 2) / epsilon_value), 1e-12
+    )
+    directed = sparse.csr_matrix(
+        (similarities, (rows[off_diagonal], columns[off_diagonal])), shape=(n_samples, n_samples)
+    )
+    weights = directed.maximum(directed.T)
 
     diffusion_coordinates = compute_diffusion_coordinates(
         weights,

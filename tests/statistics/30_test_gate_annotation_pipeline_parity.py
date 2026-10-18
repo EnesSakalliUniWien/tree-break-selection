@@ -36,8 +36,8 @@ def _build_small_binary_tree() -> tuple[nx.DiGraph, pd.DataFrame, pd.DataFrame]:
     a_dist = np.array([0.12, 0.12, 0.12, 0.88, 0.88, 0.88], dtype=np.float64)
     b_dist = np.array([0.88, 0.88, 0.88, 0.12, 0.12, 0.12], dtype=np.float64)
     cal_dist = np.array([0.50, 0.50, 0.50, 0.50, 0.50, 0.50], dtype=np.float64)
-    c_dist = np.array([0.45, 0.45, 0.45, 0.55, 0.55, 0.55], dtype=np.float64)
-    d_dist = np.array([0.55, 0.55, 0.55, 0.45, 0.45, 0.45], dtype=np.float64)
+    c_dist = np.array([0.12, 0.88, 0.12, 0.88, 0.12, 0.88], dtype=np.float64)
+    d_dist = np.array([0.88, 0.12, 0.88, 0.12, 0.88, 0.12], dtype=np.float64)
 
     for node, dist, leaf_count, is_leaf in (
         ("root", root_dist, 200, False),
@@ -72,8 +72,12 @@ def _build_small_binary_tree() -> tuple[nx.DiGraph, pd.DataFrame, pd.DataFrame]:
     return tree, base_df, leaf_data
 
 
-def test_gate_annotation_pipeline_matches_sequential_gate_annotations() -> None:
-    tree, base_df, leaf_data = _build_small_binary_tree()
+def test_gate_annotation_pipeline_matches_sequential_gate_annotations(
+    expand_leaves_into_rows,
+) -> None:
+    # Every sibling pair has a rejected child edge and the identical rows under each leaf
+    # have df 0, so no record can calibrate the empirical null and both gates fail closed.
+    tree, base_df, leaf_data = expand_leaves_into_rows(*_build_small_binary_tree())
 
     edge_df, spectral_context = annotate_child_parent_divergence(
         tree,

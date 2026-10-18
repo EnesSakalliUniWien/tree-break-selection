@@ -9,7 +9,7 @@ short: follow it before opening deep implementation directories.
 2. Install the locked lean development environment:
 
    ```bash
-   uv venv --python 3.11 .venv
+   uv venv --python 3.12 .venv
    uv sync --extra dev --extra benchmark --extra viz --locked
    ```
 

@@ -22,6 +22,10 @@
       "description": "eigenvalue_block_comparison_20260926",
       "reproduction_source": "reports/eigenvalue_block_comparison_20260926/README.md"
     },
+    "reports/failing_case_subspace_analysis_20261018": {
+      "description": "failing_case_subspace_analysis_20261018",
+      "reproduction_source": "reports/failing_case_subspace_analysis_20261018/README.md"
+    },
     "reports/independent_diffusion_nnls_20260928": {
       "description": "independent_diffusion_nnls_20260928",
       "reproduction_source": "reports/independent_diffusion_nnls_20260928/README.md"
@@ -2429,6 +2433,118 @@
       "reason": "Existing local log already excluded by the repository *.log rule; no separate backup.",
       "bytes": 38582,
       "sha256": "192a9acd198740cc1da49fd076ff599d28e8398682e78dc33cf70344454f53f6"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/README.md",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/rerun_failing_cases.py",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/subspace_failure_analysis.py",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/pair_subspace_check.py",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/tbs_rerun_failing_cases.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 58572,
+      "sha256": "33182600887654cf3c9f0d546cac3376aef201ae4c76f6cfda988ec960550570"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/failing_case_subspace_summary.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 19446,
+      "sha256": "4a4dee81112bc439fdabe41fb2a5d4ab48ddc09e2799e773f82eff8ddae94bf2"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/failing_case_top_splits.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 25198,
+      "sha256": "787e4c21991c82dd45ff466db8b1a46b11bc61d24d3d37787d96bf4519003526"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/pair_subspace_heldout.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 21522,
+      "sha256": "658b551507335b6856253beca3c0a3a879e1c71425bbcd11683142b60383d490"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/bug_checks.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12888,
+      "sha256": "105bfdf94a4978fb6ecb2f070468d5e68059f66ede3a2a73a19ad432394df82a"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/bug_harness.py",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/bug_verdicts.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 7457,
+      "sha256": "c36cf9f9567ff28952e4ff8d6dce553b1ff52b8be01280432afeee7240c9fff6"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/bug_verdicts.py",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/edge_basis_experiment.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2001,
+      "sha256": "87e0c351246ed3e36bef5070ea61cc351bc4a00f191238a914750692a2f56bc8"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/edge_basis_experiment.py",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/mahalanobis_separation_check.csv",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 531,
+      "sha256": "bd01412ffab2b7cd09a59a90d4a65ac8c1e25275cf2174f9aa482d815b536c79"
+    },
+    {
+      "path": "reports/failing_case_subspace_analysis_20261018/bug_check/mahalanobis_separation_check.py",
+      "study": "reports/failing_case_subspace_analysis_20261018",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
     }
   ]
 }

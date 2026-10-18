@@ -16,9 +16,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy import stats
+from sklearn.metrics import roc_auc_score
 
 from benchmarks.diagnostics.calibration.selected.hierarchy.selected_hierarchy_null_audit import (
     DEFAULT_CASE_NAMES,
@@ -320,23 +322,9 @@ def _log_selected_hierarchy_ratio(ratio: float) -> tuple[float, str]:
 
 
 def _component_entropy(component_cos2: np.ndarray) -> float:
-    total = float(np.sum(component_cos2))
-    if total <= 0.0:
+    if float(np.sum(component_cos2)) <= 0.0:
         return 0.0
-    probabilities = component_cos2 / total
-    positive = probabilities[probabilities > 0.0]
-    return float(-np.sum(positive * np.log(positive)))
-
-
-def _descendant_nodes_including_self(tree, node: object) -> tuple[object, ...]:
-    nodes: list[object] = [node]
-    stack = [node]
-    while stack:
-        current = stack.pop()
-        children = list(tree.successors(current))
-        nodes.extend(children)
-        stack.extend(children)
-    return tuple(nodes)
+    return float(stats.entropy(component_cos2))
 
 
 def _subtree_topology_geometry(
@@ -346,7 +334,7 @@ def _subtree_topology_geometry(
     node_depths: dict[object, int],
 ) -> dict[str, object]:
     parent_depth = int(node_depths[parent])
-    nodes = _descendant_nodes_including_self(tree, parent)
+    nodes = tuple(nx.dfs_preorder_nodes(tree, parent))
     internal_nodes = tuple(node for node in nodes if not bool(tree.nodes[node]["is_leaf"]))
     leaf_nodes = tuple(node for node in nodes if bool(tree.nodes[node]["is_leaf"]))
     descendant_internal_node_count = max(len(internal_nodes) - 1, 0)
@@ -1226,19 +1214,15 @@ def _replicate_fold_ids(table: pd.DataFrame, *, n_folds: int) -> pd.Series:
 def _case_fold_ids(table: pd.DataFrame) -> pd.Series:
     if "case_id" not in table.columns:
         raise KeyError("Case holdout requires case_id.")
-    case_values = pd.Series(table["case_id"], index=table.index).astype(str)
-    unique_cases = tuple(sorted(case_values.unique()))
-    case_to_fold = {case_id: fold_index for fold_index, case_id in enumerate(unique_cases)}
-    return case_values.map(case_to_fold).astype(int)
+    return pd.Series(pd.factorize(table["case_id"].astype(str), sort=True)[0], index=table.index)
 
 
 def _source_family_fold_ids(table: pd.DataFrame) -> pd.Series:
     if "source_family" not in table.columns:
         raise KeyError("Family holdout requires source_family.")
-    family_values = pd.Series(table["source_family"], index=table.index).astype(str)
-    unique_families = tuple(sorted(family_values.unique()))
-    family_to_fold = {family_id: fold_index for fold_index, family_id in enumerate(unique_families)}
-    return family_values.map(family_to_fold).astype(int)
+    return pd.Series(
+        pd.factorize(table["source_family"].astype(str), sort=True)[0], index=table.index
+    )
 
 
 def _evaluate_holdout_strategy(
@@ -1442,19 +1426,6 @@ def _candidate_equation_table(records: pd.DataFrame) -> pd.DataFrame:
     return table
 
 
-def _edge_action_bin(edge_action: float) -> str:
-    if not np.isfinite(edge_action) or edge_action < 0.0:
-        raise ValueError(f"edge_action must be finite and non-negative; got {edge_action!r}.")
-    for lower, upper, label in zip(
-        EDGE_ACTION_BINS,
-        EDGE_ACTION_BINS[1:],
-        EDGE_ACTION_BIN_LABELS,
-    ):
-        if lower <= edge_action < upper:
-            return label
-    raise ValueError(f"edge_action did not match a bin: {edge_action!r}.")
-
-
 def _selected_ratio_tail_law_table(records: pd.DataFrame) -> pd.DataFrame:
     table = _candidate_equation_table(records)
     if SIMULATION_ID_COLUMN not in table.columns:
@@ -1462,17 +1433,21 @@ def _selected_ratio_tail_law_table(records: pd.DataFrame) -> pd.DataFrame:
             "Selected-ratio tail-law evaluation requires explicit independent "
             f"simulation ids in {SIMULATION_ID_COLUMN!r}."
         )
-    table["edge_action_bin"] = [_edge_action_bin(float(value)) for value in table["edge_action"]]
+    edge_action = table["edge_action"].astype(float)
+    invalid = ~np.isfinite(edge_action) | (edge_action < 0.0)
+    if invalid.any():
+        raise ValueError(
+            f"edge_action must be finite and non-negative; got {edge_action[invalid].iloc[0]!r}."
+        )
+    table["edge_action_bin"] = pd.cut(
+        edge_action, EDGE_ACTION_BINS, right=False, labels=EDGE_ACTION_BIN_LABELS
+    ).astype(str)
     return table
 
 
 def _simulation_fold_ids(group: pd.DataFrame, *, n_folds: int) -> pd.Series:
-    simulation_ids = pd.Series(group[SIMULATION_ID_COLUMN], index=group.index).astype(str)
-    ordered_ids = tuple(sorted(simulation_ids.unique()))
-    fold_by_simulation = {
-        simulation_id: index % int(n_folds) for index, simulation_id in enumerate(ordered_ids)
-    }
-    return simulation_ids.map(fold_by_simulation).astype(int)
+    simulation_order = pd.factorize(group[SIMULATION_ID_COLUMN].astype(str), sort=True)[0]
+    return pd.Series(simulation_order % int(n_folds), index=group.index)
 
 
 def _fold_tail_law_evaluation(
@@ -1658,18 +1633,10 @@ def evaluate_selected_ratio_tail_law(
 
 def _binary_auc_score(scores: np.ndarray, labels: np.ndarray) -> float:
     finite_mask = np.isfinite(scores) & np.isfinite(labels)
-    finite_scores = scores[finite_mask]
     finite_labels = labels[finite_mask].astype(bool)
-    positive_count = int(np.count_nonzero(finite_labels))
-    negative_count = int(finite_labels.shape[0] - positive_count)
-    if positive_count == 0 or negative_count == 0:
+    if finite_labels.all() or not finite_labels.any():
         return np.nan
-    ranks = stats.rankdata(finite_scores, method="average")
-    positive_rank_sum = float(np.sum(ranks[finite_labels]))
-    return float(
-        (positive_rank_sum - positive_count * (positive_count + 1) / 2.0)
-        / (positive_count * negative_count)
-    )
+    return float(roc_auc_score(finite_labels, scores[finite_mask]))
 
 
 def evaluate_candidate_equations(

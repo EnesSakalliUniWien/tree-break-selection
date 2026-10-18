@@ -54,13 +54,11 @@ def _one_hot_encode_sequence_matrix(
         )
 
     n_samples, n_features = values.shape
-    encoded = np.zeros((n_samples, n_features * int(n_categories)), dtype=int)
-    row_indices = np.arange(n_samples)
-    for feature_index in range(n_features):
-        encoded[
-            row_indices,
-            feature_index * int(n_categories) + values[:, feature_index],
-        ] = 1
+    encoded = (
+        (values[:, :, None] == np.arange(int(n_categories)))
+        .reshape(n_samples, n_features * int(n_categories))
+        .astype(int)
+    )
     feature_names = [
         f"F{feature_index}_c{category_index}"
         for feature_index in range(n_features)

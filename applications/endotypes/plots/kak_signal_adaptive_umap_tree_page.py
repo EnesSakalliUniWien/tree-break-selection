@@ -461,9 +461,7 @@ def pairwise_direction_cosine_quantiles(coords: np.ndarray) -> dict[str, float]:
             "pairwise_direction_cosine_q50": math.nan,
             "pairwise_direction_cosine_q90": math.nan,
         }
-    unit = coords[valid] / radius[valid, np.newaxis]
-    cosine = unit @ unit.T
-    tri = cosine[np.triu_indices_from(cosine, k=1)]
+    tri = 1.0 - pdist(coords[valid], metric="cosine")
     return {
         "pairwise_direction_cosine_q10": quantile_or_nan(tri, 0.10),
         "pairwise_direction_cosine_q50": quantile_or_nan(tri, 0.50),

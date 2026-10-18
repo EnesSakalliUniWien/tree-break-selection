@@ -2,9 +2,10 @@
 
 These helpers build continuous tree-construction distances from the explicit
 continuous ``FeatureSpace`` contract. ``mahalanobis_time`` is a Brownian-time
-diagnostic distance for validated covariance regimes. ``standardized_euclidean``
-is a location-geometry distance for mean-shift continuous benchmarks where
-pooled full-covariance whitening can remove the signal used to build the tree.
+diagnostic distance whitened by per-feature shrinkage variances, because pooled
+full-covariance whitening removes the mean separation used to build the tree.
+``standardized_euclidean`` is a location-geometry distance for mean-shift
+continuous benchmarks.
 """
 
 from __future__ import annotations
@@ -32,15 +33,17 @@ def estimate_continuous_covariance_by_block(
     shrinkage: float = 0.05,
     ridge: float = 1e-8,
 ) -> dict[str, npt.NDArray[np.float64]]:
-    """Estimate shrinkage covariance blocks for continuous feature data.
+    """Estimate diagonal shrinkage covariance blocks for continuous feature data.
 
     Each block uses
 
-        Sigma_hat = (1 - lambda) S + lambda * tau I + epsilon * tau I
+        Sigma_hat = (1 - lambda) D + lambda * tau I + epsilon * tau I
 
-    where ``S`` is the unbiased empirical covariance and
-    ``tau = trace(S) / d``. The small ridge is scale-relative and only ensures
-    Cholesky stability for low-rank or nearly constant blocks.
+    where ``D`` is the diagonal of the unbiased empirical covariance and
+    ``tau = trace(D) / d``. Off-diagonal terms are dropped because the total
+    covariance contains the between-cluster spread, and whitening by it removes
+    the mean separation the tree should recover. The small ridge is
+    scale-relative and only ensures Cholesky stability for nearly constant blocks.
     """
     matrix = validate_feature_matrix(
         np.asarray(data_matrix, dtype=np.float64),
@@ -61,9 +64,7 @@ def estimate_continuous_covariance_by_block(
     covariance_by_block: dict[str, npt.NDArray[np.float64]] = {}
     for block in feature_space.continuous_blocks:
         block_values = matrix[:, list(block.column_indices)]
-        centered = block_values - np.mean(block_values, axis=0, keepdims=True)
-        empirical = centered.T @ centered / float(matrix.shape[0] - 1)
-        empirical = np.atleast_2d(np.asarray(empirical, dtype=np.float64))
+        empirical = np.diag(np.var(block_values, axis=0, ddof=1))
         dimension = int(block.raw_dimension)
         target_scale = float(np.trace(empirical) / max(dimension, 1))
         if target_scale <= 0.0 or not np.isfinite(target_scale):
@@ -92,9 +93,11 @@ def continuous_time_distance_condensed(
 
         (x_a - x_b)^T Sigma^{-1} (x_a - x_b) / d,
 
-    accumulated across continuous blocks. This is a time-like dissimilarity:
-    under a Gaussian diffusion with covariance ``Sigma`` per unit time, its
-    expectation is proportional to elapsed divergence time.
+    accumulated across continuous blocks. ``Sigma`` defaults to the diagonal
+    shrinkage estimate of ``estimate_continuous_covariance_by_block``. This is a
+    time-like dissimilarity: under a Gaussian diffusion with a fixed covariance
+    per unit time, its expectation is proportional to elapsed divergence time
+    for any fixed ``Sigma``.
     """
     matrix = validate_feature_matrix(
         np.asarray(data_matrix, dtype=np.float64),
@@ -178,17 +181,11 @@ def standardized_euclidean_distance_condensed(
     if matrix.shape[0] < 2:
         raise ValueError("At least two rows are required to standardize continuous data.")
 
-    standardized_blocks: list[npt.NDArray[np.float64]] = []
-    for block in feature_space.continuous_blocks:
-        block_values = matrix[:, list(block.column_indices)]
-        centered = block_values - np.mean(block_values, axis=0, keepdims=True)
-        scale = np.std(block_values, axis=0, ddof=1, keepdims=True)
-        scale = np.asarray(scale, dtype=np.float64)
-        scale[~np.isfinite(scale) | (scale <= 0.0)] = 1.0
-        standardized_blocks.append(centered / scale)
-
-    standardized_matrix = np.column_stack(standardized_blocks)
-    return pdist(standardized_matrix, metric="euclidean")
+    columns = [index for block in feature_space.continuous_blocks for index in block.column_indices]
+    values = matrix[:, columns]
+    variances = np.var(values, axis=0, ddof=1)
+    variances[~np.isfinite(variances) | (variances <= 0.0)] = 1.0
+    return pdist(values, metric="seuclidean", V=variances)
 
 
 __all__ = [

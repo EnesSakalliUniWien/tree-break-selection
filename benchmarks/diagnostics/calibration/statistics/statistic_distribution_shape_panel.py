@@ -98,13 +98,6 @@ def _record_id(table: pd.DataFrame) -> pd.Series:
     return pd.Series([f"statistic_record_{index}" for index in table.index], index=table.index)
 
 
-def _df_bin(value: float) -> str:
-    for lower, upper, label in zip(DF_BINS, DF_BINS[1:], DF_BIN_LABELS):
-        if lower < value <= upper:
-            return label
-    raise ValueError(f"degrees_of_freedom did not match a bin: {value!r}.")
-
-
 def _sample_skew(values: pd.Series) -> float:
     numeric = pd.to_numeric(values, errors="coerce").dropna()
     if numeric.shape[0] < 3:
@@ -195,7 +188,7 @@ def normalize_statistic_distribution_records(records: pd.DataFrame) -> pd.DataFr
             / np.sqrt(2.0 * alternate_degrees),
             "df_difference_alternate_minus_current": alternate_degrees - degrees,
             "df_ratio_alternate_to_current": alternate_degrees / degrees,
-            "df_bin": [_df_bin(float(value)) for value in degrees],
+            "df_bin": pd.cut(degrees, DF_BINS, labels=DF_BIN_LABELS).astype(str),
             "study_role": STUDY_ROLE,
         }
     )
