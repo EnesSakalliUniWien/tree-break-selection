@@ -4,6 +4,7 @@ DEFAULT_METHODS: tuple[str, ...] = (
     "tbs",
     "tbs_diffusion",
     "tbs_diffusion_adaptive_nnls",
+    "tbs_family_diffusion",
     "leiden",
     "louvain",
     "kmeans",
@@ -34,6 +35,7 @@ TBS_DISTANCE_TREE_METHODS = {
     "tbs_fixed_coordinate_bonferroni_nnls",
     "tbs_fixed_block_bh_nnls",
     "tbs_fixed_block_simes_bh_nnls",
+    "tbs_family_diffusion",
 }
 
 TBS_DISTANCE_TREE_NNLS_METHODS = {
@@ -43,6 +45,7 @@ TBS_DISTANCE_TREE_NNLS_METHODS = {
     "tbs_fixed_coordinate_bonferroni_nnls",
     "tbs_fixed_block_bh_nnls",
     "tbs_fixed_block_simes_bh_nnls",
+    "tbs_family_diffusion",
 }
 
 __all__ = [

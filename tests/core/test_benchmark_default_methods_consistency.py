@@ -19,6 +19,7 @@ def test_full_runner_default_method_selection_matches_shared_defaults(monkeypatc
 
     assert resolved == list(DEFAULT_METHODS)
     assert "tbs_diffusion_adaptive_nnls" in DEFAULT_METHODS
+    assert "tbs_family_diffusion" in DEFAULT_METHODS
 
 
 def test_full_runner_all_keyword_expands_to_shared_defaults(monkeypatch):

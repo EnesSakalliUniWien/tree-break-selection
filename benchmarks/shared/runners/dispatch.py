@@ -25,7 +25,11 @@ from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.
     EDGE_GATE_SPECTRAL_MINIMUM_PROJECTION_DIMENSION,
 )
 from tree_break_selection.space_separation.diffusion import (
+    FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC,
     PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS,
+    feature_family_diffusion_geometry,
+    feature_family_diffusion_settings,
+    feature_family_diffusion_unsupported_reason,
 )
 from tree_break_selection.tree.construction import DEFAULT_BINARY_TREE_DISTANCE_METRIC
 from tree_break_selection.tree.continuous_distance import (
@@ -339,7 +343,30 @@ def _run_tbs_distance_tree_method(
     distributional feature matrix.
     """
     metric = str(params["tree_distance_metric"])
-    if distance_condensed is not None:
+    energy_fraction = params.get("adaptive_projection_dimension_energy_fraction")
+    extra: dict[str, object] | None = None
+    diffusion_distance: np.ndarray | None = None
+    if metric == FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC:
+        fallback_reason = feature_family_diffusion_unsupported_reason(data_df, feature_space)
+        extra = {"feature_family_diffusion_fallback_reason": fallback_reason}
+        if fallback_reason is None:
+            diffusion_distance = feature_family_diffusion_geometry(
+                data_df, feature_space
+            ).distance_condensed
+            if energy_fraction is None:
+                energy_fraction = feature_family_diffusion_settings(
+                    feature_space
+                ).edge_projection_energy_fraction
+        elif distance_condensed is None:
+            # Diffusion cannot represent these rows; use the family's canonical tree distance.
+            metric = (
+                CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC
+                if feature_space is not None and feature_space.has_continuous_blocks
+                else DEFAULT_BINARY_TREE_DISTANCE_METRIC
+            )
+    if diffusion_distance is not None:
+        tbs_distance_condensed = diffusion_distance
+    elif distance_condensed is not None:
         # Use precomputed distance (e.g. SBM modularity distance).
         tbs_distance_condensed = np.asarray(distance_condensed, dtype=float)
     elif metric == CONTINUOUS_TREE_DISTANCE_METRIC:
@@ -377,9 +404,7 @@ def _run_tbs_distance_tree_method(
             )
         ),
         adaptive_projection_dimension_energy_fraction=(
-            None
-            if params.get("adaptive_projection_dimension_energy_fraction") is None
-            else float(params["adaptive_projection_dimension_energy_fraction"])
+            None if energy_fraction is None else float(energy_fraction)
         ),
         spectral_include_internal_barycenters=coerce_bool_param(
             params.get("spectral_include_internal_barycenters", False),
@@ -450,6 +475,7 @@ def _run_tbs_distance_tree_method(
             name="passthrough",
         ),
         trace_level="compact",
+        **({} if extra is None else {"extra": extra}),
     )
     return _normalize_method_result(result, data_df.index)
 

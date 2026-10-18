@@ -293,3 +293,104 @@ def test_run_clustering_result_rejects_unknown_diffusion_params():
                 "edge_branch_length_variance_polcy": "normalized",
             },
         )
+
+
+def _row_capturing_runner(captured: dict[str, object]):
+    """Capture runner arguments and return one label per input row."""
+    import numpy as np
+
+    from benchmarks.shared.types import MethodRunResult
+
+    def runner(*args, **kwargs):
+        captured["args"], captured["kwargs"] = args, kwargs
+        return MethodRunResult(
+            labels=np.zeros(len(args[0]), dtype=int),
+            found_clusters=1,
+            report_df=None,
+            status="ok",
+            skip_reason=None,
+            extra={},
+        )
+
+    return runner
+
+
+def _two_cluster_continuous_frame(n_samples: int = 40, n_features: int = 6):
+    import numpy as np
+    import pandas as pd
+
+    values = np.random.default_rng(0).normal(size=(n_samples, n_features))
+    values[n_samples // 2 :] += 3.0
+    return pd.DataFrame(
+        values,
+        index=[f"S{i}" for i in range(n_samples)],
+        columns=[f"F{j}" for j in range(n_features)],
+    )
+
+
+def test_family_diffusion_tbs_uses_diffusion_over_the_case_distance(monkeypatch):
+    import numpy as np
+
+    captured = {}
+    original_spec = METHOD_SPECS["tbs_family_diffusion"]
+    monkeypatch.setitem(
+        METHOD_SPECS,
+        "tbs_family_diffusion",
+        MethodSpec(
+            name=original_spec.name,
+            runner=_row_capturing_runner(captured),
+            param_grid=original_spec.param_grid,
+        ),
+    )
+    data = _two_cluster_continuous_frame()
+    case_distance = np.ones(len(data) * (len(data) - 1) // 2)
+
+    result = run_clustering_result(
+        data_df=data,
+        method_id="tbs_family_diffusion",
+        params=original_spec.param_grid[0],
+        seed=0,
+        distance_condensed=case_distance,
+        feature_space=continuous_feature_space_from_columns(tuple(data.columns)),
+    )
+
+    assert result.status == "ok"
+    assert not np.allclose(captured["args"][1], case_distance)
+    assert captured["kwargs"]["adaptive_projection_dimension_energy_fraction"] == 0.9
+    assert captured["kwargs"]["branch_length_data_df"] is data
+    assert captured["kwargs"]["extra"]["feature_family_diffusion_fallback_reason"] is None
+
+
+def test_family_diffusion_tbs_falls_back_to_the_case_distance_on_duplicate_rows(monkeypatch):
+    import numpy as np
+    import pandas as pd
+
+    captured = {}
+    original_spec = METHOD_SPECS["tbs_family_diffusion"]
+    monkeypatch.setitem(
+        METHOD_SPECS,
+        "tbs_family_diffusion",
+        MethodSpec(
+            name=original_spec.name,
+            runner=_row_capturing_runner(captured),
+            param_grid=original_spec.param_grid,
+        ),
+    )
+    values = (np.random.default_rng(1).random((40, 12)) < 0.5).astype(float)
+    values[:8] = values[0]
+    data = pd.DataFrame(values, index=[f"S{i}" for i in range(40)])
+    case_distance = pdist(values, metric="hamming")
+
+    run_clustering_result(
+        data_df=data,
+        method_id="tbs_family_diffusion",
+        params=original_spec.param_grid[0],
+        seed=0,
+        distance_condensed=case_distance,
+    )
+
+    np.testing.assert_allclose(captured["args"][1], case_distance)
+    assert captured["kwargs"]["adaptive_projection_dimension_energy_fraction"] is None
+    assert (
+        "identical rows" in captured["kwargs"]["extra"]["feature_family_diffusion_fallback_reason"]
+    )

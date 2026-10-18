@@ -8456,3 +8456,28 @@ version comparison report and wiki source summary. Production code unchanged.
   losses are 14 trees that do not separate the true clusters at the stopping node,
   5 sibling-calibration deflations of strong raw evidence and 2 mixed cases. The
   uncalibrated `fixed_coordinate_guarded_v1` sibling profile scores lower (0.770).
+
+## 2026-10-18 — Feature-family diffusion as a TBS tree option
+
+- Of the 21 losses to Leiden, 14 are limited by the tree: canonical `tbs` already
+  reaches the best cut of its average-linkage tree at the true K in every one. Seven
+  have clusters that nearest neighbours separate (10-NN label purity 0.77-0.93) but
+  average linkage mixes; the other seven have weak signal for every method.
+- Diffusion was not part of TBS's tree construction. The package's documented path
+  builds Hamming average-linkage trees, benchmark cases supply canonical TBS's
+  continuous distance through their metadata, `tbs_diffusion_adaptive_nnls` fixes
+  `metric="hamming"` and skips all 13 continuous cases, and the Euclidean diffusion
+  preset existed only in the scRNA pancreas application.
+- Measured settings: Hamming diffusion + NNLS scores 0.822 on the 101 discrete cases
+  it supports; a 0.9 edge projection energy fraction lowers that to 0.815. Euclidean
+  diffusion (15 neighbours, one component per feature up to 50) + NNLS scores 0.763
+  on the 13 continuous cases with the energy fraction and 0.616 without it, against
+  canonical `tbs` 0.688. Branch-length inner-node states (`branch_length_state`)
+  changed no result except one worse case.
+- `tbs_family_diffusion` uses those per-family settings and falls back to the case's
+  TBS distance when diffusion cannot represent the rows. In
+  `run_20261018_200003Z_full` it has mean ARI 0.825 and exact K 81.1% against Leiden
+  0.808 and 75.4% and canonical `tbs` 0.794 and 74.6%: 10 wins, 97 ties and 15 losses
+  against Leiden, one cluster on all six null cases. It is worse than canonical `tbs`
+  on `gauss_outlier_shell_4c` (0.97 to 0.00) and both SBM cases, where diffusion
+  replaces the modularity distance.

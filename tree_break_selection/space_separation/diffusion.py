@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import math
 import numbers
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,9 @@ from tree_break_selection.eigenvalue_groups import (
     extend_rank_through_ties,
     tied_eigenvalue_neighbors,
 )
+
+if TYPE_CHECKING:
+    from tree_break_selection.tree.feature_space import FeatureSpace
 
 
 @dataclass(frozen=True)
@@ -420,6 +424,95 @@ def adaptive_diffusion_geometry(
             "duplicate_rows": int(duplicate_rows),
             "max_duplicate_count": int(max_duplicate_count),
         },
+    )
+
+
+FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC = "feature_family_diffusion"
+
+
+@dataclass(frozen=True)
+class FeatureFamilyDiffusionSettings:
+    """Adaptive diffusion settings and edge-gate projection rule for one feature family."""
+
+    metric: str
+    k_neighbors: int
+    max_components: int
+    edge_projection_energy_fraction: float | None
+
+
+# Discrete families use the benchmarked adaptive pydiffmap preset; continuous uses the
+# scRNA pancreas preset, whose 0.9 energy fraction it needs to beat canonical TBS.
+FEATURE_FAMILY_DIFFUSION_SETTINGS: dict[str, FeatureFamilyDiffusionSettings] = {
+    "bernoulli": FeatureFamilyDiffusionSettings("hamming", 10, 30, None),
+    "categorical": FeatureFamilyDiffusionSettings("hamming", 10, 30, None),
+    "continuous": FeatureFamilyDiffusionSettings("euclidean", 15, 50, 0.90),
+}
+
+
+def _feature_family(feature_space: FeatureSpace | None) -> str:
+    return "bernoulli" if feature_space is None else feature_space.family_label
+
+
+def feature_family_diffusion_settings(
+    feature_space: FeatureSpace | None,
+) -> FeatureFamilyDiffusionSettings:
+    """Return the diffusion settings for the data's feature family (untyped data is binary)."""
+    family = _feature_family(feature_space)
+    if family not in FEATURE_FAMILY_DIFFUSION_SETTINGS:
+        raise ValueError(f"Feature-family diffusion has no geometry for {family!r} data.")
+    return FEATURE_FAMILY_DIFFUSION_SETTINGS[family]
+
+
+def feature_family_diffusion_unsupported_reason(
+    data: pd.DataFrame | np.ndarray,
+    feature_space: FeatureSpace | None,
+) -> str | None:
+    """Return why feature-family diffusion cannot represent ``data``, or ``None``."""
+    family = _feature_family(feature_space)
+    if family not in FEATURE_FAMILY_DIFFUSION_SETTINGS:
+        return f"no diffusion geometry for {family!r} data"
+    values = np.asarray(data, dtype=np.float64)
+    if (
+        FEATURE_FAMILY_DIFFUSION_SETTINGS[family].metric == "hamming"
+        and not np.isin(values, (0.0, 1.0)).all()
+    ):
+        return "Hamming diffusion requires binary or one-hot values"
+    max_duplicate_count = _row_duplicate_counts(values)[2]
+    if max_duplicate_count >= PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS:
+        return f"{max_duplicate_count} identical rows give pydiffmap a zero bandwidth"
+    return None
+
+
+def feature_family_diffusion_geometry(
+    data: pd.DataFrame | np.ndarray,
+    feature_space: FeatureSpace | None,
+) -> DiffusionGeometry:
+    """Fit adaptive diffusion with the settings of the data's feature family.
+
+    Binary and one-hot data use Hamming diffusion, continuous data Euclidean
+    diffusion with at most one component per feature. Raises ``ValueError`` when
+    ``feature_family_diffusion_unsupported_reason`` gives a reason.
+    """
+    reason = feature_family_diffusion_unsupported_reason(data, feature_space)
+    if reason is not None:
+        raise ValueError(f"Feature-family diffusion is unsupported: {reason}.")
+    settings = feature_family_diffusion_settings(feature_space)
+    n_samples, n_features = np.shape(data)
+    n_components = min(settings.max_components, n_samples - 2)
+    if settings.metric == "euclidean":
+        n_components = min(n_components, n_features)
+    geometry = adaptive_diffusion_geometry(
+        data,
+        k_neighbors=settings.k_neighbors,
+        diffusion_time=3,
+        n_components=n_components,
+        metric=settings.metric,
+        bandwidth_type="-1/(d+2)",
+        epsilon="median",
+    )
+    return replace(
+        geometry,
+        metadata={**geometry.metadata, "feature_family": _feature_family(feature_space)},
     )
 
 

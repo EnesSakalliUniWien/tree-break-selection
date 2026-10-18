@@ -13,6 +13,7 @@ from benchmarks.shared.types import MethodSpec
 from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
     EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
 )
+from tree_break_selection.space_separation import FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC
 from tree_break_selection.tree.construction import (
     DEFAULT_BINARY_TREE_DISTANCE_METRIC,
     DEFAULT_TREE_LINKAGE_METHOD,
@@ -349,6 +350,19 @@ METHOD_SPECS: dict[str, MethodSpec] = {
                 **ADAPTIVE_PYDIFFMAP_DIFFUSION_PARAMS,
                 **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
             }
+        ],
+        benchmark_class=CANONICAL_BENCHMARK_CLASS,
+        benchmark_grid=DEFAULT_METHOD_GRID,
+    ),
+    "tbs_family_diffusion": MethodSpec(
+        name="TBS (Feature-Family Adaptive Diffusion, NNLS Branch-Time)",
+        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
+        param_grid=[
+            {
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC,
+                "tree_linkage_method": DEFAULT_TREE_LINKAGE_METHOD,
+            },
         ],
         benchmark_class=CANONICAL_BENCHMARK_CLASS,
         benchmark_grid=DEFAULT_METHOD_GRID,

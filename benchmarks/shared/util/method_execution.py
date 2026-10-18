@@ -23,6 +23,7 @@ from benchmarks.shared.util.decomposition import create_report_dataframe_from_la
 from benchmarks.shared.util.execution_mode import coerce_bool_param
 from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
 from benchmarks.shared.util.time import BENCHMARK_STAGE_TIMING_KEYS
+from tree_break_selection.space_separation import FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC
 from tree_break_selection.tree.construction import DEFAULT_BINARY_TREE_DISTANCE_METRIC
 from tree_break_selection.tree.continuous_distance import (
     CONTINUOUS_STANDARDIZED_EUCLIDEAN_TREE_DISTANCE_METRIC,
@@ -214,7 +215,14 @@ def run_single_method_once(
     if method_id in TBS_DISTANCE_TREE_METHODS:
         metric = str(run_params["tree_distance_metric"])
         requires_precomputed_tbs_distance = bool(meta["requires_precomputed_tbs_distance"])
-        if requires_precomputed_tbs_distance:
+        if metric == FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC:
+            # The method builds its own geometry; the case distance is only its fallback.
+            distance_condensed_for_run = distance_condensed
+            recorded_run_params["tree_distance_metric"] = metric
+            recorded_run_params[TBS_TREE_DISTANCE_SOURCE_KEY] = (
+                TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC
+            )
+        elif requires_precomputed_tbs_distance:
             if distance_condensed is None:
                 raise ValueError(
                     f"Case '{meta['name']}' requires "
