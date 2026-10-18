@@ -152,7 +152,7 @@ def load_global_embedding(path: Path | None, data: pd.DataFrame) -> tuple[pd.Dat
     )
 
 
-def load_assignment(path: Path, data_index: pd.Index) -> pd.DataFrame:
+def load_relabeled_assignment(path: Path, data_index: pd.Index) -> pd.DataFrame:
     frame = pd.read_csv(path)
     missing = {"gene", "cluster_id"} - set(frame.columns)
     if missing:
@@ -431,7 +431,7 @@ def quality_tier(row: pd.Series) -> tuple[int, str]:
     return 2, "quality_mixed"
 
 
-def cluster_colors(labels: np.ndarray) -> np.ndarray:
+def cluster_size_ranks(labels: np.ndarray) -> np.ndarray:
     sizes = pd.Series(labels).value_counts()
     rank = {int(cluster_id): i for i, cluster_id in enumerate(sizes.index)}
     return np.asarray([rank[int(label)] for label in labels], dtype=int)
@@ -507,7 +507,7 @@ def draw_candidate_page(
     global_y: str,
     output_path: Path,
 ) -> plt.Figure:
-    colors = cluster_colors(artifact.labels)
+    colors = cluster_size_ranks(artifact.labels)
     color_frame = artifact.assignments.copy()
     color_frame["cluster_color_rank"] = colors
     n_colors = max(int(colors.max()) + 1, 1)
@@ -777,7 +777,7 @@ def main() -> None:
     tfidf_frames: list[pd.DataFrame] = []
     for idx, candidate in enumerate(candidates, start=1):
         print(f"[{idx}/{len(candidates)}] score {candidate.run_id}", flush=True)
-        assignments = load_assignment(candidate.assignments_path, data.index)
+        assignments = load_relabeled_assignment(candidate.assignments_path, data.index)
         labels = assignments["cluster_id"].to_numpy(dtype=int)
         subspace, distances = candidate_subspace_and_tree(candidate, data, eigensystems)
         linkage_matrix = None

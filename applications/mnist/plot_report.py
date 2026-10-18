@@ -16,9 +16,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 from applications.mnist._shared import (
     DIGIT_COLORS,
     alpha_label,
-    assignment_key,
     best_rows,
     parse_digit_counts,
+    sweep_assignment_key,
 )
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
 
@@ -178,7 +178,7 @@ def main(output_dir: Path | None = None) -> None:
     binary = pd.read_csv(SOURCE_DIR / "mnist_benchmark_summary.csv")
     continuous = pd.read_csv(SOURCE_DIR / "mnist_continuous_pca50_summary.csv")
     best = summary.sort_values("ARI", ascending=False).iloc[0]
-    best_key = assignment_key(
+    best_key = sweep_assignment_key(
         str(best["linkage"]), float(best["edge_alpha"]), float(best["sibling_alpha"])
     )
     composition = pd.read_csv(SWEEP_DIR / f"{best_key}_top_cluster_digit_composition.csv")

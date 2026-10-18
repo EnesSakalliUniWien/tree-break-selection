@@ -24,7 +24,7 @@ def alpha_label(value: float) -> str:
     return f"{value:g}"
 
 
-def assignment_key(linkage: str, edge_alpha: float, sibling_alpha: float) -> str:
+def sweep_assignment_key(linkage: str, edge_alpha: float, sibling_alpha: float) -> str:
     """Return the summary-column key for one MNIST alpha setting."""
 
     return f"{linkage}_e{alpha_label(edge_alpha)}_s{alpha_label(sibling_alpha)}"

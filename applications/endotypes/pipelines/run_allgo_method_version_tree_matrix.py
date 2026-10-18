@@ -36,7 +36,8 @@ from tree_break_selection.space_separation import (
     weight_feature_matrix,
 )
 
-METHOD_VERSIONS = ("current",)
+# Saved run ids and the method_version column keep this label for existing readers.
+METHOD_VERSION = "current"
 TREE_GEOMETRIES = (
     "whole_adaptive_diffusion",
     "raw_cosine_subspace",
@@ -54,37 +55,12 @@ def parse_args() -> argparse.Namespace:
         sibling_alpha_default=DEFAULT_SIBLING_ALPHA,
     )
     parser.add_argument(
-        "--method-versions",
-        nargs="+",
-        default=list(METHOD_VERSIONS),
-        choices=METHOD_VERSIONS,
-    )
-    parser.add_argument(
         "--tree-geometries",
         nargs="+",
         default=list(TREE_GEOMETRIES),
         choices=TREE_GEOMETRIES,
     )
     return parser.parse_args()
-
-
-def run_method(
-    *,
-    method_version: str,
-    data: pd.DataFrame,
-    distances: np.ndarray,
-    edge_alpha: float,
-    sibling_alpha: float,
-) -> MethodRunResult:
-    if method_version == "current":
-        return run_tbs_on_distance(
-            data,
-            distances,
-            sibling_alpha,
-            tree_linkage_method="average",
-            edge_alpha=edge_alpha,
-        )
-    raise ValueError(f"Unknown method_version: {method_version!r}")
 
 
 def write_assignments(
@@ -152,7 +128,6 @@ def append_method_tree_run(
     cluster_size_rows: list[dict[str, object]],
     base: dict[str, object],
     run_id: str,
-    method_version: str,
     data: pd.DataFrame,
     distances: np.ndarray,
     assignments_dir: Path,
@@ -164,12 +139,12 @@ def append_method_tree_run(
     print(f"[{run_id}] gates", flush=True)
     start_sec = time.perf_counter()
     try:
-        result = run_method(
-            method_version=method_version,
-            data=data,
-            distances=distances,
+        result = run_tbs_on_distance(
+            data,
+            distances,
+            sibling_alpha,
+            tree_linkage_method="average",
             edge_alpha=edge_alpha,
-            sibling_alpha=sibling_alpha,
         )
         if result.labels is None:
             raise RuntimeError("Method returned no labels.")
@@ -235,38 +210,36 @@ def main() -> None:
         )
         whole_distances = whole_geometry.distance_condensed
         whole_metadata = whole_geometry.metadata
-        for method_version in args.method_versions:
-            run_id = f"{method_version}__whole_adaptive_diffusion"
-            family = f"{method_version}__whole_adaptive_diffusion"
-            base = {
-                **base_common,
-                "method_version": method_version,
-                "tree_geometry": "whole_adaptive_diffusion",
-                "method_family": family,
-                "run_id": run_id,
-                "weighting": "whole",
-                "block_name": "whole_matrix",
-                "block_type": "whole_matrix",
-                "block_start": pd.NA,
-                "block_end": pd.NA,
-                "subspace_dimensions": pd.NA,
-                "block_energy_fraction": math.nan,
-                "segmentation_bic": math.nan,
-                "diffusion_mode": "adaptive",
-                "diffusion_metadata": repr(whole_metadata),
-            }
-            append_method_tree_run(
-                rows=rows,
-                cluster_size_rows=cluster_size_rows,
-                base=base,
-                run_id=run_id,
-                method_version=method_version,
-                data=data,
-                distances=whole_distances,
-                assignments_dir=assignments_dir,
-                edge_alpha=args.edge_alpha,
-                sibling_alpha=args.sibling_alpha,
-            )
+        run_id = f"{METHOD_VERSION}__whole_adaptive_diffusion"
+        family = f"{METHOD_VERSION}__whole_adaptive_diffusion"
+        base = {
+            **base_common,
+            "method_version": METHOD_VERSION,
+            "tree_geometry": "whole_adaptive_diffusion",
+            "method_family": family,
+            "run_id": run_id,
+            "weighting": "whole",
+            "block_name": "whole_matrix",
+            "block_type": "whole_matrix",
+            "block_start": pd.NA,
+            "block_end": pd.NA,
+            "subspace_dimensions": pd.NA,
+            "block_energy_fraction": math.nan,
+            "segmentation_bic": math.nan,
+            "diffusion_mode": "adaptive",
+            "diffusion_metadata": repr(whole_metadata),
+        }
+        append_method_tree_run(
+            rows=rows,
+            cluster_size_rows=cluster_size_rows,
+            base=base,
+            run_id=run_id,
+            data=data,
+            distances=whole_distances,
+            assignments_dir=assignments_dir,
+            edge_alpha=args.edge_alpha,
+            sibling_alpha=args.sibling_alpha,
+        )
 
     for weighting in args.weightings:
         if not set(args.tree_geometries).intersection(
@@ -317,37 +290,35 @@ def main() -> None:
                 )
 
             for tree_geometry, (distances, metadata) in geometry_distances.items():
-                for method_version in args.method_versions:
-                    run_id = f"{method_version}__{tree_geometry}__{weighting}__{block.block_name}"
-                    family = f"{method_version}__{tree_geometry}"
-                    base = {
-                        **base_common,
-                        "method_version": method_version,
-                        "tree_geometry": tree_geometry,
-                        "method_family": family,
-                        "run_id": run_id,
-                        "weighting": weighting,
-                        **spectral_block_record(
-                            block,
-                            block_energy=block_energy,
-                            diagnostics=diagnostics,
-                        ),
-                        "diffusion_mode": metadata.get("diffusion_mode", "none"),
-                        "diffusion_metadata": repr(metadata),
-                    }
-                    append_method_tree_run(
-                        rows=rows,
-                        cluster_size_rows=cluster_size_rows,
-                        base=base,
-                        run_id=run_id,
-                        method_version=method_version,
-                        data=data,
-                        distances=distances,
-                        assignments_dir=assignments_dir,
-                        edge_alpha=args.edge_alpha,
-                        sibling_alpha=args.sibling_alpha,
-                        summary_path=args.output_dir / "method_tree_matrix_summary.csv",
-                    )
+                run_id = f"{METHOD_VERSION}__{tree_geometry}__{weighting}__{block.block_name}"
+                family = f"{METHOD_VERSION}__{tree_geometry}"
+                base = {
+                    **base_common,
+                    "method_version": METHOD_VERSION,
+                    "tree_geometry": tree_geometry,
+                    "method_family": family,
+                    "run_id": run_id,
+                    "weighting": weighting,
+                    **spectral_block_record(
+                        block,
+                        block_energy=block_energy,
+                        diagnostics=diagnostics,
+                    ),
+                    "diffusion_mode": metadata.get("diffusion_mode", "none"),
+                    "diffusion_metadata": repr(metadata),
+                }
+                append_method_tree_run(
+                    rows=rows,
+                    cluster_size_rows=cluster_size_rows,
+                    base=base,
+                    run_id=run_id,
+                    data=data,
+                    distances=distances,
+                    assignments_dir=assignments_dir,
+                    edge_alpha=args.edge_alpha,
+                    sibling_alpha=args.sibling_alpha,
+                    summary_path=args.output_dir / "method_tree_matrix_summary.csv",
+                )
 
     summary = pd.DataFrame(rows)
     summary.to_csv(args.output_dir / "method_tree_matrix_summary.csv", index=False)

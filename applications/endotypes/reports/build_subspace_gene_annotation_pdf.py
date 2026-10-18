@@ -6,8 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import subprocess
-import sys
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,7 +46,6 @@ class ClusterAnnotation:
     top_go_id: str
     top_term_prevalence_delta: float
     representative_genes: list[str]
-    representative_gene_proteins: list[str]
     local_top_terms: list[str]
     local_top_go_ids: list[str]
     representative_gene_annotations: list[str]
@@ -236,21 +233,23 @@ def gene_annotation_blurbs(
     return blurbs
 
 
-def call_rest(payload: dict[str, Any], *, timeout_sec: int = 45) -> dict[str, Any]:
-    completed = subprocess.run(
-        [sys.executable, "scripts/rest_request.py"],
-        input=json.dumps(payload),
-        text=True,
-        capture_output=True,
-        timeout=timeout_sec + 5,
-        check=False,
-    )
-    if not completed.stdout.strip():
-        return {"ok": False, "error": {"code": "empty_output", "message": completed.stderr}}
+def fetch_records(url: str, *, params: dict[str, object] | None = None) -> dict[str, Any]:
+    """GET a JSON endpoint and return its ``results`` list, or the error as a warning record."""
     try:
-        return json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        return {"ok": False, "error": {"code": "bad_json", "message": str(exc)}}
+        import requests
+    except ImportError as exc:
+        return {"ok": False, "error": {"code": "missing_dependency", "message": str(exc)}}
+    try:
+        response = requests.get(
+            url, params=params, headers={"Accept": "application/json"}, timeout=30
+        )
+        response.raise_for_status()
+        records = response.json()["results"]
+        if not isinstance(records, list):
+            raise ValueError(f"'results' is {type(records).__name__}, not a list")
+        return {"ok": True, "records": records}
+    except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
+        return {"ok": False, "error": {"code": type(exc).__name__, "message": str(exc)}}
 
 
 def chunked(values: list[str], size: int) -> Iterable[list[str]]:
@@ -271,16 +270,9 @@ def save_cache(path: Path, cache: dict[str, Any]) -> None:
 def quickgo_lookup(go_ids: list[str], cache: dict[str, Any], limit: int) -> None:
     missing = [go_id for go_id in go_ids[:limit] if go_id and go_id not in cache["quickgo"]]
     for ids in chunked(missing, 20):
-        payload = {
-            "base_url": "https://www.ebi.ac.uk/QuickGO/services",
-            "path": "ontology/go/terms/" + ",".join(ids),
-            "headers": {"Accept": "application/json"},
-            "record_path": "results",
-            "max_items": 20,
-            "max_depth": 5,
-            "timeout_sec": 30,
-        }
-        response = call_rest(payload, timeout_sec=35)
+        response = fetch_records(
+            "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/" + ",".join(ids)
+        )
         if not response.get("ok"):
             cache["warnings"].append({"quickgo": ids, "response": response})
             continue
@@ -312,24 +304,16 @@ def uniprot_lookup(genes: list[str], cache: dict[str, Any], limit: int) -> None:
         )
     ]
     for gene in missing:
-        payload = {
-            "base_url": "https://rest.uniprot.org",
-            "path": "uniprotkb/search",
-            "params": {
-                "query": f"gene_exact:{gene} AND organism_id:9606 AND reviewed:true",
-                "fields": "accession,id,gene_names,protein_name,organism_name",
-                "size": 1,
-                "format": "json",
-            },
-            "record_path": "results",
-            "max_items": 20,
-            "max_depth": 5,
-            "timeout_sec": 30,
+        params: dict[str, object] = {
+            "query": f"gene_exact:{gene} AND organism_id:9606 AND reviewed:true",
+            "fields": "accession,id,gene_names,protein_name,organism_name",
+            "size": 1,
+            "format": "json",
         }
-        response = call_rest(payload, timeout_sec=35)
+        response = fetch_records("https://rest.uniprot.org/uniprotkb/search", params=params)
         if not response.get("ok") or not response.get("records"):
-            payload["params"]["query"] = f"gene:{gene} AND organism_id:9606 AND reviewed:true"
-            response = call_rest(payload, timeout_sec=35)
+            params["query"] = f"gene:{gene} AND organism_id:9606 AND reviewed:true"
+            response = fetch_records("https://rest.uniprot.org/uniprotkb/search", params=params)
         if not response.get("ok"):
             cache["warnings"].append({"uniprot": gene, "response": response})
             cache["uniprot"][gene] = {"accession": "", "protein_name": "", "gene_names": ""}
@@ -452,7 +436,6 @@ def build_cluster_annotations(
                     top_go_id=top_go_id,
                     top_term_prevalence_delta=float(cluster.top_term_prevalence_delta),
                     representative_genes=genes,
-                    representative_gene_proteins=[],
                     local_top_terms=local_terms["go_term"].astype(str).tolist(),
                     local_top_go_ids=local_terms["go_id"].astype(str).tolist(),
                     representative_gene_annotations=gene_annotation_blurbs(
@@ -529,9 +512,6 @@ def load_cluster_annotations_from_roster(
                     row.get("top_term_prevalence_delta", math.nan)
                 ),
                 representative_genes=split_semicolon(row.get("representative_genes", "")),
-                representative_gene_proteins=split_semicolon(
-                    row.get("representative_gene_proteins", "")
-                ),
                 local_top_terms=split_semicolon(row.get("local_top_terms", "")),
                 local_top_go_ids=split_semicolon(row.get("local_top_go_ids", "")),
                 representative_gene_annotations=split_annotations(
@@ -569,7 +549,6 @@ def write_csv_outputs(
     rows = []
     for annotation in annotations:
         proteins = [protein_label(gene, cache) for gene in annotation.representative_genes]
-        annotation.representative_gene_proteins = proteins
         rows.append(
             {
                 "run_id": annotation.run_id,
@@ -811,7 +790,7 @@ def main() -> None:
         "",
         "`assignment_source=accepted_tbs` rows are final accepted TBS assignments; `assignment_source=diagnostic_linkage_cut` rows are diagnostic linkage-tree cuts for failed gates.",
         "",
-        "Life-science interpretation uses QuickGO term records and UniProt reviewed human gene/protein lookups through `scripts/rest_request.py`.",
+        "Life-science interpretation uses QuickGO term records and UniProt reviewed human gene/protein lookups through their public REST APIs.",
     ]
     (output_dir / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
     print(json.dumps({"pdf": str(pdf_path), "clusters": len(annotations)}, indent=2))

@@ -130,7 +130,6 @@ def test_pipeline_plan_uses_canonical_current_stage_and_optional_audit_matrix(
         adaptive_metric="euclidean",
         weightings=["raw"],
         block_names=["adaptive_common_mode_01"],
-        method_versions=["current"],
         tree_geometries=["adaptive_diffusion_cosine_subspace"],
     )
 
@@ -186,7 +185,6 @@ def test_pipeline_plan_can_skip_subspace_upload_package(tmp_path: Path) -> None:
         adaptive_metric="euclidean",
         weightings=["raw"],
         block_names=None,
-        method_versions=["current"],
         tree_geometries=["adaptive_diffusion_cosine_subspace"],
     )
 

@@ -12,22 +12,21 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import umap
-from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 
 from applications.mnist._shared import (
     DIGIT_COLORS,
     alpha_label,
-    assignment_key,
     best_rows,
     parse_digit_counts,
+    sweep_assignment_key,
 )
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
 from benchmarks.experiments.mnist.run import load_mnist_subset
 from benchmarks.experiments.mnist.run_higher_categories import (
     create_plotly_higher_category_plot_3d,
 )
-from tree_break_selection.tree.construction import tree_from_linkage
+from tree_break_selection.tree.construction import build_tree
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = ROOT / "benchmarks/results/experiments/mnist"
@@ -412,8 +411,11 @@ def _build_tbs_radial_tree_context(
     cluster_labels = assignments[best_key].astype(int).to_numpy()
     digit_labels = assignments["true_digit"].astype(int).to_numpy()
 
-    linkage_matrix = linkage(pdist(feature_matrix), method=str(linkage_method))
-    tree = tree_from_linkage(linkage_matrix, leaf_names=sample_names)
+    tree = build_tree(
+        pd.DataFrame(feature_matrix, index=sample_names),
+        pdist(feature_matrix),
+        linkage_method=str(linkage_method),
+    ).tree
     descendant_sets = tree.compute_descendant_sets(use_labels=True)
     node_by_leaf_set = {frozenset(leaves): node for node, leaves in descendant_sets.items()}
     leaf_node_by_label = {
@@ -1330,7 +1332,7 @@ def main() -> None:
     continuous = pd.read_csv(SOURCE_DIR / "mnist_continuous_pca50_summary.csv")
     assignments = pd.read_csv(SWEEP_DIR / "alpha_sweep_assignments.csv")
     best = summary.sort_values("ARI", ascending=False).iloc[0]
-    best_key = assignment_key(
+    best_key = sweep_assignment_key(
         str(best["linkage"]), float(best["edge_alpha"]), float(best["sibling_alpha"])
     )
     composition = pd.read_csv(SWEEP_DIR / f"{best_key}_top_cluster_digit_composition.csv")

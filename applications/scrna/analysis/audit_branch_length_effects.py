@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -18,111 +17,17 @@ from scipy.stats import spearmanr
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
-from applications.scrna._shared import artifact_record
+from applications.scrna._shared import AUDIT_METHODS as METHODS
+from applications.scrna._shared import (
+    DATASETS,
+    DatasetSpec,
+    artifact_record,
+)
 from benchmarks.shared.util.values import bool_series
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
-@dataclass(frozen=True)
-class DatasetSpec:
-    dataset: str
-    label: str
-    output_dir: Path
-
-
-@dataclass(frozen=True)
-class MethodSpec:
-    geometry: str
-    variant: str
-    method_label: str
-    assignment_key: str
-    edge_csv: str
-
-
-DATASETS = [
-    DatasetSpec(
-        dataset="adult_pancreas",
-        label="Adult pancreas",
-        output_dir=PROJECT_ROOT
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "pancreas_scrna_cluster_benchmark_20260623",
-    ),
-    DatasetSpec(
-        dataset="goncalves_fetal",
-        label="Goncalves fetal pancreas",
-        output_dir=PROJECT_ROOT
-        / "raw"
-        / "assets"
-        / "benchmark-results"
-        / "goncalves_fetal_pancreas_progenitor_benchmark_20260624",
-    ),
-]
-
-METHODS = [
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="topology_only",
-        method_label="TBS topology projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_topology_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv="tbs_topology_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    ),
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="branch_time_nnls",
-        method_label="TBS branch-time recomputed-NNLS projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv="tbs_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    ),
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="branch_time_raw_linkage",
-        method_label="TBS raw-linkage branch-time diagnostic projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv="tbs_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="topology_only",
-        method_label="TBS adaptive diffusion topology projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv="tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="branch_time_nnls",
-        method_label=(
-            "TBS adaptive diffusion branch-time recomputed-NNLS projected adaptive-k90 "
-            "alpha=0.01 edge=0.001"
-        ),
-        assignment_key=(
-            "tbs_adaptive_diffusion_branch_time_recomputed_nnls_projected_adaptive_k90_"
-            "alpha0p01_edge0p001"
-        ),
-        edge_csv=(
-            "tbs_adaptive_diffusion_branch_time_recomputed_nnls_projected_adaptive_k90_"
-            "alpha0p01_edge0p001_tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="branch_time_raw_linkage",
-        method_label=(
-            "TBS adaptive diffusion raw-linkage branch-time diagnostic projected adaptive-k90 "
-            "alpha=0.01 edge=0.001"
-        ),
-        assignment_key=(
-            "tbs_adaptive_diffusion_raw_linkage_branch_time_diagnostic_projected_adaptive_"
-            "k90_alpha0p01_edge0p001"
-        ),
-        edge_csv=(
-            "tbs_adaptive_diffusion_raw_linkage_branch_time_diagnostic_projected_adaptive_"
-            "k90_alpha0p01_edge0p001_tree_edges.csv"
-        ),
-    ),
-]
 VARIANT_ORDER = [
     "pca_linkage:topology_only",
     "pca_linkage:branch_time_nnls",
@@ -203,7 +108,7 @@ def _collect_dataset(spec: DatasetSpec) -> tuple[pd.DataFrame, pd.DataFrame, pd.
         edge_row = _edge_summary(spec.output_dir / method.edge_csv)
         rows.append(
             {
-                "dataset": spec.dataset,
+                "dataset": spec.key,
                 "dataset_label": spec.label,
                 "geometry": method.geometry,
                 "variant": method.variant,
@@ -284,7 +189,7 @@ def _collect_dataset(spec: DatasetSpec) -> tuple[pd.DataFrame, pd.DataFrame, pd.
             ).to_numpy()
             pair_rows.append(
                 {
-                    "dataset": spec.dataset,
+                    "dataset": spec.key,
                     "left_variant": f"{left.geometry}:{left.variant}",
                     "right_variant": f"{right.geometry}:{right.variant}",
                     "ari": adjusted_rand_score(left_labels, right_labels),
@@ -295,7 +200,7 @@ def _collect_dataset(spec: DatasetSpec) -> tuple[pd.DataFrame, pd.DataFrame, pd.
 
     sensitivity_path = spec.output_dir / "tbs_branch_time_sensitivity.csv"
     sensitivity = pd.read_csv(sensitivity_path)
-    sensitivity.insert(0, "dataset", spec.dataset)
+    sensitivity.insert(0, "dataset", spec.key)
     sensitivity.insert(1, "dataset_label", spec.label)
     sensitivity["geometry"] = np.where(
         sensitivity["method"].str.contains("adaptive diffusion"),
@@ -549,7 +454,7 @@ def main(output_dir: Path | None = None) -> None:
         effect_frames.append(effects)
         pairwise_frames.append(pairwise)
         sensitivity_frames.append(sensitivity)
-        manifests[spec.dataset] = _read_manifest(spec.output_dir / "manifest.json")
+        manifests[spec.key] = _read_manifest(spec.output_dir / "manifest.json")
 
     effects = pd.concat(effect_frames, ignore_index=True)
     pairwise = pd.concat(pairwise_frames, ignore_index=True)

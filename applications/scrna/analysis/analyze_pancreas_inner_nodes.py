@@ -93,7 +93,7 @@ def entropy(values: np.ndarray) -> float:
     return float(-(probabilities * np.log(probabilities)).sum())
 
 
-def top_counts_text(counts: pd.Series, n: int = 10) -> str:
+def format_counts(counts: pd.Series, n: int = 10) -> str:
     return "; ".join(f"{key}:{value}" for key, value in counts.head(n).items())
 
 
@@ -264,7 +264,7 @@ def main() -> None:
                 "effective_celltypes": float(np.exp(entropy(celltype_counts.to_numpy()))),
                 "dominant_celltype": dominant_celltype,
                 "dominant_celltype_fraction": dominant_celltype_fraction,
-                "top_celltypes": top_counts_text(celltype_counts, 10),
+                "top_celltypes": format_counts(celltype_counts, 10),
                 "dominant_lineage": dominant_lineage,
                 "dominant_lineage_fraction": dominant_lineage_fraction,
                 "lineage_counts": "; ".join(
@@ -446,7 +446,7 @@ def build_terminal_cluster_review(
                 "dominant_celltype_fraction": float(counts.iloc[0] / n_leaves),
                 "n_celltypes": int(len(counts)),
                 "effective_celltypes": float(np.exp(entropy(counts.to_numpy()))),
-                "top_celltypes": top_counts_text(counts, 10),
+                "top_celltypes": format_counts(counts, 10),
                 "root_child_summary": root_inner.get("child_summary", ""),
                 **marker_values,
             }
@@ -533,7 +533,7 @@ def build_two_three_cluster_junction_review(
                 "effective_celltypes": effective_celltypes,
                 "dominant_celltype": str(celltype_counts.index[0]),
                 "dominant_celltype_fraction": dominant_fraction,
-                "top_celltypes": top_counts_text(celltype_counts, 8),
+                "top_celltypes": format_counts(celltype_counts, 8),
                 "progenitor_call": (
                     "mixed junction but NEUROG3 is absent; not a validated progenitor"
                     if mixed_flag
@@ -562,7 +562,7 @@ def build_two_three_cluster_junction_review(
                         f"C{cluster_id}:{count}"
                         for cluster_id, count in child_cluster_counts.items()
                     ),
-                    "child_top_celltypes": top_counts_text(child_celltype_counts, 8),
+                    "child_top_celltypes": format_counts(child_celltype_counts, 8),
                     **child_marker_values,
                 }
             )
@@ -660,7 +660,7 @@ def build_monophyletic_subtree_meeting_review(
                     "child_dominant_celltype_fraction": float(
                         child_celltype_counts.iloc[0] / len(child_indices)
                     ),
-                    "child_top_celltypes": top_counts_text(child_celltype_counts, 8),
+                    "child_top_celltypes": format_counts(child_celltype_counts, 8),
                     "child_dominant_lineage": str(child_lineage_counts.index[0]),
                     "child_lineage_counts": "; ".join(
                         f"{key}:{value}" for key, value in child_lineage_counts.items()
@@ -745,7 +745,7 @@ def build_monophyletic_subtree_meeting_review(
                 "effective_celltypes": effective_celltypes,
                 "dominant_celltype": str(celltype_counts.index[0]),
                 "dominant_celltype_fraction": dominant_celltype_fraction,
-                "top_celltypes": top_counts_text(celltype_counts, 10),
+                "top_celltypes": format_counts(celltype_counts, 10),
                 "dominant_lineage": str(lineage_counts.index[0]),
                 "dominant_lineage_fraction": dominant_lineage_fraction,
                 "lineage_counts": "; ".join(

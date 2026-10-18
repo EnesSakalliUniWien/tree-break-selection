@@ -9,7 +9,6 @@ sources:
   - applications/endotypes/reports/build_subspace_gene_annotation_pdf.py
   - applications/endotypes/reports/export_subspace_cluster_rosters.py
   - applications/endotypes/analysis/audit_go_cluster_meaningfulness.py
-  - scripts/rest_request.py
   - applications/endotypes/analysis/audit_go_annotation_analysis_levels.py
   - data/feature_matrices/feature_matrix_julia_allGO_new.tsv
   - data/feature_matrices/feature_matrix_allGO_new_interactome.tsv
@@ -226,8 +225,9 @@ internally enriched.
 - `applications/endotypes/analysis/audit_go_cluster_meaningfulness.py` writes internal
   cluster meaningfulness calls, eigenband coherence calls, size-preserving null
   partition summaries, and top/weak cluster examples.
-- `scripts/rest_request.py` is the compact REST helper used for QuickGO and
-  UniProt requests.
+- `build_subspace_gene_annotation_pdf.py` calls the QuickGO and UniProt REST
+  APIs directly with `requests`; the former `scripts/rest_request.py` helper
+  was removed on 2026-10-17 (last present at `bc38f16c`).
 - `applications/endotypes/analysis/audit_go_annotation_analysis_levels.py` classifies existing
   result roots by file signals such as matrix-quality summaries, assignment
   files, GO-IC rankings, method-split PDFs, connected manifests, subspace

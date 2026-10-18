@@ -31,12 +31,15 @@ if str(REPO_ROOT) not in sys.path:
 
 from applications.endotypes._shared import load_binary_feature_matrix, parse_go_term
 from applications.endotypes.reports.artifact_index import load_artifact_index
+
+# The PDF builder reads the subspace folders this script writes, so both use its naming rule.
 from applications.endotypes.reports.build_subspace_gene_annotation_pdf import (
     gene_annotation_blurbs,
     load_cache,
     local_top_terms_for_cluster,
     protein_label,
     representative_genes_for_cluster,
+    subspace_dir_name,
 )
 from benchmarks.shared.util.values import finite_float
 
@@ -96,19 +99,6 @@ def resolve_path(value: object, experiment_dir: Path) -> Path | None:
 
 def path_text(path: Path | None) -> str:
     return "" if path is None else str(path)
-
-
-def subspace_dir_name(row: dict[str, object] | pd.Series) -> str:
-    rank = safe_int(row["_rank"])
-    status = str(row.get("status", ""))
-    if rank:
-        prefix = f"rank{rank:02d}"
-    elif status and status != "ok":
-        block_id = safe_int(row.get("block_id"))
-        prefix = f"failed{block_id:02d}" if block_id or block_id == 0 else "failed"
-    else:
-        prefix = "rankNA"
-    return f"{prefix}_{safe_name(row.get('weighting', ''))}_{safe_name(row.get('block_name', ''))}"
 
 
 def load_optional_table(path: Path | None) -> pd.DataFrame:
@@ -309,7 +299,7 @@ def diagnostic_linkage_assignments(
     return frame.merge(sizes, on="cluster_id", how="left")
 
 
-def plot_radial_tree(
+def plot_polar_linkage_tree(
     linkage_matrix: np.ndarray,
     assignments: pd.DataFrame,
     output_path: Path,
@@ -601,13 +591,13 @@ def build_rosters(
             assignments.to_csv(accepted_assignment_path, index=False)
         if has_assignments and render_radial_trees:
             if linkage_matrix is not None:
-                plot_radial_tree(
+                plot_polar_linkage_tree(
                     linkage_matrix,
                     assignments,
                     radial_path,
                     title=f"{assignment_source}: {weighting} / {block_name}",
                 )
-                plot_radial_tree(
+                plot_polar_linkage_tree(
                     linkage_matrix,
                     assignments,
                     radial_compact_path,

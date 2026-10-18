@@ -83,12 +83,6 @@ def parse_args() -> argparse.Namespace:
         sibling_alpha_default=None,
     )
     parser.add_argument(
-        "--method-versions",
-        nargs="+",
-        default=["current"],
-        choices=["current"],
-    )
-    parser.add_argument(
         "--tree-geometries",
         nargs="+",
         default=[
@@ -245,7 +239,6 @@ def build_pipeline_plan(
             / "applications/endotypes/pipelines/run_allgo_method_version_tree_matrix.py",
             output_dir=root / "20_method_tree_matrix_audit",
         )
-        _append_many(command, "--method-versions", args.method_versions)
         _append_many(command, "--tree-geometries", args.tree_geometries)
         stages.append(
             PipelineStage(

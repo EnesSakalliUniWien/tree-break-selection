@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import warnings
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -17,118 +16,20 @@ import numpy as np
 import pandas as pd
 
 from applications.output_dirs import parse_output_dir, timestamped_results_dir
-from applications.scrna._shared import artifact_record
+from applications.scrna._shared import AUDIT_METHODS as METHODS
+from applications.scrna._shared import (
+    DATASETS,
+    AuditMethodSpec,
+    DatasetSpec,
+    artifact_record,
+)
 from benchmarks.shared.util.values import bool_value
 from tree_break_selection.hierarchy_analysis.statistics.distributional_action import (
     edge_distributional_action_summary,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-BENCHMARK_ROOT = PROJECT_ROOT / "raw/assets/benchmark-results"
 
-
-@dataclass(frozen=True)
-class DatasetSpec:
-    key: str
-    label: str
-    output_dir: Path
-
-
-@dataclass(frozen=True)
-class MethodSpec:
-    geometry: str
-    variant: str
-    method_label: str
-    assignment_key: str
-    edge_csv: str
-
-
-DATASETS = (
-    DatasetSpec(
-        key="adult_pancreas",
-        label="Adult pancreas",
-        output_dir=BENCHMARK_ROOT / "pancreas_scrna_cluster_benchmark_20260623",
-    ),
-    DatasetSpec(
-        key="goncalves_fetal",
-        label="Goncalves fetal pancreas",
-        output_dir=BENCHMARK_ROOT / "goncalves_fetal_pancreas_progenitor_benchmark_20260624",
-    ),
-)
-
-METHODS = (
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="topology_only",
-        method_label="TBS topology projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_topology_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv="tbs_topology_projected_adaptive_k90_alpha0p01_edge0p001_tree_edges.csv",
-    ),
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="branch_time_nnls",
-        method_label="TBS branch-time recomputed-NNLS projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv=(
-            "tbs_branch_time_recomputed_nnls_projected_adaptive_k90_alpha0p01_edge0p001_"
-            "tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="pca_linkage",
-        variant="branch_time_raw_linkage",
-        method_label=(
-            "TBS raw-linkage branch-time diagnostic projected adaptive-k90 alpha=0.01 edge=0.001"
-        ),
-        assignment_key="tbs_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv=(
-            "tbs_raw_linkage_branch_time_diagnostic_projected_adaptive_k90_alpha0p01_"
-            "edge0p001_tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="topology_only",
-        method_label="TBS adaptive diffusion topology projected adaptive-k90 alpha=0.01 edge=0.001",
-        assignment_key="tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001",
-        edge_csv=(
-            "tbs_adaptive_diffusion_topology_projected_adaptive_k90_alpha0p01_edge0p001_"
-            "tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="branch_time_nnls",
-        method_label=(
-            "TBS adaptive diffusion branch-time recomputed-NNLS projected adaptive-k90 "
-            "alpha=0.01 edge=0.001"
-        ),
-        assignment_key=(
-            "tbs_adaptive_diffusion_branch_time_recomputed_nnls_projected_adaptive_k90_"
-            "alpha0p01_edge0p001"
-        ),
-        edge_csv=(
-            "tbs_adaptive_diffusion_branch_time_recomputed_nnls_projected_adaptive_k90_"
-            "alpha0p01_edge0p001_tree_edges.csv"
-        ),
-    ),
-    MethodSpec(
-        geometry="adaptive_diffusion",
-        variant="branch_time_raw_linkage",
-        method_label=(
-            "TBS adaptive diffusion raw-linkage branch-time diagnostic projected adaptive-k90 "
-            "alpha=0.01 edge=0.001"
-        ),
-        assignment_key=(
-            "tbs_adaptive_diffusion_raw_linkage_branch_time_diagnostic_projected_adaptive_"
-            "k90_alpha0p01_edge0p001"
-        ),
-        edge_csv=(
-            "tbs_adaptive_diffusion_raw_linkage_branch_time_diagnostic_projected_adaptive_"
-            "k90_alpha0p01_edge0p001_tree_edges.csv"
-        ),
-    ),
-)
 
 EDGE_STAT_COLUMN = "Child_Parent_Divergence_Test_Statistic"
 EDGE_P_COLUMN = "Child_Parent_Divergence_P_Value"
@@ -243,7 +144,7 @@ def _load_goncalves_progenitor_tables(output_dir: Path) -> dict[str, dict[str, o
 
 def _edge_records_for_method(
     dataset: DatasetSpec,
-    method: MethodSpec,
+    method: AuditMethodSpec,
     pca: pd.DataFrame,
     standardized_pca: pd.DataFrame,
     progenitor_info: dict[str, dict[str, object]],
