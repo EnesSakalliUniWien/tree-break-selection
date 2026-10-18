@@ -78,8 +78,9 @@ are descriptive; multiple pairs from one dataset are not independent observation
 
 ## Measurement contract
 
-The existing cosine operator is formed from row-normalized raw feature values. The name
-`binary` in the weighting API means raw values, including signed continuous features.
+The existing cosine operator is formed from row-normalized raw feature values. The weighting
+option recorded as `binary`, now named `raw`, means raw values, including signed continuous
+features.
 Blocks are the existing contiguous, tie-preserving BIC segments of the log eigenspectrum.
 The target rank is 40, minimum block length 4, maximum segments 8. Full-operator energy
 fractions use trace = number of nonzero sample rows; retained-energy fractions are separate.
@@ -123,3 +124,8 @@ and confirmed source hashes did not change during inference. Analytic checks cov
 log-distance values, common-scale invariance, proportional and constant distance vectors,
 and rooted-clade distance. The 18 space-separation and 16 construction/rooting tests passed.
 No production method, inference default, commit or push was changed by this analysis.
+
+`summarize_results.py` validated these saved outputs and wrote this README. It first requires
+every source hash in `manifest.json`. That working tree (commit `f34f59ca` plus uncommitted
+edits) matches no commit, so on later source the script stops at this check. It keeps the
+recorded weighting name `binary`.

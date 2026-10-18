@@ -48,7 +48,7 @@ from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_
     collect_sibling_pair_records,
 )
 
-SCHEMA_VERSION = "traversal_sibling_fdr_null/v1"
+SCHEMA_VERSION = "traversal_sibling_fdr_null/v2"
 GENERATED_BY = "benchmarks.validation.statistics.traversal_sibling_fdr_null"
 SIMULATION_OUTPUT_NAME = "traversal_sibling_fdr_simulations.csv"
 SUMMARY_OUTPUT_NAME = "traversal_sibling_fdr_summary.csv"
@@ -96,7 +96,12 @@ def parse_fdr_layers(raw: str) -> tuple[FdrLayer, ...]:
 
 
 def estimate_fdr(rows: Iterable[dict[str, object]]) -> dict[str, float]:
-    """Estimate FDR-style summaries without turning support failures into null decisions."""
+    """Estimate summaries over status='ok' simulations only.
+
+    ``mean_fdp`` averages the false-discovery proportion; ``any_false_rejection_rate``
+    is the fraction with at least one false rejection. Support and runtime failures
+    are counted separately and excluded from both probability denominators.
+    """
     materialized_rows = list(rows)
     if not materialized_rows:
         raise ValueError("Cannot estimate FDR from zero simulation rows.")
@@ -115,14 +120,14 @@ def estimate_fdr(rows: Iterable[dict[str, object]]) -> dict[str, float]:
         ]
         false_rejection_indicators = [float(int(row["n_false_rejections"]) > 0) for row in ok_rows]
         mean_fdp = float(np.mean(fdps))
-        false_rejection_rate = float(np.mean(false_rejection_indicators))
+        any_false_rejection_rate = float(np.mean(false_rejection_indicators))
     else:
         mean_fdp = float("nan")
-        false_rejection_rate = float("nan")
+        any_false_rejection_rate = float("nan")
 
     return {
         "mean_fdp": mean_fdp,
-        "false_rejection_rate": false_rejection_rate,
+        "any_false_rejection_rate": any_false_rejection_rate,
         "n_simulations": float(len(materialized_rows)),
         "n_ok": float(len(ok_rows)),
         "n_support_failures": float(len(support_failures)),
@@ -138,7 +143,11 @@ def classify_fdr_outcome(
     n_ok: int | float = 1,
     n_support_failures: int | float = 0,
 ) -> str:
-    """Classify the diagnostic outcome without hiding unsupported states."""
+    """Classify finite-simulation evidence, not prove FDR control.
+
+    Unsupported states remain explicit; a mean FDP below alpha is only an
+    empirical control observation, including for synthetic valid p-values.
+    """
     if layer == FdrLayer.SELECTED_TREE_INFLATED and int(n_support_failures) > 0:
         return "inflation_support_failure"
     if int(n_ok) == 0 and int(n_support_failures) > 0:
@@ -146,11 +155,7 @@ def classify_fdr_outcome(
     if not np.isfinite(float(mean_fdp)):
         return "no_valid_decision_rows"
     if float(mean_fdp) <= float(alpha):
-        return (
-            "algorithmic_fdr_control"
-            if layer == FdrLayer.SYNTHETIC_VALID_P
-            else "empirical_control_observed"
-        )
+        return "empirical_control_observed"
     if layer == FdrLayer.SYNTHETIC_VALID_P:
         return "algorithmic_fdr_failure"
     if layer == FdrLayer.FIXED_TREE_WALD:

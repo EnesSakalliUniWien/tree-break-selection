@@ -183,7 +183,7 @@ def test_gate_annotation_pipeline_matches_sequential_gates_on_benchmark_case() -
         tree = build_tree(
             data, pdist(data.to_numpy(float), "hamming"), linkage_method="average"
         ).tree
-        tree.populate_node_divergences(data)
+        tree.populate_node_distributions(data)
         return tree
 
     sequential_tree = fresh_tree()

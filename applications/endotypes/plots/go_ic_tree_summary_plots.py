@@ -185,6 +185,12 @@ def add_candidates_from_method_matrix(summary_path: Path | None) -> list[Candida
         family = str(row["method_family"])
         run_id = str(row["run_id"])
         weighting = str(row["weighting"])
+        whole_matrix = tree_geometry == "whole_adaptive_diffusion" and weighting == "whole"
+        if not whole_matrix and weighting not in {"raw", "tfidf"}:
+            raise ValueError(
+                f"Unsupported saved weighting label: {weighting!r}; "
+                "use raw or tfidf for spectral blocks, or whole for whole_adaptive_diffusion."
+            )
         block_name = str(row["block_name"])
 
         def optional_int(value: object) -> int | None:
@@ -211,7 +217,7 @@ def eigensystems_for_data(
     data: pd.DataFrame, max_rank: int
 ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     systems: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-    for weighting in ("binary", "tfidf"):
+    for weighting in ("raw", "tfidf"):
         values = weight_feature_matrix(data, weighting)
         systems[weighting] = cosine_eigendecomposition(values, max_rank)
     return systems
@@ -245,7 +251,7 @@ def candidate_subspace_and_tree(
         return embedding, distances
 
     if candidate.weighting not in eigensystems:
-        return None, None
+        raise ValueError(f"Unsupported candidate weighting: {candidate.weighting!r}")
     eigvals, eigvecs = eigensystems[candidate.weighting]
     if candidate.block_start is None or candidate.block_end is None:
         return None, None

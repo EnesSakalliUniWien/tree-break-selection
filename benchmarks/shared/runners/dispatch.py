@@ -41,7 +41,7 @@ from tree_break_selection.tree.distributions import (
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
 
 
@@ -123,7 +123,7 @@ def _tbs_branch_length_optimization_kwargs(params: Dict[str, Any]) -> Dict[str, 
         "branch_length_optimization_target_metric": str(
             params.get(
                 "branch_length_optimization_target_metric",
-                BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+                BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
             )
         ),
         "branch_length_optimization_pair_sample_size": (

@@ -56,7 +56,7 @@ def weight_feature_matrix(data: pd.DataFrame | np.ndarray, weighting: str) -> np
     )
     if values.ndim != 2:
         raise ValueError("Expected a 2D matrix.")
-    if weighting == "binary":
+    if weighting == "raw":
         return values
     if weighting == "tfidf":
         if np.any(values < 0):

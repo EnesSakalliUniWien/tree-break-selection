@@ -118,7 +118,7 @@ def test_method_registry_names_diffusion_methods_and_branch_lengths_explicitly()
     )
     assert adaptive_nnls_params["branch_length_optimization_method"] == "fixed_topology_nnls"
     assert adaptive_nnls_params["branch_length_optimization_target_metric"] == (
-        "squared_standardized_euclidean"
+        "mean_squared_standardized_euclidean"
     )
     assert adaptive_nnls_params["branch_length_optimization_pair_sample_size"] == 50_000
     assert adaptive_nnls_params["branch_length_optimization_random_state"] == 0

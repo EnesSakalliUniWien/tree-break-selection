@@ -51,7 +51,7 @@ def compute_projected_pvalue(
 
     Returns
     -------
-    Tuple[float, float, float]
+    ProjectedQuadraticReference
         Fixed-subspace reference law ``T ~ chi2(degrees_of_freedom)`` with
         reference_scale 1.
     """

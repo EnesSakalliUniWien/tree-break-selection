@@ -136,9 +136,9 @@ class TreeConstructionSuite:
             linkage_method="average",
         )
 
-    def time_populate_node_divergences(self, case_id: str) -> None:
+    def time_populate_node_distributions(self, case_id: str) -> None:
         tree = self.tree_template.copy(as_view=False)
-        tree.populate_node_divergences(
+        tree.populate_node_distributions(
             self.data,
             feature_space=self.feature_space,
         )

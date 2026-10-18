@@ -38,8 +38,8 @@ def compute_ultrametric_branch_lengths(
     Leaf merge-heights are 0. ``root_height`` is the final merge height. When
     the root height is zero, all normalized branch lengths are zero. With a
     positive root height, every root-to-leaf path sums to 1, so linkage-derived
-    branch lengths represent relative change over tree time rather than raw
-    distance units.
+    branch lengths are normalized merge-height increments. This normalization
+    does not establish calibrated stochastic time.
 
     Parameters
     ----------

@@ -22,6 +22,7 @@ from benchmarks.cloud.sharding import (
 from benchmarks.shared.env import resolve_aws_batch_shard_index
 from benchmarks.shared.util.values import parse_csv_list
 from benchmarks.validation.statistics.traversal_sibling_fdr_null import (
+    SCHEMA_VERSION,
     SIMULATION_OUTPUT_NAME,
     SUMMARY_OUTPUT_NAME,
     FdrLayer,
@@ -108,6 +109,7 @@ def run_shard(configured: AwsTraversalSiblingFdrConfig, shard_index: int) -> dic
         replicate_indices=spec.replicate_indices,
     )
     shard_manifest = {
+        "schema_version": SCHEMA_VERSION,
         "runner": "benchmarks.cloud.aws_traversal_sibling_fdr_null",
         "execution_role": AWS_ROLE,
         "shard_index": int(spec.shard_index),
@@ -137,6 +139,11 @@ def _validate_simulation_coverage(
     simulations: pd.DataFrame,
     configured: AwsTraversalSiblingFdrConfig,
 ) -> None:
+    if (
+        "schema_version" not in simulations
+        or not simulations["schema_version"].eq(SCHEMA_VERSION).all()
+    ):
+        raise ValueError(f"Simulation rows must all use schema {SCHEMA_VERSION!r}.")
     expected = {
         (str(configured.layer), case_id, replicate_index)
         for case_id in configured.case_names
@@ -172,7 +179,7 @@ def _combined_summary(
     summary = estimate_fdr(rows)
     summary.update(
         {
-            "schema_version": "traversal_sibling_fdr_null/v1",
+            "schema_version": SCHEMA_VERSION,
             "layer": str(configured.layer),
             "suite": configured.suite,
             "case_names": ",".join(configured.case_names),
@@ -202,6 +209,9 @@ def merge_shards(configured: AwsTraversalSiblingFdrConfig) -> dict[str, pd.DataF
     manifests = [
         sharding.load_shard_manifest(shard_dir, SHARD_MANIFEST_NAME) for shard_dir in shard_dirs
     ]
+    for shard_dir, manifest in zip(shard_dirs, manifests):
+        if manifest.get("source_manifest", {}).get("schema_version") != SCHEMA_VERSION:
+            raise ValueError(f"Shard {shard_dir} must use source schema {SCHEMA_VERSION!r}.")
     validate_replicate_coverage(manifests, expected_replicates=configured.replicates)
     simulations = pd.concat(
         [sharding.load_shard_table(shard_dir, SIMULATION_OUTPUT_NAME) for shard_dir in shard_dirs],
@@ -215,6 +225,7 @@ def merge_shards(configured: AwsTraversalSiblingFdrConfig) -> dict[str, pd.DataF
     simulations.to_csv(merged_dir / SIMULATION_OUTPUT_NAME, index=False)
     summary.to_csv(merged_dir / SUMMARY_OUTPUT_NAME, index=False)
     combined_manifest = {
+        "schema_version": SCHEMA_VERSION,
         "runner": "benchmarks.cloud.aws_traversal_sibling_fdr_null",
         "execution_role": AWS_ROLE,
         "layer": str(configured.layer),

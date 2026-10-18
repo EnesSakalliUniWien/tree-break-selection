@@ -132,7 +132,10 @@ def geometry_replay() -> None:
     ]
     hashes = {str(p.relative_to(ROOT)): digest(p) for p in source_paths}
     if (OUT / "geometry_replay.json").exists():
-        assert read_json(OUT / "geometry_replay.json")["current_source_sha256"] == hashes
+        assert read_json(OUT / "geometry_replay.json")["current_source_sha256"] == hashes, (
+            "Source differs from the working tree recorded in geometry_replay.json; "
+            "no commit contains that tree, so this replay cannot run on later source."
+        )
         return
     before_cosine, before_diffusion = historical_sources(manifest)
     saved_cases = pd.read_csv(OLD / "cases.csv").set_index("case")
@@ -143,6 +146,7 @@ def geometry_replay() -> None:
         data = prepare_case_inputs(case, selected_methods=[]).data
         data_hash = hashlib.sha256(data.to_csv().encode()).hexdigest()
         assert data_hash == saved_cases.loc[case["name"], "data_sha256"]
+        # Both recorded modules name raw weighting "binary"; the current API calls it "raw".
         old_space, new_space = [
             module.separate_adaptive_cosine_space(
                 data,
@@ -245,6 +249,7 @@ def leading_mode_details() -> None:
     records = []
     for row in geometry.loc[~geometry.distances_close].itertuples():
         data = prepare_case_inputs(cases[row.case], selected_methods=[]).data
+        # Recorded name for raw weighting; the current API calls it "raw".
         space = adaptive_cosine.separate_adaptive_cosine_space(
             data,
             weighting="binary",
@@ -590,6 +595,12 @@ Recompute these comparisons against the preserved baseline with:
 ```sh
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MPLBACKEND=Agg .venv/bin/python reports/eigenspace_reassessment_20260928/spectral_blocks/compare_before_after.py
 ```
+
+The helper first requires the three source hashes recorded in
+`geometry_replay.json`. That working tree (commit `f34f59ca` plus uncommitted
+edits) matches no commit, so on later source the helper stops at this check
+instead of recomputing. It keeps the recorded weighting name `binary`, which
+the current API calls `raw`.
 
 The helper checks identical settings, input/spectrum/block records, unique
 matched run keys, successful assignment coverage, truth labels, cluster counts,

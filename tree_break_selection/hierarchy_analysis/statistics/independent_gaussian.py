@@ -206,7 +206,7 @@ def fit_independent_gaussian_tree(
         optimization = fit_fixed_topology_nnls_branch_lengths(
             tree,
             discovery,
-            target_metric="squared_standardized_euclidean",
+            target_metric="mean_squared_standardized_euclidean",
             pair_sample_size=diffusion.nnls_pair_sample_size,
             random_state=diffusion.nnls_random_state,
             solver_tolerance=diffusion.nnls_solver_tolerance,

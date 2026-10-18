@@ -196,7 +196,7 @@ def _selected_tree_fixed_sibling_min_p_value(
         distance_metric=tree_distance_metric,
         linkage_method=tree_linkage_method,
     )
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     p_values = _fixed_binary_sibling_p_values(
         tree,
         feature_space,
@@ -218,7 +218,7 @@ def _selected_root_fixed_sibling_p_value(
         distance_metric=tree_distance_metric,
         linkage_method=tree_linkage_method,
     )
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     return _fixed_root_sibling_p_value(
         tree,
         feature_space,

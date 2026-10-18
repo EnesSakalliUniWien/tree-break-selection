@@ -114,7 +114,7 @@ class PosetTree(nx.DiGraph):
         """
         return lowest_common_ancestor_for_set(self, nodes)
 
-    def populate_node_divergences(
+    def populate_node_distributions(
         self,
         leaf_data: "pd.DataFrame",
         *,

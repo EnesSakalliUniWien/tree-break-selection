@@ -22,7 +22,7 @@ from sklearn.covariance import ledoit_wolf_shrinkage
 from sklearn.metrics import adjusted_rand_score
 
 from benchmarks.shared.cases import get_test_cases_by_suite
-from benchmarks.shared.metrics import calculate_ari_nmi_purity_metrics
+from benchmarks.shared.metrics import calculate_clustering_metrics
 from benchmarks.shared.performance_grid import markdown_table
 from benchmarks.shared.runners.tbs_diffusion_runner import (
     _run_tbs_diffusion_graphtools_method,
@@ -441,7 +441,7 @@ def _result_row(
         return base, []
 
     extra = result.extra or {}
-    metrics = calculate_ari_nmi_purity_metrics(
+    metrics = calculate_clustering_metrics(
         result.report_df,
         geometry.embedding.index,
         np.asarray(case["_true_labels"]),
@@ -462,7 +462,7 @@ def _result_row(
             {"cluster_id": topology_labels},
             index=geometry.embedding.index,
         )
-        topology_metrics = calculate_ari_nmi_purity_metrics(
+        topology_metrics = calculate_clustering_metrics(
             topology_report,
             geometry.embedding.index,
             true_labels,

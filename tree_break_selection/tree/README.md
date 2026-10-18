@@ -62,7 +62,7 @@ NetworkX `DiGraph` subclass. Central data structure for the entire pipeline.
 | `get_leaves(node, return_labels)`           | Collect leaf labels globally or under a subtree.                                               |
 | `compute_descendant_sets()`                 | Map every node → frozenset of its descendant leaf labels.                                      |
 | `find_lca_for_set(nodes)`                   | LCA for a non-empty collection of nodes.                                                       |
-| `populate_node_divergences(leaf_data, feature_space=None)` | Populate flat raw-coordinate distributions and leaf counts. Categorical and continuous data require an explicit feature-space contract. Stores result in `annotations_df`. |
+| `populate_node_distributions(leaf_data, feature_space=None)` | Populate flat raw-coordinate distributions and leaf counts. Categorical and continuous data require an explicit feature-space contract. Stores result in `annotations_df`. |
 
 ## topology.py
 
@@ -81,7 +81,7 @@ Strict rooted-tree topology helpers used by `PosetTree`, the gates, and Tree-BH.
 
 ## distributions.py
 
-Bottom-up distribution population (called by `populate_node_divergences`).
+Bottom-up distribution population (called by `populate_node_distributions`).
 
 | Function                                             | What it does                                                                                                                                          |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |

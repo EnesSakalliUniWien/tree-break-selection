@@ -108,7 +108,7 @@ def test_adaptive_cosine_space_exposes_selected_block_coordinates() -> None:
 
     result = separate_adaptive_cosine_space(
         data,
-        weighting="binary",
+        weighting="raw",
         max_rank=4,
         min_segment_length=2,
         max_segments=2,

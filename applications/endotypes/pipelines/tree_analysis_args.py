@@ -37,7 +37,7 @@ def add_tree_analysis_arguments(
     parser.add_argument(
         "--weightings",
         nargs="+",
-        default=["binary", "tfidf"],
-        choices=["binary", "tfidf"],
+        default=["raw", "tfidf"],
+        choices=["raw", "tfidf"],
     )
     parser.add_argument("--block-names", nargs="*", default=None)

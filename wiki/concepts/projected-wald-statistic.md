@@ -16,7 +16,7 @@ sources:
   - benchmarks/diagnostics/calibration/sibling/gates/data_independent_sibling_gate_traversal_panel.py
   - tree_break_selection/hierarchy_analysis/decomposition/gates/orchestrator.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/fixed_subspace_annotation.py
-  - tests/statistics/44_test_fixed_coordinate_fdr_candidates.py
+  - tests/statistics/44_test_fixed_coordinate_adjustment_candidates.py
 tags:
   - method
   - statistics

@@ -48,7 +48,9 @@ def apply_tree_bh_correction(
 
     The procedure works top-down through the tree. Within each reached sibling
     group, it applies BH at a sibling-group-specific level obtained by scaling
-    the base alpha by ancestor rejection proportions.
+    the base alpha by ancestor rejection proportions. Stored corrected p-values
+    are the BH adjustments within each reached family; rejection flags compare
+    them with that family level, rather than the base alpha.
     """
     p_values, alpha = _validate_tree_bh_inputs(p_values, child_ids, alpha)
     hypothesis_count = len(p_values)

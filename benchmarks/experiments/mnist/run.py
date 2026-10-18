@@ -94,7 +94,7 @@ def run_tbs_clustering(
 
     # Decompose
     significance_level = 0.05
-    tree.populate_node_divergences(data)
+    tree.populate_node_distributions(data)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),

@@ -88,7 +88,7 @@ def test_each_plot_type_returns_a_figure_without_file_io(kind, loadings, monkeyp
             dict(
                 status="ok",
                 display_rank=1,
-                weighting="binary",
+                weighting="raw",
                 block_name="test",
                 go_bic_active_per_gene=2.0,
                 quality_tier=0,
@@ -237,7 +237,7 @@ def test_ranking_shows_tiers_and_specificity_without_reordering_by_bic():
             dict(
                 status="ok",
                 display_rank=1,
-                weighting="binary",
+                weighting="raw",
                 block_name="a",
                 quality_tier=0,
                 quality_tier_label="quality_plausible",
@@ -258,3 +258,76 @@ def test_ranking_shows_tiers_and_specificity_without_reordering_by_bic():
         pd.testing.assert_frame_equal(ranking, original)
     finally:
         plt.close(fig)
+
+
+def test_probe_summary_rejects_retired_weighting_before_filtering(tmp_path):
+    from applications.endotypes.plots.kak_signal_adaptive_umap_tree_page import (
+        load_probe_summary,
+    )
+
+    pd.DataFrame(
+        [
+            {
+                "weighting": "binary",
+                "block_name": "test",
+                "block_start": 1,
+                "block_end": 2,
+                "status": "ok",
+                "assignments_path": "assignments.csv",
+            }
+        ]
+    ).to_csv(tmp_path / "matrix_kak_probe_summary.csv", index=False)
+    with pytest.raises(ValueError, match="Unsupported saved weighting labels"):
+        load_probe_summary(tmp_path, ["raw"])
+
+
+def test_method_matrix_summary_rejects_retired_weighting(tmp_path):
+    from applications.endotypes.plots.go_ic_tree_summary_plots import (
+        add_candidates_from_method_matrix,
+    )
+
+    path = tmp_path / "method_tree_matrix_summary.csv"
+    pd.DataFrame(
+        [
+            {
+                "weighting": "binary",
+                "tree_geometry": "raw_kak",
+                "method_family": "test",
+                "run_id": "test",
+                "status": "ok",
+            }
+        ]
+    ).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="Unsupported saved weighting label"):
+        add_candidates_from_method_matrix(path)
+
+
+def test_method_matrix_summary_preserves_whole_adaptive_diffusion_candidate(tmp_path):
+    from applications.endotypes.plots.go_ic_tree_summary_plots import (
+        add_candidates_from_method_matrix,
+    )
+
+    path = tmp_path / "method_tree_matrix_summary.csv"
+    pd.DataFrame(
+        [
+            {
+                "weighting": "whole",
+                "tree_geometry": "whole_adaptive_diffusion",
+                "method_family": "tbs__whole_adaptive_diffusion",
+                "run_id": "tbs__whole_adaptive_diffusion",
+                "status": "ok",
+                "block_name": "whole_matrix",
+                "block_start": pd.NA,
+                "block_end": pd.NA,
+                "assignments_path": "assignments/current.csv",
+            }
+        ]
+    ).to_csv(path, index=False)
+    candidates = add_candidates_from_method_matrix(path)
+    assert len(candidates) == 1
+    candidate = candidates[0]
+    assert candidate.weighting == "whole"
+    assert candidate.summary["tree_geometry"] == "whole_adaptive_diffusion"
+    assert candidate.block_name == "whole_matrix"
+    assert candidate.block_start is None
+    assert candidate.block_end is None

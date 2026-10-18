@@ -91,9 +91,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--weightings",
         nargs="+",
-        default=["binary"],
-        choices=["binary", "tfidf"],
-        help="'binary' means raw matrix values, matching the historical script name.",
+        default=["raw"],
+        choices=["raw", "tfidf"],
+        help="'raw' uses the input matrix without feature weighting.",
     )
     return parser.parse_args()
 
@@ -131,7 +131,7 @@ def run_block_tree(
 
     linkage_matrix = linkage(distances, method="average")
     tree = tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),

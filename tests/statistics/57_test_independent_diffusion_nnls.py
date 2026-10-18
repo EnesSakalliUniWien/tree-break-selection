@@ -55,7 +55,7 @@ def test_diffusion_and_nnls_consume_only_discovery_and_are_not_refit():
     branch = json.loads(model.branch_length_metadata_json)
     assert geometry["metric"] == "euclidean"
     assert branch["status"] == "ok" and branch["applied_to_tree"]
-    assert branch["target_metric"] == "squared_standardized_euclidean"
+    assert branch["target_metric"] == "mean_squared_standardized_euclidean"
     before = tuple(model.tree_branch_lengths)
     with (
         patch.object(

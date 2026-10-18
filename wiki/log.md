@@ -8192,3 +8192,40 @@ version comparison report and wiki source summary. Production code unchanged.
   describe the reviews, audits and checks themselves. Findings, numbers and
   conclusions are unchanged.
 - Hash-locked retained results under `reports/` keep their recorded wording.
+
+## 2026-10-17 — Naming consistency audit and fixes
+
+- A naming audit checked active package, application and benchmark names.
+  The eight verified findings and migrations are recorded in
+  [[naming-consistency-audit]] and
+  `reports/naming_audit_20261017/README.md`.
+- Renamed distribution population, general coordinate adjustments, the
+  unweighted `raw` option, the averaged NNLS target and the clustering-metric
+  helper. Removed the redundant BH forwarding wrapper without an alias.
+  Updated callers, tests, CLI choices, exports, quick start and ASV names.
+- Corrected fitted-length/radial captions, projected-reference return-type
+  documentation and Tree-BH within-family adjustment descriptions.
+  Traversal diagnostic schema v2 uses `any_false_rejection_rate` and
+  `empirical_control_observed`; its merger rejects old or mixed schemas.
+- Historical captures and saved results keep their names and values. Strict
+  spectral readers reject retired labels; integration review preserved the
+  legitimate `whole` weighting used by whole-matrix diffusion. Three reader
+  regression tests cover these cases.
+- `UV_OFFLINE=true make check` passed: Ruff lint/format, dependency and
+  dead-code checks, wiki lint (213 pages), generated-file checks (305
+  classified files), and 895 tests across seven stages. One existing
+  scikit-learn MDS future-default warning remains. The quick-start pipeline
+  completed with six clusters and ARI 0.9530 on its fixed 80-sample example.
+- Checked coordinate-adjustment and NNLS-target values were exactly equal
+  before and after the renames. A local two-shard diagnostic smoke verified
+  v2 production, merging and rejection paths; a pipeline regression test now
+  covers rejection of a v1 shard. No cloud execution, full
+  research benchmark campaign or wheel build was performed; the installed
+  environment lacks `flit_core`. No installation, commit or push occurred.
+- Two report helpers keep the recorded weighting name `binary`:
+  `summarize_results.py` (eigenvalue block comparison) and
+  `compare_before_after.py` (spectral-block reassessment). Each first checks
+  source hashes from a working tree that matches no commit, so neither reaches
+  a weighting call on later source. Their guards now state this, and comments
+  and both READMEs mark `binary` as today's `raw`. Retained results unchanged.
+

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from benchmarks.shared.metrics import calculate_ari_nmi_purity_metrics
+from benchmarks.shared.metrics import calculate_clustering_metrics
 
 
 def test_purity_is_majority_cluster_purity_not_homogeneity_alias() -> None:
@@ -14,7 +14,7 @@ def test_purity_is_majority_cluster_purity_not_homogeneity_alias() -> None:
     )
     y_true = np.array([0, 0, 0, 1, 1, 1])
 
-    metrics = calculate_ari_nmi_purity_metrics(report_df, sample_names, y_true, {})
+    metrics = calculate_clustering_metrics(report_df, sample_names, y_true, {})
 
     assert metrics.purity == 5 / 6
     assert metrics.purity != metrics.homogeneity
@@ -28,7 +28,7 @@ def test_outlier_metrics_report_perfect_singleton_isolation() -> None:
     )
     y_true = np.array([0, 0, 1, 1, 2])
 
-    metrics = calculate_ari_nmi_purity_metrics(
+    metrics = calculate_clustering_metrics(
         report_df,
         sample_names,
         y_true,
@@ -50,7 +50,7 @@ def test_outlier_metrics_report_missed_singleton_outlier() -> None:
     )
     y_true = np.array([0, 0, 1, 1, 2])
 
-    metrics = calculate_ari_nmi_purity_metrics(
+    metrics = calculate_clustering_metrics(
         report_df,
         sample_names,
         y_true,
@@ -72,7 +72,7 @@ def test_grouped_outlier_metric_requires_one_pure_predicted_cluster() -> None:
         {"cluster_id": [0, 0, 1, 1, 2, 2]},
         index=sample_names,
     )
-    perfect_metrics = calculate_ari_nmi_purity_metrics(
+    perfect_metrics = calculate_clustering_metrics(
         perfect_report,
         sample_names,
         y_true,
@@ -84,7 +84,7 @@ def test_grouped_outlier_metric_requires_one_pure_predicted_cluster() -> None:
         {"cluster_id": [0, 0, 1, 1, 2, 3]},
         index=sample_names,
     )
-    split_metrics = calculate_ari_nmi_purity_metrics(
+    split_metrics = calculate_clustering_metrics(
         split_report,
         sample_names,
         y_true,
@@ -96,7 +96,7 @@ def test_grouped_outlier_metric_requires_one_pure_predicted_cluster() -> None:
         {"cluster_id": [0, 0, 1, 2, 2, 2]},
         index=sample_names,
     )
-    impure_metrics = calculate_ari_nmi_purity_metrics(
+    impure_metrics = calculate_clustering_metrics(
         impure_report,
         sample_names,
         y_true,
@@ -113,7 +113,7 @@ def test_outlier_metrics_are_nan_for_non_outlier_cases() -> None:
     )
     y_true = np.array([0, 0, 1, 1])
 
-    metrics = calculate_ari_nmi_purity_metrics(report_df, sample_names, y_true, {})
+    metrics = calculate_clustering_metrics(report_df, sample_names, y_true, {})
 
     assert np.isnan(metrics.outlier_precision)
     assert np.isnan(metrics.outlier_recall)

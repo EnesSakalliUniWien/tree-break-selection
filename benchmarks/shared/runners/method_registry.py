@@ -25,7 +25,7 @@ from tree_break_selection.tree.distributions import (
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
 
 
@@ -68,7 +68,7 @@ FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS = {
     "edge_branch_length_variance_policy": EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NORMALIZED,
     "branch_length_optimization_method": BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     "branch_length_optimization_target_metric": (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     "branch_length_optimization_pair_sample_size": 50_000,
     "branch_length_optimization_random_state": 0,

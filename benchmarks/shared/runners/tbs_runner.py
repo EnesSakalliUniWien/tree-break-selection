@@ -44,7 +44,7 @@ from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
     fit_fixed_topology_nnls_branch_lengths,
     validate_branch_length_optimization_method,
 )
@@ -86,7 +86,7 @@ def run_tbs_on_distance(
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_data_df: pd.DataFrame | None = None,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,
@@ -183,7 +183,7 @@ def run_tbs_on_distance(
     )
 
     populate_start_sec = perf_counter()
-    tree.populate_node_divergences(
+    tree.populate_node_distributions(
         data_df,
         feature_space=feature_space,
     )

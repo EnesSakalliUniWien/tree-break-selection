@@ -312,7 +312,7 @@ def build_boundary_tree_info(cfg, assign_df):
         y = {node: float(depth.get(node, 0)) for node in required}
         y_label = "topological depth"
     else:
-        y_label = "cumulative NNLS branch time"
+        y_label = "cumulative fitted branch length"
 
     return {
         "root": root,
@@ -534,7 +534,7 @@ def plot_radial_tree(ax, info, cluster_palette, title):
     ax.text(
         0.01,
         0.01,
-        f"radius = {info['y_label']}; colors = selected cluster IDs",
+        f"radius = normalized {info['y_label']}; colors = selected cluster IDs",
         transform=ax.transAxes,
         fontsize=8,
         color="#4b5563",
@@ -675,7 +675,7 @@ def plot_full_radial_tree(ax, info, cluster_palette, title):
     ax.text(
         0.01,
         0.01,
-        f"all {len(leaves):,} leaves; radius = cumulative NNLS branch time; colors match the labeled UMAP",
+        f"all {len(leaves):,} leaves; radius = normalized cumulative fitted branch length; colors match the labeled UMAP",
         transform=ax.transAxes,
         fontsize=8,
         color="#4b5563",

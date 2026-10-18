@@ -41,7 +41,10 @@ for key, a in assignments.groupby(["case", "block", "geometry", "method"]):
     assert a.cluster.nunique() == row.n_clusters
     assert np.isclose(adjusted_rand_score(a.truth, a.cluster), row.ari_truth)
 for file, digest in manifest["source_sha256"].items():
-    assert hashlib.sha256(Path(file).read_bytes()).hexdigest() == digest, file
+    assert hashlib.sha256(Path(file).read_bytes()).hexdigest() == digest, (
+        f"{file} differs from the working tree recorded in manifest.json; "
+        "no commit contains that tree, so this validation cannot run on later source."
+    )
 
 rank_rows = []
 for case in get_test_cases_by_suite("method_proof"):
@@ -49,6 +52,7 @@ for case in get_test_cases_by_suite("method_proof"):
     old = blocks[blocks.case.eq(case["name"])]
     record = cases.set_index("case").loc[case["name"]]
     assert hashlib.sha256(data.to_csv().encode()).hexdigest() == record.data_sha256
+    # Recorded name for raw weighting; the current API calls it "raw".
     new = separate_adaptive_cosine_space(
         data, weighting="binary", max_rank=80, min_segment_length=4, max_segments=8
     )
@@ -229,8 +233,9 @@ are descriptive; multiple pairs from one dataset are not independent observation
 
 ## Measurement contract
 
-The existing cosine operator is formed from row-normalized raw feature values. The name
-`binary` in the weighting API means raw values, including signed continuous features.
+The existing cosine operator is formed from row-normalized raw feature values. The weighting
+option recorded as `binary`, now named `raw`, means raw values, including signed continuous
+features.
 Blocks are the existing contiguous, tie-preserving BIC segments of the log eigenspectrum.
 The target rank is 40, minimum block length 4, maximum segments 8. Full-operator energy
 fractions use trace = number of nonzero sample rows; retained-energy fractions are separate.
@@ -274,6 +279,11 @@ and confirmed source hashes did not change during inference. Analytic checks cov
 log-distance values, common-scale invariance, proportional and constant distance vectors,
 and rooted-clade distance. The 18 space-separation and 16 construction/rooting tests passed.
 No production method, inference default, commit or push was changed by this analysis.
+
+`summarize_results.py` validated these saved outputs and wrote this README. It first requires
+every source hash in `manifest.json`. That working tree (commit `f34f59ca` plus uncommitted
+edits) matches no commit, so on later source the script stops at this check. It keeps the
+recorded weighting name `binary`.
 """
 (ROOT / "README.md").write_text(body)
 print(body[:2400])

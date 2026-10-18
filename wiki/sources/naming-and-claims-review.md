@@ -28,8 +28,9 @@ Three reviews covered statistical names, geometry/solver names and
 documentation claims. Seven actionable mismatches were verified against
 implementations and callers. The subsequent user-authorized
 corrections addressed all seven through clarified descriptions, plot
-labels and metadata. Numerical formulas and existing API identifiers remain
-unchanged; the original review is explicitly marked as the pre-fix snapshot.
+labels and metadata. That correction preserved numerical formulas and API
+identifiers; the original review is explicitly marked as the pre-fix snapshot.
+Subsequent naming changes are recorded in [[naming-consistency-audit]].
 
 ## Key Points
 
@@ -39,8 +40,9 @@ unchanged; the original review is explicitly marked as the pre-fix snapshot.
   plug-in rule and BH without claiming a validated-reference prerequisite.
 - The passthrough report now describes empirical-inflation plug-in values and
   explicitly leaves selected-tail validity unproven.
-- Retained invariant/equivariant identifiers are documented as operational
-  labels; visible scRNA labels describe leading and following PCA axes.
+- The original correction retained invariant/equivariant identifiers as
+  operational labels. Current code uses `LeadingAxesSpace` and
+  `decompose_leading_axes_space`, with leading/following PCA-axis names.
 - NNLS output now records the target definition, normalization and divisor.
   The plotting caption describes fitted branch lengths rather than time.
 - Adaptive diffusion metadata now separates the pydiffmap kernel from the

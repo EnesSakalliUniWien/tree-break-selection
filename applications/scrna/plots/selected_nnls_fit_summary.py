@@ -26,8 +26,8 @@ from applications.scrna.plots.selected_nnls_report import (
     plot_umap,
 )
 from tree_break_selection.tree.optimized_branch_lengths import (
+    _mean_squared_standardized_targets,
     _sample_leaf_pairs,
-    _squared_standardized_targets,
 )
 
 OUT_FIG = "scrna_selected_adaptive_diffusion_nnls_fit_summary.png"
@@ -110,7 +110,7 @@ def fit_diagnostic(cfg: dict[str, object], pair_sample_size: int = 50_000) -> di
         pair_sample_size=pair_sample_size,
         random_state=0,
     )
-    target = _squared_standardized_targets(pca, left, right)
+    target = _mean_squared_standardized_targets(pca, left, right)
     edges = pd.read_csv(output_dir / f"{SELECTED}_tree_edges.csv")
     fitted = _tree_pair_distances(edges=edges, left=left, right=right)
     residual = fitted - target

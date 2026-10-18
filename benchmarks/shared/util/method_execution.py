@@ -10,7 +10,7 @@ from benchmarks.shared.benchmark_grid import (
     benchmark_param_metadata,
     strip_benchmark_metadata,
 )
-from benchmarks.shared.metrics import calculate_ari_nmi_purity_metrics
+from benchmarks.shared.metrics import calculate_clustering_metrics
 from benchmarks.shared.result_records import (
     BenchmarkResultRow,
     ComputedResultRecord,
@@ -33,7 +33,7 @@ from tree_break_selection.tree.continuous_distance import (
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
 
 TBS_TREE_DISTANCE_SOURCE_KEY = "tree_distance_source"
@@ -203,7 +203,7 @@ def run_single_method_once(
         if branch_length_method == BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS:
             recorded_run_params.setdefault(
                 "branch_length_optimization_target_metric",
-                BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+                BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
             )
             recorded_run_params.setdefault("branch_length_optimization_pair_sample_size", 100_000)
             recorded_run_params.setdefault("branch_length_optimization_random_state", 0)
@@ -292,7 +292,7 @@ def run_single_method_once(
         report_df = _report_for_metric_evaluation(result.report_df, labels, data_t.index)
         found_clusters = result.found_clusters
         labels_len = len(labels)
-        metrics = calculate_ari_nmi_purity_metrics(
+        metrics = calculate_clustering_metrics(
             report_df,
             data_t.index,
             y_t,

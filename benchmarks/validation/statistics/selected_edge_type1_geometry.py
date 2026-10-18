@@ -327,7 +327,7 @@ def annotate_edges(
     edge_alpha: float,
     feature_space: FeatureSpace,
 ) -> tuple[pd.DataFrame, object]:
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     if tree.annotations_df is None:
         raise ValueError("Tree distribution population did not produce annotations_df.")
     annotations, spectral_context = annotate_child_parent_divergence(

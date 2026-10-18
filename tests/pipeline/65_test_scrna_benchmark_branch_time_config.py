@@ -33,7 +33,7 @@ def test_scrna_benchmark_branch_time_rows_use_nnls_branch_lengths(
         assert config.params["edge_branch_length_variance_policy"] == ("normalized_branch_length")
         assert config.params["branch_length_optimization_method"] == ("fixed_topology_nnls")
         assert config.params["branch_length_optimization_target_metric"] == (
-            "squared_standardized_euclidean"
+            "mean_squared_standardized_euclidean"
         )
         assert config.params["branch_length_optimization_pair_sample_size"] == 50_000
         assert config.params["branch_length_optimization_random_state"] == 0

@@ -97,7 +97,7 @@ def test_workflow_keeps_success_and_failure_artifacts(tmp_path, monkeypatch, fai
         adaptive_metric="euclidean",
         adaptive_bandwidth_type="-1/(d+2)",
         adaptive_epsilon="median",
-        weightings=["binary", "tfidf"],
+        weightings=["raw", "tfidf"],
         block_names=["adaptive_common_mode_01"],
         top_terms_per_axis=2,
     )

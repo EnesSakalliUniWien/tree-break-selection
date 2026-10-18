@@ -34,7 +34,7 @@ from tree_break_selection.space_separation import (
 from tree_break_selection.tree.feature_space import FeatureSpace
 from tree_break_selection.tree.optimized_branch_lengths import (
     BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
 )
 
 GRAPHTOOLS_ADAPTIVE_NEIGHBOR_PROFILE_CONNECTIVITY_MINIMUM = "connectivity_minimum"
@@ -399,7 +399,7 @@ def _run_tbs_diffusion_method(
     feature_space: FeatureSpace | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,
@@ -466,7 +466,7 @@ def _run_tbs_diffusion_graphtools_method(
     branch_length_data_df: pd.DataFrame | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,
@@ -554,7 +554,7 @@ def _run_tbs_diffusion_adaptive_method(
     feature_space: FeatureSpace | None = None,
     branch_length_optimization_method: str = BRANCH_LENGTH_OPTIMIZATION_LINKAGE_ULTRAMETRIC,
     branch_length_optimization_target_metric: str = (
-        BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN
+        BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN
     ),
     branch_length_optimization_pair_sample_size: int | None = 100_000,
     branch_length_optimization_random_state: int = 0,

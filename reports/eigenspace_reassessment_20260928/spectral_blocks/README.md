@@ -122,6 +122,12 @@ Recompute these comparisons against the preserved baseline with:
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MPLBACKEND=Agg .venv/bin/python reports/eigenspace_reassessment_20260928/spectral_blocks/compare_before_after.py
 ```
 
+The helper first requires the three source hashes recorded in
+`geometry_replay.json`. That working tree (commit `f34f59ca` plus uncommitted
+edits) matches no commit, so on later source the helper stops at this check
+instead of recomputing. It keeps the recorded weighting name `binary`, which
+the current API calls `raw`.
+
 The helper checks identical settings, input/spectrum/block records, unique
 matched run keys, successful assignment coverage, truth labels, cluster counts,
 recomputed ARI, paired tree availability and source stability. Failed and

@@ -23,7 +23,7 @@ def _small_continuous_frame() -> pd.DataFrame:
 def _branch_length_result(*, status: str, applied_to_tree: bool) -> BranchLengthOptimizationResult:
     return BranchLengthOptimizationResult(
         method="fixed_topology_nnls",
-        target_metric="squared_standardized_euclidean",
+        target_metric="mean_squared_standardized_euclidean",
         status=status,
         n_leaves=4,
         n_edges=6,

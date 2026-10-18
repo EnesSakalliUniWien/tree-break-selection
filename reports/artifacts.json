@@ -42,6 +42,10 @@
       "description": "mathematical_construction_review_20260928",
       "reproduction_source": "reports/mathematical_construction_review_20260928/README.md"
     },
+    "reports/naming_audit_20261017": {
+      "description": "Naming consistency audit and implemented API, option and reporting corrections",
+      "reproduction_source": "reports/naming_audit_20261017/README.md"
+    },
     "reports/naming_claims_review_20260928": {
       "description": "naming_claims_review_20260928",
       "reproduction_source": "reports/naming_claims_review_20260928/README.md"
@@ -1990,6 +1994,12 @@
       "study": "reports/mathematical_construction_review_20260928",
       "role": "source",
       "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/naming_audit_20261017/README.md",
+      "study": "reports/naming_audit_20261017",
+      "role": "source",
+      "reason": "Editable naming audit, migration guidance and verification record."
     },
     {
       "path": "reports/naming_claims_review_20260928/README.md",

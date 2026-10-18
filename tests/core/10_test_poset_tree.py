@@ -47,7 +47,7 @@ def test_find_lca_for_set_rejects_empty_node_set():
         G.find_lca_for_set([])
 
 
-def test_populate_node_divergences_requires_leaf_labels():
+def test_populate_node_distributions_requires_leaf_labels():
     G = PosetTree()
     G.add_node("root", is_leaf=False)
     G.add_node("left", is_leaf=True)
@@ -57,10 +57,10 @@ def test_populate_node_divergences_requires_leaf_labels():
     leaf_data = pd.DataFrame([[0.0], [1.0]], index=["left", "right"])
 
     with pytest.raises(KeyError, match="label"):
-        G.populate_node_divergences(leaf_data)
+        G.populate_node_distributions(leaf_data)
 
 
-def test_populate_node_divergences_requires_explicit_leaf_flags():
+def test_populate_node_distributions_requires_explicit_leaf_flags():
     G = PosetTree()
     G.add_node("root", is_leaf=False)
     G.add_node("left", label="left")
@@ -70,10 +70,10 @@ def test_populate_node_divergences_requires_explicit_leaf_flags():
     leaf_data = pd.DataFrame([[0.0], [1.0]], index=["left", "right"])
 
     with pytest.raises(KeyError, match="is_leaf"):
-        G.populate_node_divergences(leaf_data)
+        G.populate_node_distributions(leaf_data)
 
 
-def test_populate_node_divergences_rejects_duplicate_sample_labels():
+def test_populate_node_distributions_rejects_duplicate_sample_labels():
     leaf_data = pd.DataFrame([[1, 0], [0, 1], [1, 1]], index=["S1", "S1", "S2"])
     G = tree_from_linkage(
         np.array([[0, 1, 1.0, 2], [2, 3, 2.0, 3]]),
@@ -81,7 +81,7 @@ def test_populate_node_divergences_rejects_duplicate_sample_labels():
     )
 
     with pytest.raises(ValueError, match="duplicated labels: \\['S1'\\]"):
-        G.populate_node_divergences(leaf_data)
+        G.populate_node_distributions(leaf_data)
 
 
 def test_compute_ultrametric_branch_lengths_requires_merge_distances():
@@ -91,7 +91,7 @@ def test_compute_ultrametric_branch_lengths_requires_merge_distances():
         compute_ultrametric_branch_lengths(2, children, distances=None)
 
 
-def test_compute_ultrametric_branch_lengths_normalizes_to_root_time():
+def test_compute_ultrametric_branch_lengths_normalizes_by_root_merge_height():
     children = np.array([[0, 1], [2, 3], [4, 5]], dtype=int)
     distances = np.array([2.0, 6.0, 10.0], dtype=float)
 

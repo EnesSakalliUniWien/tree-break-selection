@@ -49,7 +49,7 @@ FixedSubspaceSiblingGateMethod = Literal[
     "fixed_block_bh",
     "fixed_block_simes_bh",
 ]
-CoordinateFdrMethod = Literal["bh", "by", "holm", "bonferroni"]
+CoordinateAdjustmentMethod = Literal["bh", "by", "holm", "bonferroni"]
 
 FIXED_SUBSPACE_SIBLING_GATE_METHODS: tuple[FixedSubspaceSiblingGateMethod, ...] = (
     "fixed_global_chi_square",
@@ -79,12 +79,15 @@ def _bh_adjusted_minimum(p_values: np.ndarray) -> float:
     return float(np.clip(np.min(adjusted_sorted), 0.0, 1.0))
 
 
-def coordinate_fdr_adjusted_minimum(
+def coordinate_adjusted_minimum(
     p_values: np.ndarray,
     *,
-    method: CoordinateFdrMethod = "bh",
+    method: CoordinateAdjustmentMethod = "bh",
 ) -> float:
-    """Return the minimum adjusted p-value for fixed coordinate evidence."""
+    """Return the minimum adjusted p-value for fixed coordinate evidence.
+
+    BH and BY are FDR procedures; Holm and Bonferroni are FWER procedures.
+    """
     values = np.asarray(p_values, dtype=float)
     if values.ndim != 1:
         raise ValueError(f"p_values must be one-dimensional; got {values.shape}.")
@@ -110,19 +113,14 @@ def coordinate_fdr_adjusted_minimum(
         )
         return float(np.clip(np.min(adjusted_sorted), 0.0, 1.0))
     raise ValueError(
-        f"Unknown coordinate FDR method {method!r}; allowed=('bh', 'by', 'holm', 'bonferroni')."
+        f"Unknown coordinate adjustment method {method!r}; allowed=('bh', 'by', 'holm', 'bonferroni')."
     )
 
 
-def fixed_coordinate_bh_p_value(z: np.ndarray) -> float:
-    """Return the coordinate-wise BH p-value for a whitened contrast."""
-    return fixed_coordinate_fdr_p_value(z, method="bh")
-
-
-def fixed_coordinate_fdr_p_value(
+def fixed_coordinate_adjusted_p_value(
     z: np.ndarray,
     *,
-    method: CoordinateFdrMethod = "bh",
+    method: CoordinateAdjustmentMethod = "bh",
 ) -> float:
     """Return a coordinate-wise adjusted p-value for a whitened contrast."""
     vector = np.asarray(z, dtype=float)
@@ -133,7 +131,7 @@ def fixed_coordinate_fdr_p_value(
     if not np.isfinite(vector).all():
         raise ValueError("z must contain only finite values.")
     coordinate_p = chi2.sf(vector * vector, df=1.0)
-    return coordinate_fdr_adjusted_minimum(coordinate_p, method=method)
+    return coordinate_adjusted_minimum(coordinate_p, method=method)
 
 
 def _block_starts(feature_space: FeatureSpace, z_dimension: int) -> np.ndarray:
@@ -211,13 +209,13 @@ def fixed_subspace_sibling_p_value(
     if method == "fixed_global_chi_square":
         return float(chi2.sf(float(np.dot(vector, vector)), df=vector.size))
     if method == "fixed_coordinate_bh":
-        return fixed_coordinate_bh_p_value(vector)
+        return fixed_coordinate_adjusted_p_value(vector, method="bh")
     if method == "fixed_coordinate_by":
-        return fixed_coordinate_fdr_p_value(vector, method="by")
+        return fixed_coordinate_adjusted_p_value(vector, method="by")
     if method == "fixed_coordinate_holm":
-        return fixed_coordinate_fdr_p_value(vector, method="holm")
+        return fixed_coordinate_adjusted_p_value(vector, method="holm")
     if method == "fixed_coordinate_bonferroni":
-        return fixed_coordinate_fdr_p_value(vector, method="bonferroni")
+        return fixed_coordinate_adjusted_p_value(vector, method="bonferroni")
     if method == "fixed_block_bh":
         return _bh_adjusted_minimum(_feature_block_p_values(vector, feature_space))
     if method == "fixed_block_simes_bh":
@@ -271,7 +269,7 @@ def _fixed_subspace_channel_values(
     statistic = float(np.dot(vector, vector))
     degrees_of_freedom = float(feature_space.contrast_dimension)
     return {
-        "fixed_coordinate_bh": fixed_coordinate_bh_p_value(vector),
+        "fixed_coordinate_bh": fixed_coordinate_adjusted_p_value(vector, method="bh"),
         "fixed_block_bh": fixed_subspace_sibling_p_value(
             vector,
             feature_space,
@@ -437,15 +435,14 @@ def annotate_fixed_subspace_sibling_divergence(
 
 
 __all__ = [
-    "CoordinateFdrMethod",
+    "CoordinateAdjustmentMethod",
     "FIXED_SUBSPACE_SIBLING_GATE_METHODS",
     "FixedSubspaceSiblingGateMethod",
     "annotate_fixed_subspace_sibling_evidence_channels",
     "annotate_fixed_subspace_sibling_divergence",
-    "coordinate_fdr_adjusted_minimum",
+    "coordinate_adjusted_minimum",
     "fixed_block_simes_bh_p_value",
-    "fixed_coordinate_bh_p_value",
-    "fixed_coordinate_fdr_p_value",
+    "fixed_coordinate_adjusted_p_value",
     "fixed_subspace_sibling_p_value",
     "sibling_fixed_subspace_contrast",
 ]

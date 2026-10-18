@@ -96,7 +96,7 @@ def build_tbs_tree_context(
     if feature_space is not None and not isinstance(feature_space, FeatureSpace):
         raise ValueError("Benchmark feature_space metadata must be a FeatureSpace.")
     if populate_node_distributions:
-        tree.populate_node_divergences(inputs.data, feature_space=feature_space)
+        tree.populate_node_distributions(inputs.data, feature_space=feature_space)
 
     return TbsTreeContext(
         data=inputs.data,

@@ -122,7 +122,7 @@ def run_edge_and_sibling_records(
     feature_space: FeatureSpace | None,
 ) -> tuple[SiblingRecordSample, str]:
     tree, tree_metric = build_selected_hierarchy_tree(data, metadata)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     edge_df, spectral_context = annotate_child_parent_divergence(
         tree,
         tree.annotations_df,

@@ -58,7 +58,7 @@ def test_scrna_benchmark_tree_edges_include_distributional_action_and_mass(
     )
     feature_space = continuous_feature_space_from_columns(tuple(leaf_data.columns))
     tree = _small_benchmark_tree()
-    tree.populate_node_divergences(leaf_data, feature_space=feature_space)
+    tree.populate_node_distributions(leaf_data, feature_space=feature_space)
 
     config = pancreas.MethodConfig(
         method_id="tbs",

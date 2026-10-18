@@ -63,9 +63,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--weightings",
         nargs="+",
-        default=["binary", "tfidf"],
-        choices=["binary", "tfidf"],
-        help="'binary' means raw matrix values, matching the historical script name.",
+        default=["raw", "tfidf"],
+        choices=["raw", "tfidf"],
+        help="'raw' uses the input matrix without feature weighting.",
     )
     return parser.parse_args()
 

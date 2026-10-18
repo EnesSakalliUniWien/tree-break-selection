@@ -212,7 +212,7 @@ def run_tree_decomposition_on_preprocessed_data(
             method=linkage_method,
         )
     tree = tree_from_linkage(linkage_matrix, leaf_names=sample_names)
-    tree.populate_node_divergences(annotations_df)
+    tree.populate_node_distributions(annotations_df)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),
@@ -262,7 +262,7 @@ def _run_diffusion_tbs_clustering(
     Z = linkage(diffusion_geometry.distance_condensed, method="average")
 
     tree = tree_from_linkage(Z, leaf_names=sample_names)
-    tree.populate_node_divergences(data)
+    tree.populate_node_distributions(data)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),

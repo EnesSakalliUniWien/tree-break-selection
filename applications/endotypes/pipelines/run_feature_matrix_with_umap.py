@@ -258,7 +258,7 @@ def _run_decomposition(
     )
 
     tree = tree_from_linkage(linkage_matrix, leaf_names=data_df.index.tolist())
-    tree.populate_node_divergences(data_df)
+    tree.populate_node_distributions(data_df)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),

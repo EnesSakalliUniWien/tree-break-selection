@@ -56,7 +56,7 @@ def main():
     print("Step 3: Converted hierarchy to PosetTree structure.")
 
     # 4. Compute node distributions, gate annotations, then traverse the tree.
-    tree.populate_node_divergences(data)
+    tree.populate_node_distributions(data)
     significance_level = 0.05
     gate_bundle = run_gate_annotation_pipeline(
         tree,

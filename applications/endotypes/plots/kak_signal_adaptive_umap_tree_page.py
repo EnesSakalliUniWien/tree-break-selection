@@ -114,14 +114,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--global-weighting",
-        choices=["binary", "tfidf"],
-        default="binary",
+        choices=["raw", "tfidf"],
+        default="raw",
         help="Feature weighting used when computing a global embedding.",
     )
     parser.add_argument(
         "--weightings",
         nargs="+",
-        choices=["binary", "tfidf"],
+        choices=["raw", "tfidf"],
         default=None,
         help="Optional weighting filter.",
     )
@@ -168,6 +168,12 @@ def load_probe_summary(results_dir: Path, weightings: list[str] | None) -> pd.Da
     if missing:
         raise ValueError(f"Probe summary missing required columns: {sorted(missing)!r}")
     summary = summary[summary["status"].eq("ok")].copy()
+    unsupported_weightings = set(summary["weighting"].astype(str)) - {"raw", "tfidf"}
+    if unsupported_weightings:
+        raise ValueError(
+            f"Unsupported saved weighting labels: {sorted(unsupported_weightings)!r}; "
+            "regenerate the probe with raw or tfidf weighting."
+        )
     if weightings is not None:
         summary = summary[summary["weighting"].isin(weightings)].copy()
     if summary.empty:

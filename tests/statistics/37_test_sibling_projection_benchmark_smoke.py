@@ -38,7 +38,7 @@ def _collect_binary_parent_structure(
     case = _find_case(case_name)
     data_df, _labels, _x_original, _metadata = generate_case_data(case)
     tree = _build_case_tree(data_df)
-    tree.populate_node_divergences(data_df)
+    tree.populate_node_distributions(data_df)
 
     bundle = run_gate_annotation_pipeline(
         tree,

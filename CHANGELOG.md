@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 ## [Unreleased] - 2026-10-14
 
 ### Changed
+- Naming audit: `PosetTree.populate_node_divergences` is now `populate_node_distributions`; `calculate_ari_nmi_purity_metrics` is now `calculate_clustering_metrics`. Active callers, tests, quick start and ASV timing names use the new names without compatibility aliases.
+- Coordinate adjustment APIs use `CoordinateAdjustmentMethod`, `coordinate_adjusted_minimum` and `fixed_coordinate_adjusted_p_value`, because the accepted methods include Holm/Bonferroni FWER procedures as well as BH/BY FDR procedures. The redundant `fixed_coordinate_bh_p_value` wrapper is removed; callers pass `method="bh"`.
+- Unweighted spectral input is named `raw` instead of `binary`; the averaged NNLS target is named `mean_squared_standardized_euclidean` instead of `squared_standardized_euclidean`. CLI choices, callers and current output metadata use these names; strict spectral readers reject retired labels. Historical outputs retain their original names.
+- The traversal sibling diagnostic uses `any_false_rejection_rate` and `empirical_control_observed`, with schema `traversal_sibling_fdr_null/v2`. Its local/AWS merger rejects old or mixed-schema shards. Probability formulas and decision thresholds are unchanged.
+- NNLS tree labels distinguish fitted branch length from calibrated time and disclose radial normalization. Projected-Wald and Tree-BH docstrings identify the actual return type and within-family adjusted values.
 - Pass-through traversal counts a deeper split only when every node on the path would split or pass through. Runs with pass-through enabled (the default) can return fewer clusters than before.
 - `build_tree` builds linkage trees only and no longer takes `builder` or `rooting`; `TreeBuildResult` drops `builder`, `rooting` and `phylogenetic_rooting`. Benchmark methods no longer accept `tree_builder` or `tree_rooting`.
 - `run_clustering_result` rejects unknown parameter keys for every registered method; `benchmark_*` bookkeeping keys remain allowed.

@@ -136,7 +136,7 @@ def analyze_case(case, args, tables):
     )
     space = separate_adaptive_cosine_space(
         data,
-        weighting="binary",
+        weighting="raw",
         max_rank=args.max_rank,
         min_segment_length=4,
         max_segments=8,
@@ -345,7 +345,7 @@ def main():
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "git_status": subprocess.check_output(["git", "status", "--short"], text=True),
         "source_sha256": {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in source_paths},
-        "weighting": "binary (raw values, including signed continuous features)",
+        "weighting": "raw values, including signed continuous features",
         "edge_alpha": 0.001,
         "sibling_alpha": 0.01,
         "branch_length_variance_policy": "none",

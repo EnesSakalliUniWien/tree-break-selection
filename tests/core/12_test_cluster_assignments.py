@@ -55,7 +55,7 @@ def _run_statistical_analysis(
     sibling_alpha: float = DEFAULT_SIBLING_ALPHA,
 ) -> pd.DataFrame:
     """Run the production gate-annotation pipeline on a populated tree."""
-    tree.populate_node_divergences(x)
+    tree.populate_node_distributions(x)
     return run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),

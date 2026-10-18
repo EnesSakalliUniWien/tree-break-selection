@@ -9,8 +9,8 @@ non-negative least-squares fit for continuous data:
 
 where ``D_ij`` is either the mean squared standardized Euclidean distance
 across all input features or the unnormalized squared Euclidean distance
-from an already prepared geometry. The compatibility identifier
-``squared_standardized_euclidean`` denotes the feature-count-normalized target.
+from an already prepared geometry. The target identifier
+``mean_squared_standardized_euclidean`` explicitly includes that normalization.
 """
 
 from __future__ import annotations
@@ -33,10 +33,10 @@ BRANCH_LENGTH_OPTIMIZATION_METHODS = (
     BRANCH_LENGTH_OPTIMIZATION_FIXED_TOPOLOGY_NNLS,
 )
 
-BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN = "squared_standardized_euclidean"
+BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN = "mean_squared_standardized_euclidean"
 BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN = "squared_euclidean"
 BRANCH_LENGTH_TARGET_METRICS = (
-    BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
 )
 
@@ -242,7 +242,7 @@ def _split_root_pair_by_linkage(
     return split
 
 
-def _squared_standardized_targets(
+def _mean_squared_standardized_targets(
     data: pd.DataFrame,
     left: np.ndarray,
     right: np.ndarray,
@@ -297,7 +297,7 @@ def fit_fixed_topology_nnls_branch_lengths(
     tree: nx.DiGraph,
     continuous_data: pd.DataFrame,
     *,
-    target_metric: str = BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN,
+    target_metric: str = BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
     pair_sample_size: int | None = 100_000,
     random_state: int = 0,
     solver_tolerance: float = 1e-6,
@@ -314,7 +314,7 @@ def fit_fixed_topology_nnls_branch_lengths(
     length is fit; ``n_zero_design_columns`` counts those edges. ``continuous_data`` is interpreted
     as raw continuous observations for the standardized target and as a
     prepared Euclidean embedding for the unstandardized target. The
-    ``squared_standardized_euclidean`` target divides the sum of squared
+    ``mean_squared_standardized_euclidean`` target divides the sum of squared
     sample-standardized differences by the total input feature count;
     ``squared_euclidean`` uses the unnormalized sum in the supplied geometry.
     """
@@ -357,8 +357,8 @@ def fit_fixed_topology_nnls_branch_lengths(
             [design, _path_incidence_matrix(leaf_edge_incidence, extra_left, extra_right)],
             format="csr",
         )
-    if target_metric == BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN:
-        targets = _squared_standardized_targets(continuous_data, left, right)
+    if target_metric == BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN:
+        targets = _mean_squared_standardized_targets(continuous_data, left, right)
         target_definition = (
             "mean squared standardized Euclidean distance "
             "(sample standard deviation with ddof=1; "
@@ -472,7 +472,7 @@ __all__ = [
     "BRANCH_LENGTH_OPTIMIZATION_METHODS",
     "BRANCH_LENGTH_TARGET_METRICS",
     "BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN",
-    "BRANCH_LENGTH_TARGET_SQUARED_STANDARDIZED_EUCLIDEAN",
+    "BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN",
     "BranchLengthOptimizationResult",
     "fit_fixed_topology_nnls_branch_lengths",
     "validate_branch_length_optimization_method",

@@ -130,7 +130,7 @@ _OVERVIEW_TEXT = dedent(
 
     Pipeline:
       benchmark matrix -> case-specific tree distance -> average linkage -> PosetTree
-      -> populate_node_divergences() -> three statistical gates
+      -> populate_node_distributions() -> three statistical gates
       -> decompose() -> cluster assignments
 
     Statistical gates applied at each internal node:

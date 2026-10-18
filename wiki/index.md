@@ -61,6 +61,8 @@ renamed, or promoted.
 
 ### Source Summaries
 
+- [[naming-consistency-audit]] - active API, CLI and statistical naming
+  corrections, alias removal, migration requirements and verification.
 - [[branch-distribution-variance-benchmark]] - matched internal-distribution and
   branch-variance comparison, discovery-only compatibility, and the distinct
   effects on node p-values, calibration support and final partitions.

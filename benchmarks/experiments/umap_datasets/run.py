@@ -202,7 +202,7 @@ def run_tbs_clustering(
     tree = tree_from_linkage(Z, leaf_names=sample_names)
 
     # Decompose
-    tree.populate_node_divergences(data)
+    tree.populate_node_distributions(data)
     gate_bundle = run_gate_annotation_pipeline(
         tree,
         tree.annotations_df.copy(),

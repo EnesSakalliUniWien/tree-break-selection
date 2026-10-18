@@ -75,10 +75,10 @@ class LensSpec:
 
 DEFAULT_LENSES = (
     LensSpec("raw_kak", "tfidf", "adaptive_modes_14_30"),
-    LensSpec("raw_kak", "binary", "adaptive_modes_10_15"),
+    LensSpec("raw_kak", "raw", "adaptive_modes_10_15"),
     LensSpec("sep_fixed_diffusion", "tfidf", "adaptive_modes_14_30"),
-    LensSpec("sep_fixed_diffusion", "binary", "adaptive_modes_02_05"),
-    LensSpec("sep_adaptive_diffusion", "binary", "adaptive_modes_02_05"),
+    LensSpec("sep_fixed_diffusion", "raw", "adaptive_modes_02_05"),
+    LensSpec("sep_adaptive_diffusion", "raw", "adaptive_modes_02_05"),
     LensSpec("sep_adaptive_diffusion", "tfidf", "adaptive_modes_06_09"),
 )
 
@@ -134,7 +134,7 @@ def parse_lens(value: str) -> LensSpec:
     family, weighting, block_name = parts
     if family not in {"raw_kak", "sep_fixed_diffusion", "sep_adaptive_diffusion"}:
         raise argparse.ArgumentTypeError(f"unknown lens family {family!r}")
-    if weighting not in {"binary", "tfidf"}:
+    if weighting not in {"raw", "tfidf"}:
         raise argparse.ArgumentTypeError(f"unknown weighting {weighting!r}")
     return LensSpec(family=family, weighting=weighting, block_name=block_name)
 
@@ -401,7 +401,7 @@ def build_lens_tree(
     if not np.isfinite(linkage_matrix).all():
         raise ValueError(f"degenerate distances for {spec.lens_id}")
     tree = tree_from_linkage(linkage_matrix, leaf_names=data.index.tolist())
-    tree.populate_node_divergences(data)
+    tree.populate_node_distributions(data)
     return tree, {
         **metadata,
         "tree_linkage_method": tree_linkage_method,

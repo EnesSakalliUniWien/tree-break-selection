@@ -175,7 +175,7 @@ def test_run_clustering_result_forwards_adaptive_nnls_branch_time_params(monkeyp
     assert captured["kwargs"]["edge_branch_length_variance_policy"] == ("normalized_branch_length")
     assert captured["kwargs"]["branch_length_optimization_method"] == "fixed_topology_nnls"
     assert captured["kwargs"]["branch_length_optimization_target_metric"] == (
-        "squared_standardized_euclidean"
+        "mean_squared_standardized_euclidean"
     )
     assert captured["kwargs"]["branch_length_optimization_pair_sample_size"] == 50_000
     assert captured["kwargs"]["branch_length_optimization_random_state"] == 0

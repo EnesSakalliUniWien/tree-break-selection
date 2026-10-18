@@ -366,7 +366,7 @@ def _selected_root_sibling_p_value(
     candidate_method: str,
 ) -> float:
     tree = _build_tree_from_leaf_data(data)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     parents, results_by_method, _skipped = _sibling_results_by_method(
         tree,
         feature_space,
@@ -609,7 +609,7 @@ def _rows_for_replicate(
         truth_labels,
         true_clusters=int(true_clusters),
     )
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     base_annotations = _base_edge_annotations(
         tree,
         data,

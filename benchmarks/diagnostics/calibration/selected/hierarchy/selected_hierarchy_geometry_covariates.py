@@ -742,7 +742,7 @@ def _run_geometry_sample(
     replicate_index: int,
 ) -> GeometryStudySample:
     tree, tree_metric = build_selected_hierarchy_tree(data, metadata)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     edge_df, spectral_context = annotate_child_parent_divergence(
         tree,
         tree.annotations_df,

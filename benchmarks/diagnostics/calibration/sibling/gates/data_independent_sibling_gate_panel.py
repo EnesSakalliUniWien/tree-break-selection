@@ -38,7 +38,7 @@ from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance impo
     build_contrast_covariance,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import (
-    fixed_coordinate_bh_p_value,
+    fixed_coordinate_adjusted_p_value,
     fixed_subspace_sibling_p_value,
 )
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.pair_observations import (
@@ -170,7 +170,7 @@ def data_independent_coordinate_gate_p_value(
     if candidate_method == "coordinate_bonferroni":
         return float(min(1.0, vector.size * float(np.min(coordinate_p))))
     if candidate_method == "coordinate_bh":
-        return fixed_coordinate_bh_p_value(vector)
+        return fixed_coordinate_adjusted_p_value(vector, method="bh")
     raise ValueError(f"Unknown candidate_method: {candidate_method!r}.")
 
 
@@ -339,7 +339,7 @@ def _rows_for_replicate(
         seed=data_seed,
     )
     tree = build_tree_from_data(data)
-    tree.populate_node_divergences(data, feature_space=feature_space)
+    tree.populate_node_distributions(data, feature_space=feature_space)
     rows: list[dict[str, object]] = []
     for parent in tree.nodes:
         children = identify_binary_sibling_children(tree, parent)
