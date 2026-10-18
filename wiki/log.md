@@ -8287,3 +8287,15 @@ version comparison report and wiki source summary. Production code unchanged.
   are excluded.
 - Do not run `chunkhound index --include ...` on the full database: its
   orphan cleanup deletes every file outside the include pattern.
+
+## 2026-10-18 — ChunkHound code research setup
+
+- `code_research` needs a reranker and an LLM. `.chunkhound.json` now uses
+  `bge-reranker-v2-m3` (GGUF Q8_0 from `gpustack/bge-reranker-v2-m3-GGUF`)
+  served by llama.cpp at `http://127.0.0.1:8081/v1/rerank`, and `codex-cli`
+  for synthesis. Ollama 0.40.4 has no rerank endpoint.
+- Start the reranker before research:
+  `llama-server -hf gpustack/bge-reranker-v2-m3-GGUF:Q8_0 --reranking --port 8081 --host 127.0.0.1 -c 8192 -b 8192 -ub 8192`.
+  The default 512-token batch rejects chunks longer than 512 tokens.
+- One test query ("How does TreeDecomposition decide whether to split a
+  node?") took 12 minutes and returned a cited answer over 112 sources.
