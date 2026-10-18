@@ -1,0 +1,18 @@
+{
+  "database": {
+    "provider": "duckdb",
+    "path": ".chunkhound/db"
+  },
+  "indexing": {
+    "per_file_timeout_seconds": 30,
+    "exclude": [
+      "raw/assets/benchmark-results/**/*.html"
+    ]
+  },
+  "embedding": {
+    "provider": "openai",
+    "base_url": "http://localhost:11434/v1",
+    "model": "embeddinggemma-2:270m",
+    "output_dims": 768
+  }
+}

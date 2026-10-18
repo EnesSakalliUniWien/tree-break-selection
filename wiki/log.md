@@ -8275,3 +8275,15 @@ version comparison report and wiki source summary. Production code unchanged.
 - New tests pin the shard S3 layout, `tbs_decompose` label order, the BY cap
   at 1 and the full `get_env_bool` error text. `make check` passed with 893
   tests. No commit or push occurred.
+
+## 2026-10-18 — ChunkHound semantic search setup
+
+- Added `.chunkhound.json`: ChunkHound 6.0.0 indexes the repository into
+  `.chunkhound/db` (DuckDB, gitignored) with the local Ollama embedding model
+  `embeddinggemma-2:270m` (768 dims, `http://localhost:11434/v1`).
+  1388 files, 26038 chunks, 0 errors; a full index takes about 9.5 minutes.
+- `per_file_timeout_seconds` is 30 because the 3 s default skipped
+  `wiki/log.md`; Plotly HTML exports under `raw/assets/benchmark-results/`
+  are excluded.
+- Do not run `chunkhound index --include ...` on the full database: its
+  orphan cleanup deletes every file outside the include pattern.

@@ -144,3 +144,6 @@ local_data/
 
 # Local tool cache for the Serena code assistant
 .serena/
+
+# Local ChunkHound index database
+.chunkhound/
