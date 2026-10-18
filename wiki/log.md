@@ -8311,5 +8311,7 @@ version comparison report and wiki source summary. Production code unchanged.
   scripts no longer run against current code; their outputs stay.
   [[independent-gaussian-production-benchmark]] and
   [[independent-diffusion-nnls-benchmark]] are now `deprecated`.
-- `run_projected_wald_kernel(adaptive_dimension_energy_fraction=...)` is now
-  reached only by tests 39 and 55.
+- `run_projected_wald_kernel(adaptive_dimension_energy_fraction=...)` stays:
+  the edge and sibling projected-Wald tests pass the gate option
+  `adaptive_projection_dimension_energy_fraction` to it, and the pancreas
+  scRNA benchmark sets it to 0.90.
