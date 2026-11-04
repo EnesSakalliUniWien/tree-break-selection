@@ -291,7 +291,7 @@ def _knn_weights(points: np.ndarray, k: int = 8):
 def test_sparse_leading_modes_match_dense_distances(monkeypatch, offset: float) -> None:
     rng = np.random.default_rng(3)
     points = rng.normal(size=(300, 4))
-    points[150:] += offset  # offset 1000 makes two graph components (dense fallback)
+    points[150:] += offset  # offset 1000 makes two graph components.
     weights = _knn_weights(points)
     dense = diffusion.compute_diffusion_coordinates(
         weights.toarray(), diffusion_time=2, n_components=12
@@ -304,3 +304,34 @@ def test_sparse_leading_modes_match_dense_distances(monkeypatch, offset: float) 
 
     assert sparse_path.shape == dense.shape
     np.testing.assert_allclose(pdist(sparse_path), pdist(dense), atol=1e-9)
+
+
+@pytest.mark.parametrize("diffusion_time", [0, 3])
+@pytest.mark.parametrize("n_components", [1, 13, 155])
+def test_disconnected_sparse_diffusion_preserves_global_ties_without_full_dense_array(
+    monkeypatch, diffusion_time: int, n_components: int
+) -> None:
+    from scipy import sparse
+
+    block = _knn_weights(np.random.default_rng(8).normal(size=(150, 4)))
+    weights = sparse.block_diag((block, block, sparse.csr_matrix((1, 1))), format="csr")
+    dense = diffusion.compute_diffusion_coordinates(
+        weights.toarray(), diffusion_time=diffusion_time, n_components=n_components
+    )
+    original_eigh = diffusion.eigh
+
+    def block_eigh(matrix):
+        assert matrix.shape[0] <= 150, "Disconnected diffusion densified the full graph."
+        return original_eigh(matrix)
+
+    monkeypatch.setattr(diffusion, "DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES", 50)
+    monkeypatch.setattr(diffusion, "eigh", block_eigh)
+    permutation = np.random.default_rng(12).permutation(weights.shape[0])
+    coordinates = diffusion.compute_diffusion_coordinates(
+        weights[permutation][:, permutation],
+        diffusion_time=diffusion_time,
+        n_components=n_components,
+    )[np.argsort(permutation)]
+
+    assert coordinates.shape == dense.shape
+    np.testing.assert_allclose(pdist(coordinates), pdist(dense), atol=1e-9)

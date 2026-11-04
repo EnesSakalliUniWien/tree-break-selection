@@ -359,6 +359,9 @@ def test_family_diffusion_tbs_uses_diffusion_over_the_case_distance(monkeypatch)
     assert captured["kwargs"]["adaptive_projection_dimension_energy_fraction"] == 0.9
     assert captured["kwargs"]["branch_length_data_df"] is data
     assert captured["kwargs"]["extra"]["feature_family_diffusion_fallback_reason"] is None
+    metadata = captured["kwargs"]["extra"]["adaptive_diffusion"]
+    assert metadata["self_distance_policy"] == "zero_identity_diagonal_before_epsilon_and_kernel"
+    assert metadata["feature_family"] == "continuous"
 
 
 def test_family_diffusion_tbs_falls_back_to_the_case_distance_on_duplicate_rows(monkeypatch):
@@ -394,3 +397,4 @@ def test_family_diffusion_tbs_falls_back_to_the_case_distance_on_duplicate_rows(
     assert (
         "identical rows" in captured["kwargs"]["extra"]["feature_family_diffusion_fallback_reason"]
     )
+    assert "adaptive_diffusion" not in captured["kwargs"]["extra"]

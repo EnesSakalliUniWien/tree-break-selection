@@ -34,10 +34,9 @@ class DiffusionGeometry:
 
 
 PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS = 8
-# shortcut: above this size the leading modes come from ARPACK (eigsh). Disconnected
-# graphs fall back to the dense solver because ARPACK can miss repeated eigenvalue 1;
-# other exact repeated leading eigenvalues are not checked. Compare with the dense
-# solver if a large run depends on such ties.
+# shortcut: large connected blocks use ARPACK (eigsh), whose recovery of exact
+# repeated nontrivial eigenvalues is not certified. Compare with a dense reference
+# when a large run depends on such ties.
 DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES = 2000
 PYDIFFMAP_VARIABLE_BANDWIDTH_MIN_POSITIVE_NEIGHBORS = PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS - 1
 
@@ -181,9 +180,9 @@ def _sparse_leading_eigenpairs(
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """Return enough descending eigenpairs to close the retained tie group, or None."""
     n_samples = transition.shape[0]
-    n_graph_components, _labels = connected_components(transition, directed=False)
+    n_graph_components, labels = connected_components(transition, directed=False)
     if n_graph_components > 1:
-        return None
+        return _component_leading_eigenpairs(transition, labels, n_components)
     k = min(int(n_components) + 10, n_samples - 1)
     start_vector = np.full(n_samples, 1.0 / math.sqrt(n_samples))
     while True:
@@ -196,6 +195,48 @@ def _sparse_leading_eigenpairs(
         if k >= n_samples - 1:
             return None
         k = min(2 * k, n_samples - 1)
+
+
+def _component_leading_eigenpairs(
+    transition: sparse.csr_matrix,
+    labels: np.ndarray,
+    n_components: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Merge component spectra, closing numerical ties in the global order."""
+    rows = [np.flatnonzero(labels == label) for label in np.unique(labels)]
+    requested = int(n_components)
+    while True:
+        spectra = []
+        for indices in rows:
+            block = transition[indices][:, indices]
+            leading = (
+                _sparse_leading_eigenpairs(block, requested)
+                if len(indices) > DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES
+                else None
+            )
+            if leading is None:
+                values, vectors = eigh(block.toarray())
+                leading = values[::-1], vectors[:, ::-1]
+            spectra.append(leading)
+
+        offsets = np.r_[0, np.cumsum([len(values) for values, _ in spectra])]
+        values = np.concatenate([values for values, _ in spectra])
+        order = np.argsort(values)[::-1]
+        _start, end = _leading_diffusion_spectrum(values[order], n_components)
+        retained = set(order[:end])
+        # A cutoff touching a truncated block needs more modes to close cross-block ties.
+        if any(
+            offsets[index + 1] - 1 in retained and len(spectrum[0]) < len(indices)
+            for index, (indices, spectrum) in enumerate(zip(rows, spectra, strict=True))
+        ):
+            requested = 2 * requested + 10
+            continue
+
+        vectors = np.zeros((transition.shape[0], end))
+        for column, position in enumerate(order[:end]):
+            index = int(np.searchsorted(offsets, position, side="right") - 1)
+            vectors[rows[index], column] = spectra[index][1][:, position - offsets[index]]
+        return values[order[:end]], vectors
 
 
 def compute_diffusion_coordinates(
@@ -258,6 +299,11 @@ def compute_diffusion_coordinates(
         if leading is None:
             matrix = matrix.toarray()
     eigensolver = "scipy.sparse.linalg.eigsh"
+    if (
+        leading is not None
+        and connected_components(transition, directed=False, return_labels=False) > 1
+    ):
+        eigensolver = "scipy.sparse.linalg.eigsh + scipy.linalg.eigh (connected components)"
     if leading is None:
         eigensolver = "scipy.linalg.eigh"
         transition = matrix * inv_sqrt_degrees[:, None] * inv_sqrt_degrees[None, :]
@@ -381,6 +427,9 @@ def adaptive_diffusion_geometry(
         bandwidth_type=bandwidth_type,
     )
     kernel_object.fit(values)
+    # Positive roundoff self distances must not enter epsilon's positive-distance sample.
+    # Keep stored off-diagonal zeros: duplicate observations have kernel weight one.
+    kernel_object.scaled_dists.setdiag(0.0)
     epsilon_value, epsilon_method = resolve_adaptive_epsilon(
         kernel_object,
         epsilon,
@@ -418,6 +467,7 @@ def adaptive_diffusion_geometry(
             ),
             "epsilon": float(epsilon_value),
             "epsilon_method": epsilon_method,
+            "self_distance_policy": "zero_identity_diagonal_before_epsilon_and_kernel",
             "diffusion_time": int(diffusion_time),
             "diffusion_components": int(coordinates.shape[1]),
             "unique_rows": int(unique_rows),

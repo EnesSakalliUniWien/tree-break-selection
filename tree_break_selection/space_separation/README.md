@@ -35,4 +35,20 @@ Adaptive diffusion metadata records `backend="pydiffmap"`, `coordinate_implement
 `coordinate_operator`, `coordinate_operator_definition`,
 `coordinate_eigensolver`, and `coordinate_eigenvalue_policy`. Pydiffmap supplies
 the kernel; repository code computes the symmetric normalized coordinates
-using SciPy `eigh`. The backend label alone does not identify the coordinates.
+using SciPy eigensolvers. The backend label alone does not identify the coordinates.
+
+Large sparse operators use SciPy `eigsh`. Disconnected graphs are solved by
+connected component, using `eigh` only for small blocks or a block requiring its
+full spectrum. The component spectra are merged before the global rank and
+complete-tie rule is applied. This avoids a full dense graph allocation while
+preserving repeated leading modes. Solver metadata identifies the mixed
+`eigsh`/`eigh` component path. Recovery of repeated nontrivial eigenvalues inside
+a large connected block retains the existing ARPACK limitation documented in code.
+
+Adaptive diffusion sets the scaled-distance identity diagonal to zero before
+epsilon selection and kernel computation, so positive floating-point self
+distances cannot enter epsilon's positive-distance sample. Off-diagonal entries,
+including stored zero distances between duplicate observations, are preserved.
+Metadata records
+`self_distance_policy="zero_identity_diagonal_before_epsilon_and_kernel"`;
+feature-family and block adaptive diffusion retain this policy.

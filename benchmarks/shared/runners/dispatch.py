@@ -350,9 +350,9 @@ def _run_tbs_distance_tree_method(
         fallback_reason = feature_family_diffusion_unsupported_reason(data_df, feature_space)
         extra = {"feature_family_diffusion_fallback_reason": fallback_reason}
         if fallback_reason is None:
-            diffusion_distance = feature_family_diffusion_geometry(
-                data_df, feature_space
-            ).distance_condensed
+            geometry = feature_family_diffusion_geometry(data_df, feature_space)
+            diffusion_distance = geometry.distance_condensed
+            extra["adaptive_diffusion"] = geometry.metadata
             if energy_fraction is None:
                 energy_fraction = feature_family_diffusion_settings(
                     feature_space
