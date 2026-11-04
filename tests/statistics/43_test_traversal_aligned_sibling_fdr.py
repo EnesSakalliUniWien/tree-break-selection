@@ -105,6 +105,20 @@ def test_nodes_with_closed_edge_gate_keep_raw_sibling_stat_but_no_fdr_decision()
     assert bool(out.loc["B", "Sibling_BH_Different"])
 
 
+def test_frontier_passes_through_a_null_like_singleton_peel() -> None:
+    tree = nx.DiGraph([("root", "leaf"), ("root", "C"), ("C", "C1"), ("C", "C2")])
+    edge_flags = {"root": False, "leaf": False, "C": False, "C1": True, "C2": True}
+    annotations_df = init_sibling_annotation_df(
+        pd.DataFrame({"Child_Parent_Divergence_Significant": pd.Series(edge_flags, dtype=bool)})
+    )
+
+    out = apply_traversal_aligned_sibling_bh_results(
+        tree, annotations_df, ["C"], [(10.0, 1.0, 0.001)], 0.01, skipped_parents=["root"]
+    )
+
+    assert bool(out.loc["C", "Sibling_BH_Different"])
+
+
 @pytest.mark.parametrize(
     ("method_label", "expected_calibration"),
     [

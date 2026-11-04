@@ -6,7 +6,8 @@ top-down traversal:
 
 #. **Binary structure prerequisite** — parent must have exactly two children.
 #. **Edge divergence gate** — at least one child must significantly
-   diverge from the parent (projected Wald chi-square test).
+   diverge from the parent (projected Wald chi-square test). A singleton peel
+   passes without it: Tree-BH tests the family below it instead.
 #. **Sibling divergence gate** — siblings must have significantly different
    distributions.
 """
@@ -19,7 +20,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tree_break_selection.tree.poset_tree import PosetTree
 
-from tree_break_selection.tree.topology import bottom_up_nodes
+from tree_break_selection.tree.topology import bottom_up_nodes, singleton_peel_continuations
 
 
 class TraversalDecision(Enum):
@@ -73,6 +74,7 @@ class GateEvaluator:
         self._passthrough_supported = passthrough_supported
         self._passthrough_bottleneck = passthrough_bottleneck or {}
         self._node_ids = tuple(self.tree.nodes)
+        self.singleton_peels = singleton_peel_continuations(self.tree)
         self._validate_contract()
         if self._passthrough:
             self._split_prerequisites_by_node = self._compute_split_prerequisites_by_node()
@@ -118,7 +120,7 @@ class GateEvaluator:
         -------
         bool
             ``True`` only when the node is binary and at least one child
-            significantly diverges from the parent.
+            significantly diverges from the parent, or the node is a singleton peel.
         """
         children = self._children_map[parent]
         if len(children) != 2:
@@ -126,7 +128,11 @@ class GateEvaluator:
 
         left_child, right_child = children
 
-        return bool(self._edge_divergent[left_child] or self._edge_divergent[right_child])
+        return bool(
+            self._edge_divergent[left_child]
+            or self._edge_divergent[right_child]
+            or parent in self.singleton_peels
+        )
 
     def _sibling_gate_is_open(self, parent: object) -> bool:
         """Run the sibling-divergence gate.

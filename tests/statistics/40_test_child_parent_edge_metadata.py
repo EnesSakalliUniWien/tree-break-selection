@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import networkx as nx
+import numpy as np
 import pandas as pd
+import pytest
 
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection import (
+    record_collection,
+)
 from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.child_parent_edge_metadata import (
     determine_whether_sibling_pair_is_edge_blocked,
     determine_whether_sibling_pair_is_null_like,
@@ -158,3 +163,45 @@ def test_nested_blocked_parents_resolve_to_the_same_stopping_event() -> None:
 
     assert direct_group == "root"
     assert nested_group == "root"
+
+
+def test_singleton_peel_chain_records_share_one_stopping_event(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # root and C are singleton peels, so Tree-BH tests {x, C, y, F, f1, f2} as one family.
+    tree = nx.DiGraph([("root", "x"), ("root", "C"), ("C", "y"), ("C", "F")])
+    tree.add_edges_from([("F", "f1"), ("F", "f2")])
+    leaf_counts = {"root": 4, "C": 3, "F": 2, "x": 1, "y": 1, "f1": 1, "f2": 1}
+    for node, leaf_count in leaf_counts.items():
+        tree.nodes[node]["distribution"] = np.array([0.5])
+        tree.nodes[node]["leaf_count"] = leaf_count
+    annotations = pd.DataFrame(
+        {
+            "Child_Parent_Divergence_Test_Statistic": 0.0,
+            "Child_Parent_Divergence_P_Value": 0.9,
+            "Child_Parent_Divergence_P_Value_BH": 0.9,
+            "Child_Parent_Divergence_Significant": False,
+            "Child_Parent_Divergence_df": 1.0,
+            "Child_Parent_Divergence_Tested": True,
+            "Child_Parent_Divergence_Ancestor_Blocked": False,
+        },
+        index=list(leaf_counts),
+    )
+    monkeypatch.setattr(
+        record_collection, "sibling_divergence_test", lambda *a, **k: (1, 1, 1, 0.5)
+    )
+    parents = ["root", "C", "F"]
+
+    records, _ = record_collection.collect_sibling_pair_records(
+        tree,
+        annotations,
+        sibling_projection_dimensions_from_edge_comparisons=dict.fromkeys(parents, 1),
+        parent_principal_component_projections={parent: np.eye(1) for parent in parents},
+        parent_principal_component_eigenvalues={parent: np.ones(1) for parent in parents},
+    )
+
+    assert {record.parent: record.calibration_dependency_group for record in records} == {
+        "root": "root",
+        "C": "root",
+        "F": "root",
+    }

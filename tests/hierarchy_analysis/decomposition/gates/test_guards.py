@@ -505,7 +505,9 @@ def test_passthrough_guard_candidates_skip_nodes_below_a_boundary() -> None:
             ("A", "A1"),
             ("A", "A2"),
             ("B", "C"),
-            ("B", "b1"),
+            ("B", "E"),
+            ("E", "e1"),
+            ("E", "e2"),
             ("C", "D"),
             ("C", "c1"),
             ("D", "d1"),
@@ -514,7 +516,7 @@ def test_passthrough_guard_candidates_skip_nodes_below_a_boundary() -> None:
     )
     edge_divergent = {node: True for node in tree.nodes}
     edge_divergent["C"] = False
-    edge_divergent["b1"] = False
+    edge_divergent["E"] = False
     sibling_different = {node: node in {"A", "D"} for node in tree.nodes}
     annotations = pd.DataFrame(
         {
