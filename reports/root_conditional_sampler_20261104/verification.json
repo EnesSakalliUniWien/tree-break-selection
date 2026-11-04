@@ -1,0 +1,11 @@
+{
+  "parity_chains": 24,
+  "native_membership_checks": 258,
+  "records": 86,
+  "sources_verified": 149,
+  "failures": [],
+  "independent_saved_rank_and_decision_checks": 86,
+  "production_sources_unchanged": 109,
+  "ordered_suite_passed": 1031,
+  "ordered_suite_warning": "One scikit-learn MDS n_init FutureWarning in existing plot test"
+}

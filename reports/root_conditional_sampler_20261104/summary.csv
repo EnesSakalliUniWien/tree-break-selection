@@ -1,0 +1,9 @@
+phase,scenario,cases,complete,unresolved,reject_005,reject_001,median_p,minimum_moves
+parity,null,12,12,0,0,0,0.3885,161
+parity,moderate,6,6,0,1,0,0.359,187
+parity,strong,6,6,0,5,4,0.004999999999999999,109
+fresh,null,40,40,0,3,0,0.543,144
+fresh,moderate,10,10,0,4,1,0.20750000000000002,44
+fresh,strong,10,10,0,7,5,0.011000000000000001,89
+registered,gauss_clear_medium_continuous,1,1,0,1,1,0.005,532
+registered,gauss_moderate_3c_continuous,1,1,0,1,1,0.001,552

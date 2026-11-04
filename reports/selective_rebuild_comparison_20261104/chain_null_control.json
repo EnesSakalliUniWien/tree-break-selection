@@ -1,0 +1,16 @@
+{
+  "all_positive": {
+    "draws": 4000,
+    "steps": 99,
+    "rejections_005": 170,
+    "rejections_001": 23,
+    "median_moves": 59.0
+  },
+  "two_disconnected_intervals": {
+    "draws": 4000,
+    "steps": 99,
+    "rejections_005": 77,
+    "rejections_001": 6,
+    "median_moves": 15.0
+  }
+}

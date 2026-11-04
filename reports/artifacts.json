@@ -65,6 +65,14 @@
     "reports/production_pvalue_replacement_20260928": {
       "description": "production_pvalue_replacement_20260928",
       "reproduction_source": "reports/production_pvalue_replacement_20260928/README.md"
+    },
+    "reports/selective_rebuild_comparison_20261104": {
+      "description": "Paired root-only known-Gaussian comparison of conditional samplers and whole-procedure rebuilding, with saved arrays, checks and limits.",
+      "reproduction_source": "reports/selective_rebuild_comparison_20261104/README.md"
+    },
+    "reports/root_conditional_sampler_20261104": {
+      "description": "Maintained root conditional sampler parity, fresh Gaussian and registered-case validation; full-suite evidence and explicit model limits.",
+      "reproduction_source": "reports/root_conditional_sampler_20261104/README.md"
     }
   },
   "files": [
@@ -2545,6 +2553,1194 @@
       "study": "reports/failing_case_subspace_analysis_20261018",
       "role": "source",
       "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/README.md",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "source",
+      "reason": "Candidate comparison protocol, derivation or reproduction source."
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/chain_null_control.json",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 293,
+      "sha256": "19d326202e18e2eee6bfdbbea4c4884c4746de2c791a67bdb4daefb7e18cd1fc"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/check_chain.py",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "source",
+      "reason": "Candidate comparison protocol, derivation or reproduction source."
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/comparison.pdf",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 29829,
+      "sha256": "2edb31414f259a498777dbf623655ed17253b0247d04f266d48a5717cb60db50"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/comparison.png",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 156117,
+      "sha256": "7c8e27a6e75cbd7bbcc642f84553d7804fc0bb2648b3f2454c1e2f49c8d9c268"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/errors.json",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/known_null_scores.npy",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 8120,
+      "sha256": "447f96e8f22eaf269ce37cfb89adb9f80d9764810acfbc8b2d75302168c37247",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/moderate_0.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20893,
+      "sha256": "5d3e75fd817f1f75f56bb24f431ecf8606698ec1640a4731697c9bddfcc83771",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/moderate_1.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21598,
+      "sha256": "da1f4f8fea317af210de979ba6b518465828964f1490dbd9afa994ecd408c784",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/moderate_2.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21231,
+      "sha256": "0d90c58b98356c40bbff6d45cd5689f50ebc900b72c7fc316db2ee9b938db928",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/moderate_3.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21825,
+      "sha256": "833f27dafc6db768317bf161c6f763f29ad2ef497bcfab0cb0e2f004444d0672",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/moderate_4.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20814,
+      "sha256": "fbdde925b6d14201eabc64d6a853386e9a973e5c0f7df5babfcababcdb448d74",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/moderate_5.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21507,
+      "sha256": "098230687c2b4b8a0d480c46cc6588741bfbe2ec7ed1d24f780d9547a1e21d04",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_0.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20335,
+      "sha256": "19a4aca709e31bf7a52c653c6b1c5d6c088e6145a4fd90e1f9fd1e49ea55a80f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_1.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21633,
+      "sha256": "bd131be5ddd581dd8893f5930fd37fed8b999f051f277c61f37fd9b879e1af99",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_10.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21517,
+      "sha256": "90f0ca70ec940de769c59547a15bee5a29c1064c660b688ed45bbf60b61d390c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_11.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20875,
+      "sha256": "d350a35854ab1948f2d4be3f27d8132d2216a99eb1af111009ecb409bb45ea05",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_2.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21908,
+      "sha256": "ee5527afa2f327973c06db59704db68598cf9d539e9046e6ed6aa0d46f2120f3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_3.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21974,
+      "sha256": "418d80ba450f995b5459c05b086d5f35681a5e33397f88eb90ba852bbd429b9d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_4.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 19816,
+      "sha256": "fb4b71475c87018788d7d14827152b1f3fdc2855cb1865741a57733205ba1417",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_5.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21531,
+      "sha256": "b23f4af6b99563ae30f71bb66610c29bcc09972fa564ea9cf1c09a18295b476c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_6.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20184,
+      "sha256": "abe21d68d1cfb5d5199e12abd3ed12eae03c1f55adc7bcdf0ec69ba3b392a8e9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_7.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21435,
+      "sha256": "a952ed862472b15198fbfb4f98207c5547e97a3cc32945d8f0bf6c2dc7a6d472",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_8.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20813,
+      "sha256": "f38a15294244756fab14f62f2debe262781cb403414b4d003a4a094d1e433f92",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/null_9.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20918,
+      "sha256": "fdc1bd9eb7ee88a822f9ce9568bfae1d7a937e27b9ad10660aa560092ff664e6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/records.jsonl",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 69687,
+      "sha256": "681e1f30777a2755a0609503c312be78a1d62aeb11d95106a516755620d9d0ec",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/strong_0.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20216,
+      "sha256": "c9dfd32ddff05c812c172f277ea51afc8d9d7907412fd357164d0a5588842289",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/strong_1.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20217,
+      "sha256": "c2aa6a00cff3669d2a87653a7dcc92c6bc4a985a71576901ce62a9156ee67b47",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/strong_2.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20755,
+      "sha256": "1b70d5f179cf40a37923dcc8e8b172c4b838883b114d97e82a139128ad64f50e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/strong_3.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 21118,
+      "sha256": "5a7cb4fc446b0e22810519ac53e0ae174cf8bcbf4648696ab79d5f05f8e42baa",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/strong_4.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 19788,
+      "sha256": "ddda9f5186e766cd3b2c8ac2429597f47019d187e79ceee543fe6b26c22eb341",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/generated/strong_5.npz",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 20640,
+      "sha256": "c3b7c7e995c52daf85df5c08ade19e77ab3c1dd6ef90d106c8d156b899833896",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/manifest.json",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 18793,
+      "sha256": "99aa7a83ef0047f84f41b0193792dfcde830d33d2fa253cb08cff35500e43561"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/protocol.md",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "source",
+      "reason": "Candidate comparison protocol, derivation or reproduction source."
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/results.csv",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 33075,
+      "sha256": "08251989a2d598df0566c99d3d78a0cc85f8556fb312044c241e9d4482990f16"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/run.log",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible local proposal/chain/input arrays and run log.",
+      "bytes": 3368,
+      "sha256": "20202a0fb4ebeaab58831a9b44e4acf1504f6ab4408aa5ab9b779224e1be6c54",
+      "storage": "local"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/run_comparison.py",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "source",
+      "reason": "Candidate comparison protocol, derivation or reproduction source."
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/summary.csv",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 1646,
+      "sha256": "41522399d2ffb2bd2a9d8eb1e38aceea25ecd025b7dbaaa9d6e02f62422bffa6"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/verification.json",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "retained_result",
+      "reason": "Compact comparison results, verification, provenance or visually checked figure.",
+      "bytes": 626,
+      "sha256": "33da9e3ea5a76d5847629cb8a752c771db54678f3a3ac95c3f6f6a5ecdfc50f1"
+    },
+    {
+      "path": "reports/selective_rebuild_comparison_20261104/verify_and_plot.py",
+      "study": "reports/selective_rebuild_comparison_20261104",
+      "role": "source",
+      "reason": "Candidate comparison protocol, derivation or reproduction source."
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/README.md",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "source",
+      "reason": "Root sampler validation protocol, report or reproduction source."
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_0.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "e5371692c89191bfb15662ce873e99ffe3f498e8daea5166eb56ef9a49fc4175",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_1.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "3fdda281b38b0a4e537f04cffc8fd6e3fad9649ab8162fdc94043adad7608c25",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_2.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "87417d5a4ea7d4fd7a6e6eced465e518b6cb57e195de7066c37e40bbcf363dad",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_3.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "87947e8ffe8197ff56c570dd1a48c15a8318b301817d219ad26c75cfbb88c2b4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_4.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "d1f215362fb9840ec74edde617245842bbde4c8f0d5da8d2638e15e5681bc496",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_5.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "57a89faf954c1cf4d38cd16a39e4170cb644d2daa8245aa8a2bc1731a6f9ee75",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_6.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "92e3ea9d5f358038129bc3650452ce0b8694e20eff9ed551d19e524bd67498f7",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_7.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "b1664baaa438dde4f6a633374fdc882fb9704ec324503485020ca1fa7f00c5d2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_8.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "ecf1ef457c81b14187e08bdb489cca617439ac35055983af2d1d2572eefed9a3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_moderate_9.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "77241a19d167f6665f83c821c864e89dc9df3263250b9d999142e642a628cd51",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_0.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "8b60426399214040e9fc7ef1ce28c0e7834151b93ccd97383a67f0ba3992536e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_1.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "2b32aa8d3a94356240d6cdc5a49941e1c34f9ece2bb238f130e0062b5ba4769f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_10.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "4d4f29dd6aa91e1de5bfae6ccffe8fb497ed58a1cbf4d6950d4b78a7446423ad",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_11.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "4ea83dbc49df61af06b9ff8062a4460254d2c6e553a511e6d3ff35e498dec299",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_12.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "0ffb642b02eef2e4ffda8f51ab625b29834f05b350bc6cd10ddfd83ca2bd2e35",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_13.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "6959470fc31d2041f366889fbc0d9f07a74dbf10fc70429955b70af9c7df3a74",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_14.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "4f0f15f70a45ff1d7749f9744e21b9e27c5bc8bc3a36a34dbdad1cfd216f5a05",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_15.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "fc971e12a0678efcb2db0db3509378235b6433702dc7925085f4c917a032ac6c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_16.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "5bc6d85e23ba7e5878e95d8b797b35605b5376fac07531d56ec27762984c5fa1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_17.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "f82bf05f937046e076a682e585a0cdd5857a558e6e4e3d452f2840a51145950e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_18.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "1ddeb0ebeedad7b9d0cc2488d28bad03b38d51e0be51886c25f3bf8af60bef48",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_19.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "69ea651f82ded1d91d8eb81ca99585ddd46bd96d7b52a489c1b327f8a4cc83f4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_2.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "a5aa4f29879a872865168a73d263f0a7d85d00e03add2be65a14aba29776228a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_20.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "fe6dac5f0ec7c0be868e78120987b92252aa9d6aafb6e2f918eb4a7f8fe06a9a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_21.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "ef2ff48e75d511f708d673e7da42cb35c9044bd25e1e083bcc1859ed79a49ffd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_22.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "f9ab0c0f1eddd2f27787f91c04515e466ebad5040be6dd1da00482d69b59c060",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_23.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "a7a2a5abf67a38181233a3002cb40aff6b8e91c5602818c6eb27a6f8337bbaf2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_24.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "02a9d6c643d4b28799e160e0cf13f091f20227296ea937e5b67e445d892a7dd9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_25.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "4c21ef1ebda38371563258c8bf36bd2a246cc782b625e876c48382c6d91c21a0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_26.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "9213b431c145410792985df9f4ac424c3eeb298626b16b89708617c9a34a24b9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_27.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "b6b5a7e1c6eead25c0a6e6b34f64887ad80a718cea8dccb282f90902a737f89a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_28.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "aa025460cb459786875bfc84ec2e99f3adcd8b54895fd4fca379df1ccf32fadd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_29.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "ccd4bd01b182c7381020c1afd242b48c679b20937f82bdfabaeb09fa5b6f37ab",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_3.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "27bc2deeaa83a4faf213952a9d7ca570fa22e444ed17f2cf65e984db1f62d3f8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_30.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "2673262337cf63cca262b3e67c04ebf63770caa564c2edd265a6b444117d5c0a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_31.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "219dea7a578f8fb5032aa5b10d6bd1806faeb9ea985b5fa6febf691bcdbf8d1b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_32.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "559bf9a8b6165138e8c2fe6bb9481a81c69928655747b02e0469506bebf8cb96",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_33.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "843487ac445cc861c90f62801842dc0dfa9cc87dd5892245b65f2bfc5cb93ba4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_34.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "09696db3c1c9336f34183a42ab512daea51c16c765c0c3a715ed1480d42f7019",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_35.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "43516ef3ee6143514a78318e92ee54aea789e5c236b434aa392de36af4771b31",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_36.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "29116f92ae0c56550253d48c030e893e39fcc29c48e2eaf1529c8e656814a438",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_37.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "2bd53b94d0ce00a239bb6ecd71bbb7e573e6ff5e5d029a75c87a309a18954841",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_38.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "f38ccf342bc4cdba8841c2c8ca1bba804734f195995f0ceac69626ba50641a23",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_39.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "f6a130fdd5c7a08c73d7c53281767191cb090be88daa543a98613f8337c366a0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_4.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "1781ebcac2d607891e3c0d293bfc17056e5e6a7ff6e56c93c78191e7c7293ec2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_5.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "a9fba0233dffb2fde31097eb7688cb017a9a28b3ce8c70b0a54a2e86718bed12",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_6.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "4251cb11ebd91ab43fbf24aed05260fcd4bb8a427f0d731a8324600993f16adc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_7.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "0f6a1698bf2c3ae56be6886cba4a2a35a74658775aa3cedb12af122764d3a097",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_8.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "e134dbe36b76a866e2927e5925f04bf6502647176e31e4f3f7835d3034cca431",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_null_9.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "12b4299d84eec64af58e158a59c27f7bb3b0e0a4cd579d0ed9d1006432c8ae41",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_0.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "53175fcd5ce05ad8e9665ba2cef0d3618d52b8c70e5ed73851515f13fd483d27",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_1.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "e2b0dccc2f8626e95de3542608bbe41fcacf6c56b858ac6f17ea9340065533fc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_2.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "3ece5b2ef2b51f4b677c029b3fb4ef16b1132f9e8c8bc8e7d61813d7288ef605",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_3.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "091bad8e7901965da3d97900e54fa0cd29e264ebb437ab49fe7d55b1fb17643e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_4.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "5478b3c03efcf3a7c3d3b332c4763018eeb829962819a451fa7223b93401bac4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_5.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "3d1a9815be10b8199198184034f112c67841bcb1fe9e877c13e531d030fa0445",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_6.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "6b646ce51b588ea24af6c900f981a3bf6334b4d44dbb50dc357f24512672ed72",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_7.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "bbd6d9d663e348952404012216186d71596a033c639ad1b998a51b8e6112a457",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_8.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "53e58808679d9e134d62766016d5e0ed9765bb8ce9375f930cc5a403cd01240e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/fresh_strong_9.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "c8f99d6567a6b4eaea52fbd99f9bc2ef1c45c8e74182d148408d5a9e9cd45bbb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/gauss_clear_medium_continuous.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 19328,
+      "sha256": "34de410776a7d6983ba534050b60ff1484f5be41b9ec14e6e3952e474ab39987",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/gauss_moderate_3c_continuous.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 10928,
+      "sha256": "4cd6470aba5933e0eab37a7ea2dce359bf5c0d76cbd72ef54d6eaecdddbb9548",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/ordered_tests.log",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 2618,
+      "sha256": "4c2f7ecf99cb67f21508065f7b086b787499635215d67747e73bb3b5bd969361",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_moderate_0.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "af41689c1103bfb56d9666bb90b1daf27b218f534050f1c057e8b70c1a2460bd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_moderate_1.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "e3570c36d597904adea84341478b21fa3f225d93a1a22a7ed1ff5d762ea6976f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_moderate_2.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "211fc744f33b2aea4a5f908a64fd4b635c1d34fc54c067f2ea730826cb50157e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_moderate_3.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "51eebd83095f396280340392b64da5869cdc1b0a11d42efb9bc6301cf1b2df07",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_moderate_4.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "5524595cbea368384969d6a66724bb9dfc09919ab6c150b421aa2ebf3015386b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_moderate_5.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "ac9a3177956ec900da7708564bca6df3d64d08a901fa0b0e2fd0c57b05246f18",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_0.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "d7ba133b16ea8b3adc4d5f53fc8d7a16bad122d2003d200c543149de17326385",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_1.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "3b16835b7b26b9632762cfdd69b056507b879ea0e8fca5362079b4a089436cac",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_10.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "dba568e8ead809b49575e045f8e1da846e484552369aa0120cae2f53768a1078",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_11.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "1a8bafb17fad650abfc6d2ca1ee288b1a172205f7263bd5b34999fb03295ff9f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_2.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "bf7ba95ad6a3939ccf2adef9692baf69ddd4654d515931ad41b8a4fc749c20d1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_3.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "d329df7409c5e4992381e20253d84086ccf8f786939212a88087e9e9e8b2d3f2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_4.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "933601abe3b15657a2d746e6ba216596e63a938e04f43d242c71625729962e37",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_5.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "92cb8c7103179d24e934a04ecd1a2bf6ad2a75ec23bc1a7518cc7d3bcde60ee3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_6.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "62f6c75e4afbb74326c4913c9cda184ef77c330178c8d90e7a12484be3c869fc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_7.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "b156069fcfc661a93856520310be739f68ea9b9199f13dcf6c925bd5594e4c2f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_8.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "4f9385d9c704dbe2a5339f20f17a6f5a0707d6967bc26d2c9c420ddb6a27f1c5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_null_9.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "37aa9c67a2ac6fc47212aafc6f3196e751e1ed1308633e2ea85f6cc019668278",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_strong_0.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "9cb777d822b053feb4f18f2b500fc981b3fbc0afad6ddb961693831d8afc7d87",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_strong_1.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "e80fc837c8be476da9f65c9bc276ef00cb444f510fdd44b90cb9b31d3ca8a36e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_strong_2.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "7d017c5ac8617668bc158bfa6a9ae03424268ffd07c30ee224e864a7392292ac",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_strong_3.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "7831f766135d8a50e5b2ff4ce59de2667c0c85f64ab7c1668243cbac03dfcb30",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_strong_4.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "a122b3b63248775f715492fa3987205179f293daa954df1a2c81e66cbc2a5b94",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/parity_strong_5.npy",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 344,
+      "sha256": "00149cbf7247b11f6c8ed33cacc79874b7e6329e9ed514ca995d2ddac499ea40",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/records.jsonl",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 1846622,
+      "sha256": "8bca2a048b9d2f01da662d6ed580bf61dcf01fbd569b4f8d71099be2d790dd13",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/generated/validation.log",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "generated_output",
+      "reason": "Local input arrays, complete chain records and verification logs.",
+      "bytes": 4827,
+      "sha256": "2b5b61892be1e5733c6dd33e49957f8d04a1b0e3e36204cb176401a58e28a04e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/manifest.json",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "retained_result",
+      "reason": "Compact root sampler results, verification and provenance.",
+      "bytes": 23317,
+      "sha256": "ca554da4e78f04a20bd90b1ca1f740901d1ca8847c2cccb05f4b930f7b21548e"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/protocol.md",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "source",
+      "reason": "Root sampler validation protocol, report or reproduction source."
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/results.csv",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "retained_result",
+      "reason": "Compact root sampler results, verification and provenance.",
+      "bytes": 16880,
+      "sha256": "7810cdd2c89ac585aa90ab19b7498a64facdce21745e82b4a0692dc728465252"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/summary.csv",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "retained_result",
+      "reason": "Compact root sampler results, verification and provenance.",
+      "bytes": 459,
+      "sha256": "a1b76eb5b191fed8a8f7eaafbc24c0d967aa5554990a64d8ff725f9f28b8d8f6"
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/validate_sampler.py",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "source",
+      "reason": "Root sampler validation protocol, report or reproduction source."
+    },
+    {
+      "path": "reports/root_conditional_sampler_20261104/verification.json",
+      "study": "reports/root_conditional_sampler_20261104",
+      "role": "retained_result",
+      "reason": "Compact root sampler results, verification and provenance.",
+      "bytes": 340,
+      "sha256": "1464bf83d804ddfc1999a2b53829947851742b1834a801c67b7dda9d39fb4863"
     }
   ]
 }

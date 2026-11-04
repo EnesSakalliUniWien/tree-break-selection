@@ -1,0 +1,14 @@
+{
+  "saved_statistics_recomputed": 192,
+  "sampled_chain_memberships_replayed": 144,
+  "source_hashes_verified": 112,
+  "baseline_tests": 16,
+  "scope": "Known-I Gaussian roots only; numerical membership, no exact-real certificate or full-pipeline error validation.",
+  "production_files_unchanged": 109,
+  "same_strong_inputs_verified_against_prior_999_proposal_run": 6,
+  "plot_visually_checked": true,
+  "additional_script_sha256": {
+    "verify_and_plot.py": "3a25f4b25bcdd769909f5b9aace5972b017eb6f8a8cd0e058762baeb236d4820",
+    "check_chain.py": "c05f10373f5fdbf25abfdfda3d309ca078caccc14ad5082b8ae8699b07956578"
+  }
+}
