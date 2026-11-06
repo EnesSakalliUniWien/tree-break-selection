@@ -202,9 +202,10 @@ benchmark CSV preserves both fields in every result row.
 - Default methods: `benchmarks.shared.util.method_sets.DEFAULT_METHODS`, currently
   `tbs`, `tbs_diffusion`, `tbs_diffusion_adaptive_nnls`, `leiden`, `louvain`,
   `kmeans`, `spectral`, `dbscan`, `optics`, and `hdbscan`.
-- Additional registered methods such as `tbs_complete` and `tbs_single` are
-  available through `TBS_METHODS`, but they are not part of the canonical
-  default benchmark unless explicitly requested.
+- Additional registered methods such as `tbs_complete`, `tbs_single` and
+  `tbs_family_diffusion_markov_ward` (family diffusion with Markov coordinates and
+  Ward linkage) are available through `TBS_METHODS`, but they are not part of the
+  canonical default benchmark unless explicitly requested.
 - Optional GPL diffusion methods such as `tbs_diffusion_graphtools`,
   `tbs_diffusion_graphtools_nnls`, and
   `tbs_diffusion_graphtools_adaptive_nnls` require the `experimental-gpl` extra:

@@ -40,6 +40,15 @@ PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS = 8
 DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES = 2000
 PYDIFFMAP_VARIABLE_BANDWIDTH_MIN_POSITIVE_NEIGHBORS = PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS - 1
 
+# Coordinate operator option -> (metadata label, definition).
+DIFFUSION_COORDINATE_OPERATORS: dict[str, tuple[str, str]] = {
+    "symmetric": ("symmetric_normalized_operator", "D^(-1/2) W D^(-1/2)"),
+    "markov": (
+        "markov_right_eigenvectors",
+        "D^(-1/2) Phi_S, the right eigenvectors of D^(-1) W",
+    ),
+}
+
 
 def _diffusion_geometry(
     coordinates: np.ndarray,
@@ -245,6 +254,7 @@ def compute_diffusion_coordinates(
     diffusion_time: int,
     n_components: int,
     record: dict[str, object] | None = None,
+    coordinate_operator: str = "symmetric",
 ) -> np.ndarray:
     """Project a symmetric diffusion operator without cutting numerical ties.
 
@@ -259,8 +269,16 @@ def compute_diffusion_coordinates(
     to zero before taking the ``diffusion_time`` power; at time zero, the
     resulting ``0**0`` is one. When ``record`` is given, its ``"eigensolver"``
     entry is set to the solver that produced the coordinates.
+    ``coordinate_operator="markov"`` returns ``D^(-1/2)`` times these
+    coordinates: the right eigenvectors of the random walk ``D^(-1) W``, without
+    the per-row root-degree factor of the symmetric eigenvectors.
     """
 
+    if coordinate_operator not in DIFFUSION_COORDINATE_OPERATORS:
+        raise ValueError(
+            f"coordinate_operator must be one of {tuple(DIFFUSION_COORDINATE_OPERATORS)!r}; "
+            f"got {coordinate_operator!r}."
+        )
     if sparse.issparse(weights):
         if weights.shape[0] <= DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES:
             weights = weights.toarray()
@@ -316,6 +334,8 @@ def compute_diffusion_coordinates(
     start, end = _leading_diffusion_spectrum(eigenvalues, n_components)
     eigenvalues = np.maximum(eigenvalues[start:end], 0.0)
     eigenvectors = eigenvectors[:, start:end]
+    if coordinate_operator == "markov":
+        eigenvectors = eigenvectors * inv_sqrt_degrees[:, None]
     return eigenvectors * (eigenvalues[None, :] ** diffusion_time)
 
 
@@ -393,12 +413,13 @@ def adaptive_diffusion_geometry(
     metric: str,
     bandwidth_type: str | float | None,
     epsilon: str | float,
+    coordinate_operator: str = "symmetric",
 ) -> DiffusionGeometry:
     """Fit a pydiffmap kernel and compute repository diffusion coordinates.
 
     ``backend`` retains the kernel backend's compatibility identifier.
-    Separate metadata records the symmetric coordinate operator and eigensolver
-    used by :func:`compute_diffusion_coordinates`.
+    Separate metadata records the coordinate operator and eigensolver used by
+    :func:`compute_diffusion_coordinates`.
     """
 
     from pydiffmap import kernel
@@ -443,7 +464,9 @@ def adaptive_diffusion_geometry(
         diffusion_time=diffusion_time,
         n_components=n_components,
         record=solver_record,
+        coordinate_operator=coordinate_operator,
     )
+    operator_label, operator_definition = DIFFUSION_COORDINATE_OPERATORS[coordinate_operator]
     return _diffusion_geometry(
         coordinates,
         metadata={
@@ -451,8 +474,8 @@ def adaptive_diffusion_geometry(
             "coordinate_implementation": (
                 "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates"
             ),
-            "coordinate_operator": "symmetric_normalized_operator",
-            "coordinate_operator_definition": "D^(-1/2) W D^(-1/2)",
+            "coordinate_operator": operator_label,
+            "coordinate_operator_definition": operator_definition,
             "coordinate_eigensolver": solver_record["eigensolver"],
             "coordinate_eigenvalue_policy": (
                 "negative_eigenvalues_clipped_to_zero_before_diffusion_time_power"
@@ -536,11 +559,15 @@ def feature_family_diffusion_unsupported_reason(
 def feature_family_diffusion_geometry(
     data: pd.DataFrame | np.ndarray,
     feature_space: FeatureSpace | None,
+    *,
+    coordinate_operator: str = "symmetric",
 ) -> DiffusionGeometry:
     """Fit adaptive diffusion with the settings of the data's feature family.
 
     Binary and one-hot data use Hamming diffusion, continuous data Euclidean
-    diffusion with at most one component per feature. Raises ``ValueError`` when
+    diffusion with at most one component per feature. ``coordinate_operator``
+    selects symmetric or Markov coordinates (see
+    :func:`compute_diffusion_coordinates`). Raises ``ValueError`` when
     ``feature_family_diffusion_unsupported_reason`` gives a reason.
     """
     reason = feature_family_diffusion_unsupported_reason(data, feature_space)
@@ -559,6 +586,7 @@ def feature_family_diffusion_geometry(
         metric=settings.metric,
         bandwidth_type="-1/(d+2)",
         epsilon="median",
+        coordinate_operator=coordinate_operator,
     )
     return replace(
         geometry,

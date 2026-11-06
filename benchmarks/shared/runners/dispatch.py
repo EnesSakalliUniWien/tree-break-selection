@@ -245,6 +245,7 @@ _TBS_DISTANCE_TREE_PARAM_KEYS = _BRANCH_LENGTH_PARAM_KEYS | frozenset(
         "continuous_covariance_min_child_leaf_count",
         "continuous_covariance_policy",
         "continuous_sibling_gate_method",
+        "diffusion_coordinate_operator",
         "edge_branch_length_variance_policy",
         "enforce_internal_support_thresholds",
         "passthrough",
@@ -350,7 +351,11 @@ def _run_tbs_distance_tree_method(
         fallback_reason = feature_family_diffusion_unsupported_reason(data_df, feature_space)
         extra = {"feature_family_diffusion_fallback_reason": fallback_reason}
         if fallback_reason is None:
-            geometry = feature_family_diffusion_geometry(data_df, feature_space)
+            geometry = feature_family_diffusion_geometry(
+                data_df,
+                feature_space,
+                coordinate_operator=str(params.get("diffusion_coordinate_operator", "symmetric")),
+            )
             diffusion_distance = geometry.distance_condensed
             extra["adaptive_diffusion"] = geometry.metadata
             if energy_fraction is None:

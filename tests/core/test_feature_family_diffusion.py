@@ -6,6 +6,7 @@ import pytest
 
 from tree_break_selection.space_separation import (
     FEATURE_FAMILY_DIFFUSION_SETTINGS,
+    compute_diffusion_coordinates,
     feature_family_diffusion_geometry,
     feature_family_diffusion_unsupported_reason,
 )
@@ -58,3 +59,42 @@ def test_unsupported_reason_names_duplicate_rows_and_non_binary_values() -> None
     assert "binary" in feature_family_diffusion_unsupported_reason(clean * 2.0, None)
     with pytest.raises(ValueError, match="identical rows"):
         feature_family_diffusion_geometry(duplicated, None)
+
+
+def test_markov_coordinates_are_random_walk_right_eigenvectors() -> None:
+    # Phi_M = D^(-1/2) Phi_S removes the per-cell root-degree factor of symmetric coordinates.
+    rng = np.random.default_rng(3)
+    weights = rng.random((12, 12))
+    weights = np.maximum(weights, weights.T)
+    np.fill_diagonal(weights, 0.0)
+    degrees = weights.sum(axis=1)
+
+    symmetric = compute_diffusion_coordinates(weights, diffusion_time=0, n_components=4)
+    markov = compute_diffusion_coordinates(
+        weights, diffusion_time=0, n_components=4, coordinate_operator="markov"
+    )
+
+    np.testing.assert_allclose(markov, symmetric / np.sqrt(degrees)[:, None])
+    transition = weights / degrees[:, None]
+    for column in markov.T:
+        eigenvalue = column @ transition @ column / (column @ column)
+        np.testing.assert_allclose(transition @ column, eigenvalue * column, atol=1e-12)
+    with pytest.raises(ValueError, match="coordinate_operator"):
+        compute_diffusion_coordinates(
+            weights, diffusion_time=0, n_components=4, coordinate_operator="laplacian"
+        )
+
+
+def test_family_diffusion_records_which_coordinates_it_used() -> None:
+    values = np.random.default_rng(0).normal(size=(60, 8))
+    values[30:] += 3.0
+    data = _frame(values)
+    feature_space = continuous_feature_space_from_columns(tuple(data.columns))
+
+    symmetric = feature_family_diffusion_geometry(data, feature_space)
+    markov = feature_family_diffusion_geometry(data, feature_space, coordinate_operator="markov")
+
+    assert symmetric.metadata["coordinate_operator"] == "symmetric_normalized_operator"
+    assert markov.metadata["coordinate_operator"] == "markov_right_eigenvectors"
+    assert markov.coordinates.shape == symmetric.coordinates.shape
+    assert not np.allclose(markov.distance_condensed, symmetric.distance_condensed)

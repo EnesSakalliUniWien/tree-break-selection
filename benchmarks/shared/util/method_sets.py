@@ -36,6 +36,7 @@ TBS_DISTANCE_TREE_METHODS = {
     "tbs_fixed_block_bh_nnls",
     "tbs_fixed_block_simes_bh_nnls",
     "tbs_family_diffusion",
+    "tbs_family_diffusion_markov_ward",
 }
 
 TBS_DISTANCE_TREE_NNLS_METHODS = {
@@ -46,6 +47,7 @@ TBS_DISTANCE_TREE_NNLS_METHODS = {
     "tbs_fixed_block_bh_nnls",
     "tbs_fixed_block_simes_bh_nnls",
     "tbs_family_diffusion",
+    "tbs_family_diffusion_markov_ward",
 }
 
 __all__ = [

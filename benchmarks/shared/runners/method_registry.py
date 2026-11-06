@@ -367,6 +367,22 @@ METHOD_SPECS: dict[str, MethodSpec] = {
         benchmark_class=CANONICAL_BENCHMARK_CLASS,
         benchmark_grid=DEFAULT_METHOD_GRID,
     ),
+    # Opt-in: on the cancer cell lines this topology holds far more lines as subtrees,
+    # but it failed the frozen count-null target, so it is not a default method.
+    "tbs_family_diffusion_markov_ward": MethodSpec(
+        name="TBS (Feature-Family Markov Diffusion, Ward, NNLS Branch-Time)",
+        runner=_import_runner("benchmarks.shared.runners.tbs_runner", "run_tbs_on_distance"),
+        param_grid=[
+            {
+                **FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS,
+                "tree_distance_metric": FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC,
+                "diffusion_coordinate_operator": "markov",
+                "tree_linkage_method": "ward",
+            },
+        ],
+        benchmark_class=CANONICAL_BENCHMARK_CLASS,
+        benchmark_grid="family_diffusion_markov_ward",
+    ),
     "tbs_diffusion_graphtools": MethodSpec(
         name="TBS (graphtools Kernel Diffusion)",
         runner=_import_runner(

@@ -27,9 +27,14 @@ diffusion metadata records the actual dimension.
 Diffusion removes its leading mode only when that eigenvalue is isolated. A
 repeated leading group is retained whole, including on disconnected graphs.
 This preserves the group rather than choosing an arbitrary direction to remove.
-The coordinates still use the symmetric normalized operator and clip negative
-eigenvalues; this change does not redefine them as Markov right-eigenvector
-coordinates.
+The coordinates use the symmetric normalized operator by default and clip
+negative eigenvalues. `coordinate_operator="markov"` (on
+`compute_diffusion_coordinates`, `adaptive_diffusion_geometry` and
+`feature_family_diffusion_geometry`) instead returns `D^(-1/2)` times them:
+the right eigenvectors of the random walk `D^(-1) W`, without the per-row
+root-degree factor. Metadata then records
+`coordinate_operator="markov_right_eigenvectors"`. The opt-in benchmark method
+`tbs_family_diffusion_markov_ward` uses these coordinates with Ward linkage.
 
 Adaptive diffusion metadata records `backend="pydiffmap"`, `coordinate_implementation`,
 `coordinate_operator`, `coordinate_operator_definition`,

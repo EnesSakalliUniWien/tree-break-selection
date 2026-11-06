@@ -398,3 +398,34 @@ def test_family_diffusion_tbs_falls_back_to_the_case_distance_on_duplicate_rows(
         "identical rows" in captured["kwargs"]["extra"]["feature_family_diffusion_fallback_reason"]
     )
     assert "adaptive_diffusion" not in captured["kwargs"]["extra"]
+
+
+def test_markov_ward_family_diffusion_is_opt_in_and_forwards_its_geometry(monkeypatch):
+    from benchmarks.shared.util.method_sets import DEFAULT_METHODS
+
+    assert "tbs_family_diffusion_markov_ward" not in DEFAULT_METHODS
+    captured = {}
+    original_spec = METHOD_SPECS["tbs_family_diffusion_markov_ward"]
+    monkeypatch.setitem(
+        METHOD_SPECS,
+        "tbs_family_diffusion_markov_ward",
+        MethodSpec(
+            name=original_spec.name,
+            runner=_row_capturing_runner(captured),
+            param_grid=original_spec.param_grid,
+        ),
+    )
+    data = _two_cluster_continuous_frame()
+
+    result = run_clustering_result(
+        data_df=data,
+        method_id="tbs_family_diffusion_markov_ward",
+        params=original_spec.param_grid[0],
+        seed=0,
+        feature_space=continuous_feature_space_from_columns(tuple(data.columns)),
+    )
+
+    assert result.status == "ok"
+    assert captured["kwargs"]["tree_linkage_method"] == "ward"
+    metadata = captured["kwargs"]["extra"]["adaptive_diffusion"]
+    assert metadata["coordinate_operator"] == "markov_right_eigenvectors"
