@@ -88,6 +88,44 @@ def test_flat_bh_matches_hand_computed_adjustment():
     assert rejected.tolist() == [True, True, True, False, False]
 
 
+def test_tree_bh_merges_a_singleton_peel_family_with_the_family_below():
+    tree = nx.DiGraph()
+    tree.add_edges_from(
+        [
+            ("root", "leaf"),
+            ("root", "C"),
+            ("C", "A"),
+            ("C", "B"),
+            ("A", "A1"),
+            ("A", "A2"),
+            ("B", "B1"),
+            ("B", "B2"),
+        ]
+    )
+    child_ids = ["leaf", "C", "A", "B", "A1", "A2", "B1", "B2"]
+    p_values = np.array([0.6, 0.6, 1e-8, 1e-8, 0.5, 0.5, 0.5, 0.5])
+
+    result = apply_tree_bh_correction(tree, p_values, child_ids, alpha=0.05)
+
+    # The root is a singleton peel, so {leaf, C, A, B} is one BH family. A and B reject
+    # even though the leaf-vs-rest edges do not; their families are tested at 0.05 * 2/4.
+    assert result.child_parent_edge_null_rejected_by_tree_bh.tolist() == [
+        False,
+        False,
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+    ]
+    assert result.child_parent_edge_tested_by_tree_bh.all()
+    np.testing.assert_allclose(
+        result.child_parent_edge_corrected_p_values_by_tree_bh,
+        [0.6, 0.6, 2e-8, 2e-8, 0.5, 0.5, 0.5, 0.5],
+    )
+
+
 def test_tree_bh_scales_child_alpha_by_parent_family_rejections():
     tree = nx.DiGraph()
     tree.add_edges_from(

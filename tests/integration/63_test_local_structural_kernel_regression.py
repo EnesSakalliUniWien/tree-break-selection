@@ -43,6 +43,27 @@ def test_null_case_returns_one_cluster() -> None:
 
 
 @pytest.mark.slow
+def test_singleton_peel_does_not_hide_the_split_below_it() -> None:
+    # N195 = one leaf + true clusters 2 and 3. Both child edges test that one leaf against
+    # the other 49 (p_BH 0.63), so Tree-BH never tests the 2 | 3 split below (raw p 1e-6).
+    case = next(
+        case for case in get_default_test_cases() if case["name"] == "phylo_conserved_4taxa"
+    )
+    inputs = prepare_case_inputs(case, ["tbs"])
+    metric = METHOD_SPECS["tbs"].param_grid[0]["tree_distance_metric"]
+
+    result = run_tbs_on_distance(
+        inputs.data,
+        pdist(inputs.data.values, metric=metric),
+        DEFAULT_SIBLING_ALPHA,
+        feature_space=inputs.metadata.get("feature_space"),
+    )
+
+    leaves_per_true_cluster = pd.crosstab(np.asarray(result.labels), np.asarray(inputs.labels))
+    assert ((leaves_per_true_cluster >= 5).sum(axis=1) <= 1).all()
+
+
+@pytest.mark.slow
 def test_default_sibling_calibration_recovers_gauss_clear_small() -> None:
     data, distance, _feature_space = _case_tbs_inputs("gauss_clear_small")
 

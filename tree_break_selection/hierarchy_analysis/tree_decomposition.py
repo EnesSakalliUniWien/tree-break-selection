@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
     from ..tree.poset_tree import PosetTree
 
+import numpy as np
 import pandas as pd
 
 from .cluster_assignments import ClusterBoundary, build_cluster_assignments
@@ -53,6 +54,8 @@ class TreeDecomposition:
     #. **Binary structure prerequisite** - parent must have exactly two children.
     #. **Edge divergence gate** - at least one child must significantly diverge
        from the parent according to the supplied child-parent test annotation.
+       A singleton peel (one leaf child, one internal child) passes this gate:
+       Tree-BH tests the family below it instead.
     #. **Sibling divergence gate** - the supplied sibling annotation must report
        an available, significant result after its configured correction. The
        default empirical-inflation path allows internally supported plug-in
@@ -63,7 +66,8 @@ class TreeDecomposition:
     Nodes that do not split become cluster boundaries. Leaves under the same
     boundary node are assigned the same cluster identifier. In pass-through mode,
     a closed sibling-divergence gate may still allow traversal to descendants when a deeper
-    split is already supported.
+    split is already supported. A leaf peeled off a passed-through singleton peel joins
+    the nearest cluster below the peel instead of standing alone.
     """
 
     def __init__(
@@ -381,6 +385,9 @@ class TreeDecomposition:
         elif edge_gate_open:
             edge_traversal_action = "continue"
             edge_traversal_stop_reason = "edge_open_continue"
+        elif node in self._gate.singleton_peels:
+            edge_traversal_action = "continue"
+            edge_traversal_stop_reason = "singleton_peel_continue"
         else:
             edge_traversal_action = "stop"
             edge_traversal_stop_reason = "edge_closed"
@@ -532,6 +539,55 @@ class TreeDecomposition:
             ),
         }
 
+    def _reattach_peeled_leaves(
+        self,
+        boundaries: list[ClusterBoundary],
+        decision_by_node: dict[object, TraversalDecision],
+    ) -> tuple[list[ClusterBoundary], set[object]]:
+        """Move each leaf of a passed-through singleton peel into the nearest cluster below it.
+
+        When the peel's edges are not significant there is no evidence that its leaf
+        differs from the rest, so the leaf joins the cluster under the peel's internal
+        child whose distribution is nearest in L1. Its cluster is then no longer a tree
+        cut. Returns the boundaries and the re-attached leaf nodes.
+        """
+        internal_child_by_peeled_leaf: dict[object, object] = {}
+        for peel, internal_child in self._gate.singleton_peels.items():
+            leaf = next(child for child in self._children[peel] if child != internal_child)
+            if decision_by_node.get(peel) is TraversalDecision.PASS_THROUGH and not (
+                self._edge_divergent[leaf] or self._edge_divergent[internal_child]
+            ):
+                internal_child_by_peeled_leaf[leaf] = internal_child
+        kept = [
+            boundary
+            for boundary in boundaries
+            if boundary.root_node not in internal_child_by_peeled_leaf
+        ]
+        for leaf, internal_child in internal_child_by_peeled_leaf.items():
+            below = self._descendant_leaf_sets[internal_child]
+            leaf_distribution = np.asarray(self.tree.nodes[leaf]["distribution"], dtype=float)
+            # A pass-through peel always has a split below it, so a candidate always exists.
+            # shortcut: L1 on raw distributions, so continuous features are not standardized;
+            # upgrade if re-attachment matters for continuous data.
+            nearest = min(
+                (
+                    index
+                    for index, boundary in enumerate(kept)
+                    if self._descendant_leaf_sets[boundary.root_node] <= below
+                ),
+                key=lambda index: float(
+                    np.abs(
+                        np.asarray(self.tree.nodes[kept[index].root_node]["distribution"])
+                        - leaf_distribution
+                    ).sum()
+                ),
+            )
+            kept[nearest] = ClusterBoundary(
+                root_node=kept[nearest].root_node,
+                leaves=kept[nearest].leaves | self._descendant_leaf_sets[leaf],
+            )
+        return kept, set(internal_child_by_peeled_leaf)
+
     # ---------- core decomposition (iterative, no recursion) ----------
 
     def decompose_tree(self) -> dict[str, object]:
@@ -610,6 +666,13 @@ class TreeDecomposition:
                 ClusterBoundary(root_node=node, leaves=self._descendant_leaf_sets[node])
             )
 
+        final_boundaries, reattached_leaves = self._reattach_peeled_leaves(
+            final_boundaries, actual_decision_by_node
+        )
+        traversal_counters["live_boundary_count"] -= len(reattached_leaves)
+        for row in traversal_trace:
+            if row["node_id"] in reattached_leaves:
+                row["final_boundary"] = False
         cluster_assignments = build_cluster_assignments(final_boundaries)
         result = {
             "cluster_assignments": cluster_assignments,

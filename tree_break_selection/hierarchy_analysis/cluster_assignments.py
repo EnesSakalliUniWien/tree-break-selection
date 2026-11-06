@@ -16,7 +16,8 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class ClusterBoundary:
-    """A final tree boundary whose descendant leaves form one cluster."""
+    """A final tree boundary whose descendant leaves, plus any re-attached peeled leaves,
+    form one cluster."""
 
     root_node: object
     leaves: frozenset[str]

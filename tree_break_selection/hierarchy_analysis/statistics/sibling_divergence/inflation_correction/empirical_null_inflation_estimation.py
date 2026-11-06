@@ -635,6 +635,16 @@ def decide_empirical_null_calibration(
         local_weights,
     )
     c_hat = float(max(local_inflation_factor, 1.0))
+    estimator = f"{model.method}:local_kernel"
+    if (
+        active_context_axes[1]
+        and target_context[1] > float(np.max(family_contexts[:, 1]))
+        and c_hat > family_baseline_inflation_factor
+    ):
+        # Beyond every calibration parent the kernel weights only the largest
+        # stopped-subtree tops, where structure the edge gate could not open inflates c.
+        c_hat = family_baseline_inflation_factor
+        estimator = f"{model.method}:family_baseline"
     support, failures = _with_support_contract(
         _decision_support(
             model=model,
@@ -650,7 +660,7 @@ def decide_empirical_null_calibration(
             status="undefined_sparse_context",
             c_hat=None,
             p_value=None,
-            estimator=f"{model.method}:local_kernel",
+            estimator=estimator,
             support=support,
             decision_context=decision_context,
             descriptive_strata={
@@ -662,7 +672,7 @@ def decide_empirical_null_calibration(
         status="internal_admissible",
         c_hat=c_hat,
         p_value=_adjusted_p_value(record, c_hat),
-        estimator=f"{model.method}:local_kernel",
+        estimator=estimator,
         support=support,
         decision_context=decision_context,
         descriptive_strata={

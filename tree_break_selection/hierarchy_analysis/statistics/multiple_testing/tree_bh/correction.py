@@ -7,6 +7,8 @@ from collections import deque
 import networkx as nx
 import numpy as np
 
+from tree_break_selection.tree.topology import singleton_peel_continuations
+
 from ..base import benjamini_hochberg_correction
 from .helpers import find_root_nodes, group_child_indices_by_parent
 from .models import ChildParentEdgeTreeBHResult
@@ -51,6 +53,11 @@ def apply_tree_bh_correction(
     the base alpha by ancestor rejection proportions. Stored corrected p-values
     are the BH adjustments within each reached family; rejection flags compare
     them with that family level, rather than the base alpha.
+
+    A singleton peel's family is merged with its internal child's family, down
+    to the first node that is not a singleton peel, and BH runs once on the
+    merged family. The merge depends only on the topology, so the hierarchy is
+    still fixed before any p-value is seen.
     """
     p_values, alpha = _validate_tree_bh_inputs(p_values, child_ids, alpha)
     hypothesis_count = len(p_values)
@@ -60,12 +67,22 @@ def apply_tree_bh_correction(
 
     if hypothesis_count:
         indices_by_parent = group_child_indices_by_parent(tree, child_ids)
+        peel_continuations = {
+            str(node): str(child) for node, child in singleton_peel_continuations(tree).items()
+        }
         # A family's level is its parent family's level times that family's rejection share.
         family_alpha = {root: alpha for root in find_root_nodes(tree)}
         frontier = deque(family_alpha)
         while frontier:
             parent_id = frontier.popleft()
-            indices = indices_by_parent.get(parent_id)
+            merged_parent_ids = [parent_id]
+            while merged_parent_ids[-1] in peel_continuations:
+                merged_parent_ids.append(peel_continuations[merged_parent_ids[-1]])
+            indices = [
+                index
+                for merged_parent_id in merged_parent_ids
+                for index in indices_by_parent.get(merged_parent_id, [])
+            ]
             if not indices:
                 continue
             family_rejected, family_corrected = benjamini_hochberg_correction(
@@ -77,6 +94,8 @@ def apply_tree_bh_correction(
             child_family_alpha = family_alpha[parent_id] * family_rejected.sum() / len(indices)
             for index in np.asarray(indices)[family_rejected]:
                 child_id = str(child_ids[index])
+                if child_id in merged_parent_ids:
+                    continue
                 family_alpha[child_id] = child_family_alpha
                 frontier.append(child_id)
 

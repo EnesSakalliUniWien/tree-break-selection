@@ -129,6 +129,22 @@ def compute_descendant_leaf_sets(
     return descendant_sets
 
 
+def singleton_peel_continuations(tree: nx.DiGraph) -> dict[object, object]:
+    """Map each singleton-peel node to its internal child.
+
+    A singleton peel has one leaf child and one internal child. Both of its
+    child-parent contrasts compare that one leaf with the rest, so they cannot
+    test the structure inside the internal child.
+    """
+    continuations: dict[object, object] = {}
+    for node in tree.nodes:
+        children = list(tree.successors(node))
+        internal_children = [child for child in children if tree.out_degree(child) > 0]
+        if len(children) == 2 and len(internal_children) == 1:
+            continuations[node] = internal_children[0]
+    return continuations
+
+
 def _single_parent(tree: nx.DiGraph, node_id: object) -> object:
     parents = list(tree.predecessors(node_id))
     if len(parents) != 1:
@@ -198,5 +214,6 @@ __all__ = [
     "is_leaf",
     "lowest_common_ancestor",
     "lowest_common_ancestor_for_set",
+    "singleton_peel_continuations",
     "tree_root",
 ]

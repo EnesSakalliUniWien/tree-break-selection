@@ -20,7 +20,7 @@ clustering pipeline.
 1. `TreeDecomposition` receives an annotation DataFrame or an explicit `GateAnnotationBundle`.
 2. `run_gate_annotation_pipeline()` populates edge-divergence and sibling-divergence columns when they are missing.
 3. `GateEvaluator.decision()` applies the runtime gates and returns a boundary, split, or pass-through action.
-4. `TreeDecomposition.decompose_tree()` advances the worklist, optionally honoring pass-through mode for deeper descendant splits.
+4. `TreeDecomposition.decompose_tree()` advances the worklist, optionally honoring pass-through mode for deeper descendant splits. A singleton peel (one leaf child, one internal child) passes the edge gate, and the leaf of a passed-through peel whose edges are not significant joins the nearest cluster below the peel.
 5. `cluster_assignments.py` converts the final boundary nodes into cluster-level and sample-level outputs.
 
 ## Notes

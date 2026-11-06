@@ -11,6 +11,7 @@ import pandas as pd
 from tree_break_selection.hierarchy_analysis.statistics.data_utils import (
     initialize_sibling_divergence_columns,
 )
+from tree_break_selection.tree.topology import singleton_peel_continuations
 
 from ...multiple_testing import benjamini_hochberg_correction
 
@@ -152,6 +153,7 @@ def apply_traversal_aligned_sibling_bh_results(
         annotations_df.loc[parents, "Sibling_Gate_P_Value_Role"] = "active_traversal_sibling_gate"
 
     parent_index = {parent: index for index, parent in enumerate(parents)}
+    peel_continuations = singleton_peel_continuations(tree)
     frontier = _root_nodes(tree)
 
     while frontier:
@@ -180,6 +182,12 @@ def apply_traversal_aligned_sibling_bh_results(
         next_frontier: list[object] = []
         for parent in candidate_parents:
             next_frontier.extend(tree.successors(parent))
+        # A null-like singleton peel does not close the frontier: Tree-BH tested below it.
+        next_frontier.extend(
+            peel_continuations[parent]
+            for parent in frontier
+            if parent in peel_continuations and parent not in candidate_parents
+        )
         frontier = next_frontier
 
     return annotations_df

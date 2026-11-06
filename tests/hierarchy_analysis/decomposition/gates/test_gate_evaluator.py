@@ -191,7 +191,9 @@ class TestGateEvaluator:
                 ("root", "A"),
                 ("root", "B"),
                 ("A", "C"),
-                ("A", "x1"),
+                ("A", "X"),
+                ("X", "x1"),
+                ("X", "x3"),
                 ("C", "D"),
                 ("C", "x2"),
                 ("D", "y1"),
@@ -200,10 +202,10 @@ class TestGateEvaluator:
                 ("B", "z2"),
             ]
         )
-        _annotate_tree_structure(tree, {"x1", "x2", "y1", "y2", "z1", "z2"})
+        _annotate_tree_structure(tree, {"x1", "x2", "x3", "y1", "y2", "z1", "z2"})
         edge_divergent = {node: True for node in tree.nodes}
         edge_divergent["C"] = False
-        edge_divergent["x1"] = False
+        edge_divergent["X"] = False
         sibling_different = {node: False for node in tree.nodes}
         sibling_different["D"] = True
 
@@ -221,6 +223,27 @@ class TestGateEvaluator:
             gate.passthrough_audit_status("root")["passthrough_decision_reason"]
             == "no_descendant_split"
         )
+
+    def test_singleton_peel_passes_through_to_a_descendant_split(self) -> None:
+        tree = nx.DiGraph()
+        tree.add_edges_from(
+            [("root", "C"), ("root", "x1"), ("C", "D"), ("C", "x2"), ("D", "y1"), ("D", "y2")]
+        )
+        _annotate_tree_structure(tree, {"x1", "x2", "y1", "y2"})
+        edge_divergent = {node: node in {"y1", "y2"} for node in tree.nodes}
+        sibling_different = {node: node == "D" for node in tree.nodes}
+
+        gate = _make_gate(
+            tree=tree,
+            passthrough=True,
+            edge_divergent=edge_divergent,
+            sibling_different=sibling_different,
+        )
+
+        # Both peels test one leaf against the rest, so their closed edges do not hide D.
+        assert gate.decision("root") is TraversalDecision.PASS_THROUGH
+        assert gate.decision("C") is TraversalDecision.PASS_THROUGH
+        assert gate.decision("D") is TraversalDecision.SPLIT
 
     def test_spectral_support_guard_blocks_passthrough(self) -> None:
         tree = _make_deep_tree()

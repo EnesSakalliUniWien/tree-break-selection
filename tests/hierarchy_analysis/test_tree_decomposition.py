@@ -17,9 +17,11 @@ from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator im
     run_gate_annotation_pipeline,
 )
 from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
+from tree_break_selection.tree.poset_tree import PosetTree
 
 from .decomposition.gates.gate_annotation_support import _build_small_tree_with_leaf_data
 from .gate_support import (
+    _annotate_tree_structure,
     _make_annotations,
     _make_binary_tree,
     _make_deep_tree,
@@ -128,6 +130,42 @@ class TestTreeDecompositionTraversal:
         assert root_trace["passthrough_candidate"] is True
         assert root_trace["passthrough_decision_reason"] == "pass_through"
         assert result["traversal_counters"]["live_passthrough_candidate_count"] == 1
+
+    @staticmethod
+    def _peel_over_split(*, peel_edges_significant: bool) -> dict[str, object]:
+        tree = PosetTree()
+        tree.add_edges_from(
+            [("root", "x"), ("root", "C"), ("C", "D"), ("C", "E")]
+            + [("D", "D1"), ("D", "D2"), ("E", "E1"), ("E", "E2")]
+        )
+        _annotate_tree_structure(tree, {"x", "D1", "D2", "E1", "E2"})
+        for node, value in {"x": 0.8, "D": 0.1, "E": 0.9}.items():
+            tree.nodes[node]["distribution"] = np.array([value])
+        significant = {"D", "E"} | ({"x", "C"} if peel_edges_significant else set())
+        annotations_df = _make_annotations(
+            tree,
+            edge_divergent={node: node in significant for node in tree.nodes},
+            sibling_different={node: node == "C" for node in tree.nodes},
+        )
+        return _decompose_with_annotations(tree, annotations_df, passthrough=True)
+
+    def test_peeled_leaf_joins_the_nearest_cluster_below_its_peel(self) -> None:
+        result = self._peel_over_split(peel_edges_significant=False)
+
+        # The root peels x off and passes through; x is nearer E (0.9) than D (0.1).
+        cluster_leaf_sets = sorted(_cluster_leaf_sets(result), key=lambda leaves: min(leaves))
+        assert cluster_leaf_sets == [{"D1", "D2"}, {"E1", "E2", "x"}]
+        trace_boundaries = [
+            row["node_id"] for row in result["traversal_trace"] if row["final_boundary"]
+        ]
+        assert sorted(trace_boundaries) == ["D", "E"]
+        assert result["traversal_counters"]["live_boundary_count"] == 2
+
+    def test_peeled_leaf_with_a_significant_edge_keeps_its_own_cluster(self) -> None:
+        result = self._peel_over_split(peel_edges_significant=True)
+
+        cluster_leaf_sets = sorted(_cluster_leaf_sets(result), key=lambda leaves: min(leaves))
+        assert cluster_leaf_sets == [{"D1", "D2"}, {"E1", "E2"}, {"x"}]
 
     def test_decompose_tree_without_passthrough_merges_at_root(self) -> None:
         tree = _make_deep_tree()

@@ -510,6 +510,45 @@ def test_empirical_inflation_conditions_on_parent_sample_size() -> None:
     assert large_parent_inflation < model.baseline_empirical_inflation_factor
 
 
+def test_parent_beyond_calibration_range_is_not_inflated_above_family_baseline() -> None:
+    # phylo_conserved_4taxa root: the kernel weighted only the largest stopped-subtree tops.
+    records = [
+        _make_record(
+            f"within_{n}",
+            stat=6.0,
+            degrees_of_freedom=2.0,
+            n_parent=n,
+            feature_family="categorical",
+        )
+        for n in (6, 8, 10, 12, 16, 20, 24)
+    ]
+    records.append(
+        _make_record(
+            "stopped_top",
+            stat=70.0,
+            degrees_of_freedom=2.0,
+            n_parent=50,
+            feature_family="categorical",
+            is_edge_blocked=True,
+        )
+    )
+    root = _make_record(
+        "root",
+        stat=190.0,
+        degrees_of_freedom=2.0,
+        n_parent=100,
+        feature_family="categorical",
+        is_null_like=False,
+    )
+
+    model = fit_empirical_null_inflation_model(records)
+    decision = decide_empirical_null_calibration(model, root)
+
+    assert model.baseline_empirical_inflation_factor == pytest.approx(7.0)
+    assert decision.c_hat == pytest.approx(7.0)
+    assert decision.p_value == pytest.approx(chi2.sf(190.0 / 7.0, 2.0))
+
+
 def test_fit_empirical_null_inflation_model_keeps_zero_ratios_as_calibration_data() -> None:
     records = [
         _make_record("zero", stat=0.0, degrees_of_freedom=2.0),
