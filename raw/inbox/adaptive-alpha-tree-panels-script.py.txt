@@ -1,0 +1,109 @@
+"""Chain p-values and node features for depth <= 2 families (see protocol.md)."""
+
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+sys.path.insert(0, str(OUT.parents[2]))
+from benchmarks.diagnostics.calibration.selected.hierarchy import (  # noqa: E402
+    diffusion_root_conditional_mc as mc,
+)
+
+P, STEPS, BASE = 5, 999, 2026110700
+PANELS = {  # name: (offset, rows, shifts per depth as (feature, shift), families)
+    "N30": (0, 30, [], 300),
+    "R30": (10_000, 30, [(0, 2.0)], 150),
+    "H40": (20_000, 40, [(0, 3.0), (1, 1.5)], 100),
+    "H80": (30_000, 80, [(0, 4.0), (1, 3.0), (2, 2.0)], 100),
+}
+
+
+def dataset(offset, n, shifts, replicate):
+    values = np.random.default_rng(BASE * 1000 + offset + replicate).normal(size=(n, P))
+    truth = np.zeros(n, int)
+    for depth, (feature, shift) in enumerate(shifts):
+        side = (np.arange(n) // (n // 2 ** (depth + 1))) % 2
+        values[:, feature] += np.where(side == 0, -shift, shift)
+        truth = truth * 2 + side
+    return values, truth
+
+
+def family_positions(signature, n):
+    """Breadth-first internal nodes of depth <= 2: (node, depth, parent position)."""
+    family = [(2 * n - 2, 0, None)]
+    for position in range(7):
+        if position >= len(family):
+            break
+        node, depth, _ = family[position]
+        if depth < 2:
+            family += [(c, depth + 1, position) for c in signature[node - n] if c >= n]
+    return family
+
+
+def merge_heights(path):
+    _, state = mc._geometry(path.values, path.labels)
+    z = linkage(state["distance_condensed"], method="average")
+    if tuple(tuple(sorted(map(int, row[:2]))) for row in z) != tuple(path.observed_signature):
+        return None
+    return z[:, 2] / z[-1, 2]
+
+
+def run(job):
+    panel, replicate = job
+    offset, n, shifts, _ = PANELS[panel]
+    values, truth = dataset(offset, n, shifts, replicate)
+    seed = BASE + 10 * replicate
+    start = perf_counter()
+    rows, error = [], None
+    with threadpool_limits(limits=1):
+        try:
+            path = mc.make_diffusion_root_path(values, sigma=1.0)
+        except (ValueError, RuntimeError, np.linalg.LinAlgError) as exc:
+            path, error = None, f"{type(exc).__name__}: {exc}"
+        if path is not None:
+            sig = path.observed_signature
+            index = lambda node: [int(path.labels[i][1:]) for i in mc._node_rows(sig, n, node)]  # noqa: E731
+            heights = merge_heights(path)
+            for position, (node, depth, parent) in enumerate(family_positions(sig, n)):
+                try:
+                    result = mc._node_chain_test(path, node, steps=STEPS, seed=seed + position, alpha=0.05)
+                except ValueError as exc:
+                    result = dict(status="unresolved", p_value=None, error=f"{type(exc).__name__}: {exc}")
+                members = index(node)
+                children = [index(child) for child in sig[node - n]]
+                rows.append({
+                    "panel": panel, "replicate": replicate, "position": position, "node": int(node),
+                    "depth": depth, "parent": parent, "rows": len(members), "n": n,
+                    "null": len(set(truth[members])) == 1,
+                    "children_rows": [len(c) for c in children],
+                    "balance": min(len(c) for c in children) / len(members),
+                    "merge_height": None if heights is None else float(heights[node - n]),
+                    "status": result["status"], "sampling_status": result.get("sampling_status"),
+                    "accepted_moves": result.get("accepted_moves"), "p_value": result["p_value"],
+                    "error": result.get("error"),
+                })
+    return {"panel": panel, "replicate": replicate, "family_error": error,
+            "seconds": perf_counter() - start, "nodes": rows}
+
+
+if __name__ == "__main__":
+    # Self-check: one hand-made signature, n = 4: merges (0,1)->4, (2,3)->5, (4,5)->6.
+    assert family_positions(((0, 1), (2, 3), (4, 5)), 4) == [(6, 0, None), (4, 1, 0), (5, 1, 0)]
+    target = OUT / (sys.argv[1] if len(sys.argv) > 1 else "results.jsonl")
+    jobs = [(panel, r) for panel, spec in PANELS.items() for r in range(spec[3])]
+    if target.name.startswith("dryrun"):  # timing check only, on replicates outside the panels
+        jobs = [(panel, 500_000 + r) for panel in PANELS for r in range(2)]
+    with Pool(processes=7) as pool, target.open("x") as output:
+        for done, record in enumerate(pool.imap_unordered(run, jobs, chunksize=1), 1):
+            output.write(json.dumps(record, default=float) + "\n")
+            output.flush()
+            if done % 50 == 0:
+                print(f"{done}/{len(jobs)} families", flush=True)
+    print("complete", len(jobs), flush=True)

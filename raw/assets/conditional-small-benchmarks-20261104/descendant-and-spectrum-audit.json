@@ -1,0 +1,160 @@
+[
+  {
+    "case": "gauss_clear_medium_continuous",
+    "node": 118,
+    "role": "root",
+    "population_counts": {
+      "0": 15,
+      "1": 15,
+      "2": 15,
+      "3": 15
+    },
+    "child_sizes": [
+      15,
+      45
+    ],
+    "graph_components": 4,
+    "leading_eigenvalues": [
+      1.0000000000000024,
+      1.0000000000000016,
+      1.0000000000000013,
+      0.9999999999999991,
+      -0.04565354846447506,
+      -0.04986605054534742
+    ]
+  },
+  {
+    "case": "gauss_clear_medium_continuous",
+    "node": 110,
+    "role": "immediate_child",
+    "population_counts": {
+      "0": 15
+    },
+    "child_sizes": [
+      1,
+      14
+    ],
+    "graph_components": 4,
+    "leading_eigenvalues": [
+      1.0000000000000024,
+      1.0000000000000016,
+      1.0000000000000013,
+      0.9999999999999991,
+      -0.04565354846447506,
+      -0.04986605054534742
+    ],
+    "descendant_observed_radius": 7.8550439948632995,
+    "root_only_certifier_radius": [
+      "244.94110098727036556681332812356534371841579659986030278125195830000894588393557",
+      "244.94110098727036556681332812356534371841579659986030278125195830000894588393559"
+    ],
+    "certifier_uses_root_contrast": true
+  },
+  {
+    "case": "gauss_clear_medium_continuous",
+    "node": 117,
+    "role": "immediate_child",
+    "population_counts": {
+      "1": 15,
+      "2": 15,
+      "3": 15
+    },
+    "child_sizes": [
+      15,
+      30
+    ],
+    "graph_components": 4,
+    "leading_eigenvalues": [
+      1.0000000000000024,
+      1.0000000000000016,
+      1.0000000000000013,
+      0.9999999999999991,
+      -0.04565354846447506,
+      -0.04986605054534742
+    ],
+    "descendant_observed_radius": 245.16109914108537,
+    "root_only_certifier_radius": [
+      "244.94110098727036556681332812356534371841579659986030278125195830000894588393557",
+      "244.94110098727036556681332812356534371841579659986030278125195830000894588393559"
+    ],
+    "certifier_uses_root_contrast": true
+  },
+  {
+    "case": "gauss_moderate_3c_continuous",
+    "node": 87,
+    "role": "immediate_child",
+    "population_counts": {
+      "0": 15,
+      "2": 15
+    },
+    "child_sizes": [
+      15,
+      15
+    ],
+    "graph_components": 3,
+    "leading_eigenvalues": [
+      1.0000000000000013,
+      0.9999999999999993,
+      0.999999999999998,
+      -0.04227872053880337,
+      -0.049090461201786464,
+      -0.05100702389841626
+    ],
+    "descendant_observed_radius": 106.6262582140019,
+    "root_only_certifier_radius": [
+      "121.99321190866780246173773090428289782507976340243054564779849501733455056948907",
+      "121.99321190866780246173773090428289782507976340243054564779849501733455056948910"
+    ],
+    "certifier_uses_root_contrast": true
+  },
+  {
+    "case": "gauss_moderate_3c_continuous",
+    "node": 85,
+    "role": "immediate_child",
+    "population_counts": {
+      "1": 15
+    },
+    "child_sizes": [
+      1,
+      14
+    ],
+    "graph_components": 3,
+    "leading_eigenvalues": [
+      1.0000000000000013,
+      0.9999999999999993,
+      0.999999999999998,
+      -0.04227872053880337,
+      -0.049090461201786464,
+      -0.05100702389841626
+    ],
+    "descendant_observed_radius": 6.385517170518435,
+    "root_only_certifier_radius": [
+      "121.99321190866780246173773090428289782507976340243054564779849501733455056948907",
+      "121.99321190866780246173773090428289782507976340243054564779849501733455056948910"
+    ],
+    "certifier_uses_root_contrast": true
+  },
+  {
+    "case": "gauss_moderate_3c_continuous",
+    "node": 88,
+    "role": "root",
+    "population_counts": {
+      "0": 15,
+      "1": 15,
+      "2": 15
+    },
+    "child_sizes": [
+      15,
+      30
+    ],
+    "graph_components": 3,
+    "leading_eigenvalues": [
+      1.0000000000000013,
+      0.9999999999999993,
+      0.999999999999998,
+      -0.04227872053880337,
+      -0.049090461201786464,
+      -0.05100702389841626
+    ]
+  }
+]

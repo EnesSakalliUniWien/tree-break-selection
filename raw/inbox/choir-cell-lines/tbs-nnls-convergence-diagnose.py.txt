@@ -1,0 +1,175 @@
+"""Inspect frozen NNLS systems without changing production code or applying diagnostic fits."""
+
+import importlib
+import inspect
+import json
+import sys
+from pathlib import Path
+from time import perf_counter
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from scipy.optimize import lsq_linear, nnls
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[2]
+BASE = ROOT / "results/analyses/choir_cell_lines_tbs_20261103_163359"
+COMPARISON = ROOT / "results/analyses/choir_tbs_recovery_comparison_20261103_174622"
+sys.path.insert(0, str(ROOT))
+from tree_break_selection.tree import optimized_branch_lengths as native
+from tree_break_selection.tree.construction.build import _canonical_sample_order
+from tree_break_selection.tree.construction.hierarchical import tree_from_linkage
+
+TRF = importlib.import_module("scipy.optimize._lsq.trf_linear")
+VARIANTS = ("symmetric_average", "symmetric_ward", "markov_average", "markov_ward")
+
+
+def write(path, value):
+    path.write_text(json.dumps(value, indent=2, default=lambda x: x.item() if isinstance(x, np.generic) else str(x))+"\n")
+
+
+def metrics(a, b, x):
+    r = np.asarray(a @ x - b)
+    g = np.asarray(a.T @ r)
+    col_sum = np.asarray(a.sum(axis=0)).ravel()
+    assert np.all(col_sum > 0) and np.min(x) >= 0
+    scaled = g * np.where(g > 0, x, 1.)
+    cost = float(.5 * (r @ r))
+    shift = max(0., float(np.max(-g / col_sum)))
+    shift += 1e-10 * max(1., float(np.max(np.abs(r))), shift)
+    y = r + shift
+    dual_grad_min = float(np.min(a.T @ y))
+    dual = float(-.5*(y @ y) - b @ y)
+    return {
+        "cost_recomputed": cost, "scaled_optimality_recomputed": float(np.max(np.abs(scaled))),
+        "negative_gradient_violation": float(np.maximum(-g, 0.).max()),
+        "complementarity_inf": float(np.max(np.abs(x*g))),
+        "gradient_inf": float(np.max(np.abs(g))),
+        "gradient_reference_inf": float(np.max(np.abs(a.T @ b))),
+        "numerical_dual_feasible": dual_grad_min >= 0., "dual_min_gradient": dual_grad_min,
+        "dual_lower_bound": dual, "duality_gap": cost-dual,
+        "relative_duality_gap": (cost-dual)/max(1., cost),
+        "positive_edges_above_1e-8": int((x > 1e-8).sum()),
+        "edge_min": float(x.min()), "edge_max": float(x.max()),
+    }
+
+
+def solve(a, b, kwargs, dest, *, inner_override=None):
+    assert not (dest / "solver.json").exists()
+    history = []
+    original = TRF.lsmr
+
+    def observed_lsmr(*args, **kw):
+        if inner_override is not None:
+            kw = kw | {"atol": inner_override, "btol": inner_override}
+        result = original(*args, **kw)
+        history.append({"atol": kw.get("atol"), "iterations": result[2], "stop": result[1],
+                        "normr": result[3], "normar": result[4], "conda_estimate": result[6]})
+        return result
+
+    start = perf_counter()
+    with patch.object(TRF, "lsmr", observed_lsmr):
+        solution = lsq_linear(a, b, **(kwargs | {"verbose": 2}))
+    record = {"status": int(solution.status), "success": bool(solution.success),
+              "message": solution.message, "iterations": int(solution.nit),
+              "cost": float(solution.cost), "reported_optimality": float(solution.optimality),
+              "elapsed_sec": perf_counter()-start, "kwargs": kwargs,
+              "inner_override": inner_override,
+              "initial_lsmr": list(solution.unbounded_sol[1:]),
+              "inner_calls": len(history), "inner_iterations": sum(x["iterations"] for x in history),
+              "inner_tolerance_min": min((x["atol"] for x in history), default=None),
+              "inner_tolerance_max": max((x["atol"] for x in history), default=None)}
+    record.update(metrics(a, b, solution.x))
+    np.testing.assert_allclose(record["cost_recomputed"], solution.cost, rtol=1e-12)
+    np.save(dest / "x.npy", solution.x)
+    write(dest / "solver.json", record)
+    write(dest / "inner_history.json", history)
+    print(json.dumps({k: record[k] for k in ("status", "iterations", "cost", "reported_optimality", "scaled_optimality_recomputed", "relative_duality_gap", "elapsed_sec")}), flush=True)
+    return solution
+
+
+def capture(variant):
+    assert variant in VARIANTS
+    dest = OUT / variant
+    dest.mkdir(exist_ok=False)
+    meta = pd.read_csv(BASE / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(BASE / "pca.npy"), index=meta.index,
+                        columns=[f"PC{i+1}" for i in range(30)])
+    assert data.shape == (48879, 30)
+    assert _canonical_sample_order(data.index.tolist()) == list(range(len(data)))
+    path = (BASE if variant == "symmetric_average" else COMPARISON / variant) / "linkage.npy"
+    tree = tree_from_linkage(np.load(path), leaf_names=data.index.tolist())
+
+    def capture_solver(a, b, **kwargs):
+        frame = inspect.currentframe().f_back
+        assert frame.f_code.co_name == "fit_fixed_topology_nnls_branch_lengths"
+        local = frame.f_locals
+        left, right = local["left"], local["right"]
+        edge_pairs = np.asarray([local["edge_by_index"][i] for i in range(a.shape[1])], dtype=str)
+        sparse.save_npz(dest / "design.npz", a)
+        np.save(dest / "target.npy", b)
+        np.savez(dest / "pairs.npz", left=left, right=right)
+        np.save(dest / "edge_pairs.npy", edge_pairs)
+        counts = a.getnnz(axis=0)
+        assert np.isfinite(a.data).all() and np.isfinite(b).all() and (counts > 0).all()
+        structure = {"shape": list(a.shape), "nnz": a.nnz,
+                     "uncovered_before_augmentation": int(local["n_zero_design_columns"]),
+                     "zero_columns_after_augmentation": int((counts == 0).sum()),
+                     "nullity_lower_bound": max(0, a.shape[1]-a.shape[0]),
+                     "column_support_quantiles": np.quantile(counts, [0., .25, .5, .75, 1.]).tolist()}
+        write(dest / "system.json", structure)
+        del frame, local
+        fit_dir = dest / "native_auto"
+        fit_dir.mkdir(exist_ok=False)
+        return solve(a, b, kwargs, fit_dir)
+
+    with threadpool_limits(limits=4), patch.object(native, "lsq_linear", capture_solver):
+        result = native.fit_fixed_topology_nnls_branch_lengths(
+            tree, data, target_metric="mean_squared_standardized_euclidean",
+            pair_sample_size=50000, random_state=0, solver_tolerance=1e-5,
+            max_iterations=1000, apply_nonconverged=False)
+    write(dest / "native_result.json", result.to_dict())
+
+
+def control(variant, label):
+    dest = OUT / variant
+    a = sparse.load_npz(dest / "design.npz")
+    b = np.load(dest / "target.npy")
+    kwargs = json.loads((dest / "native_auto/solver.json").read_text())["kwargs"]
+    if label == "fixed_inner":
+        kwargs["lsmr_tol"] = 1e-7
+    elif label == "more_outer":
+        kwargs["max_iter"] = 5000
+    elif label != "moderate_inner":
+        raise ValueError(label)
+    fit_dir = dest / label
+    fit_dir.mkdir(exist_ok=False)
+    with threadpool_limits(limits=4):
+        solve(a, b, kwargs, fit_dir, inner_override=1e-3 if label == "moderate_inner" else None)
+
+
+def self_check():
+    a = sparse.csr_matrix([[1., 0., 1.], [0., 1., 1.]])
+    b = np.ones(2)
+    x = np.array([.5, .5, .5])
+    exact = metrics(a, b, x)
+    assert exact["scaled_optimality_recomputed"] == 0 and exact["relative_duality_gap"] < 1e-8
+    bad = metrics(a, b, np.zeros(3))
+    assert bad["scaled_optimality_recomputed"] > 0 and bad["duality_gap"] > .9
+    other = x + np.array([.1, .1, -.1])
+    np.testing.assert_allclose(a @ x, a @ other, atol=1e-15)
+    dense_x, _ = nnls(a.toarray(), b)
+    assert metrics(a, b, dense_x)["scaled_optimality_recomputed"] < 1e-10
+    print("KKT, numerical dual bound, dense reference and nonunique-fit self-checks passed")
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "self-check":
+        self_check()
+    elif sys.argv[1] == "capture":
+        capture(sys.argv[2])
+    else:
+        control(sys.argv[2], sys.argv[1])

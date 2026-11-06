@@ -1,0 +1,178 @@
+"""Replay TBS gates on frozen trees and score direct component contrasts."""
+
+import hashlib
+import json
+import sys
+from itertools import combinations
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from scipy.linalg import solve
+from scipy.sparse.csgraph import connected_components
+from scipy.special import gammaln, logsumexp
+from scipy.stats import chi2
+from threadpoolctl import threadpool_limits
+
+from benchmarks.shared.runners.tbs_support import unsupported_empirical_null_reason
+from tree_break_selection.hierarchy_analysis.cluster_assignments import build_sample_cluster_assignments
+from tree_break_selection.hierarchy_analysis.decomposition.gates.orchestrator import run_gate_annotation_pipeline
+from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import compute_whitened_wald_contrast
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.fixed_subspace_annotation import fixed_subspace_sibling_p_value
+from tree_break_selection.hierarchy_analysis.tree_decomposition import TreeDecomposition
+from tree_break_selection.tree.branch_lengths import node_id
+from tree_break_selection.tree.construction.build import _canonical_sample_order
+from tree_break_selection.tree.construction.hierarchical import tree_from_linkage
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+from tree_break_selection.tree.optimized_branch_lengths import _edge_indices, _split_root_pair_by_linkage
+from tree_break_selection.tree.topology import tree_root
+
+
+RAW = Path(__file__).resolve().parent
+ROOT = RAW.parents[2]
+RUNS = ROOT / "results/analyses"
+BASE = RUNS / "choir_cell_lines_tbs_20261103_163359"
+COMPARE = RUNS / "choir_tbs_recovery_comparison_20261103_174622"
+NNLS = RUNS / "choir_nnls_convergence_diagnosis_20261103_185503"
+VARIANTS = ("symmetric_average", "symmetric_ward", "markov_average", "markov_ward")
+
+
+def read(path):
+    return json.loads(path.read_text())
+
+
+def chi_square_log10_tail(statistic, dimension):
+    assert dimension % 2 == 0 and statistic > 0
+    half = statistic / 2
+    powers = np.arange(dimension // 2)
+    return float((-half + logsumexp(powers * np.log(half) - gammaln(powers + 1))) / np.log(10))
+
+
+def component_clades(labels, sizes):
+    n = len(labels)
+    results = {}
+    for variant in VARIANTS:
+        link = np.load((BASE if variant == "symmetric_average" else COMPARE / variant) / "linkage.npy")
+        counts = np.zeros((2 * n - 1, len(sizes)), dtype=int)
+        counts[np.arange(n), labels] = 1
+        for index, (left, right) in enumerate(link[:, :2].astype(int), start=n):
+            counts[index] = counts[left] + counts[right]
+        np.testing.assert_array_equal(counts[-1], sizes)
+        enclosing = [int(np.flatnonzero(counts[:, i] == size)[0]) for i, size in enumerate(sizes)]
+        results[variant] = [{"node": node_id(index, n), "component_counts": counts[index].tolist()}
+                            for index in enclosing]
+    return results
+
+
+def component_contrasts(data, metadata, space):
+    weights = sparse.load_npz(BASE / "diffusion_kernel.npz").tocsr()
+    count, labels = connected_components(weights, directed=False)
+    np.testing.assert_array_equal(labels, np.load(BASE / "graph_components.npy"))
+    x = data.to_numpy()
+    groups = [x[labels == i] for i in range(count)]
+    means = [group.mean(axis=0) for group in groups]
+    covariances = [np.cov(group, rowvar=False, ddof=1) for group in groups]
+    sizes = [len(group) for group in groups]
+    pc_scale = x.std(axis=0, ddof=1)
+    result = []
+    for a, b in combinations(range(count), 2):
+        na, nb = sizes[a], sizes[b]
+        sa, sb = covariances[a], covariances[b]
+        delta = means[a] - means[b]
+        pooled = ((na - 1) * sa + (nb - 1) * sb) / (na + nb - 2)
+        z = compute_whitened_wald_contrast(means[a], means[b], na, nb, comparison="sibling",
+            feature_space=space, continuous_covariance_by_block={"continuous": pooled})
+        statistic = float(z @ z)
+        nominal_p = fixed_subspace_sibling_p_value(z, space, method="fixed_global_chi_square")
+        pooled_mean_cov = pooled * (1 / na + 1 / nb) + 1e-12 * np.eye(x.shape[1])
+        np.testing.assert_allclose(statistic, delta @ solve(pooled_mean_cov, delta, assume_a="pos"), rtol=1e-10)
+        unequal_stat = float(delta @ solve(sa / na + sb / nb, delta, assume_a="pos"))
+        result.append({"components": [a, b], "sizes": [na, nb], "degrees_of_freedom": x.shape[1],
+            "fixed_global_statistic": statistic, "fixed_global_nominal_p": nominal_p,
+            "fixed_global_nominal_log10_p": chi_square_log10_tail(statistic, x.shape[1]),
+            "unequal_covariance_wald_statistic": unequal_stat,
+            "unequal_covariance_nominal_p": float(chi2.sf(unequal_stat, x.shape[1])),
+            "centroid_rms_standardized_difference": float(np.sqrt(np.mean((delta / pc_scale) ** 2)))})
+    return {"component_cell_line_counts": [metadata.loc[labels == i, "Cell_line"].value_counts().to_dict() for i in range(count)],
+            "pairs": result, "smallest_enclosing_clades": component_clades(labels, sizes), "selection_calibrated": False}
+
+
+def replay(variant, data, space):
+    fit = "native_auto" if variant == "symmetric_average" else "reference"
+    link = np.load((BASE if variant == "symmetric_average" else COMPARE / variant) / "linkage.npy")
+    tree = tree_from_linkage(link, leaf_names=data.index.tolist())
+    edge_index = _edge_indices(tree)
+    dest = NNLS / variant
+    np.testing.assert_array_equal(np.asarray(list(edge_index)), np.load(dest / "edge_pairs.npy"))
+    lengths = np.load(dest / fit / "x.npy")
+    lengths = _split_root_pair_by_linkage(tree, lengths, edge_index)
+    assert np.all(np.isfinite(lengths)) and lengths.min() >= 0
+    for edge, index in edge_index.items():
+        tree.edges[edge]["branch_length"] = float(lengths[index])
+    tree.populate_node_distributions(data, feature_space=space)
+    bundle = run_gate_annotation_pipeline(tree, tree.annotations_df, edge_alpha=0.001,
+        sibling_alpha=0.01, leaf_data=data, feature_space=space,
+        adaptive_projection_dimension_energy_fraction=0.90,
+        edge_branch_length_variance_policy="normalized_branch_length")
+    annotation = bundle.annotated_df
+    root = tree_root(tree)
+    children = list(tree.successors(root))
+    columns = [c for c in annotation.columns if c.startswith(("Child_Parent_", "Sibling_"))]
+    root_rows = json.loads(annotation.loc[[root, *children], ["leaf_count", *columns]].to_json(orient="index", double_precision=15))
+    if fit == "native_auto":
+        previous = read(RAW / "tbs-root-variance-diagnostic.json")["normalized_branch_length"]["root_children"]
+        for child in children:
+            for key in ("Child_Parent_Divergence_Test_Statistic", "Child_Parent_Divergence_P_Value_BH"):
+                np.testing.assert_allclose(root_rows[child][key], previous[child][key], rtol=1e-9)
+    sibling_method = str(bundle.metadata.config.sibling_gate_method)
+    unsupported = unsupported_empirical_null_reason(annotation, sibling_gate_method=sibling_method)
+    traversal = None
+    if unsupported is None:
+        decomposer = TreeDecomposition(tree=tree, gate_annotation_bundle=bundle, passthrough=True, trace_level="compact")
+        decomposition = decomposer.decompose_tree()
+        assignment = build_sample_cluster_assignments(decomposition).reindex(data.index)
+        assert len(assignment) == len(data) and assignment.cluster_id.notna().all()
+        components = np.load(BASE / "graph_components.npy")
+        counts = pd.crosstab(assignment.cluster_id.to_numpy(), components)
+        mixed = counts.gt(0).sum(axis=1) > 1
+        component_membership = []
+        for component in counts:
+            group = counts[component]
+            component_membership.append({"component": int(component), "cells": int(group.sum()),
+                "clusters_touching_component": int(group.gt(0).sum()),
+                "cells_in_mixed_component_clusters": int(group[mixed].sum()),
+                "largest_cluster_overlap": int(group.max())})
+        traversal = {"counters": decomposition.get("traversal_counters", {}),
+                     "root_decision": decomposer._gate.decision(root).value,
+                     "clusters": int(decomposition["num_clusters"]),
+                     "component_membership": component_membership}
+    return {"variant": variant, "fit": fit, "root": root, "children": children,
+            "sibling_method": sibling_method, "root_annotations": root_rows,
+            "unsupported_reason": unsupported, "traversal": traversal,
+            "diagnostic_only": fit == "reference", "stage_timings": bundle.stage_timings}
+
+
+def main():
+    mode, output = sys.argv[1:]
+    assert mode == "components" or mode in VARIANTS
+    expected = (read(RAW / "tbs-recovery-manifest.json")["reused_input_sha256"] |
+                read(NNLS / "verification.json")["input_sha256"])
+    for path, digest in expected.items():
+        assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == digest, path
+    metadata = pd.read_csv(BASE / "cell_metadata.csv", usecols=["CellID", "Cell_line"], dtype=str)
+    assert metadata.CellID.is_unique and _canonical_sample_order(metadata.CellID.tolist()) == list(range(len(metadata)))
+    data = pd.DataFrame(np.load(BASE / "pca.npy"), index=metadata.CellID, columns=[f"PC{i+1}" for i in range(30)])
+    space = continuous_feature_space_from_columns(data.columns)
+    start = perf_counter()
+    with threadpool_limits(limits=2):
+        result = component_contrasts(data, metadata, space) if mode == "components" else replay(mode, data, space)
+    result["elapsed_sec"] = perf_counter() - start
+    with (Path(output) / f"{mode}.json").open("x") as handle:
+        json.dump(result, handle, indent=2, allow_nan=False)
+    print(mode, result["elapsed_sec"], flush=True)
+
+
+if __name__ == "__main__":
+    main()

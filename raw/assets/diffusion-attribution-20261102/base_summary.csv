@@ -1,0 +1,5 @@
+data_mode,covariance_mode,replicates,sibling_rejections,sibling_rejection_fraction,sibling_fraction_ci_low,sibling_fraction_ci_high,full_row_edge_rejections,mean_statistic,mean_p_value,parent_total_fallbacks,diagonal_covariances
+independent,known_identity,50,0,0.0,0.0,0.07112173646420458,0,24.220169098298562,0.4916860597266998,0,0
+independent,production_guarded,50,8,0.16,0.07170076718328487,0.2911263065951159,1,30.48397798251976,0.31579154145264593,1,24
+selected,known_identity,50,50,1.0,0.9288782635357954,1.0,50,98.94336144187652,3.2829528113797836e-07,0,0
+selected,production_guarded,50,50,1.0,0.9288782635357954,1.0,49,169.53563641390446,2.4288796245359308e-05,1,24

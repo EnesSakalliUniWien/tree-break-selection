@@ -2,7 +2,7 @@
 title: Failing-Case Subspace Separation
 type: analysis
 status: draft
-updated: 2026-10-18
+updated: 2026-10-19
 sources:
   - reports/failing_case_subspace_analysis_20261018/README.md
   - reports/failing_case_subspace_analysis_20261018/subspace_failure_analysis.py
@@ -147,6 +147,15 @@ and checks every stage; all 49 cases pass. Three defects remain:
 The 8 cases without a defect are `binary_perfect_*` (identical rows; designed
 fail-closed), the two Gaussian outlier cases, `dim_consolidated_4c_72f_continuous`
 and the two SBM cases.
+
+### After the fixes
+
+The full benchmark at commit `8e0093d3` (`run_20261019_064234Z_full`) returns a
+clustering for all 49 cases. 24 reach ARI >= 0.9, including 16 of the 17 the bug
+check attributed to a defect, and the 22 below 0.5 all belong to the subspace,
+overlap and no-location-signal groups. One previously healthy case,
+`phylo_conserved_4taxa`, now stops at the root because its sibling test's
+corrected p-value (0.0134) misses alpha 0.01.
 
 ## Evidence
 

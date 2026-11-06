@@ -1,0 +1,110 @@
+{
+  "seed": 20261104,
+  "draws_per_control": 20000,
+  "known_covariance_fixed_projection": {
+    "mean_q": 3.0022239963098802,
+    "nominal_rejections_at_0.05": 989,
+    "reference_rejections_at_0.05": 989,
+    "nominal_rejections_at_0.01": 202,
+    "reference_rejections_at_0.01": 202,
+    "reference_uniform_ks_distance": 0.00800871741917819
+  },
+  "same_row_parent_total_fixed_projection": {
+    "mean_q": 2.9868403418954883,
+    "nominal_rejections_at_0.05": 305,
+    "reference_rejections_at_0.05": 972,
+    "nominal_rejections_at_0.01": 0,
+    "reference_rejections_at_0.01": 203,
+    "reference_uniform_ks_distance": 0.007925969006571498
+  },
+  "within_child_full_means_full_projection": {
+    "mean_q": 19.818764520481466,
+    "nominal_rejections_at_0.05": 9872,
+    "reference_rejections_at_0.05": 1007,
+    "nominal_rejections_at_0.01": 7396,
+    "reference_rejections_at_0.01": 177,
+    "reference_uniform_ks_distance": 0.007044582488990869
+  },
+  "within_child_heldout_means_scalar": {
+    "residual_contrast_overlap_squared": 0.5000000000000002,
+    "contrast_square_vs_residual_sum_squares_covariance": 1.0553806887270119,
+    "expected_covariance": 1.0000000000000004,
+    "chi_square_rejections_at_0.05": 1331,
+    "inapplicable_F_rejections_at_0.05": 760
+  },
+  "known_covariance_fitted_pair_projection": {
+    "mean_q": 29.97699210758549,
+    "nominal_rejections_at_0.05": 20000,
+    "reference_rejections_at_0.05": 1001,
+    "nominal_rejections_at_0.01": 20000,
+    "reference_rejections_at_0.01": 194,
+    "reference_uniform_ks_distance": 0.004631828586752873
+  },
+  "fixed_basis_adaptive_rank_0.9": {
+    "1": {
+      "draws": 2,
+      "nominal_rejections_at_0.05": 2,
+      "nominal_rejections_at_0.01": 2
+    },
+    "2": {
+      "draws": 17,
+      "nominal_rejections_at_0.05": 10,
+      "nominal_rejections_at_0.01": 4
+    },
+    "3": {
+      "draws": 111,
+      "nominal_rejections_at_0.05": 42,
+      "nominal_rejections_at_0.01": 14
+    },
+    "4": {
+      "draws": 437,
+      "nominal_rejections_at_0.05": 105,
+      "nominal_rejections_at_0.01": 28
+    },
+    "5": {
+      "draws": 1449,
+      "nominal_rejections_at_0.05": 234,
+      "nominal_rejections_at_0.01": 61
+    },
+    "6": {
+      "draws": 3381,
+      "nominal_rejections_at_0.05": 341,
+      "nominal_rejections_at_0.01": 68
+    },
+    "7": {
+      "draws": 6348,
+      "nominal_rejections_at_0.05": 420,
+      "nominal_rejections_at_0.01": 88
+    },
+    "8": {
+      "draws": 8255,
+      "nominal_rejections_at_0.05": 408,
+      "nominal_rejections_at_0.01": 84
+    }
+  },
+  "saved_selected_pairs": {
+    "pairs": 183,
+    "native_p_at_most_0.01": 182,
+    "q_times_branch_factor_min": 29.99996478041201,
+    "q_times_branch_factor_max": 29.99999999997368
+  },
+  "native_guard_8_per_child_p6": {
+    "seed": 20261105,
+    "draws": 20000,
+    "native_replays_per_contrast": 25,
+    "native_max_abs_q_error_vs_unregularized_formula": 7.417746417104354e-10,
+    "full_means_hotelling": {
+      "mean_q": 12.041639400245057,
+      "nominal_rejections_at_0.05": 6540,
+      "reference_rejections_at_0.05": 1027,
+      "nominal_rejections_at_0.01": 4132,
+      "reference_rejections_at_0.01": 202,
+      "reference_uniform_ks_distance": 0.005711109824825478
+    },
+    "alternating_test_half_means": {
+      "mean_q": 9.02117672428697,
+      "nominal_rejections_at_0.05": 4060,
+      "inapplicable_hotelling_rejections_at_0.05": 241
+    }
+  }
+}

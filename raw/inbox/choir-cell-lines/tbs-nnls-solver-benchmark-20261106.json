@@ -1,0 +1,26 @@
+{
+  "lsq_linear_trf_production": {
+    "seconds": 24.24,
+    "status": 0,
+    "iterations": 1000,
+    "cost_recomputed": 1494.8300814294344,
+    "scaled_optimality_recomputed": 2.171133742172607,
+    "relative_duality_gap": 151.77290349918076
+  },
+  "lbfgsb_scaled_cold": {
+    "seconds": 22.04,
+    "iterations": 1878,
+    "seconds_to_within_0.01": 1.1,
+    "seconds_to_within_0.0001": 3.66,
+    "cost_recomputed": 482.40504622147245,
+    "scaled_optimality_recomputed": 2.11411517885412e-06,
+    "relative_duality_gap": 8.449381194804783e-06
+  },
+  "sklearn_lasso_cd_positive": {
+    "seconds": 66.76,
+    "iterations": 20000,
+    "cost_recomputed": 482.40504622632375,
+    "scaled_optimality_recomputed": 2.5547949575109524e-05,
+    "relative_duality_gap": 1.7801301560427736e-05
+  }
+}

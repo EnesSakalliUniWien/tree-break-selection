@@ -1,0 +1,11 @@
+{
+  "replicates": 10000,
+  "seed": 2026110401,
+  "features": 30,
+  "alpha": 0.01,
+  "same_pair_pca_rank_one_rejections": 10000,
+  "fixed_first_axis_rejections": 102,
+  "full_space_rejections": 112,
+  "exact_same_pair_pca_rejection_probability": 0.9999977401198593,
+  "scope": "Independent Gaussian fixed-pair control, known identity covariance, no tree selection, no branch time, no empirical inflation."
+}

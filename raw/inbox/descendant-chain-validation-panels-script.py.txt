@@ -1,0 +1,83 @@
+"""Run the pre-set descendant chain validation panels (see protocol.md)."""
+
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+sys.path.insert(0, str(OUT.parents[2]))
+from benchmarks.diagnostics.calibration.selected.hierarchy import (  # noqa: E402
+    diffusion_root_conditional_mc as mc,
+)
+
+P = 5
+PANELS = {  # name: (offset, n, design, replicates)
+    "A_null_30": (0, 30, "null", 200),
+    "B_root_signal_30": (10_000, 30, "two", 100),
+    "C_hierarchical_40": (20_000, 40, "four", 50),
+    "D_null_120": (30_000, 120, "null", 10),
+    "D_hierarchical_120": (40_000, 120, "four", 10),
+    "D_null_200": (50_000, 200, "null", 10),
+    "D_hierarchical_200": (60_000, 200, "four", 10),
+}
+
+
+def dataset(offset, n, design, replicate):
+    values = np.random.default_rng(20261106 * 1000 + offset + replicate).normal(size=(n, P))
+    if design == "null":
+        return values, np.zeros(n, int)
+    if design == "two":
+        values[: n // 2, 0] -= 2.0
+        values[n // 2 :, 0] += 2.0
+        return values, np.repeat([0, 1], n // 2)
+    quarter, half = n // 4, n // 2
+    values[:half, 0] -= 3.0
+    values[half:, 0] += 3.0
+    for start in (0, half):
+        values[start : start + quarter, 1] -= 1.5
+        values[start + quarter : start + half, 1] += 1.5
+    return values, np.repeat(np.arange(4), quarter)
+
+
+def run(job):
+    panel, replicate = job
+    offset, n, design, _ = PANELS[panel]
+    values, truth = dataset(offset, n, design, replicate)
+    start = perf_counter()
+    with threadpool_limits(limits=1):
+        family = mc.selected_diffusion_family_chain_tests(
+            values, sigma=1.0, steps=999, seed=2026110600 + 10 * replicate, alpha=0.05
+        )
+    rows = []
+    for position, node in enumerate(family["nodes"]):
+        index = [int(label[1:]) for label in node.get("rows", ())]
+        children = [[int(label[1:]) for label in child] for child in node.get("children", ())]
+        rows.append({
+            "panel": panel, "replicate": replicate, "position": position, "role": node["role"],
+            "rows": len(index), "null": len(set(truth[index])) == 1 if index else None,
+            "children_rows": [len(c) for c in children],
+            "children_pure": [len(set(truth[c])) == 1 for c in children],
+            "status": node["status"], "sampling_status": node.get("sampling_status"),
+            "accepted_moves": node.get("accepted_moves"), "unique_states": node.get("unique_states"),
+            "observed_radius": node.get("observed_radius"), "p_value": node["p_value"],
+            "decision": node["decision"], "error": node.get("error"),
+        })
+    return {"panel": panel, "replicate": replicate, "family_status": family["status"],
+            "family_error": family.get("error"), "positions": len(family["nodes"]),
+            "seconds": perf_counter() - start, "nodes": rows}
+
+
+if __name__ == "__main__":
+    jobs = [(panel, r) for panel, spec in PANELS.items() for r in range(spec[3])]
+    with Pool(processes=7) as pool, (OUT / "results.jsonl").open("x") as output:
+        for done, record in enumerate(pool.imap_unordered(run, jobs, chunksize=1), 1):
+            output.write(json.dumps(record, default=float) + "\n")
+            output.flush()
+            if done % 50 == 0:
+                print(f"{done}/{len(jobs)} datasets", flush=True)
+    print("complete", len(jobs), flush=True)

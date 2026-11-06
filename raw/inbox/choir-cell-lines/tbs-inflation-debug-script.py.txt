@@ -1,0 +1,115 @@
+"""Rerun the cancer TBS with recorded inflation factors, with and without the cap.
+
+"applied" uses the code as is and must reproduce the merged rerun's assignments.
+"uncapped" replaces each capped factor by the recorded local kernel factor.
+Both runs share one disk-backed diffusion distance array.
+"""
+
+import json
+import os
+import sys
+from dataclasses import replace
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import pdist
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+sys.path.insert(0, str(OUT.parents[2]))
+from applications.scrna._shared import json_default
+from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction import (
+    inflation_adjusted_sibling_tests,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.empirical_null_inflation_estimation import (
+    _adjusted_p_value,
+    decide_empirical_null_calibration,
+)
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+SIBLING_COLUMNS = [
+    "leaf_count", "Sibling_Test_Method", "Sibling_BH_Different", "Sibling_Raw_Test_Statistic",
+    "Sibling_Reference_Scale", "Sibling_Degrees_of_Freedom", "Sibling_Inflation_Factor",
+    "Sibling_Local_Inflation_Factor", "Sibling_Family_Baseline_Inflation_Factor",
+    "Sibling_Divergence_P_Value", "Sibling_Divergence_P_Value_Corrected",
+]
+
+
+def uncapped_decision(model, record, **kwargs):
+    decision = decide_empirical_null_calibration(model, record, **kwargs)
+    local = decision.descriptive_strata.get("local_inflation_factor")
+    if decision.c_hat is None or local is None or not decision.estimator.endswith(":family_baseline"):
+        return decision
+    c_hat = max(float(local), 1.0)
+    return replace(
+        decision, c_hat=c_hat, p_value=_adjusted_p_value(record, c_hat),
+        estimator=decision.estimator.replace(":family_baseline", ":local_kernel_uncapped"),
+    )
+
+
+def recovered_lines(truth, labels):
+    table = pd.crosstab(truth, labels)
+    recall = table.max(axis=1) / table.sum(axis=1)
+    purity = table.max(axis=0) / table.sum(axis=0)
+    return int(((recall >= 0.9) & (purity[table.idxmax(axis=1)].to_numpy() >= 0.9)).sum())
+
+
+metadata = pd.read_csv(OUT / "cell_metadata.csv", index_col=0, dtype=str)
+pca = np.load(OUT / "pca.npy")
+coordinates = np.load(OUT / "diffusion_coordinates.npy")
+data = pd.DataFrame(pca, index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+params = dict(METHOD_SPECS["tbs_family_diffusion"].param_grid[0])
+truth = metadata.Cell_line.to_numpy()
+previous = pd.read_csv(OUT / "cluster_assignments.csv").TBS_cluster.to_numpy()
+
+with threadpool_limits(limits=4):
+    distance_path = OUT / "diffusion_distance.npy"
+    distances = np.lib.format.open_memmap(
+        distance_path, mode="w+", dtype=np.float64, shape=(len(data) * (len(data) - 1) // 2,)
+    )
+    pdist(coordinates, metric="euclidean", out=distances)
+    distances.flush()
+    for mode in ("applied", "uncapped"):
+        start = perf_counter()
+        inflation_adjusted_sibling_tests.decide_empirical_null_calibration = (
+            uncapped_decision if mode == "uncapped" else decide_empirical_null_calibration
+        )
+        result = run_tbs_on_distance(
+            data, distances, 0.01, edge_alpha=0.001,
+            tree_linkage_method=params["tree_linkage_method"],
+            feature_space=continuous_feature_space_from_columns(tuple(data.columns)),
+            branch_length_data_df=data,
+            edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+            adaptive_projection_dimension_energy_fraction=0.90,
+            **_tbs_branch_length_optimization_kwargs(params),
+            extra={"feature_family_diffusion_fallback_reason": None},
+        )
+        labels = np.asarray(result.labels, dtype=int)
+        annotations = result.extra["annotations"]
+        tested = annotations[annotations.Sibling_Divergence_P_Value_Corrected.notna()]
+        tested[SIBLING_COLUMNS].to_csv(OUT / f"{mode}_sibling_tests.csv")
+        np.save(OUT / f"{mode}_labels.npy", labels)
+        summary = {
+            "mode": mode, "status": result.status.value, "found_clusters": result.found_clusters,
+            "ari_cell_line": adjusted_rand_score(truth, labels),
+            "nmi_cell_line": normalized_mutual_info_score(truth, labels),
+            "recovered_lines_90_90": recovered_lines(truth, labels),
+            "ari_vs_merged_rerun": adjusted_rand_score(previous, labels),
+            "traversal_counters": result.extra.get("traversal_counters"),
+            "elapsed_sec": perf_counter() - start,
+        }
+        (OUT / f"{mode}_summary.json").write_text(
+            json.dumps(summary, indent=2, default=json_default) + "\n"
+        )
+        print(json.dumps({k: summary[k] for k in list(summary)[:7]}, default=json_default), flush=True)
+    distances._mmap.close()
+    distance_path.unlink()
+
+# shortcut: skip interpreter teardown, which stalled after both earlier full-data runs.
+os._exit(0)

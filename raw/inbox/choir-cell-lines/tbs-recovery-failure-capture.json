@@ -1,0 +1,4 @@
+{
+  "change": "Capture native runner traceback locals on subsequent failures to preserve NNLS diagnostics/linkage; no numerical setting or fit behavior changed.",
+  "compare_sha256": "05d998d09673480c5346167eaeb3bf068388148705fad63f4232fc3ad268f4cb"
+}

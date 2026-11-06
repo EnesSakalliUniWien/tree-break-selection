@@ -2,7 +2,7 @@
 title: Selected PCA Projected-Wald Validation
 type: analysis
 status: reviewed
-updated: 2026-10-17
+updated: 2026-11-04
 sources:
   - benchmarks/validation/manifests/selected_pca_projected_wald_validation_manifest.json
   - raw/assets/selected-pca-projected-wald-validation/20260601-selected-pca-projected-wald-calibration.json
@@ -11,6 +11,9 @@ sources:
   - benchmarks/results/validation/selected_pca_projected_wald_calibration_check_20260605.csv
   - tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_reference_distribution.py
   - tree_break_selection/hierarchy_analysis/statistics/projection/spectral/tree_estimator.py
+  - reports/statistical_construction_audit_20261104/knowledge_audit.md
+  - reports/statistical_construction_audit_20261104/reference_law_audit.md
+  - reports/cancer_pc_statistics_debug_20261104/README.md
 tags:
   - method
   - projection
@@ -21,21 +24,22 @@ tags:
 
 ## Summary
 
-The fixed-subspace projected-Wald reference behaves as expected when PCA rows
-are selected from leaf-only Gaussian null rows in the local sibling-null
-diagnostic, but it fails badly when deterministic child-mean rows are included
-in the same local spectral matrix. The locked run used commit
+The three recorded fixed-membership Gaussian settings have rejection rates
+near the nominal level with leaf-only PCA, and much larger rejection rates
+when deterministic child-mean rows are included in the spectral matrix.
+These are bounded empirical findings, not an independence theorem for
+leaf-only PCA. The locked run used commit
 `492c8520809e6cfad9e4853e91c89a887eac5a21`, seed `20260601`, 1000 replicates
 per setting, and an empty recorded worktree status.
 
-This is not full-pipeline evidence. It validates one local question: whether
+This is not full-pipeline evidence. It measures one local question: whether
 the chi-square projected-Wald reference remains calibrated when PCA rows and the
 MP dimension are selected from the same fixed-membership Gaussian null context.
 It does not validate hierarchy construction, tree-selected sibling pairs,
 sibling FDR, traversal, empirical-null inflation, categorical blocks, or
 real-data misspecification.
 
-A fresh 2026-06-05 rerun on the current worktree reproduces the locked
+A 2026-06-05 rerun on the then-current worktree reproduces the locked
 pattern: leaf-only rejection rates at nominal `0.05` are `0.046`, `0.048`, and
 `0.059`, while the corresponding child-mean-row settings reject at `0.671`,
 `0.992`, and `1.000`.
@@ -77,14 +81,16 @@ the tested sibling means enter the spectral row set, plus the broader
 selected-tree setting where the hierarchy and focal sibling are selected using
 the same evidence.
 
-The mathematical interpretation is direct. In the leaf-only Gaussian null, the
-selected PCA rows are random but selected from independent null variation
-around the parent mean. The fixed-subspace chi-square reference remains
-approximately calibrated in the tested settings. When child means are appended,
-the spectral matrix contains deterministic summaries of exactly the two groups
-used by the sibling contrast. The selected subspace can then align with the
-tested left-right contrast, so conditioning on the supplied projection rows as
-fixed no longer approximates the actual selected reference law.
+Leaf-only PCA is not generally independent of the sibling contrast, even
+with fixed groups. The total centered scatter equals pooled within-group
+scatter plus \(n_Ln_R/(n_L+n_R)\,\Delta\Delta^\top\), where
+\(\Delta=\bar X_L-\bar X_R\). The tested contrast therefore enters the
+PCA input. The observed near-nominal rates apply to the sizes and covariance
+conditions in the table. In the later two-leaf control, a fitted rank-one
+direction can retain all 30 coordinates' contrast energy. Appending child
+means introduces another form of contrast reuse, but removing those rows
+alone does not establish the fixed-subspace law. See
+[[statistical-construction-audit]] for the covariance and rank controls.
 
 ## Evidence
 
@@ -100,9 +106,10 @@ fixed no longer approximates the actual selected reference law.
 - `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` defined
   the scaffold and validation contract (retired 2026-10-17).
 - `tree_break_selection/hierarchy_analysis/statistics/projection/spectral/tree_estimator.py`
-  documents the current production leaf-only spectral orchestration. The
-  child-mean/internal-row mode is preserved only in the locked validation
-  artifact as the anti-conservative comparison arm.
+  implements separate contexts: the edge basis uses its assigned leaf rows;
+  the full-descendant sibling context uses leaves by default and can append
+  internal distributions when explicitly configured. The archived child-mean
+  comparison remains evidence for its particular construction.
 - `benchmarks/validation/statistics/selected_pca_projected_wald_calibration.py` was retired on 2026-10-17 (last present at commit 5c554bc5).
 
 ## Links
@@ -110,12 +117,15 @@ fixed no longer approximates the actual selected reference law.
 - [[open-mathematical-questions]]
 - [[local-marchenko-pastur-rule]]
 - [[projected-wald-statistic]]
+- [[statistical-construction-audit]]
 
 ## Open Questions
 
-Production now excludes internal spectral rows from the projected-Wald PCA
-basis. The remaining method question exposed by that change is sibling
-calibration support: high-dimensional and high-cardinality contexts can have no
+The edge basis excludes internal rows, while the sibling context retains an
+opt-in internal-row path. Neither leaf-only sibling PCA nor splitting rows
+after selecting a tree establishes a calibrated reference. Covariance fitting,
+contrast-energy rank, tree selection and sibling calibration support remain
+separate questions. High-dimensional and high-cardinality contexts can have no
 strict empirical-null calibration records even when the raw sibling evidence is
 strong. That requires either a validated external/null calibration object or an
 explicit unsupported status; it should not be patched by reintroducing internal

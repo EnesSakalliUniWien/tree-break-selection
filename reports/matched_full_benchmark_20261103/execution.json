@@ -1,0 +1,30 @@
+{
+  "started_utc": "2026-11-03T11:54:30.841943+00:00",
+  "command": [
+    "uv",
+    "run",
+    "--no-sync",
+    "python",
+    "-u",
+    "-m",
+    "benchmarks.full.run"
+  ],
+  "environment": {
+    "TBS_CASE_SUITE": "full",
+    "TBS_METHODS": "tbs,tbs_diffusion,tbs_diffusion_adaptive_nnls,tbs_family_diffusion,leiden,louvain,kmeans,spectral,dbscan,optics,hdbscan",
+    "TBS_ENABLE_PLOTS": "1",
+    "TBS_ENABLE_MANIFOLD": "0",
+    "TBS_UMAP_ISOLATE_CASES": "1",
+    "TBS_RUN_RELATIONSHIP_ANALYSIS": "1",
+    "TBS_ENABLE_RELATIONSHIP_PLOTS": "1",
+    "TBS_RUN_TREE_CONSENSUS": "0",
+    "TBS_N_JOBS": "1",
+    "TBS_CASE_TIMEOUT_SEC": "1800",
+    "TBS_RUN_DIR": "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/results/run_20261103_matched_full_ixx1jf0m",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1"
+  }
+}

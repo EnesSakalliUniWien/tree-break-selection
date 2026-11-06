@@ -1,0 +1,182 @@
+{
+  "components": [
+    {
+      "component": 0,
+      "cells": 48444,
+      "volume": 774721.8350762293,
+      "cell_lines": 188,
+      "most_frequent_cell_line": "NCIH2110_LUNG",
+      "retained_nonstationary_modes": 27,
+      "local_second_eigenvalue": 0.999971374987674,
+      "max_markov_coordinate_range": 0.022056162638619294,
+      "max_symmetric_coordinate_range": 0.15194498550941812
+    },
+    {
+      "component": 1,
+      "cells": 250,
+      "volume": 3771.637501259338,
+      "cell_lines": 1,
+      "most_frequent_cell_line": "A204_SOFT_TISSUE",
+      "retained_nonstationary_modes": 0,
+      "local_second_eigenvalue": 0.936761595165515,
+      "max_markov_coordinate_range": 5.204170427930421e-16,
+      "max_symmetric_coordinate_range": 0.05318770068000581
+    },
+    {
+      "component": 2,
+      "cells": 185,
+      "volume": 3058.227796333515,
+      "cell_lines": 1,
+      "most_frequent_cell_line": "IM95_STOMACH",
+      "retained_nonstationary_modes": 0,
+      "local_second_eigenvalue": 0.8639193464823742,
+      "max_markov_coordinate_range": 5.759281940243e-16,
+      "max_symmetric_coordinate_range": 0.08713737493510601
+    }
+  ],
+  "root_splits": [
+    {
+      "variant": "symmetric_average",
+      "children_in_linkage_order": [
+        "L43204",
+        "N97755"
+      ],
+      "sizes_in_linkage_order": [
+        1,
+        48878
+      ],
+      "energy_measure": "mean_squared_cross_pair_distance",
+      "stationary_energy_fraction": 0.004453384495778328,
+      "saved_merge_height": 0.1216465025510629,
+      "frozen_split_height_without_stationary_modes": 0.12138473563752919,
+      "largest_mode_contributions": [
+        {
+          "mode": 26,
+          "eigenvalue": 0.999242901499555,
+          "fraction": 0.6607145003259732
+        },
+        {
+          "mode": 28,
+          "eigenvalue": 0.9991607174219026,
+          "fraction": 0.09467920472429572
+        },
+        {
+          "mode": 27,
+          "eigenvalue": 0.9991908320397659,
+          "fraction": 0.09383850370060574
+        }
+      ]
+    },
+    {
+      "variant": "symmetric_ward",
+      "children_in_linkage_order": [
+        "N97689",
+        "N97755"
+      ],
+      "sizes_in_linkage_order": [
+        250,
+        48629
+      ],
+      "energy_measure": "squared_centroid_distance",
+      "stationary_energy_fraction": 0.9999973279060169,
+      "saved_merge_height": 1.3970679463191862,
+      "frozen_split_height_without_stationary_modes": 0.002283722827901304,
+      "largest_mode_contributions": [
+        {
+          "mode": 1,
+          "eigenvalue": 1.0000000000000002,
+          "fraction": 0.9949319236518205
+        },
+        {
+          "mode": 3,
+          "eigenvalue": 0.9999999999999876,
+          "fraction": 0.005046259026265187
+        },
+        {
+          "mode": 2,
+          "eigenvalue": 0.9999999999999986,
+          "fraction": 1.914522793111144e-05
+        }
+      ]
+    },
+    {
+      "variant": "markov_average",
+      "children_in_linkage_order": [
+        "N97677",
+        "N97755"
+      ],
+      "sizes_in_linkage_order": [
+        151,
+        48728
+      ],
+      "energy_measure": "mean_squared_cross_pair_distance",
+      "stationary_energy_fraction": 0.005345634715155164,
+      "saved_merge_height": 0.02206306648194438,
+      "frozen_split_height_without_stationary_modes": 0.022009214128898145,
+      "largest_mode_contributions": [
+        {
+          "mode": 15,
+          "eigenvalue": 0.9996261859525069,
+          "fraction": 0.7529488842788519
+        },
+        {
+          "mode": 12,
+          "eigenvalue": 0.9996622844122707,
+          "fraction": 0.07739052230952036
+        },
+        {
+          "mode": 14,
+          "eigenvalue": 0.9996281651898181,
+          "fraction": 0.04415847623777028
+        }
+      ]
+    },
+    {
+      "variant": "markov_ward",
+      "children_in_linkage_order": [
+        "N97606",
+        "N97755"
+      ],
+      "sizes_in_linkage_order": [
+        267,
+        48612
+      ],
+      "energy_measure": "squared_centroid_distance",
+      "stationary_energy_fraction": 4.4332731527453455e-05,
+      "saved_merge_height": 0.37679427948392546,
+      "frozen_split_height_without_stationary_modes": 0.3767859272315384,
+      "largest_mode_contributions": [
+        {
+          "mode": 17,
+          "eigenvalue": 0.9995509436425164,
+          "fraction": 0.9502000483652581
+        },
+        {
+          "mode": 16,
+          "eigenvalue": 0.999586772866286,
+          "fraction": 0.02777031372360181
+        },
+        {
+          "mode": 12,
+          "eigenvalue": 0.9996622844122707,
+          "fraction": 0.006471645877722793
+        }
+      ]
+    }
+  ],
+  "eigenvalue_one_multiplicity": 3,
+  "max_left_relative_residual": 1.8172342824802993e-14,
+  "max_right_relative_residual": 1.8038552853079317e-14,
+  "biorthogonality_max_error": 1.554312234475219e-14,
+  "stationary_subspace_residual": 2.1218222239919245e-12,
+  "input_sha256": {
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/pca.npy": "a2ef1e696acada626d996e7fda7e40522054cd3ebb1a855a5cb83be58a984283",
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/diffusion_kernel.npz": "7b10e4e380a9a5c702fbc00062d738ff9a14a3b8ca87eff3b8ad2f190e0fe00b",
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/diffusion_coordinates.npy": "c6844134eb7b8257650b67c2108d7ed7d06aeab2e7f8b19f98a5d5a88e18c79e",
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/cell_metadata.csv": "744d353a2aa4308b04e67b9c4e8e487d65084900791c1b6b0faf9d7ad705c9ad",
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/linkage.npy": "b1c6e8811cc9f1251135c1f20243c8177ccc4909b18c0372379ee7f1cb86da36",
+    "results/analyses/choir_tbs_recovery_comparison_20261103_174622/symmetric_ward/linkage.npy": "ddc4e8ec40a62071afcbfe483eb29c6b86cdc02edab7f1f63e62e3938ee33217",
+    "results/analyses/choir_tbs_recovery_comparison_20261103_174622/markov_average/linkage.npy": "3a88a93274054db11b2da7e442b02186dc3393d6face1e2041ca1942c6c1b103",
+    "results/analyses/choir_tbs_recovery_comparison_20261103_174622/markov_ward/linkage.npy": "04707e3cf9405a662da38c587abd3249cc4d55b212afd42fbe3e97991d85bf5e"
+  }
+}

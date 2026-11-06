@@ -1,0 +1,158 @@
+"""Independent count simulations under the frozen protocol, with dataset-level outcomes."""
+
+import gc
+import hashlib
+import json
+import sys
+from time import perf_counter
+
+import anndata as ad
+import numpy as np
+import pandas as pd
+import scanpy as sc
+from pydiffmap import kernel
+from scipy import sparse
+from scipy.spatial.distance import pdist
+from threadpoolctl import threadpool_limits
+
+from compare import OUT, VARIANTS, fit, markov_coordinates, summarize, write_json
+from tree_break_selection.space_separation.diffusion import (
+    _resolve_pydiffmap_neighbor_search_k,
+    compute_diffusion_coordinates,
+    resolve_adaptive_epsilon,
+)
+
+PROTOCOL = json.loads((OUT / "protocol.json").read_text())
+MODELS = PROTOCOL["validation"]["models"]
+
+
+def generate(model_index, replicate):
+    spec = list(MODELS.values())[model_index]
+    rng = np.random.default_rng(np.random.SeedSequence([20261103, model_index, replicate]))
+    labels = np.repeat(np.arange(len(spec["sizes"])), spec["sizes"])
+    means = np.exp(rng.normal(1., 1., 3000))
+    profiles = np.tile(means, (len(spec["sizes"]), 1))
+    if len(profiles) > 1:
+        for group in range(len(profiles)):
+            profiles[group, group*60:(group+1)*60] *= np.exp(2.5)
+    sigma = spec["library_log_sigma"]
+    depth = rng.lognormal(-sigma**2 / 2., sigma, len(labels))
+    mu = profiles[labels] * depth[:, None]
+    theta = np.asarray(spec["dispersion"])[labels, None]
+    counts = rng.negative_binomial(theta, theta / (theta + mu))
+    assert np.all(counts.sum(axis=1) > 0)
+    return counts, labels
+
+
+def prepare(counts):
+    totals = counts.sum(axis=1)
+    a = ad.AnnData(sparse.csr_matrix(counts, dtype=np.float64))
+    a.X = sparse.diags(10000. / totals) @ a.X
+    sc.pp.log1p(a)
+    sc.pp.highly_variable_genes(a, n_top_genes=2000, flavor="seurat")
+    a = a[:, a.var.highly_variable].copy()
+    sc.pp.scale(a, max_value=10)
+    sc.pp.pca(a, n_comps=30, svd_solver="arpack", random_state=0)
+    pca = np.asarray(a.obsm["X_pca"], dtype=np.float64)
+    k = _resolve_pydiffmap_neighbor_search_k(pca, k_neighbors=15, bandwidth_type="-1/(d+2)")
+    fitted = kernel.Kernel(epsilon=1., k=k, metric="euclidean",
+        neighbor_params={"n_jobs": -1}, bandwidth_type="-1/(d+2)")
+    fitted.fit(pca)
+    fitted.scaled_dists.setdiag(0.)
+    epsilon, _ = resolve_adaptive_epsilon(fitted, "median", metric="euclidean")
+    fitted.epsilon_fitted = epsilon
+    w = fitted.compute().tocsr()
+    w.setdiag(0.)
+    w.eliminate_zeros()
+    w = w.maximum(w.T).tocsr()
+    symmetric = compute_diffusion_coordinates(w, diffusion_time=3, n_components=30)
+    data = pd.DataFrame(pca, index=[f"cell{i:06d}" for i in range(len(counts))],
+                        columns=[f"PC{i+1}" for i in range(30)])
+    return data, symmetric, markov_coordinates(symmetric, w)
+
+
+def run(model_names):
+    shard = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    suffix = "" if shard is None else f"_{shard}"
+    path = OUT / ("validation_" + sys.argv[1] + suffix + ".jsonl")
+    completed = set()
+    for existing in OUT.glob("validation_*.jsonl"):
+        for line in existing.read_text().splitlines():
+            r = json.loads(line)
+            completed.add((r["model"], r["replicate"], r["variant"]))
+    with threadpool_limits(limits=2), path.open("a", buffering=1) as output:
+        for model in model_names:
+            model_index = list(MODELS).index(model)
+            for replicate in range(MODELS[model]["replicates"]):
+                if shard is not None and replicate % 3 != shard:
+                    continue
+                if all((model, replicate, v) in completed for v in VARIANTS):
+                    continue
+                start = perf_counter()
+                counts, truth = generate(model_index, replicate)
+                fingerprint = hashlib.sha256(counts.tobytes()).hexdigest()
+                try:
+                    data, symmetric, markov = prepare(counts)
+                    prepare_error = None
+                except Exception as error:
+                    prepare_error = {"type": type(error).__name__, "message": str(error)}
+                preparation_sec = perf_counter()-start
+                del counts
+                for coordinates, variants in ((symmetric if prepare_error is None else None, VARIANTS[:2]),
+                                              (markov if prepare_error is None else None, VARIANTS[2:])):
+                    distances = pdist(coordinates) if prepare_error is None else None
+                    for variant in variants:
+                        if (model, replicate, variant) in completed:
+                            continue
+                        run_start = perf_counter()
+                        r = {"model": model, "replicate": replicate, "variant": variant,
+                             "seed_entropy": [20261103, model_index, replicate],
+                             "count_sha256": fingerprint, "n": len(truth), "true_k": len(np.unique(truth)),
+                             "preparation_sec": preparation_sec}
+                        try:
+                            if prepare_error is not None:
+                                raise RuntimeError(str(prepare_error))
+                            result = fit(data, distances, variant)
+                            r.update(summarize(result, truth))
+                            del result
+                        except Exception as error:
+                            r.update({"status": "exception", "error_type": type(error).__name__, "error": str(error)})
+                        r["fit_sec"] = perf_counter()-run_start
+                        output.write(json.dumps(r, default=str) + "\n")
+                    del distances
+                if prepare_error is None:
+                    del data, symmetric, markov
+                gc.collect()
+                if replicate % 10 == 0:
+                    print(f"{model} replicate {replicate+1}/{MODELS[model]['replicates']}, {perf_counter()-start:.2f}s", flush=True)
+
+
+def self_check():
+    x, labels = generate(0, 0)
+    y, labels2 = generate(0, 0)
+    np.testing.assert_array_equal(x, y)
+    np.testing.assert_array_equal(labels, labels2)
+    assert not np.array_equal(x, generate(0, 1)[0])
+    assert x.shape == (400, 3000) and len(np.unique(labels)) == 1
+    with threadpool_limits(limits=2):
+        data, symmetric, markov = prepare(x)
+        assert data.shape == (400, 30) and symmetric.shape == markov.shape
+        assert np.isfinite(symmetric).all() and np.isfinite(markov).all()
+        result = fit(data, pdist(symmetric), "symmetric_average")
+        record = summarize(result, labels)
+        assert record["status"] == "ok" and len(result.labels) == 400
+        print(json.dumps({k: record[k] for k in ("status", "found_clusters", "ari")}), flush=True)
+    write_json(OUT / "validation_self_check.json", {"status": "passed", "record": record})
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "self-check":
+        self_check()
+    elif sys.argv[1] == "low":
+        run(["null_low_depth_variation"])
+    elif sys.argv[1] == "high":
+        run(["null_high_depth_variation"])
+    elif sys.argv[1] == "signals":
+        run([name for name in MODELS if name.startswith("signal_")])
+    else:
+        raise ValueError("Use self-check, low, high or signals")

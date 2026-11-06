@@ -1,0 +1,191 @@
+cell_line,cancer_type,cells,category,dominant_cluster,dominant_recall,dominant_cluster_purity,lines_in_dominant_cluster
+2313287_STOMACH,Gastric Cancer,103,split,41,0.3495,0.5635,5
+42MGBA_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,518,giant_cluster,69,1.0,0.0267,144
+8305C_THYROID,Thyroid Cancer,459,giant_cluster,69,1.0,0.0267,144
+A204_SOFT_TISSUE,Sarcoma,250,recovered,7,1.0,1.0,1
+A2058_SKIN,Skin Cancer,294,separate_shared_cluster,68,0.9762,0.1446,16
+A375_SKIN,Skin Cancer,593,separate_shared_cluster,68,0.9848,0.1446,16
+ABC1_LUNG,Lung Cancer,311,giant_cluster,69,1.0,0.0267,144
+ACCMESO1_PLEURA,Lung Cancer,162,giant_cluster,69,1.0,0.0267,144
+ASPC1_PANCREAS,Pancreatic Cancer,290,recovered,11,0.9966,1.0,1
+BCPAP_THYROID,Thyroid Cancer,152,giant_cluster,69,1.0,0.0267,144
+BFTC909_KIDNEY,Kidney Cancer,379,giant_cluster,69,1.0,0.0267,144
+BHY_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,145,giant_cluster,69,1.0,0.0267,144
+BICR16_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,212,giant_cluster,69,1.0,0.0267,144
+BICR31_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,248,giant_cluster,69,1.0,0.0267,144
+BICR56_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,81,giant_cluster,69,1.0,0.0267,144
+BICR6_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,286,giant_cluster,69,1.0,0.0267,144
+BT474_BREAST,Breast Cancer,125,separate_shared_cluster,33,1.0,0.1775,9
+BT549_BREAST,Breast Cancer,266,giant_cluster,69,1.0,0.0267,144
+C32_SKIN,Skin Cancer,554,recovered,22,0.9982,1.0,1
+CAKI2_KIDNEY,Kidney Cancer,278,recovered,10,1.0,1.0,1
+CALU6_LUNG,Lung Cancer,258,giant_cluster,69,1.0,0.0267,144
+CAMA1_BREAST,Breast Cancer,291,separate_shared_cluster,33,1.0,0.1775,9
+CAOV3_OVARY,Ovarian Cancer,221,giant_cluster,69,1.0,0.0267,144
+CAS1_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,133,giant_cluster,69,1.0,0.0267,144
+CCFSTTG1_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,246,giant_cluster,69,1.0,0.0267,144
+CCK81_LARGE_INTESTINE,Colon/Colorectal Cancer,127,split,58,0.4173,0.3034,7
+CL34_LARGE_INTESTINE,Colon/Colorectal Cancer,378,split,53,0.3571,0.2517,7
+COLO680N_OESOPHAGUS,Esophageal Cancer,523,giant_cluster,69,1.0,0.0267,144
+COLO741_SKIN,Skin Cancer,329,separate_shared_cluster,68,0.997,0.1446,16
+COLO792_SKIN,Skin Cancer,271,separate_shared_cluster,68,1.0,0.1446,16
+COV434_OVARY,Ovarian Cancer,88,separate_shared_cluster,31,1.0,0.4837,3
+DANG_PANCREAS,Pancreatic Cancer,143,giant_cluster,69,1.0,0.0267,144
+DAOY_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,281,giant_cluster,69,1.0,0.0267,144
+DETROIT562_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,163,giant_cluster,69,1.0,0.0267,144
+DKMG_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,271,giant_cluster,69,1.0,0.0267,144
+EBC1_LUNG,Lung Cancer,186,giant_cluster,69,1.0,0.0267,144
+EFE184_ENDOMETRIUM,Endometrial/Uterine Cancer,86,recovered,28,0.9419,0.9529,2
+EFM192A_BREAST,Breast Cancer,333,separate_shared_cluster,33,0.997,0.1775,9
+EKVX_LUNG,Lung Cancer,146,giant_cluster,69,1.0,0.0267,144
+FTC133_THYROID,Thyroid Cancer,140,giant_cluster,69,1.0,0.0267,144
+GOS3_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,191,giant_cluster,69,0.9948,0.0267,144
+HCC1419_BREAST,Breast Cancer,221,separate_shared_cluster,33,1.0,0.1775,9
+HCC1428_BREAST,Breast Cancer,127,separate_shared_cluster,33,1.0,0.1775,9
+HCC366_LUNG,Lung Cancer,202,giant_cluster,69,1.0,0.0267,144
+HCC38_BREAST,Breast Cancer,200,giant_cluster,69,1.0,0.0267,144
+HCC56_LARGE_INTESTINE,Colon/Colorectal Cancer,99,split,53,0.3636,0.2517,7
+HDQP1_BREAST,Breast Cancer,64,giant_cluster,69,1.0,0.0267,144
+HEC108_ENDOMETRIUM,Endometrial/Uterine Cancer,172,giant_cluster,69,1.0,0.0267,144
+HEC151_ENDOMETRIUM,Endometrial/Uterine Cancer,250,giant_cluster,69,1.0,0.0267,144
+HEC251_ENDOMETRIUM,Endometrial/Uterine Cancer,107,giant_cluster,69,1.0,0.0267,144
+HEC59_ENDOMETRIUM,Endometrial/Uterine Cancer,385,giant_cluster,69,0.9688,0.0267,144
+HEC6_ENDOMETRIUM,Endometrial/Uterine Cancer,161,giant_cluster,69,1.0,0.0267,144
+HEP3B217_LIVER,Liver Cancer,118,separate_shared_cluster,14,1.0,0.6254,2
+HMC18_BREAST,Breast Cancer,293,recovered,12,1.0,1.0,1
+HOS_BONE,Bone Cancer,829,recovered,26,0.9891,1.0,1
+HS729_SOFT_TISSUE,Fibroblast,215,giant_cluster,69,1.0,0.0267,144
+HS852T_SKIN,Skin Cancer,162,separate_shared_cluster,68,1.0,0.1446,16
+HS939T_SKIN,Skin Cancer,236,separate_shared_cluster,68,1.0,0.1446,16
+HT1080_SOFT_TISSUE,Sarcoma,516,giant_cluster,69,0.9884,0.0267,144
+HT1197_URINARY_TRACT,Bladder Cancer,74,giant_cluster,69,1.0,0.0267,144
+HT1376_URINARY_TRACT,Bladder Cancer,120,giant_cluster,69,1.0,0.0267,144
+HT55_LARGE_INTESTINE,Colon/Colorectal Cancer,211,split,53,0.4123,0.2517,7
+HUCCT1_BILIARY_TRACT,Bile Duct Cancer,241,giant_cluster,69,1.0,0.0267,144
+HUH28_BILIARY_TRACT,Bile Duct Cancer,139,giant_cluster,69,1.0,0.0267,144
+HUH6_LIVER,Liver Cancer,338,recovered,16,0.9941,1.0,1
+HUPT3_PANCREAS,Pancreatic Cancer,136,giant_cluster,69,1.0,0.0267,144
+HUPT4_PANCREAS,Pancreatic Cancer,56,giant_cluster,69,1.0,0.0267,144
+IALM_LUNG,Lung Cancer,322,giant_cluster,69,1.0,0.0267,144
+IGR1_SKIN,Skin Cancer,725,recovered,23,0.9945,0.9986,2
+IGR37_SKIN,Skin Cancer,347,separate_shared_cluster,68,0.9712,0.1446,16
+IM95_STOMACH,Gastric Cancer,185,recovered,2,1.0,1.0,1
+JHH6_LIVER,Liver Cancer,206,giant_cluster,69,1.0,0.0267,144
+JHH7_LIVER,Liver Cancer,198,separate_shared_cluster,14,0.9949,0.6254,2
+JHOC5_OVARY,Ovarian Cancer,145,giant_cluster,69,1.0,0.0267,144
+JHOS2_OVARY,Ovarian Cancer,213,giant_cluster,69,1.0,0.0267,144
+KALS1_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,288,giant_cluster,69,1.0,0.0267,144
+KMRC3_KIDNEY,Kidney Cancer,245,giant_cluster,69,1.0,0.0267,144
+KNS42_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,172,recovered,1,0.9884,1.0,1
+KPL1_BREAST,Breast Cancer,276,separate_shared_cluster,33,1.0,0.1775,9
+KPNSI9S_AUTONOMIC_GANGLIA,Neuroblastoma,129,giant_cluster,69,1.0,0.0267,144
+KYSE520_OESOPHAGUS,Esophageal Cancer,323,giant_cluster,69,1.0,0.0267,144
+LI7_LIVER,Liver Cancer,196,giant_cluster,69,1.0,0.0267,144
+LMSU_STOMACH,Gastric Cancer,255,giant_cluster,69,1.0,0.0267,144
+LNCAPCLONEFGC_PROSTATE,Prostate Cancer,129,giant_cluster,69,1.0,0.0267,144
+LS1034_LARGE_INTESTINE,Colon/Colorectal Cancer,146,split,38,0.2808,0.7593,6
+LS180_LARGE_INTESTINE,Colon/Colorectal Cancer,361,split,53,0.3435,0.2517,7
+MCF7_BREAST,Breast Cancer,143,separate_shared_cluster,33,1.0,0.1775,9
+MDAMB361_BREAST,Breast Cancer,135,separate_shared_cluster,33,1.0,0.1775,9
+MDAMB436_BREAST,Breast Cancer,281,giant_cluster,69,1.0,0.0267,144
+MFE280_ENDOMETRIUM,Endometrial/Uterine Cancer,217,giant_cluster,69,1.0,0.0267,144
+MFE319_ENDOMETRIUM,Endometrial/Uterine Cancer,191,giant_cluster,69,1.0,0.0267,144
+MKN45_STOMACH,Gastric Cancer,118,split,41,0.3305,0.5635,5
+MKN7_STOMACH,Gastric Cancer,258,giant_cluster,69,1.0,0.0267,144
+MSTO211H_PLEURA,Lung Cancer,297,giant_cluster,69,1.0,0.0267,144
+NCIH1048_LUNG,Lung Cancer,400,giant_cluster,69,1.0,0.0267,144
+NCIH1299_LUNG,Lung Cancer,534,giant_cluster,69,1.0,0.0267,144
+NCIH1373_LUNG,Lung Cancer,164,giant_cluster,69,1.0,0.0267,144
+NCIH1435_LUNG,Lung Cancer,267,giant_cluster,69,1.0,0.0267,144
+NCIH1568_LUNG,Lung Cancer,287,split,8,0.8676,1.0,1
+NCIH1792_LUNG,Lung Cancer,111,giant_cluster,69,1.0,0.0267,144
+NCIH1944_LUNG,Lung Cancer,414,recovered,19,1.0,1.0,1
+NCIH2073_LUNG,Lung Cancer,176,giant_cluster,69,1.0,0.0267,144
+NCIH2077_LUNG,Lung Cancer,445,separate_shared_cluster,21,1.0,0.8509,2
+NCIH2087_LUNG,Lung Cancer,219,giant_cluster,69,1.0,0.0267,144
+NCIH2110_LUNG,Lung Cancer,1990,recovered,34,1.0,1.0,1
+NCIH2126_LUNG,Lung Cancer,264,giant_cluster,69,1.0,0.0267,144
+NCIH2170_LUNG,Lung Cancer,142,giant_cluster,69,1.0,0.0267,144
+NCIH2228_LUNG,Lung Cancer,367,giant_cluster,69,1.0,0.0267,144
+NCIH226_LUNG,Lung Cancer,235,giant_cluster,69,1.0,0.0267,144
+NCIH2347_LUNG,Lung Cancer,145,giant_cluster,69,1.0,0.0267,144
+NCIH2444_LUNG,Lung Cancer,237,giant_cluster,69,1.0,0.0267,144
+NCIH2452_PLEURA,Lung Cancer,538,giant_cluster,69,1.0,0.0267,144
+NCIH292_LUNG,Lung Cancer,213,giant_cluster,69,1.0,0.0267,144
+NCIH358_LUNG,Lung Cancer,336,giant_cluster,69,1.0,0.0267,144
+NCIH446_LUNG,Lung Cancer,196,recovered,4,1.0,1.0,1
+NCIH460_LUNG,Lung Cancer,837,recovered,24,0.9928,1.0,1
+NCIH522_LUNG,Lung Cancer,208,recovered,6,1.0,1.0,1
+NCIH650_LUNG,Lung Cancer,271,giant_cluster,69,1.0,0.0267,144
+NCIH727_LUNG,Lung Cancer,270,recovered,9,0.9889,1.0,1
+NCIH747_LARGE_INTESTINE,Colon/Colorectal Cancer,80,giant_cluster,69,1.0,0.0267,144
+OAW28_OVARY,Ovarian Cancer,161,recovered,0,0.9379,1.0,1
+ONCODG1_OVARY,Ovarian Cancer,270,recovered,17,0.9519,1.0,1
+OSRC2_KIDNEY,Kidney Cancer,126,giant_cluster,69,1.0,0.0267,144
+OUMS23_LARGE_INTESTINE,Colon/Colorectal Cancer,107,recovered,62,0.9813,0.9813,2
+OVCAR4_OVARY,Ovarian Cancer,283,split,27,0.8375,1.0,1
+OVK18_OVARY,Ovarian Cancer,178,separate_shared_cluster,31,1.0,0.4837,3
+OVSAHO_OVARY,Ovarian Cancer,227,recovered,30,0.9868,0.9825,2
+OVTOKO_OVARY,Ovarian Cancer,209,giant_cluster,69,1.0,0.0267,144
+PANC0203_PANCREAS,Pancreatic Cancer,506,giant_cluster,69,1.0,0.0267,144
+PANC1_PANCREAS,Pancreatic Cancer,159,giant_cluster,69,1.0,0.0267,144
+PATU8988S_PANCREAS,Pancreatic Cancer,244,split,41,0.418,0.5635,5
+PC3_PROSTATE,Prostate Cancer,169,giant_cluster,69,1.0,0.0267,144
+PECAPJ49_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,202,giant_cluster,69,1.0,0.0267,144
+PK45H_PANCREAS,Pancreatic Cancer,271,giant_cluster,69,1.0,0.0267,144
+PK59_PANCREAS,Pancreatic Cancer,174,giant_cluster,69,1.0,0.0267,144
+RCC10RGB_KIDNEY,Kidney Cancer,233,giant_cluster,69,1.0,0.0267,144
+RCM1_LARGE_INTESTINE,Colon/Colorectal Cancer,128,split,42,0.3516,1.0,1
+RD_SOFT_TISSUE,Sarcoma,261,giant_cluster,69,1.0,0.0267,144
+RERFLCAD1_LUNG,Lung Cancer,243,giant_cluster,69,1.0,0.0267,144
+RERFLCAI_LUNG,Lung Cancer,763,giant_cluster,69,1.0,0.0267,144
+RERFLCKJ_LUNG,Lung Cancer,87,giant_cluster,69,1.0,0.0267,144
+RT4_URINARY_TRACT,Bladder Cancer,106,giant_cluster,69,1.0,0.0267,144
+RVH421_SKIN,Skin Cancer,239,separate_shared_cluster,68,1.0,0.1446,16
+SBC5_LUNG,Lung Cancer,102,separate_shared_cluster,31,1.0,0.4837,3
+SH10TC_STOMACH,Gastric Cancer,351,giant_cluster,69,1.0,0.0267,144
+SJSA1_BONE,Bone Cancer,110,giant_cluster,69,1.0,0.0267,144
+SKES1_BONE,Bone Cancer,91,recovered,64,0.989,1.0,1
+SKMEL2_SKIN,Skin Cancer,276,separate_shared_cluster,68,0.9964,0.1446,16
+SKMEL30_SKIN,Skin Cancer,353,separate_shared_cluster,68,0.9972,0.1446,16
+SKMEL3_SKIN,Skin Cancer,194,separate_shared_cluster,68,0.9691,0.1446,16
+SKMEL5_SKIN,Skin Cancer,297,separate_shared_cluster,68,1.0,0.1446,16
+SKMES1_LUNG,Lung Cancer,144,giant_cluster,69,1.0,0.0267,144
+SKNAS_AUTONOMIC_GANGLIA,Neuroblastoma,226,recovered,5,1.0,1.0,1
+SNU1077_ENDOMETRIUM,Endometrial/Uterine Cancer,172,giant_cluster,69,1.0,0.0267,144
+SNU1079_BILIARY_TRACT,Bile Duct Cancer,73,giant_cluster,69,1.0,0.0267,144
+SNU1196_BILIARY_TRACT,Bile Duct Cancer,286,giant_cluster,69,1.0,0.0267,144
+SNU1214_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,188,giant_cluster,69,1.0,0.0267,144
+SNU308_BILIARY_TRACT,Gallbladder Cancer,94,giant_cluster,69,1.0,0.0267,144
+SNU423_LIVER,Liver Cancer,212,giant_cluster,69,1.0,0.0267,144
+SNU449_LIVER,Liver Cancer,282,recovered,20,0.9965,1.0,1
+SNU46_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,236,giant_cluster,69,1.0,0.0267,144
+SNU738_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,379,giant_cluster,69,1.0,0.0267,144
+SNU899_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,83,giant_cluster,69,1.0,0.0267,144
+SNUC4_LARGE_INTESTINE,Colon/Colorectal Cancer,467,split,58,0.3619,0.3034,7
+SQ1_LUNG,Lung Cancer,238,giant_cluster,69,1.0,0.0267,144
+SU8686_PANCREAS,Pancreatic Cancer,82,giant_cluster,69,1.0,0.0267,144
+SW1088_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,128,giant_cluster,69,1.0,0.0267,144
+SW1271_LUNG,Lung Cancer,115,giant_cluster,69,1.0,0.0267,144
+SW1990_PANCREAS,Pancreatic Cancer,307,giant_cluster,69,1.0,0.0267,144
+SW579_THYROID,Thyroid Cancer,217,giant_cluster,69,1.0,0.0267,144
+T47D_BREAST,Breast Cancer,221,separate_shared_cluster,33,0.9955,0.1775,9
+TCCSUP_URINARY_TRACT,Bladder Cancer,316,recovered,15,0.9968,1.0,1
+TE10_OESOPHAGUS,Esophageal Cancer,219,giant_cluster,69,1.0,0.0267,144
+TE14_OESOPHAGUS,Esophageal Cancer,474,giant_cluster,69,1.0,0.0267,144
+TE1_OESOPHAGUS,Esophageal Cancer,206,giant_cluster,69,1.0,0.0267,144
+TE6_OESOPHAGUS,Esophageal Cancer,551,giant_cluster,69,1.0,0.0267,144
+TE9_OESOPHAGUS,Esophageal Cancer,248,giant_cluster,69,1.0,0.0267,144
+TEN_ENDOMETRIUM,Endometrial/Uterine Cancer,316,recovered,18,0.9842,0.9968,2
+TM31_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,116,giant_cluster,69,1.0,0.0267,144
+TOV112D_OVARY,Ovarian Cancer,78,separate_shared_cluster,21,1.0,0.8509,2
+TOV21G_OVARY,Ovarian Cancer,305,giant_cluster,69,1.0,0.0267,144
+TYKNU_OVARY,Ovarian Cancer,117,giant_cluster,69,1.0,0.0267,144
+U118MG_CENTRAL_NERVOUS_SYSTEM,Brain Cancer,244,giant_cluster,69,1.0,0.0267,144
+UACC257_SKIN,Skin Cancer,239,separate_shared_cluster,68,0.9833,0.1446,16
+UMUC1_URINARY_TRACT,Bladder Cancer,197,giant_cluster,69,1.0,0.0267,144
+VMCUB1_URINARY_TRACT,Bladder Cancer,478,giant_cluster,69,1.0,0.0267,144
+VMRCRCZ_KIDNEY,Kidney Cancer,300,giant_cluster,69,1.0,0.0267,144
+WM88_SKIN,Skin Cancer,242,separate_shared_cluster,68,0.9959,0.1446,16
+YD38_UPPER_AERODIGESTIVE_TRACT,Head and Neck Cancer,624,giant_cluster,69,1.0,0.0267,144
+ZR751_BREAST,Breast Cancer,309,recovered,13,1.0,1.0,1

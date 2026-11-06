@@ -1,0 +1,31 @@
+{
+  "output_dir": "/Users/berksakalli/Projects/kl-te-cluster/results/analyses/choir_tbs_recovery_comparison_20261103_174622",
+  "core_sha256": {
+    "tree_break_selection/space_separation/diffusion.py": "965f539371a4b38292799d50f97798cef9743c18a41b136b1023b8e44219218a",
+    "benchmarks/shared/runners/tbs_runner.py": "0f12c8996a9f65db265d6d86836e3e70e5ad02ae5e0480e604d5e6dbd6805f64",
+    "benchmarks/shared/runners/method_registry.py": "790310bebb888045875c7b15f77321c0b4877fc68d4e3a19f2a908a0e025a6ca"
+  },
+  "reused_input_sha256": {
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/pca.npy": "a2ef1e696acada626d996e7fda7e40522054cd3ebb1a855a5cb83be58a984283",
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/diffusion_kernel.npz": "7b10e4e380a9a5c702fbc00062d738ff9a14a3b8ca87eff3b8ad2f190e0fe00b",
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/diffusion_coordinates.npy": "c6844134eb7b8257650b67c2108d7ed7d06aeab2e7f8b19f98a5d5a88e18c79e",
+    "results/analyses/choir_cell_lines_tbs_20261103_163359/cell_metadata.csv": "744d353a2aa4308b04e67b9c4e8e487d65084900791c1b6b0faf9d7ad705c9ad"
+  },
+  "capture_sha256": {
+    "tbs-recovery-validation.jsonl.gz": "b7d456d7d5bd00123f62c4a9b762784bbadf994bb5605c6862e1ecc06e4d9075",
+    "tbs-recovery-execution-sharding.json": "b8ad2aa5b8946f67e61f83411dd2c21e771f2124c69b80e51ae848fbc3312f6a",
+    "tbs-recovery-protocol.json": "0378e282b79fd2ee23c6ca693f66e760cedc48eb22d4cb8a4ee074db085d4044",
+    "tbs-recovery-compare-script.py.txt": "05d998d09673480c5346167eaeb3bf068388148705fad63f4232fc3ad268f4cb",
+    "tbs-recovery-validate-script.py.txt": "2f0448b298a64caae61a9f48e73c49d45201bf293800b77af23c5c2232d27017",
+    "tbs-recovery-execution-hashes.json": "85bbf5bb2bef0e2209cf61331b258834abc5580cf67a62c86824cecfbeea9908",
+    "tbs-recovery-verification.json": "d6dfd7199a0983adf99881245d2260ad9660ab0e0783a574b8d3ddedb0a44887",
+    "tbs-recovery-comparison.csv": "a9d77b0d970151c13979319ae8ac1797d8cd6df4f7154a939c7ad90019e3ddae",
+    "tbs-recovery-failure-capture.json": "b6d6e24e305c98c63c095a73352c8161ab66e089efa035ce424451f108310893",
+    "tbs-recovery-validation-signal.csv": "7e3b487067150900d531d31c232bc55323855e32bae61a9c91304e2f11b6bbc5",
+    "tbs-recovery-comparison.md": "966e39613e383480a2087fff73e92c67a2f32da94106dde6c80e4f5b9193e851",
+    "tbs-recovery-validation-null.csv": "15f33649d212b4bb42e269d0d855c896cd72a469609aec209b7419cc16d7df97",
+    "tbs-recovery-aggregate-script.py.txt": "9698ea68ba0c286d910de6b780c2408a7683d1489be280d8076d149465de41b7",
+    "tbs-recovery-capture_failed_topologies-script.py.txt": "853b96c6ddb217dc19a261a552aac9eb24f3f87fc150aa15d8c1084640b91b69"
+  },
+  "no_production_defaults_or_dependencies_changed": true
+}

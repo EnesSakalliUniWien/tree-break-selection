@@ -1,0 +1,63 @@
+"""Known-covariance root selective inference through native diffusion replay.
+
+Condition on the full average-linkage merge history, nuisance offset and
+contrast direction. The proposal budget is fixed independently of the observed
+radius. Conditional on the accepted count, the observation and accepted radii
+are exchangeable under the declared Gaussian contrast null.
+
+This diagnostic uses floating replay and has no interval-certification or
+descendant-traversal guarantee. Run serially because the existing replay
+temporarily instruments native functions.
+"""
+
+import numpy as np
+from scipy.stats import chi
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_replay import (
+    make_diffusion_root_path,
+)
+
+
+def selected_diffusion_root_mc_test(values, *, sigma, proposals=999, seed=0):
+    """Return a randomized conditional rank p-value for a known Gaussian scale.
+
+    A zero acceptance count gives p=1. Any unresolved membership gives no
+    p-value, since silently excluding it would change the conditional law.
+    """
+    if isinstance(proposals, bool) or not isinstance(proposals, (int, np.integer)):
+        raise ValueError("proposals must be a positive integer")
+    if proposals < 1:
+        raise ValueError("proposals must be a positive integer")
+    rng = np.random.default_rng(seed)
+    path = make_diffusion_root_path(values, sigma=sigma)
+    draws = np.sqrt(rng.chisquare(path.dimension, size=proposals))
+    accepted = []
+    result = {
+        "status": "complete",
+        "selection_event": "full_merge_history",
+        "sigma": float(sigma),
+        "dimension": path.dimension,
+        "observed_radius": path.observed_radius,
+        "nominal_p_value": float(chi.sf(path.observed_radius, path.dimension)),
+        "proposals_requested": int(proposals),
+        "seed": seed,
+        "observed_signature": path.observed_signature,
+        "source_hashes": path.source_hashes,
+        "accepted_radii": accepted,
+        "p_value": None,
+        "minimum_p_value": None,
+    }
+    for index, radius in enumerate(draws):
+        point = path.evaluate(radius)
+        result["proposals_evaluated"] = index + 1
+        if point.status == "selected":
+            accepted.append(float(radius))
+        elif point.status != "nonselected":
+            result.update(status="unresolved", error=point.error, replay_status=point.status)
+            break
+    result["accepted_count"] = len(accepted)
+    if result["status"] == "complete":
+        exceedances = sum(radius >= path.observed_radius for radius in accepted)
+        result["p_value"] = (1 + exceedances) / (1 + len(accepted))
+        result["minimum_p_value"] = 1 / (1 + len(accepted))
+    return result

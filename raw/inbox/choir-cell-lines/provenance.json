@@ -1,0 +1,92 @@
+{
+  "retrieved_at": "2026-11-03T14:08:36.893432+01:00",
+  "article": "https://www.nature.com/articles/s41588-025-02148-8",
+  "selected_dataset": "Pooled cancer cell lines (Figures 3\u20134)",
+  "accession": "GSE157220",
+  "author_repository_commit": "3d057a88e87ef318dc5206b815023820dddf5954",
+  "python": "3.12.11 (main, Jun  3 2025, 15:41:47) [Clang 17.0.0 (clang-1700.0.13.3)]",
+  "packages": {
+    "anndata": "0.12.18",
+    "pandas": "2.3.3",
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "h5py": "3.16.0"
+  },
+  "sources": [
+    {
+      "path": "local_data/choir/kinker_2020/GSE157220_CPM_data.txt.gz",
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE157nnn/GSE157220/suppl/GSE157220_CPM_data.txt.gz",
+      "bytes": 1778171720,
+      "sha256": "02b6532d7292e91c58c0a72498782ccbb9cee6e4a012985663e51016b14b655b"
+    },
+    {
+      "path": "local_data/choir/kinker_2020/SourceData1_RealData.xlsx",
+      "url": "https://zenodo.org/api/records/14641222/files/SourceData1_RealData.xlsx/content",
+      "bytes": 338291858,
+      "sha256": "46c80a99c89513b88109ac2a8a8110033cf4a09afefa389d8f57ab4c7df08248",
+      "published_md5": "f4caaf68de2c5710197218f310fbe3ef",
+      "published_md5_verified": true
+    },
+    {
+      "path": "raw/inbox/choir-cell-lines/GSE157220.series.soft.txt",
+      "bytes": 2362,
+      "sha256": "bcd2de89c5e6eb3a4d7a377d7b0f5a67e93269968c029b732cf02377693c89a3"
+    },
+    {
+      "path": "raw/inbox/choir-cell-lines/GSE157220_Pool_composition.xlsx",
+      "bytes": 15219,
+      "sha256": "7f71f3d7223a9d92ed51c810fafc0e150dd5be0b362e0e3f49f973b949ee62b0"
+    },
+    {
+      "path": "raw/inbox/choir-cell-lines/GSM4759276.sample.soft.txt",
+      "bytes": 8107,
+      "sha256": "e49fe80fc54e37aec4d10b23ad984644a0a808978a3938668d8202157dbd6c66"
+    },
+    {
+      "path": "raw/inbox/choir-cell-lines/Kinker_2020_cancer_cell_lines.R",
+      "bytes": 57259,
+      "sha256": "267e19bf7d5e67ea6eeb924006648c523291a4fdc5b4db2f82a78150d6c37cf5"
+    },
+    {
+      "path": "raw/inbox/choir-cell-lines/zenodo-14641222.json",
+      "bytes": 7386,
+      "sha256": "8ad6348dfe228219eb167373c8112273c2e5561eba9d61d5622f2998ef279334"
+    }
+  ],
+  "label_extraction": {
+    "source_sheet": "Cell lines - Cell labels",
+    "source_sheet_xml": "xl/worksheets/sheet10.xml",
+    "header_row": 18,
+    "rows": 48879,
+    "columns": 109,
+    "method": "Python standard-library zipfile and ElementTree; shared strings resolved, cells positioned by spreadsheet column reference; no openpyxl installation"
+  },
+  "id_mapping": "Pool{library}_{pool}#{barcode}-1 -> {barcode}-{library}-{pool}",
+  "mapping_validation": {
+    "source_ids_unique": true,
+    "geo_ids_unique": true,
+    "mapped_ids_unique": true,
+    "matched": 48879,
+    "unmatched_source_label_rows": 0
+  },
+  "bulk_storage": "local_data/ is Git-ignored; bulk downloads and derived AnnData are local-only",
+  "not_run": [
+    "raw SRA read download or alignment",
+    "CHOIR preprocessing or clustering",
+    "Tree-Break Selection clustering",
+    "normalization",
+    "log transformation"
+  ],
+  "local_processing_files": [
+    {
+      "path": "local_data/choir/kinker_2020/choir_cell_labels.csv",
+      "bytes": 18699809,
+      "sha256": "7af0dd86133637c6c263af418dce97a26880a3dd893528d15bae8e822bde90c8"
+    },
+    {
+      "path": "local_data/choir/kinker_2020/load_geo.py",
+      "bytes": 4659,
+      "sha256": "267640bea8ce653af1616afc88d8cdd36e9e846094bc3aa6d2c668cb82e05a2e"
+    }
+  ]
+}

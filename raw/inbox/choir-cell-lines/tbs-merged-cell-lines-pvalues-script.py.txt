@@ -1,0 +1,103 @@
+"""Cell-line breakdown, sibling tests and cluster stops of the merged cancer rerun.
+
+Usage: python <this file> <run folder> <output folder>
+Reads cluster_assignments.csv, annotations.csv and linkage.npy from the run folder.
+"""
+
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+RUN, OUT = Path(sys.argv[1]), Path(sys.argv[2])
+STAMP = "20261106"
+
+assignments = pd.read_csv(RUN / "cluster_assignments.csv")
+annotations = pd.read_csv(RUN / "annotations.csv", index_col=0, low_memory=False)
+z = np.load(RUN / "linkage.npy")
+n = len(z) + 1
+labels = assignments.TBS_cluster.to_numpy()
+flag = lambda column: annotations[column].fillna(False).astype(bool)
+name = lambda k: f"L{k}" if k < n else f"N{k}"
+size = np.r_[np.ones(n, int), z[:, 3].astype(int)]
+
+# Cell lines: recovered means >=90% of the line in its dominant cluster and that
+# cluster >=90% the line. The giant cluster is the largest TBS cluster.
+table = pd.crosstab(assignments.Cell_line, assignments.TBS_cluster)
+cells = table.sum(axis=1)
+dominant = table.idxmax(axis=1)
+recall = table.max(axis=1) / cells
+purity = table.max(axis=0) / table.sum(axis=0)
+lines_in_cluster = (table > 0).sum(axis=0)
+giant = assignments.TBS_cluster.value_counts().index[0]
+cancer_type = assignments.groupby("Cell_line").Cancer_type.first()
+
+
+def category(line):
+    if dominant[line] == giant:
+        return "giant_cluster"
+    if recall[line] >= 0.9 and purity[dominant[line]] >= 0.9:
+        return "recovered"
+    if recall[line] >= 0.9:
+        return "separate_shared_cluster"
+    return "split"
+
+
+breakdown = pd.DataFrame({
+    "cancer_type": cancer_type,
+    "cells": cells,
+    "category": [category(line) for line in table.index],
+    "dominant_cluster": dominant,
+    "dominant_recall": recall.round(4),
+    "dominant_cluster_purity": purity[dominant].to_numpy().round(4),
+    "lines_in_dominant_cluster": lines_in_cluster[dominant].to_numpy(),
+})
+breakdown.index.name = "cell_line"
+breakdown.to_csv(OUT / f"tbs-merged-cell-line-breakdown-{STAMP}.csv")
+
+# Sibling tests: the stored statistic is already divided by reference scale and c_hat.
+tested = annotations[annotations.Sibling_Divergence_P_Value_Corrected.notna()]
+sibling = pd.DataFrame({
+    "leaf_count": tested.leaf_count,
+    "estimator": tested.Sibling_Test_Method.str.split(":").str[1],
+    "decision": np.where(flag("Sibling_BH_Different")[tested.index], "different", "same"),
+    "adjusted_statistic": tested.Sibling_Test_Statistic,
+    "degrees_of_freedom": tested.Sibling_Degrees_of_Freedom,
+    "p_value": tested.Sibling_Divergence_P_Value,
+    "p_value_bh": tested.Sibling_Divergence_P_Value_Corrected,
+})
+sibling.to_csv(OUT / f"tbs-merged-sibling-tests-{STAMP}.csv")
+
+# Cluster stops: the largest subtree wholly inside a cluster is its core; passed-through
+# peel leaves can join a cluster from outside that subtree.
+significant = flag("Child_Parent_Divergence_Significant")
+different = flag("Sibling_BH_Different")
+rows = []
+for cluster in np.unique(labels):
+    count = np.r_[(labels == cluster).astype(int), np.zeros(n - 1, int)]
+    for i, (left, right) in enumerate(z[:, :2].astype(int)):
+        count[n + i] = count[left] + count[right]
+    pure = np.flatnonzero(count == size)
+    core = pure[np.argmax(size[pure])]
+    row = {"cluster": cluster, "cells": int(count[: n].sum()), "core_node": name(core),
+           "core_cells": int(size[core])}
+    if core < n:
+        row.update(reason="single_leaf")
+    else:
+        children = z[core - n, :2].astype(int)
+        bh = annotations.loc[[name(k) for k in children], "Child_Parent_Divergence_P_Value_BH"]
+        row.update(
+            smaller_child_cells=int(size[children].min()),
+            larger_child_cells=int(size[children].max()),
+            child_edge_bh_p_values=";".join(f"{v:.6g}" for v in bh),
+            reason="edge_gate_closed" if not all(significant[name(k)] for k in children)
+            else "sibling_same" if not different[name(core)] else "other",
+        )
+    rows.append(row)
+stops = pd.DataFrame(rows)
+stops.to_csv(OUT / f"tbs-merged-cluster-stops-{STAMP}.csv", index=False)
+
+print(breakdown.category.value_counts().to_string())
+print(sibling.groupby(["decision", "estimator"]).size().unstack(fill_value=0).to_string())
+print(stops.reason.value_counts().to_string())

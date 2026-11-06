@@ -1,0 +1,49 @@
+{
+  "seed": 2026110444,
+  "dimension": 2,
+  "selection_region": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      "infinity"
+    ]
+  ],
+  "selection_mass": 0.48230437301426304,
+  "proposals": 199,
+  "levels": [
+    {
+      "alpha": 0.01,
+      "rejections": 59,
+      "replicates": 20000,
+      "clopper_pearson_95": [
+        0.0022464121018634766,
+        0.003803657075795067
+      ],
+      "analytic_rank_size": 0.0034561068278818243
+    },
+    {
+      "alpha": 0.05,
+      "rejections": 863,
+      "replicates": 20000,
+      "clopper_pearson_95": [
+        0.04037551282381022,
+        0.04605825410519315
+      ],
+      "analytic_rank_size": 0.04484644700291435
+    },
+    {
+      "alpha": 0.1,
+      "rejections": 1925,
+      "replicates": 20000,
+      "clopper_pearson_95": [
+        0.09219640109503482,
+        0.10042139344290782
+      ],
+      "analytic_rank_size": 0.09533475992068546
+    }
+  ],
+  "wolfram_example_tail": 0.01239056336490901
+}

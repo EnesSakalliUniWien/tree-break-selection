@@ -1,0 +1,24 @@
+{
+  "tree_bh_family_arithmetic": "passed",
+  "sibling_frontier_reaches_A_despite_root_sibling_p_0_9": true,
+  "root_without_passthrough": "boundary",
+  "root_with_passthrough": "pass_through",
+  "closed_edge_blocks_passthrough": "boundary",
+  "calibration_two_records_c": 5.5,
+  "calibration_eleven_records_c": 1.8181818181818181,
+  "dependency_group_ess_both_models": [
+    2.0,
+    2.0
+  ],
+  "mean_null_is_not_descendant_null_intersection": {
+    "A1": -1,
+    "A2": 1,
+    "B1": 0,
+    "B2": 0,
+    "A": 0.0,
+    "B": 0.0,
+    "root": 0.0
+  },
+  "invalid_p_uniform_squared_root_false_rejection_probability": 0.22360679774997896,
+  "scope": "Deterministic code-boundary and algebra checks; not a full-pipeline error estimate."
+}

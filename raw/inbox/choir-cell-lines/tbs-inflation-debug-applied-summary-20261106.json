@@ -1,0 +1,19 @@
+{
+  "mode": "applied",
+  "status": "ok",
+  "found_clusters": 70,
+  "ari_cell_line": 0.027593019431459306,
+  "nmi_cell_line": 0.5482191567821487,
+  "recovered_lines_90_90": 27,
+  "ari_vs_merged_rerun": 1.0,
+  "traversal_counters": {
+    "live_nodes_visited": 145,
+    "live_internal_tuples": 138,
+    "live_split_count": 45,
+    "live_pass_through_count": 27,
+    "live_boundary_count": 70,
+    "live_passthrough_candidate_count": 27,
+    "live_passthrough_support_blocked_count": 0
+  },
+  "elapsed_sec": 109.89617541700136
+}

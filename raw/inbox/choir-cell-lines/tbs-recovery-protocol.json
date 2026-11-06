@@ -1,0 +1,152 @@
+{
+  "frozen_at_utc": "2026-11-03T16:50:37.890374+00:00",
+  "real_variants": [
+    "symmetric_average",
+    "symmetric_ward",
+    "markov_average",
+    "markov_ward"
+  ],
+  "real_baseline": "results/analyses/choir_cell_lines_tbs_20261103_163359",
+  "all_cells": 48879,
+  "params": {
+    "edge_branch_length_variance_policy": "normalized_branch_length",
+    "branch_length_optimization_method": "fixed_topology_nnls",
+    "branch_length_optimization_target_metric": "mean_squared_standardized_euclidean",
+    "branch_length_optimization_pair_sample_size": 50000,
+    "branch_length_optimization_random_state": 0,
+    "branch_length_optimization_solver_tolerance": 1e-05,
+    "branch_length_optimization_max_iterations": 1000,
+    "tree_distance_metric": "feature_family_diffusion",
+    "tree_linkage_method": "average"
+  },
+  "edge_alpha": 0.001,
+  "sibling_alpha": 0.01,
+  "adaptive_projection_dimension_energy_fraction": 0.9,
+  "coordinate_formula": "Phi_M = D^(-1/2) Phi_S; same W, eigenpairs, rank and diffusion time 3",
+  "validation": {
+    "models": {
+      "null_low_depth_variation": {
+        "sizes": [
+          400
+        ],
+        "library_log_sigma": 0.25,
+        "dispersion": [
+          8.0
+        ],
+        "replicates": 300
+      },
+      "null_high_depth_variation": {
+        "sizes": [
+          400
+        ],
+        "library_log_sigma": 1.0,
+        "dispersion": [
+          8.0
+        ],
+        "replicates": 300
+      },
+      "signal_balanced": {
+        "sizes": [
+          250,
+          250,
+          250,
+          250
+        ],
+        "library_log_sigma": 0.25,
+        "dispersion": [
+          8.0,
+          8.0,
+          8.0,
+          8.0
+        ],
+        "replicates": 10
+      },
+      "signal_imbalanced": {
+        "sizes": [
+          700,
+          200,
+          80,
+          20
+        ],
+        "library_log_sigma": 0.25,
+        "dispersion": [
+          8.0,
+          8.0,
+          8.0,
+          8.0
+        ],
+        "replicates": 10
+      },
+      "signal_singleton": {
+        "sizes": [
+          700,
+          200,
+          80,
+          20,
+          1
+        ],
+        "library_log_sigma": 0.25,
+        "dispersion": [
+          8.0,
+          8.0,
+          8.0,
+          8.0,
+          8.0
+        ],
+        "replicates": 10
+      },
+      "signal_density_variation": {
+        "sizes": [
+          2100,
+          600,
+          240,
+          60
+        ],
+        "library_log_sigma": 1.0,
+        "dispersion": [
+          2.0,
+          8.0,
+          20.0,
+          4.0
+        ],
+        "replicates": 5
+      }
+    },
+    "seed_sequence_entropy": [
+      20261103,
+      "model_index",
+      "replicate_index"
+    ],
+    "all_four_variants": true,
+    "genes": 3000,
+    "base_gene_log_mean": 1.0,
+    "base_gene_log_sd": 1.0,
+    "markers_per_group": 60,
+    "marker_log_fold_change": 2.5,
+    "count_distribution": "negative_binomial(theta, theta/(theta+mean)); independent entries conditional on gene means, class and cell library factor",
+    "library_factor": "lognormal(-sigma^2/2,sigma)",
+    "preprocessing": "counts -> CPM; log1p(CPM/100); Seurat HVG2000; scale(max_value=10); PCA30(arpack,random_state=0); native kernel and eigenpairs rebuilt for every independent dataset",
+    "null_endpoint": "P(final K>1) per independent homogeneous dataset",
+    "null_target": 0.01,
+    "confidence": "one-sided 95% exact binomial marginal bounds; no simultaneous or universal calibration claim",
+    "failure_policy": "retain failed/nonconverged outcomes; report successful-run rate and failure-as-error upper bound; never force fit or silently drop case",
+    "signal_endpoints": [
+      "ARI",
+      "NMI",
+      "K",
+      "purity",
+      "dominant_cluster_recall",
+      "singletons",
+      "failure_rate"
+    ],
+    "limits": "synthetic pilot; n400 nulls and n1000-3000 signals do not certify n48879 or arbitrary real-data nulls; independent seeds do not remove selected-hierarchy bias; no hyperparameter tuning or production adoption in this experiment"
+  },
+  "python": "3.12.11 (main, Jun  3 2025, 15:41:47) [Clang 17.0.0 (clang-1700.0.13.3)]",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "code_sha256": {
+    "tree_break_selection/space_separation/diffusion.py": "965f539371a4b38292799d50f97798cef9743c18a41b136b1023b8e44219218a",
+    "benchmarks/shared/runners/tbs_runner.py": "0f12c8996a9f65db265d6d86836e3e70e5ad02ae5e0480e604d5e6dbd6805f64",
+    "benchmarks/shared/runners/method_registry.py": "790310bebb888045875c7b15f77321c0b4877fc68d4e3a19f2a908a0e025a6ca",
+    "results/analyses/choir_tbs_recovery_comparison_20261103_174622/compare.py": "f97722f80dbf862f82e61024865e5e1af2bb1f01210e5419f979d8e72e379360"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-04",
+  "manifest_source_hashes_verified": 114,
+  "production_source_hashes_unchanged_since_prior_diagnosis": 109,
+  "retained_result_sha256": {
+    "mp_results.json": "75e6f70ad6a00272c4f23387318d96666b5f7786ce111209bcea7c7ce300937f",
+    "reference_results.json": "d3a7e77cf8f839ae3205428d9b28af133c253201fd5285f1f11d681c4efe6a99",
+    "downstream_results.json": "5a7793bd301e66a05b9551713fb9a9a83e309f38982ad6d416a6491180a250af"
+  },
+  "saved_result_checks": "passed: MP ranks, whitening spectrum, null edge counts; reference-law rejection counts, adaptive rank totals, native replay error; calibration, multiple testing and traversal boundaries",
+  "focused_test_batches": {
+    "mp_agent_passed": 37,
+    "reference_agent_passed": 92,
+    "coordinator_passed": 33,
+    "overlap": "MP and reference batches overlap; counts are not a unique-test total."
+  },
+  "independent_math_review": "MP agent reviewed parent-total scaled-Beta and within-child Hotelling formulas and requested a production-guard-compatible control; native 8+8 replay added.",
+  "limitations": [
+    "No production statistic replacement.",
+    "No full cancer rerun or full-pipeline Type-I/FDR validation.",
+    "Generated files retained locally; no external archive checked."
+  ]
+}

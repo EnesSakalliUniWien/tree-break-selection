@@ -36,6 +36,7 @@ def case_recipe_geometry(case: Mapping[str, object]) -> tuple[int, int]:
     if generator in {
         "blobs",
         "blobs_continuous",
+        "cancer_pc_surrogate",
         "continuous_low_rank_factor",
         "continuous_spiked_covariance",
         "dimensional_gaussian",

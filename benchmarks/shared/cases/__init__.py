@@ -23,6 +23,7 @@ METHOD_PROOF_BENCHMARK_GENERATORS = frozenset(
     {
         "binary_barycentric_template",
         "binary_selected_nonnull_only",
+        "cancer_pc_surrogate",
         "categorical_dirichlet_multinomial",
         "continuous_low_rank_factor",
         "continuous_spiked_covariance",
@@ -58,6 +59,7 @@ GRAPH_BENCHMARK_GENERATORS = frozenset({"sbm"})
 
 BENCHMARK_CASE_SUITES = frozenset(
     {
+        "cancer_pc",
         "full",
         "binary",
         "categorical",
@@ -129,6 +131,8 @@ def get_test_cases_by_suite(suite: str) -> list[dict]:
 
     if normalized_suite == "binary":
         allowed_generators = BINARY_BENCHMARK_GENERATORS
+    elif normalized_suite == "cancer_pc":
+        allowed_generators = frozenset({"cancer_pc_surrogate"})
     elif normalized_suite == "categorical":
         allowed_generators = CATEGORICAL_BENCHMARK_GENERATORS
     elif normalized_suite == "continuous":

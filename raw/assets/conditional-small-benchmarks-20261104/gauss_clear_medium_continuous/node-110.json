@@ -1,0 +1,270 @@
+{
+  "status": "complete",
+  "selection_event": "full_merge_history",
+  "sigma": 0.6,
+  "dimension": 40,
+  "observed_radius": 7.8550439948632995,
+  "nominal_p_value": 0.015353583816115353,
+  "proposals_requested": 999,
+  "seed": 2026110501,
+  "observed_signature": [
+    [
+      13,
+      58
+    ],
+    [
+      22,
+      50
+    ],
+    [
+      31,
+      48
+    ],
+    [
+      4,
+      47
+    ],
+    [
+      36,
+      51
+    ],
+    [
+      38,
+      46
+    ],
+    [
+      10,
+      33
+    ],
+    [
+      30,
+      54
+    ],
+    [
+      21,
+      35
+    ],
+    [
+      2,
+      59
+    ],
+    [
+      23,
+      56
+    ],
+    [
+      20,
+      66
+    ],
+    [
+      26,
+      43
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      39,
+      55
+    ],
+    [
+      5,
+      41
+    ],
+    [
+      15,
+      37
+    ],
+    [
+      52,
+      68
+    ],
+    [
+      24,
+      40
+    ],
+    [
+      9,
+      29
+    ],
+    [
+      17,
+      18
+    ],
+    [
+      11,
+      67
+    ],
+    [
+      19,
+      61
+    ],
+    [
+      75,
+      76
+    ],
+    [
+      28,
+      32
+    ],
+    [
+      44,
+      62
+    ],
+    [
+      34,
+      80
+    ],
+    [
+      65,
+      70
+    ],
+    [
+      27,
+      82
+    ],
+    [
+      49,
+      74
+    ],
+    [
+      16,
+      53
+    ],
+    [
+      77,
+      81
+    ],
+    [
+      12,
+      25
+    ],
+    [
+      71,
+      79
+    ],
+    [
+      72,
+      85
+    ],
+    [
+      8,
+      84
+    ],
+    [
+      7,
+      83
+    ],
+    [
+      78,
+      89
+    ],
+    [
+      63,
+      91
+    ],
+    [
+      3,
+      73
+    ],
+    [
+      14,
+      88
+    ],
+    [
+      90,
+      93
+    ],
+    [
+      87,
+      94
+    ],
+    [
+      86,
+      97
+    ],
+    [
+      60,
+      98
+    ],
+    [
+      96,
+      101
+    ],
+    [
+      64,
+      99
+    ],
+    [
+      100,
+      102
+    ],
+    [
+      92,
+      103
+    ],
+    [
+      0,
+      95
+    ],
+    [
+      57,
+      107
+    ],
+    [
+      42,
+      104
+    ],
+    [
+      69,
+      105
+    ],
+    [
+      106,
+      108
+    ],
+    [
+      109,
+      111
+    ],
+    [
+      45,
+      112
+    ],
+    [
+      113,
+      114
+    ],
+    [
+      115,
+      116
+    ],
+    [
+      110,
+      117
+    ]
+  ],
+  "source_hashes": {
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "965f539371a4b38292799d50f97798cef9743c18a41b136b1023b8e44219218a",
+    "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303"
+  },
+  "accepted_radii": [],
+  "p_value": 1.0,
+  "minimum_p_value": 1.0,
+  "strict_exclusions_with_ties": 0,
+  "proposals_evaluated": 999,
+  "accepted_count": 0,
+  "node": 110,
+  "node_rows": 15,
+  "global_rows": 60,
+  "role": "immediate_child",
+  "elapsed_seconds": 20.024384958000155,
+  "covariance_source": "generator_known_sigma_squared_identity",
+  "family_size": 3,
+  "bonferroni_alpha": 0.0033333333333333335,
+  "family_reject": false
+}

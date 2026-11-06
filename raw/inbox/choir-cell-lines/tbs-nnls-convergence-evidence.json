@@ -1,0 +1,1035 @@
+{
+  "protocol": {
+    "question": "Why full-data NNLS fails and whether its stopping criterion is reliable",
+    "environment_context_date": "2026-11-04",
+    "output_dir_timestamp_note": "Directory uses host timestamp; preserve it as created",
+    "python": "3.12.11 (main, Jun  3 2025, 15:41:47) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "scipy": "1.16.3",
+    "numpy": "2.3.4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "hypotheses": {
+      "termination": "Native success may be only cost-stagnation, not small first-order residual",
+      "inner_solver": "Automatic inner LSMR tolerance may leave inaccurate steps and slow the outer solve",
+      "identifiability": "The sampled path system may leave many branch-length directions unidentified"
+    },
+    "diagnostic_policy": "Reproduce native systems; controls change one numerical parameter at a time; no diagnostic fits applied to original artifacts or used for TBS clustering",
+    "code_sha256": {
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/optimized_branch_lengths.py": "1dcc24f015f8f6eb1d3a3c4164fdbcf397a4c0797cc28a251c9539239b7d8ccd",
+      "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/scipy/optimize/_lsq/lsq_linear.py": "aec4c38ad2c22b8ef9833a7b5f4bd0d3b2a31e767cf7d295d76902de444da0c2",
+      "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/scipy/optimize/_lsq/trf_linear.py": "8c8b3b5af88ebbff0aa5beec4e59fc5bb60b82472776fd1e1883f5e60fe60b88",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/diagnose.py": "dfa49fe2e32d2635dfde857adf6611fb19a0fba713796a084ddb4eacfcf37704"
+    },
+    "documentation": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.lsq_linear.html",
+    "documentation_note": "Online documentation is 1.18; installed 1.16.3 source inspected directly for actual stopping/inner-tolerance code"
+  },
+  "systems": {
+    "symmetric_average": {
+      "shape": [
+        56414,
+        97756
+      ],
+      "nnz": 2896696,
+      "uncovered_before_augmentation": 6712,
+      "zero_columns_after_augmentation": 0,
+      "nullity_lower_bound": 41342,
+      "column_support_quantiles": [
+        1.0,
+        2.0,
+        4.0,
+        8.0,
+        28157.0
+      ]
+    },
+    "symmetric_ward": {
+      "shape": [
+        56414,
+        97756
+      ],
+      "nnz": 2067798,
+      "uncovered_before_augmentation": 6736,
+      "zero_columns_after_augmentation": 0,
+      "nullity_lower_bound": 41342,
+      "column_support_quantiles": [
+        1.0,
+        2.0,
+        4.0,
+        7.0,
+        26090.0
+      ]
+    },
+    "markov_average": {
+      "shape": [
+        56414,
+        97756
+      ],
+      "nnz": 3164414,
+      "uncovered_before_augmentation": 6714,
+      "zero_columns_after_augmentation": 0,
+      "nullity_lower_bound": 41342,
+      "column_support_quantiles": [
+        1.0,
+        2.0,
+        4.0,
+        8.0,
+        28162.0
+      ]
+    },
+    "markov_ward": {
+      "shape": [
+        56414,
+        97756
+      ],
+      "nnz": 2252160,
+      "uncovered_before_augmentation": 6731,
+      "zero_columns_after_augmentation": 0,
+      "nullity_lower_bound": 41342,
+      "column_support_quantiles": [
+        1.0,
+        2.0,
+        4.0,
+        7.0,
+        26083.0
+      ]
+    }
+  },
+  "fits": {
+    "symmetric_average": {
+      "native": {
+        "status": 2,
+        "success": true,
+        "message": "The relative change of the cost function is less than `tol`.",
+        "iterations": 796,
+        "cost": 1856.366216346691,
+        "reported_optimality": 2.8945134255024345,
+        "elapsed_sec": 90.67953387500165,
+        "kwargs": {
+          "bounds": [
+            0.0,
+            Infinity
+          ],
+          "method": "trf",
+          "tol": 1e-05,
+          "max_iter": 1000,
+          "lsmr_tol": "auto",
+          "verbose": 0
+        },
+        "initial_lsmr": [
+          2,
+          2908,
+          26.64113059651149,
+          0.045941786421830076,
+          17264.359276024687,
+          194.60160770918787,
+          84.81473683807637
+        ],
+        "inner_calls": 795,
+        "inner_iterations": 1491,
+        "inner_tolerance_min": 0.011514613441411683,
+        "inner_tolerance_max": 0.1,
+        "cost_recomputed": 1856.366216346691,
+        "scaled_optimality_recomputed": 2.8945134255024345,
+        "negative_gradient_violation": 2.8945134255024345,
+        "complementarity_inf": 12.184201326640043,
+        "gradient_inf": 116.0769694634017,
+        "gradient_reference_inf": 59993.89303530002,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 3.962408179347676e-10,
+        "dual_lower_bound": -415408.18136987963,
+        "duality_gap": 417264.5475862263,
+        "relative_duality_gap": 224.77490912725102,
+        "positive_edges_above_1e-8": 97328,
+        "edge_min": 5e-324,
+        "edge_max": 5.31833920477673
+      },
+      "reference": {
+        "cost_recomputed": 535.3518631762473,
+        "scaled_optimality_recomputed": 3.960207044295672e-06,
+        "negative_gradient_violation": 3.960207044295672e-06,
+        "complementarity_inf": 1.7564474786513822e-06,
+        "gradient_inf": 19.09572396244121,
+        "gradient_reference_inf": 59993.89303530002,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 2.507006298332256e-10,
+        "dual_lower_bound": 535.3495796342763,
+        "duality_gap": 0.002283541970996339,
+        "relative_duality_gap": 4.265497382316117e-06,
+        "positive_edges_above_1e-8": 81350,
+        "edge_min": 0.0,
+        "edge_max": 9.4599545588496,
+        "elapsed_sec": 40.126682291996985,
+        "iterations": 1849,
+        "status": 0,
+        "success": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "objective": 535.3518631762474,
+        "diagnostic_only": true,
+        "native_objective": 1856.366216346691
+      },
+      "native_identifiability": {
+        "variant": "symmetric_average",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 16516,
+        "cherries_with_unobserved_within_pair": 16515,
+        "feasible_cherry_directions_width_above_1e-6": 16515,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          29183,
+          31407
+        ],
+        "example_edge_indices": [
+          90648,
+          63954,
+          63955
+        ],
+        "example_edges": [
+          [
+            "N94203",
+            "N80856"
+          ],
+          [
+            "N80856",
+            "L29183"
+          ],
+          [
+            "N80856",
+            "L31407"
+          ]
+        ],
+        "example_step": -1.7174306404157942,
+        "example_before_lengths": [
+          3.4348612808315884,
+          2.1686518363084017,
+          1.2698954170947034
+        ],
+        "example_after_lengths": [
+          1.7174306404157942,
+          3.886082476724196,
+          2.9873260575104976
+        ],
+        "example_max_prediction_difference": 8.881784197001252e-16,
+        "example_cost_before": 1856.366216346691,
+        "example_cost_after": 1856.366216346691,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      },
+      "reference_identifiability": {
+        "variant": "symmetric_average",
+        "fit": "reference",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 16516,
+        "cherries_with_unobserved_within_pair": 16515,
+        "feasible_cherry_directions_width_above_1e-6": 14602,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          31955,
+          32444
+        ],
+        "example_edge_indices": [
+          81288,
+          4876,
+          4877
+        ],
+        "example_edges": [
+          [
+            "N89523",
+            "N51317"
+          ],
+          [
+            "N51317",
+            "L31955"
+          ],
+          [
+            "N51317",
+            "L32444"
+          ]
+        ],
+        "example_step": -1.6918322720319379,
+        "example_before_lengths": [
+          3.3836645440638757,
+          2.1687861214880315,
+          2.622078515335725
+        ],
+        "example_after_lengths": [
+          1.6918322720319379,
+          3.860618393519969,
+          4.3139107873676625
+        ],
+        "example_max_prediction_difference": 1.7763568394002505e-15,
+        "example_cost_before": 535.3518631762474,
+        "example_cost_after": 535.3518631762474,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      }
+    },
+    "symmetric_ward": {
+      "native": {
+        "status": 0,
+        "success": false,
+        "message": "The maximum number of iterations is exceeded.",
+        "iterations": 1000,
+        "cost": 1570.6669692136102,
+        "reported_optimality": 1.9570798908680818,
+        "elapsed_sec": 108.26163420900048,
+        "kwargs": {
+          "bounds": [
+            0.0,
+            Infinity
+          ],
+          "method": "trf",
+          "tol": 1e-05,
+          "max_iter": 1000,
+          "lsmr_tol": "auto",
+          "verbose": 0
+        },
+        "initial_lsmr": [
+          2,
+          2701,
+          27.11262589609305,
+          0.03285968287327025,
+          12123.554744124316,
+          80.80251775643063,
+          84.37774209572311
+        ],
+        "inner_calls": 1000,
+        "inner_iterations": 1916,
+        "inner_tolerance_min": 0.00978539945434041,
+        "inner_tolerance_max": 0.1,
+        "cost_recomputed": 1570.6669692136102,
+        "scaled_optimality_recomputed": 1.9568705812280118,
+        "negative_gradient_violation": 1.9568705812280118,
+        "complementarity_inf": 11.17344221177868,
+        "gradient_inf": 116.35575237581622,
+        "gradient_reference_inf": 57398.734086732315,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 4.595286373643148e-10,
+        "dual_lower_bound": -336278.26315082464,
+        "duality_gap": 337848.9301200383,
+        "relative_duality_gap": 215.09902273502954,
+        "positive_edges_above_1e-8": 97415,
+        "edge_min": 5e-324,
+        "edge_max": 5.709852413830512
+      },
+      "reference": {
+        "cost_recomputed": 545.7035304391711,
+        "scaled_optimality_recomputed": 4.529771600936261e-05,
+        "negative_gradient_violation": 4.529771600936261e-05,
+        "complementarity_inf": 3.60035508475632e-06,
+        "gradient_inf": 34.71931596576396,
+        "gradient_reference_inf": 57398.734086732315,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 3.609739274617237e-10,
+        "dual_lower_bound": 545.699908054449,
+        "duality_gap": 0.0036223847221208416,
+        "relative_duality_gap": 6.638008589032986e-06,
+        "positive_edges_above_1e-8": 81951,
+        "edge_min": 0.0,
+        "edge_max": 8.973777454324393,
+        "elapsed_sec": 10.50626295800248,
+        "iterations": 1209,
+        "status": 0,
+        "success": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "objective": 545.7035304391711,
+        "diagnostic_only": true,
+        "native_objective": 1570.6669692136102
+      },
+      "native_identifiability": {
+        "variant": "symmetric_ward",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 17414,
+        "cherries_with_unobserved_within_pair": 17413,
+        "feasible_cherry_directions_width_above_1e-6": 17413,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          41964,
+          42096
+        ],
+        "example_edge_indices": [
+          86948,
+          76576,
+          76577
+        ],
+        "example_edges": [
+          [
+            "N92353",
+            "N87167"
+          ],
+          [
+            "N87167",
+            "L41964"
+          ],
+          [
+            "N87167",
+            "L42096"
+          ]
+        ],
+        "example_step": -1.5068386419849729,
+        "example_before_lengths": [
+          3.0136772839699457,
+          1.2801503939496868,
+          1.7348251018302399
+        ],
+        "example_after_lengths": [
+          1.5068386419849729,
+          2.78698903593466,
+          3.241663743815213
+        ],
+        "example_max_prediction_difference": 0.0,
+        "example_cost_before": 1570.6669692136102,
+        "example_cost_after": 1570.6669692136102,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      },
+      "reference_identifiability": {
+        "variant": "symmetric_ward",
+        "fit": "reference",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 17414,
+        "cherries_with_unobserved_within_pair": 17413,
+        "feasible_cherry_directions_width_above_1e-6": 15389,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          29183,
+          31407
+        ],
+        "example_edge_indices": [
+          87882,
+          57474,
+          57475
+        ],
+        "example_edges": [
+          [
+            "N92820",
+            "N77616"
+          ],
+          [
+            "N77616",
+            "L29183"
+          ],
+          [
+            "N77616",
+            "L31407"
+          ]
+        ],
+        "example_step": -1.634781287967137,
+        "example_before_lengths": [
+          3.269562575934274,
+          2.3255573593827523,
+          1.8679932373705777
+        ],
+        "example_after_lengths": [
+          1.634781287967137,
+          3.9603386473498894,
+          3.5027745253377147
+        ],
+        "example_max_prediction_difference": 1.7763568394002505e-15,
+        "example_cost_before": 545.7035304391712,
+        "example_cost_after": 545.7035304391712,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      },
+      "fixed_inner_1e-3": {
+        "status": 2,
+        "success": true,
+        "message": "The relative change of the cost function is less than `tol`.",
+        "iterations": 364,
+        "cost": 784.8351986615999,
+        "reported_optimality": 0.37136423930943785,
+        "elapsed_sec": 43.03537066699937,
+        "kwargs": {
+          "bounds": [
+            0.0,
+            Infinity
+          ],
+          "method": "trf",
+          "tol": 1e-05,
+          "max_iter": 1000,
+          "lsmr_tol": "auto",
+          "verbose": 0
+        },
+        "inner_override": 0.001,
+        "initial_lsmr": [
+          2,
+          2701,
+          27.11262589609305,
+          0.03285968287327025,
+          12123.554744124316,
+          80.80251775643063,
+          84.37774209572311
+        ],
+        "inner_calls": 363,
+        "inner_iterations": 12424,
+        "inner_tolerance_min": 0.001,
+        "inner_tolerance_max": 0.001,
+        "cost_recomputed": 784.8351986615999,
+        "scaled_optimality_recomputed": 0.37136423930943785,
+        "negative_gradient_violation": 0.37136423930943785,
+        "complementarity_inf": 2.827355255410253,
+        "gradient_inf": 49.08794651363383,
+        "gradient_reference_inf": 57398.734086732315,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 3.867117737144099e-10,
+        "dual_lower_bound": -46285.58013368017,
+        "duality_gap": 47070.41533234177,
+        "relative_duality_gap": 59.97490353721672,
+        "positive_edges_above_1e-8": 97754,
+        "edge_min": 7.236303998900757e-13,
+        "edge_max": 7.61342896307894
+      }
+    },
+    "markov_average": {
+      "native": {
+        "status": 0,
+        "success": false,
+        "message": "The maximum number of iterations is exceeded.",
+        "iterations": 1000,
+        "cost": 1595.5600179291093,
+        "reported_optimality": 2.8101210673070334,
+        "elapsed_sec": 144.73994762500297,
+        "kwargs": {
+          "bounds": [
+            0.0,
+            Infinity
+          ],
+          "method": "trf",
+          "tol": 1e-05,
+          "max_iter": 1000,
+          "lsmr_tol": "auto",
+          "verbose": 0
+        },
+        "initial_lsmr": [
+          2,
+          3110,
+          25.987799567958874,
+          0.04396927276442016,
+          16928.48457272319,
+          161.2031996218981,
+          71.44382215661784
+        ],
+        "inner_calls": 1000,
+        "inner_iterations": 1901,
+        "inner_tolerance_min": 0.007700049440531771,
+        "inner_tolerance_max": 0.1,
+        "cost_recomputed": 1595.5600179291093,
+        "scaled_optimality_recomputed": 1.537355216012914,
+        "negative_gradient_violation": 1.537355216012914,
+        "complementarity_inf": 4.579208794520696,
+        "gradient_inf": 107.70681042855529,
+        "gradient_reference_inf": 60005.955995340526,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 3.0288083152640866e-10,
+        "dual_lower_bound": -246091.97451577958,
+        "duality_gap": 247687.5345337087,
+        "relative_duality_gap": 155.23548581718939,
+        "positive_edges_above_1e-8": 97089,
+        "edge_min": 5e-324,
+        "edge_max": 4.3132669404231985
+      },
+      "reference": {
+        "cost_recomputed": 477.19990276069893,
+        "scaled_optimality_recomputed": 4.737259299725238e-06,
+        "negative_gradient_violation": 4.737259299725238e-06,
+        "complementarity_inf": 1.2938940239177583e-06,
+        "gradient_inf": 22.996185596641585,
+        "gradient_reference_inf": 60005.955995340526,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 1.9711737269424462e-10,
+        "dual_lower_bound": 477.1922487921536,
+        "duality_gap": 0.007653968545355383,
+        "relative_duality_gap": 1.6039333832793366e-05,
+        "positive_edges_above_1e-8": 80572,
+        "edge_min": 0.0,
+        "edge_max": 6.129438670832453,
+        "elapsed_sec": 20.51355591600077,
+        "iterations": 2083,
+        "status": 0,
+        "success": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "objective": 477.19990276069893,
+        "diagnostic_only": true,
+        "native_objective": 1595.5600179291093
+      },
+      "native_identifiability": {
+        "variant": "markov_average",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 16635,
+        "cherries_with_unobserved_within_pair": 16635,
+        "feasible_cherry_directions_width_above_1e-6": 16635,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          21660,
+          43404
+        ],
+        "example_edge_indices": [
+          92630,
+          89308,
+          89309
+        ],
+        "example_edges": [
+          [
+            "N95194",
+            "N93533"
+          ],
+          [
+            "N93533",
+            "L21660"
+          ],
+          [
+            "N93533",
+            "L43404"
+          ]
+        ],
+        "example_step": -1.2309101874995625,
+        "example_before_lengths": [
+          2.461820374999125,
+          2.518607056476502,
+          0.6577562220462676
+        ],
+        "example_after_lengths": [
+          1.2309101874995625,
+          3.7495172439760642,
+          1.88866640954583
+        ],
+        "example_max_prediction_difference": 8.881784197001252e-16,
+        "example_cost_before": 1595.5600179291096,
+        "example_cost_after": 1595.5600179291096,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      },
+      "reference_identifiability": {
+        "variant": "markov_average",
+        "fit": "reference",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 16635,
+        "cherries_with_unobserved_within_pair": 16635,
+        "feasible_cherry_directions_width_above_1e-6": 14569,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          43733,
+          45533
+        ],
+        "example_edge_indices": [
+          818,
+          760,
+          761
+        ],
+        "example_edges": [
+          [
+            "N49288",
+            "N49259"
+          ],
+          [
+            "N49259",
+            "L43733"
+          ],
+          [
+            "N49259",
+            "L45533"
+          ]
+        ],
+        "example_step": -1.1717026766189782,
+        "example_before_lengths": [
+          2.3434053532379564,
+          1.5733124256008513,
+          1.4285148918004145
+        ],
+        "example_after_lengths": [
+          1.1717026766189782,
+          2.7450151022198295,
+          2.6002175684193927
+        ],
+        "example_max_prediction_difference": 0.0,
+        "example_cost_before": 477.199902760699,
+        "example_cost_after": 477.199902760699,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      },
+      "fixed_inner_1e-3": {
+        "status": 2,
+        "success": true,
+        "message": "The relative change of the cost function is less than `tol`.",
+        "iterations": 388,
+        "cost": 743.5476415910211,
+        "reported_optimality": 0.37964905418010275,
+        "elapsed_sec": 61.35815845899924,
+        "kwargs": {
+          "bounds": [
+            0.0,
+            Infinity
+          ],
+          "method": "trf",
+          "tol": 1e-05,
+          "max_iter": 1000,
+          "lsmr_tol": "auto",
+          "verbose": 0
+        },
+        "inner_override": 0.001,
+        "initial_lsmr": [
+          2,
+          3110,
+          25.987799567958874,
+          0.04396927276442016,
+          16928.48457272319,
+          161.2031996218981,
+          71.44382215661784
+        ],
+        "inner_calls": 387,
+        "inner_iterations": 12115,
+        "inner_tolerance_min": 0.001,
+        "inner_tolerance_max": 0.001,
+        "cost_recomputed": 743.5476415910211,
+        "scaled_optimality_recomputed": 0.37964905418010275,
+        "negative_gradient_violation": 0.37964905418010275,
+        "complementarity_inf": 1.4830092044544911,
+        "gradient_inf": 43.76337349925051,
+        "gradient_reference_inf": 60005.955995340526,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 2.3392304759894955e-10,
+        "dual_lower_bound": -47593.99206527491,
+        "duality_gap": 48337.53970686594,
+        "relative_duality_gap": 65.00933767126838,
+        "positive_edges_above_1e-8": 97725,
+        "edge_min": 4.9760652809561334e-18,
+        "edge_max": 5.250213687918224
+      }
+    },
+    "markov_ward": {
+      "native": {
+        "status": 0,
+        "success": false,
+        "message": "The maximum number of iterations is exceeded.",
+        "iterations": 1000,
+        "cost": 1494.8300814294344,
+        "reported_optimality": 1.4369238920650265,
+        "elapsed_sec": 83.78760950000287,
+        "kwargs": {
+          "bounds": [
+            0.0,
+            Infinity
+          ],
+          "method": "trf",
+          "tol": 1e-05,
+          "max_iter": 1000,
+          "lsmr_tol": "auto",
+          "verbose": 0
+        },
+        "initial_lsmr": [
+          2,
+          2731,
+          26.04900334341081,
+          0.032311432368227436,
+          12407.741343418298,
+          146.85038021579325,
+          71.41068859528188
+        ],
+        "inner_calls": 1000,
+        "inner_iterations": 1887,
+        "inner_tolerance_min": 0.007184619460325133,
+        "inner_tolerance_max": 0.1,
+        "cost_recomputed": 1494.8300814294344,
+        "scaled_optimality_recomputed": 2.171133742172607,
+        "negative_gradient_violation": 2.171133742172607,
+        "complementarity_inf": 4.131406180323847,
+        "gradient_inf": 102.44275200780497,
+        "gradient_reference_inf": 57368.226374828504,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 3.043829632787265e-10,
+        "dual_lower_bound": -225379.87161503264,
+        "duality_gap": 226874.70169646206,
+        "relative_duality_gap": 151.77290349918076,
+        "positive_edges_above_1e-8": 97382,
+        "edge_min": 5e-324,
+        "edge_max": 4.542421821293195
+      },
+      "reference": {
+        "cost_recomputed": 482.4050462214782,
+        "scaled_optimality_recomputed": 3.6737082181903745e-06,
+        "negative_gradient_violation": 9.727054353092512e-07,
+        "complementarity_inf": 3.6737082181903745e-06,
+        "gradient_inf": 23.553863183855952,
+        "gradient_reference_inf": 57368.226374828504,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 1.959479197102901e-10,
+        "dual_lower_bound": 482.39969257523586,
+        "duality_gap": 0.005353646242326704,
+        "relative_duality_gap": 1.1097823881114167e-05,
+        "positive_edges_above_1e-8": 81280,
+        "edge_min": 0.0,
+        "edge_max": 5.582647455182935,
+        "elapsed_sec": 28.068057208001846,
+        "iterations": 1658,
+        "status": 0,
+        "success": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "objective": 482.40504622147824,
+        "diagnostic_only": true,
+        "native_objective": 1494.8300814294344
+      },
+      "native_identifiability": {
+        "variant": "markov_ward",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 17625,
+        "cherries_with_unobserved_within_pair": 17625,
+        "feasible_cherry_directions_width_above_1e-6": 17625,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          21660,
+          43404
+        ],
+        "example_edge_indices": [
+          91213,
+          85138,
+          85139
+        ],
+        "example_edges": [
+          [
+            "N94485",
+            "N91448"
+          ],
+          [
+            "N91448",
+            "L21660"
+          ],
+          [
+            "N91448",
+            "L43404"
+          ]
+        ],
+        "example_step": -1.10558435859043,
+        "example_before_lengths": [
+          2.21116871718086,
+          2.4900009798368856,
+          0.7796592808381678
+        ],
+        "example_after_lengths": [
+          1.10558435859043,
+          3.5955853384273153,
+          1.8852436394285976
+        ],
+        "example_max_prediction_difference": 8.881784197001252e-16,
+        "example_cost_before": 1494.8300814294344,
+        "example_cost_after": 1494.8300814294344,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      },
+      "reference_identifiability": {
+        "variant": "markov_ward",
+        "fit": "reference",
+        "rows": 56414,
+        "columns": 97756,
+        "structural_rank_upper_bound": 56414,
+        "nullity_lower_bound_from_pattern": 41342,
+        "root_column_pair_identical": true,
+        "cherries": 17625,
+        "cherries_with_unobserved_within_pair": 17625,
+        "feasible_cherry_directions_width_above_1e-6": 15434,
+        "pairs_involving_first_leaf": 6417,
+        "example_leaf_pair": [
+          7913,
+          9880
+        ],
+        "example_edge_indices": [
+          96124,
+          92882,
+          92883
+        ],
+        "example_edges": [
+          [
+            "N96941",
+            "N95320"
+          ],
+          [
+            "N95320",
+            "L7913"
+          ],
+          [
+            "N95320",
+            "L9880"
+          ]
+        ],
+        "example_step": -1.3411334278129405,
+        "example_before_lengths": [
+          2.682266855625881,
+          1.7521659694716096,
+          1.6546094579398132
+        ],
+        "example_after_lengths": [
+          1.3411334278129405,
+          3.09329939728455,
+          2.9957428857527537
+        ],
+        "example_max_prediction_difference": 8.881784197001252e-16,
+        "example_cost_before": 482.4050462214783,
+        "example_cost_after": 482.4050462214783,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+      },
+      "fixed_inner_1e-3": {
+        "status": 2,
+        "success": true,
+        "message": "The relative change of the cost function is less than `tol`.",
+        "iterations": 311,
+        "cost": 642.2954129816683,
+        "reported_optimality": 0.3687922616037982,
+        "elapsed_sec": 87.07083054199757,
+        "kwargs": {
+          "bounds": [
+            0.0,
+            Infinity
+          ],
+          "method": "trf",
+          "tol": 1e-05,
+          "max_iter": 1000,
+          "lsmr_tol": "auto",
+          "verbose": 0
+        },
+        "inner_override": 0.001,
+        "initial_lsmr": [
+          2,
+          2731,
+          26.04900334341081,
+          0.032311432368227436,
+          12407.741343418298,
+          146.85038021579325,
+          71.41068859528188
+        ],
+        "inner_calls": 310,
+        "inner_iterations": 11266,
+        "inner_tolerance_min": 0.001,
+        "inner_tolerance_max": 0.001,
+        "cost_recomputed": 642.2954129816683,
+        "scaled_optimality_recomputed": 0.3687922616037982,
+        "negative_gradient_violation": 0.3687922616037982,
+        "complementarity_inf": 0.7906661247492104,
+        "gradient_inf": 30.988216028556383,
+        "gradient_reference_inf": 57368.226374828504,
+        "numerical_dual_feasible": true,
+        "dual_min_gradient": 2.2057294879473943e-10,
+        "dual_lower_bound": -26387.170617333897,
+        "duality_gap": 27029.466030315565,
+        "relative_duality_gap": 42.082607915319194,
+        "positive_edges_above_1e-8": 97701,
+        "edge_min": 1.8260778663459854e-14,
+        "edge_max": 5.1996353139110445
+      }
+    }
+  },
+  "extra_outer_budget_control": {
+    "status": 2,
+    "success": true,
+    "message": "The relative change of the cost function is less than `tol`.",
+    "iterations": 1028,
+    "cost": 1473.7088602650797,
+    "reported_optimality": 1.411823809518994,
+    "elapsed_sec": 104.91212095800074,
+    "kwargs": {
+      "bounds": [
+        0.0,
+        Infinity
+      ],
+      "method": "trf",
+      "tol": 1e-05,
+      "max_iter": 5000,
+      "lsmr_tol": "auto",
+      "verbose": 0
+    },
+    "initial_lsmr": [
+      2,
+      2731,
+      26.04900334341081,
+      0.032311432368227436,
+      12407.741343418298,
+      146.85038021579325,
+      71.41068859528188
+    ],
+    "inner_calls": 1027,
+    "inner_iterations": 1937,
+    "inner_tolerance_min": 0.007072531770899939,
+    "inner_tolerance_max": 0.1,
+    "cost_recomputed": 1473.7088602650797,
+    "scaled_optimality_recomputed": 1.411823809518994,
+    "negative_gradient_violation": 1.411823809518994,
+    "complementarity_inf": 4.075464261049195,
+    "gradient_inf": 100.68527132957882,
+    "gradient_reference_inf": 57368.226374828504,
+    "numerical_dual_feasible": true,
+    "dual_min_gradient": 3.0291702479701144e-10,
+    "dual_lower_bound": -220931.36605402423,
+    "duality_gap": 222405.07491428932,
+    "relative_duality_gap": 150.9152051065804,
+    "positive_edges_above_1e-8": 97377,
+    "edge_min": 5e-324,
+    "edge_max": 4.556084638522413
+  },
+  "verification": {
+    "status": "passed",
+    "native_reproductions": 4,
+    "baseline_and_markov_ward_original_cost_iterations_optimality_exact": true,
+    "same_sampled_pairs_targets_all_four": true,
+    "row_column_shape": [
+      56414,
+      97756
+    ],
+    "zero_final_design_columns": 0,
+    "native_source_and_installed_solver_hashes_match": true,
+    "changed_control_code": "Final diagnose.py adds the moderate inner-only control; native fitting branch is unchanged. Pre-control script hash recorded in protocol.json.",
+    "final_script_sha256": {
+      "diagnose.py": "659a2895012fa74c58d1874d7848f2d5b82c419f4874f1a3d932ac664353a1ac",
+      "reference_solve.py": "042b01a3f74fc48728c3198bf1c397631304a924cae76ae8c1ecef5719a1403e",
+      "inspect_system.py": "7d5d05e6460c9f37c93879b305746aeffeffe2f3c00999bf0587d90d78052a1a"
+    },
+    "input_sha256": {
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_average/design.npz": "0bde50ac85a9c37e70832b842cebfd893c2c77aba3bf48932a306b87ba91d317",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_average/target.npy": "cc36d9219844e46d59c962ff5992d39165803a1f3be04514dfd75c0b3aee9ab8",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_average/pairs.npz": "97dd012d9e7fd55f2b47b0b1ee4df68315b02cff9e93778af321484cf16f2b88",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_average/edge_pairs.npy": "51ecfc80549d5b87c25e871c752c1ada9786af6ce06d858f381cb4a92609593a",
+      "results/analyses/choir_cell_lines_tbs_20261103_163359/linkage.npy": "b1c6e8811cc9f1251135c1f20243c8177ccc4909b18c0372379ee7f1cb86da36",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_ward/design.npz": "9a8a641726fafd98d80a87777571d4ef7c13b07ae69c082d9ddc4493c7b76d15",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_ward/target.npy": "cc36d9219844e46d59c962ff5992d39165803a1f3be04514dfd75c0b3aee9ab8",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_ward/pairs.npz": "97dd012d9e7fd55f2b47b0b1ee4df68315b02cff9e93778af321484cf16f2b88",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/symmetric_ward/edge_pairs.npy": "81ee7ee5c9853394a5fb4ad388aa24909c2dff9128d7451785b493650291a5c0",
+      "results/analyses/choir_tbs_recovery_comparison_20261103_174622/symmetric_ward/linkage.npy": "ddc4e8ec40a62071afcbfe483eb29c6b86cdc02edab7f1f63e62e3938ee33217",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_average/design.npz": "8e32836b7af2b10e1dde9130a1d631ebe506bc12b6aeed5e53eccfa374331aa9",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_average/target.npy": "cc36d9219844e46d59c962ff5992d39165803a1f3be04514dfd75c0b3aee9ab8",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_average/pairs.npz": "97dd012d9e7fd55f2b47b0b1ee4df68315b02cff9e93778af321484cf16f2b88",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_average/edge_pairs.npy": "e3967b55b6cbf89a85eb430953ae35d4907c97050d6c3ad405599260d6cdde52",
+      "results/analyses/choir_tbs_recovery_comparison_20261103_174622/markov_average/linkage.npy": "3a88a93274054db11b2da7e442b02186dc3393d6face1e2041ca1942c6c1b103",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_ward/design.npz": "1a309e237427bdd3596ebb6d1200b6caf907070983acae84b43525bf616db0aa",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_ward/target.npy": "cc36d9219844e46d59c962ff5992d39165803a1f3be04514dfd75c0b3aee9ab8",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_ward/pairs.npz": "97dd012d9e7fd55f2b47b0b1ee4df68315b02cff9e93778af321484cf16f2b88",
+      "results/analyses/choir_nnls_convergence_diagnosis_20261103_185503/markov_ward/edge_pairs.npy": "c5faeb44e2c399cbb175f613d252b39d6a95e5c554db97356f3ad28614531fce",
+      "results/analyses/choir_tbs_recovery_comparison_20261103_174622/markov_ward/linkage.npy": "04707e3cf9405a662da38c587abd3249cc4d55b212afd42fbe3e97991d85bf5e"
+    },
+    "reference_dual_gap_bound_checked": 2e-05,
+    "reference_pass_first_order_1e-5": 3,
+    "reference_feasible_nonunique_perturbations_verified": 4,
+    "small_runs_stopped_on_cost_change_and_optimality_above_tolerance": 2540,
+    "focused_tests_passed": 7,
+    "aborted_strict_inner_controls": [
+      "markov_ward",
+      "symmetric_average"
+    ],
+    "aborted_control_exit_code": 130,
+    "diagnostic_workers_remaining": 0
+  }
+}

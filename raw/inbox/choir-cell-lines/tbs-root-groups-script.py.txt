@@ -1,0 +1,166 @@
+"""Describe the root children of the four frozen cancer cell-line trees."""
+
+import hashlib
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from scipy.sparse.csgraph import connected_components
+
+from applications.output_dirs import timestamped_results_dir
+from tree_break_selection.tree.branch_lengths import node_id
+from tree_break_selection.tree.construction.build import _canonical_sample_order
+from tree_break_selection.tree.optimized_branch_lengths import _mean_squared_standardized_targets
+
+
+ROOT = Path(__file__).resolve().parents[3]
+RAW = Path(__file__).resolve().parent
+RUNS = ROOT / "results/analyses"
+BASE = RUNS / "choir_cell_lines_tbs_20261103_163359"
+COMPARE = RUNS / "choir_tbs_recovery_comparison_20261103_174622"
+NNLS = RUNS / "choir_nnls_convergence_diagnosis_20261103_185503"
+VARIANTS = ("symmetric_average", "symmetric_ward", "markov_average", "markov_ward")
+FIELDS = ("Cell_line", "Cancer_type", "CHOIR_1", "source_library", "pool_id", "graph_component")
+
+
+def leaves(children, node, n):
+    pending, result = [node], []
+    while pending:
+        index = pending.pop()
+        if index < n:
+            result.append(index)
+        else:
+            pending.extend(children[index - n])
+    return np.asarray(result, dtype=int)
+
+
+def within_mean(variance, count):
+    return float(2 * variance * count / (count - 1)) if count > 1 else None
+
+
+def main():
+    manifest = json.loads((RAW / "tbs-recovery-manifest.json").read_text())
+    verification = json.loads((NNLS / "verification.json").read_text())
+    inputs = manifest["reused_input_sha256"] | verification["input_sha256"]
+    for path, expected in inputs.items():
+        assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected, path
+
+    metadata = pd.read_csv(BASE / "cell_metadata.csv", usecols=["cell_id", "CellID", *FIELDS[:-1]])
+    n = len(metadata)
+    assert n == 48879 and metadata.cell_id.equals(metadata.CellID) and metadata.CellID.is_unique
+    assert _canonical_sample_order(metadata.CellID.tolist()) == list(range(n))
+    assert not metadata.isna().any().any()
+    graph = sparse.load_npz(BASE / "diffusion_kernel.npz").tocsr()
+    assert graph.shape == (n, n) and (graph != graph.T).nnz == 0
+    assert np.all(graph.data > 0) and not graph.diagonal().any()
+    _, components = connected_components(graph, directed=False)
+    np.testing.assert_array_equal(components, np.load(BASE / "graph_components.npy"))
+    metadata["graph_component"] = components
+    pca = np.load(BASE / "pca.npy")
+    assert pca.shape == (n, 30)
+    standardized = (pca - pca.mean(axis=0)) / pca.std(axis=0, ddof=1)
+    root = node_id(2 * n - 2, n)
+
+    reports, composition, memberships, masks = {}, [], [], []
+    for variant in VARIANTS:
+        link = np.load((BASE if variant == "symmetric_average" else COMPARE / variant) / "linkage.npy")
+        children = link[:, :2].astype(int)
+        sizes = np.r_[np.ones(n, dtype=int), link[:, 3].astype(int)]
+        nodes = sorted(children[-1], key=lambda index: sizes[index])
+        groups = [leaves(children, node, n) for node in nodes]
+        assert [len(indices) for indices in groups] == sizes[nodes].tolist()
+        np.testing.assert_array_equal(np.sort(np.concatenate(groups)), np.arange(n))
+        smaller = np.zeros(n, dtype=bool)
+        smaller[groups[0]] = True
+        masks.append(smaller)
+        members = metadata.loc[smaller, ["CellID", *FIELDS]].copy()
+        members.insert(0, "variant", variant)
+        memberships.append(members)
+
+        group_reports = []
+        for side, node, indices in zip(("smaller", "larger"), nodes, groups, strict=True):
+            group = metadata.iloc[indices]
+            counts = {field: group[field].value_counts() for field in FIELDS}
+            for field, values in counts.items():
+                composition.extend((variant, side, field, value, int(count)) for value, count in values.items())
+            group_reports.append({
+                "child": node_id(node, n), "cells": len(indices),
+                "cell_lines": len(counts["Cell_line"]),
+                "top_cell_lines": counts["Cell_line"].head(5).to_dict(),
+                "choir_clusters": len(counts["CHOIR_1"]),
+                "top_choir_clusters": counts["CHOIR_1"].head(5).to_dict(),
+                "graph_components": counts["graph_component"].to_dict(),
+                "induced_graph_components": connected_components(graph[indices][:, indices], directed=False)[0],
+            })
+
+        boundary = graph[smaller][:, ~smaller].tocoo()
+        line = metadata.Cell_line.to_numpy()
+        same_line = line[smaller][boundary.row] == line[~smaller][boundary.col]
+        across_centroids = standardized[smaller].mean(axis=0) - standardized[~smaller].mean(axis=0)
+        centroid_mean_square = float(np.mean(across_centroids**2))
+        variances = [float(standardized[indices].var(axis=0).mean()) for indices in groups]
+
+        dest = NNLS / variant
+        design = sparse.load_npz(dest / "design.npz")
+        edges = np.load(dest / "edge_pairs.npy")
+        root_columns = [int(np.flatnonzero((edges[:, 0] == root) & (edges[:, 1] == g["child"])).item()) for g in group_reports]
+        assert sum(edges[:, 0] == root) == 2
+        with np.load(dest / "pairs.npz") as pairs:
+            left, right = pairs["left"], pairs["right"]
+        across = smaller[left] != smaller[right]
+        for column in root_columns:
+            np.testing.assert_array_equal(design[:, column].toarray().ravel(), across)
+        target = np.load(dest / "target.npy")
+        np.testing.assert_allclose(target, _mean_squared_standardized_targets(pd.DataFrame(pca), left, right), rtol=1e-13)
+        fits = {}
+        heights = np.r_[np.zeros(n), link[:, 2]]
+        increments = link[-1, 2] - heights[nodes]
+        gauge = increments / increments.sum()
+        for fit in ("native_auto", "reference"):
+            lengths = np.load(dest / fit / "x.npy")
+            residual = design @ lengths - target
+            root_sum = float(lengths[root_columns].sum())
+            fits[fit] = {"root_length_sum": root_sum,
+                         "root_lengths_under_linkage_ratio": (root_sum * gauge).tolist(),
+                         "across_root_pair_rmse": float(np.sqrt(np.mean(residual[across] ** 2))),
+                         "within_root_child_pair_rmse": float(np.sqrt(np.mean(residual[~across] ** 2)))}
+        if variant == "symmetric_average":
+            prior = json.loads((RAW / "tbs-root-variance-diagnostic.json").read_text())
+            expected = {edge["child"]: edge["branch_length"] for edge in prior["root_edges"]}
+            np.testing.assert_allclose(fits["native_auto"]["root_lengths_under_linkage_ratio"],
+                                       [expected[g["child"]] for g in group_reports], rtol=1e-12)
+
+        reports[variant] = {
+            "groups": group_reports,
+            "smaller_group_line_totals": metadata.Cell_line.value_counts().reindex(members.Cell_line.unique()).to_dict(),
+            "smaller_group_choir_totals": metadata.CHOIR_1.value_counts().reindex(members.CHOIR_1.unique()).to_dict(),
+            "cross_kernel_edges": boundary.nnz,
+            "cross_kernel_same_line_edges": int(same_line.sum()),
+            "cross_kernel_weight": float(boundary.sum()),
+            "cross_weight_share_of_smaller_group_degree": float(boundary.sum() / graph[smaller].sum()),
+            "pca_centroid_rms_standardized_difference": float(np.sqrt(centroid_mean_square)),
+            "all_cross_pairs_mean_target": centroid_mean_square + sum(variances),
+            "all_within_pairs_mean_target": [within_mean(var, len(group)) for var, group in zip(variances, groups, strict=True)],
+            "sampled_cross_pairs": int(across.sum()),
+            "original_sample_cross_pairs": int(across[:50000].sum()),
+            "sampled_cross_pairs_mean_target": float(target[across].mean()),
+            "fits": fits,
+        }
+
+    overlap = np.stack(masks).astype(np.int64)
+    out = timestamped_results_dir("choir_root_groups")
+    out.mkdir(parents=True, exist_ok=False)
+    report = {"cells": n, "shared_graph_component_sizes": np.bincount(components).tolist(),
+              "smaller_group_intersection_order": list(VARIANTS),
+              "smaller_group_intersection_counts": (overlap @ overlap.T).tolist(),
+              "variants": reports}
+    (out / "root_groups.json").write_text(json.dumps(report, indent=2) + "\n")
+    pd.DataFrame(composition, columns=["variant", "group", "field", "value", "cells"]).to_csv(out / "root_composition.csv", index=False)
+    pd.concat(memberships, ignore_index=True).to_csv(out / "smaller_group_members.csv", index=False)
+    print(out)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,65 @@
+"""Root-plus-children chain family test on the benchmark cases that fit its noise model."""
+
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+sys.path.insert(0, str(OUT.parents[2]))
+from benchmarks.diagnostics.calibration.selected.hierarchy import (  # noqa: E402
+    diffusion_root_conditional_mc as mc,
+)
+from benchmarks.shared.cases import get_default_test_cases  # noqa: E402
+from benchmarks.shared.util.case_inputs import prepare_case_inputs  # noqa: E402
+
+# Independent Gaussian rows with identity covariance times a known sigma**2.
+SUPPORTED = {
+    "gauss_clear_medium_continuous": "cluster_std",
+    "gauss_moderate_3c_continuous": "cluster_std",
+    "gauss_null_large_continuous": "cluster_std",
+    "gauss_dense_signal_highd_continuous": "cluster_std",
+    "cancer_pc_nohub_disconnected": None,
+    "cancer_pc_nohub_connected": None,
+}
+
+
+def run(index_name):
+    index, name = index_name
+    case = next(c for c in get_default_test_cases() if c["name"] == name)
+    inputs = prepare_case_inputs(case, ["tbs"])
+    assert np.array_equal(inputs.data.values, inputs.original_features)
+    sigma = float(case[SUPPORTED[name]]) if SUPPORTED[name] else 1.0
+    truth = dict(zip(inputs.data.index, np.asarray(inputs.labels)))
+    start = perf_counter()
+    with threadpool_limits(limits=1):
+        family = mc.selected_diffusion_family_chain_tests(
+            inputs.data, sigma=sigma, steps=999, seed=2026110700 + 10 * index, alpha=0.05
+        )
+    nodes = []
+    for node in family["nodes"]:
+        groups = [sorted({truth[label] for label in child}) for child in node.get("children", ())]
+        nodes.append({
+            "role": node["role"], "rows": len(node.get("rows", ())),
+            "true_clusters_in_node": len({truth[label] for label in node.get("rows", ())}),
+            "children_rows": [len(c) for c in node.get("children", ())],
+            "children_true_clusters": groups,
+            "status": node["status"], "sampling_status": node.get("sampling_status"),
+            "accepted_moves": node.get("accepted_moves"), "observed_radius": node.get("observed_radius"),
+            "p_value": node["p_value"], "decision": node["decision"], "error": node.get("error"),
+        })
+    return {"case": name, "sigma": sigma, "shape": list(inputs.data.shape),
+            "true_clusters": len(set(truth.values())), "family_status": family["status"],
+            "family_error": family.get("error"), "seconds": perf_counter() - start, "nodes": nodes}
+
+
+if __name__ == "__main__":
+    with Pool(processes=6) as pool, (OUT / "results.jsonl").open("x") as output:
+        for record in pool.imap_unordered(run, list(enumerate(SUPPORTED))):
+            output.write(json.dumps(record, default=float) + "\n")
+            output.flush()
+            print(record["case"], record["family_status"], round(record["seconds"], 1), flush=True)

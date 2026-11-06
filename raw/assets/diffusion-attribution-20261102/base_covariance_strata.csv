@@ -1,0 +1,9 @@
+data_mode,covariance_mode,covariance_source,covariance_representation,replicates,sibling_rejections,mean_statistic,mean_p_value,minimum_left_count,minimum_right_count
+independent,known_identity,known_identity,dense,50,0,24.220169098298562,0.4916860597266998,7,15
+independent,production_guarded,parent_total_fallback,dense,1,0,34.21470097353523,0.08092498289604245,7,73
+independent,production_guarded,pooled_within_child,dense,25,7,35.68721378572638,0.1733111768506456,25,30
+independent,production_guarded,pooled_within_child,diagonal,24,1,24.908493896220552,0.4739946945195881,9,15
+selected,known_identity,known_identity,dense,50,50,98.94336144187652,3.2829528113797836e-07,7,15
+selected,production_guarded,parent_total_fallback,dense,1,1,50.54956808756137,0.001204752592647196,7,73
+selected,production_guarded,pooled_within_child,dense,25,25,242.87545048320098,7.526364590387177e-21,25,30
+selected,production_guarded,pooled_within_child,diagonal,24,24,98.0977496053182,4.0363415086538036e-07,9,15

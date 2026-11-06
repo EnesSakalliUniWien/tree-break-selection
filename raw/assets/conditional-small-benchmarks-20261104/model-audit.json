@@ -1,0 +1,112 @@
+[
+  {
+    "name": "gauss_clear_medium_continuous",
+    "generator": "blobs_continuous",
+    "seed": 101,
+    "rows": 60,
+    "features": 40,
+    "representation": "continuous",
+    "spherical_model_supported": true,
+    "reason": "known spherical Gaussian noise",
+    "fingerprint": "b6a1c8a873fa3ba9eef1a27fc826ae2bd04a2ef1857078911238ad0e7930778c"
+  },
+  {
+    "name": "gauss_moderate_3c_continuous",
+    "generator": "blobs_continuous",
+    "seed": 200,
+    "rows": 45,
+    "features": 30,
+    "representation": "continuous",
+    "spherical_model_supported": true,
+    "reason": "known spherical Gaussian noise",
+    "fingerprint": "1c67976d3983ac86d88d01b534bbe90a83a38d0f274a0a1e6f6d0627caeac460"
+  },
+  {
+    "name": "gauss_null_large_continuous",
+    "generator": "blobs_continuous",
+    "seed": 401,
+    "rows": 200,
+    "features": 80,
+    "representation": "continuous",
+    "spherical_model_supported": true,
+    "reason": "known spherical Gaussian noise",
+    "fingerprint": "39735d740c93a50b60af672366288307af679d44d3ff2de022dc98c167030f02"
+  },
+  {
+    "name": "gauss_clear_small",
+    "generator": "blobs",
+    "seed": 100,
+    "rows": 30,
+    "features": 20,
+    "representation": "median_binary",
+    "spherical_model_supported": false,
+    "reason": "median thresholding creates binary observations and dependence within each feature",
+    "fingerprint": "c2f623d5ca68b5b2bc9fcde5df0b3cd077060665565781fdc91f1c72f09b865a"
+  },
+  {
+    "name": "gauss_null_small",
+    "generator": "blobs",
+    "seed": 400,
+    "rows": 60,
+    "features": 30,
+    "representation": "median_binary",
+    "spherical_model_supported": false,
+    "reason": "median thresholding creates binary observations and dependence within each feature",
+    "fingerprint": "f6c019c4a7864a3b4b7366129c22e22ff5294d4639d5b7c2f1880176e925a163"
+  },
+  {
+    "name": "dim_consolidated_4c_24f_continuous",
+    "generator": "dimensional_gaussian_continuous",
+    "seed": 13000,
+    "rows": 160,
+    "features": 24,
+    "representation": "continuous",
+    "spherical_model_supported": false,
+    "reason": "known nonspherical block covariance",
+    "fingerprint": "16176448c65ead1586d342e51ce5ba0f1d0bd958725c1417ccb803da33953ecd"
+  },
+  {
+    "name": "mp_spike_below_bbp_continuous",
+    "generator": "continuous_spiked_covariance",
+    "seed": 21100,
+    "rows": 120,
+    "features": 300,
+    "representation": "continuous",
+    "spherical_model_supported": false,
+    "reason": "identity plus rank-one covariance",
+    "fingerprint": "305ffed2b3edfe04e03b071f57954a042d234afe8acabe3b35cc749fbfa22903"
+  },
+  {
+    "name": "cont_lowrank_pggn_shrinkage",
+    "generator": "continuous_low_rank_factor",
+    "seed": 21300,
+    "rows": 80,
+    "features": 2000,
+    "representation": "continuous",
+    "spherical_model_supported": false,
+    "reason": "factor covariance plus diagonal noise",
+    "fingerprint": "8c776a40d473284905e49d917e1e961f35bdbd1ee22555b45ad5b536755197f0"
+  },
+  {
+    "name": "gauss_single_outlier_4c_continuous",
+    "generator": "gaussian_outliers_continuous",
+    "seed": 13200,
+    "rows": 161,
+    "features": 40,
+    "representation": "continuous",
+    "spherical_model_supported": false,
+    "reason": "outliers and inliers have different noise laws",
+    "fingerprint": "2a11ebbb203ac863d35d5bf54eaf0f1c1e7d92a61485b6e0538f4f13c9fd71ee"
+  },
+  {
+    "name": "phylo_brownian_null_16taxa",
+    "generator": "phylogenetic_brownian_continuous",
+    "seed": 21500,
+    "rows": 160,
+    "features": 100,
+    "representation": "continuous",
+    "spherical_model_supported": false,
+    "reason": "shared taxon effects create marginal row dependence",
+    "fingerprint": "47f2d25c3def0b60debbbaecb741add08a1714ba9c4e537371de095db35b4e66"
+  }
+]

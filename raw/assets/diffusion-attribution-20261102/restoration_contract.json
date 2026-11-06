@@ -1,0 +1,16 @@
+{
+  "role": "diagnostic_direct_attribution_not_production_calibration",
+  "edge_alpha": 0.001,
+  "sibling_alpha": 0.01,
+  "branch_lengths": 0,
+  "contrast_energy_rank": false,
+  "edge_roles": "recomputed per selected/independent matrix with guarded covariance, frozen across arms",
+  "projection": "same native production all-leaf parent-total chart in both covariance arms; MP rank and tie expansion remain adaptive",
+  "covariance_modes": [
+    "known_identity",
+    "production_guarded"
+  ],
+  "inflation": "existing fit/decision with default enforce_support_thresholds=False; predictions on null-like rows descriptive only and withheld from production_gate_p",
+  "conditional_selected_law": "unresolved; no traversal/BH/error-control claim",
+  "node_count_unit": "dependent within dataset; use root independent dataset count"
+}

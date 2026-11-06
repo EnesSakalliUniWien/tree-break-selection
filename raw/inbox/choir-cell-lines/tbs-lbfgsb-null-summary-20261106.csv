@@ -1,0 +1,9 @@
+model,variant,attempted,successful,failed,false_partitions,rate_successful,upper_one_sided_95_failure_as_error,target_established_by_marginal_bound
+null_high_depth_variation,markov_average,300,300,0,298,0.9933333333333333,0.9988141858890657,False
+null_high_depth_variation,markov_ward,300,300,0,300,1.0,1.0,False
+null_high_depth_variation,symmetric_average,300,300,0,259,0.8633333333333333,0.8948283602690822,False
+null_high_depth_variation,symmetric_ward,300,300,0,220,0.7333333333333333,0.7751362479660515,False
+null_low_depth_variation,markov_average,300,300,0,40,0.13333333333333333,0.17000467698980215,False
+null_low_depth_variation,markov_ward,300,300,0,298,0.9933333333333333,0.9988141858890657,False
+null_low_depth_variation,symmetric_average,300,300,0,2,0.006666666666666667,0.020836230527024657,False
+null_low_depth_variation,symmetric_ward,300,300,0,295,0.9833333333333333,0.9934104677610244,False

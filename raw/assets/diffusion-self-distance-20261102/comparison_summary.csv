@@ -1,0 +1,9 @@
+case,arm,datasets,history_changes,clade_changes,root_changes,positive_self_before,positive_self_after
+gauss_clear_medium_continuous,original,1,0,0,0,13,0
+gauss_clear_medium_continuous,reconstructed,1,0,0,0,13,0
+gauss_moderate_3c_continuous,original,1,0,0,0,12,0
+gauss_moderate_3c_continuous,reconstructed,1,0,0,0,13,0
+iid_continuous,original,50,8,0,0,1194,0
+iid_continuous,reconstructed,50,8,0,0,1194,0
+small_gaussian,original,3,0,0,0,0,0
+small_gaussian,reconstructed,3,0,0,0,0,0

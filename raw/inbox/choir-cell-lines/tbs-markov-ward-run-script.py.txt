@@ -1,0 +1,132 @@
+"""Run the registered tbs_family_diffusion_markov_ward method on all cancer cells.
+
+Reuses the 2026-11-03 kernel and PCA. Markov coordinates come from the production
+coordinate_operator="markov" option; all TBS settings come from the method registry.
+A failure (for example non-converged NNLS) is recorded, not retried with other settings.
+"""
+
+import json
+import os
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from scipy.spatial.distance import pdist
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[2]
+sys.path.insert(0, str(ROOT))
+from applications.scrna._shared import json_default
+from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from tree_break_selection.space_separation.diffusion import (
+    DIFFUSION_COORDINATE_OPERATORS,
+    compute_diffusion_coordinates,
+)
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+BASE = ROOT / "results/analyses/choir_cell_lines_tbs_20261103_163359"
+SAVED_MARKOV = ROOT / "results/analyses/choir_tbs_recovery_comparison_20261103_174622/markov_ward"
+METHOD = "tbs_family_diffusion_markov_ward"
+
+
+def write_json(name, value):
+    (OUT / name).write_text(json.dumps(value, indent=2, default=json_default) + "\n")
+
+
+def recovered_lines(truth, labels):
+    table = pd.crosstab(truth, labels)
+    recall = table.max(axis=1) / table.sum(axis=1)
+    purity = table.max(axis=0) / table.sum(axis=0)
+    return int(((recall >= 0.9) & (purity[table.idxmax(axis=1)].to_numpy() >= 0.9)).sum())
+
+
+start = perf_counter()
+metadata = pd.read_csv(OUT / "cell_metadata.csv", index_col=0, dtype=str)
+pca = np.load(OUT / "pca.npy")
+data = pd.DataFrame(pca, index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+truth = metadata.Cell_line.to_numpy()
+params = dict(METHOD_SPECS[METHOD].param_grid[0])
+# One-off override of the registered 1,000-iteration budget, recorded in summary.json.
+params["branch_length_optimization_max_iterations"] = 5000
+settings = json.loads((OUT / "preparation.json").read_text())
+
+with threadpool_limits(limits=4):
+    record = {}
+    coordinates = compute_diffusion_coordinates(
+        sparse.load_npz(BASE / "diffusion_kernel.npz"), diffusion_time=3, n_components=30,
+        record=record, coordinate_operator=params["diffusion_coordinate_operator"],
+    )
+    saved = np.load(SAVED_MARKOV / "coordinates.npy")
+    sign = np.sign(np.sum(coordinates * saved, axis=0))
+    parity = float(np.max(np.abs(coordinates - saved * sign)))
+    np.save(OUT / "markov_coordinates.npy", coordinates)
+    label, definition = DIFFUSION_COORDINATE_OPERATORS[params["diffusion_coordinate_operator"]]
+    diffusion_record = {
+        "backend": "pydiffmap", "feature_family": "continuous", "metric": "euclidean",
+        "neighbor_search_k": settings["neighbor_search_k"], "diffusion_time": 3,
+        "epsilon": settings["epsilon"], "epsilon_method": settings["epsilon_method"],
+        "bandwidth_type": "-1/(d+2)", "diffusion_components": coordinates.shape[1],
+        "coordinate_operator": label, "coordinate_operator_definition": definition,
+        "coordinate_eigensolver": record["eigensolver"],
+        "self_distance_policy": "zero_identity_diagonal_before_epsilon_and_kernel",
+    }
+    print(json.dumps({"coordinate_parity_max_abs": parity, "shape": coordinates.shape}), flush=True)
+
+    distance_path = OUT / "diffusion_distance.npy"
+    distances = np.lib.format.open_memmap(
+        distance_path, mode="w+", dtype=np.float64, shape=(len(data) * (len(data) - 1) // 2,)
+    )
+    pdist(coordinates, metric="euclidean", out=distances)
+    distances.flush()
+    summary = {"method_id": METHOD, "params": params, "cells": len(data), "code_commit":
+               (OUT / "code_commit.txt").read_text().strip(), "coordinate_parity_max_abs": parity,
+               "diffusion": diffusion_record}
+    try:
+        result = run_tbs_on_distance(
+            data, distances, 0.01, edge_alpha=0.001,
+            tree_linkage_method=params["tree_linkage_method"],
+            feature_space=continuous_feature_space_from_columns(tuple(data.columns)),
+            branch_length_data_df=data,
+            edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+            adaptive_projection_dimension_energy_fraction=0.90,
+            **_tbs_branch_length_optimization_kwargs(params),
+            extra={"adaptive_diffusion": diffusion_record,
+                   "feature_family_diffusion_fallback_reason": None},
+        )
+        extra = result.extra or {}
+        summary.update(status=result.status.value, found_clusters=result.found_clusters,
+                       skip_reason=result.skip_reason, unsupported_reason=result.unsupported_reason,
+                       traversal_counters=extra.get("traversal_counters"),
+                       branch_length=({k: v for k, v in extra.items() if k.startswith("branch_length_")}))
+        if "linkage_matrix" in extra:
+            np.save(OUT / "linkage.npy", extra["linkage_matrix"])
+        if "annotations" in extra:
+            extra["annotations"].drop(columns="distribution", errors="ignore").to_csv(OUT / "annotations.csv")
+        if result.labels is not None:
+            labels = np.asarray(result.labels, dtype=int)
+            assignments = metadata[["CellID", "Cell_line", "Cancer_type", "CHOIR_1"]].copy()
+            assignments["TBS_cluster"] = labels
+            assignments.to_csv(OUT / "cluster_assignments.csv", index=False)
+            summary.update(ari_cell_line=adjusted_rand_score(truth, labels),
+                           nmi_cell_line=normalized_mutual_info_score(truth, labels),
+                           recovered_lines_90_90=recovered_lines(truth, labels),
+                           ari_published_CHOIR_1=adjusted_rand_score(metadata.CHOIR_1, labels))
+    except Exception as error:
+        summary.update(status="exception", error_type=type(error).__name__, error=str(error))
+    summary["elapsed_sec"] = perf_counter() - start
+    write_json("summary.json", summary)
+    print(json.dumps({k: summary.get(k) for k in ("status", "found_clusters", "ari_cell_line",
+          "nmi_cell_line", "recovered_lines_90_90", "error_type", "elapsed_sec")}, default=json_default),
+          flush=True)
+    distances._mmap.close()
+    distance_path.unlink()
+
+# shortcut: skip interpreter teardown, which stalled after both earlier full-data runs.
+os._exit(0)

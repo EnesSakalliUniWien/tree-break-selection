@@ -1,0 +1,8 @@
+panel,datasets,unresolved_families,tested_nodes,unresolved_nodes,stalled_nodes,null_nodes,null_rejected,null_root_rejected,null_child_rejected,family_false_rejections,family_upper95,signal_root_rejected,signal_child_rejected,median_seconds
+A_null_30,200,0,600,0,1,600,13,4/200,9/400,13/200,0.1014,0/0,0/0,10.0
+B_root_signal_30,100,0,300,0,0,141,1,0/0,1/141,1/100,0.0466,70/100,2/59,9.8
+C_hierarchical_40,50,0,150,0,0,0,0,0/0,0/0,0/50,0.0582,49/50,5/100,11.2
+D_null_120,10,0,30,0,0,30,0,0/10,0/20,0/10,0.2589,0/0,0/0,21.0
+D_hierarchical_120,10,0,30,0,0,0,0,0/0,0/0,0/10,0.2589,10/10,3/20,19.5
+D_null_200,10,0,30,0,0,30,0,0/10,0/20,0/10,0.2589,0/0,0/0,32.7
+D_hierarchical_200,10,0,30,0,0,0,0,0/0,0/0,0/10,0.2589,10/10,3/20,29.8

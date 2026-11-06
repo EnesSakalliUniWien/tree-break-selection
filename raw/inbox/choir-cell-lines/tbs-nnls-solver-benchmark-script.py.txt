@@ -1,0 +1,65 @@
+"""Cold-start timing of installed bounded least-squares solvers on the saved Markov/Ward system."""
+
+import json
+import sys
+import warnings
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from scipy import sparse
+from scipy.optimize import Bounds, lsq_linear, minimize
+from sklearn.linear_model import Lasso
+from threadpoolctl import threadpool_limits
+
+DIAG = Path(sys.argv[1])
+sys.path.insert(0, str(DIAG))
+from diagnose import metrics  # noqa: E402
+
+a = sparse.load_npz(DIAG / "markov_ward" / "design.npz").tocsr()
+b = np.load(DIAG / "markov_ward" / "target.npy")
+results = {}
+
+
+def record(name, x, seconds, **extra):
+    m = metrics(a, b, np.maximum(x, 0.0))
+    results[name] = {"seconds": round(seconds, 2), **extra, **{k: m[k] for k in (
+        "cost_recomputed", "scaled_optimality_recomputed", "relative_duality_gap")}}
+    print(name, json.dumps(results[name]), flush=True)
+
+
+with threadpool_limits(limits=4):
+    start = perf_counter()
+    native = lsq_linear(a, b, bounds=(0.0, np.inf), method="trf", tol=1e-5, max_iter=1000,
+                        lsmr_tol="auto", verbose=0)
+    record("lsq_linear_trf_production", native.x, perf_counter() - start,
+           status=int(native.status), iterations=int(native.nit))
+
+    d = 1.0 / np.sqrt(np.asarray(a.power(2).sum(axis=0)).ravel())
+    scaled = a.multiply(d).tocsr()
+    trace = []
+
+    def objective(z):
+        residual = scaled @ z - b
+        return 0.5 * (residual @ residual), scaled.T @ residual
+
+    start = perf_counter()
+    result = minimize(objective, np.zeros(a.shape[1]), method="L-BFGS-B", jac=True,
+                      bounds=Bounds(0.0, np.inf),
+                      callback=lambda z: trace.append((perf_counter() - start, objective(z)[0])),
+                      options={"maxiter": 20000, "ftol": 0.0, "gtol": 1e-8, "maxls": 40})
+    seconds = perf_counter() - start
+    best = trace[-1][1]
+    reach = {f"seconds_to_within_{tol:g}": round(next(t for t, c in trace if c <= best * (1 + tol)), 2)
+             for tol in (1e-2, 1e-4)}
+    record("lbfgsb_scaled_cold", result.x * d, seconds, iterations=int(result.nit), **reach)
+
+    start = perf_counter()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        lasso = Lasso(alpha=1e-12, positive=True, fit_intercept=False, max_iter=20000,
+                      tol=1e-10, selection="cyclic").fit(a.tocsc(), b)
+    record("sklearn_lasso_cd_positive", lasso.coef_, perf_counter() - start,
+           iterations=int(lasso.n_iter_))
+
+(Path(sys.argv[2])).write_text(json.dumps(results, indent=2) + "\n")

@@ -1,0 +1,41 @@
+"""Preserve topology diagnostics for runs whose NNLS exception preceded output export."""
+
+import gc
+
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import pdist
+from threadpoolctl import threadpool_limits
+
+from compare import BASE, OUT, write_json
+from tree_break_selection.tree.construction.build import build_tree
+
+metadata = pd.read_csv(BASE / "cell_metadata.csv", index_col=0, dtype=str)
+data = pd.DataFrame(np.load(BASE / "pca.npy"), index=metadata.index)
+with threadpool_limits(limits=4):
+    for variant in ("symmetric_ward", "markov_average"):
+        dest = OUT / variant
+        assert (dest / "failure.json").exists() and not (dest / "linkage.npy").exists()
+        coordinates = np.load(dest / "coordinates.npy")
+        path = OUT / (variant + "_topology_distance.npy")
+        assert not path.exists()
+        distances = np.lib.format.open_memmap(path, mode="w+", dtype=np.float64,
+            shape=(len(data)*(len(data)-1)//2,))
+        try:
+            print(variant, "topology-only diagnostic", flush=True)
+            pdist(coordinates, out=distances)
+            distances.flush()
+            np.testing.assert_allclose(distances[0], np.linalg.norm(coordinates[0]-coordinates[1]))
+            built = build_tree(data, distances, linkage_method=variant.split("_")[1])
+            z = built.linkage_matrix
+            assert z.shape == (48878, 4) and z[-1, 3] == 48879
+            np.save(dest / "linkage.npy", z)
+            sizes = np.r_[np.ones(48879), z[:, 3]]
+            write_json(dest / "topology_only.json", {"diagnostic_only": True,
+                "native_build_tree": True, "nnls_and_tbs_not_run_in_this_diagnostic": True,
+                "root_child_sizes": sizes[z[-1, :2].astype(int)].astype(int).tolist()})
+            del built, z, sizes, coordinates
+            gc.collect()
+        finally:
+            distances._mmap.close()
+            path.unlink()

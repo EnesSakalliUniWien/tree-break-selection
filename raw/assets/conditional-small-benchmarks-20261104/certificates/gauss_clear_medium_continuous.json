@@ -1,0 +1,59 @@
+{
+  "case": "gauss_clear_medium_continuous",
+  "sample_size": 60,
+  "sigma": 0.6,
+  "elapsed_seconds": 16.402750792000006,
+  "observed_radius": 244.94110098727035,
+  "observed_half_width": 1e-10,
+  "observed_membership_certified": false,
+  "arithmetic_contract": "real-arithmetic constructor with validated outward enclosures; not bitwise floating-point replay",
+  "p_lower": "0",
+  "p_upper": "1",
+  "selection_mass_lower": "0",
+  "selection_mass_upper": "1",
+  "gate_status": "unresolved",
+  "source_hashes": {
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "965f539371a4b38292799d50f97798cef9743c18a41b136b1023b8e44219218a",
+    "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_cells.py": "249dbe66b53665d48dcc97457098a43bfab285a409c70fa4bc4201640cb32e25",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_kernel.py": "21a8d6aa4a34ec4c67d3e7b49a7536f2fc7543999d6cf88d5179c17ba5850440",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_mass.py": "4e84634cefb9e1f0bc486fe30fa6ad4cc1c203d6ff0a3e12a716f15783a5ebbf"
+  },
+  "cells": [
+    {
+      "lo": 0.0,
+      "hi": "244.94110098717036",
+      "status": "unresolved",
+      "proof": "no_uniform_certificate",
+      "reason": "leading or retained spectral group is not uniformly separated",
+      "error": null
+    },
+    {
+      "lo": 244.94110098717036,
+      "hi": "244.94110098737033",
+      "status": "unresolved",
+      "proof": "no_uniform_certificate",
+      "reason": "leading or retained spectral group is not uniformly separated",
+      "error": null
+    },
+    {
+      "lo": 244.94110098737033,
+      "hi": "489.8822019745407",
+      "status": "unresolved",
+      "proof": "no_uniform_certificate",
+      "reason": "leading or retained spectral group is not uniformly separated",
+      "error": null
+    },
+    {
+      "lo": 489.8822019745407,
+      "hi": "inf",
+      "status": "unresolved",
+      "proof": "uncertified_unbounded_tail",
+      "reason": null,
+      "error": null
+    }
+  ]
+}

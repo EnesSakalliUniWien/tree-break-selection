@@ -2,8 +2,9 @@
 title: Adaptive Diffusion and NNLS Method/Library Audit
 type: analysis
 status: reviewed
-updated: 2026-10-14
+updated: 2026-11-06
 sources:
+  - raw/inbox/choir-cell-lines/tbs-nnls-lbfgsb-switch-20261106.md
   - reports/adaptive_diffusion_nnls_method_library_audit_20260728.md
   - reports/benchmark_execution_audit_20260728.md
   - tree_break_selection/space_separation/diffusion.py
@@ -136,6 +137,11 @@ positive-distance bandwidth rule, sparse normalization, and
 `lsq_linear` should remain the NNLS solver; its surrounding target,
 cross-validation, convergence, stability, and observability contract needs
 improvement more than the numerical solver needs replacement.
+
+Superseded on 2026-11-06: at CHOIR scale `lsq_linear` TRF stopped about three
+times above the optimum and was accepted as converged. Production now uses
+column-scaled SciPy L-BFGS-B with a certified duality-gap acceptance check
+([[choir-cell-lines-recovery-plan]]; `tbs-nnls-lbfgsb-switch-20261106.md`).
 
 ### Installed comparison backends
 

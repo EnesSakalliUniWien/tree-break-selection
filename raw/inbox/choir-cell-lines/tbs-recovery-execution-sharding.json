@@ -1,0 +1,5 @@
+{
+  "time_utc": "2026-11-03T16:53:45.023010+00:00",
+  "change": "Execution-only sharding by replicate index modulo 3; models, seeds, sample sizes, method settings and endpoints unchanged; interrupted workers resume from completed variant records.",
+  "validate_sha256": "2f0448b298a64caae61a9f48e73c49d45201bf293800b77af23c5c2232d27017"
+}

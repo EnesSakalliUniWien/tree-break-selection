@@ -1,0 +1,36 @@
+{
+  "scope": "diagnostic_root_only",
+  "conditioning": "complete_observed_merge_history",
+  "null": "independent Gaussian rows, known identity covariance, eta.T @ E[X] = 0",
+  "arithmetic_contract": "real-arithmetic constructor with validated outward enclosures; not bitwise floating-point replay",
+  "source_hashes": {
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "17c3fd6c2d8c132e6f979adb890ff0caf0ba33b233ff17f3e38ae1c6f4dfe3dc",
+    "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "7e1e1efe1b3ca653e6076ead210398426ec6260d771acec175aea603805829db",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_cells.py": "63bb98e52869bb25ae07b6838382d51cd45f74eb5c931f214ccc8dc1a3a7f95a",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_kernel.py": "c411bcd47be3caeac1c688584697ef5a6d8414fccf385adc51f2e8e5020b10d5",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_mass.py": "4e84634cefb9e1f0bc486fe30fa6ad4cc1c203d6ff0a3e12a716f15783a5ebbf",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_diagnostic.py": "0185b97e6d0ca84d654268867f852b7ab2d933faa3363f8fbb56107b6cab42b2"
+  },
+  "root_counts": {
+    "unresolved": 3
+  },
+  "limitations": [
+    "Point replays are observations, not interval certificates.",
+    "Unresolved finite intervals and infinite tails retain their probability mass.",
+    "Root rejection opens two children only; descendant traversal is not calibrated.",
+    "A small diagnostic panel does not establish empirical calibration."
+  ],
+  "generated_at": "2026-11-02T14:00:04.619307+00:00",
+  "outputs": {
+    "roots": "raw/assets/diffusion-root-diagnostic-20261102/small-controls/roots.csv",
+    "cells": "raw/assets/diffusion-root-diagnostic-20261102/small-controls/cells.csv",
+    "replay": "raw/assets/diffusion-root-diagnostic-20261102/small-controls/replay.csv"
+  },
+  "row_counts": {
+    "roots": 3,
+    "cells": 24,
+    "replay": 9
+  }
+}

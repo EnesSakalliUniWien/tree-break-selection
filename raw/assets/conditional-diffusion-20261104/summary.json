@@ -1,0 +1,71 @@
+{
+  "scenarios": [
+    {
+      "scenario": "null",
+      "datasets": 60,
+      "completed": 60,
+      "original_unresolved": 29,
+      "nominal_rejections_001": 20,
+      "conditional_rejections_001": 0,
+      "nominal_rejections_005": 36,
+      "conditional_rejections_005": 0,
+      "accepted_min": 0,
+      "accepted_median": 19.5,
+      "accepted_max": 326,
+      "zero_acceptances": 3,
+      "resolution_allows_001": 6,
+      "resolution_allows_005": 30,
+      "strict_exclusions_with_ties": 12327,
+      "seconds_total": 267.9448713369893,
+      "seconds_median": 4.439544749500783,
+      "p_value_min": 0.05263157894736842
+    },
+    {
+      "scenario": "moderate",
+      "datasets": 20,
+      "completed": 20,
+      "original_unresolved": 10,
+      "nominal_rejections_001": 17,
+      "conditional_rejections_001": 0,
+      "nominal_rejections_005": 20,
+      "conditional_rejections_005": 0,
+      "accepted_min": 0,
+      "accepted_median": 2.0,
+      "accepted_max": 42,
+      "zero_acceptances": 5,
+      "resolution_allows_001": 0,
+      "resolution_allows_005": 3,
+      "strict_exclusions_with_ties": 4042,
+      "seconds_total": 94.04089762400326,
+      "seconds_median": 4.69559450000088,
+      "p_value_min": 0.09302325581395349
+    },
+    {
+      "scenario": "strong",
+      "datasets": 20,
+      "completed": 20,
+      "original_unresolved": 7,
+      "nominal_rejections_001": 20,
+      "conditional_rejections_001": 0,
+      "nominal_rejections_005": 20,
+      "conditional_rejections_005": 0,
+      "accepted_min": 0,
+      "accepted_median": 0.0,
+      "accepted_max": 0,
+      "zero_acceptances": 20,
+      "resolution_allows_001": 0,
+      "resolution_allows_005": 0,
+      "strict_exclusions_with_ties": 3579,
+      "seconds_total": 94.06467412399797,
+      "seconds_median": 4.69905891649978,
+      "p_value_min": 1.0
+    }
+  ],
+  "null_conditional_clopper_pearson_95": [
+    0.0,
+    0.05962949228633472
+  ],
+  "all_accepted_rank_values_recomputed": true,
+  "paired_initial_complete_results_preserved": true,
+  "current_statistic_source_hash_matches": true
+}

@@ -1,0 +1,385 @@
+{
+  "cells": 48879,
+  "shared_graph_component_sizes": [
+    48444,
+    250,
+    185
+  ],
+  "smaller_group_intersection_order": [
+    "symmetric_average",
+    "symmetric_ward",
+    "markov_average",
+    "markov_ward"
+  ],
+  "smaller_group_intersection_counts": [
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      250,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      151,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      267
+    ]
+  ],
+  "variants": {
+    "symmetric_average": {
+      "groups": [
+        {
+          "child": "L43204",
+          "cells": 1,
+          "cell_lines": 1,
+          "top_cell_lines": {
+            "ASPC1_PANCREAS": 1
+          },
+          "choir_clusters": 1,
+          "top_choir_clusters": {
+            "18": 1
+          },
+          "graph_components": {
+            "0": 1
+          },
+          "induced_graph_components": 1
+        },
+        {
+          "child": "N97755",
+          "cells": 48878,
+          "cell_lines": 190,
+          "top_cell_lines": {
+            "NCIH2110_LUNG": 1990,
+            "NCIH460_LUNG": 837,
+            "HOS_BONE": 829,
+            "RERFLCAI_LUNG": 763,
+            "IGR1_SKIN": 725
+          },
+          "choir_clusters": 367,
+          "top_choir_clusters": {
+            "1": 702,
+            "2": 590,
+            "3": 569,
+            "4": 568,
+            "5": 478
+          },
+          "graph_components": {
+            "0": 48443,
+            "1": 250,
+            "2": 185
+          },
+          "induced_graph_components": 3
+        }
+      ],
+      "smaller_group_line_totals": {
+        "ASPC1_PANCREAS": 290
+      },
+      "smaller_group_choir_totals": {
+        "18": 290
+      },
+      "cross_kernel_edges": 88,
+      "cross_kernel_same_line_edges": 88,
+      "cross_kernel_weight": 67.83835776301927,
+      "cross_weight_share_of_smaller_group_degree": 1.0,
+      "pca_centroid_rms_standardized_difference": 1.1219285889933241,
+      "all_cross_pairs_mean_target": 2.2586980069693188,
+      "all_within_pairs_mean_target": [
+        null,
+        1.9999894143254708
+      ],
+      "sampled_cross_pairs": 1,
+      "original_sample_cross_pairs": 1,
+      "sampled_cross_pairs_mean_target": 1.4237378312557518,
+      "fits": {
+        "native_auto": {
+          "root_length_sum": 0.27014584931896296,
+          "root_lengths_under_linkage_ratio": [
+            0.22011185259622718,
+            0.0500339967227358
+          ],
+          "across_root_pair_rmse": 0.04139271041413739,
+          "within_root_child_pair_rmse": 0.2565412035145317
+        },
+        "reference": {
+          "root_length_sum": 0.1598853201147688,
+          "root_lengths_under_linkage_ratio": [
+            0.13027279190897503,
+            0.029612528205793777
+          ],
+          "across_root_pair_rmse": 2.325428294369658e-09,
+          "within_root_child_pair_rmse": 0.13776695489819044
+        }
+      }
+    },
+    "symmetric_ward": {
+      "groups": [
+        {
+          "child": "N97689",
+          "cells": 250,
+          "cell_lines": 1,
+          "top_cell_lines": {
+            "A204_SOFT_TISSUE": 250
+          },
+          "choir_clusters": 2,
+          "top_choir_clusters": {
+            "148": 130,
+            "170": 120
+          },
+          "graph_components": {
+            "1": 250
+          },
+          "induced_graph_components": 1
+        },
+        {
+          "child": "N97755",
+          "cells": 48629,
+          "cell_lines": 189,
+          "top_cell_lines": {
+            "NCIH2110_LUNG": 1990,
+            "NCIH460_LUNG": 837,
+            "HOS_BONE": 829,
+            "RERFLCAI_LUNG": 763,
+            "IGR1_SKIN": 725
+          },
+          "choir_clusters": 365,
+          "top_choir_clusters": {
+            "1": 702,
+            "2": 590,
+            "3": 569,
+            "4": 568,
+            "5": 478
+          },
+          "graph_components": {
+            "0": 48444,
+            "2": 185
+          },
+          "induced_graph_components": 2
+        }
+      ],
+      "smaller_group_line_totals": {
+        "A204_SOFT_TISSUE": 250
+      },
+      "smaller_group_choir_totals": {
+        "148": 130,
+        "170": 120
+      },
+      "cross_kernel_edges": 0,
+      "cross_kernel_same_line_edges": 0,
+      "cross_kernel_weight": 0.0,
+      "cross_weight_share_of_smaller_group_degree": 0.0,
+      "pca_centroid_rms_standardized_difference": 2.4175238502688456,
+      "all_cross_pairs_mean_target": 7.03354493833889,
+      "all_within_pairs_mean_target": [
+        0.4317280599184103,
+        1.9482856600372753
+      ],
+      "sampled_cross_pairs": 567,
+      "original_sample_cross_pairs": 533,
+      "sampled_cross_pairs_mean_target": 7.001291354795585,
+      "fits": {
+        "native_auto": {
+          "root_length_sum": 2.98119274048844,
+          "root_lengths_under_linkage_ratio": [
+            2.9680519298043313,
+            0.013140810684108446
+          ],
+          "across_root_pair_rmse": 0.30201506786074794,
+          "within_root_child_pair_rmse": 0.2352081338399605
+        },
+        "reference": {
+          "root_length_sum": 2.8587769639188,
+          "root_lengths_under_linkage_ratio": [
+            2.846175750196271,
+            0.01260121372252917
+          ],
+          "across_root_pair_rmse": 0.1443225281469875,
+          "within_root_child_pair_rmse": 0.13903716849386388
+        }
+      }
+    },
+    "markov_average": {
+      "groups": [
+        {
+          "child": "N97677",
+          "cells": 151,
+          "cell_lines": 1,
+          "top_cell_lines": {
+            "OAW28_OVARY": 151
+          },
+          "choir_clusters": 1,
+          "top_choir_clusters": {
+            "103": 151
+          },
+          "graph_components": {
+            "0": 151
+          },
+          "induced_graph_components": 1
+        },
+        {
+          "child": "N97755",
+          "cells": 48728,
+          "cell_lines": 190,
+          "top_cell_lines": {
+            "NCIH2110_LUNG": 1990,
+            "NCIH460_LUNG": 837,
+            "HOS_BONE": 829,
+            "RERFLCAI_LUNG": 763,
+            "IGR1_SKIN": 725
+          },
+          "choir_clusters": 366,
+          "top_choir_clusters": {
+            "1": 702,
+            "2": 590,
+            "3": 569,
+            "4": 568,
+            "5": 478
+          },
+          "graph_components": {
+            "0": 48293,
+            "1": 250,
+            "2": 185
+          },
+          "induced_graph_components": 3
+        }
+      ],
+      "smaller_group_line_totals": {
+        "OAW28_OVARY": 161
+      },
+      "smaller_group_choir_totals": {
+        "103": 151
+      },
+      "cross_kernel_edges": 2,
+      "cross_kernel_same_line_edges": 1,
+      "cross_kernel_weight": 0.9552766664680521,
+      "cross_weight_share_of_smaller_group_degree": 0.0004342617459524569,
+      "pca_centroid_rms_standardized_difference": 1.0445871093617243,
+      "all_cross_pairs_mean_target": 2.2989605529883184,
+      "all_within_pairs_mean_target": [
+        0.42025865094714676,
+        1.998162173261436
+      ],
+      "sampled_cross_pairs": 326,
+      "original_sample_cross_pairs": 307,
+      "sampled_cross_pairs_mean_target": 2.320718217155999,
+      "fits": {
+        "native_auto": {
+          "root_length_sum": 0.0021335208932179166,
+          "root_lengths_under_linkage_ratio": [
+            0.001971740067158509,
+            0.00016178082605940766
+          ],
+          "across_root_pair_rmse": 0.2705180077985425,
+          "within_root_child_pair_rmse": 0.23763319720154652
+        },
+        "reference": {
+          "root_length_sum": 0.08732661195393387,
+          "root_lengths_under_linkage_ratio": [
+            0.08070480128229413,
+            0.006621810671639748
+          ],
+          "across_root_pair_rmse": 0.15687917026514742,
+          "within_root_child_pair_rmse": 0.12989637115928787
+        }
+      }
+    },
+    "markov_ward": {
+      "groups": [
+        {
+          "child": "N97606",
+          "cells": 267,
+          "cell_lines": 1,
+          "top_cell_lines": {
+            "NCIH727_LUNG": 267
+          },
+          "choir_clusters": 2,
+          "top_choir_clusters": {
+            "80": 170,
+            "217": 97
+          },
+          "graph_components": {
+            "0": 267
+          },
+          "induced_graph_components": 1
+        },
+        {
+          "child": "N97755",
+          "cells": 48612,
+          "cell_lines": 190,
+          "top_cell_lines": {
+            "NCIH2110_LUNG": 1990,
+            "NCIH460_LUNG": 837,
+            "HOS_BONE": 829,
+            "RERFLCAI_LUNG": 763,
+            "IGR1_SKIN": 725
+          },
+          "choir_clusters": 367,
+          "top_choir_clusters": {
+            "1": 702,
+            "2": 590,
+            "3": 569,
+            "4": 568,
+            "5": 478
+          },
+          "graph_components": {
+            "0": 48177,
+            "1": 250,
+            "2": 185
+          },
+          "induced_graph_components": 3
+        }
+      ],
+      "smaller_group_line_totals": {
+        "NCIH727_LUNG": 270
+      },
+      "smaller_group_choir_totals": {
+        "217": 98,
+        "80": 173
+      },
+      "cross_kernel_edges": 9,
+      "cross_kernel_same_line_edges": 9,
+      "cross_kernel_weight": 3.2357371514059725,
+      "cross_weight_share_of_smaller_group_degree": 0.0008651643689607869,
+      "pca_centroid_rms_standardized_difference": 2.174479139926961,
+      "all_cross_pairs_mean_target": 6.028880108509129,
+      "all_within_pairs_mean_target": [
+        0.6477246066746458,
+        1.9557827177538767
+      ],
+      "sampled_cross_pairs": 574,
+      "original_sample_cross_pairs": 537,
+      "sampled_cross_pairs_mean_target": 6.136296168910559,
+      "fits": {
+        "native_auto": {
+          "root_length_sum": 1.40210963203391,
+          "root_lengths_under_linkage_ratio": [
+            1.3743540454637815,
+            0.027755586570128467
+          ],
+          "across_root_pair_rmse": 0.3117054557668345,
+          "within_root_child_pair_rmse": 0.22921826458121072
+        },
+        "reference": {
+          "root_length_sum": 1.1869882953448152,
+          "root_lengths_under_linkage_ratio": [
+            1.1634911624270552,
+            0.023497132917759924
+          ],
+          "across_root_pair_rmse": 0.19242907796561526,
+          "within_root_child_pair_rmse": 0.12999032055077736
+        }
+      }
+    }
+  }
+}

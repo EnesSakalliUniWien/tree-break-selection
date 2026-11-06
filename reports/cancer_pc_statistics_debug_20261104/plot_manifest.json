@@ -1,0 +1,10 @@
+{
+  "input_sha256": {
+    "/Users/berksakalli/Projects/kl-te-cluster/reports/cancer_pc_statistics_debug_20261104/plot_diagnostic.py": "61c2e719b2d2e88976510fabcc0afec404cc02a847bbfda90c55b73a55ad8eed",
+    "/Users/berksakalli/Projects/kl-te-cluster/reports/cancer_pc_statistics_debug_20261104/generated/complete/root_factors.csv": "e90ef3ddf642669899a3c28f1a4ee433681052555ed65c38d2713534c77b3fd8",
+    "/Users/berksakalli/Projects/kl-te-cluster/reports/cancer_pc_statistics_debug_20261104/generated/complete/calibration_factors.csv": "7dce77b00d60d39c5952d168f783ed8f41800a6d7afa51accfb892d8dcb98184",
+    "/Users/berksakalli/Projects/kl-te-cluster/reports/cancer_pc_statistics_debug_20261104/generated/complete/frozen_tree_swaps.csv": "b8a7c506548b6dc2217d8ebbd2e4a8f534bb6a76da77ec60490350d910abc534",
+    "/Users/berksakalli/Projects/kl-te-cluster/reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261106-pairs.csv": "6c25c9f93ab6dc4c39a7062b317a57fffea480ec1a4c161336e8f82ca4b0cb5e"
+  },
+  "output": "statistics_diagnosis.png"
+}

@@ -1,0 +1,50 @@
+"""Summarise the descendant chain panels with the protocol's endpoints."""
+
+import json
+from pathlib import Path
+
+import pandas as pd
+from scipy.stats import beta
+
+OUT = Path(__file__).resolve().parent
+records = [json.loads(line) for line in (OUT / "results.jsonl").read_text().splitlines()]
+
+
+def upper95(events, total):
+    return 1.0 if events == total else float(beta.ppf(0.95, events + 1, total - events))
+
+
+nodes = pd.DataFrame([node for record in records for node in record["nodes"]])
+families = pd.DataFrame([{k: v for k, v in r.items() if k != "nodes"} for r in records])
+nodes["reject"] = nodes.decision.eq("reject")
+rows = []
+for panel, group in nodes.groupby("panel", sort=False):
+    fam = families[families.panel == panel]
+    null = group[group.null.eq(True)]
+    signal = group[group.null.eq(False)]
+    false_families = int(null.groupby("replicate").reject.any().sum())
+    row = {
+        "panel": panel, "datasets": len(fam), "unresolved_families": int(fam.family_status.ne("complete").sum()),
+        "tested_nodes": len(group), "unresolved_nodes": int(group.status.ne("complete").sum()),
+        "stalled_nodes": int(group.sampling_status.eq("stalled").sum()),
+        "null_nodes": len(null), "null_rejected": int(null.reject.sum()),
+        "null_root_rejected": f"{int(null[null.role == 'root'].reject.sum())}/{int((null.role == 'root').sum())}",
+        "null_child_rejected": f"{int(null[null.role == 'child'].reject.sum())}/{int((null.role == 'child').sum())}",
+        "family_false_rejections": f"{false_families}/{len(fam)}",
+        "family_upper95": round(upper95(false_families, len(fam)), 4),
+        "signal_root_rejected": f"{int(signal[signal.role == 'root'].reject.sum())}/{int((signal.role == 'root').sum())}",
+        "signal_child_rejected": f"{int(signal[signal.role == 'child'].reject.sum())}/{int((signal.role == 'child').sum())}",
+        "median_seconds": round(float(fam.seconds.median()), 1),
+    }
+    rows.append(row)
+summary = pd.DataFrame(rows)
+summary.to_csv(OUT / "summary.csv", index=False)
+pd.set_option("display.width", 250)
+print(summary.to_string(index=False))
+null = nodes[nodes.null.eq(True)]
+print("\nnull-node p-values: share <= 0.05, 0.0167, 0.01:",
+      [round(float((null.p_value <= a).mean()), 4) for a in (0.05, 0.05 / 3, 0.01)], "of", len(null))
+for panel in ("B_root_signal_30", "C_hierarchical_40"):
+    children = nodes[(nodes.panel == panel) & (nodes.role == "child")]
+    pure = children.children_pure.apply(all)
+    print(panel, "children whose own split is pure on both sides:", int(pure.sum()), "of", len(children))

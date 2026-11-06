@@ -1,0 +1,9 @@
+{
+  "runs": 24,
+  "heldout_runs": 20,
+  "source_hashes": 11,
+  "matrix_hashes": 24,
+  "development_fixtures": 4,
+  "conditional_inference_tested": false,
+  "status": "passed"
+}

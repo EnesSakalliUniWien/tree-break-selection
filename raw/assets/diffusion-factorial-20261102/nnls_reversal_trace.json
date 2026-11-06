@@ -1,0 +1,158 @@
+[
+  {
+    "nnls": 0,
+    "root_record": {
+      "parent": "N158",
+      "left": "N156",
+      "right": "N157",
+      "stat": 109.87885696825202,
+      "reference_scale": 1.0,
+      "degrees_of_freedom": 4.0,
+      "p_value": 7.723735544850583e-23,
+      "branch_length_sum": 0.0,
+      "n_parent": 80,
+      "is_null_like": false,
+      "is_edge_blocked": false,
+      "sibling_null_weight": 1.3303923946570857e-10,
+      "calibration_dependency_group": "N158",
+      "calibration_dependency_weight": 1.3303923946570857e-10,
+      "sibling_projection_dimension": 4.0,
+      "parent_positive_eigenvalue_count": 24.0,
+      "feature_family": "bernoulli"
+    },
+    "decision": {
+      "status": "internal_admissible",
+      "c_hat": 8.600261117536066,
+      "p_value": 0.012422579930441949,
+      "estimator": "context_weighted_supported_empirical_null_inflation:local_kernel",
+      "support": {
+        "n_positive_weight_records": 79,
+        "n_supported_records": 77,
+        "n_supported_groups": 3,
+        "n_selected_nonnull_positive_weight_records": 2,
+        "n_strict_null_records": 3,
+        "n_edge_blocked_records": 74,
+        "model_effective_sample_size": 1.6756556403881748,
+        "model_max_group_weight_share": 0.7211198943217187,
+        "feature_family": "bernoulli",
+        "n_family_supported_records": 77,
+        "n_family_supported_groups": 3,
+        "family_effective_sample_size": 1.6756556403881748,
+        "leave_one_group_max_delta_log_c": 0.050759718957340993,
+        "local_effective_sample_size": 1.7685352757844999,
+        "local_max_group_weight_share": 0.682822174320849,
+        "support_contract_status": "below_internal_support_thresholds",
+        "support_contract_failure_reasons": "supported_groups_below_threshold;family_supported_groups_below_threshold;family_effective_sample_size_below_threshold;local_effective_sample_size_below_threshold;local_max_group_weight_share_above_threshold"
+      },
+      "decision_context": {
+        "feature_family": "bernoulli",
+        "sibling_projection_dimension": 4.0,
+        "n_parent": 80
+      },
+      "descriptive_strata": {
+        "active_projection_dimension_axis": true,
+        "active_parent_size_axis": false,
+        "context_bandwidth_projection_dimension": 0.5600268569137389,
+        "context_bandwidth_parent_size": 0.6491810923158814,
+        "reason": "same_selected_hierarchy_reference_law_unvalidated"
+      }
+    },
+    "run": {
+      "status": "ok",
+      "reason": "",
+      "root_edge_open": true,
+      "root_edge_min_p": 1.1534263704097882e-05,
+      "root_edge_mean_df": 19.0,
+      "root_sibling_p": 0.012422579930441949,
+      "root_sibling_df": 4.0,
+      "root_sibling_rank": 4.0,
+      "root_sibling_reject": false,
+      "root_branch_factor": 1.0,
+      "edge_reject_count": 4,
+      "mean_edge_df": 1.6455696202531647,
+      "mean_sibling_rank": 2.1012658227848102,
+      "invalid_sibling_count": 0,
+      "clusters": 1,
+      "ari": 1.0,
+      "labels": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"
+    }
+  },
+  {
+    "nnls": 1,
+    "root_record": {
+      "parent": "N158",
+      "left": "N156",
+      "right": "N157",
+      "stat": 99.59535745863863,
+      "reference_scale": 1.0,
+      "degrees_of_freedom": 4.0,
+      "p_value": 1.1994627998832063e-20,
+      "branch_length_sum": 0.07486888911740033,
+      "n_parent": 80,
+      "is_null_like": false,
+      "is_edge_blocked": false,
+      "sibling_null_weight": 6.7444156553624465e-09,
+      "calibration_dependency_group": "N158",
+      "calibration_dependency_weight": 6.7444156553624465e-09,
+      "sibling_projection_dimension": 4.0,
+      "parent_positive_eigenvalue_count": 24.0,
+      "feature_family": "bernoulli"
+    },
+    "decision": {
+      "status": "internal_admissible",
+      "c_hat": 5.9804883235535,
+      "p_value": 0.002256792380289114,
+      "estimator": "context_weighted_supported_empirical_null_inflation:local_kernel",
+      "support": {
+        "n_positive_weight_records": 79,
+        "n_supported_records": 77,
+        "n_supported_groups": 3,
+        "n_selected_nonnull_positive_weight_records": 2,
+        "n_strict_null_records": 2,
+        "n_edge_blocked_records": 75,
+        "model_effective_sample_size": 1.0928538537162562,
+        "model_max_group_weight_share": 0.9555574363906084,
+        "feature_family": "bernoulli",
+        "n_family_supported_records": 77,
+        "n_family_supported_groups": 3,
+        "family_effective_sample_size": 1.0928538537162562,
+        "leave_one_group_max_delta_log_c": 0.05968051288853826,
+        "local_effective_sample_size": 1.0993015048105994,
+        "local_max_group_weight_share": 0.9525872530966264,
+        "support_contract_status": "below_internal_support_thresholds",
+        "support_contract_failure_reasons": "supported_groups_below_threshold;family_supported_groups_below_threshold;family_effective_sample_size_below_threshold;local_effective_sample_size_below_threshold;local_max_group_weight_share_above_threshold"
+      },
+      "decision_context": {
+        "feature_family": "bernoulli",
+        "sibling_projection_dimension": 4.0,
+        "n_parent": 80
+      },
+      "descriptive_strata": {
+        "active_projection_dimension_axis": true,
+        "active_parent_size_axis": false,
+        "context_bandwidth_projection_dimension": 0.5761755506552729,
+        "context_bandwidth_parent_size": 0.6617522961719119,
+        "reason": "same_selected_hierarchy_reference_law_unvalidated"
+      }
+    },
+    "run": {
+      "status": "ok",
+      "reason": "",
+      "root_edge_open": true,
+      "root_edge_min_p": 6.813570746631465e-05,
+      "root_edge_mean_df": 19.0,
+      "root_sibling_p": 0.002256792380289114,
+      "root_sibling_df": 4.0,
+      "root_sibling_rank": 4.0,
+      "root_sibling_reject": true,
+      "root_branch_factor": 1.103252799857829,
+      "edge_reject_count": 3,
+      "mean_edge_df": 1.6455696202531647,
+      "mean_sibling_rank": 2.1012658227848102,
+      "invalid_sibling_count": 0,
+      "clusters": 2,
+      "ari": 0.0,
+      "labels": "[0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1]"
+    }
+  }
+]

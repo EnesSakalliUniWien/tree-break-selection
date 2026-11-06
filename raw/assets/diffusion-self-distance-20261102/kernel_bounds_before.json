@@ -1,0 +1,32 @@
+{
+  "seed": 20261105,
+  "observed_radius": 2.4990448450502516,
+  "kernel_sha256": "e486a404d5e7bd99da849e5a0c64ed2dbd8ce9f9702f23af61cf203074441fec",
+  "rows": [
+    {
+      "half_width": 1e-12,
+      "status": "enclosed",
+      "max_width": 5.997279668885386e-13
+    },
+    {
+      "half_width": 1e-08,
+      "status": "enclosed",
+      "max_width": 5.996746518179476e-09
+    },
+    {
+      "half_width": 1e-06,
+      "status": "enclosed",
+      "max_width": 5.996746555468526e-07
+    },
+    {
+      "half_width": 0.0001,
+      "status": "enclosed",
+      "max_width": 5.9967466124758045e-05
+    },
+    {
+      "half_width": 0.001,
+      "status": "enclosed",
+      "max_width": 0.0005996752338494445
+    }
+  ]
+}

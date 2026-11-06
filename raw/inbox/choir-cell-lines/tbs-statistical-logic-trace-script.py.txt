@@ -1,0 +1,146 @@
+"""Instrument the existing gate replay at the root without editing production code."""
+
+import hashlib
+import importlib
+import json
+import runpy
+import subprocess
+import sys
+from dataclasses import asdict
+from pathlib import Path
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+from scipy.stats import chi2
+from threadpoolctl import threadpool_limits
+
+from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import compute_mean_branch_length
+from tree_break_selection.tree.distributions import (
+    require_node_continuous_covariance_by_block,
+    resolve_node_continuous_covariance_by_block,
+)
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+from tree_break_selection.tree.topology import tree_root
+
+
+RAW = Path(__file__).resolve().parent
+ROOT = RAW.parents[2]
+BASE = ROOT / "results/analyses/choir_cell_lines_tbs_20261103_163359"
+REPLAY = ROOT / "results/analyses/choir_component_statistics_20261104_102936"
+STATISTICS = "tree_break_selection.hierarchy_analysis.statistics."
+EDGE = importlib.import_module(STATISTICS + "child_parent_divergence.child_parent_divergence_annotation.child_parent_divergence_annotation")
+SIBLING = importlib.import_module(STATISTICS + "sibling_divergence.inflated_projected_wald_annotation.pipeline")
+ADJUST = importlib.import_module(STATISTICS + "sibling_divergence.inflation_correction.inflation_adjusted_sibling_tests")
+INFLATION = importlib.import_module(STATISTICS + "sibling_divergence.inflation_correction.empirical_null_inflation_estimation")
+
+
+def read(path):
+    return json.loads(path.read_text())
+
+
+def git(*args):
+    return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
+
+
+def main():
+    variant, output = sys.argv[1:]
+    assert variant in {"symmetric_average", "markov_average"}
+    native_replay = runpy.run_path(str(RAW / "tbs-component-statistics-script.py.txt"))["replay"]
+    metadata = pd.read_csv(BASE / "cell_metadata.csv", usecols=["CellID"], dtype=str)
+    data = pd.DataFrame(np.load(BASE / "pca.npy"), index=metadata.CellID,
+                        columns=[f"PC{i + 1}" for i in range(30)])
+    space = continuous_feature_space_from_columns(data.columns)
+    source = Path(INFLATION.__file__)
+    commit = git("rev-parse", "HEAD")
+    committed_source = git("show", f"{commit}:{source.relative_to(ROOT)}")
+    committed = {"__package__": INFLATION.__package__, "__name__": "committed_inflation_diagnostic"}
+    exec(compile(committed_source, f"{commit}:{source.name}", "exec"), committed)
+    trace = {"variant": variant, "commit": commit,
+             "inflation_worktree_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+             "root_calibration": None}
+    originals = (EDGE.run_child_parent_tests_across_tree, EDGE.apply_child_parent_divergence_tree_bh_correction,
+                 SIBLING.collect_sibling_pair_records, ADJUST.decide_empirical_null_calibration)
+
+    def capture_edge(**kwargs):
+        result = originals[0](**kwargs)
+        tree = kwargs["tree"]
+        root = tree_root(tree)
+        indices = [i for i, parent in enumerate(kwargs["parent_ids"]) if parent == root]
+        selected = kwargs | {"edge_branch_length_variance_policy": "none", "stage_timings": None}
+        for name in ("child_ids", "parent_ids", "child_leaf_counts", "parent_leaf_counts",
+                     "child_distributions", "parent_distributions"):
+            selected[name] = [kwargs[name][i] for i in indices]
+        no_time = originals[0](**selected)
+        covariance = resolve_node_continuous_covariance_by_block(tree, root, space)
+        total_covariance = require_node_continuous_covariance_by_block(tree, root, space)
+        variance = covariance["continuous"]
+        trace["root_covariance"] = {"estimator": "parent_total" if covariance is total_covariance else "pooled_within_child",
+                                    "shape": list(variance.shape), "all_leaf_rows": tree.nodes[root]["leaf_count"]}
+        mean_length = compute_mean_branch_length(tree)
+        trace["mean_branch_length"] = mean_length
+        edge_rows = []
+        for j, i in enumerate(indices):
+            child = kwargs["child_ids"][i]
+            nc, np_ = int(kwargs["child_leaf_counts"][i]), int(kwargs["parent_leaf_counts"][i])
+            length = float(tree.edges[root, child]["branch_length"])
+            edge_rows.append({"child": child, "child_leaves": tree.nodes[child]["leaf_count"],
+                "child_test_rows": nc, "parent_test_rows": np_,
+                "parent_projection_rows": tree.nodes[root]["leaf_count"] - np_,
+                "contrast_norm": float(np.linalg.norm(kwargs["child_distributions"][i] - kwargs["parent_distributions"][i])),
+                "sampling_variance_factor": 1 / nc - 1 / np_, "length": length,
+                "branch_variance_multiplier": 1 + length / mean_length,
+                "statistic": float(result[0][i]), "df": float(result[1][i]), "nominal_p": float(result[2][i]),
+                "statistic_without_branch_variance": float(no_time[0][j]),
+                "df_without_branch_variance": float(no_time[1][j]), "p_without_branch_variance": float(no_time[2][j])})
+        trace["root_edges"] = edge_rows
+        return result
+
+    def capture_bh(*args, **kwargs):
+        result = originals[1](*args, **kwargs)
+        rejected, adjusted, tested, blocked = result
+        trace["edge_tree_bh"] = {"raw_statistics": len(tested), "reached": int(tested.sum()),
+                                 "rejected": int(rejected.sum()), "blocked": int(blocked.sum())}
+        indices = {child: i for i, child in enumerate(kwargs["child_ids"])}
+        for row in trace["root_edges"]:
+            i = indices[row["child"]]
+            row.update(adjusted_p=float(adjusted[i]), rejected=bool(rejected[i]))
+        return result
+
+    def capture_siblings(*args, **kwargs):
+        records, non_binary = originals[2](*args, **kwargs)
+        root = tree_root(args[0])
+        record = next(record for record in records if record.parent == root)
+        trace["raw_root_sibling"] = asdict(record)
+        trace["sibling_records"] = {"total": len(records), "focal": sum(not r.is_null_like for r in records),
+                                    "eligible_internal_calibration": sum(r.has_internal_empirical_null_support for r in records)}
+        return records, non_binary
+
+    def capture_calibration(model, record, **kwargs):
+        result = originals[3](model, record, **kwargs)
+        if record.parent == trace["raw_root_sibling"]["parent"]:
+            previous = committed["decide_empirical_null_calibration"](model, record, **kwargs)
+            trace["root_calibration"] = {"working_tree": asdict(result), "committed_rule": asdict(previous),
+                                         "calibration_records": model.n_calibration,
+                                         "max_calibration_parent_size": int(round(np.exp(model.sample_contexts[:, 1].max())))}
+            np.testing.assert_allclose(result.p_value, chi2.sf(record.stat / (record.reference_scale * result.c_hat),
+                                                              record.degrees_of_freedom), rtol=1e-12)
+        return result
+
+    with (threadpool_limits(limits=2), patch.object(EDGE, "run_child_parent_tests_across_tree", capture_edge),
+          patch.object(EDGE, "apply_child_parent_divergence_tree_bh_correction", capture_bh),
+          patch.object(SIBLING, "collect_sibling_pair_records", capture_siblings),
+          patch.object(ADJUST, "decide_empirical_null_calibration", capture_calibration)):
+        result = native_replay(variant, data, space)
+    recorded = read(REPLAY / f"{variant}.json")
+    assert result["root_annotations"] == recorded["root_annotations"]
+    assert result["traversal"]["counters"] == recorded["traversal"]["counters"]
+    trace["replay"] = result
+    with (Path(output) / f"{variant}.json").open("x") as handle:
+        json.dump(trace, handle, indent=2, allow_nan=False,
+                  default=lambda x: x.item() if isinstance(x, np.generic) else str(x))
+    print(variant, result["traversal"]["root_decision"], flush=True)
+
+
+if __name__ == "__main__":
+    main()

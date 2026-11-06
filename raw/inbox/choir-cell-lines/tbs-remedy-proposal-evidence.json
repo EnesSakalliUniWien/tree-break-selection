@@ -1,0 +1,56 @@
+{
+  "status": "proposal_with_read_only_coordinate_diagnostic; clustering_comparison_not_run",
+  "candidate": "Markov right-eigenvector coordinates",
+  "formula": "Phi_M = D^(-1/2) Phi_S; Phi_S = U Lambda^3; P = D^(-1) W",
+  "positive_kernel_degrees_verified": true,
+  "Markov_eigen_relation_max_residual": 4.510442101455574e-15,
+  "ASPC1_coordinate_norm_CV_definition": "population standard deviation divided by mean over all 290 ASPC1 cells",
+  "ASPC1_coordinate_norm_CV_current": 0.19009942697237586,
+  "ASPC1_coordinate_norm_CV_candidate": 0.05001739865742434,
+  "proposed_comparison": [
+    {
+      "coordinates": "current symmetric",
+      "linkage": "average"
+    },
+    {
+      "coordinates": "current symmetric",
+      "linkage": "ward"
+    },
+    {
+      "coordinates": "Markov right-eigenvector",
+      "linkage": "average"
+    },
+    {
+      "coordinates": "Markov right-eigenvector",
+      "linkage": "ward"
+    }
+  ],
+  "frozen": [
+    "all 48879 cells",
+    "HVG 2000",
+    "PCA 30",
+    "kernel k15",
+    "epsilon median",
+    "diffusion time3",
+    "retained eigenpairs and complete-tie policy",
+    "NNLS target, sample, seed, tolerances",
+    "edge alpha .001",
+    "sibling alpha .01"
+  ],
+  "new_clustering_run": false,
+  "production_changes": false,
+  "default_changed": false,
+  "references": [
+    {
+      "title": "Coifman and Lafon, Diffusion maps (2006)",
+      "url": "https://www.math.ucdavis.edu/~strohmer/courses/270/diffusion_maps.pdf",
+      "local_path": "raw/inbox/choir-cell-lines/diffusion-maps-coifman-lafon-2006.pdf",
+      "bytes": 700691,
+      "sha256": "cf2188865324a22da7dcea1072466881ef47723d50e5ac34253bc7b057ff43ce"
+    },
+    {
+      "title": "SciPy linkage documentation",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html"
+    }
+  ]
+}

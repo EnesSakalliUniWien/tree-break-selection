@@ -1,0 +1,17 @@
+data_source,covariance,projection,inflation,independent_dataset_count,available_count,raw_rejections,descriptive_adjusted_rejections,gate_eligible_count,production_gate_available,production_gate_rejections,full_span_count,median_raw_statistic,median_df,median_c_hat
+independent,known_identity,full_feature,empirical,50,50,0,0,0,0,0,50,23.380038978108978,24.0,1.0
+independent,known_identity,full_feature,none,50,50,0,0,0,0,0,50,23.380038978108978,24.0,1.0
+independent,known_identity,production,empirical,50,50,0,0,0,0,0,50,23.38003897810898,24.0,1.0
+independent,known_identity,production,none,50,50,0,0,0,0,0,50,23.38003897810898,24.0,1.0
+independent,production_guarded,full_feature,empirical,50,50,8,7,0,0,0,50,27.69299119738982,24.0,1.0335245841403555
+independent,production_guarded,full_feature,none,50,50,8,8,0,0,0,50,27.69299119738982,24.0,1.0
+independent,production_guarded,production,empirical,50,50,8,7,0,0,0,50,27.692991197389823,24.0,1.057391244002174
+independent,production_guarded,production,none,50,50,8,8,0,0,0,50,27.692991197389823,24.0,1.0
+selected,known_identity,full_feature,empirical,50,50,50,34,34,34,34,50,98.64357631386272,24.0,1.0
+selected,known_identity,full_feature,none,50,50,50,50,34,0,0,50,98.64357631386272,24.0,1.0
+selected,known_identity,production,empirical,50,50,50,13,34,34,13,50,98.64357631386272,24.0,2.8587956669903627
+selected,known_identity,production,none,50,50,50,50,34,0,0,50,98.64357631386272,24.0,1.0
+selected,production_guarded,full_feature,empirical,50,50,50,34,34,34,34,50,137.655491996401,24.0,1.1858401276518973
+selected,production_guarded,full_feature,none,50,50,50,50,34,0,0,50,137.655491996401,24.0,1.0
+selected,production_guarded,production,empirical,50,50,50,28,34,34,28,50,137.65549199640103,24.0,3.0780280174857326
+selected,production_guarded,production,none,50,50,50,50,34,0,0,50,137.65549199640103,24.0,1.0

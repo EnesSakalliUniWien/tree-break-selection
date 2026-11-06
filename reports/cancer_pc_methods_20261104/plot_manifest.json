@@ -1,0 +1,30 @@
+{
+  "summary_seeds": [
+    20261105,
+    20261106,
+    20261107,
+    20261108,
+    20261109
+  ],
+  "assignment_seed": 20261104,
+  "methods": [
+    "tbs_family_diffusion",
+    "tbs",
+    "spectral",
+    "kmeans",
+    "leiden",
+    "louvain",
+    "dbscan",
+    "optics",
+    "hdbscan",
+    "tbs_diffusion",
+    "tbs_diffusion_adaptive_nnls"
+  ],
+  "cases": [
+    "cancer_pc_hub_disconnected",
+    "cancer_pc_nohub_disconnected",
+    "cancer_pc_hub_connected",
+    "cancer_pc_nohub_connected"
+  ],
+  "source": "/Users/berksakalli/Projects/kl-te-cluster/reports/cancer_pc_methods_20261104/generated/panel/results.csv"
+}

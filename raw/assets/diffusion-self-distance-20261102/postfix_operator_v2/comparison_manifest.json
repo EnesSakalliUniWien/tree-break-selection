@@ -1,0 +1,30 @@
+{
+  "python": "3.12.11",
+  "versions": {
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "pydiffmap": "0.2.0.1",
+    "scikit-learn": "1.7.2",
+    "pandas": "2.3.3"
+  },
+  "source_sha256": {
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/diffusion_self_distance_comparison.py": "9c229d36145e214efb81ee79647aedaabef3dec0163790064c2ae8eefe9b3faf",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "81a51a5bec93fda2891b871b7a03b4a0dfc140e054eb3a61e4430ddad6f62565",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/diffusion_factorial.py": "9f1263a6ce63e1ba9de57ccb48e8133821a1823dd3b9ae5a722f2510f89e57c7",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+    "/Users/berksakalli/Projects/kl-te-cluster/uv.lock": "9f2d020373c38a1e376914950d588e0ec643e6d570736d56c058defcbeb39298"
+  },
+  "stage": "post_fix_comparison",
+  "datasets": 55,
+  "rows": 110,
+  "baseline_source_sha256": "17c3fd6c2d8c132e6f979adb890ff0caf0ba33b233ff17f3e38ae1c6f4dfe3dc",
+  "input_arrays_sha256": "7e46a32324354a5f3ec51e9ec90a0bbd7e4640adfef4323d7f52e0bbbf02ae77",
+  "baseline_directory": "raw/assets/diffusion-self-distance-20261102",
+  "model": "full-feature known-I root statistic; no NNLS/PCA/fitted inflation; unselected chi tails are descriptive only",
+  "operator_reference": "floating zero-self/positive-offdiagonal epsilon reduction with native row-dependent bandwidths; not a rigorous exact-real certificate",
+  "baseline_operator_metric": "not captured in original pre-fix rows; no legacy monkeypatch used to fill it",
+  "source_changes": "baseline is archived genuine live pre-fix observations; inputs replayed under live fixed source",
+  "prior_factorial_manifest_sha256": "51f7c2f2ed76f083a7683a58947057c770aab65232da5320b7cee8847be98ea6",
+  "genuine_baseline_histories_matching_prior_factorial": 50,
+  "raw_preservation_note": "First postfix files were overwritten once while adding direct operator observation, before overwrite protection was implemented. Genuine pre-fix baseline is unchanged. Existing root-level postfix outputs are retained; this version is a separate additional run."
+}

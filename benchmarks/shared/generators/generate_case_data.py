@@ -8,6 +8,7 @@ from benchmarks.shared.generators.barycentric import (
     generate_planted_hierarchy_deep_signal,
 )
 from benchmarks.shared.generators.binary_cases import generate_binary_case
+from benchmarks.shared.generators.cancer_pc_surrogate import generate_cancer_pc_surrogate
 from benchmarks.shared.generators.case_data_contracts import (
     CaseDataResult,
     CaseGenerator,
@@ -42,6 +43,7 @@ from benchmarks.shared.generators.spiked_covariance import (
 )
 
 GENERATOR_DISPATCH: dict[str, CaseGenerator] = {
+    "cancer_pc_surrogate": generate_cancer_pc_surrogate,
     "binary": generate_binary_case,
     "binary_barycentric_template": generate_binary_barycentric_template,
     "binary_selected_nonnull_only": generate_binary_selected_nonnull_only,

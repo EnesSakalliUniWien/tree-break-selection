@@ -1,0 +1,618 @@
+"""Diffusion-coordinate and distance methods for separated spaces."""
+
+from __future__ import annotations
+
+import math
+import numbers
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from scipy.linalg import eigh
+from scipy.sparse.csgraph import connected_components
+from scipy.sparse.linalg import eigsh
+from scipy.spatial.distance import pdist
+
+from tree_break_selection.eigenvalue_groups import (
+    extend_rank_through_ties,
+    tied_eigenvalue_neighbors,
+)
+
+if TYPE_CHECKING:
+    from tree_break_selection.tree.feature_space import FeatureSpace
+
+
+@dataclass(frozen=True)
+class DiffusionGeometry:
+    """Coordinates, pairwise distances, and evidence from one diffusion fit."""
+
+    coordinates: np.ndarray
+    distance_condensed: np.ndarray
+    metadata: dict[str, object]
+
+
+PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS = 8
+# shortcut: above this size the leading modes come from ARPACK (eigsh). Disconnected
+# graphs fall back to the dense solver because ARPACK can miss repeated eigenvalue 1;
+# other exact repeated leading eigenvalues are not checked. Compare with the dense
+# solver if a large run depends on such ties.
+DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES = 2000
+PYDIFFMAP_VARIABLE_BANDWIDTH_MIN_POSITIVE_NEIGHBORS = PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS - 1
+
+
+def _diffusion_geometry(
+    coordinates: np.ndarray,
+    *,
+    metadata: dict[str, object],
+) -> DiffusionGeometry:
+    """Build a validated diffusion result through one deep interface."""
+    values = np.asarray(coordinates, dtype=float)
+    if values.ndim != 2 or values.shape[0] < 2 or values.shape[1] < 1:
+        raise ValueError("Diffusion coordinates must be a non-empty two-dimensional matrix.")
+    if not np.isfinite(values).all():
+        raise ValueError("Diffusion coordinates contain non-finite values.")
+    distances = pdist(values, metric="euclidean")
+    if not np.isfinite(distances).all():
+        raise ValueError("Diffusion distances contain non-finite values.")
+    return DiffusionGeometry(
+        coordinates=values,
+        distance_condensed=distances,
+        metadata=dict(metadata),
+    )
+
+
+def resolve_neighbor_search_k(n_samples: int, k_neighbors: int) -> int:
+    """Choose valid sparse neighbor support for adaptive diffusion."""
+
+    if n_samples <= 2:
+        return 1
+    return max(2, min(int(k_neighbors), n_samples - 1))
+
+
+def _row_duplicate_counts(values: np.ndarray) -> tuple[int, int, int]:
+    if len(values) == 0:
+        return 0, 0, 0
+    _unique_rows, counts = np.unique(values, axis=0, return_counts=True)
+    unique_rows = int(len(counts))
+    return unique_rows, int(len(values) - unique_rows), int(counts.max(initial=0))
+
+
+def _resolve_pydiffmap_neighbor_search_k(
+    values: np.ndarray,
+    *,
+    k_neighbors: int,
+    bandwidth_type: str | float | None,
+) -> int:
+    neighbor_k = resolve_neighbor_search_k(len(values), k_neighbors)
+    if bandwidth_type is None:
+        return neighbor_k
+
+    _unique_rows, _duplicate_rows, max_duplicate_count = _row_duplicate_counts(values)
+
+    # pydiffmap's variable-bandwidth Kernel uses NNKDE(k=8), then builds
+    # bandwidths from the 7 nearest nonzero distances in each sparse neighbor
+    # row. Exact duplicate rows occupy zero-distance neighbor slots but are
+    # removed by sparse nonzero extraction, so the search graph needs enough
+    # extra neighbors to leave 7 positive distances after duplicates.
+    min_positive_neighbors_for_nnkde = PYDIFFMAP_VARIABLE_BANDWIDTH_MIN_POSITIVE_NEIGHBORS
+    if max_duplicate_count >= PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS:
+        raise ValueError(
+            "Adaptive pydiffmap variable-bandwidth diffusion cannot handle exact "
+            "duplicate blocks at least as large as pydiffmap's internal NNKDE "
+            f"query size ({PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS}); "
+            f"max_duplicate_count={max_duplicate_count}. Such blocks produce zero "
+            "local bandwidths and non-finite diffusion weights."
+        )
+    duplicate_aware_min_k = max_duplicate_count + min_positive_neighbors_for_nnkde
+    max_valid_k = len(values)
+    if duplicate_aware_min_k > max_valid_k:
+        raise ValueError(
+            "Adaptive pydiffmap variable-bandwidth diffusion needs at least "
+            f"{min_positive_neighbors_for_nnkde} positive nonzero neighbors after "
+            "exact duplicate rows are removed. "
+            f"n_samples={len(values)}, max_duplicate_count={max_duplicate_count}, "
+            f"required_k={duplicate_aware_min_k}, max_valid_k={max_valid_k}."
+        )
+    return max(neighbor_k, duplicate_aware_min_k)
+
+
+def resolve_adaptive_epsilon(
+    kernel_object: object,
+    epsilon: str | float,
+    *,
+    metric: str,
+) -> tuple[float, str]:
+    """Resolve scalar epsilon after pydiffmap has fitted local bandwidths."""
+
+    scaled_sq = np.asarray(kernel_object.scaled_dists.data, dtype=float) ** 2
+    return resolve_adaptive_epsilon_from_scaled_sq(scaled_sq, epsilon, metric=metric)
+
+
+def resolve_adaptive_epsilon_from_scaled_sq(
+    scaled_sq: np.ndarray,
+    epsilon: str | float,
+    *,
+    metric: str,
+) -> tuple[float, str]:
+    """Resolve scalar epsilon from precomputed scaled squared distances."""
+
+    if isinstance(epsilon, numbers.Real):
+        return float(epsilon), "scalar"
+
+    epsilon_text = str(epsilon).strip().lower()
+    finite_positive = np.asarray(scaled_sq, dtype=float)
+    finite_positive = finite_positive[np.isfinite(finite_positive) & (finite_positive > 0)]
+    if finite_positive.size == 0:
+        raise ValueError("Adaptive diffusion epsilon requires positive finite scaled distances.")
+
+    if epsilon_text == "median":
+        return float(np.median(finite_positive)), "median"
+    if epsilon_text == "mean":
+        return float(np.mean(finite_positive)), "mean"
+    if epsilon_text == "q75":
+        return float(np.quantile(finite_positive, 0.75)), "q75"
+    if epsilon_text == "bgh":
+        if metric != "euclidean":
+            raise ValueError(
+                "Adaptive diffusion epsilon='bgh' is defined for Euclidean metrics; "
+                f"got metric={metric!r}."
+            )
+        from pydiffmap import kernel as diffusion_kernel
+
+        epsilon_value, _ = diffusion_kernel.choose_optimal_epsilon_BGH(finite_positive)
+        return float(epsilon_value), "bgh"
+    return float(epsilon_text), "scalar_text"
+
+
+def _leading_diffusion_spectrum(
+    eigenvalues: np.ndarray,
+    n_components: int,
+) -> tuple[int, int]:
+    """Return the retained [start, end) range of a descending spectrum."""
+    start = 0 if tied_eigenvalue_neighbors(eigenvalues)[0] else 1
+    return start, extend_rank_through_ties(eigenvalues, start + int(n_components))
+
+
+def _sparse_leading_eigenpairs(
+    transition: sparse.csr_matrix,
+    n_components: int,
+) -> tuple[np.ndarray, np.ndarray] | None:
+    """Return enough descending eigenpairs to close the retained tie group, or None."""
+    n_samples = transition.shape[0]
+    n_graph_components, _labels = connected_components(transition, directed=False)
+    if n_graph_components > 1:
+        return None
+    k = min(int(n_components) + 10, n_samples - 1)
+    start_vector = np.full(n_samples, 1.0 / math.sqrt(n_samples))
+    while True:
+        eigenvalues, eigenvectors = eigsh(transition, k=k, which="LA", v0=start_vector)
+        order = np.argsort(eigenvalues)[::-1]
+        eigenvalues, eigenvectors = eigenvalues[order], eigenvectors[:, order]
+        _start, end = _leading_diffusion_spectrum(eigenvalues, n_components)
+        if end < len(eigenvalues):
+            return eigenvalues, eigenvectors
+        if k >= n_samples - 1:
+            return None
+        k = min(2 * k, n_samples - 1)
+
+
+def compute_diffusion_coordinates(
+    weights: np.ndarray | sparse.spmatrix,
+    *,
+    diffusion_time: int,
+    n_components: int,
+    record: dict[str, object] | None = None,
+) -> np.ndarray:
+    """Project a symmetric diffusion operator without cutting numerical ties.
+
+    ``n_components`` is a target; the final numerical eigenvalue group is
+    retained whole. Drop the leading mode only when its eigenvalue is isolated.
+    A repeated leading group is retained whole, including on disconnected graphs.
+    The operator is ``D^(-1/2) W D^(-1/2)``: zero the weight diagonal,
+    symmetrize by elementwise maximum, and use row sums as degrees, replacing
+    zero degrees by ``1e-10``. SciPy ``eigh`` supplies its eigenvectors up to
+    ``DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES`` rows; larger sparse operators use
+    ``eigsh`` for the leading modes. Negative retained eigenvalues are clipped
+    to zero before taking the ``diffusion_time`` power; at time zero, the
+    resulting ``0**0`` is one. When ``record`` is given, its ``"eigensolver"``
+    entry is set to the solver that produced the coordinates.
+    """
+
+    if sparse.issparse(weights):
+        if weights.shape[0] <= DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES:
+            weights = weights.toarray()
+        else:
+            weights = sparse.csr_matrix(weights, dtype=float, copy=True)
+    is_sparse = sparse.issparse(weights)
+    matrix = weights if is_sparse else np.asarray(weights, dtype=float).copy()
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("Expected a square diffusion weight matrix.")
+    if matrix.shape[0] < 2:
+        raise ValueError("Diffusion coordinates require at least two samples.")
+    if diffusion_time < 0:
+        raise ValueError("diffusion_time must be non-negative.")
+    if n_components < 1:
+        raise ValueError("n_components must be positive.")
+    if not np.isfinite(matrix.data if is_sparse else matrix).all():
+        raise ValueError("Diffusion weights contain non-finite values.")
+
+    if is_sparse:
+        matrix.setdiag(0.0)
+        matrix.eliminate_zeros()
+        matrix = matrix.maximum(matrix.T).tocsr()
+        degrees = np.asarray(matrix.sum(axis=1)).ravel()
+    else:
+        np.fill_diagonal(matrix, 0.0)
+        matrix = np.maximum(matrix, matrix.T)
+        degrees = matrix.sum(axis=1)
+    degrees[degrees == 0] = 1e-10
+    inv_sqrt_degrees = 1.0 / np.sqrt(degrees)
+
+    leading = None
+    if is_sparse:
+        scaling = sparse.diags(inv_sqrt_degrees)
+        transition = (scaling @ matrix @ scaling).tocsr()
+        leading = _sparse_leading_eigenpairs(transition, n_components)
+        if leading is None:
+            matrix = matrix.toarray()
+    eigensolver = "scipy.sparse.linalg.eigsh"
+    if leading is None:
+        eigensolver = "scipy.linalg.eigh"
+        transition = matrix * inv_sqrt_degrees[:, None] * inv_sqrt_degrees[None, :]
+        eigenvalues, eigenvectors = eigh(transition)
+        order = np.argsort(eigenvalues)[::-1]
+        leading = eigenvalues[order], eigenvectors[:, order]
+    if record is not None:
+        record["eigensolver"] = eigensolver
+    eigenvalues, eigenvectors = leading
+    start, end = _leading_diffusion_spectrum(eigenvalues, n_components)
+    eigenvalues = np.maximum(eigenvalues[start:end], 0.0)
+    eigenvectors = eigenvectors[:, start:end]
+    return eigenvectors * (eigenvalues[None, :] ** diffusion_time)
+
+
+def hamming_knn_diffusion_geometry(
+    data: pd.DataFrame | np.ndarray,
+    k_neighbors: int,
+    diffusion_time: int,
+    n_components: int,
+) -> DiffusionGeometry:
+    """Compute fixed-k Hamming-neighbor diffusion geometry.
+
+    The input contract is a binary or one-hot sample-by-feature matrix. The
+    method symmetrizes ``1 - Hamming`` neighbor similarities, computes the
+    shared symmetric diffusion coordinates, and returns them with their
+    condensed Euclidean distances.
+    """
+
+    from sklearn.neighbors import NearestNeighbors
+
+    values = (
+        data.to_numpy(dtype=float)
+        if isinstance(data, pd.DataFrame)
+        else np.asarray(data, dtype=float)
+    )
+    if values.ndim != 2 or values.shape[0] < 2:
+        raise ValueError("Hamming diffusion requires at least two coordinate rows.")
+    if not np.isfinite(values).all():
+        raise ValueError("Hamming diffusion coordinates contain non-finite values.")
+    if not np.isin(values, (0.0, 1.0)).all():
+        raise ValueError("Hamming diffusion requires binary or one-hot feature values.")
+    if int(k_neighbors) < 1:
+        raise ValueError("k_neighbors must be positive.")
+
+    n_samples = len(values)
+    # The search returns each row as its own neighbor; keep at least one other row.
+    neighbor_k = resolve_neighbor_search_k(n_samples, k_neighbors)
+    neighbors = NearestNeighbors(n_neighbors=neighbor_k, metric="hamming")
+    neighbors.fit(values)
+    neighbor_distances, neighbor_indices = neighbors.kneighbors(values)
+
+    rows = np.repeat(np.arange(n_samples), neighbor_k)
+    similarities = np.maximum(1.0 - neighbor_distances.ravel(), 1e-10)
+    directed = sparse.csr_matrix(
+        (similarities, (rows, neighbor_indices.ravel())), shape=(n_samples, n_samples)
+    )
+    weights = directed.maximum(directed.T)
+
+    diffusion_coordinates = compute_diffusion_coordinates(
+        weights,
+        diffusion_time=diffusion_time,
+        n_components=n_components,
+    )
+    unique_rows, counts = np.unique(values, axis=0, return_counts=True)
+    return _diffusion_geometry(
+        diffusion_coordinates,
+        metadata={
+            "backend": "sklearn_hamming_knn",
+            "metric": "hamming",
+            "neighbor_search_k": int(neighbor_k),
+            "diffusion_time": int(diffusion_time),
+            "diffusion_components": int(diffusion_coordinates.shape[1]),
+            "unique_rows": int(len(unique_rows)),
+            "duplicate_rows": int(len(values) - len(unique_rows)),
+            "max_duplicate_count": int(counts.max(initial=0)),
+        },
+    )
+
+
+def adaptive_diffusion_geometry(
+    data: pd.DataFrame | np.ndarray,
+    *,
+    k_neighbors: int,
+    diffusion_time: int,
+    n_components: int,
+    metric: str,
+    bandwidth_type: str | float | None,
+    epsilon: str | float,
+) -> DiffusionGeometry:
+    """Fit a pydiffmap kernel and compute repository diffusion coordinates.
+
+    ``backend`` retains the kernel backend's compatibility identifier.
+    Separate metadata records the symmetric coordinate operator and eigensolver
+    used by :func:`compute_diffusion_coordinates`.
+    """
+
+    from pydiffmap import kernel
+
+    values = (
+        data.to_numpy(dtype=float)
+        if isinstance(data, pd.DataFrame)
+        else np.asarray(data, dtype=float)
+    )
+    if values.ndim != 2 or values.shape[0] < 2:
+        raise ValueError("Adaptive diffusion requires at least two coordinate rows.")
+    if not np.isfinite(values).all():
+        raise ValueError("Adaptive diffusion coordinates contain non-finite values.")
+
+    unique_rows, duplicate_rows, max_duplicate_count = _row_duplicate_counts(values)
+    neighbor_k = _resolve_pydiffmap_neighbor_search_k(
+        values,
+        k_neighbors=k_neighbors,
+        bandwidth_type=bandwidth_type,
+    )
+    kernel_object = kernel.Kernel(
+        epsilon=1.0 if not isinstance(epsilon, numbers.Real) else float(epsilon),
+        k=neighbor_k,
+        metric=metric,
+        neighbor_params={"n_jobs": -1},
+        bandwidth_type=bandwidth_type,
+    )
+    kernel_object.fit(values)
+    epsilon_value, epsilon_method = resolve_adaptive_epsilon(
+        kernel_object,
+        epsilon,
+        metric=metric,
+    )
+    kernel_object.epsilon_fitted = epsilon_value
+    adaptive_kernel = kernel_object.compute()
+    solver_record: dict[str, object] = {}
+    coordinates = compute_diffusion_coordinates(
+        adaptive_kernel,
+        diffusion_time=diffusion_time,
+        n_components=n_components,
+        record=solver_record,
+    )
+    return _diffusion_geometry(
+        coordinates,
+        metadata={
+            "backend": "pydiffmap",
+            "coordinate_implementation": (
+                "tree_break_selection.space_separation.diffusion.compute_diffusion_coordinates"
+            ),
+            "coordinate_operator": "symmetric_normalized_operator",
+            "coordinate_operator_definition": "D^(-1/2) W D^(-1/2)",
+            "coordinate_eigensolver": solver_record["eigensolver"],
+            "coordinate_eigenvalue_policy": (
+                "negative_eigenvalues_clipped_to_zero_before_diffusion_time_power"
+            ),
+            "metric": metric,
+            "requested_neighbor_search_k": int(k_neighbors),
+            "neighbor_search_k": int(neighbor_k),
+            "bandwidth_type": (
+                bandwidth_type
+                if bandwidth_type is None or isinstance(bandwidth_type, str)
+                else float(bandwidth_type)
+            ),
+            "epsilon": float(epsilon_value),
+            "epsilon_method": epsilon_method,
+            "diffusion_time": int(diffusion_time),
+            "diffusion_components": int(coordinates.shape[1]),
+            "unique_rows": int(unique_rows),
+            "duplicate_rows": int(duplicate_rows),
+            "max_duplicate_count": int(max_duplicate_count),
+        },
+    )
+
+
+FEATURE_FAMILY_DIFFUSION_TREE_DISTANCE_METRIC = "feature_family_diffusion"
+
+
+@dataclass(frozen=True)
+class FeatureFamilyDiffusionSettings:
+    """Adaptive diffusion settings and edge-gate projection rule for one feature family."""
+
+    metric: str
+    k_neighbors: int
+    max_components: int
+    edge_projection_energy_fraction: float | None
+
+
+# Discrete families use the benchmarked adaptive pydiffmap preset; continuous uses the
+# scRNA pancreas preset, whose 0.9 energy fraction it needs to beat canonical TBS.
+FEATURE_FAMILY_DIFFUSION_SETTINGS: dict[str, FeatureFamilyDiffusionSettings] = {
+    "bernoulli": FeatureFamilyDiffusionSettings("hamming", 10, 30, None),
+    "categorical": FeatureFamilyDiffusionSettings("hamming", 10, 30, None),
+    "continuous": FeatureFamilyDiffusionSettings("euclidean", 15, 50, 0.90),
+}
+
+
+def _feature_family(feature_space: FeatureSpace | None) -> str:
+    return "bernoulli" if feature_space is None else feature_space.family_label
+
+
+def feature_family_diffusion_settings(
+    feature_space: FeatureSpace | None,
+) -> FeatureFamilyDiffusionSettings:
+    """Return the diffusion settings for the data's feature family (untyped data is binary)."""
+    family = _feature_family(feature_space)
+    if family not in FEATURE_FAMILY_DIFFUSION_SETTINGS:
+        raise ValueError(f"Feature-family diffusion has no geometry for {family!r} data.")
+    return FEATURE_FAMILY_DIFFUSION_SETTINGS[family]
+
+
+def feature_family_diffusion_unsupported_reason(
+    data: pd.DataFrame | np.ndarray,
+    feature_space: FeatureSpace | None,
+) -> str | None:
+    """Return why feature-family diffusion cannot represent ``data``, or ``None``."""
+    family = _feature_family(feature_space)
+    if family not in FEATURE_FAMILY_DIFFUSION_SETTINGS:
+        return f"no diffusion geometry for {family!r} data"
+    values = np.asarray(data, dtype=np.float64)
+    if (
+        FEATURE_FAMILY_DIFFUSION_SETTINGS[family].metric == "hamming"
+        and not np.isin(values, (0.0, 1.0)).all()
+    ):
+        return "Hamming diffusion requires binary or one-hot values"
+    max_duplicate_count = _row_duplicate_counts(values)[2]
+    if max_duplicate_count >= PYDIFFMAP_VARIABLE_BANDWIDTH_KDE_NEIGHBORS:
+        return f"{max_duplicate_count} identical rows give pydiffmap a zero bandwidth"
+    return None
+
+
+def feature_family_diffusion_geometry(
+    data: pd.DataFrame | np.ndarray,
+    feature_space: FeatureSpace | None,
+) -> DiffusionGeometry:
+    """Fit adaptive diffusion with the settings of the data's feature family.
+
+    Binary and one-hot data use Hamming diffusion, continuous data Euclidean
+    diffusion with at most one component per feature. Raises ``ValueError`` when
+    ``feature_family_diffusion_unsupported_reason`` gives a reason.
+    """
+    reason = feature_family_diffusion_unsupported_reason(data, feature_space)
+    if reason is not None:
+        raise ValueError(f"Feature-family diffusion is unsupported: {reason}.")
+    settings = feature_family_diffusion_settings(feature_space)
+    n_samples, n_features = np.shape(data)
+    n_components = min(settings.max_components, n_samples - 2)
+    if settings.metric == "euclidean":
+        n_components = min(n_components, n_features)
+    geometry = adaptive_diffusion_geometry(
+        data,
+        k_neighbors=settings.k_neighbors,
+        diffusion_time=3,
+        n_components=n_components,
+        metric=settings.metric,
+        bandwidth_type="-1/(d+2)",
+        epsilon="median",
+    )
+    return replace(
+        geometry,
+        metadata={**geometry.metadata, "feature_family": _feature_family(feature_space)},
+    )
+
+
+def block_diffusion_geometry(
+    coordinates: np.ndarray,
+    *,
+    k_neighbors: int,
+    diffusion_time: int,
+    n_components: int,
+) -> DiffusionGeometry:
+    """Compute fixed k-NN Gaussian diffusion geometry in one spectral block."""
+
+    from sklearn.neighbors import NearestNeighbors
+
+    values = np.asarray(coordinates, dtype=float)
+    if values.ndim != 2 or values.shape[0] < 3:
+        raise ValueError("Block diffusion requires at least three coordinate rows.")
+    if not np.isfinite(values).all():
+        raise ValueError("Block coordinates contain non-finite values.")
+
+    n_samples = values.shape[0]
+    neighbor_count = min(max(2, int(k_neighbors) + 1), n_samples)
+    neighbors = NearestNeighbors(n_neighbors=neighbor_count, metric="euclidean")
+    neighbors.fit(values)
+    neighbor_distances, neighbor_indices = neighbors.kneighbors(values)
+
+    positive_sq = neighbor_distances[neighbor_distances > 0.0] ** 2
+    if positive_sq.size == 0:
+        raise ValueError("Degenerate block coordinates for diffusion.")
+    epsilon_value = float(np.median(positive_sq))
+    if not np.isfinite(epsilon_value) or epsilon_value <= 0.0:
+        raise ValueError("Could not resolve a positive block diffusion epsilon.")
+
+    rows = np.repeat(np.arange(n_samples), neighbor_indices.shape[1])
+    columns = neighbor_indices.ravel()
+    off_diagonal = rows != columns
+    similarities = np.maximum(
+        np.exp(-(neighbor_distances.ravel()[off_diagonal] ** 2) / epsilon_value), 1e-12
+    )
+    directed = sparse.csr_matrix(
+        (similarities, (rows[off_diagonal], columns[off_diagonal])), shape=(n_samples, n_samples)
+    )
+    weights = directed.maximum(directed.T)
+
+    diffusion_coordinates = compute_diffusion_coordinates(
+        weights,
+        diffusion_time=diffusion_time,
+        n_components=n_components,
+    )
+    geometry = _diffusion_geometry(
+        diffusion_coordinates,
+        metadata={
+            "kernel": "knn_gaussian",
+            "metric": "euclidean",
+            "neighbor_search_k": int(neighbor_count - 1),
+            "epsilon": epsilon_value,
+            "diffusion_time": int(diffusion_time),
+            "diffusion_components": int(diffusion_coordinates.shape[1]),
+        },
+    )
+    if np.allclose(geometry.distance_condensed, 0.0):
+        raise ValueError("Degenerate diffusion distances for block.")
+    return geometry
+
+
+def block_adaptive_diffusion_geometry(
+    coordinates: np.ndarray,
+    *,
+    k_neighbors: int,
+    diffusion_time: int,
+    n_components: int,
+    metric: str,
+    bandwidth_type: str | float | None,
+    epsilon: str | float,
+) -> DiffusionGeometry:
+    """Compute adaptive diffusion geometry in one spectral block."""
+
+    values = np.asarray(coordinates, dtype=float)
+    if values.ndim != 2 or values.shape[0] < 3:
+        raise ValueError("Adaptive block diffusion requires at least three coordinate rows.")
+    if not np.isfinite(values).all():
+        raise ValueError("Block coordinates contain non-finite values.")
+
+    geometry = adaptive_diffusion_geometry(
+        values,
+        k_neighbors=k_neighbors,
+        diffusion_time=diffusion_time,
+        n_components=n_components,
+        metric=metric,
+        bandwidth_type=bandwidth_type,
+        epsilon=epsilon,
+    )
+    distances = np.asarray(geometry.distance_condensed, dtype=float)
+    if not np.isfinite(distances).all() or np.allclose(distances, 0.0):
+        raise ValueError("Degenerate adaptive diffusion distances for block.")
+    return DiffusionGeometry(
+        coordinates=geometry.coordinates,
+        distance_condensed=geometry.distance_condensed,
+        metadata={
+            "kernel": "pydiffmap_adaptive",
+            **geometry.metadata,
+        },
+    )

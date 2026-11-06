@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "case_seed_combinations": 24,
+  "method_rows": 264,
+  "ok": 216,
+  "skip": 48,
+  "input_hashes_matched_prior_experiment": 24,
+  "source_hashes_verified": 209,
+  "native_full_report_rows_matched": 44,
+  "pdf_page_counts": {
+    "method_comparison.pdf": 1,
+    "population_recovery.pdf": 1,
+    "generated/development/cancer_pc_benchmark_report.pdf": 23
+  },
+  "metric_checks": [
+    "ARI",
+    "NMI",
+    "non-noise cluster count"
+  ],
+  "visual_review": [
+    "method_comparison.png",
+    "population_recovery.png",
+    "native report pages 5 and 6"
+  ],
+  "limits": [
+    "No gene counts or selective calibration validation",
+    "Standardized common UMAP differs from native diffusion geometry",
+    "Known K is supplied to kmeans and spectral"
+  ]
+}

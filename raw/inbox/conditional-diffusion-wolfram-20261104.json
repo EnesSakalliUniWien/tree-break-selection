@@ -1,0 +1,24 @@
+{
+  "density_code": "Clear[r, d, a, b, z];\ndensity = 2^(1-d/2) r^(d-1) Exp[-r^2/2]/Gamma[d/2];\nnormalization = Integrate[density, {r,0,Infinity}, Assumptions -> d>0];\ntailDerivative = FullSimplify[-D[Gamma[d/2,r^2/2]/Gamma[d/2],r]-density, Assumptions -> d>0 && r>0];\nmass = Exp[-1/2]-Exp[-2]+Exp[-9/2];\nexample = N[Exp[-(16/5)^2/2]/mass, 25];\nrankLaw = Table[{bb, aa, Floor[aa (bb+1)]/(bb+1)}, {bb,{99,199}}, {aa,{1/100,1/20}}];\nExportString[<|\"chiDensityNormalized\"->normalization,\"tailDerivativeResidual\"->tailDerivative,\"disconnectedRegion\"->{{1,2},{3,\"Infinity\"}},\"exampleRadius\"->16/5,\"exampleDf\"->2,\"conditionalTail\"->example,\"nominalTail\"->N[Exp[-(16/5)^2/2],25],\"exchangeableRankRejectionProbabilities\"->rankLaw|>,\"RawJSON\"]",
+  "density_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Out[1]= \"{\\n\\t\\\"chiDensityNormalized\\\":1,\\n\\t\\\"tailDerivativeResidual\\\":0,\\n\\t\\\"disconnectedRegion\\\":[\\n\\t\\t[\\n\\t\\t\\t1,\\n\\t\\t\\t2\\n\\t\\t],\\n\\t\\t[\\n\\t\\t\\t3,\\n\\t\\t\\t\\\"Infinity\\\"\\n\\t\\t]\\n\\t],\\n\\t\\\"exampleRadius\\\":3.2,\\n\\t\\\"exampleDf\\\":2,\\n\\t\\\"conditionalTail\\\":0.01239056336490902256357064,\\n\\t\\\"nominalTail\\\":0.005976022895005943408232646,\\n\\t\\\"exchangeableRankRejectionProbabilities\\\":[\\n\\t\\t[\\n\\t\\t\\t[\\n\\t\\t\\t\\t99,\\n\\t\\t\\t\\t1.0e-2,\\n\\t\\t\\t\\t1.0e-2\\n\\t\\t\\t],\\n\\t\\t\\t[\\n\\t\\t\\t\\t99,\\n\\t\\t\\t\\t5.0e-2,\\n\\t\\t\\t\\t5.0e-2\\n\\t\\t\\t]\\n\\t\\t],\\n\\t\\t[\\n\\t\\t\\t[\\n\\t\\t\\t\\t199,\\n\\t\\t\\t\\t1.0e-2,\\n\\t\\t\\t\\t1.0e-2\\n\\t\\t\\t],\\n\\t\\t\\t[\\n\\t\\t\\t\\t199,\\n\\t\\t\\t\\t5.0e-2,\\n\\t\\t\\t\\t5.0e-2\\n\\t\\t\\t]\\n\\t\\t]\\n\\t]\\n}\""
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "rank_code": "Clear[k, a, q]; n=999;\nsize[q_,a_] := Sum[PDF[BinomialDistribution[n,q],k] Floor[a (k+1)]/(k+1),{k,0,n}];\nExportString[<|\"fixedProposalCount\"->n,\"nullRejectionProbability\"->Table[<|\"acceptanceProbability\"->N[q],\"alpha\"->N[a],\"size\"->N[size[q,a],16]|>,{q,{1/100,1/50,1/10}},{a,{1/100,1/20}}],\"minimumPWithZeroAccepted\"->1,\"assumption\"->\"Conditional on A,u,M and K accepted proposals, the observed radius and the K accepted radii are exchangeable. K is generated with a fixed proposal count and independent randomness.\"|>,\"RawJSON\"]",
+  "rank_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Out[1]= \"{\\n\\t\\\"fixedProposalCount\\\":999,\\n\\t\\\"nullRejectionProbability\\\":[\\n\\t\\t[\\n\\t\\t\\t{\\n\\t\\t\\t\\t\\\"acceptanceProbability\\\":1.0e-2,\\n\\t\\t\\t\\t\\\"alpha\\\":1.0e-2,\\n\\t\\t\\t\\t\\\"size\\\":8.274776878913902e-66\\n\\t\\t\\t},\\n\\t\\t\\t{\\n\\t\\t\\t\\t\\\"acceptanceProbability\\\":1.0e-2,\\n\\t\\t\\t\\t\\\"alpha\\\":5.0e-2,\\n\\t\\t\\t\\t\\\"size\\\":0.0003288359788196322\\n\\t\\t\\t}\\n\\t\\t],\\n\\t\\t[\\n\\t\\t\\t{\\n\\t\\t\\t\\t\\\"acceptanceProbability\\\":2.0e-2,\\n\\t\\t\\t\\t\\\"alpha\\\":1.0e-2,\\n\\t\\t\\t\\t\\\"size\\\":6.273937442395451e-40\\n\\t\\t\\t},\\n\\t\\t\\t{\\n\\t\\t\\t\\t\\\"acceptanceProbability\\\":2.0e-2,\\n\\t\\t\\t\\t\\\"alpha\\\":5.0e-2,\\n\\t\\t\\t\\t\\\"size\\\":0.02653424311453936\\n\\t\\t\\t}\\n\\t\\t],\\n\\t\\t[\\n\\t\\t\\t{\\n\\t\\t\\t\\t\\\"acceptanceProbability\\\":0.1,\\n\\t\\t\\t\\t\\\"alpha\\\":1.0e-2,\\n\\t\\t\\t\\t\\\"size\\\":0.005154177095659203\\n\\t\\t\\t},\\n\\t\\t\\t{\\n\\t\\t\\t\\t\\\"acceptanceProbability\\\":0.1,\\n\\t\\t\\t\\t\\\"alpha\\\":5.0e-2,\\n\\t\\t\\t\\t\\\"size\\\":0.04524182494928791\\n\\t\\t\\t}\\n\\t\\t]\\n\\t],\\n\\t\\\"minimumPWithZeroAccepted\\\":1,\\n\\t\\\"assumption\\\":\\\"Conditional on A,u,M and K accepted proposals, the observed radius and the K accepted radii are exchangeable. K is generated with a fixed proposal count and independent randomness.\\\"\\n}\""
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "status": "complete",
+  "selection_event": "full_merge_history",
+  "sigma": 1.2,
+  "dimension": 30,
+  "observed_radius": 6.385517170518435,
+  "nominal_p_value": 0.09070832767632195,
+  "proposals_requested": 999,
+  "seed": 2026110501,
+  "observed_signature": [
+    [
+      11,
+      25
+    ],
+    [
+      5,
+      24
+    ],
+    [
+      1,
+      28
+    ],
+    [
+      23,
+      34
+    ],
+    [
+      21,
+      39
+    ],
+    [
+      35,
+      47
+    ],
+    [
+      12,
+      38
+    ],
+    [
+      3,
+      6
+    ],
+    [
+      30,
+      46
+    ],
+    [
+      0,
+      10
+    ],
+    [
+      37,
+      45
+    ],
+    [
+      44,
+      53
+    ],
+    [
+      36,
+      52
+    ],
+    [
+      40,
+      50
+    ],
+    [
+      49,
+      51
+    ],
+    [
+      33,
+      56
+    ],
+    [
+      16,
+      20
+    ],
+    [
+      7,
+      26
+    ],
+    [
+      15,
+      57
+    ],
+    [
+      4,
+      42
+    ],
+    [
+      19,
+      48
+    ],
+    [
+      41,
+      55
+    ],
+    [
+      13,
+      31
+    ],
+    [
+      32,
+      59
+    ],
+    [
+      54,
+      60
+    ],
+    [
+      43,
+      66
+    ],
+    [
+      2,
+      65
+    ],
+    [
+      29,
+      61
+    ],
+    [
+      17,
+      63
+    ],
+    [
+      18,
+      62
+    ],
+    [
+      64,
+      69
+    ],
+    [
+      27,
+      72
+    ],
+    [
+      73,
+      74
+    ],
+    [
+      58,
+      71
+    ],
+    [
+      14,
+      67
+    ],
+    [
+      68,
+      75
+    ],
+    [
+      22,
+      70
+    ],
+    [
+      9,
+      78
+    ],
+    [
+      76,
+      77
+    ],
+    [
+      81,
+      82
+    ],
+    [
+      8,
+      80
+    ],
+    [
+      79,
+      83
+    ],
+    [
+      84,
+      86
+    ],
+    [
+      85,
+      87
+    ]
+  ],
+  "source_hashes": {
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "965f539371a4b38292799d50f97798cef9743c18a41b136b1023b8e44219218a",
+    "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303"
+  },
+  "accepted_radii": [
+    6.4006807467942775,
+    6.438307793298925,
+    6.384308653098562,
+    6.46260096096194,
+    6.483231910649975,
+    6.427406803939428,
+    6.407708469511566,
+    6.4488733933566245,
+    6.398694990779463,
+    6.397637109105524,
+    6.431991810793265,
+    6.428084934086298
+  ],
+  "p_value": 0.9230769230769231,
+  "minimum_p_value": 0.07692307692307693,
+  "strict_exclusions_with_ties": 0,
+  "proposals_evaluated": 999,
+  "accepted_count": 12,
+  "node": 85,
+  "node_rows": 15,
+  "global_rows": 45,
+  "role": "immediate_child",
+  "elapsed_seconds": 12.538838625001517,
+  "covariance_source": "generator_known_sigma_squared_identity",
+  "family_size": 3,
+  "bonferroni_alpha": 0.0033333333333333335,
+  "family_reject": false
+}

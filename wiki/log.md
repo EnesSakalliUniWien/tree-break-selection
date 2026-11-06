@@ -8481,3 +8481,905 @@ version comparison report and wiki source summary. Production code unchanged.
   against Leiden, one cluster on all six null cases. It is worse than canonical `tbs`
   on `gauss_outlier_shell_4c` (0.97 to 0.00) and both SBM cases, where diffusion
   replaces the modularity distance.
+
+## 2026-10-19 — Full benchmark rerun after the edge-test fixes
+
+- Ran `uv run python -m benchmarks.full.run` (full suite, default methods, plots
+  on) at clean commit `8e0093d3` into `run_20261019_064234Z_full`. All 1,342
+  rows match `run_20261018_200003Z_full` exactly (status, found K, ARI), so the
+  results are deterministic at this commit.
+- Against `run_20261016_163716Z_full`, canonical `tbs` goes from 96 `ok` and 26
+  `unsupported` to 122 `ok`; exact K rises from 61 to 91 cases. Of the 49
+  previously failing cases, 24 now reach ARI >= 0.9 (16 of the 17 the bug check
+  attributed to a defect; `gauss_dense_signal_highd` reaches 0.48) and 22 stay
+  below 0.5, all in the subspace, overlap and no-location-signal groups of
+  [[failing-case-subspace-separation]]. The 73 previously healthy cases move from
+  mean ARI 0.956 to 0.961.
+- One regression: `phylo_conserved_4taxa` drops from 10 clusters (ARI 0.919) to 1
+  (ARI 0.0). Its root edge stays significant (p = 1.6e-127), but the root sibling
+  test's corrected p-value is 0.0134 against alpha 0.01; with the calibrated edge
+  test only 4 of 10 tested edges reject (44 of 54 before), so more records feed
+  the empirical null.
+- Non-TBS methods changed only on the three `mahalanobis_time` cases, whose
+  precomputed distance the fix changed.
+
+## 2026-11-02 — Mathematical glossary and Wolfram construction review
+
+- Added [[mathematical-glossary]], mapping source terms from observations,
+  feature charts and subtree barycenters through contrast covariance, spectral
+  projection, empirical inflation, multiplicity and terminal cluster nodes.
+- Added [[mathematical-construction-wolfram-review]] and source summary
+  [[wolfram-mathematical-construction-checks]]. Exact Wolfram inputs and outputs
+  are captured in `raw/inbox/wolfram-mathematical-construction-checks-20261102.md`.
+- Wolfram verified barycentric/nested covariance identities, standardized
+  contrast cancellation, split action and a categorical interior example;
+  checked correlation, adaptive-projection, truncated-tail and equal-mean
+  counterexamples to unjustified reference-law claims. The context tool failed
+  internally; evaluator calls succeeded, including a corrected initially
+  unevaluated scaled-distribution expression.
+- Recorded three manuscript/code differences: opt-in edge branch inflation,
+  covariance versus Pearson correlation spectral construction, and reachable
+  full-split versus any-significant-descendant pass-through. No method or
+  manuscript edits, installations, services, commits or pushes were performed.
+- Read the live pre-existing empirical-null estimator changes without altering
+  them; the glossary identifies their larger-parent extrapolation cap as
+  working-tree behavior rather than a committed or statistically validated rule.
+- Verification: 48 focused existing baseline tests passed; `make wiki-lint`
+  passed for all 217 pages after the three additions; `git diff --check` passed.
+  No full benchmarks, calibration simulations or manuscript compilation were run.
+
+## 2026-11-02 — Sol-agent analytic selected-root investigation
+
+- User requested Sol agents for selected-edge and small-node covariance repairs,
+  then sibling mechanism isolation, and chose analytic selected-region derivation
+  before integration when the missing null/selection contract was identified.
+- Added known-covariance Gaussian conditional chi and scalar unknown-variance
+  conditional F root diagnostics for average squared-Euclidean linkage, with
+  explicit full-sequence conditioning, tie/degeneracy errors and numerical-tail
+  checks. See [[analytic-selected-root-laws]] and [[analytic-root-and-sibling-evidence]].
+- Corrected edge docstrings and the earlier glossary/review: edge PCA and
+  contrasts use separate halves within already selected children; sibling PCA
+  uses all leaves. This split does not establish selected-tree calibration.
+- The restricted unknown-variance diagnostic detects a distinct two-observation
+  per-child separated example with selective p=3.1601693694910593e-6 and residual
+  df2. It does not silently process the earlier symmetric examples' merge ties.
+- Preserved reproducible sibling controls in raw/inbox: fixed vs same-data PCA,
+  contrast-energy rank, branch scaling and independent fitted-scale uncertainty.
+  Their effects were isolated without changing alpha or production inflation.
+- Verification: full `make test` ordered suite passed all 905 tests; one existing
+  scikit-learn MDS future-default warning. Ruff checks/formatting of new modules
+  and tests passed; wiki lint passed for 219 pages and diff whitespace checks passed.
+- No production statistical behavior changed, no commits/pushes/installations.
+  Generic edge/sibling calibration remains unresolved outside the declared root
+  models, including adaptive projection, edge opening and final traversal.
+
+## 2026-11-02 — Diffusion topology, NNLS and rank factorial comparison
+
+- Executed the user-confirmed paired 2×2×2 comparison on 180 datasets:
+  50 iid nulls per feature family and five seeds of six existing signal cases,
+  totaling 1,440 runs. Branch-off sets every length to zero so both sibling
+  and edge tests are controlled. No thresholds or production policies changed.
+- All 360 NNLS fits converged and every pipeline returned supported output.
+  Gaussian topology-only false splits were 0/50 for original distances and
+  29/50 for diffusion. Original-distance root children of size 1–2 prevent
+  interpreting the zero count as calibration evidence.
+- Bernoulli diffusion false splits across (NNLS, energy rank) were 0, 4, 4, 18
+  per 50. Replayed one NNLS reversal: raw statistic decreased while fitted
+  inflation decreased more, changing adjusted p=.01242 to .00226.
+- Preserved scripts, source/environment hashes, all outcomes, root annotations,
+  paired contrasts and reversal records under the primary paths cited by
+  [[diffusion-factorial-evidence]] and [[diffusion-topology-branch-rank-isolation]].
+- Verification: 22 focused tests passed, including four new parity comparisons
+  against the existing NNLS runner; per-block invariant assertions passed;
+  all recorded source hashes matched after execution; 221-page wiki lint,
+  Ruff and diff whitespace checks passed. Full suite was not repeated because
+  production code was unchanged. No installations, services, commits or pushes.
+
+## 2026-11-02 — Fixed-partition Gaussian attribution with Sol agents and Wolfram
+
+- User confirmed full-feature, zero-branch, inflation-one attribution followed
+  by separate native projection and empirical-inflation restoration. Three
+  Sol subagents implemented the baseline/restoration and independently reviewed
+  the mathematics, source and all root records.
+- Reused all 50 prior Gaussian diffusion trees with exact data/topology hash
+  agreement; compared selected observations with independent Gaussian rows
+  assigned to identical leaf groups. Known-identity root tests rejected 50/50
+  selected versus 0/50 independent matrices. Production guarded covariance
+  rejected 8/50 independent matrices: 7/25 dense pooled, 1/24 diagonal pooled,
+  0/1 parent-total fallback.
+- Wolfram checked contrast algebra and finite-sample reference calculations.
+  Dense pooled covariance with n=80,p=24 has an ideal unregularized F(24,55)
+  reference after scaling; the nominal .01 chi-square cutoff instead gives
+  rejection probability .2342701. Distinct diagonal and parent-total laws
+  were preserved; no reference was generalized to selected data.
+- Native root projections span all 24 features, leaving raw root statistics
+  unchanged. Nonroot projected records alter fitted inflation. Frozen edge
+  roles separate descriptive predictions from eligible production gates;
+  restored native root p-values match the earlier factorial exactly.
+- Recorded 200 baseline and 800 restoration root rows, 63,200 compressed node
+  records, contracts and source/artifact hashes. See
+  [[diffusion-selection-covariance-attribution]] and
+  [[diffusion-attribution-evidence]] for results and mathematical limitations.
+- Verification: 28 focused tests passed; Ruff checks/formatting, 223-page
+  wiki lint and diff whitespace checks passed. All prior production-source
+  hashes still match. No full-suite or full-traversal calibration rerun;
+  no production statistical changes, installations, services, commits or pushes.
+
+## 2026-11-02 — Sol-agent answers on diffusion selection, roots and validity
+
+- Dispatched three Sol agents for the six user-confirmed questions: actual
+  merge-sequence selection and disconnected regions; complete boundary
+  recovery/Newton and Vandermonde applicability; covariance/fitted inflation
+  and projection/multiplicity/traversal validity.
+- Specified the known-identity chi radial measure conditioned on complete
+  actual diffusion replay, including internal NNKDE/BGH adaptation despite
+  outer median epsilon. This defines the law but does not compute all boundaries.
+- Found an actual n=9,p=1 full-sequence re-entry: radius ratios 1 and 1.2
+  preserve the sequence, 1.1 does not. Root partition remains unchanged;
+  this is a full-history example, not a disconnected root-partition proof.
+  Retained exact input/path, finite panel, four local transition brackets,
+  source hashes and executable probe in raw/assets.
+- Established the structural PSD obstruction for the nonzero symmetric
+  zero-diagonal diffusion operator. The actual coordinate Gram probe is PSD
+  but non-Toeplitz, so the guarded Vandermonde theorem is not a shortcut.
+- Recorded requirements for certified branch/root/tail coverage, the conditional
+  upper-level-set integral for fully refitted statistics, and distinct root,
+  family/FDR and fragmentation targets. No general traversal guarantee claimed.
+- Added [[diffusion-selected-law-open-question-answers]] and
+  [[diffusion-open-question-evidence]]. Parent independently reproduced the
+  three decisive radial points without instrumentation, verified unchanged root
+  groups and recorded source hashes. Re-entry probe execution/assertions,
+  compilation and Ruff passed; wiki lint passed for 225 pages and diff whitespace
+  checks passed. No production changes, full test-suite rerun, complete boundary
+  enumeration, numerical selected p-value, installation, commit or push.
+
+## 2026-11-02 — Sol-agent diffusion selected-root diagnostic implementation
+
+- Implemented native observable radial replay, exact-real adaptive-kernel
+  enclosures, rational spectral/linkage certificates, outward chi probability
+  bounds and a root-only diagnostic. Full features, zero branch lengths,
+  inflation factor 1 and no contrast-energy rank selection define the test.
+- Derived the conditional path from original dyadic observations and rational
+  root weights; enclosed the exact observed radius rather than assuming the
+  floating replay decomposition is exact. Wolfram checked ratio monotonicity.
+- Certified positive-width selected/nonselected/selected windows for the scalar
+  reentry fixture. Broad gaps and the infinite tail remain unresolved; no
+  complete boundary enumeration or informative selected p-value is claimed.
+- Extended operator enclosure to the native dense route, including the actual
+  80-by-24 attribution matrix. Found 29 positive self-distance artifacts in its
+  original native graph and 28 after radial reconstruction; inclusion in median
+  epsilon changes the operator and a floating zero-self history proposal.
+  Final whole-cell certification excludes the native history at the exact
+  observed radius: at merge step 5 a competitor uniformly wins by at least
+  about 5.55e-7 in average diffusion distance.
+- Recorded three small controls and the first attribution root, all unresolved
+  with one cluster and no passthrough. These outcomes do not establish calibration.
+  Final artifacts use the `final-*` directories under
+  `raw/assets/diffusion-root-diagnostic-20261102/`; intermediate runs are retained.
+- Added [[diffusion-selected-root-diagnostic]] and
+  [[diffusion-root-diagnostic-evidence]], with raw derivations, native discrepancy
+  reproduction and explicit exact-real versus bitwise execution limitations.
+- Verification: full ordered suite passed 964 tests. Final provenance-only edits
+  passed 40 focused diagnostic tests; Ruff and formatting passed. Wiki lint
+  passed for 227 pages. All 207 recorded production/shared source hashes matched.
+  No production behavior/threshold changes, installations, commits or pushes.
+
+## 2026-11-02 — Self-distance reconciliation and tighter selected-region bounds
+
+- Continued with three Sol agents after explicit user confirmation. Captured
+  the genuine pre-fix constructor, original arrays and 55 dataset histories
+  before the production edit; all 50 Gaussian histories match prior factorial hashes.
+- Zeroed the scaled identity diagonal before epsilon and kernel computation.
+  Preserved all off-diagonal entries and stored zero affinity. The deterministic
+  regression failed before the change and passes afterward.
+- Matched comparisons show 8/50 Gaussian complete-history order changes,
+  no clade/root-partition changes, and no history changes in three small and
+  two signal controls. All original/radial-reconstruction pairs remain stable.
+  Known-identity root statistics are identical; the unselected chi diagnostic
+  still rejects 50/50 selected Gaussian roots at .01.
+- Tightened kernel bounds with exact radial distance quadratics and support-set
+  certification, and spectral bounds with H=S^t P and retained-spectrum power
+  telescopes. Same-box comparisons certify tested scalar half-width 1e-5
+  versus the earlier 1e-12. Added proof-required interval expansion/subdivision.
+- Final first-scalar selected-mass lower bound is approximately 1.05858e-6;
+  the corrected 80-row observation now has a certified selected interval with
+  selected-mass lower bound approximately 4.88479e-14. All four bounded root
+  decisions remain unresolved. Unknown regions and the tail are retained.
+- Added [[diffusion-self-distance-repair-evidence]] and updated
+  [[diffusion-selected-root-diagnostic]], with raw derivations, Wolfram quadratic
+  check, matched topology captures and versioned final interval reports.
+- Full ordered suite: 977 tests passed. Ruff lint, changed-file formatting,
+  dependency/dead-code audits, generated-file check and 228-page wiki lint pass.
+  Repository-wide formatting still flags the unchanged earlier raw reentry
+  probe, which was preserved. Final manifest source hashes match; only the
+  intended diffusion constructor changed among 207 production/shared sources.
+  Statistical thresholds, fitted inflation and traversal
+  were unchanged; no installations, commits, pushes or persistent services.
+
+## 2026-11-03 — Production self-distance integration
+
+- Two Sol agents completed integration and independent review of the existing
+  shared constructor correction. Direct, feature-family and block adaptive
+  diffusion use the same zero-identity-diagonal policy before epsilon and kernel
+  computation, preserving off-diagonal entries and stored zero affinities.
+- Feature-family dispatch now forwards geometry metadata under the established
+  `adaptive_diffusion` key. Its new regression failed with `KeyError` before the
+  fix and passes afterward; fallback behavior and statistical defaults are
+  unchanged. Unsupported-result metadata omission remains a pre-existing limit.
+- Extended forced-artifact regression coverage across all three entry points;
+  documented the correction in the package README, changelog and
+  [[diffusion-self-distance-repair-evidence]]. Selected-root calibration stays
+  diagnostic.
+- Fresh verification: 77 constructor, wrapper, dispatch, runner-contract and
+  application tests passed, with one existing sklearn MDS FutureWarning.
+  Targeted Ruff lint and formatting passed. No full-suite rerun or distribution
+  build; the environment lacks `flit_core`. No installations, commits, pushes
+  or persistent services.
+
+## 2026-11-03 — Install the declared build backend
+
+- After explicit user confirmation, installed `flit_core` 3.12.0 in the existing
+  project `.venv` using `uv pip install --python .venv/bin/python 'flit_core>=3.2,<4'`.
+  The version satisfies the existing `pyproject.toml` build-system requirement.
+- Verified `flit_core.buildapi` imports from the project environment. The
+  manifest and lockfile remain unchanged. No distribution build, commit or push.
+
+## 2026-11-03 — Distribution build and installed-wheel verification
+
+- Built the source distribution and its wheel offline with the existing
+  `flit_core` 3.12.0 backend. All 109 production Python files are packaged;
+  all 114 package files match the checkout and both artifacts byte-for-byte.
+- Installed the wheel in a temporary environment with lock-constrained
+  dependencies. Offline installation lacked cached dependency artifacts;
+  registry access completed the install. All 26 installed packages are compatible.
+- All three self-distance regressions passed both in the checkout and against
+  the installed wheel outside the repository. Isolated import checks excluded
+  the checkout and verified the installed constructor's source hash.
+- Removed the temporary environment; retained artifacts and verification JSON
+  under `dist/verification-20261103-gmv1fe71/`. Recorded hashes and scope in
+  `raw/inbox/package-build-verification-20261103.md` and updated
+  [[diffusion-self-distance-repair-evidence]]. Manifest and lockfile unchanged;
+  no source edits, full-suite rerun, publication, commit or push.
+
+## 2026-11-03 — Matched full benchmark rerun
+
+- Reran the existing full benchmark with all 122 cases and 11 method cells,
+  original seeds/settings, plotting and case isolation. Execution completed in
+  654.13 seconds with 1,342 rows and no failed cases. Status/skip counts match.
+- Verified every recorded case/run parameter and dimension against the
+  2026-10-19 baseline. Case/generator definitions and lockfile are unchanged;
+  new input fingerprints are recorded. Original matrix hashes were unavailable.
+  All 210 recorded source hashes and the baseline CSV hash stayed unchanged.
+- Eight rows improve in ARI and none decline. Family-diffusion TBS mean ARI
+  changes 0.824874 to 0.825843, but exact K falls 99/122 to 98/122: the
+  overdispersed categorical case changes from four to seven clusters. Canonical
+  TBS improves 0.794135 to 0.805953 and exact K 91/122 to 93/122. Non-TBS methods
+  and the six full-coverage TBS null outcomes are unchanged.
+- The working tree includes the prior empirical-inflation change, so this is
+  an integrated implementation comparison, not isolated self-distance attribution.
+  Selected-root calibration remains unresolved.
+- Retained compact results, provenance, verification and a reproduction script
+  under `reports/matched_full_benchmark_20261103/`; catalogued full CSV snapshots
+  as local-only. Added [[matched-full-benchmark-evidence]]. No source behavior,
+  dependency, threshold, commit, push or publication changes in this rerun.
+
+## 2026-11-03 — CHOIR pooled cancer cell-line data load
+
+- After confirmation and dataset selection, downloaded GSE157220 CPM expression,
+  GEO pool metadata and the authors' Zenodo source-data workbook. Recorded source
+  hashes and verified the workbook's published MD5; original downloads are unchanged.
+- Loaded all 48,879 uniquely matched benchmark cells × 22,722 genes into sparse
+  float64 AnnData with all 109 published metadata/cluster-label columns. All 190
+  cell-line counts agree with independent GEO pool metadata; full expression and
+  metadata read-back checks passed. The 4,634 custom-pool cells absent from the
+  benchmark table remain in the original 53,513-cell GEO download.
+- Added [[choir-cell-lines-data]] and primary source/verification records under
+  `raw/inbox/choir-cell-lines/`. Bulk data remain local-only in ignored `local_data/`.
+  This loads GEO CPM expression, not the authors' reprocessed count matrix.
+  No clustering, normalization, dependency installation, commit or push.
+
+## 2026-11-03 — Cancer cell-line diffusion TBS preparation
+
+- After confirmation, selected `tbs_family_diffusion` using the latest full
+  benchmark's mean ARI, checking its tie with adaptive NNLS on 101 common cases.
+- Prepared all 48,879 cells without subsampling: log1p(CPM / 100), 2,000 variable
+  genes, scaled/clipped expression and 30 PCs, seed 0. The exact preset kernel
+  has three connected components (48,444 / 250 / 185), triggering the current
+  dense eigensolver fallback. One dense square is 17.8006 GiB; about 12 GiB was
+  available. Clustering has not started; an execution-choice question is pending.
+- Saved reusable local checkpoints and compact source captures; updated
+  [[choir-cell-lines-data]]. Nineteen focused diffusion/dispatcher tests passed.
+  No production source, dependency, commit, push or clustering result changes.
+
+## 2026-11-03 — Full cancer cell-line family-diffusion TBS run
+
+- Used installed SciPy to solve disconnected diffusion graphs by connected
+  component and merge complete global eigenvalue groups. Preserved unrelated
+  self-distance changes. Six new sparse/dense reference cases cover cross-block
+  ties, isolated vertices and permuted rows; all 985 project tests pass.
+- Reused all 48,879 prepared cells and the registered `tbs_family_diffusion`
+  preset, with no canonical-distance fallback or label-based tuning. The
+  eigensolve took 3.415 s (maximum residual 1.81e-14); native numerical TBS
+  execution took 129.035 s, with NNLS branch times applied.
+- Result: one cluster, ARI/NMI 0 against 190 cell lines. The singleton-versus-
+  48,878 root split has child edge Tree-BH p-values 0.9167335 / 0.7245607, so
+  descendant tests remain blocked. Published CHOIR labels, rescored but not
+  rerun, have 367 clusters and ARI 0.664014. This does not establish homogeneity.
+- Wrote and verified annotated AnnData, assignments, tree, gates and metrics
+  in the local run folder. Every original CPM value and metadata column is
+  preserved. Removed the 8.9 GiB temporary distance file. Stopped a temporary
+  diagnostic cleanup that stalled after the numerical run and verified export;
+  that process exited 143, separately from the successful numerical result.
+- Captured compact primary results, hashes, source/script snapshots and limits
+  under `raw/inbox/choir-cell-lines/`; updated [[choir-cell-lines-data]]. Dask
+  installation was authorized but not needed or performed. No dependency,
+  lockfile, commit or push changes.
+
+## 2026-11-03 — Cancer cell-line one-cluster diagnosis
+
+- Read-only diagnosis separates local kernel structure from the unbalanced
+  root and top-down gate. The root singleton is one ASPC1 cell whose 88 graph
+  neighbors all share that line. Kernel edge label agreement is 987,220 /
+  1,030,508. The singleton triggers the parent-total covariance fallback, and
+  both failed root edges prevent descendant Tree-BH families from being reached.
+- Reconstructed NNLS and replayed the original root statistics. A first replay
+  with an omitted explicit projection-basis dimension was rejected by its
+  reproduction assertion. With the matching 30-dimensional basis, removing
+  branch variance alone gives adjusted root p=0.120680 for both edges: still no
+  rejection at 0.001. No replacement clustering or threshold tuning was done.
+- A diagnostic known-K global height cut gives ARI 0.076053; it is not an oracle
+  upper bound on adaptive tree cuts. Verified that the ranking benchmark uses
+  30–1,000 observations, unlike the 48,879-cell target. Recorded observations,
+  limits and open questions under `raw/inbox/choir-cell-lines/tbs-diagnosis.md`
+  and JSON captures; updated [[choir-cell-lines-data]]. Production files and
+  original numerical outputs were not changed during this diagnosis.
+
+## 2026-11-03 — Proposed cancer cell-line recovery experiment
+
+- Proposed a controlled two-by-two coordinate/linkage comparison: current
+  symmetric versus Markov right-eigenvector coordinates, each with average
+  versus Ward linkage. Reuse all cells and eigenpairs; freeze TBS settings and
+  refit NNLS per topology. Ward is already supported; no dependency is needed.
+- A read-only Markov-coordinate calculation verifies the eigen relation to
+  4.51e-15 and changes ASPC1 norm CV 0.190099 to 0.050017. This is a geometric
+  diagnostic, not a new clustering result or validated repair.
+- Captured the primary diffusion-maps reference and proposal/evidence under
+  `raw/inbox/choir-cell-lines/`; added [[choir-cell-lines-recovery-plan]]. Adoption
+  requires held-out whole-pipeline null/signal validation. No production change,
+  new clustering run, threshold change or replacement labels were made.
+
+## 2026-11-03 — Executed cancer cell-line recovery comparison
+
+- Executed the confirmed two-by-two coordinate/linkage experiment, reusing the
+  symmetric/average one-cluster baseline and all 48,879 cells, PCA, kernel and
+  retained eigenpairs. Fixed the remaining settings and refitted NNLS per
+  topology. All three new fits returned `solver_not_converged` under the
+  1,000-iteration budget; the native runner refused them before TBS testing.
+  No nonconverged weights, replacement labels or altered thresholds were used.
+- Topology-only diagnostics give root child sizes 250/48,629 (symmetric/Ward),
+  151/48,728 (Markov/average) and 267/48,612 (Markov/Ward). Removing the singleton
+  root did not produce a valid full-data clustering in this comparison.
+- Froze independent count models and seeds before evaluating alternatives.
+  Completed 600 null and 35 signal datasets, all four variants, yielding 2,540
+  successful simulation evaluations with complete distinct/paired fingerprints.
+  Low/high-depth-variation false partitions per 300 null datasets were 0/262
+  (symmetric/average), 295/228 (symmetric/Ward), 34/298 (Markov/average), and
+  297/300 (Markov/Ward). No variant meets P(K > 1) <= 0.01 across both nulls.
+- Symmetric/Ward improves balanced-signal mean ARI 0.700000 to 0.988412 while
+  failing the null target. Nulls use 400 cells and signals 1,000–3,000; no
+  full-scale calibration, selected-p-value or descendant-FDR guarantee follows.
+  No candidate was adopted. Reliable NNLS and calibration remain open.
+- The 45 focused existing tests and experiment self-checks passed. Aggregation
+  verified all frozen datasets, unique records and paired inputs. Core hashes
+  stayed fixed. Captured report/protocol/tables/compressed raw records/script
+  snapshots under `raw/inbox/choir-cell-lines/tbs-recovery-*`; updated
+  [[choir-cell-lines-data]] and [[choir-cell-lines-recovery-plan]]. Temporary
+  distance files were removed and experiment workers ended. No dependency,
+  production default, commit or push changes were made during this experiment.
+
+## 2026-11-03 — Published CHOIR cancer cell-line results
+
+- Verified the published PMC article's Results, Methods and Figures 3–4 against
+  the existing local source-label captures. CHOIR distinguished all 190 lines
+  among 48,879 cells under the paper's recovery criterion, uniquely among six
+  compared methods, and performed better under separate 50-cell downsampling.
+- Recorded that 74.3% of lines split into multiple clusters had significantly
+  different proliferation scores, with A375/T47D support in independent data.
+  Distinguished the paper's entropy/line-recovery metrics from the existing
+  local ARI 0.664014 for 367 imported CHOIR clusters. No rerun, input matching,
+  perfect purity or exactly-190-cluster claim was made.
+- Captured `raw/inbox/choir-cell-lines/published-choir-results.md` with source
+  and access limits; updated [[choir-cell-lines-data]]. No analysis or method
+  behavior was changed.
+
+## 2026-11-04 — Full-data NNLS convergence diagnosis
+
+- Reconstructed the four saved NNLS systems from frozen linkages and PCA.
+  All use identical sampled pairs and targets: 56,414 rows, 97,756 columns,
+  no final zero columns. Reproduced the three 1,000-iteration stops and the
+  baseline relative-cost stop at 796 with optimality 2.8945.
+- Changing only the inner LSMR tolerance to 0.001 gave stops after 364, 388 and
+  311 iterations for symmetric/Ward, Markov/average and Markov/Ward, with lower
+  costs but first-order residuals 0.3714, 0.3796 and 0.3688. Raising only the
+  Markov/Ward budget stopped at 1,028 with residual 1.4118. This separates slow
+  automatic inner solves from the relative-cost acceptance criterion.
+- Independent bounded solves on unchanged objectives substantially reduced all
+  four costs and gave numerical relative primal-dual gaps below `2e-5`.
+  Verified nonnegative, prediction-equivalent perturbations away from the root
+  pair for each near-optimal fit. Accurate sampled cost does not identify the
+  individual edge lengths. No TBS gates were run with diagnostic weights.
+- All 2,540 earlier simulation fits stopped on relative cost change with
+  reported optimality above `1e-5`. Their results describe the original
+  procedure; no new acceptance threshold or downstream calibration was tested.
+- Seven focused NNLS tests, dense-reference and KKT/dual-bound self-checks,
+  numeric reproduction checks and feasible null directions passed. Preserved
+  report, CSV, evidence JSON and scripts under `raw/inbox/choir-cell-lines/`;
+  updated [[choir-cell-lines-recovery-plan]]. All workers ended; production
+  code, dependencies and prior numerical outputs were unchanged.
+
+## 2026-11-04 — Groups attached directly to the root
+
+- Verified both root-child memberships for all four saved full-data linkages.
+  The smaller groups are disjoint and contain one ASPC1 cell, all 250 A204 cells,
+  151 of 161 OAW28 cells, and 267 of 270 NCIH727 cells, respectively. The larger
+  groups contain 189 or 190 annotated lines each.
+- A204 is a disconnected graph component. OAW28 is exactly CHOIR cluster 103.
+  The ASPC1, A204, OAW28 and NCIH727 cuts cross 88, zero, two and nine graph edges
+  and have 1, 567, 326 and 574 sampled NNLS pairs across the root. Verified both
+  root columns equal the crossing indicator. Recorded PCA distances and the
+  native and independent fit residuals for these pairs.
+- Preserved the report, complete composition counts and calculation under
+  `raw/inbox/choir-cell-lines/tbs-root-groups*` and updated
+  [[choir-cell-lines-recovery-plan]]. Root groups were analyzed on frozen trees.
+
+## 2026-11-04 — TBS statistics across disconnected graph components
+
+- Traced the original alternative stops to the NNLS application guard before
+  node distributions and both gates. Replayed frozen trees using original
+  baseline lengths and independent diagnostic lengths for the alternatives.
+  The baseline root edge results reproduced. All three alternatives passed
+  the root gates and recovered whole A204 and IM95 clusters. Every alternative
+  cluster stayed inside one graph component. Totals were 711, 72 and 804 clusters.
+- The small components are intact subtrees in all four trees. Direct pooled
+  PCA Wald statistics were 403,636, 23,981 and 50,158 for the three pairs. The
+  separate-covariance check also exceeded the nominal threshold. Recorded the
+  proposed forest and separate between-component family in
+  [[choir-cell-lines-recovery-plan]]. The replay used same-data nominal references.
+- Archived `raw/inbox/choir-cell-lines/tbs-component-statistics*`. Seven
+  existing gate tests passed. Exact root annotation and traversal count parity
+  held across repeated alternative runs.
+
+## 2026-11-04 — Left and right diffusion eigenvectors in one hierarchy
+
+- Recovered 30 paired left and right eigenvectors of the frozen Markov operator
+  and verified both eigen-equations and biorthogonality. The eigenvalue 1 has
+  multiplicity three. All 27 other retained modes belong to the main component.
+  The small components' local second eigenvalues are below the global cutoff.
+- Reproduced the four root heights and traced squared contributions by mode.
+  The stationary subspace contributes 99.9997% of the symmetric/Ward squared
+  centroid separation. Mode 17 contributes 95.02% for Markov/Ward. The height
+  comparison with stationary modes removed keeps root membership fixed.
+- Recorded the user's one-tree requirement and a candidate with local modes
+  and component clades in [[choir-cell-lines-recovery-plan]]. Archived traces
+  and verification under `raw/inbox/choir-cell-lines/tbs-diffusion-eigenvector-trace*`
+  and retained the two per-cell eigenvector matrices in the local run.
+
+- Cross-referenced the fixed-tree Gaussian attribution experiment from
+  [[choir-cell-lines-recovery-plan]]. The observed null calibration failure
+  separates from the full-data NNLS guard and singleton-root traversal stop.
+  The comparison also records the separate covariance reference mismatch.
+
+## 2026-11-04 — Statistical logic at the cancer cell-line root
+
+- Instrumented both average-linkage gate replays and reproduced their root
+  annotations and traversal counts. The symmetric/average run stopped at the
+  edge gate. On the Markov/average root, the committed local inflation rule
+  and working-tree family fallback crossed the nominal sibling threshold with
+  the same Wald statistic, record and fitted model.
+- Rechecked the Gaussian control counts and replayed replicate 0. Its root
+  statistics reproduced despite the merge-history fingerprint difference.
+  Recorded evidence and reproducible traces under
+  `raw/inbox/choir-cell-lines/tbs-statistical-logic-trace*` and summarized the
+  result in [[choir-cell-lines-recovery-plan]]. Eight focused tests passed.
+
+## 2026-11-04 — Conditional diffusion root statistics with Wolfram
+
+- Derived and implemented a known-covariance Gaussian root rank diagnostic
+  using native diffusion replay and complete-history conditioning. Captured
+  Wolfram chi-density, tail and finite-rank calculations, with an independent
+  20,000-replicate exact-region probability control.
+- Replayed 60 null and 40 paired signal datasets with 999 proposals each.
+  Corrected strict exclusion in the new diagnostic after a failed regression
+  showed that later hypothetical merge ties masked earlier history violations.
+  The final paired runs all completed. At alpha 0.01 nominal chi tails rejected
+  20/60 nulls, 17/20 moderate signals and 20/20 strong signals. Conditional rank
+  tails rejected none. Strong signals had zero accepted proposals, exposing
+  sampling-resolution failure. Whole-history conditioning, numerical event
+  evaluation, covariance and descendant traversal remain explicit limitations.
+- Archived protocol, results and Wolfram capture under
+  `raw/inbox/conditional-diffusion-*` and
+  `raw/assets/conditional-diffusion-20261104/`. Indexed
+  [[conditional-diffusion-monte-carlo-evidence]] and updated the root diagnostic
+  and cancer cell-line question with the measured scope.
+- Verification passed for 32 focused tests, focused Ruff checks, independent
+  recomputation of every final rank p-value, paired-data parity and wiki lint
+  over 232 pages.
+
+## 2026-11-04 — Existing small benchmarks before cancer-data inference
+
+- Audited ten generated benchmark cases and the six earlier count models.
+  The registered continuous blob inputs retain their original Gaussian values
+  and declared spherical noise. Binary transforms, nonspherical covariance,
+  heterogeneous outliers, dependent rows and fitted count preprocessing require
+  separate statistical treatment.
+- Replayed roots and immediate descendants of both small continuous signal
+  trees using the full global selected history. Both root numerical p-values
+  are 0.001. The clear mixed child rejects in the three-node Bonferroni family.
+  The moderate mixed child has zero accepted proposals and p=1.
+- Attempted exact-real certificates on both signal roots and the existing
+  scalar control. The signal graphs have four and three components and fail
+  the isolated-leading-mode certificate assumption. Their bounds are [0,1].
+  Verified that current certificate code reconstructs root contrasts internally,
+  so numerical descendant checks cannot inherit its root certificates.
+- Recorded scripts, inputs, numerical results and certificates under
+  `raw/inbox/conditional-small-*` and
+  `raw/assets/conditional-small-benchmarks-20261104/` and updated
+  [[conditional-diffusion-monte-carlo-evidence]].
+
+- The registered 200-by-80 Gaussian null root completed with nominal p=9.41e-13
+  and conditional rank p=1 from zero accepted proposals. All seven contrasts
+  completed. Independent rank recomputation, source hashes, script compilation,
+  20 focused tests and wiki lint over 232 pages passed.
+
+## 2026-11-04 — Cancer-inspired PC benchmark reconstruction
+
+- Added a 496-by-30 continuous generator and four registered `method_proof`
+  cases crossing one row's noise scale with the separation of two populations.
+  Existing native diffusion, one-tree construction, NNLS, tests and traversal
+  remain the evaluated production path; no production behavior was changed.
+- The development hub/disconnected case reproduces three components, a
+  singleton root, covariance fallback, closed root edges, 988 ancestor-blocked
+  edges and one cluster. Its one-row control returns six clusters.
+- Five subsequent seeds all retain one versus six clusters. Three reproduce
+  the singleton mechanism; two stop at sibling calibration after significant
+  edges. Saved calibration replays identify fitted-inflation sensitivity and
+  below-threshold reference support without claiming a validated selected law.
+- Recorded scripts, full development annotations, compressed input/label/tree
+  fixtures, 24 result records and source provenance under
+  `raw/inbox/cancer-pc-surrogate-*` and
+  `raw/assets/cancer-pc-surrogate-20261104-final/`. Summarized the scope in
+  [[cancer-pc-surrogate-evidence]] and the cancer recovery question.
+- The generator and registrations first failed their new tests; the completed
+  focused generator/contract/category suite passed 23 tests. Full-scale NNLS
+  nonconvergence, count preprocessing and selective calibration remain untested.
+
+## 2026-11-04 — Cancer PC suite integration and default-method plots
+
+- Added the `cancer_pc` selector for the four existing registered surrogate
+  cases and documented the standard full-runner command. The full registry has
+  126 cases; the default eleven methods and their parameters are unchanged.
+- Completed the standard 44-row development run with a 23-page tree/UMAP PDF
+  and a six-seed, 264-row panel. Nine methods completed every case; two Hamming
+  diffusion variants explicitly skipped continuous inputs (216 OK, 48 skip).
+- The additional-seed comparison retains the family-diffusion TBS ARI contrast
+  0 versus 0.9922. Known-K spectral clustering averages 0.9916/0.9928 in those
+  disconnected controls. Recorded differing method geometries and true-K
+  inputs; these results do not establish a general ranking or selective validity.
+- Created and visually reviewed an all-method metric/count figure and a
+  population-assignment figure, plus representative native PDF pages. Stored
+  reproduction scripts, compact summaries and checks under
+  `reports/cancer_pc_methods_20261104/`; bulky reports, audits and assignments
+  receive explicit local storage entries in the artifact catalog.
+- Verified all 24 input hashes against the previous surrogate experiment,
+  recomputed 216 successful ARI/NMI/count records and matched all 44 development
+  rows between entrypoints. Updated [[cancer-pc-surrogate-evidence]] and the
+  cancer recovery question with the measured scope.
+- Final checks passed: 24 focused tests, Ruff, wiki lint over 233 pages,
+  artifact classification/checksums over 475 catalogued files and Git whitespace
+  checks. The new study preserves local detailed outputs and retained compact
+  provenance without changing existing catalog records.
+
+## 2026-11-04 — Cancer PC statistical rejection and stopping diagnosis
+
+- Applied systematic debugging to both raw null-hypothesis rejection and closed
+  split gates on four registered cases at seeds 20261104 and 20261106. Preserved
+  production sources and prior working changes; added only a reproducible
+  diagnostic study, evidence, plot and wiki synthesis.
+- Replayed 3,960 sibling statistics and 16 root edge tests. Fixed-input factors
+  isolated singleton covariance sensitivity and non-null calibration support:
+  11 of 494 records contributed 0.708302 of the calibration numerator; excluding
+  them at fixed remaining family weights opened the failed 16/480 sibling gate.
+- Diagnosed the small-node fitted-reference mechanism (Q times branch factor
+  approximately 30 with reference df=1). A separate known-noise Gaussian control
+  rejects 10,000/10,000 null pairs when the tested pair chooses its direction,
+  compared with 102/10,000 for a fixed coordinate. This is not full-pipeline
+  error calibration.
+- Full traversal replay identified an exactly zero-mean 1/383 split above three
+  populations. Frozen topology-plus-branch exchanges retained one versus six
+  clusters on both datasets in two seeds. All examined root calibrations fail
+  the existing support thresholds when enforcement is enabled.
+- Independent saved-record checks verified 241 source hashes, 120 factor
+  p-values, 7,920 edge records, population membership and calibration scale.
+  Documented scope and repair requirements in [[cancer-pc-statistics-diagnosis]].
+- Final checks passed: 59 focused tests, diagnostic assertions and independent
+  verification, Ruff, Git whitespace checks, wiki lint over 234 pages, and
+  artifact checks over 536 classified files. The study adds 61 classified
+  files, including 47 local generated outputs; no archive verification,
+  full cancer rerun or selected Type-I/FDR calibration was performed.
+
+## 2026-11-04 — Statistical construction and method knowledge audit
+
+- Three requested `gpt-6.1-sol` agents audited Marchenko–Pastur and rank,
+  projected-Wald reference laws, and accumulated method claims. Coordinator
+  checks covered empirical calibration, Tree-BH, sibling frontiers and live
+  traversal. Production inference and prior working changes were preserved.
+- Distinguished raw MP count, nominal dimension, retained rank and nominal
+  reference df. The same 60-by-30 Gaussian sample has zero MP spikes but
+  nominal rank 30 after fitted full whitening and tie completion. Active
+  contrast-energy selection can replace positive nominal requests.
+- Fixed Gaussian controls isolate different reference laws. At 8+8 rows and
+  six features, the native full-covariance guard is satisfied: chi-square
+  rejects 6,540/20,000 null samples at 0.05, versus 1,027 with the restricted
+  Hotelling-F law. Alternating edge means reuse denominator variation, so
+  that F law does not transfer. Native wrappers matched both quadratic forms
+  in 25 samples to maximum absolute error 7.42e-10.
+- Known covariance and a fixed eight-axis basis still give 1,562/20,000
+  nominal rejections with contrast-energy rank selection. Downstream probes
+  verify arithmetic and traversal boundaries without asserting calibrated
+  selected p-values or complete-pipeline error control.
+- Corrected four wiki pages: leaf-only PCA independence, spectral row roles,
+  MP/final-rank distinction, edge zero-basis sentinel, empirical-tail status
+  and exact-K oracle scope. Added [[statistical-construction-audit]] with
+  cited primary evidence and listed manuscript discrepancies and two
+  software-level gaps without changing them.
+- Retained reproducible probes and compact results under
+  `reports/statistical_construction_audit_20261104/`. Verified 114 source
+  hashes, including 109 production files unchanged since the preceding
+  diagnosis. Focused test batches passed 37, 92 and 33 tests; the first two
+  overlap. Added 15 artifact records, including three local generated
+  outputs, preserving all 536 previous records.
+- Final checks passed: Ruff, Git whitespace checks, wiki lint over 235 pages
+  and artifact checks over 551 classified files. No external archive was
+  verified, full cancer pipeline rerun or production p-value law replaced.
+
+## 2026-11-04 — Conditional and whole-procedure replacement comparison
+
+- Evaluated both requested candidates with a frozen 24-case known-I Gaussian
+  root protocol, reusing native symmetric diffusion and average linkage.
+  Added diagnostic report scripts only; preserved production inference.
+- Compared ordinary conditional sampling, importance estimates and
+  random-position reversible-chain ranks under full-history and root-split
+  events. At 0.05 the six strong cases give zero ordinary rejections, three
+  full-history chain rejections and five root-split chain rejections. The
+  same six input hashes match the earlier 999-proposal zero-acceptance cases.
+- Rebuilding known-I null datasets detects all six strong cases; generating
+  from fitted sample covariance detects none. Recorded differing hypotheses,
+  budgets and simulation dependence; no universal ranking or empirical
+  error-control claim is made from the 12 null cases.
+- Checked all 192 saved statistics, 144 sampled chain memberships and 112
+  source hashes. Native replay baseline passed 16 tests; exact finite-state,
+  truncated-chi and 8,000 known-law chain controls check the new computations.
+  Visually checked the retained comparison PNG and exported a vector PDF.
+- Added [[selective-rebuild-comparison]], updated the original prototype
+  evidence and cancer recovery question, and captured primary-source notes,
+  including the restricted 2026-10-12 unknown-covariance preprint. Cancer
+  covariance/preprocessing, descendant laws and numerical event certificates
+  remain unresolved; no production replacement was installed.
+- Final checks passed: Ruff, Git whitespace checks, wiki lint over 236 pages
+  and artifact checks over 591 files. Added 40 catalog records, including 27
+  local generated outputs, preserving the prior 551 records. All 109
+  production file hashes match the preceding audit; no archive was checked.
+
+## 2026-11-04 — Maintained root conditional sampler
+
+- Added the opt-in `selected_diffusion_root_chain_test` diagnostic API using
+  the previously evaluated random-position reversible chi chain and root-split
+  event. Known Gaussian spherical noise scale is mandatory; default production
+  TBS gates and prior rejection sampling remain unchanged.
+- Added explicit reject/nonreject/unresolved decisions, movement and resolution
+  diagnostics, retained labels/root children/chain/source hashes, and failure
+  handling that returns no p-value when required geometry is unresolved.
+- Wrote 28 failing tests before implementation, then passed the 44-test focused
+  replay/sampler batch. The full ordered suite passed 1,031 tests, with one
+  unrelated scikit-learn MDS FutureWarning.
+- The frozen 86-run validation matches all 24 prior chain arrays and ranks.
+  Fresh cases give 3/40 null, 4/10 moderate and 7/10 strong rejections at 0.05;
+  counts at 0.01 are 0, 1 and 5. Two registered Gaussian roots reject with
+  p=0.005 and 0.001 using their known noise scales. No cases were unresolved,
+  dropped or retried. Verified 258 native memberships and 149 source hashes.
+- Documented the API in calibration diagnostics, added [[root-conditional-sampler]]
+  and updated recovery/evidence links. Cancer covariance and preprocessing,
+  descendant testing and exact-real event certification remain outside the
+  supported contract. No installation, commit or persistent service occurred.
+- Final checks passed: scoped Ruff, Git whitespace checks, wiki lint over
+  237 pages and artifact checks over 687 files. Added 96 records, including
+  89 local generated outputs, preserving the prior 591 records. All 109
+  production source hashes remain unchanged; external archives were not checked.
+
+## 2026-11-06 — Singleton-peel merge and cancer rerun
+
+- Committed the root sampler code and tests (`6bbb01b7`), the diffusion
+  self-distance and per-component eigensolver fix (`61eda152`), and the root
+  sampler and selective rebuild comparison reports with their catalog entries
+  (`0a822e5d`). Then merged branch commit `cbbdf1fd` (singleton-peel traversal
+  and the sibling inflation cap) into `dev` as `50455316`, with no conflicts.
+- The full ordered suite on the merged working tree first failed one test: the
+  hub/disconnected cancer surrogate now returns six clusters (ARI 0.9982)
+  instead of reproducing the one-cluster failure. Updated
+  `tests/core/test_cancer_pc_surrogate.py` to pin six clusters and one
+  singleton-root pass-through for the hub, none for its control. All 1,038
+  tests then passed.
+- Reran family-diffusion TBS on the unchanged 48,879-cell cancer inputs. The
+  linkage is byte-identical; traversal passes through the singleton root and
+  returns 70 clusters, ARI 0.027593 and NMI 0.548219 against cell lines. One
+  cluster holds 28,611 cells; 27 of 190 lines are recovered at 90%/90%.
+  The count nulls were not repeated.
+- Captured `raw/inbox/choir-cell-lines/tbs-merged-rerun-20261106.md` with
+  summary, composition and fragmentation tables. Added
+  [[choir-singleton-peel-rerun]] and updated the recovery plan, cancer data and
+  surrogate evidence pages. No commit or push of these wiki edits occurred.
+
+## 2026-11-06 — Count-null rerun after the singleton-peel merge
+
+- Reran the 600 frozen count nulls with all four variants on merge `50455316`,
+  using the unchanged protocol, `validate.py` and `compare.py` in a new local
+  folder. All 2,400 fits completed in 570 s without failures, and every count
+  dataset matched the original by SHA-256.
+- Symmetric/average false partitions rose from 0 to 2 of 300 low-depth nulls
+  (upper one-sided 95% bound 0.020836) and from 262 to 264 high-depth nulls,
+  so the production baseline no longer meets the frozen 0.01 target. Both new
+  low-depth splits pass through a 1/399 singleton root. Markov/average rose
+  from 34 to 41 low-depth splits; other results were unchanged. Signal
+  mixtures were not rerun.
+- Captured `raw/inbox/choir-cell-lines/tbs-merged-null-rerun-20261106.md` and
+  its summary CSV, and updated [[choir-singleton-peel-rerun]], the recovery
+  plan and the index. The earlier same-day entry's statement that the count
+  nulls were not repeated is superseded. No commit or push occurred.
+
+## 2026-11-06 — Cancer rerun cell lines and p-value checks
+
+- Classified all 190 cell lines in the merged cancer rerun: 27 recovered at
+  90%/90%, 30 separated but sharing same-type clusters (16 skin lines, 9 breast
+  lines), 13 split (mostly colorectal) and 120 dominated by the 28,611-cell
+  cluster. `CHOIR_1` recovers 79 under the same definition; 9 overlap.
+- Checked the stored p-values: all in [0, 1], BH never below raw, and
+  non-significant edges with BH p below 0.001 explained by Tree-BH's scaled
+  family levels. 81 edge and 7 sibling values underflow to zero. 34 of 45
+  sibling splits use the capped `family_baseline` estimator; fitted inflation
+  factors are not saved, so their dependence on the cap is undetermined.
+- 63 of 70 clusters stop at a non-significant child edge, and 65% of cells sit
+  in clusters stopped at a split with a child of at most 10 cells. The giant
+  cluster stops at a 4 versus 28,606 split (child-edge BH p 0.561712, 0.088406).
+- Added `raw/inbox/choir-cell-lines/tbs-merged-cell-lines-pvalues-20261106.md`,
+  its script and three tables, and updated [[choir-singleton-peel-rerun]], the
+  recovery plan and the index. No TBS computation was rerun; nothing was
+  committed.
+
+## 2026-11-06 — Sibling inflation factors recorded and the cap checked
+
+- Sibling annotations now record the raw statistic, reference scale and the
+  applied, local-kernel and family-baseline inflation factors, and the full
+  traversal trace carries them per node. Calibration decisions keep the local
+  and family-baseline factors in `descriptive_strata`, and
+  `compute_inflation_adjusted_sibling_tests` also returns the decisions. Three
+  new or extended tests failed first, then passed; the full ordered suite passed.
+- Reran the cancer TBS with the factors recorded and once without the cap. The
+  applied pass reproduces the merged rerun exactly. The cap covers the 39
+  largest tested nodes (local factors 382 to 801, baseline 16.1542). Without it,
+  23 of 34 capped splits become same and turn into pass-throughs; all 70
+  clusters are identical.
+- Captured `raw/inbox/choir-cell-lines/tbs-inflation-debug-20261106.md`, the
+  per-test factor table, both summaries and the run script. Added
+  [[sibling-inflation-debugging]] and updated [[choir-singleton-peel-rerun]] and
+  the index. Nothing was committed.
+
+## 2026-11-06 — Topology limit and the opt-in Markov/Ward method
+
+- Compared the four saved cancer topologies. The symmetric/average tree holds
+  42 of 190 lines as clean subtrees (TBS recovers 27); Markov coordinates give
+  134 under either linkage, and Ward removes most small peels. A 190-cluster
+  cut of the Markov/Ward tree scores ARI 0.731.
+- Added `coordinate_operator="markov"` to `compute_diffusion_coordinates`,
+  `adaptive_diffusion_geometry` and `feature_family_diffusion_geometry`, and the
+  opt-in registered method `tbs_family_diffusion_markov_ward` (Markov
+  coordinates, Ward, NNLS branch lengths), outside `DEFAULT_METHODS` at the
+  user's choice. Three new tests failed first; the full ordered suite passed
+  1,043 tests, and Ruff and the dependency/dead-code audit passed.
+- A smoke run on the four `cancer_pc` surrogates gives 10 to 17 clusters for six
+  populations (ARI 0.229 to 0.446), against 5 to 6 (0.593 to 0.998) for
+  `tbs_family_diffusion`. The method was not rerun on the full cancer data.
+- Captured `raw/inbox/choir-cell-lines/tbs-topology-comparison-20261106.md` and
+  its script, updated the recovery plan, index, CHANGELOG and READMEs. Nothing
+  was committed.
+
+## 2026-11-06 — Full-data Markov/Ward runs and the NNLS solver
+
+- Ran `tbs_family_diffusion_markov_ward` on all 48,879 cancer cells. Production
+  Markov coordinates match the 2026-11-03 coordinates (6.94e-18). At the
+  registered 1,000-iteration NNLS budget the runner refused non-converged
+  branch lengths and ran no gates.
+- A one-off 5,000-iteration budget stopped at 1,017 iterations and gave 1,015
+  clusters: ARI 0.5337, NMI 0.8602 and 45 recovered lines against cell lines
+  (`CHOIR_1`: 367 clusters, ARI 0.6640, 79 lines). Clusters are mostly pure
+  (83.7% of cells) but a line needs a median of four clusters.
+- The NNLS question: SciPy `lsq_linear` TRF with automatic LSMR tolerance and
+  acceptance of relative-cost stops ends about three times above an independent
+  L-BFGS-B cost, and the 56,414-by-97,756 design leaves lengths non-identified.
+- Captured `raw/inbox/choir-cell-lines/tbs-markov-ward-full-run-20261106.md`,
+  both summaries and the run script; updated the recovery plan. Nothing was
+  committed.
+
+## 2026-11-06 — NNLS solver switched to column-scaled L-BFGS-B
+
+- Timed installed solvers on the saved Markov/Ward system: column-scaled SciPy
+  L-BFGS-B reached the optimum (cost 482.41) within 1e-4 in 3.7 s, while
+  production `lsq_linear` stopped at its limit with cost 1494.83; scikit-learn
+  coordinate descent and positive Ridge were slower. JAX and dedicated QP
+  solvers are not installed.
+- Replaced the fit's solver with column-scaled L-BFGS-B and a certified
+  relative duality-gap acceptance check (recorded per fit), tightened the
+  dual certificate to a per-row shift, and raised the registered budget from
+  1,000 to 5,000 iterations. New and updated tests failed first; the full
+  ordered suite passed 1,045 tests, and Ruff and the audit passed.
+- CHOIR: `tbs_family_diffusion` cost 1856.37 → 535.35, 70 → 75 clusters, ARI
+  unchanged at 0.0275, 27 lines; Markov/Ward 954 clusters, ARI 0.549. Count
+  nulls: all 2,400 fits certified; baseline 2/300 and 259/300 false partitions.
+- Captured `raw/inbox/choir-cell-lines/tbs-nnls-lbfgsb-switch-20261106.md` and
+  its evidence files; updated the recovery plan, the library audit page and
+  CHANGELOG. Nothing was committed.
+
+## 2026-11-06 — Full benchmark after the singleton-peel merge and NNLS switch
+
+- Reran the default full benchmark (126 cases, 1,386 rows, 608 s, exit 0) on
+  the merged code with the L-BFGS-B NNLS fit. On the 122 cases matched to the
+  2026-11-03 rerun: `tbs_family_diffusion` mean ARI 0.825843 → 0.828107 (exact
+  K 98 → 98), `tbs` 0.805953 → 0.810390 (93 → 94), `tbs_diffusion_adaptive_nnls`
+  unchanged; non-TBS methods identical; no status changes or new null splits.
+- The eight changed rows are the singleton-peel cases and three phylogeny
+  cases under the non-NNLS `tbs_diffusion`; the solver switch changes no result
+  by itself. The four new `cancer_pc` cases give family diffusion 6/5/6/6
+  clusters.
+- Captured `raw/inbox/full-benchmark-lbfgsb-20261106.md`, its tables and
+  script; updated [[matched-full-benchmark-evidence]] and CHANGELOG. Nothing
+  was committed.
+
+## 2026-11-06 — Descendant chain family test
+
+- Located the earlier descendant extension (`descendant_path`, 2026-11-04) and
+  combined it with the validated reversible chain:
+  `selected_diffusion_family_chain_tests` tests the root and its internal
+  children, each conditional on its ancestor-path splits, at a fixed
+  Bonferroni level `alpha / 3`. Its root position reproduces the root chain
+  test exactly. Six new tests failed first; the full ordered suite passed
+  1,051 tests. Sequential joblib cuts each replay to 8 to 20 ms.
+- A protocol fixed before results ran 390 known-noise Gaussian families
+  (30 to 200 rows). Null-node p-values are calibrated (5.37% at 0.05 across 801
+  null nodes); null children under a real root split were rejected 1/141 times;
+  family-wise false rejections were 13/200 (upper bound 0.1014). Child power was
+  low (5/100, 6/40) because every observed child split mixed the true subgroups.
+- On the six model-supported benchmark cases all six single-population nodes
+  were kept and 11 of 12 multi-population nodes rejected.
+- Captured `raw/inbox/descendant-chain-validation-20261106.md` with its
+  protocol, scripts and results; added [[descendant-chain-family-test]] and
+  updated [[root-conditional-sampler]] and the index.
+
+## 2026-11-06 — Adaptive alphas on the chain-test tree
+
+- Three Sonnet research agents checked the libraries; rules and assumptions were
+  re-read from the alpha-investing (Ramdas et al. 2017 tabulation), AdaPT and
+  STAR papers. AdaPT and STAR cannot stop with fewer than 20 and 19 rejections,
+  so they do not apply to families of at most 7 nodes; `online-fdr` is the
+  Python reference for alpha-investing. Nothing was installed.
+- A protocol fixed before results ran 650 depth-2 chain families (30 to 80
+  Gaussian rows, 42 minutes, no unresolved nodes). Alpha-investing rejected
+  313/780 mixed nodes against 240 for the current `alpha / 3` test, with 3/150
+  global-null families falsely rejecting (mFDR target). Event-fixed and
+  learned alphas keep provable FWER and gained 3 nodes; manifold weighting
+  gained nothing.
+- Tree assumption: null children were rejected 3/92 and 6/190 times after a
+  rejected parent (super-uniformity not contradicted); parent and child
+  p-values are negatively correlated, and merge height correlates with null
+  p-values while depth, size and balance do not.
+- Captured `raw/inbox/adaptive-alpha-tree-20261106.md` with its protocol,
+  library note, results and scripts; added [[adaptive-alpha-tree-procedures]]
+  and the index entry. Nothing was committed.

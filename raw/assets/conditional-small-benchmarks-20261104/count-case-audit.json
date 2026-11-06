@@ -1,0 +1,56 @@
+[
+  {
+    "name": "null_low_depth_variation",
+    "rows": 400,
+    "features": 3000,
+    "model": "negative_binomial(theta, theta/(theta+mean)); independent entries conditional on gene means, class and cell library factor",
+    "preprocessing": "counts -> CPM; log1p(CPM/100); Seurat HVG2000; scale(max_value=10); PCA30(arpack,random_state=0); native kernel and eigenpairs rebuilt for every independent dataset",
+    "gaussian_chi_prototype_supported": false,
+    "reason": "count distribution and fitted preprocessing differ from independent spherical Gaussian input"
+  },
+  {
+    "name": "null_high_depth_variation",
+    "rows": 400,
+    "features": 3000,
+    "model": "negative_binomial(theta, theta/(theta+mean)); independent entries conditional on gene means, class and cell library factor",
+    "preprocessing": "counts -> CPM; log1p(CPM/100); Seurat HVG2000; scale(max_value=10); PCA30(arpack,random_state=0); native kernel and eigenpairs rebuilt for every independent dataset",
+    "gaussian_chi_prototype_supported": false,
+    "reason": "count distribution and fitted preprocessing differ from independent spherical Gaussian input"
+  },
+  {
+    "name": "signal_balanced",
+    "rows": 1000,
+    "features": 3000,
+    "model": "negative_binomial(theta, theta/(theta+mean)); independent entries conditional on gene means, class and cell library factor",
+    "preprocessing": "counts -> CPM; log1p(CPM/100); Seurat HVG2000; scale(max_value=10); PCA30(arpack,random_state=0); native kernel and eigenpairs rebuilt for every independent dataset",
+    "gaussian_chi_prototype_supported": false,
+    "reason": "count distribution and fitted preprocessing differ from independent spherical Gaussian input"
+  },
+  {
+    "name": "signal_imbalanced",
+    "rows": 1000,
+    "features": 3000,
+    "model": "negative_binomial(theta, theta/(theta+mean)); independent entries conditional on gene means, class and cell library factor",
+    "preprocessing": "counts -> CPM; log1p(CPM/100); Seurat HVG2000; scale(max_value=10); PCA30(arpack,random_state=0); native kernel and eigenpairs rebuilt for every independent dataset",
+    "gaussian_chi_prototype_supported": false,
+    "reason": "count distribution and fitted preprocessing differ from independent spherical Gaussian input"
+  },
+  {
+    "name": "signal_singleton",
+    "rows": 1001,
+    "features": 3000,
+    "model": "negative_binomial(theta, theta/(theta+mean)); independent entries conditional on gene means, class and cell library factor",
+    "preprocessing": "counts -> CPM; log1p(CPM/100); Seurat HVG2000; scale(max_value=10); PCA30(arpack,random_state=0); native kernel and eigenpairs rebuilt for every independent dataset",
+    "gaussian_chi_prototype_supported": false,
+    "reason": "count distribution and fitted preprocessing differ from independent spherical Gaussian input"
+  },
+  {
+    "name": "signal_density_variation",
+    "rows": 3000,
+    "features": 3000,
+    "model": "negative_binomial(theta, theta/(theta+mean)); independent entries conditional on gene means, class and cell library factor",
+    "preprocessing": "counts -> CPM; log1p(CPM/100); Seurat HVG2000; scale(max_value=10); PCA30(arpack,random_state=0); native kernel and eigenpairs rebuilt for every independent dataset",
+    "gaussian_chi_prototype_supported": false,
+    "reason": "count distribution and fitted preprocessing differ from independent spherical Gaussian input"
+  }
+]

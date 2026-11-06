@@ -1,0 +1,188 @@
+"""Frozen coordinate/linkage experiment; production method defaults stay unchanged."""
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from scipy.spatial.distance import pdist
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[2]
+BASE = ROOT / "results/analyses/choir_cell_lines_tbs_20261103_163359"
+sys.path.insert(0, str(ROOT))
+from applications.scrna._shared import json_default
+from applications.scrna.pancreas_benchmark import (
+    _split_merge_detail_tables,
+    _split_merge_summary_metrics,
+)
+from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from tree_break_selection.tree.construction.build import _canonical_sample_order
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+PARAMS = dict(METHOD_SPECS["tbs_family_diffusion"].param_grid[0])
+VARIANTS = ("symmetric_average", "symmetric_ward", "markov_average", "markov_ward")
+
+
+def write_json(path, value):
+    path.write_text(json.dumps(value, indent=2, default=json_default) + "\n")
+
+
+def markov_coordinates(symmetric, weights):
+    degrees = np.asarray(weights.sum(axis=1)).ravel()
+    if not np.isfinite(degrees).all() or (degrees <= 0).any():
+        raise ValueError("Markov variant requires finite, positive kernel degrees")
+    return symmetric / np.sqrt(degrees)[:, None]
+
+
+def fit(data, distances, variant):
+    assert variant in VARIANTS
+    params = dict(PARAMS, tree_linkage_method=variant.split("_")[1])
+    return run_tbs_on_distance(
+        data, distances, 0.01, edge_alpha=0.001,
+        tree_linkage_method=params["tree_linkage_method"],
+        feature_space=continuous_feature_space_from_columns(tuple(data.columns)),
+        branch_length_data_df=data,
+        edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+        adaptive_projection_dimension_energy_fraction=0.90,
+        **_tbs_branch_length_optimization_kwargs(params),
+        extra={"experiment_variant": variant, "feature_family_diffusion_fallback_reason": None},
+    )
+
+
+def summarize(result, truth):
+    extra = result.extra or {}
+    summary = {
+        "status": result.status.value, "skip_reason": result.skip_reason,
+        "unsupported_reason": result.unsupported_reason,
+        "found_clusters": result.found_clusters,
+    }
+    summary.update({k: v for k, v in extra.items() if k.startswith("branch_length_")})
+    summary["stage_timings"] = extra.get("stage_timings")
+    summary["traversal_counters"] = extra.get("traversal_counters")
+    z = extra.get("linkage_matrix")
+    if z is not None:
+        n = len(truth)
+        sizes = np.r_[np.ones(n), z[:, 3]]
+        root_children = z[-1, :2].astype(int)
+        summary["root_child_sizes"] = sizes[root_children].astype(int).tolist()
+        top = sizes[z[-min(100, len(z)):, :2].astype(int)].min(axis=1)
+        summary["top100_singleton_splits"] = int((top == 1).sum())
+        summary["top100_min_child_size_median"] = float(np.median(top))
+        summary["root_guarded_covariance_fallback"] = bool(sizes[root_children].min() < 8)
+    a = extra.get("annotations")
+    if a is not None:
+        for col in ("Child_Parent_Divergence_Tested", "Child_Parent_Divergence_Ancestor_Blocked",
+                    "Child_Parent_Divergence_Significant", "Sibling_BH_Different", "Sibling_BH_Same"):
+            summary[col] = int(a[col].fillna(False).astype(bool).sum())
+    if result.labels is not None:
+        labels = np.asarray(result.labels, dtype=int)
+        assert labels.shape == (len(truth),) and (labels >= 0).all()
+        assert len(np.unique(labels)) == result.found_clusters
+        summary.update({"ari": adjusted_rand_score(truth, labels),
+                        "nmi": normalized_mutual_info_score(truth, labels)})
+        summary.update(_split_merge_summary_metrics(np.asarray(truth), labels))
+    return summary
+
+
+def real(variant):
+    assert variant in VARIANTS[1:]
+    dest = OUT / variant
+    dest.mkdir(exist_ok=False)
+    start = perf_counter()
+    metadata = pd.read_csv(BASE / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(BASE / "pca.npy"), index=metadata.index,
+                        columns=[f"PC{i+1}" for i in range(30)])
+    assert data.shape == (48879, 30)
+    assert _canonical_sample_order(data.index.tolist()) == list(range(len(data)))
+    coordinates = np.load(BASE / "diffusion_coordinates.npy")
+    if variant.startswith("markov"):
+        coordinates = markov_coordinates(coordinates, sparse.load_npz(BASE / "diffusion_kernel.npz"))
+    np.save(dest / "coordinates.npy", coordinates)
+    path = OUT / (variant + "_distance.npy")
+    assert not path.exists()
+    distances = None
+    try:
+        with threadpool_limits(limits=4):
+            print(f"{variant}: full Euclidean distances", flush=True)
+            distances = np.lib.format.open_memmap(path, mode="w+", dtype=np.float64,
+                shape=(len(data) * (len(data)-1) // 2,))
+            pdist(coordinates, out=distances)
+            distances.flush()
+            offsets = [0, 400, len(distances)-1]
+            before = distances[offsets].copy()
+            print(f"{variant}: linkage, fresh NNLS, both TBS gates", flush=True)
+            result = fit(data, distances, variant)
+            np.testing.assert_array_equal(before, distances[offsets])
+            summary = summarize(result, metadata.Cell_line.to_numpy())
+            summary.update({"variant": variant, "cells": len(data), "params": PARAMS | {
+                "tree_linkage_method": variant.split("_")[1]}, "edge_alpha": 0.001,
+                "sibling_alpha": 0.01, "elapsed_sec": perf_counter()-start,
+                "input_ids_sha256": hashlib.sha256("\n".join(data.index).encode()).hexdigest()})
+            extra = result.extra or {}
+            if "linkage_matrix" in extra:
+                np.save(dest / "linkage.npy", extra["linkage_matrix"])
+            if "annotations" in extra:
+                extra["annotations"].drop(columns="distribution", errors="ignore").to_csv(dest / "annotations.csv")
+            if result.labels is not None:
+                assignments = metadata[["CellID", "geo_cell_id", "Cell_line", "Cancer_type", "CHOIR_1"]].copy()
+                assignments["TBS_cluster"] = result.labels
+                assignments.to_csv(dest / "cluster_assignments.csv", index=False)
+                lines, clusters = _split_merge_detail_tables(method_label=variant,
+                    y_true=metadata.Cell_line.to_numpy(), y_pred=np.asarray(result.labels))
+                pd.DataFrame(lines).to_csv(dest / "cell_line_fragmentation.csv", index=False)
+                pd.DataFrame(clusters).to_csv(dest / "cluster_composition.csv", index=False)
+            write_json(dest / "summary.json", summary)
+            print(json.dumps({k: summary.get(k) for k in ("variant", "status", "found_clusters", "ari", "root_child_sizes", "elapsed_sec")}), flush=True)
+    except BaseException as error:
+        failure = {"type": type(error).__name__, "message": str(error),
+                   "elapsed_sec": perf_counter()-start}
+        trace = error.__traceback__
+        while trace is not None:
+            local = trace.tb_frame.f_locals
+            if trace.tb_frame.f_code.co_name == "run_tbs_on_distance":
+                if "optimization_result" in local:
+                    failure["nnls"] = local["optimization_result"].to_dict()
+                if "tree_build" in local:
+                    np.save(dest / "linkage.npy", local["tree_build"].linkage_matrix)
+            trace = trace.tb_next
+        write_json(dest / "failure.json", failure)
+        raise
+    finally:
+        if distances is not None:
+            distances._mmap.close()
+        path.unlink(missing_ok=True)
+
+
+def self_check():
+    w = sparse.csr_matrix([[0., 2., 1.], [2., 0., 3.], [1., 3., 0.]])
+    degree = np.asarray(w.sum(axis=1)).ravel()
+    s = w.toarray() / np.sqrt(degree[:, None] * degree[None, :])
+    vals, vecs = np.linalg.eigh(s)
+    phi = vecs * vals ** 3
+    old = phi.copy()
+    right = markov_coordinates(phi, w)
+    np.testing.assert_allclose(w @ right / degree[:, None], right * vals, atol=1e-14)
+    np.testing.assert_array_equal(phi, old)
+    try:
+        markov_coordinates(np.ones((2, 1)), sparse.csr_matrix((2, 2)))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Zero degrees must not silently change the Markov variant")
+    print("Markov relation, input preservation and degree guard passed")
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "self-check":
+        self_check()
+    else:
+        real(sys.argv[1])

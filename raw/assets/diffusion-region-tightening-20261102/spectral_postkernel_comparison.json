@@ -1,0 +1,152 @@
+{
+  "fixture_seed": 20261105,
+  "n": 9,
+  "p": 1,
+  "observed_radius": 2.4990448450502516,
+  "source_sha256": {
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_cells.py": "249dbe66b53665d48dcc97457098a43bfab285a409c70fa4bc4201640cb32e25",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_kernel.py": "21a8d6aa4a34ec4c67d3e7b49a7536f2fc7543999d6cf88d5179c17ba5850440",
+    "/Users/berksakalli/Projects/kl-te-cluster/raw/assets/diffusion-region-tightening-20261102/gram_engine_before.py.gz": "3c7b1e6a00c13d55261ed1539ae612671fbffd776d64a461b9780446bc675506",
+    "/Users/berksakalli/Projects/kl-te-cluster/raw/assets/diffusion-region-tightening-20261102/factor_global_before.py.gz": "4f8a6aa9885fef992ed1358e2f712516256172fa245de7af9b922cd56ed67da8"
+  },
+  "contract": "same exact-real operator box for both spectral methods",
+  "sources_unchanged_during_run": true,
+  "rows": [
+    {
+      "half_width": 1e-12,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.028704040024420565617879017752349674191209796764473268390293674037E-14"
+      },
+      "intermediate_global_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.028704040024420565617879017752349674191209796764473268390293674037E-14"
+      },
+      "after_restricted_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.028704040024420565617879017752349674191209796764473268390293674037E-14"
+      }
+    },
+    {
+      "half_width": 1e-10,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "intermediate_global_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.02807982119315729564684214674188282443130972506776315702329845579569E-12"
+      },
+      "after_restricted_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.02807982119315729564684214674188282443130972506776315702329845579569E-12"
+      }
+    },
+    {
+      "half_width": 1e-08,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "intermediate_global_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.0280791969743266467129903101623484481010593349540679367659147031909513E-10"
+      },
+      "after_restricted_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.0280791969743266467129903101623484481010593349540679367659147031909513E-10"
+      }
+    },
+    {
+      "half_width": 1e-07,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "intermediate_global_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.02807922818532903524173129708237246482607767768410178432040313927496550E-9"
+      },
+      "after_restricted_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.02807922818532903524173129708237246482607767768410178432040313927496550E-9"
+      }
+    },
+    {
+      "half_width": 1e-06,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "intermediate_global_factor": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "after_restricted_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.028079240675788197062991689624517306857873811866978156307542354943009417E-8"
+      }
+    },
+    {
+      "half_width": 1e-05,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "intermediate_global_factor": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "after_restricted_factor": {
+        "status": "selected",
+        "certified_selected_mass_lower": "7.0280792403477136054783838160965585605930155408639698554815026215989462860E-7"
+      }
+    },
+    {
+      "half_width": 0.0001,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "intermediate_global_factor": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "after_restricted_factor": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      }
+    },
+    {
+      "half_width": 0.001,
+      "kernel_status": "enclosed",
+      "same_operator_box": true,
+      "before_gram": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "intermediate_global_factor": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      },
+      "after_restricted_factor": {
+        "status": "unresolved",
+        "certified_selected_mass_lower": "0"
+      }
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+"""Fixed protocol for a root-only known-I diffusion selective-inference panel."""
+
+import hashlib
+import json
+import sys
+import time
+from importlib.metadata import version
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from threadpoolctl import threadpool_limits
+
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default, write_diagnostic_bundle
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_conditional_mc import selected_diffusion_root_mc_test
+
+
+ROOT = Path(__file__).resolve().parents[2]
+SCENARIOS = {"null": (60, 0.0), "moderate": (20, 1.0), "strong": (20, 2.0)}
+PROPOSALS = 999
+
+
+def main():
+    scenario = sys.argv[1]
+    replicates, shift = SCENARIOS[scenario]
+    output = ROOT / "raw/assets/conditional-diffusion-20261104/strict-exclusion" / scenario
+    output.mkdir(parents=True, exist_ok=True)
+    rows = []
+    with (output / "replays.jsonl").open("x") as stream, threadpool_limits(limits=1):
+        for replicate in range(replicates):
+            seed = 2026110401 + replicate
+            values = np.random.default_rng(seed).normal(size=(9, 3))
+            values[:4, 0] -= shift
+            values[4:, 0] += shift
+            started = time.perf_counter()
+            row = dict(scenario=scenario, replicate=replicate, data_seed=seed,
+                       n=9, dimension=3, shift=shift,
+                       input_sha256=hashlib.sha256(values.tobytes()).hexdigest())
+            try:
+                result = selected_diffusion_root_mc_test(values, sigma=1.0,
+                                                        proposals=PROPOSALS, seed=2026120401 + replicate)
+            except ValueError as error:
+                result = dict(status="unsupported_observation", p_value=None, error=str(error))
+            row.update({k: v for k, v in result.items()
+                        if k not in {"accepted_radii", "source_hashes", "observed_signature"}})
+            row["seconds"] = time.perf_counter() - started
+            stream.write(json.dumps(dict(row=row, details=result), default=diagnostic_json_default) + "\n")
+            stream.flush()
+            rows.append(row)
+            if (replicate + 1) % 10 == 0:
+                print(scenario, replicate + 1, result["status"], flush=True)
+    outputs = write_diagnostic_bundle(
+        output_dir=output,
+        tables={"roots": pd.DataFrame(rows)},
+        filenames={"roots": "roots.csv"},
+        manifest=dict(
+            scenario=scenario, replicates=replicates, proposals=PROPOSALS,
+            model="independent Gaussian rows, known identity covariance",
+            selection="complete native symmetric diffusion / average linkage merge history",
+            null="e.T mean = 0 at the selected root",
+            signal="first four rows mean -shift in coordinate 1, remaining five +shift",
+            alpha_levels=[0.01, 0.05], paired_noise_and_proposals=True,
+            pipeline_scope="root only, full feature contrast, zero branch factor, inflation 1",
+            arithmetic="floating replay, no exact-real membership certificate",
+            versions={p: version(p) for p in ["numpy", "scipy", "pandas", "pydiffmap"]},
+            script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            statistic_sha256=hashlib.sha256(Path(selected_diffusion_root_mc_test.__code__.co_filename).read_bytes()).hexdigest(),
+        ),
+    )
+    print(outputs["roots"], flush=True)
+
+
+if __name__ == "__main__":
+    main()

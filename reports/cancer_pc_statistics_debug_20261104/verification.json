@@ -1,0 +1,14 @@
+{
+  "native_runs": 8,
+  "prior_input_and_metric_parity": true,
+  "all_sibling_replays": 3960,
+  "root_edge_replays": 16,
+  "branch_rescaling_identity": true,
+  "contrast_weight_variance_identity": true,
+  "matched_frozen_tree_replays": 4,
+  "full_trace_partition_replays": 8,
+  "known_noise_two_leaf_rank_one_identity": true,
+  "fixed_pair_native_kernel_replays": 10,
+  "sources_unchanged_during_run": true,
+  "scope": "Observed selected-tree mechanism diagnosis; not a Type-I-error or FDR estimate."
+}

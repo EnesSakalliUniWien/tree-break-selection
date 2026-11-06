@@ -1,0 +1,141 @@
+{
+  "selected_method": "tbs_family_diffusion",
+  "criterion": "highest mean ARI among diffusion TBS methods in the latest full benchmark",
+  "benchmark_path": "reports/matched_full_benchmark_20261103/matched_method_summary.csv",
+  "benchmark_rows": [
+    {
+      "method": "tbs_diffusion",
+      "ok_after": 109,
+      "mean_ari_after": 0.5370866396397581,
+      "exact_k_after": 41
+    },
+    {
+      "method": "tbs_diffusion_adaptive_nnls",
+      "ok_after": 101,
+      "mean_ari_after": 0.8230849829921763,
+      "exact_k_after": 84
+    },
+    {
+      "method": "tbs_family_diffusion",
+      "ok_after": 122,
+      "mean_ari_after": 0.8258434695195987,
+      "exact_k_after": 98
+    }
+  ],
+  "common_case_comparison": {
+    "cases": 101,
+    "family_diffusion_mean_ari": 0.8230849829921763,
+    "adaptive_nnls_mean_ari": 0.8230849829921763,
+    "cases_with_different_ari": 0
+  },
+  "params": {
+    "edge_branch_length_variance_policy": "normalized_branch_length",
+    "branch_length_optimization_method": "fixed_topology_nnls",
+    "branch_length_optimization_target_metric": "mean_squared_standardized_euclidean",
+    "branch_length_optimization_pair_sample_size": 50000,
+    "branch_length_optimization_random_state": 0,
+    "branch_length_optimization_solver_tolerance": 1e-05,
+    "branch_length_optimization_max_iterations": 1000,
+    "tree_distance_metric": "feature_family_diffusion",
+    "tree_linkage_method": "average"
+  },
+  "continuous_diffusion_settings": {
+    "metric": "euclidean",
+    "k_neighbors": 15,
+    "max_components": 50,
+    "edge_projection_energy_fraction": 0.9
+  },
+  "alphas": {
+    "sibling": 0.01,
+    "edge": 0.001
+  },
+  "python": "3.12.11 (main, Jun  3 2025, 15:41:47) [Clang 17.0.0 (clang-1700.0.13.3)]",
+  "packages": {
+    "anndata": "0.12.18",
+    "scanpy": "1.12.1",
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "scikit-learn": "1.7.2",
+    "pydiffmap": "0.2.0.1"
+  },
+  "available_memory_GiB_at_check": 13.638092041015625,
+  "clustering_status": "not_started_pending_execution_choice_for_dense_fallback",
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "bytes": 2962,
+      "sha256": "63eae17b17d16f6594e7b587f0fa3eca52dcb0d83229de45862f255605a63af3"
+    },
+    {
+      "path": "uv.lock",
+      "bytes": 487966,
+      "sha256": "9f2d020373c38a1e376914950d588e0ec643e6d570736d56c058defcbeb39298"
+    },
+    {
+      "path": "tree_break_selection/space_separation/diffusion.py",
+      "bytes": 24682,
+      "sha256": "81a51a5bec93fda2891b871b7a03b4a0dfc140e054eb3a61e4430ddad6f62565"
+    },
+    {
+      "path": "benchmarks/shared/runners/dispatch.py",
+      "bytes": 25666,
+      "sha256": "ed5df1a0afbcf78c51b8931fba2271ded98cf31d6c9805e14ab809e2d5f0114f"
+    },
+    {
+      "path": "benchmarks/shared/runners/method_registry.py",
+      "bytes": 19221,
+      "sha256": "790310bebb888045875c7b15f77321c0b4877fc68d4e3a19f2a908a0e025a6ca"
+    },
+    {
+      "path": "benchmarks/shared/runners/tbs_runner.py",
+      "bytes": 15107,
+      "sha256": "0f12c8996a9f65db265d6d86836e3e70e5ad02ae5e0480e604d5e6dbd6805f64"
+    },
+    {
+      "path": "local_data/choir/kinker_2020/kinker_2020_choir_cells_cpm.h5ad",
+      "bytes": 507757282,
+      "sha256": "a1929197bec732d56fb3fe247206b887b0af2aa3a998199cbd66a8701f2b7988"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/pca.npy",
+      "bytes": 11731088,
+      "sha256": "a2ef1e696acada626d996e7fda7e40522054cd3ebb1a855a5cb83be58a984283"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/preparation.json",
+      "bytes": 1378,
+      "sha256": "b03e789a0cef8786904085b370f185275d73da9ce192b0469edb50e29763628d"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/gene_selection.csv",
+      "bytes": 1506924,
+      "sha256": "871c7f151e97e85c0b578c1d7028382833f9fe57eb7512366784d0f1b10fc7b5"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/pca_loadings.npy",
+      "bytes": 480128,
+      "sha256": "166c30571b74b353f7830a20b05ba561dfb865d5cecd87e4b46a1a4dd5313abe"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/graph_components.npy",
+      "bytes": 195644,
+      "sha256": "9420c567f73b5f1cc4196ca00757db7518caf2ea1bab70d869e2f2fd4ed00e7b"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/diffusion_kernel.npz",
+      "bytes": 9561142,
+      "sha256": "7b10e4e380a9a5c702fbc00062d738ff9a14a3b8ca87eff3b8ad2f190e0fe00b"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/cell_metadata.csv",
+      "bytes": 21692651,
+      "sha256": "744d353a2aa4308b04e67b9c4e8e487d65084900791c1b6b0faf9d7ad705c9ad"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/prepare.py",
+      "bytes": 3695,
+      "sha256": "0120779b7cd254463d6619899425e686866b586bce77135a0c353f9259ad0afd"
+    }
+  ],
+  "preparation_checks_passed": true
+}

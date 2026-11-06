@@ -1,0 +1,67 @@
+"""Independent bounded solve of the identical sampled objective, for diagnosis only."""
+
+import sys
+from time import perf_counter
+
+import numpy as np
+from scipy import sparse
+from scipy.optimize import Bounds, minimize, nnls
+from threadpoolctl import threadpool_limits
+
+from diagnose import OUT, metrics, write
+
+
+def reference(a, b, x0, progress=None):
+    d = 1./np.sqrt(np.asarray(a.power(2).sum(axis=0)).ravel())
+    scaled = a.multiply(d).tocsr()
+
+    def objective(z):
+        residual = scaled @ z-b
+        return .5*(residual @ residual), scaled.T @ residual
+
+    result = minimize(objective, x0/d, method="L-BFGS-B", jac=True,
+        bounds=Bounds(0., np.inf), callback=progress,
+        options={"maxiter": 6000, "ftol": 0., "gtol": 1e-8, "maxls": 40})
+    x = result.x*d
+    np.testing.assert_allclose(a @ x, scaled @ result.x, atol=1e-12)
+    return x, result
+
+
+if sys.argv[1] == "self-check":
+    a = sparse.csr_matrix([[1., 0., 1.], [0., 1., 1.], [1., 1., 0.]])
+    b = np.array([1., 2., .1])
+    x, _ = reference(a, b, np.zeros(3))
+    expected, _ = nnls(a.toarray(), b)
+    np.testing.assert_allclose(a @ x, a @ expected, atol=1e-8)
+    assert metrics(a, b, x)["scaled_optimality_recomputed"] < 1e-7
+    print("Independent bounded-solve reference self-check passed")
+    sys.exit()
+
+variant = sys.argv[1]
+dest = OUT / variant
+a = sparse.load_npz(dest / "design.npz")
+b = np.load(dest / "target.npy")
+x0 = np.load(dest / "native_auto/x.npy")
+fit_dir = dest / "reference"
+fit_dir.mkdir(exist_ok=False)
+iteration = 0
+
+
+def progress(intermediate_result):
+    global iteration
+    iteration += 1
+    if iteration % 100 == 0:
+        print(iteration, float(intermediate_result.fun), flush=True)
+
+
+start = perf_counter()
+with threadpool_limits(limits=4):
+    x, solution = reference(a, b, x0, progress)
+    record = metrics(a, b, x)
+record.update({"elapsed_sec": perf_counter()-start, "iterations": solution.nit,
+               "status": solution.status, "success": bool(solution.success),
+               "message": str(solution.message), "objective": float(solution.fun),
+               "diagnostic_only": True, "native_objective": metrics(a,b,x0)["cost_recomputed"]})
+np.save(fit_dir / "x.npy", x)
+write(fit_dir / "solver.json", record)
+print(record, flush=True)

@@ -1,0 +1,311 @@
+[
+  {
+    "initial_half_width": 1e-12,
+    "expansion_steps": 0,
+    "selection_validated": true,
+    "bounds": {
+      "lower": "5.3600461327668277473682125143015670997425522977914664733031327055881085475689090E-14",
+      "upper": "0.99999999999717782930855837527551545239407881848792527831190305801760049732029150",
+      "selection_mass_lower": "8.807706535604737908661183709359470338999648169090376275421224131046E-14",
+      "selection_mass_upper": "0.99999999999996351727739268957707920709419916619022025509446192865269216847980142",
+      "selected_below": [
+        "3.514408280887895485878276607299618900028770376166671050007681405894E-14",
+        "3.514408280887895485878276607299618900028770376166671200942324105838E-14"
+      ],
+      "selected_above": [
+        "5.293298254716842422782907102059851438970877792923705225413542725152E-14",
+        "5.293298254716842422782907102059851438970877792923706109400670506218E-14"
+      ],
+      "unresolved_below": [
+        "0.98754714485712784032035990941022248613339808696919605385847822165314246128611835",
+        "0.98754714485712784032035990941022248613339808696919605385847822165389713449959799"
+      ],
+      "unresolved_above": [
+        "0.01245285514274759989167673278777010912370748451763420475429280320485626194714880",
+        "0.01245285514274759989167673278777010912370748451763420475429280322569160403408287"
+      ],
+      "selection_validated": true,
+      "observation_radius_lower": "2.4990448450502516113633868334524232572955956701830730723295477768221440016046844",
+      "observation_radius_upper": "2.4990448450502516113633868334524232572955956701830730723295477773623363000301308"
+    },
+    "gate": {
+      "status": "unresolved",
+      "clusters": 1,
+      "passthrough": false
+    },
+    "cells": [
+      {
+        "lo": 0.0,
+        "hi": "2.4990448450492515",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.4990448450492515,
+        "hi": "2.4990448450512517",
+        "status": "selected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.4990448450512517,
+        "hi": "2.748949329554277",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.748949329554277,
+        "hi": "2.748949329556277",
+        "status": "nonselected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.748949329556277,
+        "hi": "2.9988538140593017",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.9988538140593017,
+        "hi": "2.998853814061302",
+        "status": "selected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.998853814061302,
+        "hi": "4.998089690100503",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 4.998089690100503,
+        "hi": "inf",
+        "status": "unresolved",
+        "proof": "uncertified_unbounded_tail",
+        "validated_expansion_steps": 0
+      }
+    ],
+    "source_hashes": {
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "81a51a5bec93fda2891b871b7a03b4a0dfc140e054eb3a61e4430ddad6f62565",
+      "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_cells.py": "56cbaa29b65dd037a47232f7da3134224955667c2802bf4d3dd15ea78f3fb31a",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_kernel.py": "05f6925f60070f489fc181a061fe0786ab311986c3329115d3f00a01df878f7a",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_mass.py": "4e84634cefb9e1f0bc486fe30fa6ad4cc1c203d6ff0a3e12a716f15783a5ebbf"
+    }
+  },
+  {
+    "initial_half_width": 1e-08,
+    "expansion_steps": 0,
+    "selection_validated": true,
+    "bounds": {
+      "lower": "5.3596265435525033352685821894043800765523711862499932658859528273143130593651679E-10",
+      "upper": "0.99999997178125328293093224530055599432156134361112369929934688743957824166351570",
+      "selection_mass_lower": "8.8069235414446907722325397798699368596480208062670244167824595500517803E-10",
+      "selection_mass_upper": "0.99999999963520520661368961879041833971990420179294629702769936274342115027765782",
+      "selected_below": [
+        "3.5140396480219629053666759667096656627218411231839460823777123852199929E-10",
+        "3.5140396480219629053666759667096656627218411231839460823928058454785582E-10"
+      ],
+      "selected_above": [
+        "5.2928838934227278668658638131602711969261796830830783344047471648317874E-10",
+        "5.2928838934227278668658638131602711969261796830830783344931458816213325E-10"
+      ],
+      "unresolved_below": [
+        "0.98754714450575901960097249782841367222850451688601222924384528012587129997932091",
+        "0.98754714450575901960097249782841367222850451688601222924384528012662597279165764"
+      ],
+      "unresolved_above": [
+        "0.01245285424875383286824804373875068950440599894213198715715164090736466228793299",
+        "0.01245285424875383286824804373875068950440599894213198715715164092820000477601111"
+      ],
+      "selection_validated": true,
+      "observation_radius_lower": "2.4990448450502516113633868334524232572955956701830730723295477768221440016046844",
+      "observation_radius_upper": "2.4990448450502516113633868334524232572955956701830730723295477773623363000301308"
+    },
+    "gate": {
+      "status": "unresolved",
+      "clusters": 1,
+      "passthrough": false
+    },
+    "cells": [
+      {
+        "lo": 0.0,
+        "hi": "2.4990448350502517",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.4990448350502517,
+        "hi": "2.4990448550502515",
+        "status": "selected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.4990448550502515,
+        "hi": "2.748949319555277",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.748949319555277,
+        "hi": "2.748949339555277",
+        "status": "nonselected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.748949339555277,
+        "hi": "2.998853804060302",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.998853804060302,
+        "hi": "2.9988538240603018",
+        "status": "selected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.9988538240603018,
+        "hi": "4.998089690100503",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 4.998089690100503,
+        "hi": "inf",
+        "status": "unresolved",
+        "proof": "uncertified_unbounded_tail",
+        "validated_expansion_steps": 0
+      }
+    ],
+    "source_hashes": {
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "81a51a5bec93fda2891b871b7a03b4a0dfc140e054eb3a61e4430ddad6f62565",
+      "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_cells.py": "56cbaa29b65dd037a47232f7da3134224955667c2802bf4d3dd15ea78f3fb31a",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_kernel.py": "05f6925f60070f489fc181a061fe0786ab311986c3329115d3f00a01df878f7a",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_mass.py": "4e84634cefb9e1f0bc486fe30fa6ad4cc1c203d6ff0a3e12a716f15783a5ebbf"
+    }
+  },
+  {
+    "initial_half_width": 1e-08,
+    "expansion_steps": 6,
+    "selection_validated": true,
+    "bounds": {
+      "lower": "1.1457441933131937305554341455055605406260882275422344021261581484082000399228545E-8",
+      "upper": "0.99999954849974717129158754228359599396707105395489153482571476955626261844509394",
+      "selection_mass_lower": "1.693722871148562076694787760877770037139337832676262137794032227281210032E-8",
+      "selection_mass_upper": "0.99999998832656654683618978869304473481680462903306101323161036639279466219316318",
+      "selected_below": [
+        "5.62246451341618819817057567926180049760710813251444290523921552397295423E-9",
+        "5.62246451341618819817057567926180049760710813251444290524072486398108988E-9"
+      ],
+      "selected_above": [
+        "1.131476419806943256877730192951589987378627019424817847270110674883914609E-8",
+        "1.131476419806943256877730192951589987378627019424817847270994662653675916E-8"
+      ],
+      "unresolved_below": [
+        "0.98754713923469847098698059019450558963767058555108820904779698312442702054608685",
+        "0.98754713923469847098698059019450558963767058555108820904779698312518168734070270"
+      ],
+      "unresolved_above": [
+        "0.01245283215463936436358843155066153640143367208859447742119200529610613582743092",
+        "0.01245283215463936436358843155066153640143367208859447742119200531694148433461144"
+      ],
+      "selection_validated": true,
+      "observation_radius_lower": "2.4990448450502516113633868334524232572955956701830730723295477768221440016046844",
+      "observation_radius_upper": "2.4990448450502516113633868334524232572955956701830730723295477773623363000301308"
+    },
+    "gate": {
+      "status": "unresolved",
+      "clusters": 1,
+      "passthrough": false
+    },
+    "cells": [
+      {
+        "lo": 0.0,
+        "hi": "2.4990446850502517",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.4990446850502517,
+        "hi": "2.4990450050502515",
+        "status": "selected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 4
+      },
+      {
+        "lo": 2.4990450050502515,
+        "hi": "2.748949009555277",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.748949009555277,
+        "hi": "2.7489496495552768",
+        "status": "nonselected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 5
+      },
+      {
+        "lo": 2.7489496495552768,
+        "hi": "2.998853494060302",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 2.998853494060302,
+        "hi": "2.9988541340603017",
+        "status": "selected",
+        "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+        "validated_expansion_steps": 5
+      },
+      {
+        "lo": 2.9988541340603017,
+        "hi": "4.998089690100503",
+        "status": "unresolved",
+        "proof": "no_uniform_certificate",
+        "validated_expansion_steps": 0
+      },
+      {
+        "lo": 4.998089690100503,
+        "hi": "inf",
+        "status": "unresolved",
+        "proof": "uncertified_unbounded_tail",
+        "validated_expansion_steps": 0
+      }
+    ],
+    "source_hashes": {
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "81a51a5bec93fda2891b871b7a03b4a0dfc140e054eb3a61e4430ddad6f62565",
+      "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+      "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_cells.py": "56cbaa29b65dd037a47232f7da3134224955667c2802bf4d3dd15ea78f3fb31a",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_kernel.py": "05f6925f60070f489fc181a061fe0786ab311986c3329115d3f00a01df878f7a",
+      "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_mass.py": "4e84634cefb9e1f0bc486fe30fa6ad4cc1c203d6ff0a3e12a716f15783a5ebbf"
+    }
+  }
+]

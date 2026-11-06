@@ -1,0 +1,117 @@
+"""Primary endpoints and tree-assumption tests from protocol.md."""
+
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.stats import beta, binomtest, fisher_exact, spearmanr
+
+import procedures as proc
+
+OUT = Path(__file__).resolve().parent
+records = [json.loads(line) for line in (OUT / (sys.argv[1] if len(sys.argv) > 1 else "results.jsonl")).read_text().splitlines()]
+nodes = pd.DataFrame([v for r in records for v in r["nodes"]])
+nodes.loc[nodes.status.ne("complete"), "p_value"] = None
+families = {(r["panel"], r["replicate"]): [
+    {**v, "p_value": v["p_value"] if v["status"] == "complete" else None} for v in r["nodes"]
+] for r in records if r["nodes"]}
+
+
+def upper95(events, total):
+    return 1.0 if events == total else float(beta.ppf(0.95, events + 1, total - events))
+
+
+train = [f for (panel, rep), f in families.items() if rep % 2 == 0]
+(c, lam), score = proc.learn_allocation(train)
+learned = lambda f: proc.tree_reject(f, proc.allocation_levels(f, c, lam))  # noqa: E731
+PROCEDURES = {
+    "B7": proc.bonferroni7, "B3": proc.bonferroni3, "AI": lambda f: proc.alpha_investing(f)[0],
+    "CA": proc.chain_conditioned, "LA": learned, "LM": proc.manifold_weighted,
+}
+
+rows = []
+for panel in ["N30", "R30", "H40", "H80"]:
+    test = [f for (p, rep), f in families.items() if p == panel and rep % 2 == 1]
+    for name, rule in PROCEDURES.items():
+        v_total = r_total = any_false = 0
+        fdp, mixed_by_depth, hit_by_depth = [], np.zeros(3), np.zeros(3)
+        for f in test:
+            rejected = rule(f)
+            false = sum(1 for v in f if v["null"] and v["position"] in rejected)
+            v_total, r_total, any_false = v_total + false, r_total + len(rejected), any_false + (false > 0)
+            fdp.append(false / max(len(rejected), 1))
+            for v in f:
+                if not v["null"]:
+                    mixed_by_depth[v["depth"]] += 1
+                    hit_by_depth[v["depth"]] += v["position"] in rejected
+        rows.append({
+            "panel": panel, "procedure": name, "families": len(test),
+            "fwer": f"{any_false}/{len(test)}", "fwer_upper95": round(upper95(any_false, len(test)), 4),
+            "mean_fdp": round(float(np.mean(fdp)), 4),
+            "mfdr": round(v_total / r_total, 4) if r_total else 0.0,
+            "rejections_per_family": round(r_total / len(test), 3),
+            "mixed_rejected": f"{int(hit_by_depth.sum())}/{int(mixed_by_depth.sum())}",
+            **{f"mixed_rejected_d{d}": f"{int(hit_by_depth[d])}/{int(mixed_by_depth[d])}" for d in range(3)},
+        })
+summary = pd.DataFrame(rows)
+summary.to_csv(OUT / "procedures_summary.csv", index=False)
+
+# Tree-assumption tests on null nodes, all families.
+complete = nodes[nodes.p_value.notna()].copy()
+key = complete.set_index(["panel", "replicate", "position"])
+null = complete[complete.null].copy()
+child = null[null.depth > 0].copy()
+child["parent_p"] = [key.p_value.get((r.panel, r.replicate, int(r.parent))) for r in child.itertuples()]
+child["parent_null"] = [key.null.get((r.panel, r.replicate, int(r.parent))) for r in child.itertuples()]
+child = child[child.parent_p.notna()]
+t1 = {}
+for stratum, group in child.groupby("parent_null"):
+    label = "null_parent" if stratum else "mixed_parent"
+    entry = {"children": len(group)}
+    for t in (0.05, 0.01):
+        hi, lo = group[group.parent_p <= 0.05], group[group.parent_p > 0.05]
+        a, b = int((hi.p_value <= t).sum()), int((lo.p_value <= t).sum())
+        entry[f"rate_le_{t}_given_parent_rejected"] = f"{a}/{len(hi)}"
+        entry[f"rate_le_{t}_given_parent_not_rejected"] = f"{b}/{len(lo)}"
+        if len(hi) and len(lo):
+            entry[f"fisher_p_{t}"] = float(fisher_exact([[a, len(hi) - a], [b, len(lo) - b]])[1])
+        if len(hi):
+            entry[f"binom_greater_p_{t}"] = float(binomtest(a, len(hi), t, alternative="greater").pvalue)
+            entry[f"upper95_{t}_given_parent_rejected"] = round(upper95(a, len(hi)), 4)
+    rho, p = spearmanr(group.parent_p, group.p_value)
+    entry.update(spearman_rho=float(rho), spearman_p=float(p))
+    t1[label] = entry
+
+pairs = [
+    tuple(g.p_value) for _, g in null[null.depth > 0].groupby(["panel", "replicate", "parent"]) if len(g) == 2
+]
+rho2, p2 = spearmanr(*zip(*pairs)) if len(pairs) > 2 else (np.nan, np.nan)
+null["size_share"] = null.rows / null.n
+t3 = {}
+for feature in ["depth", "size_share", "balance", "merge_height"]:
+    rho, p = spearmanr(null[feature], null.p_value)
+    tertile = pd.qcut(null[feature].rank(method="first"), 3, labels=["low", "mid", "high"])
+    rates = null.groupby(tertile, observed=True).p_value.apply(lambda s: f"{int((s <= 0.05).sum())}/{len(s)}")
+    t3[feature] = {"spearman_rho": float(rho), "spearman_p": float(p), "rate_le_0.05_by_tertile": rates.to_dict()}
+calibration = {
+    f"depth_{d}": {f"le_{t}": f"{int((g.p_value <= t).sum())}/{len(g)}" for t in (0.05, 0.01)}
+    for d, g in null.groupby("depth")
+}
+assumptions = {
+    "learned_allocation": {"c": c, "lambda": lam, "training_mixed_rejected": score},
+    "null_calibration": calibration,
+    "T1_parent_child": t1,
+    "T2_null_sibling_pairs": {"pairs": len(pairs), "spearman_rho": float(rho2), "spearman_p": float(p2)},
+    "T2_null_histogram_10_bins": np.histogram(null.p_value, bins=10, range=(0, 1))[0].tolist(),
+    "T3_features": t3,
+    "unresolved_nodes": int(nodes.status.ne("complete").sum()),
+    "stalled_nodes": int(nodes.sampling_status.eq("stalled").sum()),
+    "family_errors": sum(1 for r in records if r["family_error"]),
+    "families": len(records),
+}
+(OUT / "assumptions.json").write_text(json.dumps(assumptions, indent=2, default=float))
+pd.set_option("display.width", 250)
+print(summary.to_string(index=False))
+print(json.dumps(assumptions, indent=2, default=float))

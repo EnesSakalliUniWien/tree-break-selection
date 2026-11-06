@@ -1,0 +1,86 @@
+{
+  "status": "passed",
+  "independent_datasets": 635,
+  "dataset_variant_records": 2540,
+  "unique_records": 2540,
+  "all_frozen_models_seeds_present": true,
+  "paired_counts_identical": true,
+  "failures_retained": true,
+  "null_bounds": "one-sided 95% exact binomial; marginal, not simultaneous",
+  "real_results": [
+    {
+      "variant": "symmetric_average",
+      "status": "ok",
+      "cells": 48879,
+      "found_clusters": 1,
+      "ari": 0.0,
+      "nmi": 0.0,
+      "root_child_sizes": [
+        1,
+        48878
+      ],
+      "nnls_iterations": 796,
+      "baseline_reused": true,
+      "root_min_child_below_covariance_guard": true,
+      "top100_singleton_splits": 12,
+      "top100_min_child_size_median": 36.5,
+      "edge_alpha": 0.001,
+      "sibling_alpha": 0.01,
+      "max_nnls_iterations": 1000
+    },
+    {
+      "variant": "symmetric_ward",
+      "status": "solver_not_converged",
+      "cells": 48879,
+      "error": "Fixed-topology NNLS branch-length optimization did not apply branch lengths (status='solver_not_converged'). Refusing to run an NNLS benchmark with unrefit topology-only/linkage branch lengths. Set branch_length_optimization_apply_nonconverged=True only for an explicit non-converged diagnostic run.",
+      "nnls_iterations": null,
+      "baseline_reused": false,
+      "root_child_sizes": [
+        250,
+        48629
+      ],
+      "root_min_child_below_covariance_guard": false,
+      "top100_singleton_splits": 0,
+      "top100_min_child_size_median": 212.5,
+      "edge_alpha": 0.001,
+      "sibling_alpha": 0.01,
+      "max_nnls_iterations": 1000
+    },
+    {
+      "variant": "markov_average",
+      "status": "solver_not_converged",
+      "cells": 48879,
+      "error": "Fixed-topology NNLS branch-length optimization did not apply branch lengths (status='solver_not_converged'). Refusing to run an NNLS benchmark with unrefit topology-only/linkage branch lengths. Set branch_length_optimization_apply_nonconverged=True only for an explicit non-converged diagnostic run.",
+      "nnls_iterations": null,
+      "baseline_reused": false,
+      "root_child_sizes": [
+        151,
+        48728
+      ],
+      "root_min_child_below_covariance_guard": false,
+      "top100_singleton_splits": 24,
+      "top100_min_child_size_median": 121.5,
+      "edge_alpha": 0.001,
+      "sibling_alpha": 0.01,
+      "max_nnls_iterations": 1000
+    },
+    {
+      "variant": "markov_ward",
+      "status": "solver_not_converged",
+      "cells": 48879,
+      "error": "Fixed-topology NNLS branch-length optimization did not apply branch lengths (status='solver_not_converged'). Refusing to run an NNLS benchmark with unrefit topology-only/linkage branch lengths. Set branch_length_optimization_apply_nonconverged=True only for an explicit non-converged diagnostic run.",
+      "nnls_iterations": 1000,
+      "baseline_reused": false,
+      "root_child_sizes": [
+        267,
+        48612
+      ],
+      "root_min_child_below_covariance_guard": false,
+      "top100_singleton_splits": 2,
+      "top100_min_child_size_median": 316.0,
+      "edge_alpha": 0.001,
+      "sibling_alpha": 0.01,
+      "max_nnls_iterations": 1000
+    }
+  ]
+}

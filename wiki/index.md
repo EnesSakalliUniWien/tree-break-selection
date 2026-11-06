@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-10-17
+updated: 2026-11-04
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -34,6 +34,37 @@ renamed, or promoted.
 
 ### Project
 
+- [[adaptive-alpha-tree-procedures]] - alpha-investing, event-fixed and learned
+  alphas, and manifold weighting on 650 chain families; tree-assumption tests.
+- [[descendant-chain-family-test]] - root-plus-children chain family conditional
+  on ancestor paths; calibrated on 390 Gaussian families, low child power from peels.
+- [[root-conditional-sampler]] - maintained root-split chain diagnostic,
+  explicit unresolved decisions, tests and fresh-case validation.
+- [[selective-rebuild-comparison]] - paired conditional sampler/root-event and
+  whole-procedure rebuilding controls, with detection and covariance limits.
+- [[statistical-construction-audit]] - Sol-agent audit of MP, rank/reference df,
+  fitted covariance, calibration and knowledge claims across the statistic.
+- [[cancer-pc-statistics-diagnosis]] - fitted-reference raw rejection,
+  contaminated calibration, covariance and mean-target stopping mechanisms.
+- [[cancer-pc-surrogate-evidence]] - compact cancer-inspired benchmark with
+  root failures, matched controls, eleven-method comparisons and recovery plots across six seeds;
+  the hub root failure no longer reproduces after the singleton-peel merge.
+- [[diffusion-selected-root-diagnostic]] - exact-real local selection certificates,
+  tighter conditional p bounds, self-distance reconciliation and matched topology effects.
+- [[conditional-diffusion-monte-carlo-evidence]] - Wolfram-checked root law,
+  conditional rank prototype, small benchmark checks and certification limits.
+- [[diffusion-selected-law-open-question-answers]] - six source-grounded answers,
+  scalar full-history re-entry, conditional laws and remaining certification gaps.
+- [[diffusion-selection-covariance-attribution]] - fixed-partition Gaussian
+  controls isolate selection, covariance references and projection/inflation effects.
+- [[diffusion-topology-branch-rank-isolation]] - paired factorial separation of
+  diffusion topology, NNLS branch time and contrast-energy rank, including null failures.
+- [[analytic-selected-root-laws]] - executable restricted Gaussian chi/F root
+  selection laws and isolated sibling PCA, branch and fitted-scale failures.
+- [[mathematical-glossary]] - source-grounded definitions from observations and
+  covariance through projected-Wald testing, calibration, multiplicity and traversal.
+- [[mathematical-construction-wolfram-review]] - symbolic identity checks,
+  reference-law assumptions, selection counterexamples and current manuscript/code differences.
 - [[eigenvalue-block-tree-comparison]] - matched 11-case comparison of
   eigenvalue blocks across eight tree inference methods, separating eigenvalue
   gaps, sample geometry, rooted tree differences, TBS partitions and rank sensitivity.
@@ -46,6 +77,8 @@ renamed, or promoted.
 
 ### Tools
 
+- [[sibling-inflation-debugging]] - recorded sibling inflation factors, full
+  traversal trace and counterfactual decision reruns for checking p-values.
 - [[generated-report-files]] - generated-output classification, checksums,
   storage decisions, Git checks and archive restoration.
 - [[aws-selected-tail-equation-study]] - AWS Batch sharding and merge workflow
@@ -61,6 +94,27 @@ renamed, or promoted.
 
 ### Source Summaries
 
+- [[choir-singleton-peel-rerun]] - cancer rerun after the singleton-peel merge:
+  identical tree, 70 clusters, ARI 0.0276, 27/190 lines recovered; count-null
+  rerun loses the 0.01 target; most cells stop at small non-singleton peels.
+- [[choir-cell-lines-data]] - loaded cancer cell-line CPM data and published
+  labels; one-cluster TBS baseline, failed alternative NNLS fits and null validation.
+- [[matched-full-benchmark-evidence]] - 1,342 matched rerun rows, modest family-diffusion
+  ARI gain, categorical oversplitting and unchanged null-suite results.
+- [[diffusion-self-distance-repair-evidence]] - production identity-diagonal repair
+  and metadata integration, 55 matched topology comparisons and tighter selection certificates.
+- [[diffusion-root-diagnostic-evidence]] - Sol-agent implementation, interval and
+  probability derivations, Wolfram check, and native 80-row consistency failure.
+- [[diffusion-open-question-evidence]] - three Sol-agent investigations with
+  actual diffusion re-entry and structural Vandermonde exclusion probes.
+- [[diffusion-attribution-evidence]] - three-agent attribution experiment,
+  covariance-regime stratification and Wolfram reference-law checks.
+- [[diffusion-factorial-evidence]] - reproducible 1,440-run comparison and a
+  traced NNLS significance reversal through empirical inflation.
+- [[analytic-root-and-sibling-evidence]] - analytic derivations, primary references,
+  Wolfram density check and reproducible sibling mechanism controls.
+- [[wolfram-mathematical-construction-checks]] - captured Wolfram evaluator
+  inputs and results for barycentric algebra and statistical-law counterexamples.
 - [[naming-consistency-audit]] - active API, CLI and statistical naming
   corrections, alias removal, migration requirements and verification.
 - [[branch-distribution-variance-benchmark]] - matched internal-distribution and
@@ -966,6 +1020,9 @@ renamed, or promoted.
 
 ### Questions
 
+- [[choir-cell-lines-recovery-plan]] - executed coordinate/linkage comparison:
+  root-child composition, spectral trace, NNLS diagnosis and statistical gate trace;
+  topology limit (42 vs 134 clean lines) and the opt-in Markov/Ward method.
 - [[diffusion-nnls-calibration-open-points]] - calibration checklist with the
   false-split definition, required data conditions and remaining validation points.
 

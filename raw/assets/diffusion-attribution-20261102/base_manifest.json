@@ -1,0 +1,27 @@
+{
+  "replicates": 50,
+  "selected_seed": 2026110203,
+  "independent_seed": 2026110303,
+  "n": 80,
+  "p": 24,
+  "covariance_modes": [
+    "known_identity",
+    "production_guarded"
+  ],
+  "branch_lengths": 0,
+  "c_hat": 1,
+  "projection": "identity full 24-dimensional space, no PCA or adaptive rank",
+  "primary": "root sibling p < .01; no FDR; dataset is replicate",
+  "secondary": "full-row child-parent means p < .001, not split-row production annotation",
+  "known_identity_null": "independent test data conditional on fixed tree gives chi-square24 before numerical ridge",
+  "production_covariance_reference": "exact production guarded estimator and chi-square plug-in reference; not assumed calibrated",
+  "dense_pooled_f": "unregularized ordinary pooled covariance only when actual representation is dense; F(p,n-p-1) reference exact for independent Gaussian rows, descriptive for selected rows; production adds 1e-12 contrast covariance jitter",
+  "prior_runs": "raw/assets/diffusion-factorial-20261102/runs.csv",
+  "prior_matching_topologies": true,
+  "source_sha256": {
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/diffusion_attribution.py": "3071a671f83e4c4cc8290e29b518582edcf79187ac1ce65bd7932cfb08654260",
+    "tree_break_selection/tree/distributions.py": "be7644f7eff2841287643f125d76327e9266d77abd44b63d479e0f960364e9f8",
+    "tree_break_selection/hierarchy_analysis/statistics/contrast_covariance.py": "b1c7c2e6d49837d544dea5b9ce1c8cdb9acb97b354fadd18f39daf0312290f00"
+  },
+  "limitation": "50 dataset replicates are attribution evidence, not a tail probability proof"
+}

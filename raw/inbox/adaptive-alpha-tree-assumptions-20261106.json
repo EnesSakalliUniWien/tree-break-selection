@@ -1,0 +1,120 @@
+{
+  "learned_allocation": {
+    "c": [
+      0.35,
+      0.45,
+      0.2
+    ],
+    "lambda": [
+      1.0,
+      0.25,
+      1.0
+    ],
+    "training_mixed_rejected": 248
+  },
+  "null_calibration": {
+    "depth_0": {
+      "le_0.05": "11/300",
+      "le_0.01": "2/300"
+    },
+    "depth_1": {
+      "le_0.05": "37/815",
+      "le_0.01": "3/815"
+    },
+    "depth_2": {
+      "le_0.05": "66/1701",
+      "le_0.01": "9/1701"
+    }
+  },
+  "T1_parent_child": {
+    "mixed_parent": {
+      "children": 357,
+      "rate_le_0.05_given_parent_rejected": "6/190",
+      "rate_le_0.05_given_parent_not_rejected": "16/167",
+      "fisher_p_0.05": 0.0145628409168545,
+      "binom_greater_p_0.05": 0.9169435901010731,
+      "upper95_0.05_given_parent_rejected": 0.0614,
+      "rate_le_0.01_given_parent_rejected": "1/190",
+      "rate_le_0.01_given_parent_not_rejected": "0/167",
+      "fisher_p_0.01": 1.0,
+      "binom_greater_p_0.01": 0.8518550084524202,
+      "upper95_0.01_given_parent_rejected": 0.0247,
+      "spearman_rho": -0.12282170860953884,
+      "spearman_p": 0.020270419669206244
+    },
+    "null_parent": {
+      "children": 2159,
+      "rate_le_0.05_given_parent_rejected": "3/92",
+      "rate_le_0.05_given_parent_not_rejected": "78/2067",
+      "fisher_p_0.05": 1.0,
+      "binom_greater_p_0.05": 0.8443818603817422,
+      "upper95_0.05_given_parent_rejected": 0.0821,
+      "rate_le_0.01_given_parent_rejected": "0/92",
+      "rate_le_0.01_given_parent_not_rejected": "11/2067",
+      "fisher_p_0.01": 1.0,
+      "binom_greater_p_0.01": 1.0,
+      "upper95_0.01_given_parent_rejected": 0.032,
+      "spearman_rho": -0.1382180887457233,
+      "spearman_p": 1.121694828975234e-10
+    }
+  },
+  "T2_null_sibling_pairs": {
+    "pairs": 1115,
+    "spearman_rho": 0.04509363165219418,
+    "spearman_p": 0.13236887102408812
+  },
+  "T2_null_histogram_10_bins": [
+    255,
+    313,
+    286,
+    282,
+    264,
+    279,
+    281,
+    268,
+    279,
+    309
+  ],
+  "T3_features": {
+    "depth": {
+      "spearman_rho": 0.004895654440351685,
+      "spearman_p": 0.7951113967973971,
+      "rate_le_0.05_by_tertile": {
+        "low": "37/939",
+        "mid": "42/938",
+        "high": "35/939"
+      }
+    },
+    "size_share": {
+      "spearman_rho": 0.003517506742692571,
+      "spearman_p": 0.851991749118853,
+      "rate_le_0.05_by_tertile": {
+        "low": "34/939",
+        "mid": "40/938",
+        "high": "40/939"
+      }
+    },
+    "balance": {
+      "spearman_rho": 0.0017465010648517302,
+      "spearman_p": 0.9261905643625661,
+      "rate_le_0.05_by_tertile": {
+        "low": "43/939",
+        "mid": "29/938",
+        "high": "42/939"
+      }
+    },
+    "merge_height": {
+      "spearman_rho": -0.06131418107797719,
+      "spearman_p": 0.0011326605340761507,
+      "rate_le_0.05_by_tertile": {
+        "low": "36/939",
+        "mid": "41/938",
+        "high": "37/939"
+      }
+    }
+  },
+  "unresolved_nodes": 0,
+  "stalled_nodes": 0,
+  "family_errors": 0,
+  "families": 650
+}

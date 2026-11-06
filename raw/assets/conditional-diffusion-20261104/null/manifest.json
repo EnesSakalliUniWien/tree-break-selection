@@ -1,0 +1,30 @@
+{
+  "scenario": "null",
+  "replicates": 60,
+  "proposals": 999,
+  "model": "independent Gaussian rows, known identity covariance",
+  "selection": "complete native symmetric diffusion / average linkage merge history",
+  "null": "e.T mean = 0 at the selected root",
+  "signal": "first four rows mean -shift in coordinate 1, remaining five +shift",
+  "alpha_levels": [
+    0.01,
+    0.05
+  ],
+  "paired_noise_and_proposals": true,
+  "pipeline_scope": "root only, full feature contrast, zero branch factor, inflation 1",
+  "arithmetic": "floating replay, no exact-real membership certificate",
+  "versions": {
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "pandas": "2.3.3",
+    "pydiffmap": "0.2.0.1"
+  },
+  "script_sha256": "077a13e60781dca76115240d758f3fd8a790f52a166128b754d1cabb4b12fea6",
+  "generated_at": "2026-11-04T10:34:21.346364+00:00",
+  "outputs": {
+    "roots": "/Users/berksakalli/Projects/kl-te-cluster/raw/assets/conditional-diffusion-20261104/null/roots.csv"
+  },
+  "row_counts": {
+    "roots": 60
+  }
+}

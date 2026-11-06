@@ -1,0 +1,12 @@
+method,ok_before,ok_after,mean_ari_before,mean_ari_after,exact_k_before,exact_k_after,ari_improved,ari_degraded,null_split_before,null_split_after
+dbscan,122,122,0.576,0.576,71,71,0,0,0,0
+hdbscan,122,122,0.603754,0.603754,56,56,0,0,4,4
+kmeans,122,122,0.85705,0.85705,122,122,0,0,0,0
+leiden,122,122,0.807762,0.807762,92,92,0,0,4,4
+louvain,122,122,0.804345,0.804345,93,93,0,0,4,4
+optics,122,122,0.528018,0.528018,66,66,0,0,0,0
+spectral,122,122,0.826922,0.826922,122,122,0,0,0,0
+tbs,122,122,0.805953,0.81039,93,94,2,1,0,0
+tbs_diffusion,109,109,0.537087,0.537957,41,40,1,2,0,0
+tbs_diffusion_adaptive_nnls,101,101,0.823085,0.823085,84,84,0,0,0,0
+tbs_family_diffusion,122,122,0.825843,0.828107,98,98,1,1,0,0

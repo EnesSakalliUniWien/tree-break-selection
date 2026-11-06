@@ -60,9 +60,11 @@ def annotate_child_parent_divergence(
 
     The edge test splits each parent's leaves (see ``split_edge_test_rows``): it
     fits the PCA basis on one half and tests the other half's child-parent
-    contrast, so the basis is fixed relative to the tested contrast and the
-    chi-square reference holds. The returned spectral context is fitted on all
-    leaves, as the sibling gate expects.
+    contrast. This separates basis fitting from contrast rows; it does not make
+    child membership independent when the tree was selected using these data.
+    The chi-square reference also requires an appropriate covariance law and
+    is not a calibrated selected-tree reference. The returned spectral context
+    is fitted on all leaves, as the sibling gate expects.
     """
     annotations_df = annotations_df.copy()
     edge_alpha = float(significance_level_alpha)

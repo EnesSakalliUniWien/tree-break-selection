@@ -1,0 +1,103 @@
+{
+  "seed": 20261104,
+  "null_replays_per_shape": 3000,
+  "known": {
+    "raw_mp_count": 0,
+    "nominal_dimension": 2,
+    "basis_rank": 30,
+    "eigenvalue_min_max": [
+      0.10041580526908978,
+      2.658316397814766
+    ]
+  },
+  "fitted_full": {
+    "raw_mp_count": 0,
+    "nominal_dimension": 30,
+    "basis_rank": 30,
+    "eigenvalue_min_max": [
+      0.9833333333237047,
+      0.9833333333329697
+    ]
+  },
+  "fitted_diagonal": {
+    "raw_mp_count": 0,
+    "nominal_dimension": 2,
+    "basis_rank": 30,
+    "eigenvalue_min_max": [
+      0.10021316244671297,
+      2.488276217460995
+    ]
+  },
+  "fitted_diagonal_pair": {
+    "raw_mp_count": 0,
+    "nominal_dimension": 1,
+    "basis_rank": 1,
+    "eigenvalue_min_max": [
+      14.999999985440136,
+      14.999999985440136
+    ]
+  },
+  "augmented_zero_rank": {
+    "reported_threshold_rows": 3,
+    "leaf_rows": 2
+  },
+  "adaptive_nominal_ranks": [
+    1,
+    2,
+    30
+  ],
+  "adaptive_aligned_first_ranks": [
+    1,
+    1,
+    1
+  ],
+  "adaptive_aligned_last_ranks": [
+    30,
+    30,
+    30
+  ],
+  "null_counts": {
+    "6x30": {
+      "implemented": {
+        "edge": 10.47213595499958,
+        "count_above": 158
+      },
+      "centered_scale_matched": {
+        "edge": 9.915816237971963,
+        "count_above": 294
+      },
+      "centered_unscaled": {
+        "edge": 11.898979485566354,
+        "count_above": 22
+      }
+    },
+    "30x30": {
+      "implemented": {
+        "edge": 4.0,
+        "count_above": 274
+      },
+      "centered_scale_matched": {
+        "edge": 3.9330508271670164,
+        "count_above": 373
+      },
+      "centered_unscaled": {
+        "edge": 4.068673269483121,
+        "count_above": 187
+      }
+    },
+    "60x30": {
+      "implemented": {
+        "edge": 2.914213562373095,
+        "count_above": 286
+      },
+      "centered_scale_matched": {
+        "edge": 2.885712264530842,
+        "count_above": 368
+      },
+      "centered_unscaled": {
+        "edge": 2.9346226418957717,
+        "count_above": 243
+      }
+    }
+  }
+}

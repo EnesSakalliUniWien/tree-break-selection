@@ -1,0 +1,59 @@
+{
+  "case": "existing_scalar_reentry",
+  "sample_size": 9,
+  "sigma": 1.0,
+  "elapsed_seconds": 0.35137816700080293,
+  "observed_radius": 2.4990448450502516,
+  "observed_half_width": 1e-10,
+  "observed_membership_certified": true,
+  "arithmetic_contract": "real-arithmetic constructor with validated outward enclosures; not bitwise floating-point replay",
+  "p_lower": "3.5583509767977087903139886569594945035839159244273929272852841419756541048288559E-12",
+  "p_upper": "0.99999999971781246691253248282544744838506792825264582733945515114413536910157256",
+  "selection_mass_lower": "7.02807982119315729564684214674188282443130972506776315626862524227589E-12",
+  "selection_mass_upper": "1",
+  "gate_status": "unresolved",
+  "source_hashes": {
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py": "965f539371a4b38292799d50f97798cef9743c18a41b136b1023b8e44219218a",
+    "/Users/berksakalli/Projects/kl-te-cluster/.venv/lib/python3.12/site-packages/pydiffmap/kernel.py": "0fb6e0a83717519ad9357f3f6d5e1fe6ea2a12676b34f64942f1c194c7736ec6",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_replay.py": "1566dc5afab275e8a6f5542d2e7989d6e876112ee090460ed93900013508992f",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/tree/construction/build.py": "559c492f2c7ad7db66b9badec7781b3df29997bf63b1f90922934fb2bf7dd046",
+    "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_cells.py": "249dbe66b53665d48dcc97457098a43bfab285a409c70fa4bc4201640cb32e25",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_kernel.py": "21a8d6aa4a34ec4c67d3e7b49a7536f2fc7543999d6cf88d5179c17ba5850440",
+    "/Users/berksakalli/Projects/kl-te-cluster/benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_mass.py": "4e84634cefb9e1f0bc486fe30fa6ad4cc1c203d6ff0a3e12a716f15783a5ebbf"
+  },
+  "cells": [
+    {
+      "lo": 0.0,
+      "hi": "2.4990448449502516",
+      "status": "unresolved",
+      "proof": "no_uniform_certificate",
+      "reason": "unresolved positive distances or duplicates",
+      "error": null
+    },
+    {
+      "lo": 2.4990448449502516,
+      "hi": "2.4990448451502516",
+      "status": "selected",
+      "proof": "outward_native_kernel_and_exact_spectral_linkage_bounds",
+      "reason": null,
+      "error": null
+    },
+    {
+      "lo": 2.4990448451502516,
+      "hi": "4.998089690100503",
+      "status": "unresolved",
+      "proof": "no_uniform_certificate",
+      "reason": "unresolved nearest-neighbor support",
+      "error": null
+    },
+    {
+      "lo": 4.998089690100503,
+      "hi": "inf",
+      "status": "unresolved",
+      "proof": "uncertified_unbounded_tail",
+      "reason": null,
+      "error": null
+    }
+  ]
+}

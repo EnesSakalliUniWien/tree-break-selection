@@ -1,0 +1,31 @@
+{
+  "python": "3.12.11",
+  "prior_environment_and_production_sources_manifest": "raw/assets/diffusion-factorial-20261102/manifest.json",
+  "prior_manifest_sha256": "51f7c2f2ed76f083a7683a58947057c770aab65232da5320b7cee8847be98ea6",
+  "all_prior_source_hashes_still_match": true,
+  "new_source_sha256": {
+    "benchmarks/diagnostics/calibration/diffusion_attribution.py": "3071a671f83e4c4cc8290e29b518582edcf79187ac1ce65bd7932cfb08654260",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_attribution_restoration.py": "7f83ce506abf1ec3ead357f841774cb4e9b71088cec0e93ac978bb88978e4bca",
+    "tests/core/test_diffusion_attribution.py": "bfd58b5116754296260666463541d1da4c57e62c0df297ae62067607fb9877f4",
+    "tests/core/test_diffusion_attribution_restoration.py": "3e588ec0542538ce212394808e45162724d05fd9957334de91cad6c2b6a0cf3a"
+  },
+  "artifact_sha256": {
+    "base_covariance_strata.csv": "f00a6394aa4ac5ca7f9462440646c72c935f7cc34f8a9911c4aae93a59bc5c2d",
+    "base_manifest.json": "9b13a80006ea0a713eae0935f936fabb2653ea467deba0c531f6a3248912cdbb",
+    "base_runs.csv": "4e9b2eb7cd2417da638b57138040e633affe9e094428fec68b93017ed7c07bb9",
+    "base_summary.csv": "af7167dce5237c219714f3f931c3bb0a8c3834b7375067efe4a856136d8e504b",
+    "restoration_contract.json": "0bf712f33b0730e4ac58016a6290f4d6191f7f74e9a7b2e56e8a861f70db03f3",
+    "restoration_nodes.csv.gz": "94f07b78e877af2b1b3fc63004f224925bb87f35f5f53067fe74c4022356eff4",
+    "restoration_root_summary.csv": "bd00a287eaee0cbbf5b1723bd7c7cbdd75fb9f00af4124bfe3ed29eebdf5f505",
+    "restoration_roots.csv": "c91e4031d75b0e40c5514112ce680b23e3294bf8ae1d66ee39852b6813f2757a"
+  },
+  "verification": {
+    "focused_tests_passed": 28,
+    "wiki_pages_checked": 223,
+    "baseline_root_rows": 200,
+    "restoration_root_rows": 800,
+    "node_records": 63200,
+    "full_traversal_calibration_tested": false
+  },
+  "independent_review": "all baseline/restoration roots checked; baseline parity and native guarded empirical parity against prior factorial exact"
+}

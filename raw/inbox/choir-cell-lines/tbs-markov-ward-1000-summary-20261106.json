@@ -1,0 +1,37 @@
+{
+  "method_id": "tbs_family_diffusion_markov_ward",
+  "params": {
+    "edge_branch_length_variance_policy": "normalized_branch_length",
+    "branch_length_optimization_method": "fixed_topology_nnls",
+    "branch_length_optimization_target_metric": "mean_squared_standardized_euclidean",
+    "branch_length_optimization_pair_sample_size": 50000,
+    "branch_length_optimization_random_state": 0,
+    "branch_length_optimization_solver_tolerance": 1e-05,
+    "branch_length_optimization_max_iterations": 1000,
+    "tree_distance_metric": "feature_family_diffusion",
+    "diffusion_coordinate_operator": "markov",
+    "tree_linkage_method": "ward"
+  },
+  "cells": 48879,
+  "code_commit": "50455316",
+  "coordinate_parity_max_abs": 6.938893903907228e-18,
+  "diffusion": {
+    "backend": "pydiffmap",
+    "feature_family": "continuous",
+    "metric": "euclidean",
+    "neighbor_search_k": 15,
+    "diffusion_time": 3,
+    "epsilon": 0.032452781313245804,
+    "epsilon_method": "median",
+    "bandwidth_type": "-1/(d+2)",
+    "diffusion_components": 30,
+    "coordinate_operator": "markov_right_eigenvectors",
+    "coordinate_operator_definition": "D^(-1/2) Phi_S, the right eigenvectors of D^(-1) W",
+    "coordinate_eigensolver": "scipy.sparse.linalg.eigsh + scipy.linalg.eigh (connected components)",
+    "self_distance_policy": "zero_identity_diagonal_before_epsilon_and_kernel"
+  },
+  "status": "exception",
+  "error_type": "ValueError",
+  "error": "Fixed-topology NNLS branch-length optimization did not apply branch lengths (status='solver_not_converged'). Refusing to run an NNLS benchmark with unrefit topology-only/linkage branch lengths. Set branch_length_optimization_apply_nonconverged=True only for an explicit non-converged diagnostic run.",
+  "elapsed_sec": 110.63335120797274
+}

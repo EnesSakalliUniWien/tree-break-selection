@@ -1,0 +1,49 @@
+{
+  "graph_edges": 1030508,
+  "same_cell_line_edges": 987220,
+  "same_cell_line_edge_fraction": 0.9579935332864956,
+  "same_cell_line_edge_weight_fraction": 0.9624884313199755,
+  "root_singleton": {
+    "row": 43204,
+    "CellID": "Pool15_19#AAAGATGCATTGAGCT-1",
+    "Cell_line": "ASPC1_PANCREAS",
+    "cell_line_size": 290,
+    "neighbors": 88,
+    "same_cell_line_neighbors": 88,
+    "diffusion_norm_rank": 4
+  },
+  "top_100_merges": {
+    "singletons_on_smaller_side": 12,
+    "at_most_5_cells_on_smaller_side": 26,
+    "median_smaller_side": 36.5
+  },
+  "within_ASPC1_correlation_diffusion_norm_sqrt_kernel_degree": 0.9773939540244323,
+  "known_K_190_global_height_cut_diagnostic_only": {
+    "clusters": 190,
+    "ari": 0.07605258435469996,
+    "nmi": 0.6637460202021912,
+    "not_a_TBS_result_or_tree_oracle_upper_bound": true
+  },
+  "ranking_benchmark": {
+    "cases": 122,
+    "minimum_samples": 30,
+    "maximum_samples": 1000,
+    "source": "reports/matched_full_benchmark_20261103/input-fingerprints.csv"
+  },
+  "no_production_changes": true,
+  "no_replacement_cluster_labels": true,
+  "root_covariance": {
+    "policy": "guarded_within_child",
+    "minimum_child_leaves": 8,
+    "root_child_leaf_counts": [
+      1,
+      48878
+    ],
+    "fallback_to_parent_total_verified_by_identity": true
+  },
+  "test_sample_sizes": {
+    "singleton": 1,
+    "large_child": 24439,
+    "parent": 24440
+  }
+}

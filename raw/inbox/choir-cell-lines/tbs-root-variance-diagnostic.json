@@ -1,0 +1,62 @@
+{
+  "original_result_unchanged": true,
+  "projection_basis_dimension": 30,
+  "mean_branch_length": 0.21771610415953954,
+  "root_edges": [
+    {
+      "child": "L43204",
+      "branch_length": 0.22011185259622715,
+      "variance_multiplier": 2.011004001959047
+    },
+    {
+      "child": "N97755",
+      "branch_length": 0.05003399672273579,
+      "variance_multiplier": 1.2298130260776279
+    }
+  ],
+  "normalized_branch_length": {
+    "root_children": {
+      "L43204": {
+        "leaf_count": 1,
+        "Child_Parent_Divergence_Test_Statistic": 18.359402898659503,
+        "Child_Parent_Divergence_df": 28.0,
+        "Child_Parent_Divergence_P_Value": 0.9167335178724925,
+        "Child_Parent_Divergence_P_Value_BH": 0.9167335178724925,
+        "Child_Parent_Divergence_Significant": false
+      },
+      "N97755": {
+        "leaf_count": 48878,
+        "Child_Parent_Divergence_Test_Statistic": 30.019624772230017,
+        "Child_Parent_Divergence_df": 28.0,
+        "Child_Parent_Divergence_P_Value": 0.3622803256434331,
+        "Child_Parent_Divergence_P_Value_BH": 0.7245606512868662,
+        "Child_Parent_Divergence_Significant": false
+      }
+    },
+    "significant_edges": 0,
+    "tested_nodes": 2
+  },
+  "original_root_statistics_reproduced": true,
+  "none": {
+    "root_children": {
+      "L43204": {
+        "leaf_count": 1,
+        "Child_Parent_Divergence_Test_Statistic": 36.92083270278039,
+        "Child_Parent_Divergence_df": 28.0,
+        "Child_Parent_Divergence_P_Value": 0.12061671557586998,
+        "Child_Parent_Divergence_P_Value_BH": 0.12068003915649836,
+        "Child_Parent_Divergence_Significant": false
+      },
+      "N97755": {
+        "leaf_count": 48878,
+        "Child_Parent_Divergence_Test_Statistic": 36.91799542262058,
+        "Child_Parent_Divergence_df": 28.0,
+        "Child_Parent_Divergence_P_Value": 0.12068003915649836,
+        "Child_Parent_Divergence_P_Value_BH": 0.12068003915649836,
+        "Child_Parent_Divergence_Significant": false
+      }
+    },
+    "significant_edges": 0,
+    "tested_nodes": 2
+  }
+}

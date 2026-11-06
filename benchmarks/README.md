@@ -137,12 +137,26 @@ cd benchmarks/full && python run.py
 
 ### Environment Variables
 
+The four cancer-inspired 496-row, 30-feature cases are available as the
+`cancer_pc` suite, as well as within `method_proof` and `full`. Run the default
+method set and the standard per-case tree/UMAP reports from the repository root:
+
+```bash
+TBS_CASE_SUITE=cancer_pc uv run --no-sync --offline python -m benchmarks.full.run
+```
+
+These paired controls vary one observation's noise scale and the separation of
+two populations. They reproduce root-gating failures at the PC stage; they do
+not reproduce gene counts or fitted cancer covariance. Unsupported continuous
+inputs remain explicit skipped results. K-means and spectral clustering receive
+the known cluster count in the default benchmark.
+
 Every `TBS_*` variable the code reads. Booleans accept `1/true/yes/on` and
 `0/false/no/off`; an invalid value raises.
 
 | Variable | Default | Consumer |
 | --- | --- | --- |
-| `TBS_CASE_SUITE` | `full` | `full/run.py`: case suite (`binary`, `categorical`, `continuous`, `discretized_gaussian`, `graph`, `full`) |
+| `TBS_CASE_SUITE` | `full` | `full/run.py`: case suite (`binary`, `categorical`, `continuous`, `discretized_gaussian`, `graph`, `method_proof`, `cancer_pc`, `full`) |
 | `TBS_METHODS` | `DEFAULT_METHODS` | `shared/util/method_selection.py::resolve_methods_from_env`: comma-separated method ids or `all` |
 | `TBS_N_JOBS` | `1` in benchmark entrypoints; otherwise all cores for large trees | `tree_break_selection/.../spectral/marchenko_pastur.py`: spectral worker count; set to `1` by `shared/benchmark_runs/runtime.py` |
 | `TBS_ENABLE_PLOTS` | `true` | `full/run.py`: per-case PDFs and UMAP pages |
@@ -188,7 +202,7 @@ case suite and compares the default benchmark methods.
 
 **Data generation**: By default the runner uses the `full` suite from
 `benchmarks.shared.cases.get_test_cases_by_suite()`, which currently resolves to
-122 cases. Each case specifies a generator, sample count, feature count,
+126 cases. Each case specifies a generator, sample count, feature count,
 cluster count, and noise level. The dispatcher (`generate_case_data`) routes to
 the appropriate generator, binarizes, one-hot-encodes, or keeps continuous
 coordinates under an explicit `FeatureSpace`, and feeds the resulting matrix to
@@ -200,7 +214,7 @@ benchmark CSV preserves both fields in every result row.
 **Experiment setup**:
 
 - Default methods: `benchmarks.shared.util.method_sets.DEFAULT_METHODS`, currently
-  `tbs`, `tbs_diffusion`, `tbs_diffusion_adaptive_nnls`, `leiden`, `louvain`,
+  `tbs`, `tbs_diffusion`, `tbs_diffusion_adaptive_nnls`, `tbs_family_diffusion`, `leiden`, `louvain`,
   `kmeans`, `spectral`, `dbscan`, `optics`, and `hdbscan`.
 - Additional registered methods such as `tbs_complete`, `tbs_single` and
   `tbs_family_diffusion_markov_ward` (family diffusion with Markov coordinates and
@@ -281,7 +295,7 @@ For a focused diagnosis of the current TBS gap on categorical and overlapping fa
 **Purpose**: Fast iteration benchmark — runs ~15 representative cases from the full suite for quick validation during development.
 
 **Data generation**: Draws from the same default case pool used by the full
-suite (`get_default_test_cases()`), which currently contains 121 cases.
+suite (`get_default_test_cases()`), which currently contains 126 cases.
 Hand-picked subset covers Gaussian, Binary, Categorical, SBM, and Overlapping
 families.
 
@@ -350,7 +364,7 @@ contracts, and maintained runners. Matching tests live under
 
 ## Test Case Categories
 
-The full suite currently resolves to 122 cases from the shared case registry.
+The full suite currently resolves to 126 cases from the shared case registry.
 The major families represented in that registry are summarized below.
 
 ### Contract Suites
@@ -365,7 +379,8 @@ contracts instead of mixing every historical stress case into one score.
 | `continuous` | 9 | Selected raw Gaussian-coordinate examples with explicit continuous `FeatureSpace` and Euclidean tree distances. | Experimental empirical-Gaussian path; report separately from binary and discretized Gaussian results. |
 | `discretized_gaussian` | 33 | Gaussian sources transformed to binary or quantile one-hot features. | Discretization stress tests, not evidence for native continuous performance. |
 | `graph` | 3 | SBM adjacency features with precomputed modularity distance. | Graph-distance/recoverability stress tests. |
-| `full` | 122 | Union of the registry. | Broad smoke/reporting suite; avoid using its aggregate as a single method claim. |
+| `cancer_pc` | 4 | Cancer-inspired continuous PC-stage mixture with paired row-scale and separation controls. | Root-gating mechanism comparison; does not validate cancer-data inference. |
+| `full` | 126 | Union of the registry. | Broad smoke/reporting suite; avoid using its aggregate as a single method claim. |
 
 ### Gaussian
 

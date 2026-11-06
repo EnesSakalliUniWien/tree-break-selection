@@ -1,0 +1,107 @@
+"""Verify the frozen experiment is complete and aggregate independent dataset outcomes."""
+
+import json
+
+import numpy as np
+import pandas as pd
+from scipy.stats import beta
+
+from compare import BASE, OUT, PARAMS, VARIANTS, write_json
+
+
+def upper95(events, n):
+    return 1. if events == n else float(beta.ppf(.95, events+1, n-events))
+
+
+def main():
+    protocol = json.loads((OUT / "protocol.json").read_text())
+    rows = [json.loads(line) for path in sorted(OUT.glob("validation_*.jsonl"))
+            for line in path.read_text().splitlines()]
+    keys = [(r["model"], r["replicate"], r["variant"]) for r in rows]
+    expected = {(model, replicate, variant)
+                for model, spec in protocol["validation"]["models"].items()
+                for replicate in range(spec["replicates"])
+                for variant in VARIANTS}
+    assert len(keys) == len(set(keys)), "Duplicate dataset/variant records"
+    assert set(keys) == expected, f"Incomplete study: {len(expected-set(keys))} missing records"
+    fingerprints = {(r["model"], r["replicate"]): r["count_sha256"] for r in rows}
+    assert len(set(fingerprints.values())) == len(fingerprints), "Repeated count datasets"
+    for model, replicate, _ in sorted(expected):
+        paired = [r for r in rows if r["model"] == model and r["replicate"] == replicate]
+        assert len({r["count_sha256"] for r in paired}) == 1
+    validation = pd.DataFrame(rows)
+    validation.to_csv(OUT / "validation_dataset_results.csv", index=False)
+    null_rows, signal_rows = [], []
+    for (model, variant), part in validation.groupby(["model", "variant"]):
+        ok = part[part.status == "ok"]
+        failed = len(part)-len(ok)
+        record = {"model": model, "variant": variant, "attempted": len(part),
+                  "successful": len(ok), "failed": failed}
+        if model.startswith("null_"):
+            splits = int((ok.found_clusters > 1).sum())
+            record.update({"false_partitions": splits,
+                "rate_successful": splits / len(ok) if len(ok) else None,
+                "lower_one_sided_95_successful": (0. if splits == 0 else float(beta.ppf(.05, splits, len(ok)-splits+1))) if len(ok) else None,
+                "upper_one_sided_95_successful": upper95(splits, len(ok)) if len(ok) else None,
+                "worst_case_rate_attempted": (splits+failed)/len(part),
+                "upper_one_sided_95_failure_as_error": upper95(splits+failed, len(part)),
+                "null_target": .01,
+                "target_established_by_marginal_bound": upper95(splits+failed, len(part)) <= .01})
+            null_rows.append(record)
+        else:
+            for metric in ("ari", "nmi", "found_clusters", "weighted_cluster_purity",
+                           "weighted_label_dominant_cluster_recall", "split_error_rate", "merge_error_rate"):
+                record[metric+"_mean"] = float(ok[metric].mean()) if len(ok) else None
+                record[metric+"_min"] = float(ok[metric].min()) if len(ok) else None
+            signal_rows.append(record)
+    pd.DataFrame(null_rows).to_csv(OUT / "validation_null_summary.csv", index=False)
+    pd.DataFrame(signal_rows).to_csv(OUT / "validation_signal_summary.csv", index=False)
+    real_rows = []
+    for variant in VARIANTS:
+        if variant == "symmetric_average":
+            summary = json.loads((BASE / "summary.json").read_text())
+            row = {"variant": variant, "status": summary["status"], "cells": summary["cells"],
+                   "found_clusters": summary["found_clusters"], "ari": summary["ari_cell_line"],
+                   "nmi": summary["nmi_cell_line"], "root_child_sizes": [1, 48878],
+                   "nnls_iterations": summary["method_metadata"]["branch_length_optimization_iterations"],
+                   "baseline_reused": True}
+        else:
+            dest = OUT / variant
+            if (dest / "summary.json").exists():
+                summary = json.loads((dest / "summary.json").read_text())
+                row = {k: summary.get(k) for k in ("variant", "status", "cells", "found_clusters", "ari", "nmi", "root_child_sizes")}
+                row["nnls_iterations"] = summary.get("branch_length_optimization_iterations")
+            else:
+                failure = json.loads((dest / "failure.json").read_text())
+                row = {"variant": variant, "status": "solver_not_converged" if "solver_not_converged" in failure["message"] else "failed",
+                       "cells": 48879, "error": failure["message"], "nnls_iterations": failure.get("nnls", {}).get("iterations")}
+            row["baseline_reused"] = False
+        linkage_path = (BASE if variant == "symmetric_average" else OUT / variant) / "linkage.npy"
+        if linkage_path.exists():
+            z = np.load(linkage_path)
+            sizes = np.r_[np.ones(48879), z[:, 3]]
+            children = sizes[z[-1, :2].astype(int)].astype(int)
+            row["root_child_sizes"] = children.tolist()
+            row["root_min_child_below_covariance_guard"] = bool(children.min() < 8)
+            top = sizes[z[-100:, :2].astype(int)].min(axis=1)
+            row["top100_singleton_splits"] = int((top == 1).sum())
+            row["top100_min_child_size_median"] = float(np.median(top))
+        row.update({"edge_alpha": .001, "sibling_alpha": .01,
+                    "max_nnls_iterations": PARAMS["branch_length_optimization_max_iterations"]})
+        real_rows.append(row)
+    pd.DataFrame(real_rows).to_csv(OUT / "comparison.csv", index=False)
+    write_json(OUT / "aggregate_verification.json", {
+        "status": "passed", "independent_datasets": len(expected)//4,
+        "dataset_variant_records": len(rows), "unique_records": len(set(keys)),
+        "all_frozen_models_seeds_present": True, "paired_counts_identical": True,
+        "failures_retained": True, "null_bounds": "one-sided 95% exact binomial; marginal, not simultaneous",
+        "real_results": real_rows,
+    })
+    print(pd.DataFrame(real_rows).drop(columns="error", errors="ignore").to_string(index=False))
+    print(pd.DataFrame(null_rows).to_string(index=False))
+
+
+if __name__ == "__main__":
+    assert abs(upper95(0, 300) - (1.-.05**(1./300))) < 1e-12
+    assert upper95(300, 300) == 1.
+    main()

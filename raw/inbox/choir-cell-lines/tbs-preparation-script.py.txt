@@ -1,0 +1,86 @@
+"""Prepare all cancer-line cells and check the selected diffusion graph."""
+
+import gc
+import json
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import anndata as ad
+import numpy as np
+import scanpy as sc
+from pydiffmap import kernel
+from scipy.sparse.csgraph import connected_components
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[2]
+sys.path.insert(0, str(ROOT))
+from tree_break_selection.space_separation.diffusion import (
+    _resolve_pydiffmap_neighbor_search_k,
+    resolve_adaptive_epsilon,
+)
+
+start = perf_counter()
+assert not (OUT / "pca.npy").exists()
+with threadpool_limits(limits=4):
+    print("Loading all 48,879 cells", flush=True)
+    a = ad.read_h5ad(ROOT / "local_data/choir/kinker_2020/kinker_2020_choir_cells_cpm.h5ad")
+    assert a.shape == (48_879, 22_722) and a.uns["expression_units"] == "CPM"
+    original_ids = a.obs_names.copy()
+    # Convert CPM to the usual per-10,000 scale without re-normalizing library totals.
+    a.X.data /= 100.0
+    sc.pp.log1p(a)
+    sc.pp.highly_variable_genes(a, n_top_genes=2_000, flavor="seurat")
+    a.var.to_csv(OUT / "gene_selection.csv")
+    selected = a[:, a.var.highly_variable].copy()
+    del a
+    gc.collect()
+    print(f"Scaling {selected.n_vars} variable genes and computing 30 PCs", flush=True)
+    sc.pp.scale(selected, max_value=10)
+    sc.pp.pca(selected, n_comps=30, svd_solver="arpack", random_state=0)
+    coordinates = np.asarray(selected.obsm["X_pca"], dtype=np.float64)
+    assert coordinates.shape == (48_879, 30) and np.isfinite(coordinates).all()
+    assert selected.obs_names.equals(original_ids)
+    np.save(OUT / "pca.npy", coordinates)
+    np.save(OUT / "pca_loadings.npy", selected.varm["PCs"])
+    selected.obs.to_csv(OUT / "cell_metadata.csv")
+    summary = {
+        "cells": selected.n_obs, "input_genes": 22_722, "hvg_genes": selected.n_vars,
+        "pcs": 30, "expression_transform": "log1p(CPM / 100); no library-total renormalization",
+        "hvg_flavor": "seurat", "scale_max_value": 10, "seed": 0,
+        "pca_variance_ratio": selected.uns["pca"]["variance_ratio"].tolist(),
+        "all_input_cells_retained": True,
+    }
+    del selected
+    gc.collect()
+    print("Fitting the selected method's 15-neighbor, variable-bandwidth kernel", flush=True)
+    k = _resolve_pydiffmap_neighbor_search_k(
+        coordinates, k_neighbors=15, bandwidth_type="-1/(d+2)"
+    )
+    fitted = kernel.Kernel(
+        epsilon=1.0, k=k, metric="euclidean",
+        neighbor_params={"n_jobs": -1}, bandwidth_type="-1/(d+2)",
+    )
+    fitted.fit(coordinates)
+    fitted.scaled_dists.setdiag(0.0)
+    epsilon, epsilon_method = resolve_adaptive_epsilon(fitted, "median", metric="euclidean")
+    fitted.epsilon_fitted = epsilon
+    weights = fitted.compute().tocsr()
+    weights.setdiag(0.0)
+    weights.eliminate_zeros()
+    weights = weights.maximum(weights.T).tocsr()
+    n_components, component_ids = connected_components(weights, directed=False)
+    np.save(OUT / "graph_components.npy", component_ids)
+    from scipy.sparse import save_npz
+
+    save_npz(OUT / "diffusion_kernel.npz", weights)
+    summary.update({
+        "method_id": "tbs_family_diffusion", "graph_components": int(n_components),
+        "graph_component_sizes": np.bincount(component_ids).tolist(),
+        "neighbor_search_k": int(k), "epsilon": float(epsilon),
+        "epsilon_method": epsilon_method, "elapsed_sec": perf_counter() - start,
+        "dense_square_float64_GiB": coordinates.shape[0] ** 2 * 8 / 2 ** 30,
+    })
+    (OUT / "preparation.json").write_text(json.dumps(summary, indent=2) + "\n")
+    print(json.dumps(summary, indent=2), flush=True)

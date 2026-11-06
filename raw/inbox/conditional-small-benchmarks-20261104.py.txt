@@ -1,0 +1,145 @@
+"""Audit existing benchmark inputs and replay root/immediate-child contrasts."""
+
+import hashlib
+import json
+import sys
+import time
+from dataclasses import replace
+from pathlib import Path
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+from threadpoolctl import threadpool_limits
+
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import diffusion_root_conditional_mc as mc
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_replay import make_diffusion_root_path
+from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+from tree_break_selection.tree.construction import build_tree
+from tree_break_selection.tree.distributions import resolve_node_continuous_covariance_by_block
+from tree_break_selection.tree.topology import tree_root
+
+
+ROOT = Path(__file__).resolve().parents[2]
+OUTPUT = ROOT / "raw/assets/conditional-small-benchmarks-20261104"
+CASES = {c["name"]: c for c in get_default_test_cases()}
+SUPPORTED = ["gauss_clear_medium_continuous", "gauss_moderate_3c_continuous",
+             "gauss_null_large_continuous"]
+
+
+def save(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("x") as stream:
+        json.dump(value, stream, indent=2, default=diagnostic_json_default, allow_nan=False)
+        stream.write("\n")
+
+
+def groups_for(path):
+    groups = {i: [i] for i in range(len(path.values))}
+    for step, (left, right) in enumerate(path.observed_signature):
+        groups[len(path.values) + step] = groups[left] + groups[right]
+    return groups
+
+
+def descendant_path(path, node):
+    groups = groups_for(path)
+    left, right = path.observed_signature[node - len(path.values)]
+    contrast = np.zeros(len(path.values))
+    contrast[groups[left]] = 1 / len(groups[left])
+    contrast[groups[right]] = -1 / len(groups[right])
+    e = contrast / np.linalg.norm(contrast)
+    vector = e @ path.values
+    radius = np.linalg.norm(vector) / path.sigma
+    direction = vector / np.linalg.norm(vector)
+    derived = replace(path, e=e, u=direction, observed_radius=float(radius),
+                      offset=path.values - np.outer(e, vector),
+                      slope=path.sigma * np.outer(e, direction))
+    np.testing.assert_allclose(derived.offset + radius * derived.slope, path.values, atol=1e-12)
+    np.testing.assert_allclose(e @ derived.offset, 0, atol=1e-12)
+    outside = sorted(set(range(len(path.values))) - set(groups[node]))
+    np.testing.assert_array_equal(derived.slope[outside], 0)
+    assert derived.evaluate(radius).status == "selected"
+    return derived
+
+
+def run_case(name):
+    case = CASES[name]
+    inputs = prepare_case_inputs(case, ["tbs"])
+    assert np.array_equal(inputs.data.values, inputs.original_features)
+    path = make_diffusion_root_path(inputs.data, sigma=case["cluster_std"])
+    point = path.evaluate(path.observed_radius)
+    canonical = pd.DataFrame(path.values, index=path.labels, columns=inputs.data.columns)
+    built = build_tree(canonical, point.state["distance_condensed"], linkage_method="average")
+    built.tree.populate_node_distributions(canonical, feature_space=inputs.metadata["feature_space"])
+    root = tree_root(built.tree)
+    covariance = resolve_node_continuous_covariance_by_block(built.tree, root, inputs.metadata["feature_space"])
+    array = next(iter(covariance.values()))
+    diagonal = array if array.ndim == 1 else np.diag(array)
+    groups = groups_for(path)
+    root_id = 2 * len(path.values) - 2
+    nodes = [root_id]
+    if name != "gauss_null_large_continuous":
+        nodes += [node for node in path.observed_signature[-1] if node >= len(path.values)]
+    records = []
+    for index, node in enumerate(nodes):
+        selected = path if node == root_id else descendant_path(path, node)
+        start = time.perf_counter()
+        with patch.object(mc, "make_diffusion_root_path", return_value=selected):
+            result = mc.selected_diffusion_root_mc_test(canonical, sigma=path.sigma,
+                                                       proposals=999, seed=2026110500 + index)
+        result.update(node=node, node_rows=len(groups[node]), global_rows=len(path.values),
+                      role="root" if node == root_id else "immediate_child", elapsed_seconds=time.perf_counter()-start,
+                      covariance_source="generator_known_sigma_squared_identity",
+                      family_size=len(nodes), bonferroni_alpha=0.01/len(nodes),
+                      family_reject=result["p_value"] is not None and result["p_value"] <= 0.01/len(nodes))
+        records.append(result)
+        save(OUTPUT / name / f"node-{node}.json", result)
+        print(name, node, result["status"], result["accepted_count"], result["p_value"], flush=True)
+    save(OUTPUT / name / "manifest.json", dict(
+        case=case, preprocessing=inputs.metadata["feature_representation"],
+        original_values_preserved=True, input_sha256=hashlib.sha256(inputs.data.values.tobytes()).hexdigest(),
+        sample_labels=inputs.data.index.tolist(), known_variance=path.sigma**2,
+        production_covariance_shape=list(array.shape),
+        production_variance_ratios_to_known=dict(min=float(diagonal.min()/path.sigma**2),
+                                               mean=float(diagonal.mean()/path.sigma**2),max=float(diagonal.max()/path.sigma**2)),
+        node_family=nodes, subtree_refitting=False, descendants_condition_on_full_global_history=True,
+        prototype_sha256=hashlib.sha256(Path(mc.__file__).read_bytes()).hexdigest(),
+        script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    ))
+
+
+def audit():
+    names = SUPPORTED + ["gauss_clear_small", "gauss_null_small",
+        "dim_consolidated_4c_24f_continuous", "mp_spike_below_bbp_continuous",
+        "cont_lowrank_pggn_shrinkage", "gauss_single_outlier_4c_continuous",
+        "phylo_brownian_null_16taxa"]
+    rows = []
+    reasons = {
+        "blobs": "median thresholding creates binary observations and dependence within each feature",
+        "dimensional_gaussian_continuous": "known nonspherical block covariance",
+        "continuous_spiked_covariance": "identity plus rank-one covariance",
+        "continuous_low_rank_factor": "factor covariance plus diagonal noise",
+        "gaussian_outliers_continuous": "outliers and inliers have different noise laws",
+        "phylogenetic_brownian_continuous": "shared taxon effects create marginal row dependence",
+    }
+    for name in names:
+        case = CASES[name]
+        inputs = prepare_case_inputs(case, ["tbs"])
+        rows.append(dict(name=name, generator=case["generator"], seed=case["seed"],
+                         rows=inputs.data.shape[0], features=inputs.data.shape[1],
+                         representation=inputs.metadata["feature_representation"],
+                         spherical_model_supported=name in SUPPORTED,
+                         reason="known spherical Gaussian noise" if name in SUPPORTED else reasons[case["generator"]],
+                         fingerprint=hashlib.sha256(inputs.data.values.tobytes()).hexdigest()))
+    save(OUTPUT / "model-audit.json", rows)
+    print(pd.DataFrame(rows).drop(columns="fingerprint").to_string(index=False))
+
+
+if __name__ == "__main__":
+    with threadpool_limits(limits=1):
+        if sys.argv[1] == "audit":
+            audit()
+        else:
+            run_case(sys.argv[1])

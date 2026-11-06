@@ -1,0 +1,117 @@
+"""Apply the selected family-diffusion/NNLS TBS preset to every prepared cell."""
+
+import faulthandler
+import hashlib
+import json
+import os
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import pdist
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+from threadpoolctl import threadpool_limits
+
+OUT = Path(__file__).resolve().parent
+sys.path.insert(0, str(OUT.parents[2]))
+from applications.scrna._shared import json_default
+from applications.scrna.pancreas_benchmark import _split_merge_detail_tables
+from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from tree_break_selection.tree.construction.build import _canonical_sample_order
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+start = perf_counter()
+assert not (OUT / "summary.json").exists()
+metadata = pd.read_csv(OUT / "cell_metadata.csv", index_col=0, dtype=str)
+pca = np.load(OUT / "pca.npy")
+coordinates = np.load(OUT / "diffusion_coordinates.npy")
+assert pca.shape == (48_879, 30) and coordinates.shape[0] == len(metadata)
+assert _canonical_sample_order(metadata.index.tolist()) == list(range(len(metadata)))
+data = pd.DataFrame(pca, index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+feature_space = continuous_feature_space_from_columns(tuple(data.columns))
+params = dict(METHOD_SPECS["tbs_family_diffusion"].param_grid[0])
+settings = json.loads((OUT / "preparation.json").read_text())
+diffusion_record = json.loads((OUT / "diffusion-verification.json").read_text())
+diffusion_record.update({
+    "backend": "pydiffmap", "feature_family": "continuous", "metric": "euclidean",
+    "neighbor_search_k": settings["neighbor_search_k"], "diffusion_time": 3,
+    "epsilon": settings["epsilon"], "epsilon_method": settings["epsilon_method"],
+    "bandwidth_type": "-1/(d+2)", "diffusion_components": coordinates.shape[1],
+    "coordinate_operator": "symmetric_normalized_operator",
+    "coordinate_eigensolver": diffusion_record["eigensolver"],
+    "self_distance_policy": "zero_identity_diagonal_before_epsilon_and_kernel",
+})
+(OUT / "runtime.json").write_text(json.dumps({"pid": os.getpid(), "status": "running"}))
+with threadpool_limits(limits=4), (OUT / "runtime-stacks.txt").open("w") as diagnostic:
+    faulthandler.dump_traceback_later(60, repeat=True, file=diagnostic)
+    try:
+        distance_path = OUT / "diffusion_distance.npy"
+        assert not distance_path.exists()
+        distances = np.lib.format.open_memmap(
+            distance_path, mode="w+", dtype=np.float64,
+            shape=(len(data) * (len(data) - 1) // 2,),
+        )
+        print("Computing full diffusion distances into a disk-backed array", flush=True)
+        pdist(coordinates, metric="euclidean", out=distances)
+        distances.flush()
+        for i, j in [(0, 1), (0, len(data) - 1), (21, 400), (400, len(data) - 1)]:
+            offset = len(data) * i - i * (i + 1) // 2 + j - i - 1
+            np.testing.assert_allclose(distances[offset], np.linalg.norm(coordinates[i] - coordinates[j]), atol=1e-14)
+        print("Running average linkage, fixed-topology NNLS, and both TBS gates", flush=True)
+        result = run_tbs_on_distance(
+            data, distances, 0.01, edge_alpha=0.001,
+            tree_linkage_method=params["tree_linkage_method"],
+            feature_space=feature_space, branch_length_data_df=data,
+            edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+            adaptive_projection_dimension_energy_fraction=0.90,
+            **_tbs_branch_length_optimization_kwargs(params),
+            extra={"adaptive_diffusion": diffusion_record, "feature_family_diffusion_fallback_reason": None},
+        )
+        summary = {
+            "method_id": "tbs_family_diffusion", "params": params, "seed": 0,
+            "cells": len(data), "all_input_cells_retained": True,
+            "status": result.status.value, "skip_reason": result.skip_reason,
+            "unsupported_reason": result.unsupported_reason,
+            "found_clusters": result.found_clusters, "sibling_alpha": 0.01, "edge_alpha": 0.001,
+            "preparation": settings, "diffusion": diffusion_record,
+        }
+        extra = result.extra or {}
+        if "linkage_matrix" in extra:
+            np.save(OUT / "linkage.npy", extra["linkage_matrix"])
+        if "annotations" in extra:
+            extra["annotations"].to_csv(OUT / "annotations.csv")
+        summary["method_metadata"] = {
+            key: value for key, value in extra.items()
+            if key not in {"tree", "decomposition", "traversal_trace", "full_edge_traversal_trace", "annotations", "gate_bundle", "linkage_matrix"}
+        }
+        if result.labels is not None:
+            labels = np.asarray(result.labels, dtype=int)
+            assert labels.shape == (48_879,) and (labels >= 0).all()
+            assert np.unique(labels).size == result.found_clusters
+            assignments = metadata[["CellID", "geo_cell_id", "Cell_line", "Cancer_type", "CHOIR_1", "source_library", "pool_id"]].copy()
+            assignments["TBS_cluster"] = labels
+            assignments.to_csv(OUT / "cluster_assignments.csv", index=False)
+            truth = assignments.Cell_line.to_numpy()
+            summary["ari_cell_line"] = adjusted_rand_score(truth, labels)
+            summary["nmi_cell_line"] = normalized_mutual_info_score(truth, labels)
+            summary["ari_published_CHOIR_1"] = adjusted_rand_score(assignments.CHOIR_1, labels)
+            summary["published_CHOIR_1_ari_cell_line"] = adjusted_rand_score(truth, assignments.CHOIR_1)
+            lines, clusters = _split_merge_detail_tables(method_label="tbs_family_diffusion", y_true=truth, y_pred=labels)
+            pd.DataFrame(lines).to_csv(OUT / "cell_line_fragmentation.csv", index=False)
+            pd.DataFrame(clusters).to_csv(OUT / "cluster_composition.csv", index=False)
+            if result.report_df is not None:
+                result.report_df.to_csv(OUT / "decomposition_report.csv", index=False)
+        summary["elapsed_sec"] = perf_counter() - start
+        (OUT / "summary.json").write_text(json.dumps(summary, indent=2, default=json_default) + "\n")
+        print(json.dumps({key: summary[key] for key in ["status", "cells", "found_clusters", "elapsed_sec"]}, indent=2), flush=True)
+        distances._mmap.close()
+        distance_path.unlink()
+    except BaseException as error:
+        (OUT / "failure.json").write_text(json.dumps({"type": type(error).__name__, "message": str(error), "elapsed_sec": perf_counter() - start}, indent=2))
+        raise
+    finally:
+        faulthandler.cancel_dump_traceback_later()

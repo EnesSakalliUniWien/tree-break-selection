@@ -1,0 +1,18 @@
+{
+  "stage": "genuine_pre_fix_capture",
+  "datasets": 55,
+  "rows": 110,
+  "source_sha256": "17c3fd6c2d8c132e6f979adb890ff0caf0ba33b233ff17f3e38ae1c6f4dfe3dc",
+  "source_path": "/Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/space_separation/diffusion.py",
+  "python": "3.12.11",
+  "versions": {
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "pydiffmap": "0.2.0.1",
+    "scikit-learn": "1.7.2",
+    "pandas": "2.3.3"
+  },
+  "statistic_reference": "known identity root full-space unselected chi-square diagnostic only; not calibrated after selection",
+  "source_snapshot": "pre_fix_diffusion.py",
+  "input_arrays": "baseline_inputs.npz"
+}

@@ -1,0 +1,189 @@
+"""Freeze four controls and evaluate development plus five subsequent seeds.
+
+Run with PYTHONPATH=. uv run --no-sync --offline python <this file> [fresh output directory].
+"""
+
+import hashlib
+import importlib.metadata
+import json
+import platform
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.sparse.csgraph import connected_components
+from sklearn.metrics import adjusted_rand_score
+
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import selected_hierarchy_null_audit as audit
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_replay import _geometry
+from benchmarks.shared.cases import get_test_cases_by_suite
+from benchmarks.shared.generators.generate_case_data import generate_case_data
+from benchmarks.shared.runners.dispatch import run_clustering_result
+from benchmarks.shared.runners.method_registry import METHOD_SPECS
+from tree_break_selection.tree import optimized_branch_lengths as nnls
+from tree_break_selection.tree.distributions import resolve_node_continuous_covariance_by_block
+from tree_break_selection.tree.topology import tree_root
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflation_correction.empirical_null_inflation_estimation import (
+    decide_empirical_null_calibration, fit_empirical_null_inflation_model,
+)
+
+
+def save(path, value):
+    with path.open("x") as stream:
+        json.dump(value, stream, indent=2, default=diagnostic_json_default, allow_nan=False)
+        stream.write("\n")
+
+
+def run_case(recipe, output):
+    start = time.monotonic()
+    data, truth, matrix, meta = generate_case_data(recipe)
+    n = len(data)
+    signature, state = _geometry(matrix, data.index.tolist())
+    members = {i: [i] for i in range(n)}
+    for step, (a, b) in enumerate(signature):
+        members[n + step] = members[a] + members[b]
+    groups = sorted((members[v] for v in signature[-1]), key=len)
+    smaller = np.zeros(n, dtype=bool)
+    smaller[groups[0]] = True
+    graph = state["scaled_distances"].maximum(state["scaled_distances"].T)
+    graph.setdiag(0)
+    graph.eliminate_zeros()
+    _, components = connected_components(graph, directed=False)
+    neighbors = graph[0].indices
+    standardized = matrix / matrix.std(axis=0, ddof=1)
+    root_cross_target = np.mean((standardized[smaller].mean(0) - standardized[~smaller].mean(0)) ** 2)
+    root_cross_target += standardized[smaller].var(0).mean() + standardized[~smaller].var(0).mean()
+    means = np.array(meta["population_means"])[truth]
+    row = {
+        "case": recipe["name"], "seed": recipe["seed"],
+        "seed_role": "development" if recipe["seed"] == 20261104 else "heldout_seed",
+        "hub_scale": recipe["hub_scale"], "isolation_offset": recipe["isolation_offset"],
+        "matrix_sha256": hashlib.sha256(matrix.tobytes()).hexdigest(),
+        "components": sorted(np.bincount(components).tolist(), reverse=True),
+        "stationary_multiplicity": int(np.count_nonzero(np.isclose(state["eigenvalues"], 1, atol=1e-10, rtol=0))),
+        "root_sizes": list(map(len, groups)),
+        "root_small_is_hub": groups[0] == [0],
+        "root_population_counts": [np.bincount(truth[g], minlength=6).tolist() for g in groups],
+        "hub_neighbors": len(neighbors), "hub_same_population_neighbors": int(sum(truth[neighbors] == truth[0])),
+        "root_graph_cross_edges": graph[smaller][:, ~smaller].count_nonzero(),
+        "root_cross_target_mean": float(root_cross_target),
+        "root_large_within_target_mean": float(2 * standardized[~smaller].var(0, ddof=1).mean()),
+        "true_root_mean_contrast_norm": float(np.linalg.norm(means[smaller].mean(0) - means[~smaller].mean(0))),
+        "retained_indices": state["retained_indices"],
+        "diffusion_settings": state["metadata"],
+        "known_spherical_common_covariance_model": recipe["hub_scale"] == 1,
+    }
+    params = dict(METHOD_SPECS["tbs_family_diffusion"].param_grid[0])
+    try:
+        result = run_clustering_result(data, "tbs_family_diffusion", params, feature_space=meta["feature_space"])
+    except (ValueError, RuntimeError) as exc:
+        row.update(status="failed", error=f"{type(exc).__name__}: {exc}")
+        return row
+    extra = result.extra
+    tree = extra["tree"]
+    root = tree_root(tree)
+    children = list(tree.successors(root))
+    annotations = extra["annotations"]
+    row.update(
+        status=result.status.value, clusters=result.found_clusters,
+        ari=float(adjusted_rand_score(truth, result.labels)) if result.labels is not None else None,
+        traversal=extra.get("traversal_counters"),
+        root_annotations=json.loads(annotations.loc[[root, *children]].to_json(orient="index")),
+        nnls={k.removeprefix("branch_length_optimization_"): v for k, v in extra.items() if k.startswith("branch_length_optimization_")},
+        covariance_min_child_leaf_count=extra["continuous_covariance_min_child_leaf_count"],
+        ancestor_blocked_edges=int(annotations["Child_Parent_Divergence_Ancestor_Blocked"].sum()),
+        tested_edges=int(annotations["Child_Parent_Divergence_Tested"].sum()),
+    )
+    if pd.notna(annotations.loc[root, "Sibling_Divergence_P_Value"]):
+        bundle = extra["gate_bundle"]
+        spectral = bundle.edge_gate_result.spectral_context
+        dimensions = audit.derive_sibling_projection_dimensions_from_child_edge_comparisons(tree, spectral_context=spectral)
+        projections, eigenvalues = audit.collect_parent_principal_component_inputs_for_sibling_tests(dimensions, spectral_context=spectral)
+        records, _ = audit.collect_sibling_pair_records(
+            tree, bundle.edge_gate_result.annotated_df, feature_space=meta["feature_space"],
+            sibling_projection_dimensions_from_edge_comparisons=dimensions,
+            parent_principal_component_projections=projections,
+            parent_principal_component_eigenvalues=eigenvalues,
+            adaptive_projection_dimension_energy_fraction=0.9,
+        )
+        record = next(r for r in records if r.parent == root)
+        decision = decide_empirical_null_calibration(fit_empirical_null_inflation_model(records), record)
+        np.testing.assert_allclose(decision.p_value, annotations.loc[root, "Sibling_Divergence_P_Value"], rtol=1e-12)
+        row["root_sibling_record"] = record
+        row["root_calibration"] = decision
+    native_signature = tuple(tuple(sorted(map(int, z[:2]))) for z in extra["linkage_matrix"])
+    assert native_signature == signature
+    edge_indices = nnls._edge_indices(tree)
+    incidence = nnls._leaf_edge_incidence(tree, nnls._leaf_nodes_for_data(tree, data.index), edge_indices)
+    columns = [edge_indices[root, child] for child in children]
+    left, right, _ = nnls._sample_leaf_pairs(n, pair_sample_size=params["branch_length_optimization_pair_sample_size"], random_state=0)
+    root_design = nnls._path_incidence_matrix(incidence[:, columns], left, right).toarray()
+    crossing = smaller[left] != smaller[right]
+    np.testing.assert_array_equal(root_design[:, 0], crossing)
+    np.testing.assert_array_equal(root_design[:, 1], crossing)
+    row["root_nnls_columns_identical"] = True
+    row["native_sampled_root_cross_pairs"] = int(sum(crossing))
+    scaled_budget = round(50_000 * n / 48_879)
+    left, right, _ = nnls._sample_leaf_pairs(n, pair_sample_size=scaled_budget, random_state=0)
+    row["sampling_only_scaled_budget"] = scaled_budget
+    row["sampling_only_scaled_cross_pairs"] = int(sum(smaller[left] != smaller[right]))
+    covariance = next(iter(resolve_node_continuous_covariance_by_block(tree, root, meta["feature_space"]).values()))
+    parent_total = next(iter(resolve_node_continuous_covariance_by_block(tree, root, meta["feature_space"], continuous_covariance_policy="parent_total").values()))
+    row["root_covariance_shape"] = list(covariance.shape)
+    row["root_covariance_equals_parent_total"] = bool(np.array_equal(covariance, parent_total))
+    row["root_covariance_mean_diagonal"] = float((np.diag(covariance) if covariance.ndim == 2 else covariance).mean())
+    row["seconds"] = time.monotonic() - start
+    if recipe["seed"] == 20261104:
+        np.savez_compressed(output / f"{recipe['name']}.npz", values=matrix, truth=truth,
+                            predicted=result.labels, linkage=extra["linkage_matrix"],
+                            eigenvalues=state["eigenvalues"], components=components)
+        annotations.to_csv(output / f"{recipe['name']}-annotations.csv")
+    return row
+
+
+def main():
+    output = Path(sys.argv[1] if len(sys.argv) > 1 else "raw/assets/cancer-pc-surrogate-20261104")
+    output.mkdir(parents=True, exist_ok=False)
+    recipes = [c for c in get_test_cases_by_suite("method_proof") if c["generator"] == "cancer_pc_surrogate"]
+    assert len(recipes) == 4
+    seeds = list(range(20261104, 20261110))
+    sources = [
+        "benchmarks/shared/generators/cancer_pc_surrogate.py", "benchmarks/shared/cases/method_proof.py",
+        "benchmarks/shared/runners/dispatch.py", "benchmarks/shared/runners/tbs_runner.py",
+        "tree_break_selection/space_separation/diffusion.py", "tree_break_selection/tree/optimized_branch_lengths.py",
+        "tree_break_selection/tree/distributions.py",
+        "tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/child_parent_divergence_annotation.py",
+        "tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/spectral_context.py",
+        "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py",
+        str(Path(__file__)),
+    ]
+    save(output / "manifest.json", {
+        "recipes": recipes, "seeds": seeds, "python": sys.version, "platform": platform.platform(),
+        "packages": {p: importlib.metadata.version(p) for p in ("numpy", "scipy", "scikit-learn", "pydiffmap")},
+        "source_sha256": {p: hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in sources},
+        "method": "tbs_family_diffusion", "method_params": METHOD_SPECS["tbs_family_diffusion"].param_grid[0],
+        "scope": "PC-stage mechanism reproduction; no selective-error calibration or full-scale solver validation",
+    })
+    rows = []
+    for seed in seeds:
+        for recipe in recipes:
+            row = run_case(dict(recipe, seed=seed), output)
+            rows.append(row)
+            save(output / f"{recipe['name']}-{seed}.json", row)
+            print(json.dumps({k: row.get(k) for k in ("case", "seed", "status", "components", "root_sizes", "clusters", "ari", "seconds")}), flush=True)
+    save(output / "results.json", rows)
+    pd.DataFrame([{k: r.get(k) for k in ("case", "seed", "seed_role", "status", "root_small_is_hub", "stationary_multiplicity", "clusters", "ari", "seconds")} for r in rows]).to_csv(output / "summary.csv", index=False)
+    assert len(rows) == 24
+    assert all(r["status"] == "ok" and r["root_nnls_columns_identical"] for r in rows)
+    development = {r["case"]: r for r in rows if r["seed_role"] == "development"}
+    failed = development["cancer_pc_hub_disconnected"]
+    assert failed["root_sizes"] == [1, 495] and failed["clusters"] == 1
+    assert failed["root_covariance_equals_parent_total"] and failed["traversal"]["live_nodes_visited"] == 1
+    assert development["cancer_pc_nohub_disconnected"]["clusters"] == 6
+
+
+if __name__ == "__main__":
+    main()

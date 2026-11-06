@@ -127,8 +127,9 @@ def split_edge_test_rows(
     test. Each child's rows, in leaf-label order, alternate between halves,
     starting with the test half, so a single-leaf child is always tested. A
     parent's basis rows are its children's basis halves. The split ignores
-    the data values and the row order of leaf_data, so under the null the
-    basis is independent of the test-half contrast.
+    the data values and the row order of leaf_data once child membership is
+    fixed. If membership was selected using these data, the split does not
+    remove that selection or establish basis/contrast independence.
 
     Returns
     -------

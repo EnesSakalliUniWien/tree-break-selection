@@ -1,0 +1,83 @@
+"""Construct exact sampled-tree null directions and feasible equivalent edge vectors."""
+
+import json
+import sys
+
+import numpy as np
+from scipy import sparse
+from scipy.sparse.csgraph import structural_rank
+
+from diagnose import OUT, VARIANTS, write
+
+records = []
+fit = sys.argv[1] if len(sys.argv) > 1 else "native_auto"
+filename = "identifiability.json" if fit == "native_auto" else "reference_identifiability.json"
+for variant in VARIANTS:
+    dest = OUT / variant
+    if not (dest / fit / "x.npy").exists():
+        continue
+    a = sparse.load_npz(dest / "design.npz").tocsc()
+    b = np.load(dest / "target.npy")
+    x = np.load(dest / fit / "x.npy")
+    pairs = np.load(dest / "pairs.npz")
+    left, right = pairs["left"], pairs["right"]
+    observed = set(zip(left.tolist(), right.tolist(), strict=True))
+    edges = np.load(dest / "edge_pairs.npy")
+    edge_index = {tuple(edge): i for i, edge in enumerate(edges.tolist())}
+    children, incoming = {}, {}
+    for parent, child in edges.tolist():
+        children.setdefault(parent, []).append(child)
+        incoming[child] = parent
+    root = list(set(children)-set(incoming))
+    assert len(root) == 1
+    root = root[0]
+    root_indices = [edge_index[(root, c)] for c in children[root]]
+    assert len(root_indices) == 2
+    assert (a[:, root_indices[0]]-a[:, root_indices[1]]).nnz == 0
+    candidates = []
+    cherries = 0
+    for parent, kids in children.items():
+        if len(kids) != 2 or not all(c.startswith("L") for c in kids) or parent == root:
+            continue
+        cherries += 1
+        leaf_pair = tuple(sorted(int(c[1:]) for c in kids))
+        if leaf_pair in observed:
+            continue
+        indices = [edge_index[(incoming[parent], parent)]] + [edge_index[(parent, c)] for c in kids]
+        width = float(x[indices[0]] + min(x[indices[1]], x[indices[2]]))
+        candidates.append((width, indices, leaf_pair))
+    assert candidates
+    width, indices, leaf_pair = max(candidates)
+    parent, first, second = indices
+    direction = np.zeros(a.shape[1])
+    direction[indices] = [1., -1., -1.]
+    np.testing.assert_array_equal(a @ direction, np.zeros(a.shape[0]))
+    step = -.5*x[parent] if x[parent] >= min(x[first], x[second]) else .5*min(x[first], x[second])
+    altered = x + step*direction
+    assert altered.min() >= 0 and abs(step) > 1e-6
+    prediction_difference = float(np.max(np.abs(a @ altered - a @ x)))
+    assert prediction_difference < 1e-12
+    before_cost = float(.5*np.sum((a @ x-b)**2))
+    after_cost = float(.5*np.sum((a @ altered-b)**2))
+    assert abs(before_cost-after_cost) < 1e-9
+    rank_bound = int(structural_rank(a))
+    record = {
+        "variant": variant, "fit": fit, "rows": a.shape[0], "columns": a.shape[1],
+        "structural_rank_upper_bound": rank_bound,
+        "nullity_lower_bound_from_pattern": a.shape[1]-rank_bound,
+        "root_column_pair_identical": True,
+        "cherries": cherries, "cherries_with_unobserved_within_pair": len(candidates),
+        "feasible_cherry_directions_width_above_1e-6": sum(t[0] > 1e-6 for t in candidates),
+        "pairs_involving_first_leaf": int(((left == 0)|(right == 0)).sum()),
+        "example_leaf_pair": leaf_pair, "example_edge_indices": indices,
+        "example_edges": edges[indices].tolist(), "example_step": float(step),
+        "example_before_lengths": x[indices].tolist(),
+        "example_after_lengths": altered[indices].tolist(),
+        "example_max_prediction_difference": prediction_difference,
+        "example_cost_before": before_cost, "example_cost_after": after_cost,
+        "interpretation": "Underdetermination is verified, but alone does not prove why one optimizer run stops sooner. The root convention removes only the root-pair ambiguity."
+    }
+    write(dest / filename, record)
+    records.append(record)
+    print(json.dumps({k: record[k] for k in ("variant", "rows", "columns", "structural_rank_upper_bound", "cherries_with_unobserved_within_pair", "example_step", "example_max_prediction_difference")}), flush=True)
+write(OUT / filename, records)

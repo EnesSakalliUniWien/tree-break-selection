@@ -31,6 +31,32 @@ def _method_case(
 
 METHOD_PROOF_CASES = {
     "method_proof": [
+        *[
+            _method_case(
+                name=f"cancer_pc_{hub}_{graph}",
+                generator="cancer_pc_surrogate",
+                n_samples=496,
+                n_features=30,
+                n_clusters=6,
+                hub_scale=hub_scale,
+                isolation_offset=isolation_offset,
+                seed=20261104,
+                benchmark_role="cancer_root_mechanism_control",
+                mathematical_target="diffusion_density_root_contrast_and_ancestor_blocking",
+                expected_failure_modes=[
+                    "diffusion_singleton_root",
+                    "guarded_covariance_fallback",
+                    "ancestor_blocks_descendant_signal",
+                    "repeated_stationary_eigenvalues",
+                ],
+                success_criterion=(
+                    "Record graph components, root children, root gates and descendants; "
+                    "compare matched controls without changing thresholds."
+                ),
+            )
+            for hub, hub_scale in (("hub", 0.03), ("nohub", 1.0))
+            for graph, isolation_offset in (("disconnected", 20.0), ("connected", 3.0))
+        ],
         _method_case(
             name="bar_binary_balanced_4c",
             generator="binary_barycentric_template",

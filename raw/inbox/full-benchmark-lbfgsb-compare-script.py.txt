@@ -1,0 +1,55 @@
+"""Compare the L-BFGS-B full run with the 2026-11-03 matched rerun ("after") on common cases."""
+
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+NEW = Path(sys.argv[1]) / "full_benchmark_comparison.csv"
+BASE = Path("reports/matched_full_benchmark_20261103/matched_case_results.csv")
+
+new = pd.read_csv(NEW, low_memory=False)
+base = pd.read_csv(BASE).rename(columns={
+    "method_before": "method", "true_clusters_before": "true_clusters", "status_after": "status",
+    "found_clusters_after": "found_clusters", "ari_after": "ari", "nmi_after": "nmi"})
+base = base[["case_id", "method", "true_clusters", "status", "found_clusters", "ari", "nmi"]]
+print("new rows", len(new), "cases", new.case_id.nunique(), "methods", new.method.nunique())
+print("cases only in new:", sorted(set(new.case_id) - set(base.case_id)))
+
+m = base.merge(new[["case_id", "method", "status", "found_clusters", "ari", "nmi"]],
+               on=["case_id", "method"], suffixes=("_before", "_after"))
+print("matched rows", len(m))
+rows = []
+for method, g in m.groupby("method"):
+    ok_b, ok_a = g.status_before.eq("ok"), g.status_after.eq("ok")
+    both = ok_b & ok_a
+    null = g.true_clusters.eq(1)
+    delta = g.ari_after - g.ari_before
+    rows.append({
+        "method": method, "ok_before": int(ok_b.sum()), "ok_after": int(ok_a.sum()),
+        "mean_ari_before": round(g.ari_before[ok_b].mean(), 6), "mean_ari_after": round(g.ari_after[ok_a].mean(), 6),
+        "exact_k_before": int((ok_b & g.found_clusters_before.eq(g.true_clusters)).sum()),
+        "exact_k_after": int((ok_a & g.found_clusters_after.eq(g.true_clusters)).sum()),
+        "ari_improved": int((both & (delta > 1e-6)).sum()), "ari_degraded": int((both & (delta < -1e-6)).sum()),
+        "null_split_before": int((null & ok_b & g.found_clusters_before.gt(1)).sum()),
+        "null_split_after": int((null & ok_a & g.found_clusters_after.gt(1)).sum()),
+    })
+summary = pd.DataFrame(rows)
+print(summary.to_string(index=False))
+changed = m[(m.ari_after - m.ari_before).abs() > 1e-6].assign(ari_delta=lambda d: d.ari_after - d.ari_before)
+print("\nchanged rows", len(changed))
+print(changed.sort_values("ari_delta")[["case_id", "method", "ari_before", "ari_after", "found_clusters_before",
+      "found_clusters_after", "true_clusters"]].to_string(index=False))
+status_changed = m[m.status_before != m.status_after]
+print("\nstatus changes:", status_changed[["case_id", "method", "status_before", "status_after"]].to_string(index=False) if len(status_changed) else "none")
+for column in ("branch_length_optimization_status", "branch_length_optimization_relative_duality_gap",
+               "branch_length_optimization_iterations"):
+    if column in new:
+        values = new[column].dropna()
+        print(column, values.value_counts().to_dict() if values.dtype == object else values.describe()[["count", "min", "50%", "max"]].to_dict())
+extra = new[~new.case_id.isin(base.case_id)]
+if len(extra):
+    print("\nnew-only cases:")
+    print(extra[["case_id", "method", "status", "found_clusters", "true_clusters", "ari"]].to_string(index=False))
+summary.to_csv(Path(sys.argv[1]) / "lbfgsb_vs_matched_20261103_summary.csv", index=False)
+changed.to_csv(Path(sys.argv[1]) / "lbfgsb_vs_matched_20261103_changed.csv", index=False)

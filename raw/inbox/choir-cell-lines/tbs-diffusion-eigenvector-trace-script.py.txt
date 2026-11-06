@@ -1,0 +1,165 @@
+"""Trace the left and right eigenvectors of the saved Markov diffusion."""
+
+import hashlib
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from scipy.linalg import eigvalsh
+from scipy.sparse.csgraph import connected_components
+from scipy.spatial.distance import cdist
+from threadpoolctl import threadpool_limits
+
+from applications.output_dirs import timestamped_results_dir
+from tree_break_selection.tree.branch_lengths import node_id
+from tree_break_selection.tree.construction.build import _canonical_sample_order
+
+
+RAW = Path(__file__).resolve().parent
+ROOT = RAW.parents[2]
+RUNS = ROOT / "results/analyses"
+BASE = RUNS / "choir_cell_lines_tbs_20261103_163359"
+COMPARE = RUNS / "choir_tbs_recovery_comparison_20261103_174622"
+VARIANTS = ("symmetric_average", "symmetric_ward", "markov_average", "markov_ward")
+
+
+def leaves(children, node, n):
+    result, pending = [], [node]
+    while pending:
+        index = pending.pop()
+        if index < n:
+            result.append(index)
+        else:
+            pending.extend(children[index - n])
+    return np.asarray(result)
+
+
+def average_distance(a, b):
+    if len(a) > len(b):
+        a, b = b, a
+    return sum(cdist(a[i:i + 32], b).sum() for i in range(0, len(a), 32)) / (len(a) * len(b))
+
+
+def root_trace(variant, n, coordinates, stationary, eigenvalues):
+    link = np.load((BASE if variant == "symmetric_average" else COMPARE / variant) / "linkage.npy")
+    children = link[:, :2].astype(int)
+    nodes = children[-1]
+    groups = [leaves(children, node, n) for node in nodes]
+    np.testing.assert_array_equal(np.sort(np.concatenate(groups)), np.arange(n))
+    a, b = [coordinates[rows] for rows in groups]
+    left_mean, right_mean = a.mean(axis=0), b.mean(axis=0)
+    energy = (left_mean - right_mean) ** 2
+    if variant.endswith("ward"):
+        factor = 2 * len(a) * len(b) / (len(a) + len(b))
+        height = np.sqrt(factor * energy.sum())
+        height_without_stationary = np.sqrt(factor * energy[~stationary].sum())
+        measure = "squared_centroid_distance"
+    else:
+        energy += a.var(axis=0) + b.var(axis=0)
+        height = average_distance(a, b)
+        height_without_stationary = average_distance(a[:, ~stationary], b[:, ~stationary])
+        measure = "mean_squared_cross_pair_distance"
+    np.testing.assert_allclose(height, link[-1, 2], rtol=1e-10, atol=1e-13)
+    largest = np.argsort(energy)[-3:][::-1]
+    report = {"variant": variant, "children_in_linkage_order": [node_id(j, n) for j in nodes],
+              "sizes_in_linkage_order": [len(a), len(b)], "energy_measure": measure,
+              "stationary_energy_fraction": float(energy[stationary].sum() / energy.sum()),
+              "saved_merge_height": float(link[-1, 2]),
+              "frozen_split_height_without_stationary_modes": float(height_without_stationary),
+              "largest_mode_contributions": [{"mode": int(j + 1), "eigenvalue": float(eigenvalues[j]),
+                                              "fraction": float(energy[j] / energy.sum())} for j in largest]}
+    rows = [{"variant": variant, "mode": j + 1, "eigenvalue": eigenvalues[j],
+             "left_child_coordinate_mean": left_mean[j], "right_child_coordinate_mean": right_mean[j],
+             "energy_measure": measure, "contribution": energy[j], "fraction": energy[j] / energy.sum()}
+            for j in range(len(eigenvalues))]
+    return report, rows
+
+
+def main():
+    expected = json.loads((RAW / "tbs-recovery-manifest.json").read_text())["reused_input_sha256"]
+    verification = RUNS / "choir_nnls_convergence_diagnosis_20261103_185503/verification.json"
+    linkages = json.loads(verification.read_text())["input_sha256"]
+    expected.update({name: digest for name, digest in linkages.items() if name.endswith("/linkage.npy")})
+    for name, digest in expected.items():
+        assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, name
+    weights = sparse.load_npz(BASE / "diffusion_kernel.npz").tocsr()
+    assert (weights != weights.T).nnz == 0
+    count, components = connected_components(weights, directed=False)
+    np.testing.assert_array_equal(components, np.load(BASE / "graph_components.npy"))
+    metadata = pd.read_csv(BASE / "cell_metadata.csv", usecols=["CellID", "Cell_line"])
+    cell_ids = metadata.CellID.to_numpy(dtype=str)
+    assert metadata.CellID.is_unique and _canonical_sample_order(cell_ids.tolist()) == list(range(len(cell_ids)))
+    symmetric_coordinates = np.load(BASE / "diffusion_coordinates.npy")
+    n, rank = symmetric_coordinates.shape
+    assert n == len(cell_ids) and weights.shape == (n, n) and rank == 30 and count == 3
+    norms = np.linalg.norm(symmetric_coordinates, axis=0)
+    eigenvalues = np.cbrt(norms)
+    original_eigenvalues = json.loads((BASE / "diffusion-verification.json").read_text())["eigenvalues"]
+    np.testing.assert_allclose(eigenvalues, original_eigenvalues, rtol=1e-13)
+    u = symmetric_coordinates / norms
+    degree = np.asarray(weights.sum(axis=1)).ravel()
+    assert np.all(degree > 0)
+    sqrt_degree = np.sqrt(degree[:, None])
+    right, left = u / sqrt_degree, u * sqrt_degree
+    right_residual = np.linalg.norm((weights @ right) / degree[:, None] - right * eigenvalues, axis=0) / np.linalg.norm(right, axis=0)
+    left_residual = np.linalg.norm(weights @ (left / degree[:, None]) - left * eigenvalues, axis=0) / np.linalg.norm(left, axis=0)
+    dual_error = float(np.max(np.abs(left.T @ right - np.eye(rank))))
+    assert max(right_residual.max(), left_residual.max(), dual_error) < 1e-10
+    stationary = np.isclose(eigenvalues, 1, atol=1e-10, rtol=0)
+    assert stationary.sum() == count
+    volumes = np.bincount(components, weights=degree)
+    component_basis = np.eye(count)[components] * np.sqrt(degree / volumes[components])[:, None]
+    basis_error = float(np.linalg.norm(u[:, stationary] - component_basis @ (component_basis.T @ u[:, stationary])))
+    assert basis_error < 1e-10
+    energy = np.stack([np.sum(u[components == i] ** 2, axis=0) for i in range(count)], axis=1)
+    dominant = energy.argmax(axis=1)
+    np.testing.assert_allclose(energy.max(axis=1), 1.0, atol=1e-10)
+    markov_coordinates = symmetric_coordinates / sqrt_degree
+    for variant in VARIANTS[1:]:
+        coordinates = markov_coordinates if variant.startswith("markov") else symmetric_coordinates
+        np.testing.assert_allclose(coordinates, np.load(COMPARE / variant / "coordinates.npy"), rtol=1e-13, atol=1e-15)
+
+    mode_rows = [{"mode": j + 1, "eigenvalue": eigenvalues[j], "stationary": bool(stationary[j]),
+                  "component": int(dominant[j]), "relative_left_residual": left_residual[j],
+                  "relative_right_residual": right_residual[j],
+                  **{f"component_{i}_energy": energy[j, i] for i in range(count)}} for j in range(rank)]
+    component_rows = []
+    for i in range(count):
+        mask = components == i
+        local_nonconstant = eigenvalues[(dominant == i) & ~stationary]
+        if not len(local_nonconstant):
+            block = weights[mask][:, mask].toarray() / (sqrt_degree[mask] @ sqrt_degree[mask].T)
+            second = eigvalsh(block, subset_by_index=[len(block) - 2, len(block) - 2])[0]
+        else:
+            second = local_nonconstant.max()
+        component_rows.append({"component": i, "cells": int(mask.sum()), "volume": float(volumes[i]),
+            "cell_lines": int(metadata.loc[mask, "Cell_line"].nunique()),
+            "most_frequent_cell_line": metadata.loc[mask, "Cell_line"].value_counts().index[0],
+            "retained_nonstationary_modes": int(len(local_nonconstant)), "local_second_eigenvalue": float(second),
+            "max_markov_coordinate_range": float(np.ptp(markov_coordinates[mask], axis=0).max()),
+            "max_symmetric_coordinate_range": float(np.ptp(symmetric_coordinates[mask], axis=0).max())})
+    roots, root_rows = [], []
+    for variant in VARIANTS:
+        coordinates = markov_coordinates if variant.startswith("markov") else symmetric_coordinates
+        summary, rows = root_trace(variant, n, coordinates, stationary, eigenvalues)
+        roots.append(summary)
+        root_rows.extend(rows)
+    out = timestamped_results_dir("choir_diffusion_eigenvector_trace")
+    out.mkdir(parents=True, exist_ok=False)
+    pd.DataFrame(mode_rows).to_csv(out / "eigenvalue_trace.csv", index=False)
+    pd.DataFrame(root_rows).to_csv(out / "root_mode_contributions.csv", index=False)
+    np.savez_compressed(out / "markov_eigenvectors.npz", cell_id=cell_ids, graph_component=components,
+                        eigenvalues=eigenvalues, right=right, left=left)
+    evidence = {"components": component_rows, "root_splits": roots,
+                "eigenvalue_one_multiplicity": int(stationary.sum()), "max_left_relative_residual": float(left_residual.max()),
+                "max_right_relative_residual": float(right_residual.max()), "biorthogonality_max_error": dual_error,
+                "stationary_subspace_residual": basis_error, "input_sha256": expected}
+    (out / "evidence.json").write_text(json.dumps(evidence, indent=2, allow_nan=False) + "\n")
+    print(out)
+
+
+if __name__ == "__main__":
+    with threadpool_limits(limits=4):
+        main()

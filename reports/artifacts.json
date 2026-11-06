@@ -66,6 +66,22 @@
       "description": "production_pvalue_replacement_20260928",
       "reproduction_source": "reports/production_pvalue_replacement_20260928/README.md"
     },
+    "reports/matched_full_benchmark_20261103": {
+      "description": "Matched full benchmark rerun after self-distance integration, including the existing empirical-inflation change",
+      "reproduction_source": "reports/matched_full_benchmark_20261103/README.md"
+    },
+    "reports/cancer_pc_methods_20261104": {
+      "description": "Cancer-inspired PC surrogate comparison with eleven default methods, six seeds and recovery plots",
+      "reproduction_source": "reports/cancer_pc_methods_20261104/README.md"
+    },
+    "reports/cancer_pc_statistics_debug_20261104": {
+      "description": "Cancer PC surrogate diagnosis of statistical rejections, covariance, calibration contamination and closed tree gates",
+      "reproduction_source": "reports/cancer_pc_statistics_debug_20261104/README.md"
+    },
+    "reports/statistical_construction_audit_20261104": {
+      "description": "Three Sol audits and controlled checks of MP dimension, projected-Wald reference laws, calibration, multiplicity, traversal and accumulated method knowledge.",
+      "reproduction_source": "reports/statistical_construction_audit_20261104/README.md"
+    },
     "reports/selective_rebuild_comparison_20261104": {
       "description": "Paired root-only known-Gaussian comparison of conditional samplers and whole-procedure rebuilding, with saved arrays, checks and limits.",
       "reproduction_source": "reports/selective_rebuild_comparison_20261104/README.md"
@@ -2553,6 +2569,1994 @@
       "study": "reports/failing_case_subspace_analysis_20261018",
       "role": "source",
       "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/README.md",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "source",
+      "reason": "Matched comparison protocol, interpretation or reproduction script."
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/changed_case_results.csv",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 3378,
+      "sha256": "ee0d07c9027534d7b3c4da8f12120edd45ed8a89369949824a644fa08f222c2c"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/compare_matched.py",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "source",
+      "reason": "Matched comparison protocol, interpretation or reproduction script."
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/comparison_checks.json",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 517,
+      "sha256": "c1823fe9f56bcfb8eb8973ea574328d44eb8d1a0abdbbf32748bddd320d6c702"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/completion.json",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 168,
+      "sha256": "5e499f278f51881796a4edc7fbc2f167001af862c5b2cb9bb6acaed6ded028c3"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/execution.json",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 917,
+      "sha256": "e5cc6692ec1b6637792e64a6fe51c5f077a90b1ec4bd6d902fd0a076cf44aac2"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/generated/baseline_results.csv",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "generated_output",
+      "reason": "Full matched result CSV snapshot retained locally; no separate backup claimed.",
+      "bytes": 1452692,
+      "sha256": "78230352247ad7724d93181abfefd5cf82d203adc761294882eb9c651b10b099",
+      "storage": "local"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/generated/current_results.csv",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "generated_output",
+      "reason": "Full matched result CSV snapshot retained locally; no separate backup claimed.",
+      "bytes": 1452723,
+      "sha256": "d954f7d51d1a35143b8ece141231f332b2002e402d1f9fcbae78c1dfbf0ee1a3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/input-fingerprints.csv",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 12478,
+      "sha256": "960c8a28c0da4c23e8de48f49034ea3cfeeb4b759d7e4a4ebccbe850593413c6"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/matched-run-manifest.json",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 92599,
+      "sha256": "d3b4732c753d9637a5128cff161001fdc595615d30294530545773d8d85bb0eb"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/matched_case_results.csv",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 382003,
+      "sha256": "48e60247faed967bfb467d6b786132937a586e9f41b02d44352dab04b50ab66d"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/matched_method_summary.csv",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 1900,
+      "sha256": "a13befd174cbb2097f1ec16fbce82192c6e336d45a0fba6b7a0615d6932751ba"
+    },
+    {
+      "path": "reports/matched_full_benchmark_20261103/source-changes.patch",
+      "study": "reports/matched_full_benchmark_20261103",
+      "role": "retained_result",
+      "reason": "Compact paired results, provenance, source snapshot or verification retained for review.",
+      "bytes": 7983,
+      "sha256": "9c25b11881f8e2de1b427eef3ebf5379834a4d3ac505014986e15f8dcdda3928"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/README.md",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "source",
+      "reason": "Editable report or reproduction/plotting script."
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/additional_seed_summary.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 3719,
+      "sha256": "010eae4d2dd130230c5f2fbf938e158f8bb3bb9d5ea50333b3eb821e8b5192ce"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/development_results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 58706,
+      "sha256": "5bf1b9a5a593b1bd5de3097951a243c5330a22b4fa5dca65d26f84ed44b84cde"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/_case_generation_manifest.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 16626,
+      "sha256": "eee41f4a1182424ee81061ed2087ff0c6e6d594eab2604ff143bfaaec9e12cdd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/_cover_overview.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 19250,
+      "sha256": "9f85f9b0d47267f457b9067b7075f7abd3036949d31560da671f80e11ead77ba",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/_section_method_proof.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 19028,
+      "sha256": "775c332856b546e5107a5cfcdfaa0e1ba3e65f8817459f26ec9ab5ea6ba720b2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_1_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 223555,
+      "sha256": "a51e3a63215894e3a0f5c20f9af6b1aa633b79f955881f02a0c7584b958573af",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_1_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224636,
+      "sha256": "8995e344c38ffc8d8d3b6cae3f51957b28195c36dcdadb1218fa350e41fca302",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_2_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224814,
+      "sha256": "0502c77a0d37f9277d59c0e46c820e3f626e788048fb7b1f2920ed9feb844bd1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_2_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224803,
+      "sha256": "7f4a11cf7bae872275314864fb87a69c564e3664c65f6916fe709653438b13ba",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_3_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224750,
+      "sha256": "aaec8f43d444c4d980f882bf33b2c608d02f1b0a6c83036dadf08427489e83f6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_3_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224610,
+      "sha256": "da4fb79ee59c4a1f4e12fae27b7c9536979b6cf895d6ff3fb120bf8ccd83d506",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_4_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225234,
+      "sha256": "45055f5e68e8b49983b84e40d894fe778501c9c69f5897fdef38e384b41e33be",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/audit/case_4_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224833,
+      "sha256": "962e7ce56cd57597e564d3b502d5f6519389da43333bc3ef86ff7ef97141fe28",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/benchmark_performance_grid.md",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 6551,
+      "sha256": "0aa3f721a8bf0c9e3cc2f00e759b7fce079e1487378db6209f027b96eff0dedb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/benchmark_performance_grid_ari.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 2653,
+      "sha256": "eb7701bee56f59cb75414ce30128c2d82e787c9fa46c19e84ffc2edb786c8153",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/benchmark_performance_grid_nmi.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 2652,
+      "sha256": "ff6cce0b5c5622be87735abd6fcc68bef9988b83702cd3ba52b5760212cc27ae",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/benchmark_performance_grid_purity.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 2814,
+      "sha256": "621db2f2cf53c932dc4dc43a03f6d647dba83daecf2b8df643d27620620ac15c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/benchmark_performance_grid_status.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 2271,
+      "sha256": "0bab7b2e968ac7774854d450d12e62972398f2509b4faea51eb856c15b2b3100",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/benchmark_performance_grid_summary.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 5490,
+      "sha256": "a348e54adf175b8a07cffe256a117411ba9a87c31f6f854bac21884b28c31c12",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/benchmark_support_coverage_by_method_case_family.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 522,
+      "sha256": "fa60decbb9bb62c0f3649c45ff405ccb708eb6c9b25d49d01f640586e238507c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/cancer_pc_benchmark_comparison.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 58207,
+      "sha256": "f2c0097728f331b2606d3e10b98817ac5237e66de3817fadc0b7162a254dbf83",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/cancer_pc_benchmark_report.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 808754,
+      "sha256": "49a252c2ff8df21afce446f596de9680255331649167e1fa0510aa45ff52e6e3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/failure_report.md",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 801,
+      "sha256": "b87d5b5c3cbedc812fd87c84cc19a19ad0398cd6693df370ed9fe9ec5694f504",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/plots/cancer_pc_hub_connected.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 194206,
+      "sha256": "a1382881ee084809c01664dfb7112cb3eaf47256651fc39f71a7513bdf8b3954",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/plots/cancer_pc_hub_disconnected.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 183373,
+      "sha256": "8fb5fe74f26498b008620af0e695d2ff7e95fb21a707680065eec7000b356d4f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/plots/cancer_pc_nohub_connected.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 196463,
+      "sha256": "d8bfb0007d3a8e5ba4cf259d84d6022ee2cc1c2c44c508b3daa3fa26b7dcf92e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development/plots/cancer_pc_nohub_disconnected.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 184853,
+      "sha256": "bea37813db2224a6b47fda23647db406ee94e233dacd5c7aa7871f3921f903e0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/development.log",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 10824,
+      "sha256": "844a79d15f7a61da1eb3530c86645bc9668b0aa185276d9d13d237d3d1aae8c9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/native-preview-05.png",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 233176,
+      "sha256": "cfb716f0fb3a298fa868d1a4badea16d48ddbac888666ee5ea18e6f43dde394a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/native-preview-06.png",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 481537,
+      "sha256": "d5a5cd9ecedf7ec1d20bccf6c4baf87591395d17159f6f2a71b8db5400f8b5d1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119557,
+      "sha256": "4d62ee2a49078afd4d6954cddda83c654e4630a1ef4f6bf58d5246fd02165aaa",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_connected/audit/case_2_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224814,
+      "sha256": "0502c77a0d37f9277d59c0e46c820e3f626e788048fb7b1f2920ed9feb844bd1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_connected/audit/case_2_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224803,
+      "sha256": "7f4a11cf7bae872275314864fb87a69c564e3664c65f6916fe709653438b13ba",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15904,
+      "sha256": "b7c39981282915b4b8c370285e8710dfbd52fa5a960e5549172c337397bd69cd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119284,
+      "sha256": "98654ab7f84ca44a799938dfc298ac9c267e9d7300aceb80d7c646604e700d12",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_disconnected/audit/case_1_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 223555,
+      "sha256": "a51e3a63215894e3a0f5c20f9af6b1aa633b79f955881f02a0c7584b958573af",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_disconnected/audit/case_1_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224636,
+      "sha256": "8995e344c38ffc8d8d3b6cae3f51957b28195c36dcdadb1218fa350e41fca302",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_hub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15677,
+      "sha256": "6a6be6caa6c609f0eb976d0d8503fd6729095f7b64faf186361bc74469bbc377",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119562,
+      "sha256": "1116ef5ab6ac271dec122827082c4ae0781b72f3ce3064a81865b4f4f01b803f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_connected/audit/case_4_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225234,
+      "sha256": "45055f5e68e8b49983b84e40d894fe778501c9c69f5897fdef38e384b41e33be",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_connected/audit/case_4_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224833,
+      "sha256": "962e7ce56cd57597e564d3b502d5f6519389da43333bc3ef86ff7ef97141fe28",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 16072,
+      "sha256": "be2a00020141396c3f3466e3809111bdcaaa07c197156abde474b8e65c6620d5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119286,
+      "sha256": "484b457dbce4a7eae4e4762a3e68d18b3c942706ce7a7fd4201118e8e7a50534",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_disconnected/audit/case_3_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224750,
+      "sha256": "aaec8f43d444c4d980f882bf33b2c608d02f1b0a6c83036dadf08427489e83f6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_disconnected/audit/case_3_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224610,
+      "sha256": "da4fb79ee59c4a1f4e12fae27b7c9536979b6cf895d6ff3fb120bf8ccd83d506",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261104/cancer_pc_nohub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15933,
+      "sha256": "e487f7856a351c3a493919437bad1d0ee9eca0517d19aafe242563107aeece6b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119573,
+      "sha256": "df5b7f34cd6e75aacf07d7396f73500bcc55364f9c4cc05b995ac3db2df106f9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_connected/audit/case_6_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225063,
+      "sha256": "ebc78ce7626d2262ad9d53c8098cb2ecefd45da30c54c279b4a496f58dd0f3e3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_connected/audit/case_6_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225054,
+      "sha256": "d29fb7bd5ba21ad99e71714382d86bcfd15fddbe73dfd8beecd61d7945055e3e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15910,
+      "sha256": "1c5ee65cc2f45c7d8ce34809234e133c1ba15bae0f8cb81c371147e867960b55",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119307,
+      "sha256": "aa78e6bf2fed84bf9e0048ac0a25eb694f8db35eee7c8d47a16557a2ce2de666",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_disconnected/audit/case_5_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224105,
+      "sha256": "15e60ab9aaf66f5267e5df729e0ac39f7535fdba3a8e0064c6a0b733c06d42e6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_disconnected/audit/case_5_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225030,
+      "sha256": "980bd45689ed652135afe7a9cb4fffeaad3cc6dff637e810a29cfb5650383595",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_hub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15720,
+      "sha256": "d6405937dcdf7f95b581b04e32943c164a29e3b68b67b57ab7f77bc3c2834473",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119680,
+      "sha256": "5ed904ced08ddb34767103ba0ee37a3c61de17115e0a354076df709f7ac8fddd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_connected/audit/case_8_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225465,
+      "sha256": "de00c8c1689dac58dc67bd02d4d126238714fedec5340451ec42f916b6e52939",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_connected/audit/case_8_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225312,
+      "sha256": "f464f16224956dc971daabcb85e584c7c2e4f9bf486f45fe6108115c15066aa6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15936,
+      "sha256": "e3dcba8e71f3a5d025aee177d4f9511f6ec7e1bf9a299a21bc8c59dd6b05b27a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119294,
+      "sha256": "4e8db1e219622fcc6830ebd6489229c0011ac9db25291343998b71c0bac34805",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_disconnected/audit/case_7_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224792,
+      "sha256": "e5831fec72d3a528387888508045c7caae2039ce83684ee849bb19059f306da8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_disconnected/audit/case_7_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225180,
+      "sha256": "12898407995c8ff816db10aacb8465bcdf503b0721d95d0cc972ac521126627b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261105/cancer_pc_nohub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15974,
+      "sha256": "5bcc505ef703eb60d2af9ceef4adb04bb109e9f2801729f7a1d2be191fdd4eb8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119605,
+      "sha256": "e03045bd1ca9b9754670d5e0d0d8e155682fb0e132cb1fa3e45c756c5ec4d5fd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_connected/audit/case_10_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225273,
+      "sha256": "1db9379f4161b05c2a331cca1114ad6387d3287361ef50d3471953c4f1ce113f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_connected/audit/case_10_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224722,
+      "sha256": "a7924f510f882a33458cecd22a724fdee8529f722a4f97e132e1c7b7f40d666d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15888,
+      "sha256": "942feb8b4af9adbf65c7e34e94ed8d64ddc56090e9cc9e47e89e4c866db17e6f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119371,
+      "sha256": "a84c52002f84f926d55dc3f8ac98cbfeb7a3bdb004dc11488b2136badfe7d358",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_disconnected/audit/case_9_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224226,
+      "sha256": "0a0256da456c5ec85359a86dce54563bbe57aae19d466b46736366e242500fcd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_disconnected/audit/case_9_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224808,
+      "sha256": "58f2fa7247c0aaf1cef60c699d051a60bf2c5b14a7b1b48907f56824472f6583",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_hub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15594,
+      "sha256": "2489604101d33113600045fb7dafb849799d9559b0026dd5cf0897e5e52ab510",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119587,
+      "sha256": "4dc7a2a8bb98d1bb43d4dea40eeae74720260cc492cb6608b4a1a4d0d550c8c0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_connected/audit/case_12_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225263,
+      "sha256": "fcdef4885c4bdf5bc801fb6483f395919c3b9d98585689f1bae9347dc72a2405",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_connected/audit/case_12_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224692,
+      "sha256": "16815e4c3440c7be2bab256b9cfcc3f3b866f8386dc4fa3c653fce93f0d4f4d4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 16200,
+      "sha256": "9e488293b9e7fc5bce80218a028bc8425a3b8abdc2d20dc86de0f82aa63756da",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119425,
+      "sha256": "dfea81b85e9a7e265047b61a447bc9678f148c421ec9221c4d30dc877b6bcc10",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_disconnected/audit/case_11_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225029,
+      "sha256": "56be3e1e016664acadddaa0135dd767a4ccc11e6aabbca906fb5f67d4c99958a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_disconnected/audit/case_11_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224837,
+      "sha256": "c6b050397de1937e5a2a5485355ddf5af537b1e96aebca194c76dee01afb9101",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261106/cancer_pc_nohub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 16040,
+      "sha256": "35639690df4e214a7aab850e97c2dc94e26be14683c1755b34fde3e836784c3b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119614,
+      "sha256": "e38638a431a846bc6e9ad1762586e65f890e3d5d66ffae906ac1cd5d93d12d6c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_connected/audit/case_14_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224852,
+      "sha256": "0445888b453e0d9f2417c3a2cedcf8a4ba9634d06ca3116e8aad7d372637b3a9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_connected/audit/case_14_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224696,
+      "sha256": "8e1615404becc86414339eda63003aa6ef1aa825e2530f4692ab0c73e7391c1c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15919,
+      "sha256": "55b91ef5302980d4e3f8d0a734b3ebcd0ff63c94a00099adf42efc462fbc05d1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119307,
+      "sha256": "e6b3af0d8260b5edfe9f9b64d629ab26539bfd6bdbce8e11d643208ce6a6fa92",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_disconnected/audit/case_13_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 223795,
+      "sha256": "4b5c901bb98a47f581d0853ab983193ab973f25efdb92d75bd6edefbdabb0dbd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_disconnected/audit/case_13_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225162,
+      "sha256": "cf6c5d70145b323eb79aae67303ed9fa91411427c639a5dca983b3cad93fa143",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_hub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15689,
+      "sha256": "a894ed0fdf1a941b291fa54928b86125c28e6a3dc4503b90d26af56745ba1f03",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119609,
+      "sha256": "957d2a67c9aa118dad680f747928827f1eca2853e6fe8f5714b72fcc64f410f1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_connected/audit/case_16_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225255,
+      "sha256": "6111cb1cdb8d98138f3254cda72bc1769e7ddd0db919fed75d03fd2bb8b8f3d2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_connected/audit/case_16_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224887,
+      "sha256": "d8ec6e60ad1f155f1200ccefb7130d2170666ef10b41444077ff3c42343db081",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15936,
+      "sha256": "020a8e8a154200ff1fc5582f3a46d49a88e533a3bcb7487a9cda432fcd5acdfc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119346,
+      "sha256": "0b0d684076c15814a804e47bcab84af4cb17cc400e03dc19f07db199f0cb55e8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_disconnected/audit/case_15_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225013,
+      "sha256": "29c6cae613e54cf2a9d0badf1c0ea9d2a72fe3d67dc93a38a6fd076d0072bebc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_disconnected/audit/case_15_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225157,
+      "sha256": "e5d3a03cd26eadbcc4f8e85b130200e6face5513398f774d1b0566d2d3631f2f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261107/cancer_pc_nohub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15958,
+      "sha256": "168921ff75257617fa019960fb41ab966e7d94fce6a74720027466b67c563d6a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119572,
+      "sha256": "f8d8fce1d8a67873b81cd31301133d861fa87375f1a24928589551c4079739dc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_connected/audit/case_18_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225195,
+      "sha256": "d6b15c6290f7364e4f8c716fb2c11408b46b107c3136886c4b68c0d5ffc2e232",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_connected/audit/case_18_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225026,
+      "sha256": "57c0b44de917983b1b96a96290588a566ac9997a0767b2c2215cbae212b0160c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15933,
+      "sha256": "171f5f5392a0fe25f329b564741f18354ad820ce81c161a54587036347e34e1a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119355,
+      "sha256": "b8404edeb0511c9d7ae74184564480c0d093a6d0a1297943dd1803d861ca3308",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_disconnected/audit/case_17_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 223813,
+      "sha256": "bb26dcbf89b47d8ebf1bdec7e20ee17f25ef3c34738ce4e995d8626c595b2826",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_disconnected/audit/case_17_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224808,
+      "sha256": "274d1b43869e4f0935604801f878c7f35489753aa54f1a00b941d30664ced58b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_hub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15703,
+      "sha256": "cd48cb0dd578ffe1a77539e0630b473f16f61ccef36fea16f9f1aabf15a0af09",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119626,
+      "sha256": "376abd162a50b8525400ddb43fb9565305573b4b20ec4f187310c140dc51deb4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_connected/audit/case_20_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225315,
+      "sha256": "93c12d0ab75394993de5f7fe35ed067ce3eadc6db42b51510c13f0b85165dcfe",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_connected/audit/case_20_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224748,
+      "sha256": "e9e6fa824195e1cc9404f2618bfc3691e0be37550a188daa173ebbf3e4a54dda",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15923,
+      "sha256": "140771b82fb395be2e0644beed0f5ce494824a8b8a8f7cc233911f779ca79f6d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119388,
+      "sha256": "ab7f4f7a1699772dc4b1f5531ebb8f7043b07d52cad180addd9596110651975c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_disconnected/audit/case_19_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224797,
+      "sha256": "bf5312b473e573ae5d0844016658b1722840538f65a1f041d2f4c022aaa388f0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_disconnected/audit/case_19_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224727,
+      "sha256": "f6f4c2bf505c661bdbf4a0fddcdcf6238e89ec7a097e3199ed8a0d44f83b7f74",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261108/cancer_pc_nohub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 16167,
+      "sha256": "a47d7830bb00e86c23af15ca3e0c999f8dbc774d735b0c33bc595e662da688da",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119507,
+      "sha256": "5107dfef6c40ff77b411f014cc7c2938d379834993edfb1091d7703f7245e4f3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_connected/audit/case_22_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224552,
+      "sha256": "450398ddc1878b76d8021e90b45df7d9cc668827c625861b28d175722fe54b68",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_connected/audit/case_22_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224791,
+      "sha256": "1867b3dec6222fdb70c2292ff186b9477903e7b46d02bf69941f86d93072a96d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15918,
+      "sha256": "ca08c37fb99c5838a84fb44184fe334729b7808242a0c31fa5229f1046669346",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119372,
+      "sha256": "9746e9e0bcf6fe196429e109b2981d0a5afb336cefd0f52590ca78d23b1b0d2b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_disconnected/audit/case_21_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 223781,
+      "sha256": "6cbe34e402181f66f623e43786fb4c8e457935ba8ebc425f912cb9ecef7d262a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_disconnected/audit/case_21_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224528,
+      "sha256": "4a4b52d82f669cba9dfbce7e189b72f6e22afb03cc67067f3ea4580ca1f707b2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_hub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15728,
+      "sha256": "ce54cf4426d50aa83f95c9dce05005869ed2a1d6d9d4d0645e3f32106b39ed6e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_connected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119630,
+      "sha256": "94bb07827c3d3f0062f021a051d426f42439498634a76d63bfb2114cd1e5433c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_connected/audit/case_24_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 225024,
+      "sha256": "bb420f370560374e6566fcab83c0aff7ec42b6aa3e362cecca23cc963afaebeb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_connected/audit/case_24_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224781,
+      "sha256": "7a9b87cadab3abb83baa89169021b361530649649331547aea79b8ec7d877dfe",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_connected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15928,
+      "sha256": "011b9137488de15eb078bed74927b98ccfe615a611e0c1390878ff647f540ac8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_disconnected/assignments.npz",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 119270,
+      "sha256": "f52943f9837e2a44d134486b3e2f8b6e19a518f5c78ce24ce784165c67ae8235",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_disconnected/audit/case_23_tbs_family_diffusion_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224919,
+      "sha256": "702776d31af50af59cf66318c9341bdd8da6f7f2e5d3c1ee414e3eb4f6a4a51b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_disconnected/audit/case_23_tbs_stats.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 224386,
+      "sha256": "21fb54a06beb0b1514255fc35fcc5b9c7167503b1d727ec6bfe5de9a194a44d9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/20261109/cancer_pc_nohub_disconnected/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 15653,
+      "sha256": "bf5d6201c73baf373abbb40471ad8bdbbf5fe60ba4d673329c2db122210c6713",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/input-fingerprints.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Original panel provenance in local run directory; identical compact copy retained at study root.",
+      "bytes": 2443,
+      "sha256": "52f0b97618ec09b1de98ec48a39658092fc36e5fb3b5442cc5944a38766c24b4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/manifest.json",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Original panel provenance in local run directory; identical compact copy retained at study root.",
+      "bytes": 40762,
+      "sha256": "36be026715bb58f157f1d1f510a3a2a194369875f3afebae45a91015d8499fbb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel/results.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 347401,
+      "sha256": "20b0c621ae978fbcd24c1d9f46f2e318257e86477e1a28feac6e3de30957f343",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/generated/panel.log",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "generated_output",
+      "reason": "Detailed benchmark output retained locally without separate backup.",
+      "bytes": 5073,
+      "sha256": "62cac903fc395c5fa2bccc805641e87b5245ddbb002a64663fe255bae7d74862",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/method_comparison.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 39580,
+      "sha256": "2be34eaf86b1b36f17700b887f834f514a9c7e58ce08eac98840ffc60e04ca99"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/method_comparison.png",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 229766,
+      "sha256": "f780e2094c7f163ec1bd0f341066971d0f99a78bd368d38c80da5a4639cc1f1f"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/plot_manifest.json",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 616,
+      "sha256": "8c55e541e5464ecd4dc408e574dd8a7c1c15d1a3b23d57c5c9f128cf0b203a72"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/plot_results.py",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "source",
+      "reason": "Editable report or reproduction/plotting script."
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/population_recovery.pdf",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 188645,
+      "sha256": "335aebf8a4ca051a5834b55032ce1bbe9f580a7e47996e7d983c9abe9a89de78"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/population_recovery.png",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 723543,
+      "sha256": "4fb88a8ab799eb26c54f1ad1f67d46e939492416e23e70399b1600df93d75445"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/run_panel.py",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "source",
+      "reason": "Editable report or reproduction/plotting script."
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/verification.json",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact numerical result, figure, provenance or verification retained for review.",
+      "bytes": 779,
+      "sha256": "4f92c628c3cc2ff7f68439256a753fa459011b7c92ac18bc2c1548639c008298"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/panel_manifest.json",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact panel provenance retained outside the generated-output directory.",
+      "bytes": 40762,
+      "sha256": "36be026715bb58f157f1d1f510a3a2a194369875f3afebae45a91015d8499fbb"
+    },
+    {
+      "path": "reports/cancer_pc_methods_20261104/input-fingerprints.csv",
+      "study": "reports/cancer_pc_methods_20261104",
+      "role": "retained_result",
+      "reason": "Compact panel provenance retained outside the generated-output directory.",
+      "bytes": 2443,
+      "sha256": "52f0b97618ec09b1de98ec48a39658092fc36e5fb3b5442cc5944a38766c24b4"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/README.md",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "source",
+      "reason": "Diagnostic report, reproduction, plotting or independent verification source."
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/calibration_factors.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 7869,
+      "sha256": "7dce77b00d60d39c5952d168f783ed8f41800a6d7afa51accfb892d8dcb98184"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/fixed_pair_reference_check.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 407,
+      "sha256": "cd1b20df78e1befdb9cda97c064dea6f4397f630d564aa24a9c6cfb8186fff34"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/frozen_tree_swaps.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 1907,
+      "sha256": "b8a7c506548b6dc2217d8ebbd2e4a8f534bb6a76da77ec60490350d910abc534"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/calibration_factors.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 7869,
+      "sha256": "7dce77b00d60d39c5952d168f783ed8f41800a6d7afa51accfb892d8dcb98184",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261104-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100485,
+      "sha256": "0cb67d2431cec5c17c364660e2fed5bec19c02b8619e2d1b0e3e5856f675d941",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261104-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 32736,
+      "sha256": "317efd1ac2a9364010c776c3ba84d784ead5e26be144e3163d29c25b8668be1e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261104-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3374,
+      "sha256": "ecabfa3934e44a0cde414c98fed8dcbb9a360fee1bdb3f41352acb5d39ba00ee",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261104-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 137839,
+      "sha256": "bb651ff075ec0b6e20f652e37d7dc440c607a19010325346c9a9f7c9a9d00277",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261104-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 22221,
+      "sha256": "da539a004bbe7a71a2fda0b66ebc940c736cdccb43c387af9d905811a0e66300",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261106-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100755,
+      "sha256": "8811674b7de129ae50b4a937a6fc8729fefee51ec045447bd8daad6d348b7093",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261106-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 30829,
+      "sha256": "3289e02ba62951c8a3395ce364210eef4b333790f06dfe7efa50121735902bce",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261106-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3377,
+      "sha256": "741ef4c923b15d0515400cf67c7dfb98916bebd0968402dfe1c5e2731cc415d3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261106-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 138259,
+      "sha256": "e37f848f8a1ddbde6faaeb24e8707abb422419e4739f9ee0d4cc8e0ab6e5b85d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_connected-20261106-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 22255,
+      "sha256": "41eeeb36cef5e24f20e1d4ed7056effcf13a942d3d4a2f61af981077757be044",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261104-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101123,
+      "sha256": "2006a70c4d31155871b7d9c5ad00eda524f889176de41ea59ee318f9866d101a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261104-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 38785,
+      "sha256": "398746fb1cc61d15f5ff5eb986e570abf55098c0f1038570b153c28074a12331",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261104-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3281,
+      "sha256": "19c8f987ba0025b5c9a2700ad4527f568a44860d998ca26b75f7a16c847a1502",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261104-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 137157,
+      "sha256": "f15573e4510c2244123dfc3815bc0312d0e2e3a2d56399f1dad87e6472247103",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261104-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 5925,
+      "sha256": "718e07ad87828335749a115e12fdbb7a36d9f1fbf429bc59d3e89d5a257082e3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261106-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101714,
+      "sha256": "ede143871e8d21b37a978456d8e09d2dbe1483235fa06a6574cabe0eeb59c307",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261106-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 39711,
+      "sha256": "6c25c9f93ab6dc4c39a7062b317a57fffea480ec1a4c161336e8f82ca4b0cb5e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261106-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3464,
+      "sha256": "0a493ad7889229799c3483ed83ede40ca5b70a78e0a2dfb2c7b625736475856b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261106-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 137484,
+      "sha256": "1ab8486605b2b290e0234fee60ca1b2789d457a70a4fcfcf34a3683c091cd33e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_hub_disconnected-20261106-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 6218,
+      "sha256": "c4bec6a92e921c0bfd4e5a7f6870c5e879d3f2795382f862bdbe0f2ed790bed1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261104-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102468,
+      "sha256": "f033105c412e008aa937f8e9b3a41f6ac8bf7a6b4a7edc8ff058a08f55426657",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261104-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 33056,
+      "sha256": "b439608d9fd7be9d9f4f7a3140f6eae135de8b482be344b0085d281aaa31d8ba",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261104-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3374,
+      "sha256": "7942cd6c4e5b379b5d029780ba4e7b009fa28bba2e54f070c9a27f38918a60e0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261104-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 144685,
+      "sha256": "6fd1e3c3e7c6a2d2eef56aecb3ba75fc8fd7ba1c7e8f7cddbbc761e834155c5b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261104-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 31251,
+      "sha256": "a0098bdd9898856a566b8808178ef1b8e1d0f04f314728887930bc9c1e55503a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261106-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102873,
+      "sha256": "279262de98196d0ef5cf96d99df94cdfc1120b5037d9a8f866e0d20e4317b514",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261106-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 31105,
+      "sha256": "752e1bbea229e83c43c5d24cea790c9ce1f78a275faaea243c6abfae3f1c7ab0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261106-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3376,
+      "sha256": "3bcf4010512a742795f1330cc8e3b260f6f7be1e2e4638a4a67893ec4e4ee3e7",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261106-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 145039,
+      "sha256": "2689ada95b808a63aa57b9cf56392294549992618187b996e7802cbc58abd25d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_connected-20261106-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 22363,
+      "sha256": "813229a152ac0ecdf55892fe857d5c1336b38d4f17fb2a9fe4e4bd2fed430e25",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261104-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103372,
+      "sha256": "e70799efadce11f6cbee1f799f06db318ae59fe4cbd70ab0428041e18f8dd0fe",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261104-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 39165,
+      "sha256": "327bcbf6266da29971174038903a8ba4e0aa2af45d621f88a46d76fb2fb4a0a5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261104-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3375,
+      "sha256": "3821f924f1253df4784ade5542bde06f152bca6e1a35fbf52d90ec9918953bfd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261104-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 144835,
+      "sha256": "5215ba0b035831720c7c3ce0e4daf15b83f35bc6b5b6e7f6408752a1d9f854f5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261104-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 26991,
+      "sha256": "f1e5752167dc8cf8cf4b9fac79379ed0566a4aeef418b3c0ab3c62d1077eb944",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261106-edges.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103925,
+      "sha256": "195a073c279e27b27b38decd940c0ad2e8abd705d5a64584b25e2022b89dd4d8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261106-pairs.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 40930,
+      "sha256": "a10d296dc30bd6ccbd0cd5cd6e419e72a6513cc93185892526d742511d519534",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261106-root-calibration.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 3379,
+      "sha256": "1d1d7e852eada60434dc1cf6d224933ce390c0faf6815ddb2a07ec7344b0ccfe",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261106-siblings.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 145854,
+      "sha256": "4dc39e0259a09ddc4017372e527168e3be213b1f47d01901500c45723868a1bc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/cancer_pc_nohub_disconnected-20261106-traversal.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 30919,
+      "sha256": "930c1c1939a47a603567e7b9e2a629a29a79171d46cdc098801fc1004592dbdb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/fixed_pair_reference_check.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 407,
+      "sha256": "cd1b20df78e1befdb9cda97c064dea6f4397f630d564aa24a9c6cfb8186fff34",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/frozen_tree_swaps.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 1907,
+      "sha256": "b8a7c506548b6dc2217d8ebbd2e4a8f534bb6a76da77ec60490350d910abc534",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/manifest.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 42623,
+      "sha256": "ab4efe18120c40b4906779fa1be3b02e3f6d07f6bc918c96f69868ed5cb090f7",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/root_factors.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 18321,
+      "sha256": "e90ef3ddf642669899a3c28f1a4ee433681052555ed65c38d2713534c77b3fd8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/summary.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2039,
+      "sha256": "87ae2f4da53d0ad3f740c26e8e2808282279113240b4fc7d15d4f1d0c40ea9e0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/generated/complete/verification.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 503,
+      "sha256": "4dab1a10c2b9d77e7f0d0907d96335633a18ee220097d3d22aeac43d34ffacba",
+      "storage": "local"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/independent_verification.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 480,
+      "sha256": "b66f853cc67886c48391fce5639c78d8fd8ba9ffeed69a7165ab183be6b76627"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/manifest.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 42623,
+      "sha256": "ab4efe18120c40b4906779fa1be3b02e3f6d07f6bc918c96f69868ed5cb090f7"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/plot_diagnostic.py",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "source",
+      "reason": "Diagnostic report, reproduction, plotting or independent verification source."
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/plot_manifest.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 1076,
+      "sha256": "81a6d6184dcc59e1cc31c5e7a63376cbf2753db942551338bdacf3012033df2c"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/root_factors.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 18321,
+      "sha256": "e90ef3ddf642669899a3c28f1a4ee433681052555ed65c38d2713534c77b3fd8"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/run_diagnostic.py",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "source",
+      "reason": "Diagnostic report, reproduction, plotting or independent verification source."
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/statistics_diagnosis.png",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 247550,
+      "sha256": "2c9d5eabc81b6144b00dc07ad6b77835baebb9caa8c07a04395a41144676acff"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/summary.csv",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 2039,
+      "sha256": "87ae2f4da53d0ad3f740c26e8e2808282279113240b4fc7d15d4f1d0c40ea9e0"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/verification.json",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "retained_result",
+      "reason": "Compact diagnostic results, verification, provenance or visually checked figure.",
+      "bytes": 503,
+      "sha256": "4dab1a10c2b9d77e7f0d0907d96335633a18ee220097d3d22aeac43d34ffacba"
+    },
+    {
+      "path": "reports/cancer_pc_statistics_debug_20261104/verify_results.py",
+      "study": "reports/cancer_pc_statistics_debug_20261104",
+      "role": "source",
+      "reason": "Diagnostic report, reproduction, plotting or independent verification source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/README.md",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "source",
+      "reason": "Audit report or reproducible diagnostic source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/downstream_probe.py",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "source",
+      "reason": "Audit report or reproducible diagnostic source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/downstream_results.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "retained_result",
+      "reason": "Compact audit result, source provenance or independent verification.",
+      "bytes": 732,
+      "sha256": "5a7793bd301e66a05b9551713fb9a9a83e309f38982ad6d416a6491180a250af"
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/generated/downstream/probe.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible controlled diagnostic output; local original of retained compact results.",
+      "bytes": 732,
+      "sha256": "5a7793bd301e66a05b9551713fb9a9a83e309f38982ad6d416a6491180a250af",
+      "storage": "local"
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/generated/mp/probe.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible controlled diagnostic output; local original of retained compact results.",
+      "bytes": 2027,
+      "sha256": "75e6f70ad6a00272c4f23387318d96666b5f7786ce111209bcea7c7ce300937f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/generated/reference/reference_probe.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "generated_output",
+      "reason": "Reproducible controlled diagnostic output; local original of retained compact results.",
+      "bytes": 3431,
+      "sha256": "d3a7e77cf8f839ae3205428d9b28af133c253201fd5285f1f11d681c4efe6a99",
+      "storage": "local"
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/knowledge_audit.md",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "source",
+      "reason": "Audit report or reproducible diagnostic source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/manifest.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "retained_result",
+      "reason": "Compact audit result, source provenance or independent verification.",
+      "bytes": 18758,
+      "sha256": "ded8ad017a301a0c473f7559ce77e98f8726ae2f4ef33a9b16e9bb27c3f08e80"
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/mp_audit.md",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "source",
+      "reason": "Audit report or reproducible diagnostic source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/mp_probe.py",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "source",
+      "reason": "Audit report or reproducible diagnostic source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/mp_results.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "retained_result",
+      "reason": "Compact audit result, source provenance or independent verification.",
+      "bytes": 2027,
+      "sha256": "75e6f70ad6a00272c4f23387318d96666b5f7786ce111209bcea7c7ce300937f"
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/reference_law_audit.md",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "source",
+      "reason": "Audit report or reproducible diagnostic source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/reference_probe.py",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "source",
+      "reason": "Audit report or reproducible diagnostic source."
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/reference_results.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "retained_result",
+      "reason": "Compact audit result, source provenance or independent verification.",
+      "bytes": 3431,
+      "sha256": "d3a7e77cf8f839ae3205428d9b28af133c253201fd5285f1f11d681c4efe6a99"
+    },
+    {
+      "path": "reports/statistical_construction_audit_20261104/verification.json",
+      "study": "reports/statistical_construction_audit_20261104",
+      "role": "retained_result",
+      "reason": "Compact audit result, source provenance or independent verification.",
+      "bytes": 1277,
+      "sha256": "3ebe4fe1073f922aa1c4687433ae1a71426d10820d261fe259c325859b7d2cfc"
     },
     {
       "path": "reports/selective_rebuild_comparison_20261104/README.md",

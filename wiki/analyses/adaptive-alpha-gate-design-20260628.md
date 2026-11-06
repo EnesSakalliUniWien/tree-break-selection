@@ -185,6 +185,8 @@ contract.
   a focal split that opens at `0.03` convert a baseline pass-through into a
   direct split?
 - Can sibling-alpha weighting be made formal with IHW/AdaPT-style covariates
-  computed out of fold or from p-value-independent geometry?
+  computed out of fold or from p-value-independent geometry? For the chain test,
+  [[adaptive-alpha-tree-procedures]] shows event-fixed features (depth, size,
+  balance) give a formal FWER allocation, while diffusion merge height does not.
 - What selected-hierarchy null law is needed before this can be promoted from
   adaptive resolution to adaptive FDR control?

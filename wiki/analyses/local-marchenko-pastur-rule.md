@@ -2,7 +2,7 @@
 title: Local Marchenko-Pastur Rule
 type: analysis
 status: reviewed
-updated: 2026-10-16
+updated: 2026-11-04
 sources:
   - wiki/sources/selected-geometry-mp-integral-literature-20260602.md
   - wiki/sources/local-mp-identity-law-diagnostic-20260602.md
@@ -15,6 +15,8 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/projection/spectral/tree_estimator.py
   - manuscript/sections/method/edge_test.tex
   - manuscript/sections/method/assumptions_validation.tex
+  - reports/statistical_construction_audit_20261104/mp_audit.md
+  - reports/statistical_construction_audit_20261104/mp_results.json
   - benchmarks/validation/contracts/method_constants_manifest.py
   - raw/assets/mp-dimension-rule-analysis/20260525-controlled-spectrum-summary.md
   - raw/assets/mp-dimension-rule-analysis/20260525-dimension-contract-subset.csv
@@ -35,37 +37,33 @@ tags:
 
 ## Summary
 
-The implemented Marchenko--Pastur upper-edge calculation is scale-consistent
-with the covariance eigenvalues returned by the backend. The primal path
-diagonalizes \(\widetilde M_u^\top \widetilde M_u / m_u\), and the dual path
-diagonalizes \(\widetilde M_u\widetilde M_u^\top / m_u\). These matrices share
-the same nonzero feature-covariance eigenvalues, so the implemented edge
+The primal and dual backend spectra have the same scale. Both centered
+scatter matrices divide by the actual spectral row count \(N_u\), and they
+share the same positive eigenvalues. The implemented identity-population
+Marchenko--Pastur edge uses a separate leaf-row count \(m_u^{\mathrm{MP}}\):
 \[
-b_u^{\mathrm{MP}} = \left(1+\sqrt{d_u/m_u}\right)^2
+b_u^{\mathrm{MP}} = \left(1+\sqrt{d_u/m_u^{\mathrm{MP}}}\right)^2.
 \]
-is not transposed in the high-dimensional dual branch.
+The dual branch does not transpose this aspect ratio. Optional internal rows
+increase \(N_u\) without increasing the current worker's MP leaf count.
 
 That does not make the rule a validated calibration-and-power guarantee. The
-calculation is correct for an ideal independent, unit-scale, local null
-spectrum. The code now separates raw MP signal count, projected-Wald test
-dimension, effective independent row count, and the MP threshold row count.
-Production now estimates the inferential PCA basis from descendant leaf rows
-only. Deterministic internal distribution summaries remain useful historical
-diagnostics, but they are no longer part of the active projected-Wald spectral
-contract because the selected-PCA validation showed severe anti-conservative
-calibration when child-mean/internal rows are appended to the projection
-matrix. The remaining open layers are the minimum projection dimension of two,
-finite-sample upper-edge calibration, null-whitening scale, and calibration
-support in high-cardinality or high-dimensional sibling contexts.
+formula is an asymptotic bulk edge for its specified independent, unit-scale
+reference ensemble, not a finite-sample quantile. The edge spectral context
+uses the assigned basis halves; the sibling context uses all descendant leaves
+and supports opt-in internal rows. `effective_independent_rows` records a leaf
+count, not an estimated number of independent observations. Raw MP count,
+nominal rank, available positive rank and final retained rank are different.
+When contrast-energy selection is enabled and a positive basis is available,
+the kernel replaces the nominal request using the tested contrast. The
+reported chi-square df is the final retained row count, whose null-law
+justification remains separate. See [[statistical-construction-audit]].
 
-The next analytic extension is not bootstrap thresholding. The current rule is
-the \(H=\delta_1\) identity-population MP law after null whitening. If local
-categorical, continuous, or selected tangent spectra have a non-identity
-population spectral distribution \(H_u\), the natural mathematical replacement
-is the deformed MP law defined by the Stieltjes-transform integral equation and
-its inverse support map. That would make the question "what is the local
-population spectrum in the null-whitened tangent chart?" rather than "which
-resampled threshold is less bad on a benchmark?"
+A deformed MP law can describe certain fixed nonidentity population spectra
+\(H_u\) under its own assumptions. It does not automatically describe
+whitening fitted from the same rows, internal averaging operators or selected
+tree membership. Deriving the correct ensemble precedes choosing a spectral
+replacement; changing the nominal edge alone does not calibrate the Wald test.
 
 The 2026-06-02 local identity-law screen shows that this question is active,
 not cosmetic. Bernoulli and discretized Gaussian selected node spectra often
@@ -96,7 +94,7 @@ strict sibling-calibration-support failures; the remaining skip was the
 intentional dense continuous covariance limit for the 20,000-feature continuous
 stress case.
 
-The 2026-06-16 copied-commit comparison adds a current-code reconstruction of
+The 2026-06-16 copied-commit comparison records a then-current reconstruction of
 the old internal-barycenter row path. On a one-replicate overlap panel, the
 legacy diagnostic increases raw MP signal counts by about `191` nodes on
 average and adds thousands of MP threshold rows, but the completed partitions
@@ -112,14 +110,14 @@ For each internal node, the spectral worker maps descendant rows into the
 null-whitened tangent coordinates used by the projected-Wald tests. It then
 removes constant active features, centers the rows, and eigendecomposes either
 the feature covariance or the smaller dual Gram matrix. Both paths divide by
-the row count \(m_u\), so the positive dual eigenvalues remain on the same
+the physical spectral row count \(N_u\), so the positive dual eigenvalues remain on the same
 scale as the feature covariance.
 
 The dimension estimator counts eigenvalues above
 \((1+\sqrt{d_u/m_u^{\mathrm{MP}}})^2\), then floors the returned dimension to
 the configured minimum. Here \(m_u^{\mathrm{MP}}\) is the row count used by the
-threshold; it is recorded separately from the effective independent row count
-\(m_u^{\mathrm{eff}}\). In the active edge-gate context, the minimum dimension is
+threshold; it is recorded separately from the field
+\(m_u^{\mathrm{eff}}\), which currently also counts supplied leaf rows. In the edge-gate context, the default minimum dimension is
 two. The raw MP signal count and the returned test dimension are therefore
 different mathematical objects:
 \[
@@ -128,11 +126,15 @@ k_u^{\mathrm{raw}}
 \#\{\lambda_{u,i}>b_u^{\mathrm{MP}}\},
 \qquad
 k_u^{\mathrm{test}}
-=
-\max\{2,k_u^{\mathrm{raw}}\}.
+=\operatorname{extendGroups}\!\left(\min\{r_+,\max\{2,k_u^{\mathrm{raw}}\}\}\right).
 \]
 
-For a centered Gaussian matrix, the backend divides by the original row count
+Here \(r_+\) is the available positive rank and zero remains zero. Numerical
+eigenvalue-group completion can expand the nominal rank beyond the floor.
+With energy selection, the final test rank can be below or above this nominal
+value; the available candidate basis still limits it.
+
+For a leaf-only centered Gaussian matrix with fixed known whitening, the backend divides by the original row count
 rather than by the centered rank. A scale-matched centered Gaussian edge would
 be \(\frac{m_u-1}{m_u}(1+\sqrt{d_u/(m_u-1)})^2\), which is slightly lower than
 the current asymptotic edge and increases finite-sample false spike rates in
@@ -144,9 +146,12 @@ correction, not only an \(m\) versus \(m-1\) substitution.
 The code exposes these objects through a typed spectral decomposition result:
 `raw_mp_signal_counts_by_node`, `test_projection_dimensions_by_node`,
 `effective_independent_rows_by_node`, and `mp_threshold_rows_by_node`.
-Downstream edge and sibling tests consume the test dimension; diagnostics and
-validation can inspect whether the MP rule actually saw signal or only the
-regularization floor.
+These dimensions are nominal inputs. The projected-Wald kernel may replace a
+positive request with contrast-energy rank and then extend the cutoff through
+ties. It uses the actual retained row count as the nominal reference df.
+The 2026-11-04 replay shows zero MP spikes with nominal rank 30 after full
+same-row covariance whitening creates one numerical tie group; separate
+contrast-energy controls return rank 1 or 30 from nominal requests 1, 2 or 30.
 
 ### What The Controlled Probe Shows
 
@@ -186,16 +191,18 @@ projection floors \(0,1,2\), and finite-null upper-edge smoke variants. Those
 runs are still useful for failure attribution: the old augmented-row behavior
 could improve selected benchmark ARI, especially in high-cardinality
 categorical settings, but it did so through a spectral basis that is not
-calibrated by the fixed-subspace projected-Wald reference. The active
-diagnostic script now compares only leaf-only MP floor and finite-null variants;
-internal-row effects are represented by the locked selected-PCA validation
-artifact rather than by a production configuration switch.
+calibrated by the fixed-subspace projected-Wald reference. The historical
+diagnostic script compared leaf-only MP floor and finite-null variants.
+Current edge basis construction is leaf-only; the sibling context still
+supports an explicit internal-row configuration. The archived comparison does
+not establish validity for that option.
 
-Floor \(0\) is not currently a valid full-method benchmark. The
-projected-Wald kernel correctly rejects a zero-dimensional spectral context
-when the contrast vector is nonzero. A floor-zero experiment therefore needs a
-new explicit zero-dimensional edge-test semantics before it can be treated as a
-clustering benchmark. Floor \(1\) was runnable, but it over-split at least one
+The historical floor-zero experiment encountered the kernel's rejection of a
+zero-dimensional request with nonzero contrast. The current edge wrapper
+instead emits \(Q=0,df=0,p=1\) before reaching the kernel when its basis rank
+is zero. This sentinel means no edge test; it does not establish equality or
+validate a full-method floor-zero benchmark. Floor \(1\) was runnable in that
+historical experiment, but it over-split at least one
 clear Gaussian case that floor \(2\) recovered exactly in the representative
 subset.
 
@@ -226,10 +233,10 @@ The correct next mathematical object is therefore not an internal-row fallback
 or an unvalidated floor change, but a calibrated rule for empirical-null
 support or an external conditional-null calibration model.
 
-The 2026-06-16 standard-dispatch reconstruction makes the same conclusion
-observable in the current code. Internal barycenters can be appended and counted
-for the MP edge as the old commit did, while the leaf count remains recorded as
-the independent-row count. In the compact overlap benchmark, this produces much
+The 2026-06-16 reconstruction appended internal barycenters and counted them
+for the MP edge to match the historical comparison, while recording the leaf
+count separately. The current worker counts only supplied leaf rows for the
+MP threshold. In the historical compact overlap benchmark, augmentation produced much
 larger raw MP signal and threshold-row sums, but no partition change among the
 four completed paired rows. Thus internal rows are best treated as a spectral
 sensitivity diagnostic and possible local covariate, not as a rescue condition

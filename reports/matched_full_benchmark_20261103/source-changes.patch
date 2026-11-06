@@ -1,0 +1,129 @@
+diff --git a/benchmarks/shared/runners/dispatch.py b/benchmarks/shared/runners/dispatch.py
+index bf6d5568..b1c05f28 100644
+--- a/benchmarks/shared/runners/dispatch.py
++++ b/benchmarks/shared/runners/dispatch.py
+@@ -350,9 +350,9 @@ def _run_tbs_distance_tree_method(
+         fallback_reason = feature_family_diffusion_unsupported_reason(data_df, feature_space)
+         extra = {"feature_family_diffusion_fallback_reason": fallback_reason}
+         if fallback_reason is None:
+-            diffusion_distance = feature_family_diffusion_geometry(
+-                data_df, feature_space
+-            ).distance_condensed
++            geometry = feature_family_diffusion_geometry(data_df, feature_space)
++            diffusion_distance = geometry.distance_condensed
++            extra["adaptive_diffusion"] = geometry.metadata
+             if energy_fraction is None:
+                 energy_fraction = feature_family_diffusion_settings(
+                     feature_space
+diff --git a/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/child_parent_divergence_annotation.py b/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/child_parent_divergence_annotation.py
+index eb472e11..3a924add 100644
+--- a/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/child_parent_divergence_annotation.py
++++ b/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/child_parent_divergence_annotation.py
+@@ -60,9 +60,11 @@ def annotate_child_parent_divergence(
+ 
+     The edge test splits each parent's leaves (see ``split_edge_test_rows``): it
+     fits the PCA basis on one half and tests the other half's child-parent
+-    contrast, so the basis is fixed relative to the tested contrast and the
+-    chi-square reference holds. The returned spectral context is fitted on all
+-    leaves, as the sibling gate expects.
++    contrast. This separates basis fitting from contrast rows; it does not make
++    child membership independent when the tree was selected using these data.
++    The chi-square reference also requires an appropriate covariance law and
++    is not a calibrated selected-tree reference. The returned spectral context
++    is fitted on all leaves, as the sibling gate expects.
+     """
+     annotations_df = annotations_df.copy()
+     edge_alpha = float(significance_level_alpha)
+diff --git a/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/spectral_context.py b/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/spectral_context.py
+index 63e4afed..76513668 100644
+--- a/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/spectral_context.py
++++ b/tree_break_selection/hierarchy_analysis/statistics/child_parent_divergence/child_parent_divergence_annotation/spectral_context.py
+@@ -127,8 +127,9 @@ def split_edge_test_rows(
+     test. Each child's rows, in leaf-label order, alternate between halves,
+     starting with the test half, so a single-leaf child is always tested. A
+     parent's basis rows are its children's basis halves. The split ignores
+-    the data values and the row order of leaf_data, so under the null the
+-    basis is independent of the test-half contrast.
++    the data values and the row order of leaf_data once child membership is
++    fixed. If membership was selected using these data, the split does not
++    remove that selection or establish basis/contrast independence.
+ 
+     Returns
+     -------
+diff --git a/tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py b/tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
+index 9393889d..8a930c0e 100644
+--- a/tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
++++ b/tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/inflation_correction/empirical_null_inflation_estimation.py
+@@ -635,6 +635,16 @@ def decide_empirical_null_calibration(
+         local_weights,
+     )
+     c_hat = float(max(local_inflation_factor, 1.0))
++    estimator = f"{model.method}:local_kernel"
++    if (
++        active_context_axes[1]
++        and target_context[1] > float(np.max(family_contexts[:, 1]))
++        and c_hat > family_baseline_inflation_factor
++    ):
++        # Beyond every calibration parent the kernel weights only the largest
++        # stopped-subtree tops, where structure the edge gate could not open inflates c.
++        c_hat = family_baseline_inflation_factor
++        estimator = f"{model.method}:family_baseline"
+     support, failures = _with_support_contract(
+         _decision_support(
+             model=model,
+@@ -650,7 +660,7 @@ def decide_empirical_null_calibration(
+             status="undefined_sparse_context",
+             c_hat=None,
+             p_value=None,
+-            estimator=f"{model.method}:local_kernel",
++            estimator=estimator,
+             support=support,
+             decision_context=decision_context,
+             descriptive_strata={
+@@ -662,7 +672,7 @@ def decide_empirical_null_calibration(
+         status="internal_admissible",
+         c_hat=c_hat,
+         p_value=_adjusted_p_value(record, c_hat),
+-        estimator=f"{model.method}:local_kernel",
++        estimator=estimator,
+         support=support,
+         decision_context=decision_context,
+         descriptive_strata={
+diff --git a/tree_break_selection/space_separation/README.md b/tree_break_selection/space_separation/README.md
+index 9cbff2fb..e778830b 100644
+--- a/tree_break_selection/space_separation/README.md
++++ b/tree_break_selection/space_separation/README.md
+@@ -36,3 +36,11 @@ Adaptive diffusion metadata records `backend="pydiffmap"`, `coordinate_implement
+ `coordinate_eigensolver`, and `coordinate_eigenvalue_policy`. Pydiffmap supplies
+ the kernel; repository code computes the symmetric normalized coordinates
+ using SciPy `eigh`. The backend label alone does not identify the coordinates.
++
++Adaptive diffusion sets the scaled-distance identity diagonal to zero before
++epsilon selection and kernel computation, so positive floating-point self
++distances cannot enter epsilon's positive-distance sample. Off-diagonal entries,
++including stored zero distances between duplicate observations, are preserved.
++Metadata records
++`self_distance_policy="zero_identity_diagonal_before_epsilon_and_kernel"`;
++feature-family and block adaptive diffusion retain this policy.
+diff --git a/tree_break_selection/space_separation/diffusion.py b/tree_break_selection/space_separation/diffusion.py
+index fcd7e707..f7b32d6b 100644
+--- a/tree_break_selection/space_separation/diffusion.py
++++ b/tree_break_selection/space_separation/diffusion.py
+@@ -381,6 +381,9 @@ def adaptive_diffusion_geometry(
+         bandwidth_type=bandwidth_type,
+     )
+     kernel_object.fit(values)
++    # Positive roundoff self distances must not enter epsilon's positive-distance sample.
++    # Keep stored off-diagonal zeros: duplicate observations have kernel weight one.
++    kernel_object.scaled_dists.setdiag(0.0)
+     epsilon_value, epsilon_method = resolve_adaptive_epsilon(
+         kernel_object,
+         epsilon,
+@@ -418,6 +421,7 @@ def adaptive_diffusion_geometry(
+             ),
+             "epsilon": float(epsilon_value),
+             "epsilon_method": epsilon_method,
++            "self_distance_policy": "zero_identity_diagonal_before_epsilon_and_kernel",
+             "diffusion_time": int(diffusion_time),
+             "diffusion_components": int(coordinates.shape[1]),
+             "unique_rows": int(unique_rows),

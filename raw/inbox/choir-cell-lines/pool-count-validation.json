@@ -1,0 +1,55 @@
+{
+  "cell_lines_compared": 190,
+  "all_per_cell_line_counts_equal": true,
+  "geo_pool_total_cells": 53513,
+  "lines_not_in_choir_table": [
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "SCC47_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 592
+    },
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "JHU029_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 797
+    },
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "SCC25_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 898
+    },
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "SCC9_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 475
+    },
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "JHU011_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 717
+    },
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "93VU_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 572
+    },
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "SCC90_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 258
+    },
+    {
+      "Pool_ID": "custom",
+      "Cell line name": "JHU006_UPPER_AERODIGESTIVE_TRACT",
+      "Primary_Disease": "Head and Neck Cancer",
+      "Cells_Analyzed_Post_QC": 325
+    }
+  ]
+}

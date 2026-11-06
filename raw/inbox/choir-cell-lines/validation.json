@@ -1,0 +1,37 @@
+{
+  "shape": [
+    48879,
+    22722
+  ],
+  "nnz": 181398276,
+  "dtype": "float64",
+  "cell_lines": 190,
+  "cancer_types": 22,
+  "source_libraries": 16,
+  "pools": 8,
+  "geo_cells": 53513,
+  "selected_cells": 48879,
+  "geo_cells_outside_choir_table": 4634,
+  "published_label_columns": 109,
+  "default_choir_clusters": 367,
+  "expression_units": "CPM",
+  "raw_counts_available": false,
+  "total_cpm_range": [
+    904818.8449121127,
+    996390.5122035062
+  ],
+  "full_matrix_roundtrip_equal": true,
+  "h5ad_sha256": "a1929197bec732d56fb3fe247206b887b0af2aa3a998199cbd66a8701f2b7988",
+  "h5ad_bytes": 507757282,
+  "independent_original_geo_text_check": {
+    "cells": 6,
+    "genes": 128,
+    "entries": 768,
+    "exact_equal": true
+  },
+  "independent_metadata_csv_check": {
+    "rows": 48879,
+    "columns": 109,
+    "exact_equal": true
+  }
+}

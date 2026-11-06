@@ -1,0 +1,153 @@
+{
+  "cells": 48879,
+  "cell_lines": 190,
+  "TBS_clusters": 1,
+  "ari_cell_line": 0.0,
+  "nmi_cell_line": 0.0,
+  "published_CHOIR_clusters": 367,
+  "published_CHOIR_ari_cell_line": 0.6640144797441466,
+  "all_ids_unique_and_labeled": true,
+  "preset_matches_registry": true,
+  "canonical_distance_fallback": false,
+  "root_node": "N97756",
+  "root_child_tests": {
+    "L43204": {
+      "leaf_count": 1,
+      "Child_Parent_Divergence_Test_Statistic": 18.359402898659503,
+      "Child_Parent_Divergence_df": 28.0,
+      "Child_Parent_Divergence_P_Value": 0.9167335178724924,
+      "Child_Parent_Divergence_P_Value_BH": 0.9167335178724924,
+      "Child_Parent_Divergence_Significant": false
+    },
+    "N97755": {
+      "leaf_count": 48878,
+      "Child_Parent_Divergence_Test_Statistic": 30.019624772230017,
+      "Child_Parent_Divergence_df": 28.0,
+      "Child_Parent_Divergence_P_Value": 0.3622803256434331,
+      "Child_Parent_Divergence_P_Value_BH": 0.7245606512868662,
+      "Child_Parent_Divergence_Significant": false
+    }
+  },
+  "ancestor_blocked_node_count": 97754,
+  "NNLS_status": "ok",
+  "NNLS_applied": true,
+  "NNLS_iterations": 796,
+  "export": {
+    "all_cells_labeled": true,
+    "all_original_metadata_preserved": true,
+    "all_original_CPM_values_equal": true,
+    "shape": [
+      48879,
+      22722
+    ],
+    "h5ad_bytes": 525347666
+  },
+  "tests": {
+    "command": "make test",
+    "exit_code": 0,
+    "stage_pass_counts": [
+      192,
+      339,
+      1,
+      248,
+      161,
+      41,
+      3
+    ],
+    "total_passed": 985,
+    "warnings": 1,
+    "warning": "Existing sklearn MDS n_init FutureWarning in plotting coverage"
+  },
+  "runtime_cleanup": {
+    "pid": 35932,
+    "status": "stopped_after_numerical_completion",
+    "reason": "temporary faulthandler diagnostic cleanup stalled after summary and verified output export",
+    "numerical_status": "ok",
+    "numerical_elapsed_sec": 129.03453679199993
+  },
+  "outputs": [
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/summary.json",
+      "bytes": 10328,
+      "sha256": "c53a33a46447297d198f35e5931fdc80ce0754fa73f7c1060a47cc4aa2538415"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/cluster_assignments.csv",
+      "bytes": 4836694,
+      "sha256": "2fb8cbc733fa0b0c1b4186d23ef6e17d523f6ea15c6ac15bfdc41dbb2169c94f"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/cancer_cell_lines_tbs.h5ad",
+      "bytes": 525347666,
+      "sha256": "54a7c68142d298ba991e17d3144b1e79c7d9d6662597ebc7efa2782082f34b40"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/linkage.npy",
+      "bytes": 1564224,
+      "sha256": "b1c6e8811cc9f1251135c1f20243c8177ccc4909b18c0372379ee7f1cb86da36"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/annotations.csv",
+      "bytes": 58109969,
+      "sha256": "41f987565eec645bb54c9fcd9628e174c0063e8ccdc9fc07944c9e267a668c18"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/cell_line_fragmentation.csv",
+      "bytes": 11900,
+      "sha256": "0fa4e803891a83796a06914538a399af60e453213c0da58eec3fe5d381765172"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/cluster_composition.csv",
+      "bytes": 229,
+      "sha256": "845d99a2f9a845d0eca44639c0f73b9fd40feebb43cda1392a0ff6392affc4ee"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/diffusion-verification.json",
+      "bytes": 1000,
+      "sha256": "3c3ef1f66262d257eb6803442d9bd6cd2bbcea63ea640365ccb27df3bd4cedd8"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/export-verification.json",
+      "bytes": 182,
+      "sha256": "c40c94f5d1e31dbbc16618e81f483d1f3ecfedbc599c8449c11d1fb2a674db14"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/prepare.py",
+      "bytes": 3695,
+      "sha256": "0120779b7cd254463d6619899425e686866b586bce77135a0c353f9259ad0afd"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/coordinates.py",
+      "bytes": 1960,
+      "sha256": "d94e557add99eadd0f10324e34b4cd0f0cfe38818651a8db91dc71d691a57525"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/run_tbs.py",
+      "bytes": 6883,
+      "sha256": "2e30da27059ff5dc550d8f1018949fbd8b32ea69f57f70e0bb951f173d8d8f55"
+    },
+    {
+      "path": "results/analyses/choir_cell_lines_tbs_20261103_163359/export.py",
+      "bytes": 2236,
+      "sha256": "cc32e84eb86a8597bc68529404bf7a4d50709c3f2cdf4a656a2bc98f67defc85"
+    }
+  ],
+  "implementation_files": [
+    {
+      "path": "tree_break_selection/space_separation/diffusion.py",
+      "sha256": "965f539371a4b38292799d50f97798cef9743c18a41b136b1023b8e44219218a"
+    },
+    {
+      "path": "tests/statistics/55_test_eigenspace_invariance.py",
+      "sha256": "839aa39fe38c99630858109e319df2a7e6eadbd6cc5f698c731413778428551a"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "63eae17b17d16f6594e7b587f0fa3eca52dcb0d83229de45862f255605a63af3"
+    },
+    {
+      "path": "uv.lock",
+      "sha256": "9f2d020373c38a1e376914950d588e0ec643e6d570736d56c058defcbeb39298"
+    }
+  ]
+}

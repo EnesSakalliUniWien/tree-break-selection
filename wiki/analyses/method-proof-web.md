@@ -2,7 +2,7 @@
 title: Method Proof Web
 type: analysis
 status: reviewed
-updated: 2026-06-03
+updated: 2026-11-04
 sources:
   - manuscript/guides/full_method_logic_map.md
   - manuscript/guides/edge_sibling_derivation_guide.md
@@ -18,6 +18,8 @@ sources:
   - wiki/sources/selected-ratio-tail-law-diagnostic-20260602.md
   - wiki/sources/local-mp-identity-law-diagnostic-20260602.md
   - wiki/sources/hierarchy-gate-separation-20260603.md
+  - reports/statistical_construction_audit_20261104/knowledge_audit.md
+  - reports/statistical_construction_audit_20261104/reference_law_audit.md
 tags:
   - analysis
   - proof
@@ -202,9 +204,11 @@ not \(\chi^2_1\).
 
 This is the proof-level explanation for the selected-PCA validation result:
 deterministic child-mean/internal rows can align the spectral basis with the
-same child contrast being tested. Leaf-only spectral rows are therefore the
-active inferential contract; internal rows are historical diagnostics, not a
-production basis.
+same child contrast being tested. Leaf-only PCA can also depend on that
+contrast through the between-group term in total scatter. The current edge
+basis uses assigned leaf rows. The sibling context uses leaves by default and
+can append internal distributions when explicitly configured. Neither choice
+establishes validity after tree selection; see [[statistical-construction-audit]].
 
 ### Proposition 3: Scalar Mean Inflation Does Not Prove Tail Calibration
 
@@ -230,15 +234,16 @@ checks.
 Fix a hierarchy \(T\) and restrict the final output to subtree cuts of \(T\).
 If the best exact-\(K\) oracle subtree cut has ARI below the recoverability
 threshold, then no gate or p-value rule operating on the same fixed tree and
-same cut family can exceed that oracle target.
+same cut family with exactly \(K\) clusters can exceed that oracle target.
 
 Proof. The oracle is defined as the maximum ARI over the allowed subtree-cut
-family. Any gate traversal output is one member of that same family. Therefore
-its ARI is bounded above by the oracle maximum.
+family. A gate traversal output with exactly \(K\) clusters in that family is
+one of its members, so its ARI is bounded by the oracle maximum. An output with
+a different number of clusters belongs to a different comparison family.
 
-This proves why tree/metric unrecoverable benchmark rows must not drive
-statistical gate changes. They require representation, distance, linkage, or
-benchmark-construction analysis before local-test changes.
+A low exact-\(K\) oracle value rules out recovery at that \(K\) through gate
+changes alone while preserving the hierarchy and cut family. That scoped
+failure motivates representation, distance, linkage or benchmark analysis.
 
 ### Theorem: Current Proof Boundary
 
@@ -249,7 +254,9 @@ The following statement is supported by proof under fixed-object assumptions:
 \Longrightarrow
 W(P)\sim\chi^2_k
 \]
-after valid covariance whitening.
+when covariance whitening yields a standard Gaussian contrast conditional on
+the fixed projection and rank. Fixed objects or identity covariance alone do
+not imply Gaussianity, and fitted whitening needs its own reference law.
 
 The following statement is not yet proved:
 
@@ -279,8 +286,9 @@ R_u=\frac{W_u}{a_u\nu_u}.
 1. Feature-space covariance defines the tangent metric.
 2. Whitening maps valid fixed contrasts to isotropic coordinates.
 3. Orthonormal projection gives the fixed projected-Wald chi-square law.
-4. MP dimension selection chooses the projection size; its identity edge is
-   valid only under local isotropic spectral assumptions.
+4. MP contributes to a nominal projection size. Contrast-energy selection can
+   replace it, and tie completion sets the retained rank. The identity MP edge
+   and the projected-Wald reference have separate distributional assumptions.
 5. Same-data hierarchy selection replaces the fixed-object law with a
    conditional selected-region law.
 6. Internal empirical-null calibration is valid only when strict or

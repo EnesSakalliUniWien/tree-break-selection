@@ -1,0 +1,46 @@
+"""Apply the existing interval certifier to small benchmark root paths."""
+
+import json
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+from threadpoolctl import threadpool_limits
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_cells import analyze_diffusion_root_cells
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_mass import bounded_root_gate
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_replay import make_diffusion_root_path
+from benchmarks.shared.cases import get_default_test_cases
+from benchmarks.shared.util.case_inputs import prepare_case_inputs
+
+
+name = sys.argv[1]
+if name == "existing_scalar_reentry":
+    values = np.random.default_rng(20261105).normal(size=(9, 1))
+    sigma = 1.0
+else:
+    case = next(c for c in get_default_test_cases() if c["name"] == name)
+    values = prepare_case_inputs(case, ["tbs"]).data
+    sigma = case["cluster_std"]
+started = time.perf_counter()
+with threadpool_limits(limits=1):
+    path = make_diffusion_root_path(values, sigma=sigma)
+    analysis = analyze_diffusion_root_cells(path, observed_half_width=1e-10)
+    bounds, gate = bounded_root_gate(analysis, path, .01)
+record = dict(
+    case=name, sample_size=len(values), sigma=sigma, elapsed_seconds=time.perf_counter()-started,
+    observed_radius=path.observed_radius, observed_half_width=1e-10,
+    observed_membership_certified=analysis.selection_certified,
+    arithmetic_contract=analysis.arithmetic_contract,
+    p_lower=str(bounds.lower), p_upper=str(bounds.upper),
+    selection_mass_lower=str(bounds.selection_mass_lower), selection_mass_upper=str(bounds.selection_mass_upper),
+    gate_status=gate.status, source_hashes=analysis.source_hashes,
+    cells=[dict(lo=c.lo, hi=str(c.hi), status=c.status, proof=c.proof,
+                reason=c.details.get("reason"), error=c.details.get("error")) for c in analysis.cells],
+)
+output = Path(__file__).resolve().parents[2] / "raw/assets/conditional-small-benchmarks-20261104/certificates"
+output.mkdir(parents=True, exist_ok=True)
+with (output / f"{name}.json").open("x") as stream:
+    json.dump(record, stream, indent=2, allow_nan=False)
+print(json.dumps({k:v for k,v in record.items() if k not in {"source_hashes","cells"}}), flush=True)
