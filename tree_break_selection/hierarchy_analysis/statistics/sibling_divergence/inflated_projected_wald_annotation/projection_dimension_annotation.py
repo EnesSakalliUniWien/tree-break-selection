@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
+from ..inflation_correction.types.inflation_model import CalibrationDecision
 from ..pair_testing.types.sibling_pair_record import SiblingPairRecord
 
 
@@ -43,7 +45,42 @@ def write_record_calibration_evidence(
     ]
 
 
+def write_inflation_evidence(
+    annotations_dataframe: pd.DataFrame,
+    records: list[SiblingPairRecord],
+    tested_parent_ids: list[str],
+    decisions: list[CalibrationDecision | None],
+) -> None:
+    """Write the raw statistic and inflation factors behind each tested sibling p-value.
+
+    The stored test statistic is already divided by the reference scale and applied
+    factor. With these columns, chi2.sf(raw / (reference_scale * factor), df) can be
+    re-evaluated under the local or family-baseline factor without rerunning the tree.
+    """
+    by_parent = {record.parent: record for record in records}
+    for parent, decision in zip(tested_parent_ids, decisions, strict=True):
+        record = by_parent[parent]
+        strata = {} if decision is None else decision.descriptive_strata
+        annotations_dataframe.loc[
+            parent,
+            [
+                "Sibling_Raw_Test_Statistic",
+                "Sibling_Reference_Scale",
+                "Sibling_Inflation_Factor",
+                "Sibling_Local_Inflation_Factor",
+                "Sibling_Family_Baseline_Inflation_Factor",
+            ],
+        ] = [
+            float(record.stat),
+            float(record.reference_scale),
+            np.nan if decision is None else float(decision.c_hat),
+            float(strata.get("local_inflation_factor", np.nan)),
+            float(strata.get("family_baseline_inflation_factor", np.nan)),
+        ]
+
+
 __all__ = [
+    "write_inflation_evidence",
     "write_record_calibration_evidence",
     "write_record_projection_dimensions",
 ]

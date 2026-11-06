@@ -547,6 +547,7 @@ def decide_empirical_null_calibration(
         "context_bandwidth_parent_size": float(model.context_bandwidth[1])
         if model.context_bandwidth.size > 1
         else 0.0,
+        "family_baseline_inflation_factor": float(family_baseline_inflation_factor),
     }
     if not np.any(active_context_axes):
         c_hat = float(max(family_baseline_inflation_factor, 1.0))
@@ -634,6 +635,7 @@ def decide_empirical_null_calibration(
         reference_expectations,
         local_weights,
     )
+    descriptive_strata["local_inflation_factor"] = float(local_inflation_factor)
     c_hat = float(max(local_inflation_factor, 1.0))
     estimator = f"{model.method}:local_kernel"
     if (

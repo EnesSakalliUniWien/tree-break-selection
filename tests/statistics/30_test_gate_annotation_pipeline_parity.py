@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
+from scipy.stats import chi2
 
 from benchmarks.shared.cases import get_default_test_cases
 from benchmarks.shared.generators import generate_case_data
@@ -205,3 +206,33 @@ def test_gate_annotation_pipeline_matches_sequential_gates_on_benchmark_case() -
 
     assert sequential_df["Child_Parent_Divergence_Significant"].any()
     _assert_matches_outside_evidence_channels(sequential_df, bundled.annotated_df)
+
+
+def test_sibling_annotations_record_the_inflation_factors_behind_each_p_value() -> None:
+    # The stored statistic is already divided by the applied factor; the raw statistic,
+    # reference scale and both candidate factors let any p-value be re-evaluated.
+    case = next(c for c in get_default_test_cases() if c["name"] == "binary_balanced_low_noise")
+    data, _labels, _original, _metadata = generate_case_data(case)
+    tree = build_tree(data, pdist(data.to_numpy(float), "hamming"), linkage_method="average").tree
+    tree.populate_node_distributions(data)
+    df = _sequential_gate_annotations(tree, tree.annotations_df, data)
+
+    tested = df[df["Sibling_Test_Method"].str.startswith("context_weighted")]
+    assert len(tested) > 0
+    factor = tested["Sibling_Inflation_Factor"]
+    np.testing.assert_allclose(
+        tested["Sibling_Test_Statistic"],
+        tested["Sibling_Raw_Test_Statistic"] / (tested["Sibling_Reference_Scale"] * factor),
+    )
+    np.testing.assert_allclose(
+        tested["Sibling_Divergence_P_Value"],
+        chi2.sf(tested["Sibling_Test_Statistic"], tested["Sibling_Degrees_of_Freedom"]),
+    )
+    local = tested["Sibling_Test_Method"].str.endswith(":local_kernel")
+    np.testing.assert_allclose(
+        factor[local], np.maximum(tested["Sibling_Local_Inflation_Factor"][local], 1.0)
+    )
+    np.testing.assert_allclose(
+        factor[~local], tested["Sibling_Family_Baseline_Inflation_Factor"][~local]
+    )
+    assert df.loc[~df.index.isin(tested.index), "Sibling_Inflation_Factor"].isna().all()

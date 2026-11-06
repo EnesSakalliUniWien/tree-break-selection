@@ -425,9 +425,15 @@ def test_compute_inflation_adjusted_sibling_tests_can_enforce_support_thresholds
     ]
     model = fit_empirical_null_inflation_model(records)
 
-    parents, summaries, _methods = compute_inflation_adjusted_sibling_tests(records, model=model)
+    parents, summaries, _methods, decisions = compute_inflation_adjusted_sibling_tests(
+        records, model=model
+    )
     assert parents == ["target"]
     assert summaries[0] == pytest.approx((16.0 / 3.0, 2.0, chi2.sf(16.0 / 3.0, 2.0)))
+    assert decisions[0].p_value == summaries[0][2]
+    assert summaries[0][0] == pytest.approx(
+        16.0 / (records[2].reference_scale * decisions[0].c_hat)
+    )
 
     with pytest.raises(ValueError, match="undefined_sparse_context"):
         compute_inflation_adjusted_sibling_tests(
@@ -547,6 +553,10 @@ def test_parent_beyond_calibration_range_is_not_inflated_above_family_baseline()
     assert model.baseline_empirical_inflation_factor == pytest.approx(7.0)
     assert decision.c_hat == pytest.approx(7.0)
     assert decision.p_value == pytest.approx(chi2.sf(190.0 / 7.0, 2.0))
+    # The capped local estimate stays visible so the cap's effect can be audited.
+    assert decision.estimator.endswith(":family_baseline")
+    assert decision.descriptive_strata["family_baseline_inflation_factor"] == pytest.approx(7.0)
+    assert decision.descriptive_strata["local_inflation_factor"] > 7.0
 
 
 def test_fit_empirical_null_inflation_model_keeps_zero_ratios_as_calibration_data() -> None:

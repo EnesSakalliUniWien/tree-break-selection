@@ -303,6 +303,17 @@ class TreeDecomposition:
                 node, "Sibling_Divergence_P_Value_Corrected"
             ),
             "sibling_test_statistic": self._annotation_value(node, "Sibling_Test_Statistic"),
+            "sibling_raw_test_statistic": self._annotation_value(
+                node, "Sibling_Raw_Test_Statistic"
+            ),
+            "sibling_reference_scale": self._annotation_value(node, "Sibling_Reference_Scale"),
+            "sibling_inflation_factor": self._annotation_value(node, "Sibling_Inflation_Factor"),
+            "sibling_local_inflation_factor": self._annotation_value(
+                node, "Sibling_Local_Inflation_Factor"
+            ),
+            "sibling_family_baseline_inflation_factor": self._annotation_value(
+                node, "Sibling_Family_Baseline_Inflation_Factor"
+            ),
             "sibling_degrees_of_freedom": self._annotation_value(
                 node, "Sibling_Degrees_of_Freedom"
             ),

@@ -34,6 +34,7 @@ from .fdr_annotation import (
     mark_non_binary_as_skipped,
 )
 from .projection_dimension_annotation import (
+    write_inflation_evidence,
     write_record_calibration_evidence,
     write_record_projection_dimensions,
 )
@@ -183,12 +184,14 @@ def annotate_sibling_divergence(
         tested_parent_ids,
         inflation_adjusted_test_summaries,
         inflation_adjustment_method_labels,
+        calibration_decisions,
     ) = compute_inflation_adjusted_sibling_tests(
         records,
         model=model,
         enforce_support_thresholds=enforce_support_thresholds,
         support_thresholds=support_thresholds,
     )
+    write_inflation_evidence(annotations_df, records, tested_parent_ids, calibration_decisions)
     if stage_timings is not None:
         stage_timings["sibling_gate_adjusted_tests_sec"] = float(
             stage_timings.get("sibling_gate_adjusted_tests_sec", 0.0)

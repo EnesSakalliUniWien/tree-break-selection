@@ -176,6 +176,11 @@ def initialize_sibling_divergence_columns(df: pd.DataFrame) -> pd.DataFrame:
     df["Sibling_Null_Weight"] = np.nan
     df["Sibling_Parent_Positive_Eigenvalue_Count"] = np.nan
     df["Sibling_Test_Statistic"] = np.nan
+    df["Sibling_Raw_Test_Statistic"] = np.nan
+    df["Sibling_Reference_Scale"] = np.nan
+    df["Sibling_Inflation_Factor"] = np.nan
+    df["Sibling_Local_Inflation_Factor"] = np.nan
+    df["Sibling_Family_Baseline_Inflation_Factor"] = np.nan
     df["Sibling_Degrees_of_Freedom"] = np.nan
     df["Sibling_Divergence_P_Value"] = np.nan
     df["Sibling_Divergence_P_Value_Corrected"] = np.nan

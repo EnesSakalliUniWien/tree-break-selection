@@ -12,6 +12,7 @@ from .empirical_null_inflation_estimation import (
     decide_empirical_null_calibration,
 )
 from .types.inflation_model import (
+    CalibrationDecision,
     CalibrationSupportThresholds,
     EmpiricalNullInflationModel,
 )
@@ -26,8 +27,8 @@ def _compute_inflation_adjusted_sibling_test(
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     family_support_cache: dict[str, dict[str, float | int]] | None = None,
-) -> tuple[InflationAdjustedSiblingTestSummary, str]:
-    """Return one inflation-adjusted sibling-test summary."""
+) -> tuple[InflationAdjustedSiblingTestSummary, str, CalibrationDecision | None]:
+    """Return one inflation-adjusted sibling-test summary and its calibration decision."""
     if not np.isfinite(sibling_test_record.stat):
         raise ValueError(
             "Sibling record must have a finite statistic before "
@@ -40,7 +41,7 @@ def _compute_inflation_adjusted_sibling_test(
                 f"parent={sibling_test_record.parent!r}."
             )
         method = "zero_dimensional_sibling_record" if model is None else model.method
-        return (0.0, 0.0, 1.0), method
+        return (0.0, 0.0, 1.0), method, None
     if sibling_test_record.degrees_of_freedom < 0:
         raise ValueError(
             "Sibling record must have non-negative degrees of freedom before "
@@ -94,10 +95,14 @@ def _compute_inflation_adjusted_sibling_test(
         )
     inflation_adjusted_p_value = decision.p_value
     return (
-        inflation_adjusted_statistic,
-        inflation_adjusted_degrees_of_freedom,
-        inflation_adjusted_p_value,
-    ), decision.estimator
+        (
+            inflation_adjusted_statistic,
+            inflation_adjusted_degrees_of_freedom,
+            inflation_adjusted_p_value,
+        ),
+        decision.estimator,
+        decision,
+    )
 
 
 def compute_inflation_adjusted_sibling_tests(
@@ -106,18 +111,27 @@ def compute_inflation_adjusted_sibling_tests(
     model: EmpiricalNullInflationModel | None,
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
-) -> tuple[list[str], list[InflationAdjustedSiblingTestSummary], list[str]]:
-    """Return inflation-adjusted sibling-test summaries for tested parents."""
+) -> tuple[
+    list[str],
+    list[InflationAdjustedSiblingTestSummary],
+    list[str],
+    list[CalibrationDecision | None],
+]:
+    """Return summaries, method labels and calibration decisions for tested parents.
+
+    A decision is None for a zero-dimensional record, which needs no calibration.
+    """
     tested_parent_ids: list[str] = []
     inflation_adjusted_test_summaries: list[InflationAdjustedSiblingTestSummary] = []
     inflation_adjustment_method_labels: list[str] = []
+    calibration_decisions: list[CalibrationDecision | None] = []
     family_support_cache: dict[str, dict[str, float | int]] = {}
 
     for sibling_test_record in sibling_test_records:
         if sibling_test_record.is_null_like:
             continue
 
-        test_summary, method_label = _compute_inflation_adjusted_sibling_test(
+        test_summary, method_label, decision = _compute_inflation_adjusted_sibling_test(
             sibling_test_record,
             model=model,
             enforce_support_thresholds=enforce_support_thresholds,
@@ -127,11 +141,13 @@ def compute_inflation_adjusted_sibling_tests(
         tested_parent_ids.append(sibling_test_record.parent)
         inflation_adjusted_test_summaries.append(test_summary)
         inflation_adjustment_method_labels.append(method_label)
+        calibration_decisions.append(decision)
 
     return (
         tested_parent_ids,
         inflation_adjusted_test_summaries,
         inflation_adjustment_method_labels,
+        calibration_decisions,
     )
 
 

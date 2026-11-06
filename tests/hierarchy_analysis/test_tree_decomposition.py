@@ -78,6 +78,38 @@ class TestTreeDecompositionTraversal:
         cluster_leaf_sets = sorted(_cluster_leaf_sets(result), key=lambda leaves: min(leaves))
         assert cluster_leaf_sets == [{"L1"}, {"L2"}, {"R1"}, {"R2"}]
 
+    def test_full_trace_records_the_sibling_inflation_factors(self) -> None:
+        tree = _make_binary_tree()
+        annotations_df = _make_annotations(
+            tree,
+            edge_divergent={node: True for node in tree.nodes},
+            sibling_different={node: True for node in tree.nodes},
+        )
+        root = next(node for node in tree.nodes if tree.in_degree(node) == 0)
+        factors = {
+            "Sibling_Raw_Test_Statistic": 40.0,
+            "Sibling_Reference_Scale": 2.0,
+            "Sibling_Inflation_Factor": 4.0,
+            "Sibling_Local_Inflation_Factor": 9.0,
+            "Sibling_Family_Baseline_Inflation_Factor": 4.0,
+        }
+        for column, value in factors.items():
+            annotations_df[column] = np.nan
+            annotations_df.loc[root, column] = value
+
+        trace = _decompose_with_annotations(tree, annotations_df, passthrough=False)[
+            "traversal_trace"
+        ]
+
+        row = next(row for row in trace if row["node_id"] == root)
+        assert {
+            "sibling_raw_test_statistic": 40.0,
+            "sibling_reference_scale": 2.0,
+            "sibling_inflation_factor": 4.0,
+            "sibling_local_inflation_factor": 9.0,
+            "sibling_family_baseline_inflation_factor": 4.0,
+        }.items() <= row.items()
+
     def test_decompose_tree_default_trace_level_is_compact(self) -> None:
         tree = _make_binary_tree()
         annotations_df = _make_annotations(
