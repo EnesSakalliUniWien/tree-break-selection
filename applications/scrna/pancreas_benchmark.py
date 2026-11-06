@@ -266,7 +266,7 @@ def _method_configs(true_k: int) -> list[MethodConfig]:
         "branch_length_optimization_pair_sample_size": 50_000,
         "branch_length_optimization_random_state": 0,
         "branch_length_optimization_solver_tolerance": 1e-5,
-        "branch_length_optimization_max_iterations": 1000,
+        "branch_length_optimization_max_iterations": 5000,
     }
     tbs_adaptive_topology_params = {
         **_base_tbs_params(),
@@ -285,7 +285,7 @@ def _method_configs(true_k: int) -> list[MethodConfig]:
         "branch_length_optimization_pair_sample_size": 50_000,
         "branch_length_optimization_random_state": 0,
         "branch_length_optimization_solver_tolerance": 1e-5,
-        "branch_length_optimization_max_iterations": 1000,
+        "branch_length_optimization_max_iterations": 5000,
     }
     return [
         MethodConfig(

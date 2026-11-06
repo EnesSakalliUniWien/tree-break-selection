@@ -122,7 +122,7 @@ def test_method_registry_names_diffusion_methods_and_branch_lengths_explicitly()
     assert adaptive_nnls_params["branch_length_optimization_pair_sample_size"] == 50_000
     assert adaptive_nnls_params["branch_length_optimization_random_state"] == 0
     assert adaptive_nnls_params["branch_length_optimization_solver_tolerance"] == 1e-5
-    assert adaptive_nnls_params["branch_length_optimization_max_iterations"] == 1000
+    assert adaptive_nnls_params["branch_length_optimization_max_iterations"] == 5000
 
     assert graphtools_diffusion.name == "TBS (graphtools Kernel Diffusion)"
     assert graphtools_params["diffusion_method"] == "graphtools_kernel_diffusion"

@@ -180,7 +180,7 @@ def test_run_clustering_result_forwards_adaptive_nnls_branch_time_params(monkeyp
     assert captured["kwargs"]["branch_length_optimization_pair_sample_size"] == 50_000
     assert captured["kwargs"]["branch_length_optimization_random_state"] == 0
     assert captured["kwargs"]["branch_length_optimization_solver_tolerance"] == 1e-5
-    assert captured["kwargs"]["branch_length_optimization_max_iterations"] == 1000
+    assert captured["kwargs"]["branch_length_optimization_max_iterations"] == 5000
 
 
 def test_run_clustering_result_forwards_graphtools_adaptive_k_params(monkeypatch):

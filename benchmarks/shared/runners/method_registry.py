@@ -74,7 +74,7 @@ FIXED_TOPOLOGY_NNLS_BRANCH_TIME_PARAMS = {
     "branch_length_optimization_pair_sample_size": 50_000,
     "branch_length_optimization_random_state": 0,
     "branch_length_optimization_solver_tolerance": 1e-5,
-    "branch_length_optimization_max_iterations": 1000,
+    "branch_length_optimization_max_iterations": 5000,
 }
 
 CANONICAL_BENCHMARK_CLASS = "canonical"

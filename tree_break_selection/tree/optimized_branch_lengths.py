@@ -11,6 +11,8 @@ where ``D_ij`` is either the mean squared standardized Euclidean distance
 across all input features or the unnormalized squared Euclidean distance
 from an already prepared geometry. The target identifier
 ``mean_squared_standardized_euclidean`` explicitly includes that normalization.
+The fit uses column-scaled L-BFGS-B and is accepted only with a certified
+relative duality gap.
 """
 
 from __future__ import annotations
@@ -22,7 +24,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy import sparse
-from scipy.optimize import lsq_linear
+from scipy.optimize import Bounds, minimize
 
 from tree_break_selection.tree.topology import tree_root
 
@@ -39,6 +41,9 @@ BRANCH_LENGTH_TARGET_METRICS = (
     BRANCH_LENGTH_TARGET_MEAN_SQUARED_STANDARDIZED_EUCLIDEAN,
     BRANCH_LENGTH_TARGET_SQUARED_EUCLIDEAN,
 )
+
+# L-BFGS-B iterations between duality-gap checks; each check costs three sparse products.
+DUALITY_GAP_CHECK_INTERVAL = 25
 
 
 @dataclass(frozen=True)
@@ -63,6 +68,7 @@ class BranchLengthOptimizationResult:
     elapsed_sec: float
     cost: float
     optimality: float
+    relative_duality_gap: float
     iterations: int
     target_mean: float
     target_median: float
@@ -293,6 +299,80 @@ def _path_incidence_matrix(
     return sparse.vstack(blocks, format="csr")
 
 
+def _relative_duality_gap(
+    design: sparse.spmatrix, targets: np.ndarray, lengths: np.ndarray
+) -> float:
+    """Certified bound on how far ``0.5 * ||A tau - b||^2`` is above its nonnegative minimum.
+
+    Returned relative to ``max(1, cost)``. For a nonnegative design without empty
+    columns, ``y = r + w`` with ``w >= 0`` making ``A.T @ y >= 0`` is dual feasible, so
+    ``-0.5 ||y||^2 - b @ y`` is a lower bound on the minimum. Each row's ``w_i`` is the
+    largest ``max(-g_j, 0) / colsum_j`` over its columns, which covers every column's deficit.
+    """
+    design = sparse.csr_matrix(design)
+    residuals = design @ lengths - targets
+    gradient = design.T @ residuals
+    column_sums = np.asarray(design.sum(axis=0)).ravel()
+    ratios = np.maximum(-gradient, 0.0) / column_sums
+    row_ratios = sparse.csr_matrix(
+        (ratios[design.indices], design.indices, design.indptr), shape=design.shape
+    )
+    dual = residuals + row_ratios.max(axis=1).toarray().ravel()
+    # Rounding can leave A.T @ y slightly negative; shift past the remaining deficit.
+    deficit = -float(np.min(design.T @ dual))
+    if deficit > 0.0:
+        dual = dual + 2.0 * deficit / float(np.min(column_sums))
+    cost = 0.5 * float(residuals @ residuals)
+    lower_bound = -0.5 * float(dual @ dual) - float(targets @ dual)
+    return max(0.0, cost - lower_bound) / max(1.0, cost)
+
+
+def _solve_nonnegative_least_squares(
+    design: sparse.spmatrix,
+    targets: np.ndarray,
+    *,
+    tolerance: float,
+    max_iterations: int | None,
+) -> tuple[np.ndarray, int, str]:
+    """Minimize ``0.5 * ||A tau - b||^2`` over ``tau >= 0`` by column-scaled L-BFGS-B.
+
+    Columns are scaled to unit norm because edge supports range from one sampled pair to
+    tens of thousands, which stalls unscaled solvers. Iteration stops once the certified
+    relative duality gap is at most ``tolerance``. Returns lengths, iterations and message.
+    """
+    scale = 1.0 / np.sqrt(np.asarray(design.power(2).sum(axis=0)).ravel())
+    scaled = (design @ sparse.diags(scale)).tocsr()
+    completed = 0
+
+    def objective(z: np.ndarray) -> tuple[float, np.ndarray]:
+        residuals = scaled @ z - targets
+        return 0.5 * float(residuals @ residuals), scaled.T @ residuals
+
+    def stop_at_tolerance(intermediate_result) -> None:
+        nonlocal completed
+        completed += 1
+        if completed % DUALITY_GAP_CHECK_INTERVAL == 0 and (
+            _relative_duality_gap(design, targets, intermediate_result.x * scale) <= tolerance
+        ):
+            raise StopIteration
+
+    solution = minimize(
+        objective,
+        np.zeros(design.shape[1]),
+        jac=True,
+        method="L-BFGS-B",
+        bounds=Bounds(0.0, np.inf),
+        callback=stop_at_tolerance,
+        options={
+            "maxiter": 15_000 if max_iterations is None else int(max_iterations),
+            "ftol": 0.0,
+            "gtol": 0.0,
+            "maxls": 40,
+        },
+    )
+    return np.maximum(solution.x * scale, 0.0), int(solution.nit), str(solution.message)
+
+
 def fit_fixed_topology_nnls_branch_lengths(
     tree: nx.DiGraph,
     continuous_data: pd.DataFrame,
@@ -317,6 +397,10 @@ def fit_fixed_topology_nnls_branch_lengths(
     ``mean_squared_standardized_euclidean`` target divides the sum of squared
     sample-standardized differences by the total input feature count;
     ``squared_euclidean`` uses the unnormalized sum in the supplied geometry.
+    The fit uses column-scaled L-BFGS-B. Its status is ``ok`` only when the
+    certified relative duality gap ``(cost - dual lower bound) / max(1, cost)``
+    is at most ``solver_tolerance``; ``max_iterations`` caps L-BFGS-B iterations
+    (``None`` means 15,000).
     """
     start_sec = perf_counter()
     if target_metric not in BRANCH_LENGTH_TARGET_METRICS:
@@ -374,22 +458,18 @@ def fit_fixed_topology_nnls_branch_lengths(
     design_nnz = int(design.nnz)
     design_density = float(design_nnz / (design.shape[0] * design.shape[1]))
 
-    solution = lsq_linear(
+    solved_lengths, iterations, solver_message = _solve_nonnegative_least_squares(
         design,
         targets,
-        bounds=(0.0, np.inf),
-        method="trf",
-        tol=float(solver_tolerance),
-        max_iter=max_iterations,
-        lsmr_tol="auto",
-        verbose=0,
+        tolerance=float(solver_tolerance),
+        max_iterations=max_iterations,
     )
-    lengths = _split_root_pair_by_linkage(
-        tree, np.asarray(solution.x, dtype=float), edge_index_by_pair
-    )
+    lengths = _split_root_pair_by_linkage(tree, solved_lengths, edge_index_by_pair)
     fitted = np.asarray(design @ lengths, dtype=float)
     residuals = fitted - targets
-    solver_converged = bool(solution.success)
+    relative_duality_gap = _relative_duality_gap(design, targets, lengths)
+    gradient = design.T @ residuals
+    solver_converged = relative_duality_gap <= float(solver_tolerance)
     applied_to_tree = solver_converged or bool(apply_nonconverged)
 
     if applied_to_tree:
@@ -444,9 +524,11 @@ def fit_fixed_topology_nnls_branch_lengths(
         applied_to_tree=bool(applied_to_tree),
         apply_nonconverged=bool(apply_nonconverged),
         elapsed_sec=perf_counter() - start_sec,
-        cost=float(solution.cost),
-        optimality=float(solution.optimality),
-        iterations=int(solution.nit),
+        cost=0.5 * float(residuals @ residuals),
+        # First-order measure of the bound-constrained problem, as in SciPy's TRF test.
+        optimality=float(np.max(np.abs(gradient * np.where(gradient > 0.0, lengths, 1.0)))),
+        relative_duality_gap=relative_duality_gap,
+        iterations=iterations,
         target_mean=target_mean,
         target_median=float(np.median(targets)),
         fitted_mean=float(np.mean(fitted)),
@@ -459,7 +541,7 @@ def fit_fixed_topology_nnls_branch_lengths(
         branch_length_median=float(np.median(lengths)),
         branch_length_min=float(np.min(lengths)),
         branch_length_max=float(np.max(lengths)),
-        solver_message=str(solution.message),
+        solver_message=solver_message,
         target_definition=target_definition,
         target_normalization=target_normalization,
         target_normalization_divisor=target_normalization_divisor,

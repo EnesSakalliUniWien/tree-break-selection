@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+from scipy import sparse
 from scipy.optimize import nnls
 
 from tree_break_selection.tree import optimized_branch_lengths
@@ -100,6 +99,7 @@ def test_fixed_topology_nnls_recovers_additive_tree_distances() -> None:
     )
 
     assert result.status == "ok"
+    assert result.relative_duality_gap <= 1e-10
     assert result.n_pairs_used == 6
     assert result.design_nnz == 20
     assert np.isclose(result.design_density, 20.0 / 36.0)
@@ -204,20 +204,11 @@ def test_fixed_topology_nnls_nonconverged_solution_policy(
     tree = _small_binary_tree()
     geometry = _prepared_geometry()
 
-    def fake_lsq_linear(design: object, *_args: object, **_kwargs: object) -> SimpleNamespace:
-        return SimpleNamespace(
-            x=np.full(design.shape[1], 9.0, dtype=float),
-            success=False,
-            cost=123.0,
-            optimality=456.0,
-            nit=7,
-            message="forced non-convergence",
-        )
+    def fake_solver(design: object, *_args: object, **_kwargs: object) -> tuple:
+        # Far from the optimum, so the duality-gap check rejects it.
+        return np.full(design.shape[1], 9.0, dtype=float), 7, "forced non-convergence"
 
-    monkeypatch.setattr(
-        "tree_break_selection.tree.optimized_branch_lengths.lsq_linear",
-        fake_lsq_linear,
-    )
+    monkeypatch.setattr(optimized_branch_lengths, "_solve_nonnegative_least_squares", fake_solver)
 
     kwargs = {} if apply_nonconverged is None else {"apply_nonconverged": apply_nonconverged}
     result = fit_fixed_topology_nnls_branch_lengths(
@@ -229,6 +220,8 @@ def test_fixed_topology_nnls_nonconverged_solution_policy(
     )
 
     assert result.status == "solver_not_converged"
+    assert result.relative_duality_gap > 1e-6
+    assert result.iterations == 7
     assert result.applied_to_tree is expected_applied
     assert result.apply_nonconverged is expected_applied
     assert {attrs["branch_length"] for _, _, attrs in tree.edges(data=True)} == {
@@ -249,14 +242,16 @@ def test_fixed_topology_nnls_adds_a_crossing_pair_for_every_unsampled_edge(
 ) -> None:
     tree = _small_binary_tree()
     geometry = _prepared_geometry()
-    real_lsq_linear = optimized_branch_lengths.lsq_linear
+    real_solver = optimized_branch_lengths._solve_nonnegative_least_squares
     designs: list[object] = []
 
-    def capture_lsq_linear(design: object, *args: object, **kwargs: object) -> object:
+    def capture_solver(design: object, *args: object, **kwargs: object) -> object:
         designs.append(design)
-        return real_lsq_linear(design, *args, **kwargs)
+        return real_solver(design, *args, **kwargs)
 
-    monkeypatch.setattr(optimized_branch_lengths, "lsq_linear", capture_lsq_linear)
+    monkeypatch.setattr(
+        optimized_branch_lengths, "_solve_nonnegative_least_squares", capture_solver
+    )
 
     result = fit_fixed_topology_nnls_branch_lengths(
         tree,
@@ -295,3 +290,40 @@ def test_fixed_topology_nnls_splits_the_root_pair_by_linkage_lengths() -> None:
     assert even_a == pytest.approx(even_b)
     assert skewed_a + skewed_b == pytest.approx(even_a + even_b)
     assert skewed_a == pytest.approx(3.0 * skewed_b)
+
+
+def test_relative_duality_gap_bounds_the_distance_to_the_nnls_optimum() -> None:
+    rng = np.random.default_rng(0)
+    design = sparse.vstack(
+        [sparse.csr_matrix((rng.random((30, 12)) < 0.4).astype(float)), sparse.eye(12)]
+    ).tocsr()
+    targets = rng.random(42) * 3.0
+    optimum, _ = nnls(design.toarray(), targets)
+    best = 0.5 * float(np.sum((design @ optimum - targets) ** 2))
+
+    assert optimized_branch_lengths._relative_duality_gap(design, targets, optimum) < 1e-10
+    for offset in (0.01, 0.5):
+        worse = optimum + offset
+        cost = 0.5 * float(np.sum((design @ worse - targets) ** 2))
+        gap = optimized_branch_lengths._relative_duality_gap(design, targets, worse)
+        assert gap >= (cost - best) / max(1.0, cost) - 1e-12
+
+
+def test_column_scaled_solver_reaches_the_dense_nnls_optimum_on_a_badly_scaled_design() -> None:
+    # Column supports from 1 to 400 pairs, as in large trees, slow an unscaled solve.
+    rng = np.random.default_rng(1)
+    columns = np.column_stack([rng.random(400) < f for f in np.geomspace(0.0025, 1.0, 25)])
+    columns[np.arange(25), np.arange(25)] = True  # every edge is crossed, as in a real fit
+    design = sparse.csr_matrix(columns.astype(float))
+    targets = design @ rng.random(25) + rng.normal(scale=0.1, size=400)
+    optimum, _ = nnls(design.toarray(), targets)
+
+    lengths, iterations, _message = optimized_branch_lengths._solve_nonnegative_least_squares(
+        design, targets, tolerance=1e-7, max_iterations=5000
+    )
+
+    assert np.all(lengths >= 0.0)
+    assert iterations <= 5000
+    # The certificate is conservative: it stays near 4e-8 here at a floating-point optimum.
+    assert optimized_branch_lengths._relative_duality_gap(design, targets, lengths) <= 1e-7
+    np.testing.assert_allclose(lengths, optimum, atol=1e-6)

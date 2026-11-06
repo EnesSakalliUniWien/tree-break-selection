@@ -40,6 +40,7 @@ def _branch_length_result(*, status: str, applied_to_tree: bool) -> BranchLength
         elapsed_sec=0.01,
         cost=1.0,
         optimality=1.0,
+        relative_duality_gap=1.0,
         iterations=1,
         target_mean=1.0,
         target_median=1.0,
