@@ -45,11 +45,11 @@ class MethodRunResult:
         if self.found_clusters != 0:
             raise ValueError(f"status={self.status.value} requires found_clusters=0.")
 
-        if self.status is BenchmarkRunStatus.SKIP:
+        if self.status in (BenchmarkRunStatus.SKIP, BenchmarkRunStatus.ERROR):
             if self.unsupported_reason is not None:
-                raise ValueError("status=skip must not include unsupported_reason.")
+                raise ValueError(f"status={self.status.value} must not include unsupported_reason.")
             if self.skip_reason is None or not self.skip_reason.strip():
-                raise ValueError("status=skip requires a non-empty skip_reason.")
+                raise ValueError(f"status={self.status.value} requires a non-empty skip_reason.")
             return
 
         if self.skip_reason is not None:

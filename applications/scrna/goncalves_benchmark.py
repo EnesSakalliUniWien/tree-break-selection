@@ -9,6 +9,7 @@ pancreas benchmark methods for classical clustering and TBS comparison.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -44,6 +45,8 @@ from applications.scrna.pancreas_benchmark import (
 DATASET_ID = "goncalves_human_pancreas_dev_fetal_pancreas"
 EXPR_URL = "https://cells.ucsc.edu/human-pancreas-dev/fetal-pancreas/exprMatrix.tsv.gz"
 META_URL = "https://cells.ucsc.edu/human-pancreas-dev/fetal-pancreas/meta.tsv"
+EXPR_SHA256 = "d6507439a8c4a3a21a66c76872ca11a7b01c3bb978db55596f5b1b0cca573218"
+META_SHA256 = "bf6e7f2008cb8222bd11361738f6b1eaf1a28a7e51c933dbbcbca66a5391a9cd"
 CELLTYPE_CANDIDATES = (
     "population",
     "Population",
@@ -106,11 +109,20 @@ def _ensure_inputs(expr_path: Path, meta_path: Path, *, skip_download: bool) -> 
             raise FileNotFoundError(
                 "Missing required local input(s) with --skip-download: " + ", ".join(missing)
             )
-        return
-    if not expr_path.exists():
-        _download_file(EXPR_URL, expr_path)
-    if not meta_path.exists():
-        _download_file(META_URL, meta_path)
+    else:
+        if not expr_path.exists():
+            _download_file(EXPR_URL, expr_path)
+        if not meta_path.exists():
+            _download_file(META_URL, meta_path)
+    # The inputs are not in Git; the hashes pin results to the copies used since 2026-06-24.
+    for path, expected in ((expr_path, EXPR_SHA256), (meta_path, META_SHA256)):
+        with path.open("rb") as stream:
+            actual = hashlib.file_digest(stream, "sha256").hexdigest()
+        if actual != expected:
+            raise RuntimeError(
+                f"{path} has SHA-256 {actual}, expected {expected}. The upstream file "
+                "changed or the copy is incomplete; results would not be comparable."
+            )
 
 
 def _first_present(columns: pd.Index, candidates: tuple[str, ...]) -> str | None:

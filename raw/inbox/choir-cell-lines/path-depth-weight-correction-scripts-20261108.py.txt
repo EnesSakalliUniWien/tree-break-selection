@@ -1,0 +1,356 @@
+# ===== protocol.md =====
+# Protocol: large-split correction with tree depth, the weight and whole paths (frozen 2026-11-08)
+
+## Question
+
+Does the sibling correction come closer to what no-group data need for large splits, without losing real
+groups, when it takes into account (1) tree depth, (2) the reference weight and (3) whole paths?
+
+User definitions: tree depth = number of splits between the root and the split. Whole paths = every
+root-to-leaf path through the split, so the split's ancestors and its descendants.
+
+## Finding that motivates the weight change (probe, 8 Markov/Ward `low` + 8 default `high` datasets)
+
+Reference splits of 40 or more cells are mostly splits whose own child edges were tested and stayed closed.
+Their score T/(s*df) is about 3, while large tested splits need about 7 to 8. Their weight (product of the
+child-edge Tree-BH p-values) correlates -0.33 with the score. Reference splits below a closed gate (edge
+blocked, weight 1) score 7 to 17. The production cap (beyond the largest reference parent) never fired in the
+2026-11-07 run.
+
+## Candidates
+
+All use only the tree's own reference records (the production `EmpiricalNullInflationModel` sample) and
+today's estimator: c = max(sum(k*w*T) / sum(k*w*s*df), 1) with a Gaussian kernel k whose bandwidth per axis
+is the weighted SD over the records used, the same family-baseline cap, and adjusted p = chi2.sf(T/(s*c), df).
+
+| Name | Change from today |
+| --- | --- |
+| today | none (replay; self-check: equals production c_hat on every tested split) |
+| depth | tree depth added as a third kernel axis |
+| weight | only edge-blocked records (kept because a gate above them stayed closed, weight 1); records whose own child edges were tested are dropped, because their gate and weight depend on the same difference the sibling score measures |
+| paths | only records that are ancestors or descendants of the split |
+| all | depth + weight + paths together |
+
+A split with no record in its set closes its gate, as production does for zero local weight. Splits that
+production already closes for support reasons stay closed. Everything else (edge gate, Tree-BH, traversal
+BH, pass-through, stopping) is production code, run end to end with the candidate's p-values.
+
+## Data
+
+- No-group: the 900 count datasets of 2026-11-07 (`low` sd 0.25, `matched_median` sd 0.42, `high` sd 1.0;
+  300 each; 400 cells, 3,000 genes, NB dispersion 8).
+- Real groups: `signal_balanced`, `signal_imbalanced`, `signal_singleton` (1,000 cells, 4 groups, 10 each),
+  `signal_density_variation` (3,000 cells, 4 groups, 5).
+- Both trees (`symmetric_average` = default, `markov_ward`), production alphas (edge 1e-3, sibling 1e-2),
+  frozen preparation (`validate.prepare`).
+
+## Endpoints
+
+1. No-group, per tree, depth spread and candidate: tested splits with adjusted p <= 0.01 by parent size bin
+   (2-9, 10-39, 40-159, 160-400); applied factor (median) vs needed factor (99th percentile of
+   T/(s*chi2.ppf(0.99, df)) over tested splits in the bin).
+2. No-group: false partitions (found clusters > 1) out of 300, median found clusters.
+3. Real groups: mean ARI and median found clusters per signal model.
+
+Decision rule, fixed before results:
+
+- "Fixes large splits": on the Markov/Ward tree at sd 0.25 and 0.42, tested splits of 40 or more cells pass
+  at <= 2%.
+- "Keeps real groups": on the default tree, mean ARI on every signal model within 0.02 of today's.
+
+The sd 1.0 rows are reported but not used for the rule: there sequencing depth puts real structure into the
+table (2026-11-07 depth-confound analysis), so a split there is not a pure selection effect.
+
+## Amendment before the full run (after the 2-dataset pilot, see deviations.md)
+
+4. Descriptive: per tree, depth spread and parent size bin, the weighted score sum(w*T)/sum(w*s*df) of the
+   reference records (edge blocked vs own child edges tested) next to the median score of tested splits. It
+   shows whether the gate that sorts splits into "reference" and "tested" also sorts them by score.
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- Pilot (`run.py check`, `low` 0 and `signal_balanced` 0) before the full run: the replay matched production
+  c_hat on 40/40 tested splits; runtime about 9 s per no-group dataset. On `low` 0 the `weight` candidate moved
+  the Markov/Ward large-split factor only from 2.25 to 2.28 (378 of 388 records were already edge blocked).
+  Endpoint 4 (descriptive, reference scores by role and size) was added because of this, before the full run.
+  No candidate, rule or threshold changed.
+
+# ===== run.py =====
+"""Run protocol.md: production fits end to end, with the sibling correction swapped per candidate."""
+
+import json
+import sys
+from dataclasses import replace
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+sys.path.insert(0, str(HERE.parents[2]))
+
+import networkx as nx  # noqa: E402
+import numpy as np  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from scipy.stats import chi2  # noqa: E402
+from sklearn.metrics import adjusted_rand_score  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+import depth  # noqa: E402  (puts the frozen null folder with validate/compare on sys.path)
+from compare import fit  # noqa: E402
+from validate import MODELS as VALIDATION_MODELS  # noqa: E402
+from validate import prepare  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+
+CANDIDATES = ("today", "depth", "weight", "paths", "all")
+TREES = {"symmetric_average": 1, "markov_ward": 2}  # index into prepare()'s output
+NULLS = ("low", "matched_median", "high")
+SIGNALS = ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+STATE = {"candidate": "today", "splits": [], "replay_ok": []}
+ORIGINAL = pipeline.compute_inflation_adjusted_sibling_tests
+
+
+def ratio_mle(stat, expected, weight):
+    return float(np.sum(weight * stat) / np.sum(weight * expected))
+
+
+def bandwidth(contexts, weight):
+    center = np.sum(contexts * weight[:, None], axis=0) / weight.sum()
+    sd = np.sqrt(np.maximum(np.sum((contexts - center) ** 2 * weight[:, None], axis=0) / weight.sum(), 0.0))
+    return np.where(sd <= 1e-12, 0.0, sd)
+
+
+def correction(candidate, model, record, tree, level):
+    """Return (c, records used); c is None when the split's record set is empty."""
+    s = model.sample
+    use_depth, use_weight, use_paths = (candidate in (name, "all") for name in ("depth", "weight", "paths"))
+    keep = np.array([family == record.feature_family for family in s.feature_families])
+    if use_weight:
+        keep &= s.is_edge_blocked
+    if not keep.any():
+        return None, 0
+    stat, expected, weight = s.statistics, s.reference_scales * s.degrees_of_freedom, s.weights
+    contexts = s.contexts
+    target = [np.log(record.sibling_projection_dimension), np.log(float(record.n_parent))]
+    if use_depth:
+        contexts = np.column_stack([contexts, [level[p] for p in s.parent_ids]])
+        target.append(level[record.parent])
+    target = np.asarray(target, dtype=float)
+    baseline = max(ratio_mle(stat[keep], expected[keep], weight[keep]), 1.0)
+    width = bandwidth(contexts[keep], weight[keep])
+    used = keep.copy()
+    if use_paths:
+        path = nx.ancestors(tree, record.parent) | nx.descendants(tree, record.parent)
+        used &= np.array([p in path for p in s.parent_ids])
+        if not used.any():
+            return None, 0
+    active = np.ones(contexts.shape[1], dtype=bool)
+    active[1] = record.feature_family != "bernoulli"
+    active &= width > 0.0
+    if not active.any():
+        return max(ratio_mle(stat[used], expected[used], weight[used]), 1.0), int(used.sum())
+    z = (contexts[used][:, active] - target[active]) / width[active]
+    log_k = -0.5 * np.sum(z**2, axis=1)
+    local = weight[used] * np.exp(log_k - log_k.max())
+    if local.sum() <= 0.0:
+        return None, int(used.sum())
+    c = max(ratio_mle(stat[used], expected[used], local), 1.0)
+    if active[1] and target[1] > contexts[keep][:, 1].max() and c > baseline:
+        c = baseline  # production cap: beyond every reference parent use the baseline
+    return c, int(used.sum())
+
+
+def leaf_count(tree, node):
+    return sum(1 for d in nx.descendants(tree, node) if tree.out_degree(d) == 0) or 1
+
+
+def swapped(records, *, model, **kwargs):
+    ids, summaries, labels, decisions, inadmissible = ORIGINAL(records, model=model, **kwargs)
+    tree = sys._getframe(1).f_locals["tree"]  # annotate_sibling_divergence's tree argument
+    root = next(n for n in tree.nodes if tree.in_degree(n) == 0)
+    level = nx.shortest_path_length(tree, root)
+    by_parent = {r.parent: r for r in records}
+    if STATE["candidate"] == "today":  # endpoint 4: reference scores by size bin and role
+        s = model.sample
+        n = np.exp(s.contexts[:, 1])
+        size_bin = np.digitize(n, [9.5, 39.5, 159.5])
+        expected = s.reference_scales * s.degrees_of_freedom
+        for b in np.unique(size_bin):
+            for blocked in (True, False):
+                m = (size_bin == b) & (s.is_edge_blocked == blocked)
+                if m.any():
+                    STATE["refs"].append({"bin": int(b), "blocked": blocked, "n": int(m.sum()),
+                                          "sum_w": float(s.weights[m].sum()),
+                                          "sum_wT": float((s.weights * s.statistics)[m].sum()),
+                                          "sum_we": float((s.weights * expected)[m].sum()),
+                                          "sum_T": float(s.statistics[m].sum()), "sum_e": float(expected[m].sum())})
+    out = ([], [], [], [], list(inadmissible))
+    for pid, summary, label, decision in zip(ids, summaries, labels, decisions, strict=True):
+        record = by_parent[pid]
+        if decision is None:  # zero-dimensional record, no calibration
+            for column, value in zip(out[:4], (pid, summary, label, decision), strict=True):
+                column.append(value)
+            continue
+        c, n_used = correction(STATE["candidate"], model, record, tree, level)
+        if STATE["candidate"] == "today":
+            STATE["replay_ok"].append(bool(np.isclose(c, decision.c_hat, rtol=1e-9, atol=0.0)))
+        kids = list(tree.successors(pid))
+        row = {"node": str(pid), "level": int(level[pid]), "n_parent": int(record.n_parent),
+               "n_small": int(min(leaf_count(tree, k) for k in kids)), "stat": float(record.stat),
+               "scale": float(record.reference_scale), "df": float(record.degrees_of_freedom),
+               "c": c, "n_used": n_used, "p": None}
+        STATE["splits"].append(row)
+        if c is None:
+            out[4].append((record, replace(decision, status="undefined_sparse_context", c_hat=None, p_value=None)))
+            continue
+        adjusted = record.stat / (record.reference_scale * c)
+        row["p"] = float(chi2.sf(adjusted, df=record.degrees_of_freedom))
+        out[0].append(pid)
+        out[1].append((adjusted, float(record.degrees_of_freedom), row["p"]))
+        out[2].append(f"{label}:{STATE['candidate']}")
+        out[3].append(replace(decision, c_hat=c, p_value=row["p"]))
+    return out
+
+
+pipeline.compute_inflation_adjusted_sibling_tests = swapped
+
+
+def task(job):
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    datasets, splits, refs = [], [], []
+    STATE["replay_ok"] = []
+    with threadpool_limits(limits=1):
+        prepared = prepare(counts)
+        for tree_name, index in TREES.items():
+            distances = pdist(prepared[index])
+            for candidate in CANDIDATES:
+                STATE.update(candidate=candidate, splits=[], refs=[])
+                start = perf_counter()
+                result = fit(prepared[0], distances, tree_name)
+                key = {"model": model, "replicate": replicate, "tree": tree_name, "candidate": candidate}
+                refs.extend({**key, **r} for r in STATE["refs"])
+                bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+                for row in STATE["splits"]:
+                    splits.append({**key, **row, "bh_different": bool(bh[row["node"]])})
+                datasets.append({**key, "status": result.status.value, "found_clusters": result.found_clusters,
+                                 "ari": float(adjusted_rand_score(np.asarray(truth), result.labels)),
+                                 "sec": perf_counter() - start})
+    return datasets, splits, refs, STATE["replay_ok"]
+
+
+def jobs():
+    signal = [(m, r) for m in SIGNALS for r in range(VALIDATION_MODELS[m]["replicates"])]
+    return signal + [(m, r) for m in NULLS for r in range(300)]
+
+
+def main(workers):
+    paths = {name: HERE / f"{name}.jsonl" for name in ("datasets", "splits", "refs", "replay")}
+    done = set()
+    if paths["datasets"].exists():
+        rows = map(json.loads, paths["datasets"].read_text().splitlines())
+        done = {(r["model"], r["replicate"]) for r in rows if r["tree"] == "markov_ward" and r["candidate"] == "all"}
+    todo = [j for j in jobs() if j not in done]
+    files = {name: path.open("a", buffering=1) for name, path in paths.items()}
+    with Pool(workers) as pool:
+        for i, (datasets, splits, refs, replay) in enumerate(pool.imap_unordered(task, todo), 1):
+            files["splits"].write("".join(json.dumps(r) + "\n" for r in splits))
+            files["refs"].write("".join(json.dumps(r) + "\n" for r in refs))
+            files["replay"].write(json.dumps({"n": len(replay), "ok": sum(replay)}) + "\n")
+            files["datasets"].write("".join(json.dumps(r) + "\n" for r in datasets))
+            if i % 25 == 0:
+                print(f"{i}/{len(todo)}", flush=True)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "check":
+        for job in (("low", 0), ("signal_balanced", 0)):
+            t = perf_counter()
+            datasets, splits, refs, replay = task(job)
+            print(job, f"{perf_counter() - t:.1f}s", f"replay {sum(replay)}/{len(replay)}")
+            for d in datasets:
+                print(d["tree"], d["candidate"], d["found_clusters"], round(d["ari"], 3), round(d["sec"], 1))
+            big = [s for s in splits if s["n_parent"] >= 40]
+            for s in big[:12]:
+                print({k: s[k] for k in ("tree", "candidate", "n_parent", "n_small", "level", "c", "n_used", "p")})
+    else:
+        main(int(sys.argv[1]))
+
+# ===== summarize.py =====
+"""Summarize run.py output into the protocol endpoints (protocol.md)."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.stats import chi2
+
+HERE = Path(__file__).resolve().parent
+NULLS = ["low", "matched_median", "high"]
+BINS, LABELS = [1, 9, 39, 159, 400], ["2-9", "10-39", "40-159", "160-400"]
+ORDER = ["today", "depth", "weight", "paths", "all"]
+
+
+def load(name):
+    return pd.DataFrame(map(json.loads, (HERE / f"{name}.jsonl").read_text().splitlines()))
+
+
+def main():
+    replay = load("replay")
+    print(f"replay check: {replay.ok.sum()}/{replay.n.sum()} tested splits equal production c_hat\n")
+    ds, sp, refs = load("datasets"), load("splits"), load("refs")
+    ds["candidate"] = pd.Categorical(ds.candidate, ORDER)
+    sp["candidate"] = pd.Categorical(sp.candidate, ORDER)
+    sp["passed"] = sp.p.notna() & (sp.p.fillna(1.0) <= 0.01)
+    sp["score"] = sp.stat / (sp.scale * sp.df)
+    sp["need"] = sp.stat / (sp.scale * chi2.ppf(0.99, sp.df))
+    sp["bin"] = pd.cut(sp.n_parent, BINS, labels=LABELS)
+    null = sp[sp.model.isin(NULLS)]
+
+    e1 = null.groupby(["tree", "model", "bin", "candidate"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"), applied=("c", "median"),
+        needed=("need", lambda x: np.quantile(x, 0.99)), closed_empty=("c", lambda x: x.isna().mean()))
+    e1.round(3).to_csv(HERE / "e1_pass_by_size.csv")
+    big = null[null.n_parent >= 40].groupby(["tree", "model", "candidate"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"), applied=("c", "median"))
+    big.round(3).to_csv(HERE / "e1_pass_large.csv")
+
+    nds = ds[ds.model.isin(NULLS)]
+    e2 = nds.groupby(["tree", "model", "candidate"], observed=True).agg(
+        datasets=("found_clusters", "size"), false_partitions=("found_clusters", lambda x: int((x > 1).sum())),
+        median_clusters=("found_clusters", "median"))
+    e2.to_csv(HERE / "e2_false_partitions.csv")
+
+    sds = ds[~ds.model.isin(NULLS)]
+    e3 = sds.groupby(["tree", "model", "candidate"], observed=True).agg(
+        datasets=("ari", "size"), mean_ari=("ari", "mean"), median_clusters=("found_clusters", "median"))
+    e3.round(3).to_csv(HERE / "e3_signal.csv")
+
+    refs = refs[refs.model.isin(NULLS)].copy()
+    refs["bin"] = pd.Categorical.from_codes(refs["bin"], LABELS)
+    e4 = refs.groupby(["tree", "model", "bin", "blocked"], observed=True)[["n", "sum_wT", "sum_we"]].sum()
+    e4["ref_score"] = e4.sum_wT / e4.sum_we
+    e4 = e4[["n", "ref_score"]].unstack("blocked")
+    e4.columns = [f"{a}_{'blocked' if b else 'own_tested'}" for a, b in e4.columns]
+    tested = null[null.candidate == "today"].groupby(["tree", "model", "bin"], observed=True).score.median()
+    e4["tested_score"] = tested
+    e4.round(2).to_csv(HERE / "e4_reference_vs_tested.csv")
+
+    pd.set_option("display.width", 200)
+    for name, table in [("E1 large splits (>=40)", big), ("E1 by size", e1), ("E2", e2), ("E3", e3), ("E4", e4)]:
+        print(name)
+        print(table.round(3).to_string(), "\n")
+
+    rule = big.pass_share.xs("markov_ward", level="tree")
+    fixes = {c: bool(all(rule.loc[(m, c)] <= 0.02 for m in ("low", "matched_median"))) for c in ORDER}
+    ari = e3.mean_ari.xs("symmetric_average", level="tree").unstack("candidate")
+    keeps = {c: bool(((ari[c] - ari["today"]).abs() <= 0.02).all()) for c in ORDER}
+    print("Decision rule:", {c: {"fixes_large_splits": fixes[c], "keeps_real_groups": keeps[c]} for c in ORDER})
+
+
+if __name__ == "__main__":
+    main()
+

@@ -91,6 +91,34 @@ def test_non_empirical_and_supported_gates_do_not_report_unsupported():
     )
 
 
+def test_strict_support_closing_every_focal_gate_is_unsupported():
+    annotations = _unsupported_annotations()
+    annotations.loc[annotations.index[:39], "Sibling_Gate_P_Value_Calibration"] = (
+        "undefined_sparse_context"
+    )
+    annotations.loc[annotations.index[-1], "Sibling_Role_Supported"] = True
+
+    reason = unsupported_empirical_null_reason(
+        annotations, sibling_gate_method="projected_wald_inflation"
+    )
+
+    assert reason is not None
+    assert reason.code is UnsupportedReasonCode.EMPIRICAL_NULL_THIN_INTERNAL_SUPPORT
+    assert reason.evidence.focal_record_count == 39
+    assert reason.evidence.admissible_support_count == 1
+
+    # One focal gate that was actually tested makes the run a real answer.
+    annotations.loc[annotations.index[39], "Sibling_Gate_P_Value_Calibration"] = (
+        "empirical_null_inflation"
+    )
+    assert (
+        unsupported_empirical_null_reason(
+            annotations, sibling_gate_method="projected_wald_inflation"
+        )
+        is None
+    )
+
+
 @pytest.mark.slow
 def test_dense_high_dimensional_fixed_coordinate_control_remains_ok(
     dense_highd_case_data: tuple[pd.DataFrame, np.ndarray],

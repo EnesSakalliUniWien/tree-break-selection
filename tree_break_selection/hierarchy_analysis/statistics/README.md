@@ -16,6 +16,7 @@ Import each entrypoint from the path shown. `child_parent_divergence`, `multiple
 | `sibling_divergence.fixed_subspace_annotation.annotate_fixed_subspace_sibling_divergence` | Opt-in sibling gate using fixed covariance-whitened coordinate or feature-block BH aggregation without parent PCA adaptation. |
 | `multiple_testing.benjamini_hochberg_correction` | Flat BH correction helper. |
 | `multiple_testing.apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
+| `sibling_divergence.split_count_rule_out.split_count_rule_out` | Opt-in split-count rule-out p-value of one split (union bound, invariant-direction separability, equidistant cells). |
 
 ## Directory Map
 
@@ -44,7 +45,13 @@ Import each entrypoint from the path shown. `child_parent_divergence`, `multiple
    chi-square statistic or coordinate-wise/feature-block BH p-value
    aggregation before traversal-aligned sibling FDR. A positive
    `sibling_gate_alpha_penalty` divides the sibling FDR alpha before
-   annotation, matching the selected-topology penalty used in diagnostics. An
+   annotation, matching the selected-topology penalty used in diagnostics. The
+   opt-in `sibling_split_count_rule_out` (projected-Wald gate, continuous
+   features) replaces each tested p-value by a union bound over the
+   2^(n-1) - 1 splits of the subtree and sets it to 1 unless the split is
+   separable in the subtree's invariant directions with at most 5% of cells
+   equidistant (`sibling_divergence/split_count_rule_out.py`); it was measured
+   with 30 test coordinates only. An
    optional root-stability guard can then fail closed on an unstable open root
    split without changing non-root sibling decisions. Validation-only profiles
    can attach selected-permutation diagnostics with explicit scope: `root`,

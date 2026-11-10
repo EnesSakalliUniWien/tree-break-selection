@@ -60,6 +60,7 @@ def benchmark_cluster_algorithm(
     include_cover_pages: bool = True,
     include_validation_page: bool = True,
     tree_consensus_label_dir: str | Path | None = None,
+    allow_method_errors: bool = False,
 ):
     """
     Benchmark the cluster decomposition algorithm across multiple test cases.
@@ -99,6 +100,10 @@ def benchmark_cluster_algorithm(
         Set False for per-case PDFs that will be merged later by an outer runner.
     include_validation_page : bool, default=True
         When streaming plots to PDF, include the validation metric summary page.
+    allow_method_errors : bool, default=False
+        When False, a method exception propagates at once. When True, it becomes
+        a ``status=error`` row; the full benchmark uses this so one failing
+        method does not discard the case's other rows.
 
     Returns
     -------
@@ -171,6 +176,7 @@ def benchmark_cluster_algorithm(
                 plots_root=plots_root,
                 verbose=verbose,
                 tree_consensus_label_dir=tree_consensus_label_dir,
+                allow_method_errors=allow_method_errors,
             )
             result_rows.extend(case_result_rows)
             computed_results.extend(case_computed_results)

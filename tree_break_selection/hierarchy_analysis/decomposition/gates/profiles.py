@@ -119,21 +119,10 @@ def resolve_sibling_gate_profile_config(
     root_selective_permutation_guard_seed: int | None = None,
     root_selective_permutation_guard_alpha: float | None = None,
     root_selective_permutation_guard_scope: str | None = None,
-) -> tuple[
-    str | None,
-    str,
-    float,
-    float | None,
-    int,
-    float,
-    int,
-    int,
-    int,
-    float | None,
-    str,
-]:
+) -> tuple[str | None, dict[str, object]]:
     """Resolve profile and explicit sibling-gate settings to concrete values.
 
+    Returns the profile id and the settings keyed by the parameter names above.
     ``None`` means "not given": the profile value applies, else the default in
     ``_GATE_SETTING_DEFAULTS``. An explicit value the profile also sets must
     match it, even when it equals that default. A profile without a selective
@@ -171,7 +160,7 @@ def resolve_sibling_gate_profile_config(
                 f"profile has {profile_value!r}, explicit value is {value!r}."
             )
         resolved[name] = None if profile_value is None else cast(profile_value)
-    return (None if profile is None else profile.profile_id, *resolved.values())  # type: ignore[return-value]
+    return (None if profile is None else profile.profile_id), resolved
 
 
 __all__ = [

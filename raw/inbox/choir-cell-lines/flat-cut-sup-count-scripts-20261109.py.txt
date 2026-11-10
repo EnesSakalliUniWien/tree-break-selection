@@ -1,0 +1,520 @@
+# ===== protocol.md =====
+# Protocol: a tighter count than all flat cuts (frozen 2026-11-09, before check.py and apply.py)
+
+User choice: derive a tighter count of the splits a Ward tree can pick, in place of the count of all flat cuts.
+
+## Derivation
+
+E1. Any split the tree picks, by any rule, has ratio at most the best flat cut's (D1 of
+    `gaussian_cut_rule_20261108`). So p = P(sup over flat cuts of rho_hat >= rho_obs) is valid for Ward's split
+    without counting cuts. The old rule bounds this sup by a union over all M_k(n) ~ n^k flat cuts, ignoring that
+    neighbouring cuts share almost all cells.
+E2. Whiten by the sample total covariance. For centred cells and the cut s_i = sign(v'x_i), the mean difference
+    is d = m / (2 pi(1 - pi)) with m = (1/n) sum s_i x_i, so R^2 = pi(1 - pi) d'd = |m|^2 / (4 pi (1 - pi)) and
+    rho = R^2 / (1 - R^2) (times (n - 2)/n for the pooled divisor). Over sign vectors, sup |m| = sup_v mean |v'x|
+    (exchange of the two sups), the best direction's mean absolute deviation.
+E3. Envelope argument (Hartigan 1978 for split criteria, Pollard 1982 for k-means): the sup sits, to first order,
+    on the population's best cuts, so the cut's threshold and side shares add only O(1/n). Per direction,
+    R_hat(v) = mean|t| / sd(t) with t = v'x; linearised, sqrt(n)(R_hat(v) - R*) is the mean of
+    f(t) = |t| - c0 (t^2 + 1)/2, c0 = E|t|, var f = 1 - 3/pi (Gaussian) and 1/40 (uniform).
+E4. Gaussian F: every direction is a best cut, so the sup runs over the sphere S^{k-1} (even field). Its
+    covariance is (2/pi)(sqrt(1 - r^2) + r arcsin r - 1 - r^2/2) at r = v'w, giving the normalised second
+    spectral moment lambda = (1 - 2/pi)/(1 - 3/pi) = 8.06. Ceiling 3: the uniform-on-the-sphere law of radius
+    sqrt(3) in k = 3 has a uniform marginal in every direction (rho* = 3 everywhere); its lambda = 13.0 is
+    used for every k (assumption; the ceiling alone does not fix lambda).
+E5. The sup tail of an even unit-variance field on S^{k-1}: expected Euler characteristic with Lipschitz-Killing
+    curvatures of the sphere of radius sqrt(lambda) (Adler-Taylor eq. 3.6.4), halved. Self-check: with
+    lambda = 1 the formula equals P(chi_k >= u) (Adler-Taylor eq. 4.5.15).
+
+## Checks
+
+- C1 (null calibration): n in {100, 400, 1600}, 400 replicates; Gaussian k = 1, 2, 3 and ceiling 3 with the
+  uniform (k = 1) and uniform on the sphere of radius sqrt(3) (k = 3). Sup over flat cuts: all thresholds;
+  directions exact for k = 1, a grid (720 angles, 2,000 sphere points) refined by 5 Fisher re-sorts for k > 1.
+  Endpoint: share of replicates with p <= 0.01 and <= 0.05, new rule and old flat-cut count. Prediction: new
+  shares near alpha (within Monte Carlo error, 0.5% sd at 1%), old shares near 0.
+- C2 (application, descriptive): ceiling 3, new rule, on the saved Markov/Ward ceiling3 tree: the rho each of the
+  27 hidden-boundary top splits needs (old: 4.3-7.4) and how many pass; among the 1,838 tested splits, kept at
+  p <= 0.01 by size, old vs new. No refit, BH or traversal; no production change.
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- C1 failed for the frozen rule (u on the rho scale): share of single populations with p <= 0.01 was 2-4%
+  (k = 1), 1-8% (k = 2) and 2-22% (k = 3); worst at 100 cells. rho is a convex function of R, so the linear
+  approximation on the rho scale under-states the tail. Amended rule: u on the R scale (count_rule.sup_p; the
+  frozen version is kept as sup_p_rho_scale). On the same draws the amended shares were 0-2.75% at 1%. Because
+  the amendment was chosen after seeing those draws, C1 was rerun with fresh seeds and 1,000 replicates
+  (check_seed1.jsonl); that run is the calibration result.
+- Added after the endpoints: 4,000 one-dimensional Gaussian replicates at 400, 1,600 and 6,400 cells (fixed
+  centre cut vs best cut, R scale): share above the 1% point 1.2-1.3% (fixed) and 1.3-1.5% (best); the best
+  cut's mean excess 0.155, 0.079, 0.043 in sd units, shrinking like 1/sqrt(n).
+- For k >= 4 the EC expansion swings between large positive and negative values at moderate u, and clipping at 0
+  gave p = 0 at the ceiling itself (found in C2 before any result was used). Fix: p is the non-increasing upper
+  envelope of the EC tail (its largest value at u or above), capped at 1; self-check added (p = 1 at the ceiling,
+  p never smaller at a larger rho). The C1 shares at 1% and 5% are unchanged by the envelope.
+- Added after the endpoints: null check at k = 6 and 9 (`check_highk.py`; Gaussian null with the Gaussian rule,
+  product of uniforms with the ceiling-3 rule; best cut found by search, so a lower bound) and the null 99th
+  percentile of the best cut against the rho each rule needs (`conservativeness.txt`).
+
+# ===== count_rule.py =====
+"""protocol.md: tail of the best flat cut of one population, in place of the count of all flat cuts.
+
+Null: n cells from one population F whose best flat cut has ratio rho* = b. The tree's split has ratio at
+most the best flat cut's (D1), so p = P(sup over flat cuts of rho_hat >= rho_obs). To first order the sup sits
+on the population's best cuts (envelope argument; Hartigan 1978, Pollard 1982): in whitened coordinates
+R_hat(v) = mean |v'x| / sd(v'x) at the cut through the centre, R^2 = rho/(1 + rho), and
+
+    sqrt(n) (rho_hat(v) - b) ~ sigma_rho W(v),  W a unit-variance even Gaussian field on the sphere S^{k-1}.
+
+Its sup tail is the expected Euler characteristic (Adler and Taylor):
+    p = 1/2 sum_j L_j(S^{k-1} of radius sqrt(lambda)) rho_j(u),  u = sqrt(n) (rho_obs - b) / sigma_rho,
+halved because W(v) = W(-v). Constants (derivations in protocol.md):
+    Gaussian F:  b = 2/(pi - 2) = 1.752, sigma_rho^2 = a^2 (1 - 3/pi) = 6.582, lambda = (1 - 2/pi)/(1 - 3/pi) = 8.063
+    ceiling 3 (uniform marginal at the cut): b = 3, sigma_rho^2 = a^2 / 40 = 19.2, lambda = 13.0 (isotropic law with
+    uniform marginals, which exists for k = 3; used for every k, an assumption)
+with a = d rho / d R = 2 R* / (1 - R*^2)^2.
+"""
+
+from functools import lru_cache
+
+import numpy as np
+from scipy.special import gammaln
+from scipy.stats import norm
+
+SHAPES = {
+    "gaussian": {"b": 2 / (np.pi - 2), "R": np.sqrt(2 / np.pi), "var_R": 1 - 3 / np.pi, "lam": (1 - 2 / np.pi) / (1 - 3 / np.pi)},
+    "ceiling3": {"b": 3.0, "R": np.sqrt(3) / 2, "var_R": 1 / 40, "lam": 13.0},
+}
+
+
+def sigma_rho(shape):
+    s = SHAPES[shape]
+    return 2 * s["R"] / (1 - s["R"] ** 2) ** 2 * np.sqrt(s["var_R"])
+
+
+def log_sphere_area(m):
+    """log s_m, the surface area of the unit sphere in R^m."""
+    return np.log(2) + (m / 2) * np.log(np.pi) - gammaln(m / 2)
+
+
+def lk_sphere(j, k, radius):
+    """L_j of the sphere S^{k-1} of the given radius (Adler-Taylor eq. 3.6.4); 0 unless k - 1 - j is even."""
+    if (k - 1 - j) % 2:
+        return 0.0
+    log_binom = gammaln(k) - gammaln(j + 1) - gammaln(k - j)
+    return float(2 * np.exp(log_binom + log_sphere_area(k) - log_sphere_area(k - j) + j * np.log(radius)))
+
+
+def ec_density(j, u):
+    """rho_j(u) of a unit-variance Gaussian field: 1 - Phi(u) for j = 0, else (2 pi)^{-(j+1)/2} H_{j-1}(u) e^{-u^2/2}."""
+    u = np.asarray(u, dtype=float)
+    if j == 0:
+        return norm.sf(u)
+    h_prev, h = np.zeros_like(u), np.ones_like(u)  # probabilists' Hermite: H_{-1} unused, H_0 = 1
+    for m in range(1, j):
+        h_prev, h = h, u * h - (m - 1) * h_prev
+    return (2 * np.pi) ** (-(j + 1) / 2) * h * np.exp(-u * u / 2)
+
+
+def sup_tail(u, k, lam, even=True):
+    """Expected-EC approximation of P(sup over S^{k-1} of a unit-variance field >= u)."""
+    total = sum(lk_sphere(j, k, np.sqrt(lam)) * ec_density(j, u) for j in range(k))
+    return total / 2 if even else total
+
+
+U_GRID = np.arange(-10.0, 60.0, 0.002)
+
+
+@lru_cache(maxsize=None)
+def _envelope(k, lam):
+    tail = np.asarray(sup_tail(U_GRID, k, lam), dtype=float)
+    return np.maximum.accumulate(tail[::-1])[::-1]  # largest value at this u or above
+
+
+def sup_tail_envelope(u, k, lam):
+    """Non-increasing upper envelope of the even-field EC tail: its largest value at u or above (deviations.md).
+
+    The EC expansion is accurate only for large u; for k >= 4 it swings between large positive and negative values
+    at moderate u. The envelope keeps the large-u values and replaces the swings by their largest later value.
+    """
+    env = _envelope(int(k), float(lam))
+    if u >= U_GRID[-1]:
+        return float(max(sup_tail(u, k, lam), 0.0))
+    return float(env[max(0, int(np.searchsorted(U_GRID, u, side="left")) - 1)])  # grid point at or below u: larger p
+
+
+def sup_p_rho_scale(rho_obs, n, k, shape="ceiling3"):
+    """Frozen version (protocol.md): linearised on the rho scale. Failed C1 (too many small p); kept for the record."""
+    if k == 0 or not np.isfinite(rho_obs):
+        return 1.0
+    s = SHAPES[shape]
+    u = np.sqrt(n) * (rho_obs - s["b"]) / sigma_rho(shape)
+    return float(min(1.0, max(0.0, sup_tail(u, k, s["lam"]))))
+
+
+def sup_p(rho_obs, n, k, shape="ceiling3"):
+    """p that a split of n cells with ratio rho_obs on k invariant directions goes beyond one population's best cut.
+
+    Amended (deviations.md): u on the scale of R = sqrt(rho'/(1 + rho')), rho' = rho n/(n - 2), where the
+    linearisation of E3 holds; rho is a convex function of R and its tail is heavier than the linear one.
+    """
+    if k == 0 or not np.isfinite(rho_obs):
+        return 1.0
+    s = SHAPES[shape]
+    rho_total = rho_obs * n / (n - 2)
+    u = np.sqrt(n) * (np.sqrt(rho_total / (1 + rho_total)) - s["R"]) / np.sqrt(s["var_R"])
+    return float(min(1.0, max(0.0, sup_tail_envelope(u, k, s["lam"]))))
+
+
+if __name__ == "__main__":
+    from scipy.stats import chi
+    for k in (1, 2, 3, 5, 12):  # A-T (4.5.15): sum_j L_j(S^{k-1}) rho_j(u) = P(chi_k >= u)
+        for u in (1.0, 3.0, 6.0):
+            assert abs(float(sup_tail(u, k, 1.0, even=False)) - chi.sf(u, k)) < 1e-9 * max(1, chi.sf(u, k)) + 1e-12, (k, u)
+    assert abs(sup_p_rho_scale(SHAPES["gaussian"]["b"] + 2.326 * sigma_rho("gaussian") / 10, 100, 1, "gaussian") - 0.01) < 1e-3
+    r = SHAPES["gaussian"]["R"] + 2.326 * np.sqrt(SHAPES["gaussian"]["var_R"]) / 10
+    assert abs(sup_p(r * r / (1 - r * r) * 98 / 100, 100, 1, "gaussian") - 0.01) < 1e-3
+    for k in (6, 9, 12):  # the envelope never gives a smaller p at a larger rho, and p = 1 at the ceiling
+        ps = [sup_p(r, 229, k) for r in np.linspace(3.0, 30.0, 60)]
+        assert all(a >= b for a, b in zip(ps, ps[1:])) and ps[0] == 1.0, (k, ps[:5])
+    assert abs(sigma_rho("gaussian") ** 2 - 6.5824) < 1e-3 and abs(sigma_rho("ceiling3") ** 2 - 19.2) < 1e-9
+    print("self-check passed", round(sigma_rho("gaussian") ** 2, 4), round(sigma_rho("ceiling3") ** 2, 4),
+          round(SHAPES["gaussian"]["lam"], 4))
+
+# ===== check.py =====
+"""protocol.md C1: null calibration of the sup-based p against the best flat cut of simulated single populations."""
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "gaussian_cut_rule_20261108"))
+from count_rule import sup_p, sup_p_rho_scale  # noqa: E402
+from cut_rule import cut_bound_p, gaussian_bound, unimodal_bound  # noqa: E402
+
+REPS, NS = int(sys.argv[2]) if len(sys.argv) > 2 else 400, (100, 400, 1600)
+SEED = int(sys.argv[3]) if len(sys.argv) > 3 else 0  # 0: first run; 1: fresh replication of the amended rule
+CASES = [("gaussian", 1), ("gaussian", 2), ("gaussian", 3), ("ceiling3", 1), ("ceiling3", 3)]
+
+
+def draw(shape, k, n, rng):
+    if shape == "gaussian":
+        return rng.standard_normal((n, k))
+    if k == 1:
+        return rng.uniform(-np.sqrt(3), np.sqrt(3), (n, 1))
+    z = rng.standard_normal((n, 3))
+    return np.sqrt(3) * z / np.linalg.norm(z, axis=1, keepdims=True)  # uniform on the sphere: uniform marginals
+
+
+def directions(k, rng):
+    if k == 1:
+        return np.ones((1, 1))
+    if k == 2:
+        a = np.linspace(0, np.pi, 720, endpoint=False)
+        return np.c_[np.cos(a), np.sin(a)]
+    i = np.arange(2000) + 0.5  # Fibonacci points on the half sphere
+    z = i / 2000
+    phi = np.pi * (1 + 5 ** 0.5) * i
+    r = np.sqrt(1 - z * z)
+    return np.c_[r * np.cos(phi), r * np.sin(phi), z]
+
+
+def best_cut(y, v):
+    """(R^2, order, i) of the best threshold along v; y whitened and centred (total covariance, divisor n)."""
+    n = len(y)
+    order = np.argsort(y @ v)
+    prefix = np.cumsum(y[order], axis=0)[:-1]
+    sizes = np.arange(1, n)
+    r2 = np.einsum("ij,ij->i", prefix, prefix) / (sizes * (n - sizes))
+    i = int(np.argmax(r2))
+    return r2[i], order, i + 1
+
+
+def sup_rho(x, rng):
+    n, k = x.shape
+    y = x - x.mean(0)
+    y = y @ np.linalg.inv(np.linalg.cholesky(y.T @ y / n)).T
+    proj = y @ directions(k, rng).T
+    order = np.argsort(proj, axis=0)
+    best = (-1.0, None, None)
+    for j in range(proj.shape[1]):
+        prefix = np.cumsum(y[order[:, j]], axis=0)[:-1]
+        sizes = np.arange(1, n)
+        r2 = np.einsum("ij,ij->i", prefix, prefix) / (sizes * (n - sizes))
+        i = int(np.argmax(r2))
+        if r2[i] > best[0]:
+            best = (r2[i], order[:, j], i + 1)
+    for _ in range(5 if k > 1 else 0):  # Fisher re-sort: the best split's own direction, then its best threshold
+        left = np.zeros(n, bool)
+        left[best[1][:best[2]]] = True
+        d = y[left].mean(0) - y[~left].mean(0)
+        cand = best_cut(y, d / np.linalg.norm(d))
+        if cand[0] <= best[0] + 1e-12:
+            break
+        best = cand
+    r2 = best[0]
+    left = np.zeros(n, bool)
+    left[best[1][:best[2]]] = True
+    return (n - 2) / n * r2 / (1 - r2), left
+
+
+def task(job):
+    shape, k, n = job
+    rng = np.random.default_rng([k, n, 1 if shape == "gaussian" else 2] + ([SEED] if SEED else []))
+    bound = gaussian_bound if shape == "gaussian" else unimodal_bound
+    rows = []
+    for _ in range(REPS):
+        x = draw(shape, k, n, rng)
+        rho, left = sup_rho(x, rng)
+        old, _ = cut_bound_p(x, left, bound)
+        rows.append({"shape": shape, "k": k, "n": n, "rho": rho, "p_new": sup_p(rho, n, k, shape), "p_rho_scale": sup_p_rho_scale(rho, n, k, shape), "p_old": old})
+    return rows
+
+
+if __name__ == "__main__":
+    jobs = [(s, k, n) for s, k in CASES for n in NS]
+    with Pool(int(sys.argv[1])) as pool, (HERE / ("check.jsonl" if not SEED else f"check_seed{SEED}.jsonl")).open("w") as f:
+        for rows in pool.imap_unordered(task, jobs):
+            f.write("".join(json.dumps(r) + "\n" for r in rows))
+            r = rows[0]
+            p = np.array([x["p_new"] for x in rows])
+            po = np.array([x["p_old"] for x in rows])
+            print(r["shape"], r["k"], r["n"], "new<=.01", round((p <= 0.01).mean(), 4), "new<=.05", round((p <= 0.05).mean(), 4),
+                  "old<=.05", round((po <= 0.05).mean(), 4), "mean rho", round(np.mean([x["rho"] for x in rows]), 3), flush=True)
+
+# ===== check.txt =====
+ceiling3 1 100 new<=.01 0.025 new<=.05 0.07 old<=.05 0.01 mean rho 3.011
+ceiling3 1 1600 new<=.01 0.01 new<=.05 0.0425 old<=.05 0.0 mean rho 3.007
+ceiling3 1 400 new<=.01 0.015 new<=.05 0.055 old<=.05 0.005 mean rho 3.014
+ceiling3 3 100 new<=.01 0.22 new<=.05 0.355 old<=.05 0.1025 mean rho 4.432
+ceiling3 3 1600 new<=.01 0.0225 new<=.05 0.075 old<=.05 0.0 mean rho 3.288
+ceiling3 3 400 new<=.01 0.07 new<=.05 0.1575 old<=.05 0.005 mean rho 3.614
+gaussian 1 100 new<=.01 0.0375 new<=.05 0.09 old<=.05 0.005 mean rho 1.808
+gaussian 1 1600 new<=.01 0.03 new<=.05 0.09 old<=.05 0.0 mean rho 1.756
+gaussian 1 400 new<=.01 0.02 new<=.05 0.0675 old<=.05 0.0 mean rho 1.763
+gaussian 2 100 new<=.01 0.08 new<=.05 0.16 old<=.05 0.0075 mean rho 2.189
+gaussian 2 1600 new<=.01 0.0125 new<=.05 0.07 old<=.05 0.0 mean rho 1.841
+gaussian 2 400 new<=.01 0.035 new<=.05 0.105 old<=.05 0.0025 mean rho 1.948
+gaussian 3 100 new<=.01 0.16 new<=.05 0.29 old<=.05 0.005 mean rho 2.504
+gaussian 3 1600 new<=.01 0.02 new<=.05 0.0875 old<=.05 0.0 mean rho 1.899
+gaussian 3 400 new<=.01 0.0525 new<=.05 0.1325 old<=.05 0.0 mean rho 2.068
+
+# ===== check_seed1.txt =====
+ceiling3 1 100 new<=.01 0.008 new<=.05 0.061 old<=.05 0.011 mean rho 3.044
+ceiling3 1 1600 new<=.01 0.008 new<=.05 0.047 old<=.05 0.0 mean rho 3.005
+ceiling3 1 400 new<=.01 0.009 new<=.05 0.051 old<=.05 0.005 mean rho 3.01
+ceiling3 3 100 new<=.01 0.0 new<=.05 0.01 old<=.05 0.069 mean rho 4.385
+ceiling3 3 1600 new<=.01 0.005 new<=.05 0.026 old<=.05 0.0 mean rho 3.286
+ceiling3 3 400 new<=.01 0.003 new<=.05 0.034 old<=.05 0.003 mean rho 3.616
+gaussian 1 100 new<=.01 0.011 new<=.05 0.074 old<=.05 0.003 mean rho 1.819
+gaussian 1 1600 new<=.01 0.012 new<=.05 0.053 old<=.05 0.0 mean rho 1.755
+gaussian 1 400 new<=.01 0.012 new<=.05 0.059 old<=.05 0.0 mean rho 1.765
+gaussian 2 100 new<=.01 0.009 new<=.05 0.055 old<=.05 0.005 mean rho 2.186
+gaussian 2 1600 new<=.01 0.013 new<=.05 0.052 old<=.05 0.0 mean rho 1.842
+gaussian 2 400 new<=.01 0.01 new<=.05 0.061 old<=.05 0.0 mean rho 1.941
+gaussian 3 100 new<=.01 0.005 new<=.05 0.039 old<=.05 0.009 mean rho 2.494
+gaussian 3 1600 new<=.01 0.006 new<=.05 0.041 old<=.05 0.0 mean rho 1.902
+gaussian 3 400 new<=.01 0.007 new<=.05 0.037 old<=.05 0.0 mean rho 2.07
+
+# ===== check_highk.py =====
+"""Added after the endpoints (deviations.md): null check at k = 6 and 9, where the real clusters sit.
+
+Gaussian null with the Gaussian rule; product of uniforms (best cuts at the axes, rho* = 3) with the ceiling-3 rule.
+The sup is searched (300 random directions, the 10 best refined by Fisher re-sorts), so it is a lower bound.
+"""
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from check import best_cut  # noqa: E402
+from count_rule import sup_p  # noqa: E402
+
+REPS = 300
+
+
+def sup_rho(x, rng):
+    n, k = x.shape
+    y = x - x.mean(0)
+    y = y @ np.linalg.inv(np.linalg.cholesky(y.T @ y / n)).T
+    v = rng.standard_normal((300, k))
+    starts = sorted((best_cut(y, d / np.linalg.norm(d)) for d in v), key=lambda c: -c[0])[:10]
+    best = 0.0
+    for cand in starts:
+        for _ in range(10):
+            left = np.zeros(n, bool)
+            left[cand[1][:cand[2]]] = True
+            d = y[left].mean(0) - y[~left].mean(0)
+            new = best_cut(y, d / np.linalg.norm(d))
+            if new[0] <= cand[0] + 1e-12:
+                break
+            cand = new
+        best = max(best, cand[0])
+    return (n - 2) / n * best / (1 - best)
+
+
+def task(job):
+    shape, k, n = job
+    rng = np.random.default_rng([k, n, 3 if shape == "gaussian" else 4])
+    rows = []
+    for _ in range(REPS):
+        x = rng.standard_normal((n, k)) if shape == "gaussian" else rng.uniform(-1, 1, (n, k))
+        rho = sup_rho(x, rng)
+        rows.append({"shape": shape, "k": k, "n": n, "rho": rho, "p": sup_p(rho, n, k, shape)})
+    return rows
+
+
+if __name__ == "__main__":
+    jobs = [(s, k, n) for s in ("gaussian", "ceiling3") for k in (6, 9) for n in (400, 1600)]
+    with Pool(int(sys.argv[1])) as pool, (HERE / "check_highk.jsonl").open("w") as f:
+        for rows in pool.imap_unordered(task, jobs):
+            f.write("".join(json.dumps(r) + "\n" for r in rows))
+            p = np.array([r["p"] for r in rows])
+            print(rows[0]["shape"], rows[0]["k"], rows[0]["n"], "p<=.01", round((p <= 0.01).mean(), 4), "p<=.05",
+                  round((p <= 0.05).mean(), 4), "mean rho", round(np.mean([r["rho"] for r in rows]), 3), flush=True)
+
+# ===== check_highk.txt =====
+ceiling3 6 1600 p<=.01 0.0 p<=.05 0.0 mean rho 3.17
+ceiling3 6 400 p<=.01 0.0 p<=.05 0.0 mean rho 3.433
+ceiling3 9 1600 p<=.01 0.0 p<=.05 0.0 mean rho 3.206
+ceiling3 9 400 p<=.01 0.0 p<=.05 0.0 mean rho 3.557
+gaussian 6 1600 p<=.01 0.0 p<=.05 0.0167 mean rho 2.018
+gaussian 6 400 p<=.01 0.0033 p<=.05 0.02 mean rho 2.358
+gaussian 9 1600 p<=.01 0.0 p<=.05 0.0 mean rho 2.081
+gaussian 9 400 p<=.01 0.0 p<=.05 0.0 mean rho 2.551
+
+# ===== conservativeness.txt =====
+ceiling3 k=6 n=400: null best-cut rho 99th pct 3.86 (max 4.05) | needed: sup rule 4.74, flat-cut count 4.53
+ceiling3 k=6 n=1600: null best-cut rho 99th pct 3.34 (max 3.38) | needed: sup rule 3.71, flat-cut count 3.82
+ceiling3 k=9 n=400: null best-cut rho 99th pct 4.06 (max 4.14) | needed: sup rule 5.37, flat-cut count 4.83
+ceiling3 k=9 n=1600: null best-cut rho 99th pct 3.38 (max 3.46) | needed: sup rule 3.90, flat-cut count 3.98
+gaussian k=6 n=400: null best-cut rho 99th pct 2.58 (max 2.67) | needed: sup rule 2.66, flat-cut count 2.96
+gaussian k=6 n=1600: null best-cut rho 99th pct 2.11 (max 2.13) | needed: sup rule 2.14, flat-cut count 2.39
+gaussian k=9 n=400: null best-cut rho 99th pct 2.77 (max 2.84) | needed: sup rule 2.95, flat-cut count 3.21
+gaussian k=9 n=1600: null best-cut rho 99th pct 2.18 (max 2.19) | needed: sup rule 2.23, flat-cut count 2.52
+
+# ===== apply.py =====
+"""protocol.md C2: the amended sup rule (ceiling 3) on the saved Markov/Ward ceiling3 tree; descriptive, no refit."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from count_rule import sup_p  # noqa: E402
+
+TRACE = HERE.parent / "ceiling_rule_real_20261109"
+pd.set_option("display.width", 220)
+
+
+def needed_rho(n, k):
+    """Smallest rho with p <= 0.01 (p is non-increasing in rho); inf when even R -> 1 is not enough."""
+    if sup_p(1e9, n, k) > 0.01:
+        return np.inf
+    lo, hi = 3.0, 1e9
+    for _ in range(200):
+        mid = np.sqrt(lo * hi)
+        lo, hi = (lo, mid) if sup_p(mid, n, k) <= 0.01 else (mid, hi)
+    return hi
+
+
+t = pd.read_csv(TRACE / "trace_pairs.csv")
+t["needed_sup"] = [needed_rho(r.cluster_node_cells, int(r.top_k)) if r.top_k == r.top_k else np.nan for r in t.itertuples()]
+t["passes_sup"] = t.top_rho >= t.needed_sup
+print(t[["pair", "cluster_node_cells", "top_k", "top_rho", "top_needed_rho", "needed_sup", "passes_sup", "clean_boundary"]]
+      .round(2).to_string(index=False))
+print("\n27 pairs: top split passes the sup rule:", int(t.passes_sup.sum()), "| clean boundary and passes:",
+      int((t.passes_sup & t.clean_boundary).sum()), "| needed rho old", round(t.top_needed_rho.min(), 2), "-",
+      round(t.top_needed_rho.max(), 2), "new", round(t.needed_sup.min(), 2), "-", round(t.needed_sup.max(), 2), "\n")
+
+s = pd.DataFrame(map(json.loads, (TRACE / "trace" / "splits.jsonl").read_text().splitlines()))
+s["p_sup"] = [sup_p(r.rho, r.n_parent, int(r.k)) for r in s.itertuples()]
+s["bin"] = pd.cut(s.n_parent, [1, 31, 159, 999, 50000], labels=["<=31", "32-159", "160-999", "1000+"])
+print("1,838 tested splits, kept at p <= 0.01 before BH")
+print(s.groupby("bin", observed=True).agg(tested=("p", "size"), old=("p", lambda x: (x <= 0.01).sum()),
+                                          new=("p_sup", lambda x: (x <= 0.01).sum())).to_string())
+print("needed rho for typical sizes (k = 6, 9, 12):",
+      {n: [round(needed_rho(n, k), 2) for k in (6, 9, 12)] for n in (50, 100, 300, 1000, 5000)})
+t.to_csv(HERE / "apply_pairs.csv", index=False)
+
+# ===== apply.txt =====
+                                        pair  cluster_node_cells  top_k  top_rho  top_needed_rho  needed_sup  passes_sup  clean_boundary
+                    IGR37_SKIN + SKMEL3_SKIN                 229    8.0     0.32            5.23        6.50       False           False
+              MDAMB361_BREAST + BT474_BREAST                 258    9.0     4.38            5.23        6.50       False            True
+            SW1990_PANCREAS + PK45H_PANCREAS                 540   11.0     0.53            4.75        5.19       False           False
+                  UACC257_SKIN + SKMEL5_SKIN                 131    8.0     1.20            5.85        9.66       False           False
+DETROIT562_UPPER_AERODIGESTIVE_TRACT + BICR3                 214    8.0     0.36            5.30        6.75       False           False
+               TE1_OESOPHAGUS + HDQP1_BREAST                 269   11.0     0.85            5.39        7.11       False           False
+          PATU8988S_PANCREAS + MKN45_STOMACH                 359    9.0     3.10            4.92        5.60       False            True
+SNUC4_LARGE_INTESTINE + CL34_LARGE_INTESTINE                1207   12.0     2.12            4.27        4.30       False            True
+SNU1214_UPPER_AERODIGESTIVE_TRACT + TE14_OES                 114    9.0     2.22            6.19       13.07       False            True
+                  COLO741_SKIN + SKMEL3_SKIN                  88    NaN      NaN             NaN         NaN       False           False
+                  SKMEL5_SKIN + UACC257_SKIN                 118    9.0     0.56            6.14       12.46       False           False
+      SNU308_BILIARY_TRACT + TE14_OESOPHAGUS                 119    9.0     2.45            6.13       12.32       False           False
+SNU46_UPPER_AERODIGESTIVE_TRACT + TE6_OESOPH                  57    9.0     0.53            7.26         inf       False           False
+BICR6_UPPER_AERODIGESTIVE_TRACT + BICR31_UPP                 895   12.0     1.60            4.45        4.60       False           False
+                     A375_SKIN + SKMEL2_SKIN                 896   12.0     0.26            4.45        4.60       False           False
+                 RERFLCAI_LUNG + JHOS2_OVARY                  68    8.0     5.18            6.78       34.56       False           False
+               PANC0203_PANCREAS + EBC1_LUNG                 636   11.0     1.29            4.63        4.93       False           False
+      HUCCT1_BILIARY_TRACT + SU8686_PANCREAS                 341   10.0     3.20            5.06        5.98       False           False
+              NCIH2444_LUNG + HUPT4_PANCREAS                 309   11.0     3.66            5.25        6.57       False            True
+                     WM88_SKIN + HS939T_SKIN                1451    NaN      NaN             NaN         NaN       False           False
+                  SKMEL5_SKIN + COLO741_SKIN                 283   10.0     1.22            5.24        6.54       False           False
+              RCC10RGB_KIDNEY + OSRC2_KIDNEY                 360   10.0     4.53            5.01        5.84       False            True
+BICR56_UPPER_AERODIGESTIVE_TRACT + VMCUB1_UR                 103    8.0     3.12            6.17       12.78       False            True
+                 COLO792_SKIN + COLO741_SKIN                 485   11.0     1.35            4.84        5.39       False           False
+SNU46_UPPER_AERODIGESTIVE_TRACT + NCIH1792_L                 320   12.0     4.06            5.30        6.76       False           False
+           NCIH2347_LUNG + PANC0203_PANCREAS                 187    8.0     1.96            5.44        7.31       False           False
+SNU46_UPPER_AERODIGESTIVE_TRACT + KYSE520_OE                  36    6.0     1.63            7.39         inf       False            True
+
+27 pairs: top split passes the sup rule: 0 | clean boundary and passes: 0 | needed rho old 4.27 - 7.39 new 4.3 - inf 
+
+1,838 tested splits, kept at p <= 0.01 before BH
+         tested  old  new
+bin                      
+<=31        363    0    0
+32-159      867   14    1
+160-999     505   65   62
+1000+       103   42   43
+needed rho for typical sizes (k = 6, 9, 12): {50: [np.float64(38.78), inf, inf], 100: [np.float64(9.51), np.float64(16.21), np.float64(37.28)], 300: [np.float64(5.16), np.float64(6.04), np.float64(7.02)], 1000: [np.float64(3.94), np.float64(4.22), np.float64(4.48)], 5000: [np.float64(3.37), np.float64(3.46), np.float64(3.54)]}
+
+# ===== conservativeness.py =====
+"""Added after the endpoints: null 99th percentile of the best cut vs the rho each rule needs (k = 6, 9)."""
+import sys
+
+import numpy as np
+import pandas as pd
+from scipy.stats import ncx2
+
+sys.path.insert(0, "../gaussian_cut_rule_20261108")
+from count_rule import SHAPES, sup_p  # noqa: E402
+from cut_rule import log_flat_cuts  # noqa: E402
+
+
+def needed(fn):
+    lo, hi = 1.0, 1e9
+    for _ in range(200):
+        mid = np.sqrt(lo * hi)
+        lo, hi = (lo, mid) if fn(mid) <= 0.01 else (mid, hi)
+    return hi
+
+
+d = pd.read_json("check_highk.jsonl", lines=True)
+for (shape, k, n), g in d.groupby(["shape", "k", "n"]):
+    b = SHAPES[shape]["b"]
+    new = needed(lambda r: sup_p(r, n, k, shape))
+    old = needed(lambda r: min(1.0, np.exp(log_flat_cuts(n, k) + ncx2.logsf(n * r, k, n * b))))
+    print(f"{shape:8s} k={k} n={n}: null best-cut rho 99th pct {np.quantile(g.rho, .99):.2f} (max {g.rho.max():.2f}) "
+          f"| needed: sup rule {new:.2f}, flat-cut count {old:.2f}")

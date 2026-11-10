@@ -1,0 +1,1624 @@
+# SOURCE: benchmarks/diagnostics/calibration/selected/hierarchy/subtree_spectral_alignment.py
+"""Deterministic diagnostics for aligned covariance and diffusion subspaces."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from numbers import Integral
+
+import numpy as np
+from scipy import sparse
+from scipy.linalg import eigh, norm, subspace_angles
+
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors
+from tree_break_selection.space_separation.diffusion import DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES
+
+type Block = tuple[int, int]
+SPAN_ATOL = 1e-10
+
+
+@dataclass(frozen=True, eq=False)
+class SubspaceComparison:
+    rank_a: int
+    rank_b: int
+    singular_overlaps: np.ndarray
+    principal_angles: np.ndarray
+    a_outside_b: float
+    b_outside_a: float
+    a_contained_in_b: bool
+    b_contained_in_a: bool
+    projector_frobenius: float
+    same_span: bool
+
+
+@dataclass(frozen=True, eq=False)
+class EigenSystem:
+    matrix: np.ndarray
+    eigenvalues: np.ndarray
+    eigenvectors: np.ndarray
+    blocks: tuple[Block, ...]
+
+
+@dataclass(frozen=True, eq=False)
+class CovarianceDecomposition:
+    total: np.ndarray
+    within: np.ndarray
+    between: np.ndarray
+
+
+@dataclass(frozen=True, eq=False)
+class ReflectionComparison:
+    subspaces: SubspaceComparison
+    covariance_frobenius: float | None
+    covariance_relative_frobenius: float | None
+    covariance_matches: bool | None
+
+
+@dataclass(frozen=True, eq=False)
+class RestrictedBasis:
+    basis: np.ndarray
+    parent_rank: int
+    restricted_rank: int
+    rank_loss: int
+    singular_values: np.ndarray
+
+
+@dataclass(frozen=True, eq=False)
+class DiffusionSpectrum:
+    weights: np.ndarray
+    degrees: np.ndarray
+    symmetric_operator: np.ndarray
+    markov_operator: np.ndarray
+    eigenvalues: np.ndarray
+    symmetric_vectors: np.ndarray
+    right_vectors: np.ndarray
+    left_vectors: np.ndarray
+    blocks: tuple[Block, ...]
+    residuals: dict[str, float]
+
+    def block_alignment(self, block: Block) -> dict[str, SubspaceComparison]:
+        """Compare one whole numerical block before and after degree transforms."""
+        if block not in self.blocks:
+            raise ValueError("block must be a whole numerical eigenvalue block")
+        start, stop = block
+        symmetric, right, left = (
+            basis[:, start:stop]
+            for basis in (self.symmetric_vectors, self.right_vectors, self.left_vectors)
+        )
+        root = np.sqrt(self.degrees)[:, None]
+        return {
+            "symmetric_vs_right": compare_subspaces(symmetric, right),
+            "right_vs_left": compare_subspaces(right, left),
+            "symmetric_vs_degree_right": compare_subspaces(symmetric, root * right),
+            "symmetric_vs_inverse_degree_left": compare_subspaces(symmetric, left / root),
+        }
+
+
+def _matrix(values) -> np.ndarray:
+    x = np.asarray(values)
+    if np.iscomplexobj(x):
+        raise ValueError("Expected a real matrix")
+    x = np.asarray(x, dtype=float)
+    if x.ndim != 2 or x.shape[0] == 0 or not np.isfinite(x).all():
+        raise ValueError("Expected a finite real matrix with at least one row")
+    return x
+
+
+def _rank_tolerance(shape, rtol: float | None) -> float:
+    value = np.finfo(float).eps * max(shape) if rtol is None else float(rtol)
+    if not 0 <= value < 1:
+        raise ValueError("rtol must be finite and lie in [0, 1)")
+    return value
+
+
+def orthonormal_basis(columns, *, rtol: float | None = None) -> np.ndarray:
+    """Orthonormal column span, keeping singular values above rtol times the largest."""
+    x = _matrix(columns)
+    tolerance = _rank_tolerance(x.shape, rtol)
+    scale = np.max(np.abs(x), initial=0.0)
+    if scale == 0:
+        return np.empty((len(x), 0))
+    u, singular, _ = np.linalg.svd(x / scale, full_matrices=False)
+    return u[:, singular > singular[0] * tolerance]
+
+
+def compare_subspaces(a, b, *, rtol: float | None = None) -> SubspaceComparison:
+    """Compare column spans in common coordinates. Angles are radians, smallest first."""
+    qa, qb = (orthonormal_basis(x, rtol=rtol) for x in (a, b))
+    if len(qa) != len(qb):
+        raise ValueError("Subspaces must share the same ambient dimension")
+    overlap = qa.T @ qb
+    angles = subspace_angles(qa, qb)[::-1] if overlap.size else np.empty(0)
+    singular = np.clip(np.linalg.svd(overlap, compute_uv=False), 0, 1)
+    outside_a = float(np.linalg.norm(qa - qb @ overlap.T))
+    outside_b = float(np.linalg.norm(qb - qa @ overlap))
+    rank_a, rank_b = qa.shape[1], qb.shape[1]
+    a_in_b = rank_a <= rank_b and outside_a <= SPAN_ATOL
+    b_in_a = rank_b <= rank_a and outside_b <= SPAN_ATOL
+    return SubspaceComparison(
+        rank_a,
+        rank_b,
+        singular,
+        angles,
+        outside_a,
+        outside_b,
+        a_in_b,
+        b_in_a,
+        float(np.hypot(outside_a, outside_b)),
+        a_in_b and b_in_a,
+    )
+
+
+def _centered(values, ddof: int) -> tuple[np.ndarray, int]:
+    x = _matrix(values)
+    if isinstance(ddof, (bool, np.bool_)) or ddof not in (0, 1) or len(x) <= ddof or not x.shape[1]:
+        raise ValueError("Covariance needs features, ddof 0 or 1, and more rows than ddof")
+    with np.errstate(over="raise", invalid="raise"):
+        return x - x.mean(axis=0), len(x) - ddof
+
+
+def _symmetric_spectrum(matrix: np.ndarray) -> EigenSystem:
+    eigenvalues, eigenvectors = eigh(matrix)
+    eigenvalues, eigenvectors = eigenvalues[::-1], eigenvectors[:, ::-1]
+    ends = [
+        *(np.flatnonzero(~tied_eigenvalue_neighbors(eigenvalues)) + 1).tolist(),
+        len(eigenvalues),
+    ]
+    return EigenSystem(
+        matrix, eigenvalues, eigenvectors, tuple(zip([0, *ends[:-1]], ends, strict=True))
+    )
+
+
+def covariance_spectrum(values, *, ddof: int = 1) -> EigenSystem:
+    """Whole numerical eigenspaces of raw covariance in the supplied feature coordinates."""
+    centered, divisor = _centered(values, ddof)
+    with np.errstate(over="raise", invalid="raise"):
+        scaled = centered / np.sqrt(divisor)
+        return _symmetric_spectrum(scaled.T @ scaled)
+
+
+def covariance_decomposition(values, groups, *, ddof: int = 1) -> CovarianceDecomposition:
+    """Parent covariance = within-group scatter + between-group scatter, using one divisor."""
+    centered, divisor = _centered(values, ddof)
+    labels = np.asarray(groups)
+    if labels.shape != (len(centered),):
+        raise ValueError("groups must supply one label per row")
+    _, indices = np.unique(labels, return_inverse=True)
+    with np.errstate(over="raise", invalid="raise"):
+        within = np.zeros((centered.shape[1], centered.shape[1]))
+        between = within.copy()
+        for index in np.unique(indices):
+            child = centered[indices == index]
+            shift = child.mean(axis=0)
+            residual = (child - shift) / np.sqrt(divisor)
+            within += residual.T @ residual
+            weighted_shift = np.sqrt(len(child) / divisor) * shift
+            between += np.outer(weighted_shift, weighted_shift)
+        scaled = centered / np.sqrt(divisor)
+        return CovarianceDecomposition(scaled.T @ scaled, within, between)
+
+
+def compare_reflection(
+    a, b, reflection, *, covariance_a=None, covariance_b=None, rtol: float | None = None
+) -> ReflectionComparison:
+    """Compare a prescribed orthogonal involution applied to A against B."""
+    a, q = _matrix(a), _matrix(reflection)
+    identity = np.eye(len(a))
+    if (
+        q.shape != identity.shape
+        or not np.allclose(q, q.T, rtol=0, atol=SPAN_ATOL)
+        or not np.allclose(q.T @ q, identity, rtol=0, atol=SPAN_ATOL)
+    ):
+        raise ValueError("reflection must be an orthogonal involution in the common coordinates")
+    subspaces = compare_subspaces(q @ orthonormal_basis(a, rtol=rtol), b, rtol=rtol)
+    if covariance_a is None and covariance_b is None:
+        return ReflectionComparison(subspaces, None, None, None)
+    if covariance_a is None or covariance_b is None:
+        raise ValueError("Supply both covariance matrices or neither")
+    ca, cb = _matrix(covariance_a), _matrix(covariance_b)
+    if any(c.shape != q.shape or not np.allclose(c, c.T, rtol=SPAN_ATOL, atol=0) for c in (ca, cb)):
+        raise ValueError("Covariance matrices must be symmetric in the common coordinates")
+    scale = max(np.max(np.abs(ca)), np.max(np.abs(cb))) or 1.0
+    ca_scaled, cb_scaled = ca / scale, cb / scale
+    error = float(np.linalg.norm(q @ ca_scaled @ q.T - cb_scaled))
+    reference = float(max(np.linalg.norm(ca_scaled), np.linalg.norm(cb_scaled))) or 1.0
+    relative = error / reference
+    return ReflectionComparison(subspaces, error * float(scale), relative, relative <= SPAN_ATOL)
+
+
+def reversible_diffusion_spectrum(weights) -> DiffusionSpectrum:
+    """Dense, unclipped reversible spectrum using production symmetrization conventions."""
+    if sparse.issparse(weights):
+        if (
+            weights.shape[0] != weights.shape[1]
+            or weights.shape[0] > DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES
+        ):
+            raise ValueError("Diffusion weights exceed the dense diagnostic size limit")
+        weights = weights.toarray()
+    w = _matrix(weights)
+    n = len(w)
+    if w.shape != (n, n) or not 2 <= n <= DENSE_DIFFUSION_EIGENSOLVER_MAX_SAMPLES:
+        raise ValueError("Expected a square diffusion weight matrix within the dense size limit")
+    if np.any(w < 0):
+        raise ValueError("Diffusion weights must be nonnegative")
+    w = np.maximum(w, w.T)
+    np.fill_diagonal(w, 0)
+    with np.errstate(over="raise", invalid="raise"):
+        degrees = w.sum(axis=1)
+        if np.any(degrees <= 0):
+            raise ValueError(
+                "Diffusion diagnostic requires positive degrees after removing the diagonal"
+            )
+        root = np.sqrt(degrees)
+        symmetric = (w / root[:, None]) / root
+        # Equal diagonal scaling is symmetric mathematically. Remove rounding asymmetry.
+        symmetric = (symmetric + symmetric.T) / 2
+        markov = w / degrees[:, None]
+        eigen = _symmetric_spectrum(symmetric)
+        u, values = eigen.eigenvectors, eigen.eigenvalues
+        right, left = u / root[:, None], u * root[:, None]
+        residuals = {
+            "symmetric_eigen": float(np.linalg.norm(symmetric @ u - u * values)),
+            "markov_right_eigen": float(
+                norm((markov @ right - right * values).ravel()) / norm(right.ravel())
+            ),
+            "markov_left_eigen": float(
+                norm((markov.T @ left - left * values).ravel()) / norm(left.ravel())
+            ),
+            "biorthogonality": float(np.linalg.norm(left.T @ right - np.eye(n))),
+            "degree_similarity": float(np.linalg.norm(root[:, None] * markov / root - symmetric)),
+        }
+    return DiffusionSpectrum(
+        w, degrees, symmetric, markov, values, u, right, left, eigen.blocks, residuals
+    )
+
+
+def restrict_parent_basis(
+    parent_basis, child_rows, *, rtol: float | None = None
+) -> RestrictedBasis:
+    """Restrict parent rows in the given child order and reorthogonalize the surviving span."""
+    parent = orthonormal_basis(parent_basis, rtol=rtol)
+    indices = tuple(child_rows)
+    if (
+        not indices
+        or any(
+            isinstance(i, (bool, np.bool_))
+            or not isinstance(i, Integral)
+            or not 0 <= i < len(parent)
+            for i in indices
+        )
+        or len(set(indices)) != len(indices)
+    ):
+        raise ValueError("child_rows must contain distinct valid row indices")
+    restricted = parent[np.asarray(indices, dtype=np.intp)]
+    u, singular, _ = np.linalg.svd(restricted, full_matrices=False)
+    # Restriction is a contraction of a unit-norm parent basis. Reference its
+    # scale, so roundoff leakage from a vanishing restriction stays rank zero.
+    basis = u[:, singular > _rank_tolerance(parent.shape, rtol)]
+    parent_rank, restricted_rank = parent.shape[1], basis.shape[1]
+    return RestrictedBasis(
+        basis, parent_rank, restricted_rank, parent_rank - restricted_rank, singular
+    )
+
+
+def compare_parent_child(
+    parent_basis, child_basis, child_rows, *, rtol: float | None = None
+) -> SubspaceComparison:
+    """Compare restricted parent and supplied child spans, not their graph operators."""
+    restricted = restrict_parent_basis(parent_basis, child_rows, rtol=rtol)
+    return compare_subspaces(restricted.basis, child_basis, rtol=rtol)
+
+
+# SOURCE: tests/statistics/77_test_subtree_spectral_alignment.py
+"""Deterministic spectral alignment and reversible diffusion checks."""
+
+import numpy as np
+import pytest
+from scipy import sparse
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_spectral_alignment import (
+    compare_parent_child,
+    compare_reflection,
+    compare_subspaces,
+    covariance_decomposition,
+    covariance_spectrum,
+    orthonormal_basis,
+    restrict_parent_basis,
+    reversible_diffusion_spectrum,
+)
+from tree_break_selection.space_separation.diffusion import compute_diffusion_coordinates
+
+
+def test_sign_basis_rotation_and_unequal_rank():
+    a = np.eye(4)[:, :2]
+    b = a @ np.array([[0.6, 0.8], [0.8, -0.6]])
+    same = compare_subspaces(a, b)
+    assert same.same_span
+    np.testing.assert_allclose(same.singular_overlaps, [1, 1], atol=1e-14)
+    np.testing.assert_allclose(same.principal_angles, [0, 0], atol=1e-14)
+    assert same.projector_frobenius < 1e-14
+    unequal = compare_subspaces(a[:, :1], b)
+    assert (unequal.rank_a, unequal.rank_b) == (1, 2)
+    assert unequal.a_contained_in_b and not unequal.b_contained_in_a and not unequal.same_span
+    assert unequal.projector_frobenius == pytest.approx(1)
+    np.testing.assert_allclose(unequal.principal_angles, [0], atol=1e-14)
+
+
+def test_zero_and_dependent_spans_are_explicit():
+    x = np.array([[1, 2], [2, 4], [0, 0]], dtype=float)
+    q = orthonormal_basis(x)
+    assert q.shape == (3, 1)
+    assert compare_subspaces(x, 1e-250 * x).same_span
+    empty = np.empty((3, 0))
+    result = compare_subspaces(empty, x)
+    assert (result.rank_a, result.rank_b) == (0, 1)
+    assert result.principal_angles.size == 0
+    assert result.a_contained_in_b and not result.b_contained_in_a
+    assert result.projector_frobenius == pytest.approx(1)
+    assert compare_subspaces(empty, np.zeros((3, 2))).same_span
+
+
+def test_equal_covariance_eigenvalues_can_have_different_eigenspaces():
+    a = np.array([[2, 0, 0], [-2, 0, 0], [0, 2, 0], [0, -2, 0], [0, 0, 1], [0, 0, -1]])
+    b = a[:, [2, 1, 0]]
+    sa, sb = covariance_spectrum(a), covariance_spectrum(b)
+    np.testing.assert_allclose(sa.eigenvalues, sb.eigenvalues)
+    assert sa.blocks == sb.blocks == ((0, 2), (2, 3))
+    result = compare_subspaces(sa.eigenvectors[:, :2], sb.eigenvectors[:, :2])
+    np.testing.assert_allclose(result.singular_overlaps, [1, 0], atol=1e-14)
+    assert result.projector_frobenius == pytest.approx(np.sqrt(2))
+    assert not result.same_span
+
+
+def test_prescribed_reflection_preserves_or_changes_separate_objects():
+    reflection = np.diag([-1.0, 1])
+    line = np.array([[1.0], [1]])
+    covariance = np.array([[3.0, 1], [1, 2]])
+    broken = compare_reflection(
+        line, line, reflection, covariance_a=covariance, covariance_b=covariance
+    )
+    assert not broken.subspaces.same_span and not broken.covariance_matches
+    reflected = compare_reflection(
+        line,
+        reflection @ line,
+        reflection,
+        covariance_a=covariance,
+        covariance_b=reflection @ covariance @ reflection.T,
+    )
+    assert reflected.subspaces.same_span and reflected.covariance_matches
+    axis = np.array([[1.0], [0]])
+    assert compare_reflection(axis, axis, reflection).subspaces.same_span
+    assert compare_reflection(axis, axis, reflection).covariance_matches is None
+
+
+@pytest.mark.parametrize("ddof", [0, 1])
+def test_covariance_decomposition_weights_child_scatter_and_mean_shifts(ddof):
+    x = np.array([[0, 0], [2, 1], [4, 3], [10, 0], [14, -2], [21, 2]], dtype=float)
+    groups = [0, 0, 0, 1, 1, 2]
+    parts = covariance_decomposition(x, groups, ddof=ddof)
+    mean = x.mean(axis=0)
+    expected_within = np.zeros((2, 2))
+    expected_between = np.zeros((2, 2))
+    for label in np.unique(groups):
+        child = x[np.asarray(groups) == label]
+        centered = child - child.mean(axis=0)
+        expected_within += centered.T @ centered
+        diff = child.mean(axis=0) - mean
+        expected_between += len(child) * np.outer(diff, diff)
+    np.testing.assert_allclose(parts.within, expected_within / (len(x) - ddof))
+    np.testing.assert_allclose(parts.between, expected_between / (len(x) - ddof))
+    np.testing.assert_allclose(parts.total, np.cov(x, rowvar=False, ddof=ddof))
+    np.testing.assert_allclose(parts.total, parts.within + parts.between)
+
+
+def test_irregular_diffusion_bases_need_degree_transform():
+    weights = np.array([[9, 1, 3, 0], [0, 8, 2, 1], [0, 2, 7, 1], [0, 1, 0, 6]], dtype=float)
+    result = reversible_diffusion_spectrum(sparse.csr_matrix(weights))
+    expected = np.maximum(weights, weights.T)
+    np.fill_diagonal(expected, 0)
+    np.testing.assert_array_equal(result.weights, expected)
+    np.testing.assert_allclose(result.markov_operator.sum(axis=1), 1)
+    assert result.eigenvalues[-1] < 0
+    for error in result.residuals.values():
+        assert error < 1e-12
+    leading = result.block_alignment(result.blocks[0])
+    assert not leading["symmetric_vs_right"].same_span
+    assert not leading["right_vs_left"].same_span
+    assert leading["symmetric_vs_degree_right"].same_span
+    assert leading["symmetric_vs_inverse_degree_left"].same_span
+    for operator in ("symmetric", "markov"):
+        fitted = compute_diffusion_coordinates(
+            weights, diffusion_time=2, n_components=3, coordinate_operator=operator
+        )
+        source = result.symmetric_vectors if operator == "symmetric" else result.right_vectors
+        retained = source[:, 1:] * np.maximum(result.eigenvalues[1:], 0) ** 2
+        assert compare_subspaces(fitted, retained).same_span
+
+
+def test_row_restriction_detects_rank_loss_and_keeps_child_order():
+    parent = np.eye(5)[:, :3]
+    child_rows = [4, 1, 0]
+    restricted = restrict_parent_basis(parent, child_rows)
+    assert (restricted.parent_rank, restricted.restricted_rank, restricted.rank_loss) == (3, 2, 1)
+    child = np.eye(3)[:, 1:]
+    assert compare_parent_child(parent, child, child_rows).same_span
+    assert restrict_parent_basis(parent, [3, 4]).restricted_rank == 0
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: compare_subspaces(np.ones((2, 1)), np.ones((3, 1))),
+        lambda: orthonormal_basis([[np.nan]]),
+        lambda: orthonormal_basis([[1j]]),
+        lambda: orthonormal_basis([[1]], rtol=-1),
+        lambda: covariance_decomposition([[1], [2]], [0]),
+        lambda: covariance_spectrum([[1]], ddof=1),
+        lambda: reversible_diffusion_spectrum([[0, -1], [1, 0]]),
+        lambda: reversible_diffusion_spectrum([[0, 0], [0, 0]]),
+        lambda: restrict_parent_basis(np.eye(3), [0, 0]),
+        lambda: restrict_parent_basis(np.eye(3), [1.0]),
+        lambda: compare_reflection(np.eye(2), np.eye(2), [[0, -1], [1, 0]]),
+        lambda: compare_reflection(np.eye(2), np.eye(2), np.eye(2), covariance_a=np.eye(2)),
+    ],
+)
+def test_invalid_inputs_fail_explicitly(call):
+    with pytest.raises(ValueError):
+        call()
+
+
+def test_diffusion_keeps_whole_zero_block_and_negative_mode():
+    w = np.zeros((4, 4))
+    w[0, 1:] = [1, 2, 3]
+    w[1:, 0] = w[0, 1:]
+    result = reversible_diffusion_spectrum(w)
+    assert result.blocks == ((0, 1), (1, 3), (3, 4))
+    np.testing.assert_allclose(result.eigenvalues, [1, 0, 0, -1], atol=1e-14)
+    for block in result.blocks:
+        assert result.block_alignment(block)["symmetric_vs_degree_right"].same_span
+    with pytest.raises(ValueError, match="whole"):
+        result.block_alignment((1, 2))
+
+
+def test_rebuilt_child_modes_can_disagree_with_the_restricted_parent_modes():
+    w = np.array([[0, 1, 3], [1, 0, 1], [3, 1, 0]], dtype=float)
+    parent = reversible_diffusion_spectrum(w)
+    child_rows = [0, 1]
+    child = reversible_diffusion_spectrum(w[np.ix_(child_rows, child_rows)])
+    result = compare_parent_child(
+        parent.symmetric_vectors[:, :1], child.symmetric_vectors[:, :1], child_rows
+    )
+    assert not result.same_span
+    aligned = compare_parent_child(
+        parent.right_vectors[:, :1], child.right_vectors[:, :1], child_rows
+    )
+    assert aligned.same_span
+
+
+# SOURCE: tests/statistics/78_test_subtree_alignment_native_replay.py
+"""Instrumenting the spectral study must preserve native fits and retain failures."""
+
+import gzip
+import json
+
+import numpy as np
+import pytest
+
+from benchmarks.diagnostics.calibration import subtree_research
+from reports.subtree_spectral_alignment_20261109 import run
+from tree_break_selection.space_separation import diffusion
+
+
+@pytest.mark.parametrize("operator,link", [("symmetric", "average"), ("markov", "ward")])
+def test_spectral_capture_preserves_native_pipeline_and_coordinates(operator, link):
+    values, truth, _ = run.dataset("crossed", 0)
+    untouched = values.copy()
+    coordinate_function = diffusion.compute_diffusion_coordinates
+    gate_function = subtree_research.run_gate_annotation_pipeline
+    actual, detail, spec = run.capture_native(values, truth[2], operator, link)
+    expected, _ = subtree_research.run_method(
+        values, truth[2], operator=operator, linkage_method=link
+    )
+    assert actual["status"] == expected["status"] == "ok"
+    assert actual["labels"] == expected["labels"]
+    assert actual["root_sibling_p"] == expected["root_sibling_p"]
+    assert diffusion.compute_diffusion_coordinates is coordinate_function
+    assert subtree_research.run_gate_annotation_pipeline is gate_function
+    np.testing.assert_array_equal(values, untouched)
+    start, end = run.spectral_window(spec, values.shape[1])
+    basis = spec.symmetric_vectors if operator == "symmetric" else spec.right_vectors
+    coordinates = basis[:, start:end] * np.maximum(spec.eigenvalues[start:end], 0) ** 3
+    np.testing.assert_allclose(
+        run.pdist(coordinates), detail["baseline_diffusion_distance"], atol=1e-10
+    )
+    assert len(detail["native_context"]) == 3
+    assert all(
+        fields["principal_component_eigenvalues_by_node"] is not None
+        for fields in detail["native_context"].values()
+    )
+
+
+def test_spectral_capture_restores_instrumentation_after_failure(monkeypatch):
+    coordinate_function = diffusion.compute_diffusion_coordinates
+    gate_function = subtree_research.run_gate_annotation_pipeline
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("intentional native failure")
+
+    monkeypatch.setattr(subtree_research, "run_method", fail)
+    with pytest.raises(RuntimeError, match="intentional native failure"):
+        run.capture_native(np.eye(4), np.zeros(4), "markov", "ward")
+    assert diffusion.compute_diffusion_coordinates is coordinate_function
+    assert subtree_research.run_gate_annotation_pipeline is gate_function
+
+
+def test_replay_retains_each_failed_attempt_and_refuses_overwrite(monkeypatch, tmp_path):
+    def fail(*args, **kwargs):
+        raise RuntimeError("intentional replay failure")
+
+    monkeypatch.setattr(run, "evaluate", fail)
+    run.run(tmp_path, replicates=1)
+    with gzip.open(tmp_path / "rows.jsonl.gz", "rt") as stream:
+        records = [json.loads(line) for line in stream]
+    assert len(records) == 8
+    assert all(row["status"] == "error" and "replay failure" in row["reason"] for row in records)
+    assert len({(row["case"], row["replicate"], row["operator"]) for row in records}) == 8
+    assert json.loads((tmp_path / "verification.json").read_text())["error"] == 8
+    with pytest.raises(FileExistsError, match="Refusing to overwrite"):
+        run.run(tmp_path, replicates=1)
+
+
+def test_native_failure_keeps_original_reason_without_gate_context(monkeypatch):
+    def fail(*args, **kwargs):
+        return {"status": "error", "reason": "NNLS not applied: fixture"}, {}
+
+    monkeypatch.setattr(subtree_research, "evaluate_tree", fail)
+    values, truth, _ = run.dataset("crossed", 0)
+    result, _ = run.evaluate(values, truth, "markov", "ward")
+    assert result["native"]["status"] == "error"
+    assert result["native"]["reason"] == "NNLS not applied: fixture"
+    assert result["native_context"] == {}
+
+
+def test_unexpected_child_refit_failure_is_error_and_does_not_hide_induced_result(monkeypatch):
+    def fail(*args, **kwargs):
+        raise RuntimeError("unexpected child refit failure")
+
+    monkeypatch.setattr(run, "capture_diffusion", fail)
+    values, truth, _ = run.dataset("crossed", 0)
+    result, _ = run.evaluate(values, truth, "markov", "ward")
+    assert all(child["status"] == "error" for child in result["children"])
+    assert all(child["induced_parent_graph"]["status"] == "ok" for child in result["children"])
+    assert all(child["rebuilt_child_graph"]["status"] == "error" for child in result["children"])
+
+
+# SOURCE: reports/subtree_spectral_alignment_20261109/run.py
+"""Replay the native subtree pipeline and compare explicitly mapped spectral spaces."""
+
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import json
+from collections import Counter
+from dataclasses import asdict
+from pathlib import Path
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import pdist
+from sklearn.metrics import adjusted_mutual_info_score
+
+from benchmarks.diagnostics.calibration import subtree_research as research
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import (
+    subtree_spectral_alignment as align,
+)
+from reports.subtree_spectral_alignment_20261109.alternatives.run import REGIMES, dataset
+from tree_break_selection.space_separation import diffusion
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+from tree_break_selection.tree.topology import tree_root
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+
+
+def digest(values):
+    return hashlib.sha256(np.ascontiguousarray(values, dtype=np.float64).tobytes()).hexdigest()
+
+
+def spectral_window(spec, features):
+    return diffusion._leading_diffusion_spectrum(
+        spec.eigenvalues, min(features, len(spec.eigenvalues) - 2, 50)
+    )
+
+
+def capture_diffusion(values, operator="symmetric"):
+    captured = {}
+    original = diffusion.compute_diffusion_coordinates
+
+    def observe(weights, **kwargs):
+        captured["weights"] = weights.copy()
+        return original(weights, **kwargs)
+
+    data = pd.DataFrame(values)
+    space = continuous_feature_space_from_columns(data.columns)
+    with patch.object(diffusion, "compute_diffusion_coordinates", observe):
+        geometry = diffusion.feature_family_diffusion_geometry(
+            data, space, coordinate_operator=operator
+        )
+    return geometry, align.reversible_diffusion_spectrum(captured["weights"])
+
+
+def capture_native(values, truth, operator, link):
+    captured = {}
+    original_coordinates = diffusion.compute_diffusion_coordinates
+    original_gate = research.run_gate_annotation_pipeline
+
+    def coordinates(weights, **kwargs):
+        captured["weights"] = weights.copy()
+        return original_coordinates(weights, **kwargs)
+
+    def gate(tree, *args, **kwargs):
+        bundle = original_gate(tree, *args, **kwargs)
+        context = bundle.edge_gate_result.spectral_context
+        nodes = [tree_root(tree)]
+        nodes += list(tree.successors(nodes[0]))
+        captured["native_context"] = {
+            str(node): {
+                field: getattr(context, field).get(node)
+                for field in (
+                    "test_projection_dimensions_by_node",
+                    "raw_mp_signal_counts_by_node",
+                    "principal_component_projections_by_node",
+                    "principal_component_eigenvalues_by_node",
+                    "active_feature_counts_by_node",
+                    "mp_threshold_rows_by_node",
+                )
+            }
+            for node in nodes
+        }
+        captured["native_nodes"] = [str(node) for node in nodes]
+        return bundle
+
+    with (
+        patch.object(diffusion, "compute_diffusion_coordinates", coordinates),
+        patch.object(research, "run_gate_annotation_pipeline", gate),
+    ):
+        row, details = research.run_method(
+            values, truth, operator=operator, linkage_method=link, trace=True
+        )
+    spec = align.reversible_diffusion_spectrum(captured.pop("weights"))
+    details.update(captured)
+    return row, details, spec
+
+
+def top_basis(spec, rank=2):
+    end = min(rank, len(spec.eigenvalues))
+    for start, stop in spec.blocks:
+        if start < end <= stop:
+            end = stop
+            break
+    return spec.eigenvectors[:, :end]
+
+
+def covariance_comparison(parent, child):
+    return {
+        "parent_eigenvalues": parent.eigenvalues,
+        "child_eigenvalues": child.eigenvalues,
+        "eigenvalue_relative_difference": float(
+            np.linalg.norm(parent.eigenvalues - child.eigenvalues)
+            / max(np.linalg.norm(parent.eigenvalues), np.finfo(float).tiny)
+        ),
+        "leading_whole_block_comparison": asdict(
+            align.compare_subspaces(top_basis(parent), top_basis(child))
+        ),
+        "whole_block_comparisons": [
+            {
+                "parent_block": (a, b),
+                "child_block": (c, d),
+                **asdict(
+                    align.compare_subspaces(parent.eigenvectors[:, a:b], child.eigenvectors[:, c:d])
+                ),
+            }
+            for a, b in parent.blocks
+            for c, d in child.blocks
+        ],
+    }
+
+
+def reflected_covariances(a, b):
+    p = len(a.eigenvalues)
+    reflections = []
+    for axis in range(p):
+        h = np.eye(p)
+        h[axis, axis] = -1
+        reflections.append((f"feature_{axis}_sign", h))
+    if p >= 2:
+        h = np.eye(p)
+        h[[0, 1]] = h[[1, 0]]
+        reflections.append(("swap_features_0_1", h))
+    return {
+        name: asdict(
+            align.compare_reflection(
+                top_basis(a),
+                top_basis(b),
+                h,
+                covariance_a=a.matrix,
+                covariance_b=b.matrix,
+            )
+        )
+        for name, h in reflections
+    }
+
+
+def child_rows(z, n):
+    groups = {i: (i,) for i in range(n)}
+    for index, (a, b, *_rest) in enumerate(z):
+        groups[n + index] = tuple(sorted(groups[int(a)] + groups[int(b)]))
+    return [groups[int(i)] for i in z[-1, :2]]
+
+
+def diffusion_comparison(parent, child, rows, features):
+    ps, pe = spectral_window(parent, features)
+    cs, ce = spectral_window(child, features)
+    comparisons = {}
+    for name in ("symmetric_vectors", "right_vectors", "left_vectors"):
+        restricted = align.restrict_parent_basis(getattr(parent, name)[:, ps:pe], rows)
+        comparisons[name] = {
+            "parent_rank": restricted.parent_rank,
+            "restricted_rank": restricted.restricted_rank,
+            "rank_loss": restricted.rank_loss,
+            **asdict(align.compare_subspaces(restricted.basis, getattr(child, name)[:, cs:ce])),
+        }
+    return {
+        "parent_window": (ps, pe),
+        "child_window": (cs, ce),
+        "parent_selected_eigenvalues": parent.eigenvalues[ps:pe],
+        "child_selected_eigenvalues": child.eigenvalues[cs:ce],
+        "comparisons": comparisons,
+    }
+
+
+def evaluate(values, truth, operator, link):
+    reference = np.zeros(len(values), dtype=int) if truth is None else truth[2]
+    native, detail, parent = capture_native(values, reference, operator, link)
+    result = {
+        "native": native,
+        "native_context": detail.get("native_context", {}),
+        "native_nodes": detail.get("native_nodes", []),
+    }
+    if native["status"] == "ok" and truth is not None:
+        result["native_factor_ami"] = {
+            name: adjusted_mutual_info_score(target, native["labels"])
+            for name, target in zip(("factor_a", "contrast_b", "joint"), truth, strict=True)
+        }
+    start, end = spectral_window(parent, values.shape[1])
+    eigenvalues = np.maximum(parent.eigenvalues[start:end], 0) ** 3
+    coordinates = (
+        getattr(parent, "symmetric_vectors" if operator == "symmetric" else "right_vectors")[
+            :, start:end
+        ]
+        * eigenvalues
+    )
+    distance_error = float(
+        np.max(np.abs(pdist(coordinates) - detail["baseline_diffusion_distance"]))
+    )
+    assert distance_error < 1e-9
+    result["diffusion"] = {
+        "production_distance_max_abs_error": distance_error,
+        "eigenvalues": parent.eigenvalues,
+        "degrees": parent.degrees,
+        "window": (start, end),
+        "residuals": parent.residuals,
+        "whole_blocks": [
+            {
+                "block": block,
+                "alignments": {k: asdict(v) for k, v in parent.block_alignment(block).items()},
+            }
+            for block in parent.blocks
+            if block[0] < end and block[1] > start
+        ],
+    }
+    z = np.array(detail["linkage"])
+    children = child_rows(z, len(values))
+    assignments = np.zeros(len(values), dtype=int)
+    assignments[list(children[1])] = 1
+    decomposed = align.covariance_decomposition(values, assignments)
+    total = align.covariance_spectrum(values)
+    detail["matrix_evidence"] = {
+        "parent_weights": parent.weights,
+        "parent_symmetric_operator": parent.symmetric_operator,
+        "parent_markov_operator": parent.markov_operator,
+        "parent_raw_covariance": total.matrix,
+        "children": [],
+    }
+    error = float(np.linalg.norm(decomposed.total - decomposed.within - decomposed.between))
+    assert error < 1e-10
+    result["covariance"] = {
+        "eigenvalues": total.eigenvalues,
+        "decomposition_error": error,
+        "within_trace": float(np.trace(decomposed.within)),
+        "between_trace": float(np.trace(decomposed.between)),
+        "prescribed_reflections": reflected_covariances(total, total),
+    }
+    child_covariances = []
+    result["children"] = []
+    for positions in children:
+        rows = np.array(positions)
+        current = {"rows": positions, "n": len(rows)}
+        matrices = {"rows": positions}
+        detail["matrix_evidence"]["children"].append(matrices)
+        if len(rows) < 3:
+            current.update(status="unsupported", reason="fewer than three child rows")
+            for name in ("induced_parent_graph", "rebuilt_child_graph"):
+                current[name] = {"status": "unsupported", "reason": current["reason"]}
+            child_covariances.append(None)
+            result["children"].append(current)
+            continue
+        cov = align.covariance_spectrum(values[rows])
+        matrices["raw_covariance"] = cov.matrix
+        child_covariances.append(cov)
+        current["covariance"] = covariance_comparison(total, cov)
+        try:
+            induced = align.reversible_diffusion_spectrum(parent.weights[np.ix_(rows, rows)])
+            current["induced_parent_graph"] = {
+                "status": "ok",
+                **diffusion_comparison(parent, induced, rows, values.shape[1]),
+            }
+            matrices["induced_weights"] = induced.weights
+            matrices["induced_symmetric_operator"] = induced.symmetric_operator
+            matrices["induced_markov_operator"] = induced.markov_operator
+        except ValueError as exc:
+            current["induced_parent_graph"] = {"status": "unsupported", "reason": str(exc)}
+        except Exception as exc:
+            current["induced_parent_graph"] = {
+                "status": "error",
+                "reason": f"{type(exc).__name__}: {exc}",
+            }
+        try:
+            _geometry, rebuilt = capture_diffusion(values[rows], operator)
+            current["rebuilt_child_graph"] = {
+                "status": "ok",
+                **diffusion_comparison(parent, rebuilt, rows, values.shape[1]),
+            }
+            matrices["rebuilt_weights"] = rebuilt.weights
+            matrices["rebuilt_symmetric_operator"] = rebuilt.symmetric_operator
+            matrices["rebuilt_markov_operator"] = rebuilt.markov_operator
+            if current["induced_parent_graph"]["status"] == "ok":
+                current["induced_vs_rebuilt_operator_frobenius"] = float(
+                    np.linalg.norm(induced.symmetric_operator - rebuilt.symmetric_operator)
+                )
+        except ValueError as exc:
+            current["rebuilt_child_graph"] = {"status": "unsupported", "reason": str(exc)}
+        except Exception as exc:
+            current["rebuilt_child_graph"] = {
+                "status": "error",
+                "reason": f"{type(exc).__name__}: {exc}",
+            }
+        statuses = [
+            current[name]["status"] for name in ("induced_parent_graph", "rebuilt_child_graph")
+        ]
+        current["status"] = (
+            "error" if "error" in statuses else "unsupported" if "unsupported" in statuses else "ok"
+        )
+        result["children"].append(current)
+    if all(cov is not None for cov in child_covariances):
+        result["left_right_covariance"] = covariance_comparison(*child_covariances)
+        result["left_right_reflections"] = reflected_covariances(*child_covariances)
+    return result, detail
+
+
+def source_hashes():
+    paths = sorted((ROOT / "tree_break_selection").rglob("*.py"))
+    paths += [Path(__file__), HERE / "alternatives/run.py"]
+    paths += [
+        ROOT / "benchmarks/diagnostics/calibration/subtree_research.py",
+        ROOT
+        / "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_spectral_alignment.py",
+        ROOT / "benchmarks/shared/metrics.py",
+        ROOT / "benchmarks/shared/statistical_profiles.py",
+    ]
+    return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+
+
+def run(output, replicates=20):
+    if not 1 <= replicates <= 20:
+        raise ValueError("Expected 1 through 20 declared replicates")
+    output.mkdir(parents=True, exist_ok=True)
+    if (output / "manifest.json").exists():
+        raise FileExistsError(f"Refusing to overwrite {output}")
+    before = source_hashes()
+    (output / "manifest.json").write_text(
+        json.dumps(
+            {"replicates": replicates, "regimes": REGIMES, "source_hashes": before}, indent=2
+        )
+    )
+    count, failed, child_failed = 0, 0, 0
+    native_status = Counter()
+    graph_status = {name: Counter() for name in ("induced_parent_graph", "rebuilt_child_graph")}
+    with gzip.open(output / "rows.jsonl.gz", "xt") as stream:
+        for case in REGIMES:
+            for replicate in range(replicates):
+                values, truth, seed = dataset(case, replicate)
+                for operator, link in (("symmetric", "average"), ("markov", "ward")):
+                    record = {
+                        "case": case,
+                        "replicate": replicate,
+                        "seed": seed,
+                        "operator": operator,
+                        "linkage": link,
+                        "data_hash": digest(values),
+                    }
+                    try:
+                        record["result"], detail = evaluate(values, truth, operator, link)
+                        record["status"] = "ok"
+                        native_status[record["result"]["native"]["status"]] += 1
+                        for child in record["result"]["children"]:
+                            for name in graph_status:
+                                graph_status[name][child[name]["status"]] += 1
+                        child_failed += sum(
+                            child["status"] != "ok" for child in record["result"]["children"]
+                        )
+                        if replicate == 0:
+                            with gzip.open(
+                                output / f"trace_{case}_{operator}.json.gz", "xt"
+                            ) as trace:
+                                json.dump(detail, trace, default=diagnostic_json_default)
+                    except Exception as exc:
+                        failed += 1
+                        record.update(status="error", reason=f"{type(exc).__name__}: {exc}")
+                    stream.write(json.dumps(record, default=diagnostic_json_default) + "\n")
+                    stream.flush()
+                    count += 1
+            print(f"{case}: {2 * replicates} attempts", flush=True)
+    after = source_hashes()
+    changed = [p for p in set(before) | set(after) if before.get(p) != after.get(p)]
+    verification = {
+        "attempted": count,
+        "error": failed,
+        "non_ok_children": child_failed,
+        "native_status_counts": dict(native_status),
+        "child_graph_status_counts": {name: dict(counts) for name, counts in graph_status.items()},
+        "source_files_changed_during_run": changed,
+    }
+    (output / "verification.json").write_text(json.dumps(verification, indent=2))
+    print(json.dumps(verification), flush=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--replicates", type=int, default=20)
+    arguments = parser.parse_args()
+    run(arguments.output, arguments.replicates)
+
+
+# SOURCE: reports/subtree_spectral_alignment_20261109/summarize.py
+"""Reconstruct paired spectral comparisons and verify shared input identities."""
+
+from __future__ import annotations
+
+import gzip
+import hashlib
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from reports.subtree_spectral_alignment_20261109.alternatives.run import dataset
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+
+
+def main():
+    panel = HERE / "parent_child"
+    with gzip.open(panel / "rows.jsonl.gz", "rt") as stream:
+        rows = [json.loads(line) for line in stream]
+    alternatives = pd.read_csv(HERE / "alternatives/rows.csv.gz")
+    assert len(rows) == 160 and len(alternatives) == 5120
+    assert len({(r["case"], r["replicate"], r["operator"]) for r in rows}) == 160
+    assert all(row["status"] == "ok" for row in rows)
+    a, children = [], []
+    for row in rows:
+        x, _truth, seed = dataset(row["case"], row["replicate"])
+        h = hashlib.sha256(x.tobytes()).hexdigest()
+        assert h == row["data_hash"] and seed == row["seed"]
+        other = alternatives[
+            (alternatives.regime == row["case"]) & (alternatives.replicate == row["replicate"])
+        ]
+        assert len(other) == 64 and other.data_sha256.eq(h).all() and other.seed.eq(seed).all()
+        r = row["result"]
+        core = {key: row[key] for key in ("case", "replicate", "operator")}
+        d, blocks = r["diffusion"], r["diffusion"]["whole_blocks"]
+        a.append(
+            core
+            | {
+                "native_ami": r["native"]["ami"],
+                "groups": r["native"]["found_clusters"],
+                "root_p": r["native"]["root_sibling_p"],
+                "root_reject": r["native"]["root_sibling_reject"],
+                "raw_left_right_gap": max(
+                    b["alignments"]["right_vs_left"]["projector_frobenius"] for b in blocks
+                ),
+                "transported_gap": max(
+                    b["alignments"]["symmetric_vs_degree_right"]["projector_frobenius"]
+                    for b in blocks
+                ),
+                "production_distance_error": d["production_distance_max_abs_error"],
+                "covariance_error": r["covariance"]["decomposition_error"],
+                "between_fraction": r["covariance"]["between_trace"]
+                / (r["covariance"]["within_trace"] + r["covariance"]["between_trace"]),
+                "raw_mp": r["native_context"][r["native_nodes"][0]]["raw_mp_signal_counts_by_node"],
+            }
+        )
+        for index, child in enumerate(r["children"]):
+            assert child["status"] == "ok"
+            comp = child["rebuilt_child_graph"]["comparisons"]
+            children.append(
+                core
+                | {
+                    "child": index,
+                    "n": child["n"],
+                    "raw_covariance_gap": child["covariance"]["leading_whole_block_comparison"][
+                        "projector_frobenius"
+                    ],
+                    "raw_eigenvalue_gap": child["covariance"]["eigenvalue_relative_difference"],
+                    "right_gap": comp["right_vectors"]["projector_frobenius"],
+                    "left_gap": comp["left_vectors"]["projector_frobenius"],
+                    "symmetric_gap": comp["symmetric_vectors"]["projector_frobenius"],
+                    "rank_loss": comp["right_vectors"]["rank_loss"],
+                    "operator_gap": child["induced_vs_rebuilt_operator_frobenius"],
+                }
+            )
+    roots, child = pd.DataFrame(a), pd.DataFrame(children)
+    roots.to_csv(panel / "root_summary.csv", index=False)
+    child.to_csv(panel / "child_summary.csv", index=False)
+    assert len(child) == 320
+    sources = json.loads((panel / "manifest.json").read_text())["source_hashes"]
+    changed = [
+        path
+        for path, value in sources.items()
+        if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != value
+    ]
+    assert not changed, changed
+    result = {
+        "native_fits": len(rows),
+        "child_comparisons": len(child),
+        "alternative_rows": len(alternatives),
+        "unique_shared_datasets": len({r["data_hash"] for r in rows}),
+        "all_input_hashes_regenerated_and_paired": True,
+        "source_files_changed": changed,
+        "maximum_errors": roots[
+            ["transported_gap", "production_distance_error", "covariance_error"]
+        ]
+        .max()
+        .to_dict(),
+        "child_rank_loss_count": int(child.rank_loss.gt(0).sum()),
+        "induced_rebuilt_gap_above_1e_10": int(child.operator_gap.gt(1e-10).sum()),
+        "operator_gap_range": [float(child.operator_gap.min()), float(child.operator_gap.max())],
+        "native_grouped": roots.groupby(["case", "operator"])
+        .agg(
+            mean_ami=("native_ami", "mean"),
+            mean_groups=("groups", "mean"),
+            root_rejections=("root_reject", "sum"),
+            median_raw_left_right_gap=("raw_left_right_gap", "median"),
+            median_between_fraction=("between_fraction", "median"),
+        )
+        .reset_index()
+        .to_dict("records"),
+        "child_grouped": child.groupby(["case", "operator"])
+        .agg(
+            median_raw_covariance_gap=("raw_covariance_gap", "median"),
+            median_raw_eigenvalue_gap=("raw_eigenvalue_gap", "median"),
+            median_right_gap=("right_gap", "median"),
+            median_operator_gap=("operator_gap", "median"),
+            positive_rank_loss=("rank_loss", lambda x: int(x.gt(0).sum())),
+        )
+        .reset_index()
+        .to_dict("records"),
+    }
+    assert all(np.isfinite(value) for value in result["maximum_errors"].values())
+    (HERE / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
+    print(
+        json.dumps(
+            {key: value for key, value in result.items() if not key.endswith("grouped")}, indent=2
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+# SOURCE: reports/subtree_spectral_alignment_20261109/production_spans.py
+"""Compare surviving production-coordinate spans on the same saved child memberships."""
+
+from __future__ import annotations
+
+import gzip
+import json
+from dataclasses import asdict
+from pathlib import Path
+
+import numpy as np
+
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import (
+    subtree_spectral_alignment as align,
+)
+from reports.subtree_spectral_alignment_20261109 import run
+
+HERE = Path(__file__).resolve().parent
+
+
+def coordinates(spec, features, operator):
+    start, stop = run.spectral_window(spec, features)
+    basis = spec.symmetric_vectors if operator == "symmetric" else spec.right_vectors
+    weights = np.maximum(spec.eigenvalues[start:stop], 0) ** 3
+    return basis[:, start:stop] * weights, int(np.count_nonzero(weights == 0))
+
+
+def main():
+    output = HERE / "parent_child/production_span_rows.jsonl.gz"
+    if output.exists():
+        raise FileExistsError(f"Refusing to overwrite {output}")
+    before = run.source_hashes()
+    with gzip.open(HERE / "parent_child/rows.jsonl.gz", "rt") as stream:
+        original = [json.loads(line) for line in stream]
+    cache, rows = {}, []
+    for record in original:
+        key = record["case"], record["replicate"]
+        if key not in cache:
+            x, _truth, _seed = run.dataset(*key)
+            _geometry, parent = run.capture_diffusion(x)
+            cache[key] = x, parent
+        x, parent = cache[key]
+        assert run.digest(x) == record["data_hash"]
+        np.testing.assert_allclose(
+            parent.degrees, record["result"]["diffusion"]["degrees"], rtol=0, atol=0
+        )
+        operator = record["operator"]
+        parent_coordinates, parent_clipped = coordinates(parent, x.shape[1], operator)
+        for index, child in enumerate(record["result"]["children"]):
+            indices = np.asarray(child["rows"])
+            induced = align.reversible_diffusion_spectrum(parent.weights[np.ix_(indices, indices)])
+            geometry, rebuilt = run.capture_diffusion(x[indices], operator)
+            result = {k: record[k] for k in ("case", "replicate", "operator", "seed", "data_hash")}
+            result.update(child=index, parent_zero_weight_modes=parent_clipped)
+            for name, spec in (("induced", induced), ("rebuilt", rebuilt)):
+                child_coordinates, clipped = coordinates(spec, x.shape[1], operator)
+                if name == "rebuilt":
+                    np.testing.assert_allclose(
+                        run.pdist(child_coordinates), geometry.distance_condensed, atol=1e-10
+                    )
+                inherited = align.restrict_parent_basis(parent_coordinates, indices)
+                result[name] = {
+                    "zero_weight_modes": clipped,
+                    "inherited_parent_rank": inherited.parent_rank,
+                    "rank_loss_on_restriction": inherited.rank_loss,
+                    **asdict(align.compare_subspaces(inherited.basis, child_coordinates)),
+                }
+            rows.append(result)
+    assert len(cache) == 80 and len(rows) == 320
+    after = run.source_hashes()
+    assert before == after
+    with gzip.open(output, "xt") as stream:
+        for record in rows:
+            stream.write(json.dumps(record, default=diagnostic_json_default) + "\n")
+    summary = {
+        "status": "completed",
+        "scope": "Same 80 datasets and saved 320 child memberships; no new native fits or independent observations",
+        "child_rows": len(rows),
+        "datasets": len(cache),
+        "parent_windows_with_zero_weights": sum(
+            row["parent_zero_weight_modes"] > 0 for row in rows
+        ),
+        "operators": {
+            operator: {
+                kind: {
+                    "compared": len(group),
+                    "child_windows_with_zero_weights": sum(
+                        row[kind]["zero_weight_modes"] > 0 for row in group
+                    ),
+                    "same_span": sum(row[kind]["same_span"] for row in group),
+                    "median_projector_gap": float(
+                        np.median([row[kind]["projector_frobenius"] for row in group])
+                    ),
+                    "median_child_rank": float(np.median([row[kind]["rank_b"] for row in group])),
+                }
+                for kind in ("induced", "rebuilt")
+            }
+            for operator in ("symmetric", "markov")
+            if (group := [row for row in rows if row["operator"] == operator])
+        },
+        "source_hashes": before,
+    }
+    (HERE / "parent_child/production_span_summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
+    print(json.dumps({k: v for k, v in summary.items() if k != "source_hashes"}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
+
+
+# SOURCE: reports/subtree_spectral_alignment_20261109/alternatives/run.py
+"""Run the frozen whole-block alternative topology panel."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import platform
+import sys
+from itertools import combinations
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+import scipy
+import sklearn
+from scipy.cluster.hierarchy import cut_tree
+from scipy.spatial.distance import pdist, squareform
+from sklearn.metrics import adjusted_mutual_info_score
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.selected.hierarchy import (
+    subtree_topology_candidate as candidate,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy import subtree_topology_geometry as geo
+from benchmarks.shared.metrics import matched_group_recovery
+
+REGIMES = ("crossed", "tied_population_crossed", "compatible", "common_mean_null")
+N_REPLICATES = 20
+
+
+def spans(points):
+    """Combine each whole block using the existing centered Gram score generator."""
+    single = [(group[0], scores) for group, _, scores in geo._spectral_coordinate_spans(points) if len(group) == 1]
+    for count in range(1, len(single) + 1):
+        for subset in combinations(single, count):
+            yield tuple(block for block, _ in subset), np.column_stack([scores for _, scores in subset])
+
+
+def build_ward(points):
+    z = candidate._local_ward(points)
+    return z, candidate.topology_from_linkage(z)
+
+
+def pair_clades(truth, clades):
+    left = frozenset(np.flatnonzero(truth == 0).tolist())
+    right = frozenset(np.flatnonzero(truth == 1).tolist())
+    return left in clades or right in clades, left in clades and right in clades
+
+
+def score(truth, labels, name):
+    recovery = matched_group_recovery(truth, labels)
+    return {
+        f"{name}_ami": adjusted_mutual_info_score(truth, labels),
+        f"{name}_matched_macro_f1": float(recovery.f1.mean()),
+        f"{name}_matched_rare_f1": float(recovery.loc[recovery.rare, "f1"].mean()),
+    }
+
+
+def dataset(regime, replicate):
+    seed = int(np.random.SeedSequence([20261109, 123, REGIMES.index(regime), replicate]).generate_state(1)[0])
+    rng = np.random.default_rng(seed)
+    groups = np.repeat(np.arange(4), 16)
+    a, parity = groups // 2, groups % 2
+    means = np.zeros((64, 6))
+    if regime == "compatible":
+        means[:, 0] = 3 * (2 * a - 1)
+        means[np.arange(64), 1 + a] = 2 * (2 * parity - 1)
+        b = (groups != 0).astype(int)
+    elif regime == "common_mean_null":
+        b = None
+    else:
+        scales = [3, 2] if regime == "crossed" else [2.5, 2.5]
+        means[:, :2] = np.column_stack([2 * a - 1, 2 * parity - 1]) * scales
+        b = parity
+    values = means + rng.normal(0, 0.5, size=means.shape)
+    order = rng.permutation(64)
+    truth = None if b is None else (a[order], b[order], groups[order])
+    return values[order], truth, seed
+
+
+def exact_examples():
+    out = {}
+    for name, scale in (("rectangle", (2, 1)), ("square", (1, 1))):
+        x = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]]) * scale
+        inputs = [(str(blocks), points) for blocks, points in spans(x)]
+        inputs += [("full_coordinates", x)] + [(f"prescribed_axis_{j}", x[:, j:j+1]) for j in range(2)]
+        rows = []
+        for space, coordinates in inputs:
+            trees = geo.ward_topology_family(coordinates)
+            for tree in sorted(trees, key=repr):
+                clades = geo.tree_clades(tree)
+                split_a = pair_clades(np.array([0, 0, 1, 1]), clades)[0]
+                split_b = pair_clades(np.array([0, 1, 0, 1]), clades)[0]
+                assert not (split_a and split_b)
+                fit = geo.fit_additive_distances(tree, pdist(x))
+                rows.append({
+                    "space": space, "tree": tree, "split_a": split_a, "split_b": split_b,
+                    "full_target_rmse": fit.rmse, "full_target_max_abs_residual": fit.max_abs_residual,
+                    "distances": pdist(coordinates).tolist(),
+                })
+        assert len(list(spans(x))) == (3 if name == "rectangle" else 1)
+        out[name] = rows
+    return out
+
+
+def evaluate(regime, replicate):
+    x, truth, seed = dataset(regime, replicate)
+    candidates = list(spans(x))
+    n_blocks = sum(len(blocks) == 1 for blocks, _ in candidates)
+    assert len(candidates) == 2**n_blocks - 1
+    leading = next(blocks for blocks, coords in candidates if coords.shape[1] >= 2 and blocks[0][0] == 0 and all(
+        left[1] == right[0] for left, right in zip(blocks, blocks[1:])
+    ))
+    target = pdist(x)
+    scale = float(target.max())
+    normalized_target = squareform(target / scale)
+    tolerance = 1e-10 * scale
+    z_full, full = build_ward(x)
+    rows, fits = [], {}
+    for blocks, coordinates in [((), x), *candidates]:
+        z, tree = (z_full, full) if not blocks else build_ward(coordinates)
+        clades = geo.tree_clades(tree)
+        shortlisted = not blocks or len(blocks) == 1 or blocks == leading
+        record = {
+            "regime": regime, "replicate": replicate, "seed": seed, "status": "ok",
+            "data_sha256": hashlib.sha256(x.tobytes()).hexdigest(),
+            "blocks": repr(blocks), "rank": coordinates.shape[1], "n_blocks": n_blocks,
+            "is_full_coordinates": not blocks, "is_leading": blocks == leading,
+            "is_single_block": len(blocks) == 1, "shortlisted": shortlisted,
+            "topology_id": hashlib.sha256(repr(tree).encode()).hexdigest(),
+            "rooted_rf_to_full": len(clades ^ geo.tree_clades(full)),
+        }
+        if shortlisted:
+            splits = geo.tree_edge_splits(tree)
+            if splits not in fits:
+                fits[splits] = candidate._fit_from_split_gram(splits, normalized_target, scale)
+            fit = fits[splits]
+            record |= {
+                "target_rmse": fit.rmse, "target_max_abs_residual": fit.max_abs_residual,
+                "zero_internal_edges": sum(
+                    len(split.left) > 1 and len(split.right) > 1 and length <= tolerance
+                    for split, length in zip(fit.edge_splits, fit.branch_lengths, strict=True)
+                ),
+                "_tree": tree,
+            }
+        if truth is not None:
+            a, b, joint = truth
+            cuts = cut_tree(z, n_clusters=[2, 4])
+            record |= score(a, cuts[:, 0], "factor_a") | score(b, cuts[:, 0], "contrast_b") | score(
+                joint, cuts[:, 1], "joint"
+            )
+            record["split_a"], record["both_a_clades"] = pair_clades(a, clades)
+            record["split_b"], record["both_b_clades"] = pair_clades(b, clades)
+            record["joint_four_clades"] = all(
+                frozenset(np.flatnonzero(joint == group).tolist()) in clades for group in range(4)
+            )
+            if regime in ("crossed", "tied_population_crossed"):
+                assert not (record["split_a"] and record["split_b"])
+        rows.append(record)
+    best = min(fit.rmse for fit in fits.values())
+    tied = [row for row in rows if row.get("target_rmse", np.inf) <= best + tolerance]
+    selected = next((row for row in tied if row["is_full_coordinates"]), None)
+    if selected is None:
+        selected = min(tied, key=lambda row: repr(row["_tree"]))
+    for row in rows:
+        row["selected_common_target"] = row is selected
+        row["shortlist_distinct_unrooted"] = len(fits)
+        row.pop("_tree", None)
+    return rows
+
+
+def summarize(frame):
+    rows = []
+    for (regime, rep), group in frame.groupby(["regime", "replicate"], sort=False):
+        full = group.loc[group.is_full_coordinates].iloc[0]
+        leading = group.loc[group.is_leading].iloc[0]
+        selected = group.loc[group.selected_common_target].iloc[0]
+        spectral = group.loc[~group.is_full_coordinates]
+        row = {
+            "regime": regime, "replicate": rep, "seed": full.seed,
+            "span_count": len(spectral), "unique_topologies": group.topology_id.nunique(),
+            "shortlist_distinct_unrooted": full.shortlist_distinct_unrooted,
+            "full_target_rmse": full.target_rmse, "selected_target_rmse": selected.target_rmse,
+        }
+        if regime != "common_mean_null":
+            for name, arm in (("full", full), ("leading", leading), ("selected", selected)):
+                row |= {f"{name}_{column}": arm[column] for column in (
+                    "split_a", "split_b", "joint_four_clades", "factor_a_ami", "contrast_b_ami", "joint_ami",
+                )}
+            row["union_has_both"] = bool(spectral.split_a.any() and spectral.split_b.any())
+            row["any_tree_has_both"] = bool((spectral.split_a & spectral.split_b).any())
+            row["full_has_both"] = bool(full.split_a and full.split_b)
+            for column in ("factor_a_ami", "contrast_b_ami", "joint_ami"):
+                row[f"oracle_{column}"] = spectral[column].max()
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def main():
+    exact = exact_examples()
+    rows = []
+    for regime in REGIMES:
+        for rep in range(N_REPLICATES):
+            start = perf_counter()
+            try:
+                rows.extend(dict(row, dataset_elapsed_s=perf_counter() - start) for row in evaluate(regime, rep))
+            except (ValueError, RuntimeError, np.linalg.LinAlgError) as exc:
+                rows.append(dict(regime=regime, replicate=rep, status="error", error=str(exc)))
+        print(regime, len(rows), flush=True)
+    frame = pd.DataFrame(rows)
+    frame.to_csv(HERE / "rows.csv.gz", index=False)
+    assert frame.status.eq("ok").all(), frame.loc[~frame.status.eq("ok")]
+    summary = summarize(frame)
+    assert len(summary) == 80 and summary.seed.is_unique
+    summary.to_csv(HERE / "summary.csv", index=False)
+    sources = [
+        Path(__file__), HERE / "protocol.md", Path(geo.__file__), Path(candidate.__file__),
+        ROOT / "benchmarks/shared/metrics.py", ROOT / "tree_break_selection/eigenvalue_groups.py",
+    ]
+    (HERE / "evidence.json").write_text(json.dumps({
+        "python": platform.python_version(), "numpy": np.__version__, "pandas": pd.__version__,
+        "scipy": scipy.__version__, "sklearn": sklearn.__version__, "exact": exact,
+        "hashes": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources},
+        "datasets": len(summary), "rows": len(frame), "statuses": frame.status.value_counts().to_dict(),
+    }, indent=2, allow_nan=False) + "\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# SOURCE: reports/subtree_spectral_alignment_20261109/figures/plot.py
+"""Render crossed partitions and finite-panel topology coverage."""
+
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+SOURCE = HERE.parent / "alternatives" / "summary.csv"
+STEM = "crossed_partitions_and_topology_coverage"
+BLUE = "#18648a"
+ORANGE = "#a64324"
+INK = "#162337"
+MUTED = "#43536a"
+POINTS = {"A": (-2, -1), "B": (-2, 1), "C": (2, -1), "D": (2, 1)}
+REGIMES = ("crossed", "tied_population_crossed", "compatible")
+
+
+def coverage():
+    data = pd.read_csv(SOURCE)
+    assert not data.duplicated(["regime", "replicate"]).any()
+    grouped = data.groupby("regime")
+    assert grouped.size().eq(20).all()
+    assert set(grouped.groups) == {*REGIMES, "common_mean_null"}
+    null = grouped.get_group("common_mean_null")
+    assert null.unique_topologies.eq(63).all() and null.union_has_both.isna().all()
+    rows = data[data.regime.isin(REGIMES)]
+    columns = ["union_has_both", "any_tree_has_both"]
+    assert rows[columns].notna().all().all()
+    assert set(rows[columns].to_numpy().ravel()) == {False, True}
+    return rows.groupby("regime")[columns].sum().reindex(REGIMES).astype(int)
+
+
+def draw_partition(ax, groups, axis):
+    boundary = ax.axvline if axis == "x" else ax.axhline
+    boundary(0, color="#9faab8", linewidth=1, ls="--")
+    for group, color in zip(groups, (BLUE, ORANGE), strict=True):
+        x, y = np.array([POINTS[leaf] for leaf in group]).T
+        ax.plot(x, y, color=color, alpha=0.30, linewidth=7, solid_capstyle="round")
+        ax.scatter(x, y, color=color, s=55, zorder=3)
+        for name, xx, yy in zip(group, x, y, strict=True):
+            ax.annotate(name, (xx, yy), xytext=(8, 4), textcoords="offset points", color=INK)
+    ax.set(xlim=(-2.7, 2.9), ylim=(-1.55, 1.6), xticks=[-2, 0, 2], yticks=[-1, 0, 1])
+    ax.set_title(f"${axis}$ split   {'|'.join(groups)}", fontsize=11, fontweight="bold")
+    ax.set_xlabel("x", labelpad=0)
+    ax.set_ylabel("y", rotation=0, labelpad=5)
+    ax.set_aspect("equal", adjustable="box")
+    ax.tick_params(length=2)
+
+
+def draw_tree(ax, groups):
+    for j, (group, color) in enumerate(zip(groups, (BLUE, ORANGE), strict=True)):
+        x = 2 * j
+        ax.plot([x, x, x + 1, x + 1], [0, 1, 1, 0], color=color, linewidth=2)
+        ax.plot([x + 0.5, x + 0.5], [1, 1.65], color=INK, linewidth=1.5)
+        for i, leaf in enumerate(group):
+            ax.text(x + i, -0.13, leaf, ha="center", va="top", color=color, fontweight="bold")
+    ax.plot([0.5, 2.5], [1.65, 1.65], color=INK, linewidth=1.5)
+    ax.plot([1.5, 1.5], [1.65, 1.92], color=INK, linewidth=1.5)
+    ax.set(xlim=(-0.45, 3.45), ylim=(-0.5, 2.05))
+    ax.set_axis_off()
+
+
+def main():
+    plt.rcParams.update(
+        {
+            "font.family": "DejaVu Sans",
+            "font.size": 10,
+            "axes.spines.right": False,
+            "axes.spines.top": False,
+            "pdf.fonttype": 42,
+            "svg.fonttype": "none",
+        }
+    )
+    fig = plt.figure(figsize=(11.7, 5.3), facecolor="white")
+    grid = fig.add_gridspec(
+        2,
+        3,
+        width_ratios=(1, 1, 1.9),
+        height_ratios=(1.18, 0.7),
+        left=0.07,
+        right=0.97,
+        top=0.76,
+        bottom=0.24,
+        wspace=0.36,
+        hspace=0.37,
+    )
+    fig.text(0.06, 0.91, "When two partitions cross", fontsize=22, fontweight="bold", color=INK)
+    fig.text(0.06, 0.827, "A  Two factors on the same four leaves", fontweight="bold", color=INK)
+    for j, (groups, axis) in enumerate([(("AB", "CD"), "x"), (("AC", "BD"), "y")]):
+        draw_partition(fig.add_subplot(grid[0, j]), groups, axis)
+        draw_tree(fig.add_subplot(grid[1, j]), groups)
+
+    ax = fig.add_subplot(grid[:, 2])
+    ax.set_title("B  Both contrasts represented", loc="left", fontweight="bold", pad=14, color=INK)
+    positions = np.arange(3)
+    colors = (BLUE, ORANGE)
+    for j, (column, label, color) in enumerate(
+        zip(
+            coverage().to_numpy().T,
+            ("Across the spectral family", "Together in one family tree"),
+            colors,
+            strict=True,
+        )
+    ):
+        bars = ax.bar(positions + (j - 0.5) * 0.35, column, width=0.32, color=color, label=label)
+        ax.bar_label(
+            bars, labels=[f"{value}/20" for value in column], padding=3, fontsize=9, color=color
+        )
+    ax.set_xticks(positions, ["Crossed", "Tied-population\ncrossed", "Compatible\n(nested B)"])
+    ax.set(ylim=(0, 29), yticks=[0, 5, 10, 15, 20], ylabel="Datasets out of 20")
+    ax.grid(axis="y", color="#e5e9ef")
+    ax.set_axisbelow(True)
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
+
+    fig.text(
+        0.06,
+        0.13,
+        "A  Both partitions describe real factors in the example. Their clades cross, so a single rooted tree cannot contain both.\n"
+        "B  Descriptive 20-seed panels. In the compatible case, contrast B is a nested group versus its complement.\n"
+        "    The common-mean null still produced 63 distinct candidates per dataset. Counts describe geometric sensitivity.",
+        color=MUTED,
+        fontsize=9,
+        linespacing=1.48,
+        va="top",
+    )
+    for extension in ("png", "pdf", "svg"):
+        fig.savefig(HERE / f"{STEM}.{extension}", dpi=200, facecolor="white")
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    main()

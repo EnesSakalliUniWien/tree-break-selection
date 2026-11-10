@@ -1,0 +1,206 @@
+# ===== protocol.md =====
+# Protocol: rule-out test on the real CHOIR cell-line data, end to end (frozen 2026-11-08)
+
+## What runs
+
+The two registered methods exactly as in `choir_cell_lines_tbs_lbfgsb_20261106/run_lbfgsb.py`
+(`tbs_family_diffusion` = default tree, `tbs_family_diffusion_markov_ward`): 48,879 cells, 30 PCs from that
+folder, its saved diffusion coordinates, the registry parameters, edge alpha 1e-3, sibling alpha 1e-2. The
+sibling p-value of each tested split is swapped by the harness of `split_count_exclusion_20261108` (unchanged
+code), arms:
+
+- today: production p-value (replay check: the 2026-11-06 runs found 75 and 954 clusters, ARI 0.0275 and 0.549,
+  27 and 41 lines recovered at 90/90).
+- count_all: min(1, (2^(n-1) - 1) p_split).
+- rule_out: count_all, and p = 1 unless the split is separable in its subtree's invariant directions with at most
+  5% of cells equidistant (|margin| < 0.1 in the test metric).
+
+Only change for scale: leaf rows of tested splits are found on demand instead of for every node at once.
+
+## Endpoints (descriptive)
+
+Per method and arm: found clusters, ARI and NMI against the cell-line labels, lines recovered (a cluster holds
+>= 90% of the line and the line is >= 90% of that cluster), ARI against published CHOIR_1, tested splits, tested
+splits kept as real by rule_out and why the others were excluded (not separable, tie share), and the sizes of
+the accepted splits. There are no known no-group parts in these data, so calibration cannot be checked here;
+cluster counts are compared with the 190 lines.
+
+# ===== run.py =====
+"""protocol.md: today, count_all and rule_out on the full CHOIR data for both registered methods.
+
+usage: run.py METHOD   (tbs_family_diffusion | tbs_family_diffusion_markov_ward)
+"""
+
+import importlib.util
+import json
+import os
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import networkx as nx
+
+HERE = Path(__file__).resolve().parent
+_spec = importlib.util.spec_from_file_location("exclusion", HERE.parent / "split_count_exclusion_20261108" / "run.py")
+exclusion = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(exclusion)  # patches the sibling pipeline with its arms
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance  # noqa: E402
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns  # noqa: E402
+
+SOURCE = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+ARMS = ("today", "count_all", "rule_out")
+METHOD = sys.argv[1]
+
+
+class LeafRows:
+    """Leaf row indices of a tree node, computed on first use."""
+
+    def __init__(self, tree, row_of_label):
+        self.tree, self.row_of_label, self.cache = tree, row_of_label, {}
+
+    def __getitem__(self, node):
+        if node not in self.cache:
+            below = nx.descendants(self.tree, node) | {node}
+            self.cache[node] = [self.row_of_label[self.tree.nodes[u]["label"]] for u in below
+                                if self.tree.out_degree(u) == 0]
+        return self.cache[node]
+
+
+def wrapper(records, *, model, **kwargs):
+    tree = sys._getframe(1).f_locals["tree"]  # swapped() reads `tree` from this frame
+    cache = exclusion.STATE["cache"]
+    if "rows" not in cache:
+        cache["rows"] = LeafRows(tree, {label: i for i, label in enumerate(exclusion.STATE["data"].index)})
+        cache["matrix"] = exclusion.STATE["data"].to_numpy(dtype=np.float64)
+    return exclusion.swapped(records, model=model, **kwargs)
+
+
+pipeline.compute_inflation_adjusted_sibling_tests = wrapper
+
+
+def recovered_lines(truth, labels):
+    table = pd.crosstab(truth, labels)
+    recall = table.max(axis=1) / table.sum(axis=1)
+    purity = table.max(axis=0) / table.sum(axis=0)
+    return int(((recall >= 0.9) & (purity[table.idxmax(axis=1)].to_numpy() >= 0.9)).sum())
+
+
+def main():
+    metadata = pd.read_csv(SOURCE / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(SOURCE / "pca.npy"), index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+    truth = metadata.Cell_line.to_numpy()
+    params = dict(METHOD_SPECS[METHOD].param_grid[0])
+    coordinates = np.load(SOURCE / METHOD / "coordinates.npy")
+    out = HERE / METHOD
+    out.mkdir(exist_ok=True)
+    distance_path = out / "diffusion_distance.npy"
+    distances = np.lib.format.open_memmap(distance_path, mode="w+", dtype=np.float64,
+                                          shape=(len(data) * (len(data) - 1) // 2,))
+    pdist(coordinates, metric="euclidean", out=distances)
+    distances.flush()
+    exclusion.STATE.update(data=data, cache={})  # per-split exclusion results do not depend on the arm
+    with threadpool_limits(limits=4), (out / "results.jsonl").open("w") as f:
+        for arm in ARMS:
+            exclusion.STATE.update(arm=arm, splits=[], checks={})
+            start = perf_counter()
+            result = run_tbs_on_distance(
+                data, distances, 0.01, edge_alpha=0.001, tree_linkage_method=params["tree_linkage_method"],
+                feature_space=continuous_feature_space_from_columns(tuple(data.columns)), branch_length_data_df=data,
+                edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+                adaptive_projection_dimension_energy_fraction=0.90, **_tbs_branch_length_optimization_kwargs(params),
+                extra={"feature_family_diffusion_fallback_reason": None})
+            labels = np.asarray(result.labels, dtype=int)
+            bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+            splits = [{**s, "bh_different": bool(bh[s["node"]])} for s in exclusion.STATE["splits"]]
+            row = {"method": METHOD, "arm": arm, "status": result.status.value, "found_clusters": result.found_clusters,
+                   "ari_cell_line": adjusted_rand_score(truth, labels), "nmi_cell_line": normalized_mutual_info_score(truth, labels),
+                   "recovered_lines_90_90": recovered_lines(truth, labels),
+                   "ari_published_CHOIR_1": adjusted_rand_score(metadata.CHOIR_1, labels),
+                   "checks": exclusion.STATE["checks"], "sec": perf_counter() - start, "splits": splits}
+            f.write(json.dumps(row, default=float) + "\n")
+            pd.DataFrame({"cell": metadata.index, "Cell_line": truth, "cluster": labels}).to_csv(
+                out / f"assignments_{arm}.csv.gz", index=False)
+            print(json.dumps({k: v for k, v in row.items() if k != "splits"}, default=float), flush=True)
+    distances._mmap.close()
+    distance_path.unlink()
+
+
+if __name__ == "__main__":
+    main()
+    os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (run_lbfgsb.py)
+
+# ===== summarize.py =====
+"""Summaries for protocol.md: metrics per method and arm, cluster purity and line fragmentation, split reasons."""
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 220)
+rows, splits = [], []
+for method in ("tbs_family_diffusion", "tbs_family_diffusion_markov_ward"):
+    for r in map(json.loads, (HERE / method / "results.jsonl").read_text().splitlines()):
+        a = pd.read_csv(HERE / method / f"assignments_{r['arm']}.csv.gz")
+        t = pd.crosstab(a.Cell_line, a.cluster)
+        purity = t.max(axis=0) / t.sum(axis=0)
+        main_cluster_share = t.max(axis=1) / t.sum(axis=1)
+        rows.append({"method": method.replace("tbs_family_diffusion", "default").replace("default_markov_ward", "markov_ward"),
+                     "arm": r["arm"], "clusters": r["found_clusters"], "ari": r["ari_cell_line"], "nmi": r["nmi_cell_line"],
+                     "lines_90_90": r["recovered_lines_90_90"], "ari_choir1": r["ari_published_CHOIR_1"],
+                     "clusters_ge90_pure": int((purity >= 0.9).sum()), "clusters_lt20_cells": int((t.sum(axis=0) < 20).sum()),
+                     "largest_cluster": int(t.sum(axis=0).max()),
+                     "lines_main_cluster_ge90": int((main_cluster_share >= 0.9).sum()),
+                     "median_clusters_per_line": float((t >= 0.05 * t.sum(axis=1).to_numpy()[:, None]).sum(axis=1).median())})
+        splits += [{"method": rows[-1]["method"], "arm": r["arm"], **s} for s in r["splits"]]
+m = pd.DataFrame(rows)
+print(m.round(3).to_string(index=False), "\n")
+s = pd.DataFrame(splits)
+ro = s[s.arm == "rule_out"].copy()
+ro["bin"] = pd.cut(ro.n_parent, [1, 31, 159, 999, 50000], labels=["<=31", "32-159", "160-999", "1000+"])
+why = ro.groupby(["method", "bin"], observed=True).agg(
+    tested=("real", "size"), separable=("separable", "mean"), tie_le_005=("tie_share", lambda x: (x <= 0.05).mean()),
+    kept_as_real=("real", "mean"), accepted=("bh_different", "mean"))
+print("rule_out tested splits by size\n", why.round(3).to_string())
+m.round(4).to_csv(HERE / "metrics.csv", index=False)
+why.round(4).to_csv(HERE / "rule_out_reasons.csv")
+
+# ===== summary.txt =====
+     method       arm  clusters   ari   nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  lines_main_cluster_ge90  median_clusters_per_line
+    default     today        75 0.028 0.548           27       0.014                  48                   20            28611                      177                       1.0
+    default count_all        82 0.027 0.549           29       0.014                  54                   23            28611                      174                       1.0
+    default  rule_out        69 0.018 0.497           29       0.009                  49                   12            32680                      174                       1.0
+markov_ward     today       954 0.549 0.863           41       0.445                 761                  374             1451                       56                       3.0
+markov_ward count_all      1605 0.402 0.833           24       0.334                1330                  940             1451                       28                       5.0
+markov_ward  rule_out       664 0.765 0.901           80       0.514                 494                  253             1990                       91                       2.0 
+
+rule_out tested splits by size
+                      tested  separable  tie_le_005  kept_as_real  accepted
+method      bin                                                           
+default     <=31          8      0.000       1.000         0.000     0.000
+            32-159       12      0.667       0.750         0.667     0.500
+            160-999      21      0.429       0.524         0.429     0.333
+            1000+        49      0.245       0.857         0.245     0.184
+markov_ward <=31        363      0.000       1.000         0.000     0.000
+            32-159      867      0.304       0.468         0.254     0.172
+            160-999     505      0.311       0.349         0.259     0.143
+            1000+       103      0.359       0.806         0.359     0.340
+
+# ===== run outputs (metrics lines) =====
+{"method": "tbs_family_diffusion", "arm": "today", "status": "ok", "found_clusters": 75, "ari_cell_line": 0.027501580482560465, "nmi_cell_line": 0.5478832096047226, "recovered_lines_90_90": 27, "ari_published_CHOIR_1": 0.013829383146337417, "checks": {"n_matches_record": [90, 90], "replay": [90, 90]}, "sec": 143.84727520804154, 
+{"method": "tbs_family_diffusion", "arm": "count_all", "status": "ok", "found_clusters": 82, "ari_cell_line": 0.027326960350048043, "nmi_cell_line": 0.5491589507941731, "recovered_lines_90_90": 29, "ari_published_CHOIR_1": 0.01375283031724595, "checks": {}, "sec": 109.39441283402266, 
+{"method": "tbs_family_diffusion", "arm": "rule_out", "status": "ok", "found_clusters": 69, "ari_cell_line": 0.018152642915704793, "nmi_cell_line": 0.4965577595043011, "recovered_lines_90_90": 29, "ari_published_CHOIR_1": 0.009114700234420058, "checks": {}, "sec": 112.85938825004268, 
+{"method": "tbs_family_diffusion_markov_ward", "arm": "today", "status": "ok", "found_clusters": 954, "ari_cell_line": 0.5487738487929897, "nmi_cell_line": 0.862679353336724, "recovered_lines_90_90": 41, "ari_published_CHOIR_1": 0.4445783754165225, "checks": {"n_matches_record": [1838, 1838], "replay": [1838, 1838]}, "sec": 162.60792812501313, 
+{"method": "tbs_family_diffusion_markov_ward", "arm": "count_all", "status": "ok", "found_clusters": 1605, "ari_cell_line": 0.4021257076644639, "nmi_cell_line": 0.8333232267383075, "recovered_lines_90_90": 24, "ari_published_CHOIR_1": 0.33410868548350814, "checks": {}, "sec": 145.74536595802056, 
+{"method": "tbs_family_diffusion_markov_ward", "arm": "rule_out", "status": "ok", "found_clusters": 664, "ari_cell_line": 0.7651600941523182, "nmi_cell_line": 0.9006331704544697, "recovered_lines_90_90": 80, "ari_published_CHOIR_1": 0.5139064680750106, "checks": {}, "sec": 149.3347618749831, 

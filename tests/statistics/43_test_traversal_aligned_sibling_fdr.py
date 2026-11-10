@@ -119,6 +119,26 @@ def test_frontier_passes_through_a_null_like_singleton_peel() -> None:
     assert bool(out.loc["C", "Sibling_BH_Different"])
 
 
+def test_frontier_passes_through_a_closed_parent_without_testing_it() -> None:
+    tree = _binary_three_level_tree()
+    annotations_df = _annotations()
+
+    out = apply_traversal_aligned_sibling_bh_results(
+        tree,
+        annotations_df,
+        ["A", "B"],
+        [(10.0, 1.0, 0.001), (1.0, 1.0, 0.90)],
+        0.01,
+        closed_parents=["root"],
+    )
+
+    assert not bool(out.loc["root", "Sibling_BH_Different"])
+    assert pd.isna(out.loc["root", "Sibling_Divergence_P_Value_Corrected"])
+    # Only A and B form the depth-1 family: 0.001 * 2 / 1.
+    assert np.isclose(out.loc["A", "Sibling_Divergence_P_Value_Corrected"], 0.002)
+    assert bool(out.loc["A", "Sibling_BH_Different"])
+
+
 @pytest.mark.parametrize(
     ("method_label", "expected_calibration"),
     [

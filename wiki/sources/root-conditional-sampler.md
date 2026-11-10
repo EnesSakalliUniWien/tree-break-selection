@@ -2,8 +2,9 @@
 title: Root Conditional Sampler Implementation
 type: source
 status: reviewed
-updated: 2026-11-06
+updated: 2026-11-09
 sources:
+  - raw/inbox/choir-cell-lines/root-validation-calibration-20261109.md
   - raw/inbox/descendant-chain-validation-20261106.md
   - benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_conditional_mc.py
   - benchmarks/diagnostics/calibration/README.md
@@ -69,8 +70,18 @@ The same module now also tests the root's children conditional on their
 ancestor paths; [[descendant-chain-family-test]] records that extension and
 its validation.
 
+The 9 November follow-up reproduces all 24 historical chains and runs 1,664
+fresh families at a fixed 119-step budget. The primary n=9,p=3 null has
+38/1,200 root rejections at .05 (one-sided exact upper limit .04130).
+On 20 preselected balanced signals, 999 versus 119 steps raises root .05
+rejection from 6 to 12, at higher cost. Larger/wider panels, unresolved cases,
+model boundaries and descendant power are in
+[[root-validation-generalisation-evidence]].
+
 ## Links
 
+- [[root-validation-generalisation-evidence]]
+- [[gaussian-root-calibration-and-cut-geometry]]
 - [[descendant-chain-family-test]]
 - [[selective-rebuild-comparison]]
 - [[conditional-diffusion-monte-carlo-evidence]]

@@ -18,7 +18,7 @@ from benchmarks.shared.result_records import (
     build_computed_result_record,
 )
 from benchmarks.shared.runners.dispatch import run_clustering_result
-from benchmarks.shared.types import MethodSpec
+from benchmarks.shared.types import BenchmarkRunStatus, MethodRunResult, MethodSpec
 from benchmarks.shared.util.decomposition import create_report_dataframe_from_labels
 from benchmarks.shared.util.execution_mode import coerce_bool_param
 from benchmarks.shared.util.method_sets import TBS_DISTANCE_TREE_METHODS
@@ -167,8 +167,13 @@ def run_single_method_once(
     meta: dict[str, object],
     distance_matrix: np.ndarray | None,
     distance_condensed: np.ndarray | None,
+    allow_method_errors: bool = False,
 ) -> tuple[BenchmarkResultRow, ComputedResultRecord | None]:
-    """Execute one method+params run and return typed outputs."""
+    """Execute one method+params run and return typed outputs.
+
+    A raising method re-raises unless ``allow_method_errors`` is set; then it
+    becomes a ``status=error`` row whose ``skip_reason`` holds the exception.
+    """
     benchmark_metadata = benchmark_param_metadata(
         method_id,
         params,
@@ -262,38 +267,47 @@ def run_single_method_once(
                 TBS_TREE_DISTANCE_SOURCE_FEATURE_METRIC
             )
 
-    result = run_clustering_result(
-        data_df=data_t,
-        method_id=method_id,
-        params=run_params,
-        seed=run_seed,
-        significance_level=significance_level,
-        edge_alpha=edge_alpha,
-        distance_matrix=distance_matrix,
-        distance_condensed=distance_condensed_for_run,
-        feature_space=feature_space,
-    )
+    true_clusters = int(meta["n_clusters"])
+    try:
+        result = run_clustering_result(
+            data_df=data_t,
+            method_id=method_id,
+            params=run_params,
+            seed=run_seed,
+            significance_level=significance_level,
+            edge_alpha=edge_alpha,
+            distance_matrix=distance_matrix,
+            distance_condensed=distance_condensed_for_run,
+            feature_space=feature_space,
+        )
+        if _should_fail_closed_hard_overlap_internal_filter(
+            method_id=method_id,
+            case_name=case_name,
+            true_clusters=true_clusters,
+            result=result,
+            recorded_run_params=recorded_run_params,
+        ):
+            raise ValueError(
+                "Fail-closed hard-overlap internal support guard: "
+                "guarded internal-barycenter TBS returned one cluster without "
+                "admissible split support."
+            )
+    except Exception as exc:
+        if not allow_method_errors:
+            raise
+        result = MethodRunResult(
+            labels=None,
+            found_clusters=0,
+            report_df=None,
+            status=BenchmarkRunStatus.ERROR,
+            skip_reason=f"{type(exc).__name__}: {exc}",
+        )
 
-    true_clusters_raw = meta["n_clusters"]
-    true_clusters = int(true_clusters_raw)
     stage_timings = _extract_stage_timings(
         method_id=method_id,
         result_status=result.status,
         result_extra=result.extra,
     )
-
-    if _should_fail_closed_hard_overlap_internal_filter(
-        method_id=method_id,
-        case_name=case_name,
-        true_clusters=true_clusters,
-        result=result,
-        recorded_run_params=recorded_run_params,
-    ):
-        raise ValueError(
-            "Fail-closed hard-overlap internal support guard: "
-            "guarded internal-barycenter TBS returned one cluster without "
-            "admissible split support."
-        )
 
     if result.status == "ok" and result.labels is not None:
         labels = result.labels

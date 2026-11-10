@@ -67,6 +67,7 @@ def run_tbs_on_distance(
     ),
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
     enforce_internal_support_thresholds: bool = False,
+    sibling_split_count_rule_out: bool = False,
     sibling_gate_profile: str | None = None,
     sibling_gate_method: str | None = None,
     sibling_gate_alpha_penalty: float | None = None,
@@ -205,6 +206,7 @@ def run_tbs_on_distance(
         continuous_covariance_min_child_leaf_count=(continuous_covariance_min_child_leaf_count),
         edge_branch_length_variance_policy=edge_branch_length_variance_policy,
         enforce_internal_support_thresholds=bool(enforce_internal_support_thresholds),
+        sibling_split_count_rule_out=bool(sibling_split_count_rule_out),
         sibling_gate_profile=sibling_gate_profile,
         sibling_gate_method=sibling_gate_method,
         sibling_gate_alpha_penalty=sibling_gate_alpha_penalty,
@@ -301,6 +303,7 @@ def run_tbs_on_distance(
         "enforce_internal_support_thresholds": bool(
             resolved_gate_config.enforce_internal_support_thresholds
         ),
+        "sibling_split_count_rule_out": bool(resolved_gate_config.sibling_split_count_rule_out),
         "passthrough": bool(passthrough),
         "sibling_gate_method": str(resolved_gate_config.sibling_gate_method),
     }

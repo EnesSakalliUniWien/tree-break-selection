@@ -1,0 +1,54 @@
+[
+  {
+    "code": "Module[{x,t,v,a,b,p,k,n,q,z,m,i,j,rho,short=1/1000,tail=1/10,c=1/3,raw,l,u,sl,su}, \nraw[j_,lo_,hi_]:=(1-tail)/short Integrate[x^j,{x,lo,Max[lo,Min[hi,short]]}]+tail Integrate[x^j,{x,lo,hi}]; \nl=raw[0,0,c];u=raw[0,c,1];sl=raw[1,0,c];su=raw[1,c,1];\nrho=l u (sl/l-su/u)^2/(raw[2,0,1]-sl^2/l-su^2/u);\n{Factor[p a^2+(1-p)b^2-p(1-p)(a+b)^2],\n{rho,N[rho,16]},\nLimit[FullSimplify[(1-q(1-t)) q(1-t)((1+t)/2-q t^2/(2(1-q(1-t))))^2/(q t^3/3-(q t^2/2)^2/(1-q(1-t))+q (1-t)^3/12)],q->0,Direction->\"FromAbove\"],\nIntegrate[Sqrt[3](x-1/4-3 x^2/4),{x,0,1}], Integrate[3(x-1/4-3 x^2/4)^2,{x,0,1}],\n16^2 3/40,\nSeries[40((2/Pi)(Sin[t]+Cos[t](Pi/2-t))-(51+27 Cos[t]^2)/80),{t,0,4}],\nFactor[k 9/5+k(k-1) 3/5-k^2], FullSimplify[(n z/(n-2))/(1+n z/(n-2))]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {(-b$83979 + a$83979*p$83979 + b$83979*p$83979)^2, {1367002729/184734185, 7.39983630533785612013282760849054548296`16.}, (-3*(-1 + t$83979)*(1 + t$83979)^2)/(1 + 3*t$83979*(-1 + t$83979 + t$83979^2)), 0, 1/40, 96/5, SeriesData[t$83979, 0, {1, 0, -13/2, 80/(3*Pi), -17/6}, 0, 5, 1], (-2*(-3 + k$83979)*k$83979)/5, (n$83979*z$83979)/(-2 + n$83979 + n$83979*z$83979)}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  {
+    "code": "Module[{r,k,n,t,s,c,theta,rho,eta}, \n{Factor[8(1+3 t(-1+t+t^2))-3(1-t)(1+t)^2], \nIntegrate[r^(k/2-1) (1-r)^((n-1-k)/2-1),{r,0,1},Assumptions->n>k+1&&k>0],\nFullSimplify[r/.First@Solve[2 Sqrt[1-r]==1,r,Reals]],\nFullSimplify[(r/(1-r))/.r->3/4],\nLimit[(Sqrt[1-r]^(n))^(1/n),n->Infinity,Assumptions->0<r<1],\n{Limit[(1+2 s/n)^(-k/2) Exp[-3 s/(1+2 s/n)],n->Infinity,Assumptions->s>0&&k>0],\nFullSimplify[(2 k+12 n)/n]},\nFullSimplify[Series[(2/Pi)(Sin[theta]+Cos[theta](Pi/2-theta)-1-Cos[theta]^2/2)/(1-3/Pi),{theta,0,4}]]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {(-1 + 3*t$83973)^2*(5 + 3*t$83973), (Gamma[k$83973/2]*Gamma[(-1 - k$83973 + n$83973)/2])/Gamma[(-1 + n$83973)/2], 3/4, 3, Sqrt[1 - r$83973], {E^(-3*s$83973), 12 + (2*k$83973)/n$83973}, SeriesData[theta$83973, 0, {1, 0, -1/2*(-2 + Pi)/(-3 + Pi), 2/(3*(-3 + Pi)), (-8 + Pi)/(24*(-3 + Pi))}, 0, 5, 1]}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  {
+    "code": "Module[{a,b,r,w,k,n}, \n{FullSimplify[D[(w/(1+w))^a (1/(1+w))^(b-1)/w,w]],\nFullSimplify[(r/(1-r))/(k/(n-1-k)),Assumptions->0<r<1&&n>k+1&&k>0],\nFullSimplify[((n-1-k)/k)*(n/(n-2))*w,Assumptions->n>k+1&&k>0],\nFullSimplify[D[(w/(1+w))^(a-1) (1-w/(1+w))^(b-1) / Beta[a,b],w] /. w->1,Assumptions->a>0&&b>0],\nFullSimplify[(w/(1+w))^(a-1) (1/(1+w))^(b-1)/(1+w)^2 - w^(a-1)/(1+w)^(a+b),Assumptions->a>0&&b>0&&w>0],\nTable[N[{CDF[BetaDistribution[3/2,9/2],r],CDF[FRatioDistribution[3,9],3r/(1-r)]},18],{r,{1/10,1/2,3/4}}]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {(w$83978^(-2 + a$83978)*((1 + w$83978)^(-1))^b$83978*(-1 + a$83978 - b$83978*w$83978))/(1 + w$83978)^a$83978, ((1 + k$83978 - n$83978)*r$83978)/(k$83978*(-1 + r$83978)), (n$83978*(-1 - k$83978 + n$83978)*w$83978)/(k$83978*(-2 + n$83978)), (2^(1 - a$83978 - b$83978)*(a$83978 - b$83978))/Beta[a$83978, b$83978], 0, {{0.19830213718282326863725955210463517923`18., 0.19830213718282326863725955210463517923`18.}, {0.91228709067614791742032899746991778951`18., 0.91228709067614791742032899746991778951`18.}, {0.99549497215037835333949343590935224551`18., 0.99549497215037835333949343590935224551`18.}}}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  {
+    "code": "Module[{p,d}, {Reduce[p(1-p)d^2>3 && 0<p<1 && d>=0,d,Reals], Table[{p,Sqrt[3/(p(1-p))],N[Sqrt[3/(p(1-p))],15]},{p,{1/2,1/5,1/20}}]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {Inequality[0, Less, p$83978, Less, 1] && d$83978 > Sqrt[3]*Sqrt[-(1/((-1 + p$83978)*p$83978))], {{1/2, 2*Sqrt[3], 3.46410161513775458705489268301174473388`15.}, {1/5, (5*Sqrt[3])/2, 4.33012701892219323381861585376468091735`15.}, {1/20, 20*Sqrt[3/19], 7.94719414239026283919651032310117585078`15.}}}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  }
+]

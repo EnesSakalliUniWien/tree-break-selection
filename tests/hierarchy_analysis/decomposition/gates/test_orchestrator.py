@@ -383,3 +383,35 @@ def test_pipeline_rejects_unknown_sibling_gate_method() -> None:
             leaf_data=leaf_data,
             sibling_gate_method="adaptive_magic",
         )
+
+
+def test_pipeline_rejects_split_count_rule_out_with_fixed_sibling_gate() -> None:
+    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
+
+    with pytest.raises(ValueError, match="sibling_split_count_rule_out"):
+        run_gate_annotation_pipeline(
+            tree,
+            annotations_df.copy(),
+            edge_alpha=0.01,
+            sibling_alpha=0.01,
+            leaf_data=leaf_data,
+            sibling_gate_method="fixed_coordinate_bh",
+            sibling_split_count_rule_out=True,
+        )
+
+
+def test_pipeline_rejects_split_count_rule_out_without_continuous_features(
+    expand_leaves_into_rows,
+) -> None:
+    tree, annotations_df, leaf_data = expand_leaves_into_rows(*_build_small_tree_with_leaf_data())
+
+    with pytest.raises(ValueError, match="continuous feature_space"):
+        run_gate_annotation_pipeline(
+            tree,
+            annotations_df.copy(),
+            edge_alpha=0.01,
+            sibling_alpha=0.01,
+            leaf_data=leaf_data,
+            feature_space=infer_feature_space_from_columns(tuple(leaf_data.columns)),
+            sibling_split_count_rule_out=True,
+        )

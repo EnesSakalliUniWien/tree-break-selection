@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-09",
+  "scope": "Saved-data paths and missing-neighborhood statistical diagnostics",
+  "saved_fits": 160,
+  "independent_reused_datasets": 16,
+  "new_analysis_fits": 0,
+  "paths": 569954,
+  "internal_endpoint_paths": 1890,
+  "files": {
+    "reports/subtree_path_statistics_20261109/README.md": "04e2c3b2ff91b10e8c9ba4ace7985d8bced86b55e67f8702e40944a3d938d458",
+    "reports/subtree_path_statistics_20261109/mathematics.md": "6f30db3d05fe3eaaf94db8f86b992dc99bf7e0ed7f1789b3cd9e45ed33a21b74",
+    "reports/subtree_path_statistics_20261109/protocol.md": "9882e59a37c1c1e98038c1cb3b45663bf4b1f7e51d9785ee265e87e21f914eb4",
+    "reports/subtree_path_statistics_20261109/wolfram_evidence.json": "a9a3252c3412e55c53c710cceb7f1dc9b98b006cc3c697e73bee8ec26e44c904",
+    "reports/subtree_path_statistics_20261109/panel/manifest.json": "400ce96a01df0a4d9100307dd12e6a8a05da2fd37746687e5082e8e58027f06d",
+    "reports/subtree_path_statistics_20261109/panel/summary.json": "21aff13f76ac55af0f8f55629e728015ed42f18da6677980d47bd22d3050955b",
+    "reports/subtree_path_statistics_20261109/panel/endpoint_summary.json": "e162351b8480f3e6207133b1df465e17c78dbe6922e9a647893a39425d6c02ad",
+    "reports/subtree_path_statistics_20261109/panel/same_path_example.json": "c2e0cbef841defea24661608a382a776dd7687f9f8134876b1a08e4e420bd0fc",
+    "reports/subtree_path_statistics_20261109/panel/paths.csv.gz": "90102926292e655695f58fe7606f3aa9c338cce6dcb337abc9dc00f316833c44",
+    "reports/subtree_path_statistics_20261109/panel/matched_edges.json.gz": "5151c0013b8cfd68eef77b47c6fc64a158a93676c7342a7d4b011d23fa9ba541",
+    "reports/subtree_path_statistics_20261109/tests.log": "7ffebd3ec71f4679ad3e341374a06f964ee7416b2d52e70332e1aa0f4a57c328",
+    "reports/subtree_path_statistics_20261109/run.py": "7ccde8a66998142726b4819711f330aeeba2c2c8663e6a59bd3dd3a4239b26d9",
+    "reports/subtree_path_statistics_20261109/summarize_endpoints.py": "61ccfbaa9dd19de971a8f55e6a201b25c3fc4aeec3be1c0e9940f61ef5d8edc7",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_path_context.py": "b789a6be7644c604652037fb5f2d86df2b3e923889eb597558f832aee1f1fad2",
+    "tests/statistics/81_test_subtree_path_context.py": "3e307e1f2ad67458dc9bde40b2708c0b8af09633105d2a56754564f5b24b7b29",
+    "raw/inbox/choir-cell-lines/subtree-path-statistics-20261109-sources.py.txt": "3c97d0deb0bbf440a9c0e070c905037a5619ee687b06e326cb1d389a840c263f"
+  }
+}

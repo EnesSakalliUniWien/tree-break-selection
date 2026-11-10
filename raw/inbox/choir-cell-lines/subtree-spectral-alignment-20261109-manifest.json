@@ -1,0 +1,398 @@
+{
+  "report_root": "reports/subtree_spectral_alignment_20261109",
+  "source_hashes": {
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_spectral_alignment.py": "0af69308f3e6cad5bc4500208e5ee434eac53b281eab3d7a4d21820f49fdc6c3",
+    "tests/statistics/77_test_subtree_spectral_alignment.py": "a4b25f39eabd1bf129a83aa4e89f2b40a9cc3da275b9db7c3ebc019ba3e94591",
+    "tests/statistics/78_test_subtree_alignment_native_replay.py": "a39c948e0dc155a7e433cd49053270cd15f055a5664d7875c50d6fa9d9849af2",
+    "reports/subtree_spectral_alignment_20261109/run.py": "bf527a4f939235a45274cf534781048abde58b91be2ec1a796d0d7d130f1597f",
+    "reports/subtree_spectral_alignment_20261109/summarize.py": "c3a0e8301b7ef9e48137bf204eb35b09395a723b6db3ebe0dc9abb33e4aebccf",
+    "reports/subtree_spectral_alignment_20261109/production_spans.py": "dd0f9333306ae837c68e74690c35af0b6787db222ec28784da394d70a51c3cc7",
+    "reports/subtree_spectral_alignment_20261109/alternatives/run.py": "f411ebaba3835840eee31c445bbbd410eea573dd9a8181878f275163b70dc935",
+    "reports/subtree_spectral_alignment_20261109/figures/plot.py": "b68b2403fb6172e75b05b06d09c9b8324d3b01a6fbc178eab20081f2bf6c9768"
+  },
+  "artifacts": {
+    "reports/subtree_spectral_alignment_20261109/README.md": {
+      "bytes": 10607,
+      "sha256": "ff44cbde5c9749b7c51ec67b296b4be34ebbb0765a8aaf7a1cbf66828709e4a3"
+    },
+    "reports/subtree_spectral_alignment_20261109/alignment/report.md": {
+      "bytes": 6671,
+      "sha256": "d7b125679aa767d9b8bf3e5ebe4a2db1720006bba49c99a31ef7abd0061a829f"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/README.md": {
+      "bytes": 4627,
+      "sha256": "59c1d8182dac90ba96cb9b3c7283e3fdbf756ce3fe35ba6c0504920f12fdd626"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/evidence.json": {
+      "bytes": 6890,
+      "sha256": "907750bcc2d980d9d2bc7de35e12f799d461b10f7f3d5293ab453ae015e5f849"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/protocol.md": {
+      "bytes": 3442,
+      "sha256": "760b7272b191d4c274d02ad543afdd1d2b5edb564f4fdda61b97ea63a987e4ae"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/rows.csv.gz": {
+      "bytes": 389177,
+      "sha256": "452ba208b65cb7c4affafd995db7324ef0dcd0227a6823b6fbb4272e422336fb"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/run.py": {
+      "bytes": 10501,
+      "sha256": "f411ebaba3835840eee31c445bbbd410eea573dd9a8181878f275163b70dc935"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/source_change_review.json": {
+      "bytes": 1805,
+      "sha256": "206f02b2dc2821ceb57566109efe0c233306a5b119c7083fd5595d1a88dd7fa6"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/source_during_run.py.txt": {
+      "bytes": 10501,
+      "sha256": "903f16e036897be0ed1bc3b5ef11c6648e8cf333b62c28dd2125a5f242cbb25a"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/summary.csv": {
+      "bytes": 17441,
+      "sha256": "1c0f44475af07322893da44f4d2e6db7f85cde155d553dc5926b62f32cbafcf1"
+    },
+    "reports/subtree_spectral_alignment_20261109/alternatives/verification.json": {
+      "bytes": 449,
+      "sha256": "730ce8b57b99b7aab1de15785cdbeec0bc7e59eef8a4eb9b864bd54b37a68cc9"
+    },
+    "reports/subtree_spectral_alignment_20261109/figures/crossed_partitions_and_topology_coverage.pdf": {
+      "bytes": 28968,
+      "sha256": "60199cf2eb8c96460a599382adade9ba2ae91f0e0b971e04e72b7684b3055d7f"
+    },
+    "reports/subtree_spectral_alignment_20261109/figures/crossed_partitions_and_topology_coverage.png": {
+      "bytes": 156925,
+      "sha256": "61f136dbb11a32eeef1bc968a8baa8f7a93141ca7806f4f9b38d448b87d77c81"
+    },
+    "reports/subtree_spectral_alignment_20261109/figures/crossed_partitions_and_topology_coverage.svg": {
+      "bytes": 32583,
+      "sha256": "f76a7ac55d530b2028e2a30fa0a90c6a118f806e901858de84f14391de1eb725"
+    },
+    "reports/subtree_spectral_alignment_20261109/figures/plot.py": {
+      "bytes": 5379,
+      "sha256": "b68b2403fb6172e75b05b06d09c9b8324d3b01a6fbc178eab20081f2bf6c9768"
+    },
+    "reports/subtree_spectral_alignment_20261109/math/README.md": {
+      "bytes": 12295,
+      "sha256": "25a0285a7396139f4450d91e22d05a7e8d0c30748cd15ee3fee718cf1bd3df10"
+    },
+    "reports/subtree_spectral_alignment_20261109/math/coifman-lafon-2006.pdf": {
+      "bytes": 700691,
+      "sha256": "cf2188865324a22da7dcea1072466881ef47723d50e5ac34253bc7b057ff43ce"
+    },
+    "reports/subtree_spectral_alignment_20261109/math/primary_sources.md": {
+      "bytes": 1532,
+      "sha256": "edc42065d7a2f184145e3e1ed228f47417398df9ce645cf63b83272f30edd317"
+    },
+    "reports/subtree_spectral_alignment_20261109/math/wolfram_evidence.json": {
+      "bytes": 1288,
+      "sha256": "b7b5713e943a1c1c0f4253a564205b0215644b2c22ac3712f8989e3004da92a3"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/child_summary.csv": {
+      "bytes": 47422,
+      "sha256": "70f4b557d215ad4ae4cbd53b2e32ea8f35cb7c2661fd9ad7f97359ec0c691c8e"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/manifest.json": {
+      "bytes": 18707,
+      "sha256": "a23752f7248373de64edc2cd635ff2f1c47daabe0d1e0b4b61d182fbc1358d15"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/production_span_rows.jsonl.gz": {
+      "bytes": 63348,
+      "sha256": "b61aaf05e9894f03c4590f6cf510c3c8cf1352322cb4c12b2f14e26471616721"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/production_span_summary.json": {
+      "bytes": 19701,
+      "sha256": "5753090db8b5cbb5c07c989cbba7ecd2c356d5b2844854412dd42cbf6630b57d"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/root_summary.csv": {
+      "bytes": 26649,
+      "sha256": "817c69c54126cc605ed26b6dc901ea8afd67c0b2977070d2360f6de983bd2c29"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/rows.jsonl.gz": {
+      "bytes": 2256358,
+      "sha256": "743b4f8838734d191e2fef194a9078088fd34622e7d83675b47f487d51680877"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_common_mean_null_markov.json.gz": {
+      "bytes": 117531,
+      "sha256": "9636888f1ca07d9cd60120ed02b60fa6ae30c35006f8150f883879ecdbe75696"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_common_mean_null_symmetric.json.gz": {
+      "bytes": 116617,
+      "sha256": "1835b5a6d51bdc6a5a5acbcb0719b466e2844f3486c653b7bb4aa689eb92b9c2"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_compatible_markov.json.gz": {
+      "bytes": 103738,
+      "sha256": "184eb02a4d28ce019e7aaa599c584894707260724e537d7a9038259545f80498"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_compatible_symmetric.json.gz": {
+      "bytes": 108474,
+      "sha256": "f55a592e38ee7f7faf983e1186d968bed4d60444a7ae695a9db7a42644efe8fd"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_crossed_markov.json.gz": {
+      "bytes": 101192,
+      "sha256": "54c4378470bd0fb33feac2e4c8358391650c18c9aba78b3bfce96b2f15363211"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_crossed_symmetric.json.gz": {
+      "bytes": 107856,
+      "sha256": "f4dab85741c597a5fd9ab5204968c11d4483644565afe35409dec74cb456d16b"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_tied_population_crossed_markov.json.gz": {
+      "bytes": 99839,
+      "sha256": "7f27b7f65a3b7a11deeca73ce2629e0c304c0396e3d07a63e16b01b2f822ed25"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_tied_population_crossed_symmetric.json.gz": {
+      "bytes": 106904,
+      "sha256": "7c8941bfd19f76595587a737b371e529f949b1945d1fe57ac50c048bc459b917"
+    },
+    "reports/subtree_spectral_alignment_20261109/parent_child/verification.json": {
+      "bytes": 290,
+      "sha256": "bf909ef968b779f4f5f8c0d40ed3870cf31dde60ed0597222e191870c439030f"
+    },
+    "reports/subtree_spectral_alignment_20261109/production_spans.py": {
+      "bytes": 4818,
+      "sha256": "dd0f9333306ae837c68e74690c35af0b6787db222ec28784da394d70a51c3cc7"
+    },
+    "reports/subtree_spectral_alignment_20261109/protocol.md": {
+      "bytes": 4600,
+      "sha256": "5b512b0e6767b547faa2067b6be5f2afd58d49513c8f044cad3db457d85924f8"
+    },
+    "reports/subtree_spectral_alignment_20261109/pytest_output.txt": {
+      "bytes": 6614,
+      "sha256": "85ca6b751742bc1baaf6750722a68952d2ea8b8a9eced4e7f9892b564116c917"
+    },
+    "reports/subtree_spectral_alignment_20261109/run.py": {
+      "bytes": 16346,
+      "sha256": "bf527a4f939235a45274cf534781048abde58b91be2ec1a796d0d7d130f1597f"
+    },
+    "reports/subtree_spectral_alignment_20261109/summarize.py": {
+      "bytes": 5896,
+      "sha256": "c3a0e8301b7ef9e48137bf204eb35b09395a723b6db3ebe0dc9abb33e4aebccf"
+    },
+    "reports/subtree_spectral_alignment_20261109/summary.json": {
+      "bytes": 5166,
+      "sha256": "3ed65973fb06fe686490376b973f6fa2fd4f2f54529a7490a944e68cd392d42a"
+    }
+  },
+  "summary": {
+    "native_fits": 160,
+    "child_comparisons": 320,
+    "alternative_rows": 5120,
+    "unique_shared_datasets": 80,
+    "all_input_hashes_regenerated_and_paired": true,
+    "source_files_changed": [],
+    "maximum_errors": {
+      "transported_gap": 1.6512461363502128e-15,
+      "production_distance_error": 1.3877787807814457e-14,
+      "covariance_error": 7.14612618207639e-15
+    },
+    "child_rank_loss_count": 239,
+    "induced_rebuilt_gap_above_1e_10": 316,
+    "operator_gap_range": [
+      2.0885955386424364e-16,
+      0.8164804132609161
+    ],
+    "native_grouped": [
+      {
+        "case": "common_mean_null",
+        "operator": "markov",
+        "mean_ami": 0.0,
+        "mean_groups": 4.55,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.3921454535779905,
+        "median_between_fraction": 0.15575231257424849
+      },
+      {
+        "case": "common_mean_null",
+        "operator": "symmetric",
+        "mean_ami": 0.0,
+        "mean_groups": 3.6,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.3921454535779905,
+        "median_between_fraction": 0.15539069068912548
+      },
+      {
+        "case": "compatible",
+        "operator": "markov",
+        "mean_ami": 1.0,
+        "mean_groups": 4.0,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.1460314756997536,
+        "median_between_fraction": 0.6051956370172398
+      },
+      {
+        "case": "compatible",
+        "operator": "symmetric",
+        "mean_ami": 1.0,
+        "mean_groups": 4.0,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.1460314756997536,
+        "median_between_fraction": 0.3130093983485712
+      },
+      {
+        "case": "crossed",
+        "operator": "markov",
+        "mean_ami": 1.0,
+        "mean_groups": 4.0,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.15650722425069785,
+        "median_between_fraction": 0.30731858331389816
+      },
+      {
+        "case": "crossed",
+        "operator": "symmetric",
+        "mean_ami": 1.0,
+        "mean_groups": 4.0,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.15650722425069785,
+        "median_between_fraction": 0.30544277301198397
+      },
+      {
+        "case": "tied_population_crossed",
+        "operator": "markov",
+        "mean_ami": 0.9968298064124266,
+        "mean_groups": 4.05,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.1663742599192052,
+        "median_between_fraction": 0.30404892574013065
+      },
+      {
+        "case": "tied_population_crossed",
+        "operator": "symmetric",
+        "mean_ami": 1.0,
+        "mean_groups": 4.0,
+        "root_rejections": 20,
+        "median_raw_left_right_gap": 0.1663742599192052,
+        "median_between_fraction": 0.3069180701171146
+      }
+    ],
+    "child_grouped": [
+      {
+        "case": "common_mean_null",
+        "operator": "markov",
+        "median_raw_covariance_gap": 1.4415964534252352,
+        "median_raw_eigenvalue_gap": 0.26177122144447285,
+        "median_right_gap": 1.8361084569678763,
+        "median_operator_gap": 0.6496655657000892,
+        "positive_rank_loss": 0
+      },
+      {
+        "case": "common_mean_null",
+        "operator": "symmetric",
+        "median_raw_covariance_gap": 1.458194599571534,
+        "median_raw_eigenvalue_gap": 0.24408097372252577,
+        "median_right_gap": 1.7496489413316918,
+        "median_operator_gap": 0.6423427031744273,
+        "positive_rank_loss": 0
+      },
+      {
+        "case": "compatible",
+        "operator": "markov",
+        "median_raw_covariance_gap": 1.4543880613305369,
+        "median_raw_eigenvalue_gap": 0.5679906494889769,
+        "median_right_gap": 2.118146123186561,
+        "median_operator_gap": 0.004422302712999704,
+        "positive_rank_loss": 40
+      },
+      {
+        "case": "compatible",
+        "operator": "symmetric",
+        "median_raw_covariance_gap": 1.4278619561009376,
+        "median_raw_eigenvalue_gap": 0.5680353843797299,
+        "median_right_gap": 2.235964102951442,
+        "median_operator_gap": 0.0035949617221333373,
+        "positive_rank_loss": 39
+      },
+      {
+        "case": "crossed",
+        "operator": "markov",
+        "median_raw_covariance_gap": 1.273008785509658,
+        "median_raw_eigenvalue_gap": 0.6177174222514323,
+        "median_right_gap": 2.2358385675680568,
+        "median_operator_gap": 0.003255102704210098,
+        "positive_rank_loss": 40
+      },
+      {
+        "case": "crossed",
+        "operator": "symmetric",
+        "median_raw_covariance_gap": 1.2167914463923588,
+        "median_raw_eigenvalue_gap": 0.6262583415077534,
+        "median_right_gap": 2.23599309456905,
+        "median_operator_gap": 0.0043939148479972545,
+        "positive_rank_loss": 40
+      },
+      {
+        "case": "tied_population_crossed",
+        "operator": "markov",
+        "median_raw_covariance_gap": 1.2819297271602665,
+        "median_raw_eigenvalue_gap": 0.6066979170364895,
+        "median_right_gap": 2.11798480848175,
+        "median_operator_gap": 0.004907837926083929,
+        "positive_rank_loss": 40
+      },
+      {
+        "case": "tied_population_crossed",
+        "operator": "symmetric",
+        "median_raw_covariance_gap": 1.332968282162304,
+        "median_raw_eigenvalue_gap": 0.6317948061772369,
+        "median_right_gap": 2.236000810141281,
+        "median_operator_gap": 0.0037847654436885926,
+        "positive_rank_loss": 40
+      }
+    ]
+  },
+  "wolfram": {
+    "code": "Module[{w={{0,1,0,0},{1,0,1,0},{0,1,0,1},{0,0,1,0}},d,s,p,r,u,l,wc,dc,pc,a,b,ha,hb,h,x,y,m,ss,mu,ma,mb,n1,n2}, d=DiagonalMatrix[Total[w,{2}]]; s=MatrixPower[d,-1/2].w.MatrixPower[d,-1/2]; p=Inverse[d].w; r={2,1,-1,-2}/Sqrt[12]; u=MatrixPower[d,1/2].r; l=d.r; wc=w[[1;;3,1;;3]]; dc=DiagonalMatrix[Total[wc,{2}]]; pc=Inverse[dc].wc; a=DiagonalMatrix[{4,1}]; b=DiagonalMatrix[{1,4}]; ha=DiagonalMatrix[{-1,1}]; hb={{0,1},{1,0}}; h={{0,1},{-1,0}}; x={{-2,-1},{-2,1}}; y={{2,-1},{2,1},{4,0}}; m=Join[x,y]; mu=Mean[m]; ma=Mean[x]; mb=Mean[y]; n1=Length[x]; n2=Length[y]; ss[z_]:=Transpose[(#-Mean[z])&/@z].((#-Mean[z])&/@z); FullSimplify[{s==MatrixPower[d,1/2].p.MatrixPower[d,-1/2],s.u==u/2,p.r==r/2,Transpose[p].l==l/2,l.r,(u[[1]]-u[[2]])^2/4,(r[[1]]-r[[2]])^2/4,pc.r[[1;;3]]-r[[1;;3]]/2,Eigenvalues[a]==Eigenvalues[b],ha.a.Transpose[ha]==b,hb.a.Transpose[hb]==b,h.IdentityMatrix[2].Transpose[h]==IdentityMatrix[2],ss[m]-ss[x]-ss[y]-n1 n2/(n1+n2) Outer[Times,ma-mb,ma-mb]}]]",
+    "timeConstraint": 25,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {True, True, True, True, 1, (3 - 2*Sqrt[2])/24, 1/48, {0, 0, Sqrt[3]/4}, True, False, True, True, {{0, 0}, {0, 0}}}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  "production_span_summary": {
+    "status": "completed",
+    "scope": "Same 80 datasets and saved 320 child memberships; no new native fits or independent observations",
+    "child_rows": 320,
+    "datasets": 80,
+    "parent_windows_with_zero_weights": 0,
+    "operators": {
+      "symmetric": {
+        "induced": {
+          "compared": 160,
+          "child_windows_with_zero_weights": 72,
+          "same_span": 0,
+          "median_projector_gap": 1.4142135623730951,
+          "median_child_rank": 6.0
+        },
+        "rebuilt": {
+          "compared": 160,
+          "child_windows_with_zero_weights": 75,
+          "same_span": 0,
+          "median_projector_gap": 1.4143343756221425,
+          "median_child_rank": 6.0
+        }
+      },
+      "markov": {
+        "induced": {
+          "compared": 160,
+          "child_windows_with_zero_weights": 82,
+          "same_span": 0,
+          "median_projector_gap": 1.4142135623730954,
+          "median_child_rank": 5.0
+        },
+        "rebuilt": {
+          "compared": 160,
+          "child_windows_with_zero_weights": 85,
+          "same_span": 0,
+          "median_projector_gap": 1.4148171303857389,
+          "median_child_rank": 5.0
+        }
+      }
+    }
+  },
+  "final_verification": "Report verification.json is maintained separately from this immutable artifact snapshot."
+}

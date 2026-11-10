@@ -22,6 +22,7 @@ from .decomposition.gates.column_contracts import (
     validate_sibling_gate_columns,
 )
 from .decomposition.gates.gate_evaluator import GateEvaluator, TraversalDecision
+from .decomposition.gates.orchestrator import resolve_effective_sibling_alpha
 from .statistics.data_utils import extract_bool_column_dict
 
 TraceLevel = Literal["compact", "full"]
@@ -109,8 +110,8 @@ class TreeDecomposition:
             )
             self._annotation_edge_alpha = float(gate_annotation_bundle.metadata.edge.alpha)
             self._annotation_sibling_alpha = float(gate_annotation_bundle.metadata.sibling.alpha)
-            self._annotation_effective_sibling_alpha = self._annotation_sibling_alpha / float(
-                gate_config.sibling_gate_alpha_penalty
+            self._annotation_effective_sibling_alpha = resolve_effective_sibling_alpha(
+                self._annotation_sibling_alpha, gate_config.sibling_gate_alpha_penalty
             )
         else:
             self.annotations_df = self._validated_annotations(annotations_df)

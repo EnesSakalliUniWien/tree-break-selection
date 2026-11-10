@@ -1,0 +1,3190 @@
+
+# FILE: results/analyses/subtree_topology_reference_20261109/bootstrap/run.py
+# SHA256: 5fba4b6323e4feabe3b5c8d8ea6ae4d434b88c3ed614464e681f2e7c16a7e0ad
+"""Locked fixed-leaf Ward bootstrap experiment."""
+
+import hashlib
+import json
+import math
+import sys
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage
+from scipy.spatial.distance import pdist
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.selected.hierarchy import subtree_topology_geometry as geo
+
+CASES = (
+    ("planted", [(-7, 0), (-7, 1), (1, -1), (1, 1), (5, -1), (5, 2)], ((0, 1), ((2, 3), (4, 5)))),
+    ("rectangle", [(-2, -1), (-2, 1), (2, -1), (2, 1)], ((0, 3), (1, 2))),
+    ("square", [(-1, -1), (-1, 1), (1, -1), (1, 1)], None),
+)
+SCHEMES = ("feature", "noise_008", "noise_080", "row_permutation")
+
+
+def ward(values, labels):
+    nodes = list(map(int, labels))
+    for a, b in linkage(values, method="ward")[:, :2].astype(int):
+        nodes.append((nodes[a], nodes[b]))
+    return nodes[-1]
+
+
+def key(tree):
+    return tuple(sorted(tuple(sorted(clade)) for clade in geo.tree_clades(tree)))
+
+
+def rates(trees, nominal, target, ties):
+    representatives = {key(t): t for t in trees}
+    count = Counter(map(key, trees))
+    splits = Counter(
+        (cut.left, cut.right)
+        for t in trees
+        for cut in geo.tree_edge_splits(t)
+        if min(len(cut.left), len(cut.right)) > 1
+    )
+    n = len(trees)
+    result = dict(
+        attempts=n,
+        distinct_topologies=len(count),
+        entropy_bits=-sum(c / n * math.log2(c / n) for c in count.values()),
+        topologies=[dict(clades=k, count=c, frequency=c / n) for k, c in sorted(count.items())],
+        split_frequencies=[
+            dict(left=a, right=b, count=c, frequency=c / n) for (a, b), c in sorted(splits.items())
+        ],
+        rf_to_nominal=dict(
+            sorted(Counter(geo.rooted_robinson_foulds(t, nominal) for t in trees).items())
+        ),
+        outside_exact_tie_family=sum(c for k, c in count.items() if k not in ties),
+        min_rf_to_tie_family=dict(
+            sorted(
+                Counter(
+                    min(
+                        geo.rooted_robinson_foulds(representatives[k], tie) for tie in ties.values()
+                    )
+                    for k in map(key, trees)
+                ).items()
+            )
+        ),
+    )
+    if target is not None:
+        result["rf_to_comparator"] = dict(
+            sorted(Counter(geo.rooted_robinson_foulds(t, target) for t in trees).items())
+        )
+        result["comparator_recovery"] = count[key(target)]
+    assert sum(c for c in count.values()) == n
+    return result
+
+
+def main():
+    result = {}
+    for case_idx, (name, points, target) in enumerate(CASES):
+        planar = np.asarray(points, dtype=float)
+        a, b = planar.T
+        x = np.column_stack([a, b, a, b, a + b, a - b])
+        np.testing.assert_array_equal(pdist(x, "sqeuclidean"), 4 * pdist(planar, "sqeuclidean"))
+        ids = np.arange(len(x))
+        nominal = ward(x, ids)
+        ties = {key(t): t for t in geo.ward_topology_family(x, rtol=0)}
+        assert set(ties) == {key(t) for t in geo.ward_topology_family(x)}
+        if name == "square":
+            assert set(ties) == {key(((0, 1), (2, 3))), key(((0, 2), (1, 3)))}
+        assert key(nominal) in ties
+        assert len(ties) == (2 if name == "square" else 1)
+        if name == "planted":
+            assert geo.rooted_robinson_foulds(nominal, target) == 0
+        result[name] = dict(
+            points=x.tolist(),
+            nominal_clades=key(nominal),
+            exact_tied_family=sorted(ties),
+            comparator=None if target is None else key(target),
+            comparator_is_truth=name == "planted",
+            schemes={},
+        )
+        for i, scheme in enumerate(SCHEMES):
+            trees, raw_order = [], []
+            for j in range(1000):
+                rng = np.random.default_rng([5811260911, case_idx, i, j])
+                if scheme == "feature":
+                    values = x[:, rng.integers(x.shape[1], size=x.shape[1])]
+                elif scheme.startswith("noise"):
+                    sigma = 0.08 if scheme == "noise_008" else 0.8
+                    values = x + rng.normal(scale=sigma, size=x.shape)
+                else:
+                    order = rng.permutation(ids)
+                    values = x[order][np.argsort(order)]
+                    np.testing.assert_array_equal(pdist(values), pdist(x))
+                    raw_order.append(ward(x[order], order))
+                trees.append(ward(values, ids))
+            outcome = rates(trees, nominal, target, ties)
+            if raw_order:
+                assert outcome["rf_to_nominal"] == {0: 1000}
+                outcome["unrestored_order_ward_with_restored_labels"] = rates(
+                    raw_order, nominal, target, ties
+                )
+            result[name]["schemes"][scheme] = outcome
+    paths = (Path(__file__), HERE / "protocol.md", Path(geo.__file__))
+    evidence = dict(
+        cases=result,
+        sha256={
+            str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths
+        },
+    )
+    with (HERE / "evidence.json").open("x") as stream:
+        json.dump(evidence, stream, indent=2, allow_nan=False)
+        stream.write("\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/calibration/all_labels.py
+# SHA256: 22157f5a6515018a60fec06cbe60a98e028b37af1c3074a86675c7952ab47631
+"""Exact max-over-labels score on a fixed or median-selected eight-row subtree."""
+import json
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from threadpoolctl import threadpool_limits
+
+from run import fixed_subtree_contrast_test, subtree_gaussian_chain_test, summary
+
+HERE = Path(__file__).resolve().parent
+LEFT = ((np.arange(127)[:, None] >> np.arange(8)) & 1) == 0
+# Fix the last label to the left side, remove the empty complement.
+LEFT = LEFT[1:]
+LEFT = np.r_[LEFT, [[False] * 7 + [True]]]
+CONTRASTS = LEFT - LEFT.mean(axis=1, keepdims=True)
+CONTRASTS /= np.linalg.norm(CONTRASTS, axis=1, keepdims=True)
+assert len(LEFT) == len(np.unique(LEFT, axis=0)) == 127
+assert LEFT[:, -1].all() and np.all(LEFT.sum(axis=1) < 8)
+
+
+def record(panel_idx, replicate):
+    ds, cs = np.random.SeedSequence([81620261109, panel_idx, replicate]).spawn(2)
+    seed = int(cs.generate_state(1, dtype=np.uint64)[0])
+    factor = np.linalg.cholesky([[1, 1.2], [1.2, 4]])
+    x = np.random.default_rng(ds).standard_normal((16, 2)) @ factor.T
+    order = np.argsort(x[:, 0])
+    if panel_idx:
+        rows, outside = np.sort(order[:8]), order[8:]
+        boundary = x[outside, 0].min()
+    else:
+        rows = np.arange(8)
+        boundary = None
+
+    def scores(values):
+        y = values[rows] - values[rows].mean(axis=0)
+        q, _ = np.linalg.qr(y, mode="reduced")
+        return ((CONTRASTS @ q)**2).sum(axis=1)
+
+    def score(values):
+        return float(scores(values).max())
+
+    def event(values):
+        if values[rows, 0].max() == boundary:
+            raise FloatingPointError("median membership tied")
+        return bool(values[rows, 0].max() < boundary)
+
+    max_index = int(np.argmax(scores(x)))
+    fixed = fixed_subtree_contrast_test(
+        x, subtree_indices=rows, left_indices=rows[LEFT[max_index]], all_labels=True
+    )
+    assert fixed["status"] == "complete" and fixed["number_of_labels"] == 127
+    np.testing.assert_allclose(fixed["statistic"], score(x), rtol=1e-12)
+    result = dict(panel=("fixed_max" if panel_idx == 0 else "selected_descendant"),
+                  replicate=replicate, seed=seed, score=score(x),
+                  naive_analytic=fixed["unadjusted_p_value"], fixed_beta=fixed)
+    for name, test_event in [("naive_chain", None), *([("selected_chain", event)] if panel_idx else [])]:
+        start = perf_counter()
+        chain = subtree_gaussian_chain_test(
+            x, subtree_indices=rows, score=score, selection_event=test_event, steps=199, seed=seed
+        )
+        chain["seconds"] = perf_counter() - start
+        if chain["status"] == "complete":
+            assert chain["p_value"] == np.mean(np.asarray(chain["chain_scores"]) >= score(x))
+        result[name] = chain
+    return result
+
+
+def main():
+    out = {}
+    with threadpool_limits(limits=1), (HERE / "all_labels.jsonl").open("x") as stream:
+        for panel_idx, count in enumerate((320, 160)):
+            rows = []
+            for replicate in range(count):
+                row = record(panel_idx, replicate)
+                stream.write(json.dumps(row, allow_nan=False) + "\n")
+                rows.append(row)
+            stream.flush()
+            out[rows[0]["panel"]] = summary(rows)
+    (HERE / "all_labels_summary.json").write_text(json.dumps(out, indent=2) + "\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/calibration/all_labels_before_canonicalization.py
+# SHA256: 465ff0b22ea9d28d451d7392c7b84288c74fbfe0222c301a0124f2b18c78b291
+"""Exact max-over-labels score on a fixed or median-selected eight-row subtree."""
+import json
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from threadpoolctl import threadpool_limits
+
+from run import fixed_subtree_contrast_test, subtree_gaussian_chain_test, summary
+
+HERE = Path(__file__).resolve().parent
+LEFT = ((np.arange(127)[:, None] >> np.arange(8)) & 1) == 0
+# Fix the last label to the left side, remove the empty complement.
+LEFT = LEFT[1:]
+LEFT = np.r_[LEFT, [[False] * 7 + [True]]]
+CONTRASTS = LEFT - LEFT.mean(axis=1, keepdims=True)
+CONTRASTS /= np.linalg.norm(CONTRASTS, axis=1, keepdims=True)
+assert len(LEFT) == len(np.unique(LEFT, axis=0)) == 127
+assert LEFT[:, -1].all() and np.all(LEFT.sum(axis=1) < 8)
+
+
+def record(panel_idx, replicate):
+    ds, cs = np.random.SeedSequence([81620261109, panel_idx, replicate]).spawn(2)
+    seed = int(cs.generate_state(1, dtype=np.uint64)[0])
+    factor = np.linalg.cholesky([[1, 1.2], [1.2, 4]])
+    x = np.random.default_rng(ds).standard_normal((16, 2)) @ factor.T
+    order = np.argsort(x[:, 0])
+    if panel_idx:
+        rows, outside = order[:8], order[8:]
+        boundary = x[outside, 0].min()
+    else:
+        rows = np.arange(8)
+        boundary = None
+
+    def scores(values):
+        y = values[rows] - values[rows].mean(axis=0)
+        q, _ = np.linalg.qr(y, mode="reduced")
+        return ((CONTRASTS @ q)**2).sum(axis=1)
+
+    def score(values):
+        return float(scores(values).max())
+
+    def event(values):
+        if values[rows, 0].max() == boundary:
+            raise FloatingPointError("median membership tied")
+        return bool(values[rows, 0].max() < boundary)
+
+    max_index = int(np.argmax(scores(x)))
+    fixed = fixed_subtree_contrast_test(
+        x, subtree_indices=rows, left_indices=rows[LEFT[max_index]], all_labels=True
+    )
+    assert fixed["status"] == "complete" and fixed["number_of_labels"] == 127
+    np.testing.assert_allclose(fixed["statistic"], score(x), rtol=1e-12)
+    result = dict(panel=("fixed_max" if panel_idx == 0 else "selected_descendant"),
+                  replicate=replicate, seed=seed, score=score(x),
+                  naive_analytic=fixed["unadjusted_p_value"], fixed_beta=fixed)
+    for name, test_event in [("naive_chain", None), *([("selected_chain", event)] if panel_idx else [])]:
+        start = perf_counter()
+        chain = subtree_gaussian_chain_test(
+            x, subtree_indices=rows, score=score, selection_event=test_event, steps=199, seed=seed
+        )
+        chain["seconds"] = perf_counter() - start
+        if chain["status"] == "complete":
+            assert chain["p_value"] == np.mean(np.asarray(chain["chain_scores"]) >= score(x))
+        result[name] = chain
+    return result
+
+
+def main():
+    out = {}
+    with threadpool_limits(limits=1), (HERE / "all_labels.jsonl").open("x") as stream:
+        for panel_idx, count in enumerate((320, 160)):
+            rows = []
+            for replicate in range(count):
+                row = record(panel_idx, replicate)
+                stream.write(json.dumps(row, allow_nan=False) + "\n")
+                rows.append(row)
+            stream.flush()
+            out[rows[0]["panel"]] = summary(rows)
+    (HERE / "all_labels_summary.json").write_text(json.dumps(out, indent=2) + "\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/calibration/run.py
+# SHA256: cfdc39c5ee859b62ded99ba6db313f8c94224317e525fdb0e02ec7f45b1aee6a
+"""Fresh independent fixed and selected Gaussian subtree checks."""
+import json
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from scipy.stats import beta, binomtest
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_gaussian_reference import (
+    fixed_subtree_contrast_test,
+    subtree_gaussian_chain_test,
+)
+
+PANELS = (("fixed_null", 3, 1200), ("selected_null", 3, 1200),
+          ("full_span_null", 12, 300), ("selected_signal", 3, 200))
+ROWS = np.arange(32).reshape(4, 8)
+CONTRAST = np.repeat([1.0, -1.0], 4) / np.sqrt(8)
+
+
+def statistic(values, rows):
+    feature = values[rows, 0]
+    z = feature - feature.mean()
+    return float((CONTRAST @ z)**2 / (z @ z))
+
+
+def record(panel, panel_idx, p, replicate, factor):
+    data_seed, chain_seed = np.random.SeedSequence([2026110917, panel_idx, replicate]).spawn(2)
+    seed = int(chain_seed.generate_state(1, dtype=np.uint64)[0])
+    x = np.random.default_rng(data_seed).standard_normal((32, p)) @ factor
+    if panel == "selected_signal":
+        x[4:8, 0] += 2.5 * np.linalg.norm(factor[:, 0])
+    scores = [statistic(x, rows) for rows in ROWS]
+    selected = panel.startswith("selected")
+    winner = int(np.argmax(scores)) if selected else 0
+    rows = ROWS[winner]
+    maximum_other = max(value for i, value in enumerate(scores) if i != winner)
+    ties_win = winner < next(i for i, v in enumerate(scores) if v == maximum_other and i != winner)
+
+    def score(values):
+        return statistic(values, rows)
+
+    def event(values):
+        q = score(values)
+        return q >= maximum_other if ties_win else q > maximum_other
+
+    tail = float(beta.sf(scores[winner], 0.5, 3))
+    result = dict(panel=panel, replicate=replicate, seed=seed, winner=winner,
+                  score=scores[winner], largest_other=maximum_other, naive_analytic=tail)
+    if selected:
+        result["selected_analytic"] = float(tail / beta.sf(maximum_other, 0.5, 3))
+    for name, test_event in [("naive_chain", None), *([("selected_chain", event)] if selected else [])]:
+        start = perf_counter()
+        result[name] = subtree_gaussian_chain_test(
+            x, subtree_indices=rows, score=score, selection_event=test_event, steps=119, seed=seed
+        )
+        result[name]["seconds"] = perf_counter() - start
+        chain = result[name]
+        if chain["status"] == "complete":
+            assert chain["p_value"] == np.mean(np.asarray(chain["chain_scores"]) >= scores[winner])
+            assert chain["chain_scores"][chain["anchor_index"]] == scores[winner]
+    if not selected:
+        fixed = fixed_subtree_contrast_test(x, subtree_indices=rows, left_indices=rows[:4])
+        result["fixed_beta"] = fixed
+        if panel == "full_span_null":
+            assert fixed["decision"] == "unresolved" and fixed["rank"] == 7
+            reduced = fixed_subtree_contrast_test(x, subtree_indices=rows, left_indices=rows[:4], rank=2)
+            assert reduced["status"] == "complete"
+            result["rank2_beta"] = reduced
+    return result
+
+
+def summary(rows):
+    result = []
+    for endpoint in ("naive_analytic", "selected_analytic", "naive_chain", "selected_chain",
+                     "fixed_beta", "rank2_beta"):
+        if endpoint not in rows[0]:
+            continue
+        endpoint_rows = [r[endpoint] for r in rows]
+        chain = endpoint.endswith("chain")
+        p = [r["p_value"] for r in endpoint_rows] if isinstance(endpoint_rows[0], dict) else endpoint_rows
+        for alpha in (0.05, 0.01):
+            rejected = [value is not None and value <= alpha and (
+                not chain or endpoint_rows[i]["sampling_status"] == "moved"
+            ) for i, value in enumerate(p)]
+            ci = binomtest(sum(rejected), len(rows)).proportion_ci()
+            result.append(dict(
+                endpoint=endpoint, alpha=alpha, rejected=sum(rejected), datasets=len(rows),
+                lower95=ci.low, upper95=ci.high,
+                unresolved=sum(r["decision"] == "unresolved" for r in endpoint_rows)
+                if isinstance(endpoint_rows[0], dict) else 0,
+                median_moves=float(np.median([r["accepted_moves"] for r in endpoint_rows])) if chain else None,
+                median_seconds=float(np.median([r["seconds"] for r in endpoint_rows])) if chain else None,
+                stalled=sum(r["sampling_status"] == "stalled" for r in endpoint_rows) if chain else None,
+                signal_selected=sum(r["winner"] == 0 for r in rows) if rows[0]["panel"] == "selected_signal" else None,
+                signal_selected_rejected=sum(hit and r["winner"] == 0 for hit, r in zip(rejected, rows))
+                if rows[0]["panel"] == "selected_signal" else None,
+            ))
+    return result
+
+
+def main():
+    out = {}
+    with threadpool_limits(limits=1), (HERE / "results.jsonl").open("x") as stream:
+        for i, (panel, p, count) in enumerate(PANELS):
+            q, _ = np.linalg.qr(np.random.default_rng(731190).normal(size=(p, p)))
+            factor = np.sqrt(np.geomspace(1, 16, p))[:, None] * q.T
+            rows = []
+            for rep in range(count):
+                row = record(panel, i, p, rep, factor)
+                stream.write(json.dumps(row, allow_nan=False) + "\n")
+                rows.append(row)
+            stream.flush()
+            assert len(rows) == count
+            out[panel] = summary(rows)
+            print(panel, count, flush=True)
+    (HERE / "summary.json").write_text(json.dumps(out, indent=2, allow_nan=False) + "\n")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["summarize"]:
+        panels = {name: [] for name, _, _ in PANELS}
+        with (HERE / "results.jsonl").open() as stream:
+            for row in map(json.loads, stream):
+                panels[row["panel"]].append(row)
+        for name, _, count in PANELS:
+            assert sorted(r["replicate"] for r in panels[name]) == list(range(count))
+        out = {name: summary(rows) for name, rows in panels.items()}
+        (HERE / "summary.json").write_text(json.dumps(out, indent=2, allow_nan=False) + "\n")
+    else:
+        main()
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/calibration/run_before_summary_fix.py
+# SHA256: 401e7d3a860bf53b3a5fa5a891101e2b4c56f5fa54c94749c2a3116d4d4ee9bc
+"""Fresh independent fixed and selected Gaussian subtree checks."""
+import json
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from scipy.stats import beta, binomtest
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_gaussian_reference import (
+    fixed_subtree_contrast_test,
+    subtree_gaussian_chain_test,
+)
+
+PANELS = (("fixed_null", 3, 1200), ("selected_null", 3, 1200),
+          ("full_span_null", 12, 300), ("selected_signal", 3, 200))
+ROWS = np.arange(32).reshape(4, 8)
+CONTRAST = np.repeat([1.0, -1.0], 4) / np.sqrt(8)
+
+
+def statistic(values, rows):
+    feature = values[rows, 0]
+    z = feature - feature.mean()
+    return float((CONTRAST @ z)**2 / (z @ z))
+
+
+def record(panel, panel_idx, p, replicate, factor):
+    data_seed, chain_seed = np.random.SeedSequence([2026110917, panel_idx, replicate]).spawn(2)
+    seed = int(chain_seed.generate_state(1, dtype=np.uint64)[0])
+    x = np.random.default_rng(data_seed).standard_normal((32, p)) @ factor
+    if panel == "selected_signal":
+        x[4:8, 0] += 2.5 * np.linalg.norm(factor[:, 0])
+    scores = [statistic(x, rows) for rows in ROWS]
+    selected = panel.startswith("selected")
+    winner = int(np.argmax(scores)) if selected else 0
+    rows = ROWS[winner]
+    maximum_other = max(value for i, value in enumerate(scores) if i != winner)
+    ties_win = winner < next(i for i, v in enumerate(scores) if v == maximum_other and i != winner)
+
+    def score(values):
+        return statistic(values, rows)
+
+    def event(values):
+        q = score(values)
+        return q >= maximum_other if ties_win else q > maximum_other
+
+    tail = float(beta.sf(scores[winner], 0.5, 3))
+    result = dict(panel=panel, replicate=replicate, seed=seed, winner=winner,
+                  score=scores[winner], largest_other=maximum_other, naive_analytic=tail)
+    if selected:
+        result["selected_analytic"] = tail / beta.sf(maximum_other, 0.5, 3)
+    for name, test_event in [("naive_chain", None), *([("selected_chain", event)] if selected else [])]:
+        start = perf_counter()
+        result[name] = subtree_gaussian_chain_test(
+            x, subtree_indices=rows, score=score, selection_event=test_event, steps=119, seed=seed
+        )
+        result[name]["seconds"] = perf_counter() - start
+        chain = result[name]
+        if chain["status"] == "complete":
+            assert chain["p_value"] == np.mean(np.asarray(chain["chain_scores"]) >= scores[winner])
+            assert chain["chain_scores"][chain["anchor_index"]] == scores[winner]
+    if not selected:
+        fixed = fixed_subtree_contrast_test(x, subtree_indices=rows, left_indices=rows[:4])
+        result["fixed_beta"] = fixed
+        if panel == "full_span_null":
+            assert fixed["decision"] == "unresolved" and fixed["rank"] == 7
+            reduced = fixed_subtree_contrast_test(x, subtree_indices=rows, left_indices=rows[:4], rank=2)
+            assert reduced["status"] == "complete"
+            result["rank2_beta"] = reduced
+    return result
+
+
+def summary(rows):
+    result = []
+    for endpoint in ("naive_analytic", "selected_analytic", "naive_chain", "selected_chain",
+                     "fixed_beta", "rank2_beta"):
+        if endpoint not in rows[0]:
+            continue
+        endpoint_rows = [r[endpoint] for r in rows]
+        chain = endpoint.endswith("chain")
+        p = [r["p_value"] for r in endpoint_rows] if isinstance(endpoint_rows[0], dict) else endpoint_rows
+        for alpha in (0.05, 0.01):
+            rejected = [value is not None and value <= alpha and (
+                not chain or endpoint_rows[i]["sampling_status"] == "moved"
+            ) for i, value in enumerate(p)]
+            ci = binomtest(sum(rejected), len(rows)).proportion_ci()
+            result.append(dict(
+                endpoint=endpoint, alpha=alpha, rejected=sum(rejected), datasets=len(rows),
+                lower95=ci.low, upper95=ci.high,
+                unresolved=sum(r["decision"] == "unresolved" for r in endpoint_rows)
+                if isinstance(endpoint_rows[0], dict) else 0,
+                median_moves=float(np.median([r["accepted_moves"] for r in endpoint_rows])) if chain else None,
+                median_seconds=float(np.median([r["seconds"] for r in endpoint_rows])) if chain else None,
+                stalled=sum(r["sampling_status"] == "stalled" for r in endpoint_rows) if chain else None,
+                signal_selected=sum(r["winner"] == 0 for r in rows) if rows[0]["panel"] == "selected_signal" else None,
+                signal_selected_rejected=sum(hit and r["winner"] == 0 for hit, r in zip(rejected, rows))
+                if rows[0]["panel"] == "selected_signal" else None,
+            ))
+    return result
+
+
+def main():
+    out = {}
+    with threadpool_limits(limits=1), (HERE / "results.jsonl").open("x") as stream:
+        for i, (panel, p, count) in enumerate(PANELS):
+            q, _ = np.linalg.qr(np.random.default_rng(731190).normal(size=(p, p)))
+            factor = np.sqrt(np.geomspace(1, 16, p))[:, None] * q.T
+            rows = []
+            for rep in range(count):
+                row = record(panel, i, p, rep, factor)
+                stream.write(json.dumps(row, allow_nan=False) + "\n")
+                rows.append(row)
+            stream.flush()
+            assert len(rows) == count
+            out[panel] = summary(rows)
+            print(panel, count, flush=True)
+    (HERE / "summary.json").write_text(json.dumps(out, indent=2, allow_nan=False) + "\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/calibration/subtree_gaussian_reference_before_canonicalization.py
+# SHA256: e83481c6ec597f51257ca5d574b8bf4cb25acea9872825e8b55a2d066e8d6a6a
+"""Gaussian common-mean references for a specified subtree."""
+
+import math
+from numbers import Integral, Real
+
+import numpy as np
+from scipy.linalg import helmert
+from scipy.stats import beta
+
+
+def _rows(indices, n, *, name, minimum):
+    try:
+        rows = tuple(indices)
+    except TypeError as error:
+        raise ValueError(f"{name} must be a sequence of row indices") from error
+    if (
+        len(rows) < minimum
+        or any(isinstance(i, bool) or not isinstance(i, Integral) or not 0 <= i < n for i in rows)
+        or len(set(rows)) != len(rows)
+    ):
+        raise ValueError(f"{name} must contain at least {minimum} distinct valid row indices")
+    return np.asarray(rows, dtype=np.intp)
+
+
+def _inputs(values, subtree_indices, alpha):
+    if isinstance(alpha, bool) or not isinstance(alpha, Real) or not 0 < alpha < 1:
+        raise ValueError("alpha must lie strictly between zero and one")
+    x = np.asarray(values, dtype=float)
+    if x.ndim != 2 or x.shape[1] < 1 or not np.isfinite(x).all():
+        raise ValueError("values must be a finite matrix with at least one feature")
+    return x, _rows(subtree_indices, len(x), name="subtree_indices", minimum=2)
+
+
+def _rotated(state, rng):
+    proposed = state.copy()
+    if len(state) == 1:
+        sign = 1 if rng.integers(2) else -1
+        proposed[0] *= sign
+        return proposed, (0, 0, 0.0, sign)
+    i, j = sorted(map(int, rng.choice(len(state), size=2, replace=False)))
+    angle = float(rng.uniform(-np.pi, np.pi))
+    sign = 1 if rng.integers(2) else -1
+    c, s = math.cos(angle), math.sin(angle)
+    proposed[i] = c * state[i] - s * state[j]
+    proposed[j] = sign * (s * state[i] + c * state[j])
+    return proposed, (i, j, angle, sign)
+
+
+def subtree_gaussian_chain_test(
+    values, *, subtree_indices, score, selection_event=None, steps=999, seed=0, alpha=0.05
+):
+    """Rank a deterministic full-matrix score under the common-mean Gaussian null.
+
+    Condition on the subtree mean, centered feature Gram matrix, outside rows
+    and, if supplied, the caller's selection event. Subtree rows must be iid
+    Gaussian with one common mean and covariance and independent of outside
+    rows. Unknown covariance is allowed. The event must describe how the tested
+    membership and any other conditioned selection were obtained. Omitting it
+    requires prespecified membership. Callbacks receive read-only matrices.
+    A failed evaluation invalidates the rank. No descendant or traversal event
+    is inferred here, and native floating-point event membership is uncertified.
+
+    Chain moves store accepted transforms as (i, j, angle, sign), relative to
+    the preceding state when moving outward from the observed anchor. An empty
+    entry keeps the preceding state. Equal indices denote the one-axis case.
+    """
+    x, rows = _inputs(values, subtree_indices, alpha)
+    for name, value, minimum in (("steps", steps, 1), ("seed", seed, 0)):
+        if isinstance(value, bool) or not isinstance(value, Integral) or value < minimum:
+            raise ValueError(f"{name} must be an integer >= {minimum}")
+    if not callable(score) or (selection_event is not None and not callable(selection_event)):
+        raise ValueError("score and any selection_event must be callable")
+
+    def in_event(matrix):
+        if selection_event is None:
+            return True
+        accepted = selection_event(matrix)
+        if not isinstance(accepted, (bool, np.bool_)):
+            raise ValueError("selection_event must return a boolean")
+        return bool(accepted)
+
+    def score_value(matrix):
+        value = score(matrix)
+        if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value):
+            raise ValueError("score must return a finite real number")
+        return float(value)
+
+    rng = np.random.default_rng(seed)
+    anchor = int(rng.integers(steps + 1))
+    scores = [None] * (steps + 1)
+    moves = [None] * (steps + 1)
+    result = dict(
+        status="unresolved",
+        decision="unresolved",
+        p_value=None,
+        error=None,
+        sampling_status="unresolved",
+        observed_score=None,
+        anchor_index=anchor,
+        accepted_moves=0,
+        completed_steps=0,
+        event_evaluations=0,
+        chain_scores=scores,
+        chain_moves=moves,
+        alpha=float(alpha),
+        seed=int(seed),
+        steps_requested=int(steps),
+        resolution_sufficient=1 / (steps + 1) <= alpha,
+        subtree_indices=rows.tolist(),
+        numerical_event_certified=False,
+        selection_event="fixed_membership" if selection_event is None else "caller_supplied",
+        observation_model="independent_gaussian_common_mean_covariance",
+    )
+    observed = x.copy()
+    observed.setflags(write=False)
+    phase = "observation"
+    try:
+        if not in_event(observed):
+            raise ValueError("observed matrix does not satisfy selection_event")
+        scores[anchor] = result["observed_score"] = score_value(observed)
+        with np.errstate(over="raise", invalid="raise"):
+            basis = helmert(len(rows), full=False)
+            mean = x[rows].mean(axis=0)
+            original = basis @ (x[rows] - mean)
+            phase = "sampling"
+            for positions in (range(anchor - 1, -1, -1), range(anchor + 1, steps + 1)):
+                current, current_score = original, scores[anchor]
+                for index in positions:
+                    proposed, move = _rotated(current, rng)
+                    if not np.array_equal(proposed, current):
+                        candidate = x.copy()
+                        candidate[rows] = mean + basis.T @ proposed
+                        candidate.setflags(write=False)
+                        if selection_event is not None:
+                            result["event_evaluations"] += 1
+                        if in_event(candidate):
+                            current_score = score_value(candidate)
+                            current = proposed
+                            moves[index] = move
+                            result["accepted_moves"] += 1
+                    scores[index] = current_score
+                    result["completed_steps"] += 1
+    except Exception as error:
+        result.update(error_phase=phase, error=f"{type(error).__name__}: {error}")
+        return result
+
+    p_value = sum(value >= scores[anchor] for value in scores) / (steps + 1)
+    moved = result["accepted_moves"] > 0
+    result.update(
+        status="complete", p_value=p_value, sampling_status="moved" if moved else "stalled"
+    )
+    if moved and result["resolution_sufficient"]:
+        result["decision"] = "reject" if p_value <= alpha else "do_not_reject"
+    return result
+
+
+def fixed_subtree_contrast_test(
+    values, *, subtree_indices, left_indices, rank=None, all_labels=False, alpha=0.05
+):
+    """Test a fixed binary row contrast on a prespecified common-mean subtree.
+
+    The statistic is squared projection of the unit row contrast onto the
+    leading rank-k left singular subspace of the centered subtree. The right
+    directions and numerical rank are functions of its feature Gram matrix.
+    For fixed membership and labels the conditional law is Beta(k/2,(m-1-k)/2).
+    An optional Bonferroni factor counts all unordered nonempty binary splits.
+    It permits label search on the specified subtree. Selected membership and
+    contrast-selected rank are outside the reference.
+    """
+    x, rows = _inputs(values, subtree_indices, alpha)
+    left = _rows(left_indices, len(x), name="left_indices", minimum=1)
+    left_mask = np.isin(rows, left)
+    if left_mask.sum() != len(left) or len(left) == len(rows):
+        raise ValueError("left_indices must form a nonempty proper subset of subtree_indices")
+    if rank is not None and (isinstance(rank, bool) or not isinstance(rank, Integral) or rank < 0):
+        raise ValueError("rank must be a nonnegative integer or None")
+    if not isinstance(all_labels, (bool, np.bool_)):
+        raise ValueError("all_labels must be a boolean")
+
+    m = len(rows)
+    count = (1 << (m - 1)) - 1 if all_labels else 1
+    result = dict(
+        status="unresolved",
+        decision="unresolved",
+        error=None,
+        p_value=None,
+        unadjusted_p_value=None,
+        statistic=None,
+        rank=None,
+        subtree_indices=rows.tolist(),
+        left_indices=left.tolist(),
+        number_of_labels=count,
+        alpha=float(alpha),
+        selection_event="fixed_membership",
+        all_labels=bool(all_labels),
+        observation_model="independent_gaussian_common_mean_covariance",
+    )
+    try:
+        with np.errstate(over="raise", invalid="raise"):
+            basis = helmert(m, full=False)
+            centered = x[rows] - x[rows].mean(axis=0)
+            u, singular, _ = np.linalg.svd(basis @ centered, full_matrices=False)
+        tolerance = singular[0] * max(centered.shape) * np.finfo(float).eps
+        full_rank = int(np.count_nonzero(singular > tolerance))
+        k = full_rank if rank is None else int(rank)
+        result["rank"] = k
+        if not 0 < k < m - 1 or k > full_rank:
+            raise ValueError(
+                "rank is zero, exceeds the numerical rank, or spans the centered row space"
+            )
+        if k < full_rank and singular[k - 1] - singular[k] <= tolerance:
+            raise ValueError("rank cuts a tied Gram eigenspace")
+        contrast = np.where(left_mask, 1 / len(left), -1 / (m - len(left)))
+        contrast /= np.linalg.norm(contrast)
+        q = float(np.linalg.norm(u[:, :k].T @ (basis @ contrast)) ** 2)
+        if not 0 <= q < 1:
+            raise FloatingPointError("projection statistic is outside numerical Beta support")
+        log_tail = float(beta.logsf(q, k / 2, (m - 1 - k) / 2))
+        if not math.isfinite(log_tail):
+            raise FloatingPointError("Beta tail underflowed or is nonfinite")
+    except (ValueError, FloatingPointError, np.linalg.LinAlgError) as error:
+        result["error"] = f"{type(error).__name__}: {error}"
+        return result
+
+    p_value = math.exp(min(0.0, log_tail + math.log(count)))
+    return result | dict(
+        status="complete",
+        decision="reject" if p_value <= alpha else "do_not_reject",
+        p_value=p_value,
+        unadjusted_p_value=math.exp(log_tail),
+        statistic=q,
+    )
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/figure.py
+# SHA256: 8824dfe50c58f322eeb2aa112d2a15a5df2f55ec41db3b1b4204a2b57ab3c9ee
+"""Render the four-leaf distance and Ward topology comparison."""
+
+import json
+from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.spatial.distance import squareform
+
+HERE = Path(__file__).resolve().parent
+EVIDENCE = json.loads((HERE / "geometry/geometry.json").read_text())
+RECT = EVIDENCE["examples"]["rectangle"]
+TIES = EVIDENCE["ward_tie_families"]
+LABELS = "ABCD"
+INK = "#17243a"
+MUTED = "#485972"
+BLUE = "#245a9a"
+TEAL = "#087b72"
+
+
+def matrix(ax, entry):
+    distances = squareform(entry["condensed_distances"])
+    ax.imshow(distances, cmap="Blues", vmin=0, vmax=4, interpolation="nearest")
+    ax.set_xticks(range(4), LABELS)
+    ax.set_yticks(range(4), LABELS)
+    ax.tick_params(axis="both", length=0, pad=3, labelsize=8)
+    ax.xaxis.tick_top()
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    for i, j in np.ndindex(distances.shape):
+        value = distances[i, j]
+        ax.text(j, i, f"{value:g}", ha="center", va="center", fontsize=8,
+                color="white" if value >= 3 else INK)
+    ax.set_xticks(np.arange(-.5, 4), minor=True)
+    ax.set_yticks(np.arange(-.5, 4), minor=True)
+    ax.grid(which="minor", color="white", linewidth=.7)
+    ax.tick_params(which="minor", bottom=False, top=False, left=False)
+
+
+def tree(ax, topology, color):
+    ax.set_xlim(-.5, 3.5)
+    ax.set_ylim(-.6, 2.25)
+    ax.axis("off")
+    cursor = iter(range(4))
+
+    def draw(node):
+        if isinstance(node, int):
+            x = next(cursor)
+            ax.text(x, -.15, LABELS[node], ha="center", va="top", fontsize=9, color=INK)
+            return x, 0
+        x1, y1 = draw(node[0])
+        x2, y2 = draw(node[1])
+        height = 1 + max(y1, y2)
+        ax.plot([x1, x1, x2, x2], [y1, height, height, y2],
+                color=color, linewidth=1.6, solid_capstyle="round")
+        return (x1 + x2) / 2, height
+
+    draw(topology)
+
+
+def main():
+    plt.rcParams.update({"font.family": "DejaVu Sans", "pdf.fonttype": 42, "svg.fonttype": "none"})
+    fig = plt.figure(figsize=(7.5, 4.65), facecolor="white")
+    fig.text(.055, .952, "Same leaves, different Ward topologies", fontsize=16,
+             fontweight="bold", color=INK, va="top")
+    fig.text(.055, .892, "Project the same rectangle onto each axis and cluster its projected distances.",
+             fontsize=8.7, color=MUTED, va="top")
+
+    fig.text(.055, .785, "Original rectangle", fontsize=9.5, fontweight="bold", color=INK)
+    rect_ax = fig.add_axes([.065, .33, .23, .33])
+    points = np.array(RECT["input"])
+    rect_ax.set_aspect("equal")
+    rect_ax.scatter(*points.T, color=INK, s=22, zorder=3)
+    for i, (x, y) in enumerate(points):
+        rect_ax.annotate(LABELS[i], (x, y), xytext=(0, 5), textcoords="offset points",
+                         ha="center", fontsize=8, color=INK)
+    rect_ax.set(xlim=(-2.75, 2.75), ylim=(-1.65, 1.75), xticks=(-2, 0, 2), yticks=(-1, 0, 1))
+    rect_ax.set_xlabel("First coordinate", fontsize=7.5, labelpad=2)
+    rect_ax.set_ylabel("Second coordinate", fontsize=7.5, labelpad=2)
+    rect_ax.tick_params(labelsize=7, length=2, pad=2)
+    rect_ax.grid(color="#dce4ee", linewidth=.65)
+    rect_ax.spines[["top", "right"]].set_visible(False)
+    rect_ax.spines[["bottom", "left"]].set_color("#8290a4")
+
+    fig.text(.364, .785, "Projected distances", fontsize=9.5, fontweight="bold", color=INK)
+    fig.text(.685, .785, "Ward topology", fontsize=9.5, fontweight="bold", color=INK)
+    for index, (name, color, y, family_key) in enumerate((
+        ("First axis", BLUE, .49, "rectangle_first_axis"),
+        ("Second axis", TEAL, .225, "rectangle_second_axis"),
+    )):
+        entry = RECT["candidates"][index]
+        family, = TIES["topologies_by_rtol"][family_key]["1e-10"]
+        assert entry["ward_tree"] == family
+        matrix(fig.add_axes([.41, y, .157, .205]), entry)
+        tree(fig.add_axes([.688, y + .005, .26, .199]), family, color)
+        fig.text(.361, y + .102, name, color=color, fontsize=8, fontweight="bold",
+                 rotation=90, va="center", ha="center")
+        pair_text = "AB | CD" if index == 0 else "AC | BD"
+        fig.text(.805, y - .022, pair_text, fontsize=8, color=color, ha="center")
+
+    fig.text(.055, .105, f"Axis topology families   Union {TIES['axis_union']}   ·   "
+             f"Intersection {TIES['axis_intersection']}", color=INK, fontsize=9, fontweight="bold")
+    fig.text(.055, .058,
+             "Distances are Euclidean in projected coordinate units (shared scale 0–4). "
+             "Tree heights are schematic.", color=MUTED, fontsize=7.5)
+    for extension in ("png", "pdf", "svg"):
+        fig.savefig(HERE / f"distances_and_topologies.{extension}", dpi=300, facecolor="white")
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    main()
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/geometry/run.py
+# SHA256: ffe13a086b3d4704cd84889e07b546b61e64f8312ec041ceaa9b3b258b40c9b7
+"""Deterministic small subtree geometry examples, with no statistical fits."""
+
+from dataclasses import asdict
+import hashlib
+from itertools import combinations
+import json
+from pathlib import Path
+import platform
+import sys
+
+import numpy as np
+import scipy
+from scipy.spatial.distance import pdist, squareform
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.selected.hierarchy import subtree_topology_geometry as geo
+
+angle = 0.42
+rotation = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+square = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]], dtype=float)
+examples = {
+    "rectangle": square * [2, 1],
+    "square_tied": square,
+    "square_rotated": square @ rotation,
+    "coincident_pairs": np.array([[0], [0], [2], [2]], dtype=float),
+    "constant": np.ones((4, 3)),
+    "saturated": np.eye(4),
+}
+output = {}
+for name, points in examples.items():
+    candidates = geo.spectral_geometry(points)
+    rows = []
+    for entry in candidates:
+        rows.append({
+            "rank": entry.subspace.rank,
+            "eigenblocks": entry.subspace.eigenblocks,
+            "projector": entry.subspace.projector.tolist(),
+            "strict_cuts": [asdict(cut) for cut in entry.cuts],
+            "condensed_distances": entry.distances.tolist(),
+            "ward_tree": entry.ward_tree,
+            "ward_clades": sorted(sorted(clade) for clade in geo.tree_clades(entry.ward_tree)),
+            "ward_edge_splits": sorted(
+                (asdict(cut) for cut in geo.tree_edge_splits(entry.ward_tree)), key=lambda row: row["left"]
+            ),
+            "ward_cophenetic_distances": geo.cophenetic_distances(entry.ward_linkage).tolist(),
+        })
+    output[name] = {
+        "input": points.tolist(),
+        "candidates": rows,
+        "ward_comparisons": [
+            {
+                "left_eigenblocks": a.subspace.eigenblocks,
+                "right_eigenblocks": b.subspace.eigenblocks,
+                "rooted_rf": geo.rooted_robinson_foulds(a.ward_tree, b.ward_tree),
+                "distance_rmse": float(np.sqrt(np.mean((a.distances - b.distances) ** 2))),
+                "cophenetic_rmse": float(np.sqrt(np.mean((
+                    geo.cophenetic_distances(a.ward_linkage) - geo.cophenetic_distances(b.ward_linkage)
+                ) ** 2))),
+            }
+            for a, b in combinations(candidates, 2)
+        ],
+    }
+
+counts = []
+for n in range(2, 7):
+    cuts = geo.unordered_cuts(n)
+    trees = geo.rooted_binary_topologies(n)
+    assert len(trees) == len(set(trees))
+    assert {cut for tree in trees for cut in geo.tree_edge_splits(tree)} == set(cuts)
+    for tree in trees:
+        assert all(a <= b or b <= a or not (a & b) for a, b in combinations(geo.tree_clades(tree), 2))
+    counts.append({"n": n, "unordered_cuts": len(cuts), "rooted_binary_topologies": len(trees)})
+
+square_result, rotated_result = output["square_tied"]["candidates"][0], output["square_rotated"]["candidates"][0]
+for key in ("rank", "eigenblocks", "strict_cuts", "ward_tree"):
+    assert square_result[key] == rotated_result[key]
+for key in ("projector", "condensed_distances", "ward_cophenetic_distances"):
+    np.testing.assert_allclose(square_result[key], rotated_result[key], atol=1e-12)
+
+def ward_family_examples():
+    """Finite Ward tie alternatives and conflicting pair-distance orders."""
+    near = square.copy()
+    near[2:, 0] += 1e-11
+    point_sets = {
+        "rectangle_first_axis": examples["rectangle"][:, :1],
+        "rectangle_second_axis": examples["rectangle"][:, 1:],
+        "square": square,
+        "rotated_square": square @ rotation,
+        "near_square": near,
+        "generic": np.array([[0], [1], [4], [10]]),
+        "simplex": np.eye(4),
+    }
+    families = {}
+    for name, points in point_sets.items():
+        families[name] = {
+            str(rtol): sorted(geo.ward_topology_family(points, rtol=rtol), key=repr)
+            for rtol in (0, 1e-10)
+        }
+    first, second = list(point_sets.values())[:2]
+    left, right = geo.ward_topology_family(first), geo.ward_topology_family(second)
+    assert len(left | right) == 2 and not (left & right)
+    pair_names = list(combinations(range(4), 2))
+    a, b = pdist(first), pdist(second)
+    pair_orders = []
+    for i, j in combinations(range(len(pair_names)), 2):
+        signs = (int(np.sign(a[i] - a[j])), int(np.sign(b[i] - b[j])))
+        pair_orders.append({
+            "pairs": [pair_names[i], pair_names[j]],
+            "orders_by_axis": signs,
+            "distances_by_axis": [[float(a[i]), float(a[j])], [float(b[i]), float(b[j])]],
+        })
+    return {
+        "inputs": {name: points.tolist() for name, points in point_sets.items()},
+        "topologies_by_rtol": families,
+        "axis_union": len(left | right), "axis_intersection": len(left & right),
+        "axis_pair_orders": pair_orders,
+        "axis_strict_reversals": sum(np.prod(r["orders_by_axis"]) == -1 for r in pair_orders).item(),
+        "axis_equidistant_in_one_space_only": sum(
+            (r["orders_by_axis"][0] == 0) != (r["orders_by_axis"][1] == 0) for r in pair_orders
+        ),
+    }
+
+
+def additive_fit_examples():
+    """Fit all 15 rooted topologies to each of five fixed distance geometries."""
+    geometries = {
+        "rectangle_first_axis": pdist(examples["rectangle"][:, :1]),
+        "rectangle_second_axis": pdist(examples["rectangle"][:, 1:]),
+        "rectangle_full": pdist(examples["rectangle"]),
+        "square_full": pdist(square),
+        "simplex": pdist(np.eye(4)),
+    }
+
+    def triangle_violation(distances):
+        d = squareform(distances)
+        return float(np.max(d[:, None, :] - (d[:, :, None] + d[None, :, :])))
+
+    out = {}
+    for name, observed in geometries.items():
+        observed_violation = triangle_violation(observed)
+        assert observed_violation <= 1e-12
+        rows = []
+        for tree in geo.rooted_binary_topologies(4):
+            fit = geo.fit_additive_distances(tree, observed)
+            fitted_violation = triangle_violation(fit.fitted_distances)
+            assert fitted_violation <= 1e-12
+            rows.append({
+                "tree": tree,
+                "edge_splits": [asdict(split) for split in fit.edge_splits],
+                "lengths": fit.branch_lengths.tolist(),
+                "fitted_distances": fit.fitted_distances.tolist(),
+                "rmse": fit.rmse,
+                "max_abs_residual": fit.max_abs_residual,
+                "fitted_max_triangle_violation": fitted_violation,
+            })
+        out[name] = {
+            "observed_distances": observed.tolist(),
+            "observed_max_triangle_violation": observed_violation,
+            "fits": rows,
+        }
+    return out
+
+
+sources = [Path(geo.__file__), Path(__file__).resolve(), ROOT / "tests/statistics/72_test_subtree_topology_geometry.py",
+           HERE / "subtree_topology_geometry_before_distance_fit.py"]
+(HERE / "geometry.json").write_text(json.dumps({
+    "python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
+    "hashes": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources},
+    "combinatorial_counts": counts, "examples": output, "ward_tie_families": ward_family_examples(),
+    "additive_distance_fits": additive_fit_examples(),
+}, indent=2, allow_nan=False) + "\n")
+print(json.dumps({"combinatorial_counts": counts, "examples": list(output)}, indent=2))
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/geometry/subtree_topology_geometry_before_distance_fit.py
+# SHA256: afac5bf097bf11641ed36dc34274f6fb0cc196fb14c32466d7998ffd8792382a
+"""Bounded geometry diagnostics on a fixed labeled subtree.
+
+Leaf labels are row positions. Cut enumeration, Ward trees in spectral spans,
+and the combinatorial topology family are separate objects.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from functools import cache
+from itertools import combinations, product
+
+import numpy as np
+from scipy.cluster.hierarchy import cophenet, linkage
+from scipy.spatial.distance import pdist, squareform
+
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (
+    is_separable,
+)
+
+MAX_CUT_LEAVES = 10
+MAX_TOPOLOGY_LEAVES = 6
+
+type Tree = int | tuple[Tree, Tree]
+
+
+@dataclass(frozen=True)
+class Cut:
+    """Unordered split with the smallest leaf on the left."""
+
+    left: tuple[int, ...]
+    right: tuple[int, ...]
+
+
+@dataclass(frozen=True, eq=False)
+class SpectralSubspace:
+    """Descending Gram eigenblock ranges and the resulting sample geometry."""
+
+    eigenblocks: tuple[tuple[int, int], ...]
+    rank: int
+    projector: np.ndarray
+    coordinates: np.ndarray
+
+
+@dataclass(frozen=True, eq=False)
+class SpectralGeometry:
+    subspace: SpectralSubspace
+    cuts: tuple[Cut, ...]
+    distances: np.ndarray
+    ward_linkage: np.ndarray
+    ward_tree: Tree
+
+
+def unordered_cuts(n: int) -> tuple[Cut, ...]:
+    """All nonempty complementary splits, with row zero on the left."""
+    if not 2 <= n <= MAX_CUT_LEAVES:
+        raise ValueError(f"Cut enumeration requires 2 through {MAX_CUT_LEAVES} leaves.")
+    return tuple(
+        Cut(
+            (0, *(j for j in range(1, n) if mask & (1 << (j - 1)))),
+            tuple(j for j in range(1, n) if not mask & (1 << (j - 1))),
+        )
+        for mask in range((1 << (n - 1)) - 1)
+    )
+
+
+def spectral_subspaces(points: np.ndarray) -> tuple[SpectralSubspace, ...]:
+    """Return each positive whole Gram block and each distinct leading block union.
+
+    Each projector acts on row space. The coordinates retain Euclidean geometry
+    within the projected feature space. SVD avoids explicitly squaring the
+    condition number or allocating the feature Gram matrix.
+    """
+    x = np.asarray(points, dtype=np.float64)
+    if x.ndim != 2 or min(x.shape) < 1 or not np.isfinite(x).all():
+        raise ValueError("Expected a finite, nonempty rows-by-features matrix.")
+    if not 2 <= len(x) <= MAX_CUT_LEAVES:
+        raise ValueError(f"Subtree geometry requires 2 through {MAX_CUT_LEAVES} leaves.")
+
+    # Scale before centering and SVD to keep the Gram spectrum finite.
+    scale = float(np.max(np.abs(x)))
+    if scale == 0:
+        return ()
+    normalized = x / scale
+    normalized -= normalized[0].copy()
+    u, singular, _ = np.linalg.svd(normalized - normalized.mean(axis=0), full_matrices=False)
+    threshold = np.finfo(float).eps * max(x.shape) * singular[0]
+    rank = min(len(x) - 1, int(np.count_nonzero(singular > threshold)))
+    if rank == 0:
+        return ()
+
+    values = (singular[:rank] / singular[0]) ** 2
+    ends = [*(np.flatnonzero(~tied_eigenvalue_neighbors(values)) + 1).tolist(), rank]
+    blocks = tuple(zip([0, *ends[:-1]], ends, strict=True))
+    groups = [(block,) for block in blocks] + [blocks[:k] for k in range(2, len(blocks) + 1)]
+    subspaces = []
+    for group in groups:
+        start, stop = group[0][0], group[-1][1]
+        row_basis = u[:, start:stop]
+        coordinates = (row_basis * singular[start:stop]) * scale
+        if not np.isfinite(coordinates).all():
+            raise ValueError("Projected coordinates must fit in finite float64.")
+        subspaces.append(
+            SpectralSubspace(group, stop - start, row_basis @ row_basis.T, coordinates)
+        )
+    return tuple(subspaces)
+
+
+def spectral_geometry(points: np.ndarray) -> tuple[SpectralGeometry, ...]:
+    """Enumerate strict affine cuts and compute a fixed-row-order Ward tree per span."""
+    subspaces = spectral_subspaces(points)
+    records = []
+    for subspace in subspaces:
+        x = subspace.coordinates
+        # Column rescaling preserves affine feasibility and avoids scaling the LP
+        # by the Gram eigenvalues or measurement units.
+        lp_points = x / np.max(np.abs(x), axis=0)
+        cuts = tuple(
+            cut
+            for cut in unordered_cuts(len(x))
+            if is_separable(lp_points, np.isin(np.arange(len(x)), cut.left))
+        )
+        scale = np.max(np.abs(x))
+        scaled_distances = pdist(x / scale)
+        distances = scaled_distances * scale
+        if not np.isfinite(distances).all():
+            raise ValueError("Projected distances must fit in finite float64.")
+        # shortcut: round relative input distances at 1e-12 for deterministic numerical
+        # ties in fixed row order, replace if exact near-tie Ward decisions are required.
+        max_distance = scaled_distances.max()
+        ward = linkage(np.round(scaled_distances / max_distance, 12), method="ward")
+        ward[:, 2] *= max_distance * scale
+        if not np.isfinite(ward).all():
+            raise ValueError("Ward linkage heights must fit in finite float64.")
+        nodes: list[Tree] = list(range(len(x)))
+        first_leaf = list(range(len(x)))
+        for a, b in ward[:, :2].astype(int):
+            if first_leaf[b] < first_leaf[a]:
+                a, b = b, a
+            nodes.append((nodes[a], nodes[b]))
+            first_leaf.append(first_leaf[a])
+        records.append(SpectralGeometry(subspace, cuts, distances, ward, nodes[-1]))
+    return tuple(records)
+
+
+def rooted_binary_topologies(n: int) -> tuple[Tree, ...]:
+    """Enumerate all unordered rooted full binary trees of at most six labeled leaves."""
+    if not 2 <= n <= MAX_TOPOLOGY_LEAVES:
+        raise ValueError(f"Topology enumeration requires 2 through {MAX_TOPOLOGY_LEAVES} leaves.")
+
+    def recurse(labels: tuple[int, ...]) -> tuple[Tree, ...]:
+        if len(labels) == 1:
+            return (labels[0],)
+        trees = []
+        for cut in unordered_cuts(len(labels)):
+            left = recurse(tuple(labels[i] for i in cut.left))
+            right = recurse(tuple(labels[i] for i in cut.right))
+            trees.extend(product(left, right))
+        return tuple(trees)
+
+    return recurse(tuple(range(n)))
+
+
+def ward_topology_family(
+    points_or_condensed: np.ndarray, *, rtol: float = 1e-10
+) -> frozenset[Tree]:
+    """All Ward trees reachable by tied merges on two through six leaves.
+
+    Accepts Euclidean coordinates or condensed Euclidean distances. At each
+    step include every increase in within-cluster SSE within `rtol` times the
+    largest original squared pair distance of the minimum. Zero uses exact
+    floating-point comparisons.
+    """
+    x = np.asarray(points_or_condensed, dtype=float)
+    if not np.isfinite(rtol) or rtol < 0:
+        raise ValueError("rtol must be finite and nonnegative.")
+    if not x.size or not np.isfinite(x).all() or x.ndim not in (1, 2):
+        raise ValueError("Expected finite coordinates or condensed Euclidean distances.")
+    if x.ndim == 1 and (x < 0).any():
+        raise ValueError("Euclidean distances must be nonnegative.")
+    scale = np.max(np.abs(x))
+    if scale > 0:
+        x = x / scale
+    if x.ndim == 2 and not 2 <= len(x) <= MAX_TOPOLOGY_LEAVES:
+        raise ValueError(
+            f"Ward topology enumeration requires 2 through {MAX_TOPOLOGY_LEAVES} leaves."
+        )
+    distances = pdist(x) if x.ndim == 2 else x
+    if not 1 <= len(distances) <= MAX_TOPOLOGY_LEAVES * (MAX_TOPOLOGY_LEAVES - 1) // 2:
+        raise ValueError(
+            f"Ward topology enumeration requires 2 through {MAX_TOPOLOGY_LEAVES} leaves."
+        )
+    max_distance = distances.max()
+    normalized = distances / max_distance if max_distance > 0 else distances
+    squared = squareform(normalized**2)
+    n = len(squared)
+    if x.ndim == 1:
+        centered = np.eye(n) - 1 / n
+        if np.linalg.eigvalsh(-0.5 * centered @ squared @ centered)[0] < -1e-12:
+            raise ValueError("Condensed distances must be Euclidean.")
+
+    @cache
+    def merge_cost(left: tuple[int, ...], right: tuple[int, ...]) -> float:
+        a, b = len(left), len(right)
+        cross = squared[np.ix_(left, right)].sum()
+        within_a = sum(squared[i, j] for i, j in combinations(left, 2))
+        within_b = sum(squared[i, j] for i, j in combinations(right, 2))
+        # (ab/(a+b)) times the squared centroid distance, via pair distances.
+        return max(0.0, (a * b * cross - b**2 * within_a - a**2 * within_b) / (a * b * (a + b)))
+
+    @cache
+    def expand(forest: tuple[tuple[tuple[int, ...], Tree], ...]) -> frozenset[Tree]:
+        if len(forest) == 1:
+            return frozenset((forest[0][1],))
+        costs = [
+            (merge_cost(forest[i][0], forest[j][0]), i, j)
+            for i, j in combinations(range(len(forest)), 2)
+        ]
+        threshold = min(cost for cost, _, _ in costs) + rtol
+        trees = set()
+        for cost, i, j in costs:
+            if cost <= threshold:
+                left, right = forest[i], forest[j]
+                merged = (tuple(sorted(left[0] + right[0])), (left[1], right[1]))
+                trees.update(expand(forest[:i] + (merged,) + forest[i + 1 : j] + forest[j + 1 :]))
+        return frozenset(trees)
+
+    return expand(tuple(((i,), i) for i in range(n)))
+
+
+def _clades(tree: Tree) -> list[frozenset[int]]:
+    if isinstance(tree, int):
+        return [frozenset((tree,))]
+    left, right = map(_clades, tree)
+    return [*left, *right, left[-1] | right[-1]]
+
+
+def tree_clades(tree: Tree) -> frozenset[frozenset[int]]:
+    """Nontrivial clades for rooted topology comparison."""
+    return frozenset(clade for clade in _clades(tree)[:-1] if len(clade) > 1)
+
+
+def tree_edge_splits(tree: Tree) -> frozenset[Cut]:
+    """Unordered edge splits including pendant edges, deduplicating the root split."""
+    clades = _clades(tree)
+    leaves = clades.pop()
+    first = min(leaves)
+    splits = set()
+    for clade in clades:
+        left, right = (clade, leaves - clade) if first in clade else (leaves - clade, clade)
+        splits.add(Cut(tuple(sorted(left)), tuple(sorted(right))))
+    return frozenset(splits)
+
+
+def rooted_robinson_foulds(left: Tree, right: Tree) -> int:
+    """Number of nontrivial rooted clades present in only one of the trees."""
+    if _clades(left)[-1] != _clades(right)[-1]:
+        raise ValueError("Rooted RF requires the same leaf labels in both trees.")
+    return len(tree_clades(left) ^ tree_clades(right))
+
+
+def cophenetic_distances(tree_or_linkage: Tree | np.ndarray) -> np.ndarray:
+    """Condensed cophenetic distances in row order.
+
+    An abstract topology assigns a node the height of its longest path to a
+    leaf in edge units. A linkage matrix preserves its supplied heights.
+    """
+    if isinstance(tree_or_linkage, np.ndarray):
+        return cophenet(tree_or_linkage)
+
+    leaves = _clades(tree_or_linkage)[-1]
+    n = len(leaves)
+    if n < 2 or leaves != frozenset(range(n)):
+        raise ValueError("Cophenetic topology leaves must be numbered 0 through n-1.")
+    merges = []
+
+    def build(node: Tree) -> tuple[int, int, int]:
+        if isinstance(node, int):
+            return node, 0, 1
+        a, ha, na = build(node[0])
+        b, hb, nb = build(node[1])
+        parent = n + len(merges)
+        height, count = 1 + max(ha, hb), na + nb
+        merges.append((a, b, height, count))
+        return parent, height, count
+
+    _, _, count = build(tree_or_linkage)
+    if count != n:
+        raise ValueError("Cophenetic topology leaves must be unique.")
+    return cophenet(np.asarray(merges, dtype=float))
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/integration/power_followup.py
+# SHA256: 354e04b4c90bffac911d40ea88c1b3dc4c634eac749b33fcbb79a5d5f844b42b
+import json
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_gaussian_reference import subtree_gaussian_chain_test
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_tests import native_sibling_statistic, ward_subtree_selection
+
+HERE = Path(__file__).parent
+cases = [json.loads(line) for line in (HERE/'results.jsonl').read_text().splitlines()
+         if json.loads(line)['panel'] == 'native_signal_root']
+with (HERE/'power_followup.jsonl').open('w') as output:
+    for extra_shift in [0, 6]:
+        for case in cases:
+            x = np.array(case['data'])
+            x[8:, 0] += extra_shift
+            rows, event = ward_subtree_selection(x, keep_split=True)
+            start = perf_counter()
+            result = subtree_gaussian_chain_test(x, subtree_indices=rows,
+                score=lambda matrix: native_sibling_statistic(matrix, rows),
+                selection_event=event, seed=case['seed'], steps=999, alpha=.05)
+            record = dict(replicate=case['replicate'], extra_shift=extra_shift,
+                          elapsed_sec=perf_counter()-start, result=result)
+            output.write(json.dumps(record)+'\n'); output.flush()
+            print(case['replicate'],extra_shift,result['p_value'],result['accepted_moves'],flush=True)
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/integration/run.py
+# SHA256: 23ac90774c308841baa7a8cfb404605e9fdad563b508987816a093d392d0ca34
+"""Run the prespecified subtree integration panel with existing dependencies."""
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from scipy.stats import binomtest
+
+ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_gaussian_reference import (
+    subtree_gaussian_chain_test,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_tests import (
+    native_sibling_statistic,
+    subtree_alternative_cut_test,
+    subtree_topology_search_test,
+    topology_pair_reference,
+    ward_subtree_selection,
+)
+
+HERE = Path(__file__).parent
+rng = np.random.default_rng(2026110911)
+samplers = np.random.default_rng(2026110912)
+factor = np.array([[2., .6, .1], [0., .8, .3], [0., 0., .5]])
+records = []
+paths = sorted((ROOT / "tree_break_selection").rglob("*.py"))
+paths += sorted((ROOT / "benchmarks/diagnostics/calibration/selected/hierarchy").glob("subtree_*.py"))
+paths += [Path(__file__), HERE / "protocol.md", ROOT / "pyproject.toml", ROOT / "uv.lock"]
+hashes = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+(HERE / "manifest.json").write_text(json.dumps({"source_hashes_before": hashes}, indent=2))
+output = (HERE / "results.jsonl").open("w")
+
+
+def observe(panel, replicate, x, function, **kwargs):
+    seed = int(samplers.integers(0, 2**32))
+    start = perf_counter()
+    try:
+        result = function(x, seed=seed, alpha=.05, **kwargs)
+    except Exception as error:
+        result = dict(status="unresolved", decision="unresolved", p_value=None,
+                      error=f"{type(error).__name__}: {error}")
+    row = dict(panel=panel, replicate=replicate, data=x.tolist(), seed=seed,
+               elapsed_sec=perf_counter()-start, result=result)
+    output.write(json.dumps(row) + "\n")
+    output.flush()
+    records.append(row)
+    return result
+
+
+for rep in range(50):
+    x = rng.normal(size=(5, 2)) @ factor[:2, :2]
+    observe("null_cut_max", rep, x, subtree_alternative_cut_test,
+            subtree_indices=range(5), steps=49)
+print("cut maximum: 50 complete", flush=True)
+
+for rep in range(40):
+    x = rng.normal(size=(4, 2)) @ factor[:2, :2]
+    observe("null_topology_max", rep, x, subtree_topology_search_test,
+            subtree_indices=range(4), steps=49)
+    observe("null_topology_pair", rep, x, topology_pair_reference,
+            subtree_indices=range(4), first=((0, 1), (2, 3)), second=((0, 2), (1, 3)), steps=49)
+print("topology maximum and paired contrast: 80 complete", flush=True)
+
+for rep in range(2):
+    x = rng.normal(size=(6, 2)) @ factor[:2, :2]
+    x[3:, 0] += 6
+    observe("signal_cut_max", rep, x, subtree_alternative_cut_test,
+            subtree_indices=range(6), steps=199)
+
+for panel in ("native_null_root", "native_signal_root", "native_selected_null_child"):
+    for rep in range(2):
+        n = 12 if panel == "native_null_root" else 16
+        x = rng.normal(size=(n, 3)) @ factor
+        path = (0,) if panel == "native_selected_null_child" else ()
+        if panel != "native_null_root":
+            x[8:, 0] += 10 if path else 6
+        rows, event = ward_subtree_selection(x, path=path, keep_split=True)
+        observe(panel, rep, x, subtree_gaussian_chain_test,
+                subtree_indices=rows, selection_event=event,
+                score=lambda matrix, rows=rows: native_sibling_statistic(matrix, rows), steps=99)
+    print(panel + ": 2 complete", flush=True)
+output.close()
+
+summaries = {}
+for panel in sorted({row["panel"] for row in records}):
+    group = [row for row in records if row["panel"] == panel]
+    rejected = sum(row["result"]["decision"] == "reject" for row in group)
+    interval = binomtest(rejected, len(group)).proportion_ci()
+    summaries[panel] = dict(attempted=len(group), rejected=rejected,
+        unresolved=sum(row["result"]["decision"] == "unresolved" for row in group),
+        stalled=sum(row["result"].get("sampling_status") == "stalled" for row in group),
+        exact_95_ci=[interval.low, interval.high],
+        median_seconds=float(np.median([row["elapsed_sec"] for row in group])),
+        p_values=[row["result"]["p_value"] for row in group])
+unchanged = all(hashlib.sha256((ROOT/path).read_bytes()).hexdigest() == digest
+                for path, digest in hashes.items())
+assert unchanged
+(HERE / "summary.json").write_text(json.dumps(summaries, indent=2))
+(HERE / "manifest.json").write_text(json.dumps({"source_hashes_before": hashes,
+    "source_hashes_unchanged": unchanged, "attempted": len(records),
+    "results_sha256": hashlib.sha256((HERE / "results.jsonl").read_bytes()).hexdigest()}, indent=2))
+print(json.dumps(summaries, indent=2), flush=True)
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/bootstrap/protocol.md
+# SHA256: e0af5d8f595a63bdbaea88bef05e6bdff606f2cedfa1188a453e0fbf165a1040
+# Fixed bootstrap and Ward tie protocol
+
+Locked before simulation. All leaves keep identities 0 through n−1. Embed
+each of the following two-dimensional configurations as six measured
+coordinates [x, y, x, y, x+y, x−y]. The embedding multiplies all squared
+Euclidean distances by four. No fitting or noise estimation is performed.
+
+| Case | Coordinates in leaf order | Declared comparator |
+| --- | --- | --- |
+| Planted hierarchy | (-7,0),(-7,1),(1,-1),(1,1),(5,-1),(5,2) | ((0,1),((2,3),(4,5))) is the planted truth |
+| Crossed rectangle | (-2,-1),(-2,1),(2,-1),(2,1) | ((0,3),(1,2)) is a crossed comparator without truth status |
+| Equidistant square edges | (-1,-1),(-1,1),(1,-1),(1,1) | no planted truth |
+
+Compute deterministic Euclidean Ward on rows in ascending leaf-ID order.
+Compare its rooted clades and unrooted nontrivial edge splits to the
+unperturbed Ward tree, the declared comparator where present, and the family
+from all exact minimum-cost Ward tie choices on the unperturbed geometry.
+The tied family is a set, without a probability weighting. The comparison
+uses exact rooted Robinson–Foulds distances, not distance correlation.
+Record topology and split frequencies, topology Shannon entropy in bits,
+exact rooted-RF histograms, and frequency outside the unperturbed tie family.
+
+For each geometry, use 1,000 independent replicates of each scheme, with a
+NumPy generator seeded by [5811260911, case index, scheme index, replicate].
+
+1. Feature bootstrap. Resample six columns with replacement. Its natural
+   sampling interpretation requires iid feature units. These illustrative
+   columns include duplicates and deterministic combinations, so frequencies
+   are descriptive of the empirical column-resampling law.
+2. Gaussian measurement bootstrap at sigma 0.08 and 0.8. Add independent
+   centered Gaussian noise with fixed standard deviation sigma to every
+   element, around the fixed configuration. Neither sigma is fitted.
+3. Row-permutation control. Permute intact rows and restore canonical leaf
+   order before Ward. Assert the topology and distances are unchanged. Also
+   run Ward in shuffled order and restore leaf labels afterward, to measure
+   order-dependent tie-breaking. Both operations keep labeled distances
+   fixed; a row permutation is not a null geometry generator.
+
+No attempts are dropped or reseeded. These frequencies depend on the chosen
+resampling law, feature representation and noise scale. They do not
+estimate uniform masses over topologies or furnish statistical p-values.
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/calibration/all_labels_protocol.md
+# SHA256: e1b49f9a52c4cb2b02f9419047f5c22ad83c506966b5348bda8f3caf6193dc4c
+# Locked all-label and selected-descendant extension
+
+Frozen before any outcome of this extension. Use 320 fixed-membership and
+160 selected-descendant independent Gaussian datasets, p=2, 16 rows,
+common mean zero, common nonspherical covariance [[1,1.2],[1.2,4]].
+Generate each data/chain seed from spawned sequences under
+[81620261109, panel index, replicate]. Use 199 steps throughout.
+
+The statistic is the exact maximum of squared projection of the unit binary
+row contrast onto the centered two-feature left span over 127 unordered
+nonempty labels on eight rows. Report the unadjusted Beta tail evaluated at
+that maximizing label as a selection-failure control, its all-label
+Bonferroni tail, and the max-score chain.
+
+Fixed membership uses rows 0 through 7. The selected descendant is the
+lower eight rows of a root median split on feature 1, with a prespecified
+lower-child role. The event replays that the selected rows are exactly the
+lower child. All upper-child rows remain frozen. Compare the naive and
+membership-conditioned chains on the same matrix and seed. Data are
+continuous. Ties at the root median are declared unsupported rather than
+assigned an arbitrary numeric rule in this extension.
+
+Report exact 95% binomial intervals at .05 and .01, attempted datasets,
+unresolved outcomes, movement and runtime. This is a simple fully specified
+ancestor selection event and all-label score. It supports no numerical
+claim about native diffusion, Ward, average-linkage, or full traversal.
+
+Correction recorded after the first attempt. Sort the selected row IDs before
+building the Helmert basis and evaluating the score. The original validation
+passed the lower group in observed feature order. The kernel would then depend
+on an extra within-group ordering absent from the event. The first attempt
+is retained as `all_labels_before_canonicalization.jsonl`. The corrected run
+uses the original seeds, membership, score, and step budget. This correction
+was required by the conditioning argument and is independent of the
+direction of the result.
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/calibration/protocol.md
+# SHA256: 6a821742545ff3da5931bec68fe787218a1f8a2342b2a56621003ea9d0cc4ff6
+# Locked subtree Gaussian core simulation
+
+Frozen before any outputs of this simulation. The existing 45 sampler tests
+and 18 new deterministic subtree tests preceded the simulation.
+
+Generate independent datasets with Gaussian rows and covariance
+(Q\operatorname{diag}(1,4,16)Q^\top) or its 12-feature extension,
+with (Q) the QR basis of a deterministic normal draw seeded by 731190
+and eigenvalues geometrically spaced between 1 and 16. Use data entropy
+[2026110917, panel index, replicate] and independent spawned sampler seeds.
+Each dataset has four disjoint predeclared eight-row candidate subtrees.
+The split for each candidate is its first four against its last four rows.
+The score is the squared projection of the unit row contrast onto the
+subtree's centered first feature divided by the squared norm of that feature,
+equivalently the squared correlation with the binary contrast.
+
+- Fixed Gaussian null, 1,200 independent datasets, p=3. Test the first
+  candidate at nominal .05 and .01 with 119 steps. Report the analytic
+  Beta(1/2,3) one-feature control and the all-feature, rank-3 fixed-label
+  Beta helper.
+- Selected Gaussian null, 1,200 independent datasets, p=3. Select the
+  candidate with highest observed score, breaking ties by candidate order.
+  Compare the naive fixed-membership reference on the selected candidate to
+  the chain conditional on the candidate still winning. The other candidates
+  are outside the subtree and remain frozen. The exact selected reference is
+  the Beta(1/2,3) survival at the observed score divided by its survival at
+  the largest unchanged competitor. Compare these two analytic references to
+  the two chains, with the same chain seed and 119 steps.
+- Full-span Gaussian null, 300 independent datasets, p=12. Use the fixed
+  first candidate, test the same score, and verify that the default all-feature
+  Beta helper fails closed at centered rank 7, while an explicitly fixed
+  leading Gram rank of 2 yields a finite Beta reference.
+- Selected signal, 200 independent datasets, p=3. Add a shift of 2.5 marginal
+  standard deviations to the first feature of the second half of the first
+  candidate only. Select and test as in the selected null panel. Record
+  selection of the true candidate and rejection jointly.
+
+Report exact 95% two-sided binomial intervals with every attempted dataset
+in the denominator, and counts of unresolved, stalls, accepted moves and
+runtime. Store dataset and chain seeds, reference tails, selection identity
+and result summaries. Chain scores and moves stay in per-dataset output.
+No tuning, retries, or outcome-based budget adjustment. At 1,200 null
+datasets a 5% rate has approximate 1.23-point margin. The naive selected
+reference is expected to inflate, and the conditional test to be conservative
+at 119 steps. This constructed membership event and the isolated score do not
+establish full traversal or final-partition error control.
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/integration/power_followup_protocol.md
+# SHA256: 262ab2788bacf68acd7667e247fc7b2c9b5a7c48310a74897c0316abdd604395
+# Post-panel power diagnosis
+
+2026-11-09 Europe/Vienna. This follows the first integration results and is exploratory, not part of the frozen null panel. The two n=16 signal roots both recovered the planted 8+8 split, but had p=.99 and .07 with 99 transitions. Retain both original matrices and sampler seeds. Rerun each with 999 transitions, then add 6 to coordinate zero of rows 8..15 (total planted shift 12 rather than 6) and run at the same 999-transition budget. Rebuild each observed event. Record every result and all movements. These four runs diagnose budget/strength sensitivity, not general power or exact conditional mixing.
+
+
+# FILE: results/analyses/subtree_topology_reference_20261109/integration/protocol.md
+# SHA256: d399a6bc7889aa0b9b6ec1e42523cf6d63456f90e2dfa169f63238f1e82fa296
+# Subtree score integration protocol
+
+Frozen before the first integration simulation, 2026-11-09 Europe/Vienna.
+
+All rows in each null subtree are independent Gaussian observations with one common mean and covariance. Outside rows are fixed during a replay. Data seed 2026110911 and sampler-seed generator 2026110912 are separate. Covariance comes from a fixed non-diagonal factor. No tuning uses the results.
+
+- 50 null matrices, n=5,p=2: enumerate strict affine cuts in the full Gram-derived span, replay the maximum full-space raw sibling Wald score, 49 transitions, alpha .05.
+- 40 null matrices, n=4,p=2: regenerate the union of tied-Ward families over whole spectral blocks and cumulative spans, replay the maximum summed full-space sibling score, 49 transitions, alpha .05. Relative tie tolerance is 1e-10.
+- The same 40 matrices: paired absolute score difference for the prespecified trees ((0,1),(2,3)) and ((0,2),(1,3)), 49 transitions, independent sampler seeds. This tests homogeneity, not equality of accuracy.
+- Two strong two-group examples, n=6,p=2, shift 6 on coordinate 0, 199 transitions: joint cut search. This is a diagnostic power illustration.
+- Six native raw sibling examples, each 99 transitions: two Gaussian null roots (n=12,p=3), two shifted roots (n=16,p=3, shift 6), and two selected first children (n=16,p=3, outside eight rows shifted by 10). A fixed path, ordered by smallest leaf ID, chooses the node. Its ancestor memberships and own sibling split are preserved. Each accepted orientation refits Ward, fixed-topology NNLS, native spectral context, guarded covariance, and .90 contrast-energy rank. The reference replaces the raw-score reference only; empirical inflation, eligibility and traversal are not used to assert error control.
+
+Every attempt, unresolved result, stalled chain, rejection, p-value, runtime and seed is retained. Exact binomial intervals summarize rejection counts; the small integration panels are not a calibration certificate. Source hashes are recorded before the run and verified afterward. Existing production code and defaults remain unchanged.
+
+
+# FILE: benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_tests.py
+# SHA256: 0bd61c67780b0367d0984489f90aace2ec1c13e9bc90d732017bcd93ee5ebe42
+"""Opt-in subtree score references; these do not change TBS gates or traversal.
+
+All inferential outputs test one common-mean Gaussian population in the tested
+subtree. Topology differences do not test equality of reconstruction accuracy.
+"""
+
+from __future__ import annotations
+
+from numbers import Integral
+
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import pdist
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_gaussian_reference import (
+    _inputs,
+    subtree_gaussian_chain_test,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_geometry import (
+    Cut,
+    Tree,
+    spectral_subspaces,
+    unordered_cuts,
+    ward_topology_family,
+)
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection import (
+    collect_sibling_pair_records,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.wald_statistic.sibling_divergence_test import (
+    sibling_divergence_test,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.projection.gate_inputs.projection_dimensions import (
+    derive_sibling_projection_dimensions_from_child_edge_comparisons,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (
+    is_separable,
+)
+from tree_break_selection.tree.construction import build_tree
+from tree_break_selection.tree.distributions import pooled_within_child_covariance_by_block
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+
+def _frame(values):
+    x = np.asarray(values, dtype=float)
+    if x.ndim != 2 or len(x) < 2 or x.shape[1] < 1 or not np.isfinite(x).all():
+        raise ValueError("Expected at least two finite rows and one feature")
+    return pd.DataFrame(x, index=[f"S{i:012d}" for i in range(len(x))])
+
+
+def sibling_cut_scores(values, cuts):
+    """Existing full-space raw sibling Wald scores, zero branches, guarded covariance.
+
+    This matches the earlier full-space sibling diagnostic, including parent
+    covariance fallback. It excludes empirical inflation and adaptive rank.
+    """
+    data = _frame(values)
+    x = data.to_numpy()
+    space = continuous_feature_space_from_columns(data.columns)
+    tree = build_tree(data, pdist(x), linkage_method="ward").tree
+    tree.populate_node_distributions(data, feature_space=space)
+    p = x.shape[1]
+    scores = []
+    for cut in cuts:
+        if not cut.left or not cut.right or sorted((*cut.left, *cut.right)) != list(range(len(x))):
+            raise ValueError("Each cut must partition the local row indices exactly once")
+        covariance = pooled_within_child_covariance_by_block(
+            tree, tree.root(), space, x, [list(cut.left), list(cut.right)]
+        )
+        statistic, _, _, _ = sibling_divergence_test(
+            x[list(cut.left)].mean(0),
+            x[list(cut.right)].mean(0),
+            len(cut.left),
+            len(cut.right),
+            branch_length_sum=0.0,
+            mean_branch_length=None,
+            projection_dimension_from_edge_comparisons=p,
+            parent_principal_component_projection=np.eye(p),
+            parent_principal_component_eigenvalues=np.ones(p),
+            feature_space=space,
+            continuous_covariance_by_block=covariance,
+        )
+        if not np.isfinite(statistic):
+            raise ValueError("Nonfinite sibling statistic")
+        scores.append(statistic)
+    return np.asarray(scores, dtype=float)
+
+
+def _candidate_scores(points):
+    spaces = spectral_subspaces(points)
+    if not spaces:
+        return (), np.array([], dtype=float)
+    # Every smaller-span affine cut lies in the full cumulative span.
+    coordinates = max(spaces, key=lambda space: space.rank).coordinates
+    coordinates = coordinates / np.max(np.abs(coordinates), axis=0)
+    cuts = tuple(
+        cut
+        for cut in unordered_cuts(len(points))
+        if is_separable(coordinates, np.isin(np.arange(len(points)), cut.left))
+    )
+    return cuts, sibling_cut_scores(points, cuts)
+
+
+def subtree_alternative_cut_test(
+    values, *, subtree_indices, selection_event=None, steps=999, seed=0, alpha=0.05
+):
+    """Replay all full-span affine candidates and their maximum sibling score.
+
+    Returned cut ranks share the maximum reference and give simultaneous control
+    only under the complete common-mean subtree null. Membership is prespecified
+    unless the supplied event reproduces its selection. No observed candidate
+    count is substituted into a fixed-label Beta tail.
+    """
+    x, rows = _inputs(values, subtree_indices, alpha)
+    observed = {}
+
+    def score(matrix):
+        cuts, scores = _candidate_scores(matrix[rows])
+        if not observed:
+            observed.update(cuts=cuts, scores=scores)
+        return float(np.max(scores, initial=0.0))
+
+    result = subtree_gaussian_chain_test(
+        x,
+        subtree_indices=rows,
+        score=score,
+        selection_event=selection_event,
+        steps=steps,
+        seed=seed,
+        alpha=alpha,
+    )
+    result["candidate_family"] = "full_span_strict_affine_cuts"
+    result["score"] = "full_space_raw_sibling_zero_branches"
+    result["cut_results"] = [
+        dict(
+            left=rows[list(cut.left)].tolist(),
+            right=rows[list(cut.right)].tolist(),
+            statistic=float(statistic),
+            global_null_adjusted_p_value=(
+                sum(value >= statistic for value in result["chain_scores"]) / (steps + 1)
+                if result["status"] == "complete"
+                else None
+            ),
+        )
+        for cut, statistic in zip(observed.get("cuts", ()), observed.get("scores", ()), strict=True)
+    ]
+    return result
+
+
+def ward_subtree_selection(values, *, path=(), keep_split=False):
+    """Capture a prespecified Ward node path, ordered by the smallest leaf ID.
+
+    Return (row_indices, event). The event preserves every ancestral child pair;
+    keep_split also preserves the tested node's own pair. The path must be chosen
+    before observing the data. It does not encode an additional search for a node
+    or a TBS gate/traversal decision. All outside rows stay fixed in the sampler.
+    """
+    path = tuple(path)
+    if any(
+        isinstance(side, bool) or not isinstance(side, Integral) or side not in (0, 1)
+        for side in path
+    ):
+        raise ValueError("path must contain only child positions 0 or 1")
+    if not isinstance(keep_split, (bool, np.bool_)):
+        raise ValueError("keep_split must be boolean")
+    original = _frame(values)
+
+    def describe(matrix):
+        data = _frame(matrix)
+        tree = build_tree(data, pdist(data.to_numpy()), linkage_method="ward").tree
+        clades = tree.compute_descendant_sets()
+        node, ancestors = tree.root(), []
+        for depth in range(len(path) + 1):
+            children = sorted(tree.successors(node), key=lambda child: min(clades[child]))
+            if len(children) != 2:
+                return None
+            if depth < len(path) or keep_split:
+                ancestors.append(tuple(tuple(sorted(clades[child])) for child in children))
+            if depth == len(path):
+                return tuple(sorted(clades[node])), tuple(ancestors)
+            node = children[path[depth]]
+
+    observed = describe(original.to_numpy())
+    if observed is None:
+        raise ValueError("The specified path must reach an internal node")
+    rows = np.flatnonzero(original.index.isin(observed[0]))
+    return rows, lambda matrix: describe(matrix) == observed
+
+
+def native_sibling_statistic(values, subtree_indices):
+    """Refit Ward, NNLS, edge spectral context and native adaptive raw sibling score.
+
+    This retains the native raw statistic, including branch time and .90
+    contrast-energy rank. It does not reuse the native chi-square/inflated p-value,
+    impose its eligibility gate, or claim control of the final partition.
+    """
+    data = _frame(values)
+    _, rows = _inputs(values, subtree_indices, 0.05)
+    space = continuous_feature_space_from_columns(data.columns)
+    result = run_tbs_on_distance(
+        data,
+        pdist(data.to_numpy()),
+        0.05,
+        tree_linkage_method="ward",
+        feature_space=space,
+        adaptive_projection_dimension_energy_fraction=0.90,
+        branch_length_optimization_method="fixed_topology_nnls",
+        branch_length_data_df=data,
+    )
+    if result.status != "ok":
+        raise ValueError(f"Native TBS replay failed: {result.status}")
+    tree = result.extra["tree"]
+    edge = result.extra["gate_bundle"].edge_gate_result
+    spectral = edge.spectral_context
+    dimensions = derive_sibling_projection_dimensions_from_child_edge_comparisons(
+        tree, spectral_context=spectral
+    )
+    records, _ = collect_sibling_pair_records(
+        tree,
+        edge.annotated_df,
+        sibling_projection_dimensions_from_edge_comparisons=dimensions,
+        parent_principal_component_projections=spectral.principal_component_projections_by_node,
+        parent_principal_component_eigenvalues=spectral.principal_component_eigenvalues_by_node,
+        feature_space=space,
+        adaptive_projection_dimension_energy_fraction=0.90,
+    )
+    target = frozenset(data.index[rows])
+    clades = tree.compute_descendant_sets()
+    record = next((record for record in records if clades[record.parent] == target), None)
+    if record is None or not np.isfinite(record.stat):
+        raise ValueError("Requested subtree has no finite native raw sibling score")
+    return float(record.stat)
+
+
+def topology_sibling_score(values, topology: Tree):
+    """Prespecified topology score: sum of raw full-space sibling scores at its nodes."""
+    x = _frame(values).to_numpy()
+
+    def leaves(node):
+        if isinstance(node, int):
+            return [node]
+        if not isinstance(node, tuple) or len(node) != 2:
+            raise ValueError("Expected a binary nested-tuple topology")
+        return leaves(node[0]) + leaves(node[1])
+
+    if sorted(leaves(topology)) != list(range(len(x))):
+        raise ValueError("Topology must contain each local row index exactly once")
+
+    def score(node):
+        if isinstance(node, int):
+            return 0.0
+        left, right = leaves(node[0]), leaves(node[1])
+        cut = Cut(tuple(range(len(left))), tuple(range(len(left), len(left) + len(right))))
+        local = sibling_cut_scores(x[left + right], (cut,))[0]
+        return float(local + score(node[0]) + score(node[1]))
+
+    return score(topology)
+
+
+def topology_pair_reference(
+    values,
+    *,
+    subtree_indices,
+    first: Tree,
+    second: Tree,
+    selection_event=None,
+    steps=999,
+    seed=0,
+    alpha=0.05,
+):
+    """Paired absolute score difference for two prespecified labeled topologies.
+
+    A data-selected pair needs its pair-selection event as well. The null is
+    homogeneous Gaussian rows, not equal expected accuracy of the two trees.
+    """
+    x, rows = _inputs(values, subtree_indices, alpha)
+
+    def score(matrix):
+        return abs(
+            topology_sibling_score(matrix[rows], first)
+            - topology_sibling_score(matrix[rows], second)
+        )
+
+    result = subtree_gaussian_chain_test(
+        x,
+        subtree_indices=rows,
+        score=score,
+        selection_event=selection_event,
+        steps=steps,
+        seed=seed,
+        alpha=alpha,
+    )
+    return result | {"score": "absolute_difference_of_summed_full_space_sibling_scores"}
+
+
+def subtree_topology_search_test(
+    values, *, subtree_indices, selection_event=None, steps=999, seed=0, alpha=0.05
+):
+    """Replay the union of tied-Ward families over whole spectral spans (at most six rows).
+
+    The geometry rule fixes the relative tie tolerance at 1e-10. Counts are
+    descriptive; the maximum is recalculated over the new family on every draw.
+    Scores sum raw full-space sibling scores, using the same feature space for
+    every candidate. They are a declared diagnostic criterion, not a likelihood.
+    """
+    x, rows = _inputs(values, subtree_indices, alpha)
+    if len(rows) > 6:
+        raise ValueError("Tied-Ward topology search requires at most six subtree leaves")
+
+    def candidates(matrix):
+        points = matrix[rows]
+        trees = set()
+        for space in spectral_subspaces(points):
+            trees.update(ward_topology_family(space.coordinates, rtol=1e-10))
+        ordered = sorted(trees, key=repr)
+        return ordered, [topology_sibling_score(points, tree) for tree in ordered]
+
+    observed = {}
+
+    def score(matrix):
+        trees, scores = candidates(matrix)
+        if not observed:
+            observed.update(trees=trees, scores=scores)
+        return max(scores, default=0.0)
+
+    result = subtree_gaussian_chain_test(
+        x,
+        subtree_indices=rows,
+        score=score,
+        selection_event=selection_event,
+        steps=steps,
+        seed=seed,
+        alpha=alpha,
+    )
+    result.update(candidate_family="union_of_spectral_tied_ward_topologies", tie_rtol=1e-10)
+    result["topology_results"] = [
+        dict(
+            topology=tree,
+            statistic=statistic,
+            global_null_adjusted_p_value=(
+                sum(value >= statistic for value in result["chain_scores"]) / (steps + 1)
+                if result["status"] == "complete"
+                else None
+            ),
+        )
+        for tree, statistic in zip(
+            observed.get("trees", ()), observed.get("scores", ()), strict=True
+        )
+    ]
+    return result
+
+
+# FILE: benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_geometry.py
+# SHA256: dfce3ca40d2f07de0935da76db105abf2b38ae98ae6eea8a9200860000fea332
+"""Bounded geometry diagnostics on a fixed labeled subtree.
+
+Leaf labels are row positions. Cut enumeration, Ward trees in spectral spans,
+and the combinatorial topology family are separate objects.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from functools import cache
+from itertools import combinations, product
+
+import numpy as np
+from scipy.cluster.hierarchy import cophenet, linkage
+from scipy.optimize import nnls
+from scipy.spatial.distance import pdist, squareform
+
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (
+    is_separable,
+)
+
+MAX_CUT_LEAVES = 10
+MAX_TOPOLOGY_LEAVES = 6
+
+type Tree = int | tuple[Tree, Tree]
+
+
+@dataclass(frozen=True)
+class Cut:
+    """Unordered split with the smallest leaf on the left."""
+
+    left: tuple[int, ...]
+    right: tuple[int, ...]
+
+
+@dataclass(frozen=True, eq=False)
+class SpectralSubspace:
+    """Descending Gram eigenblock ranges and the resulting sample geometry."""
+
+    eigenblocks: tuple[tuple[int, int], ...]
+    rank: int
+    projector: np.ndarray
+    coordinates: np.ndarray
+
+
+@dataclass(frozen=True, eq=False)
+class SpectralGeometry:
+    subspace: SpectralSubspace
+    cuts: tuple[Cut, ...]
+    distances: np.ndarray
+    ward_linkage: np.ndarray
+    ward_tree: Tree
+
+
+@dataclass(frozen=True, eq=False)
+class AdditiveDistanceFit:
+    """Nonnegative lengths by unique edge split and fitted condensed distances."""
+
+    edge_splits: tuple[Cut, ...]
+    branch_lengths: np.ndarray
+    fitted_distances: np.ndarray
+    rmse: float
+    max_abs_residual: float
+
+
+def unordered_cuts(n: int) -> tuple[Cut, ...]:
+    """All nonempty complementary splits, with row zero on the left."""
+    if not 2 <= n <= MAX_CUT_LEAVES:
+        raise ValueError(f"Cut enumeration requires 2 through {MAX_CUT_LEAVES} leaves.")
+    return tuple(
+        Cut(
+            (0, *(j for j in range(1, n) if mask & (1 << (j - 1)))),
+            tuple(j for j in range(1, n) if not mask & (1 << (j - 1))),
+        )
+        for mask in range((1 << (n - 1)) - 1)
+    )
+
+
+def spectral_subspaces(points: np.ndarray) -> tuple[SpectralSubspace, ...]:
+    """Return each positive whole Gram block and each distinct leading block union.
+
+    Each projector acts on row space. The coordinates retain Euclidean geometry
+    within the projected feature space. SVD avoids explicitly squaring the
+    condition number or allocating the feature Gram matrix.
+    """
+    x = np.asarray(points, dtype=np.float64)
+    if x.ndim != 2 or min(x.shape) < 1 or not np.isfinite(x).all():
+        raise ValueError("Expected a finite, nonempty rows-by-features matrix.")
+    if not 2 <= len(x) <= MAX_CUT_LEAVES:
+        raise ValueError(f"Subtree geometry requires 2 through {MAX_CUT_LEAVES} leaves.")
+
+    # Scale before centering and SVD to keep the Gram spectrum finite.
+    scale = float(np.max(np.abs(x)))
+    if scale == 0:
+        return ()
+    normalized = x / scale
+    normalized -= normalized[0].copy()
+    u, singular, _ = np.linalg.svd(normalized - normalized.mean(axis=0), full_matrices=False)
+    threshold = np.finfo(float).eps * max(x.shape) * singular[0]
+    rank = min(len(x) - 1, int(np.count_nonzero(singular > threshold)))
+    if rank == 0:
+        return ()
+
+    values = (singular[:rank] / singular[0]) ** 2
+    ends = [*(np.flatnonzero(~tied_eigenvalue_neighbors(values)) + 1).tolist(), rank]
+    blocks = tuple(zip([0, *ends[:-1]], ends, strict=True))
+    groups = [(block,) for block in blocks] + [blocks[:k] for k in range(2, len(blocks) + 1)]
+    subspaces = []
+    for group in groups:
+        start, stop = group[0][0], group[-1][1]
+        row_basis = u[:, start:stop]
+        coordinates = (row_basis * singular[start:stop]) * scale
+        if not np.isfinite(coordinates).all():
+            raise ValueError("Projected coordinates must fit in finite float64.")
+        subspaces.append(
+            SpectralSubspace(group, stop - start, row_basis @ row_basis.T, coordinates)
+        )
+    return tuple(subspaces)
+
+
+def spectral_geometry(points: np.ndarray) -> tuple[SpectralGeometry, ...]:
+    """Enumerate strict affine cuts and compute a fixed-row-order Ward tree per span."""
+    subspaces = spectral_subspaces(points)
+    records = []
+    for subspace in subspaces:
+        x = subspace.coordinates
+        # Column rescaling preserves affine feasibility and avoids scaling the LP
+        # by the Gram eigenvalues or measurement units.
+        lp_points = x / np.max(np.abs(x), axis=0)
+        cuts = tuple(
+            cut
+            for cut in unordered_cuts(len(x))
+            if is_separable(lp_points, np.isin(np.arange(len(x)), cut.left))
+        )
+        scale = np.max(np.abs(x))
+        scaled_distances = pdist(x / scale)
+        distances = scaled_distances * scale
+        if not np.isfinite(distances).all():
+            raise ValueError("Projected distances must fit in finite float64.")
+        # shortcut: round relative input distances at 1e-12 for deterministic numerical
+        # ties in fixed row order, replace if exact near-tie Ward decisions are required.
+        max_distance = scaled_distances.max()
+        ward = linkage(np.round(scaled_distances / max_distance, 12), method="ward")
+        ward[:, 2] *= max_distance * scale
+        if not np.isfinite(ward).all():
+            raise ValueError("Ward linkage heights must fit in finite float64.")
+        nodes: list[Tree] = list(range(len(x)))
+        first_leaf = list(range(len(x)))
+        for a, b in ward[:, :2].astype(int):
+            if first_leaf[b] < first_leaf[a]:
+                a, b = b, a
+            nodes.append((nodes[a], nodes[b]))
+            first_leaf.append(first_leaf[a])
+        records.append(SpectralGeometry(subspace, cuts, distances, ward, nodes[-1]))
+    return tuple(records)
+
+
+def rooted_binary_topologies(n: int) -> tuple[Tree, ...]:
+    """Enumerate all unordered rooted full binary trees of at most six labeled leaves."""
+    if not 2 <= n <= MAX_TOPOLOGY_LEAVES:
+        raise ValueError(f"Topology enumeration requires 2 through {MAX_TOPOLOGY_LEAVES} leaves.")
+
+    def recurse(labels: tuple[int, ...]) -> tuple[Tree, ...]:
+        if len(labels) == 1:
+            return (labels[0],)
+        trees = []
+        for cut in unordered_cuts(len(labels)):
+            left = recurse(tuple(labels[i] for i in cut.left))
+            right = recurse(tuple(labels[i] for i in cut.right))
+            trees.extend(product(left, right))
+        return tuple(trees)
+
+    return recurse(tuple(range(n)))
+
+
+def ward_topology_family(
+    points_or_condensed: np.ndarray, *, rtol: float = 1e-10
+) -> frozenset[Tree]:
+    """All Ward trees reachable by tied merges on two through six leaves.
+
+    Accepts Euclidean coordinates or condensed Euclidean distances. At each
+    step include every increase in within-cluster SSE within `rtol` times the
+    largest original squared pair distance of the minimum. Zero uses exact
+    floating-point comparisons.
+    """
+    x = np.asarray(points_or_condensed, dtype=float)
+    if not np.isfinite(rtol) or rtol < 0:
+        raise ValueError("rtol must be finite and nonnegative.")
+    if not x.size or not np.isfinite(x).all() or x.ndim not in (1, 2):
+        raise ValueError("Expected finite coordinates or condensed Euclidean distances.")
+    if x.ndim == 1 and (x < 0).any():
+        raise ValueError("Euclidean distances must be nonnegative.")
+    scale = np.max(np.abs(x))
+    if scale > 0:
+        x = x / scale
+    if x.ndim == 2 and not 2 <= len(x) <= MAX_TOPOLOGY_LEAVES:
+        raise ValueError(
+            f"Ward topology enumeration requires 2 through {MAX_TOPOLOGY_LEAVES} leaves."
+        )
+    distances = pdist(x) if x.ndim == 2 else x
+    if not 1 <= len(distances) <= MAX_TOPOLOGY_LEAVES * (MAX_TOPOLOGY_LEAVES - 1) // 2:
+        raise ValueError(
+            f"Ward topology enumeration requires 2 through {MAX_TOPOLOGY_LEAVES} leaves."
+        )
+    max_distance = distances.max()
+    normalized = distances / max_distance if max_distance > 0 else distances
+    squared = squareform(normalized**2)
+    n = len(squared)
+    if x.ndim == 1:
+        centered = np.eye(n) - 1 / n
+        if np.linalg.eigvalsh(-0.5 * centered @ squared @ centered)[0] < -1e-12:
+            raise ValueError("Condensed distances must be Euclidean.")
+
+    @cache
+    def merge_cost(left: tuple[int, ...], right: tuple[int, ...]) -> float:
+        a, b = len(left), len(right)
+        cross = squared[np.ix_(left, right)].sum()
+        within_a = sum(squared[i, j] for i, j in combinations(left, 2))
+        within_b = sum(squared[i, j] for i, j in combinations(right, 2))
+        # (ab/(a+b)) times the squared centroid distance, via pair distances.
+        return max(0.0, (a * b * cross - b**2 * within_a - a**2 * within_b) / (a * b * (a + b)))
+
+    @cache
+    def expand(forest: tuple[tuple[tuple[int, ...], Tree], ...]) -> frozenset[Tree]:
+        if len(forest) == 1:
+            return frozenset((forest[0][1],))
+        costs = [
+            (merge_cost(forest[i][0], forest[j][0]), i, j)
+            for i, j in combinations(range(len(forest)), 2)
+        ]
+        threshold = min(cost for cost, _, _ in costs) + rtol
+        trees = set()
+        for cost, i, j in costs:
+            if cost <= threshold:
+                left, right = forest[i], forest[j]
+                merged = (tuple(sorted(left[0] + right[0])), (left[1], right[1]))
+                trees.update(expand(forest[:i] + (merged,) + forest[i + 1 : j] + forest[j + 1 :]))
+        return frozenset(trees)
+
+    return expand(tuple(((i,), i) for i in range(n)))
+
+
+def _clades(tree: Tree) -> list[frozenset[int]]:
+    if isinstance(tree, int):
+        return [frozenset((tree,))]
+    left, right = map(_clades, tree)
+    return [*left, *right, left[-1] | right[-1]]
+
+
+def tree_clades(tree: Tree) -> frozenset[frozenset[int]]:
+    """Nontrivial clades for rooted topology comparison."""
+    return frozenset(clade for clade in _clades(tree)[:-1] if len(clade) > 1)
+
+
+def tree_edge_splits(tree: Tree) -> frozenset[Cut]:
+    """Unordered edge splits including pendant edges, deduplicating the root split."""
+    clades = _clades(tree)
+    leaves = clades.pop()
+    first = min(leaves)
+    splits = set()
+    for clade in clades:
+        left, right = (clade, leaves - clade) if first in clade else (leaves - clade, clade)
+        splits.add(Cut(tuple(sorted(left)), tuple(sorted(right))))
+    return frozenset(splits)
+
+
+def fit_additive_distances(tree: Tree, condensed_distances: np.ndarray) -> AdditiveDistanceFit:
+    """Fit all leaf-pair distances to unique edge splits on a small fixed tree.
+
+    Targets use the supplied distance units. Complementary root edges have
+    the same incidence column, so their lengths are represented by one sum.
+    Zero fitted internal lengths give unresolved splits in the fitted metric.
+    """
+    clades = _clades(tree)
+    n = len(clades[-1])
+    if not 2 <= n <= MAX_TOPOLOGY_LEAVES:
+        raise ValueError(
+            f"Additive distance fitting requires 2 through {MAX_TOPOLOGY_LEAVES} leaves."
+        )
+    if clades[-1] != frozenset(range(n)) or sum(len(clade) == 1 for clade in clades) != n:
+        raise ValueError("Expected unique leaf labels 0 through n-1.")
+    observed = np.asarray(condensed_distances, dtype=float)
+    if (
+        observed.shape != (n * (n - 1) // 2,)
+        or not np.isfinite(observed).all()
+        or (observed < 0).any()
+    ):
+        raise ValueError("Expected finite nonnegative condensed distances for the supplied leaves.")
+
+    splits = tuple(sorted(tree_edge_splits(tree), key=lambda split: split.left))
+    membership = np.column_stack([np.isin(np.arange(n), split.left) for split in splits])
+    left, right = np.triu_indices(n, k=1)
+    design = (membership[left] != membership[right]).astype(float)
+    scale = float(observed.max()) or 1.0
+    normalized = observed / scale
+    lengths, _ = nnls(design, normalized)
+    fitted = design @ lengths
+    residuals = fitted - normalized
+    lengths, fitted = lengths * scale, fitted * scale
+    if not np.isfinite(fitted).all():
+        raise ValueError("Fitted distances must fit in finite float64.")
+    return AdditiveDistanceFit(
+        splits,
+        lengths,
+        fitted,
+        float(np.sqrt(np.mean(residuals**2))) * scale,
+        float(np.max(np.abs(residuals))) * scale,
+    )
+
+
+def rooted_robinson_foulds(left: Tree, right: Tree) -> int:
+    """Number of nontrivial rooted clades present in only one of the trees."""
+    if _clades(left)[-1] != _clades(right)[-1]:
+        raise ValueError("Rooted RF requires the same leaf labels in both trees.")
+    return len(tree_clades(left) ^ tree_clades(right))
+
+
+def cophenetic_distances(tree_or_linkage: Tree | np.ndarray) -> np.ndarray:
+    """Condensed cophenetic distances in row order.
+
+    An abstract topology assigns a node the height of its longest path to a
+    leaf in edge units. A linkage matrix preserves its supplied heights.
+    """
+    if isinstance(tree_or_linkage, np.ndarray):
+        return cophenet(tree_or_linkage)
+
+    leaves = _clades(tree_or_linkage)[-1]
+    n = len(leaves)
+    if n < 2 or leaves != frozenset(range(n)):
+        raise ValueError("Cophenetic topology leaves must be numbered 0 through n-1.")
+    merges = []
+
+    def build(node: Tree) -> tuple[int, int, int]:
+        if isinstance(node, int):
+            return node, 0, 1
+        a, ha, na = build(node[0])
+        b, hb, nb = build(node[1])
+        parent = n + len(merges)
+        height, count = 1 + max(ha, hb), na + nb
+        merges.append((a, b, height, count))
+        return parent, height, count
+
+    _, _, count = build(tree_or_linkage)
+    if count != n:
+        raise ValueError("Cophenetic topology leaves must be unique.")
+    return cophenet(np.asarray(merges, dtype=float))
+
+
+# FILE: benchmarks/diagnostics/calibration/selected/hierarchy/subtree_gaussian_reference.py
+# SHA256: 848ba415f72a56a6a4bef5c011f44660c4a10842d18e2888d54c54c6bda76a0b
+"""Gaussian common-mean references for a specified subtree."""
+
+import math
+from numbers import Integral, Real
+
+import numpy as np
+from scipy.linalg import helmert
+from scipy.stats import beta
+
+
+def _rows(indices, n, *, name, minimum):
+    try:
+        rows = tuple(indices)
+    except TypeError as error:
+        raise ValueError(f"{name} must be a sequence of row indices") from error
+    if (
+        len(rows) < minimum
+        or any(isinstance(i, bool) or not isinstance(i, Integral) or not 0 <= i < n for i in rows)
+        or len(set(rows)) != len(rows)
+    ):
+        raise ValueError(f"{name} must contain at least {minimum} distinct valid row indices")
+    return np.asarray(rows, dtype=np.intp)
+
+
+def _inputs(values, subtree_indices, alpha):
+    if isinstance(alpha, bool) or not isinstance(alpha, Real) or not 0 < alpha < 1:
+        raise ValueError("alpha must lie strictly between zero and one")
+    x = np.asarray(values, dtype=float)
+    if x.ndim != 2 or x.shape[1] < 1 or not np.isfinite(x).all():
+        raise ValueError("values must be a finite matrix with at least one feature")
+    rows = _rows(subtree_indices, len(x), name="subtree_indices", minimum=2)
+    # Membership alone fixes the proposal basis, including for data-ordered input indices.
+    return x, np.sort(rows)
+
+
+def _rotated(state, rng):
+    proposed = state.copy()
+    if len(state) == 1:
+        sign = 1 if rng.integers(2) else -1
+        proposed[0] *= sign
+        return proposed, (0, 0, 0.0, sign)
+    i, j = sorted(map(int, rng.choice(len(state), size=2, replace=False)))
+    angle = float(rng.uniform(-np.pi, np.pi))
+    sign = 1 if rng.integers(2) else -1
+    c, s = math.cos(angle), math.sin(angle)
+    proposed[i] = c * state[i] - s * state[j]
+    proposed[j] = sign * (s * state[i] + c * state[j])
+    return proposed, (i, j, angle, sign)
+
+
+def subtree_gaussian_chain_test(
+    values, *, subtree_indices, score, selection_event=None, steps=999, seed=0, alpha=0.05
+):
+    """Rank a deterministic full-matrix score under the common-mean Gaussian null.
+
+    Condition on the subtree mean, centered feature Gram matrix, outside rows
+    and, if supplied, the caller's selection event. Subtree rows must be iid
+    Gaussian with one common mean and covariance and independent of outside
+    rows. Unknown covariance is allowed. The event must describe how the tested
+    membership and any other conditioned selection were obtained. Omitting it
+    requires prespecified membership. Callbacks receive read-only matrices.
+    Any score-defining choices captured by callbacks must be prespecified or
+    part of the event. A failed evaluation invalidates the rank. No descendant or traversal event
+    is inferred here, and native floating-point event membership is uncertified.
+
+    Chain moves store accepted transforms as (i, j, angle, sign), relative to
+    the preceding state when moving outward from the observed anchor. An empty
+    entry keeps the preceding state. Equal indices denote the one-axis case.
+    """
+    x, rows = _inputs(values, subtree_indices, alpha)
+    for name, value, minimum in (("steps", steps, 1), ("seed", seed, 0)):
+        if isinstance(value, bool) or not isinstance(value, Integral) or value < minimum:
+            raise ValueError(f"{name} must be an integer >= {minimum}")
+    if not callable(score) or (selection_event is not None and not callable(selection_event)):
+        raise ValueError("score and any selection_event must be callable")
+
+    def in_event(matrix):
+        if selection_event is None:
+            return True
+        accepted = selection_event(matrix)
+        if not isinstance(accepted, (bool, np.bool_)):
+            raise ValueError("selection_event must return a boolean")
+        return bool(accepted)
+
+    def score_value(matrix):
+        value = score(matrix)
+        if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value):
+            raise ValueError("score must return a finite real number")
+        return float(value)
+
+    rng = np.random.default_rng(seed)
+    anchor = int(rng.integers(steps + 1))
+    scores = [None] * (steps + 1)
+    moves = [None] * (steps + 1)
+    result = dict(
+        status="unresolved",
+        decision="unresolved",
+        p_value=None,
+        error=None,
+        sampling_status="unresolved",
+        observed_score=None,
+        anchor_index=anchor,
+        accepted_moves=0,
+        completed_steps=0,
+        event_evaluations=0,
+        chain_scores=scores,
+        chain_moves=moves,
+        alpha=float(alpha),
+        seed=int(seed),
+        steps_requested=int(steps),
+        resolution_sufficient=1 / (steps + 1) <= alpha,
+        subtree_indices=rows.tolist(),
+        numerical_event_certified=False,
+        selection_event="fixed_membership" if selection_event is None else "caller_supplied",
+        observation_model="independent_gaussian_common_mean_covariance",
+    )
+    observed = x.copy()
+    observed.setflags(write=False)
+    phase = "observation"
+    try:
+        if not in_event(observed):
+            raise ValueError("observed matrix does not satisfy selection_event")
+        scores[anchor] = result["observed_score"] = score_value(observed)
+        with np.errstate(over="raise", invalid="raise"):
+            basis = helmert(len(rows), full=False)
+            mean = x[rows].mean(axis=0)
+            original = basis @ (x[rows] - mean)
+            phase = "sampling"
+            for positions in (range(anchor - 1, -1, -1), range(anchor + 1, steps + 1)):
+                current, current_score = original, scores[anchor]
+                for index in positions:
+                    proposed, move = _rotated(current, rng)
+                    if not np.array_equal(proposed, current):
+                        candidate = x.copy()
+                        candidate[rows] = mean + basis.T @ proposed
+                        candidate.setflags(write=False)
+                        if selection_event is not None:
+                            result["event_evaluations"] += 1
+                        if in_event(candidate):
+                            current_score = score_value(candidate)
+                            current = proposed
+                            moves[index] = move
+                            result["accepted_moves"] += 1
+                    scores[index] = current_score
+                    result["completed_steps"] += 1
+    except Exception as error:
+        result.update(error_phase=phase, error=f"{type(error).__name__}: {error}")
+        return result
+
+    p_value = sum(value >= scores[anchor] for value in scores) / (steps + 1)
+    moved = result["accepted_moves"] > 0
+    result.update(
+        status="complete", p_value=p_value, sampling_status="moved" if moved else "stalled"
+    )
+    if moved and result["resolution_sufficient"]:
+        result["decision"] = "reject" if p_value <= alpha else "do_not_reject"
+    return result
+
+
+def fixed_subtree_contrast_test(
+    values, *, subtree_indices, left_indices, rank=None, all_labels=False, alpha=0.05
+):
+    """Test a fixed binary row contrast on a prespecified common-mean subtree.
+
+    The statistic is squared projection of the unit row contrast onto the
+    leading rank-k left singular subspace of the centered subtree. The right
+    directions and numerical rank are functions of its feature Gram matrix.
+    For fixed membership and labels the conditional law is Beta(k/2,(m-1-k)/2).
+    An optional Bonferroni factor counts all unordered nonempty binary splits.
+    It permits label search on the specified subtree. Selected membership and
+    contrast-selected rank are outside the reference.
+    """
+    x, rows = _inputs(values, subtree_indices, alpha)
+    left = _rows(left_indices, len(x), name="left_indices", minimum=1)
+    left_mask = np.isin(rows, left)
+    if left_mask.sum() != len(left) or len(left) == len(rows):
+        raise ValueError("left_indices must form a nonempty proper subset of subtree_indices")
+    if rank is not None and (isinstance(rank, bool) or not isinstance(rank, Integral) or rank < 0):
+        raise ValueError("rank must be a nonnegative integer or None")
+    if not isinstance(all_labels, (bool, np.bool_)):
+        raise ValueError("all_labels must be a boolean")
+
+    m = len(rows)
+    count = (1 << (m - 1)) - 1 if all_labels else 1
+    result = dict(
+        status="unresolved",
+        decision="unresolved",
+        error=None,
+        p_value=None,
+        unadjusted_p_value=None,
+        statistic=None,
+        rank=None,
+        subtree_indices=rows.tolist(),
+        left_indices=left.tolist(),
+        number_of_labels=count,
+        alpha=float(alpha),
+        selection_event="fixed_membership",
+        all_labels=bool(all_labels),
+        observation_model="independent_gaussian_common_mean_covariance",
+    )
+    try:
+        with np.errstate(over="raise", invalid="raise"):
+            basis = helmert(m, full=False)
+            centered = x[rows] - x[rows].mean(axis=0)
+            u, singular, _ = np.linalg.svd(basis @ centered, full_matrices=False)
+        tolerance = singular[0] * max(centered.shape) * np.finfo(float).eps
+        full_rank = int(np.count_nonzero(singular > tolerance))
+        k = full_rank if rank is None else int(rank)
+        result["rank"] = k
+        if not 0 < k < m - 1 or k > full_rank:
+            raise ValueError(
+                "rank is zero, exceeds the numerical rank, or spans the centered row space"
+            )
+        if k < full_rank and singular[k - 1] - singular[k] <= tolerance:
+            raise ValueError("rank cuts a tied Gram eigenspace")
+        contrast = np.where(left_mask, 1 / len(left), -1 / (m - len(left)))
+        contrast /= np.linalg.norm(contrast)
+        q = float(np.linalg.norm(u[:, :k].T @ (basis @ contrast)) ** 2)
+        if not 0 <= q < 1:
+            raise FloatingPointError("projection statistic is outside numerical Beta support")
+        log_tail = float(beta.logsf(q, k / 2, (m - 1 - k) / 2))
+        if not math.isfinite(log_tail):
+            raise FloatingPointError("Beta tail underflowed or is nonfinite")
+    except (ValueError, FloatingPointError, np.linalg.LinAlgError) as error:
+        result["error"] = f"{type(error).__name__}: {error}"
+        return result
+
+    p_value = math.exp(min(0.0, log_tail + math.log(count)))
+    return result | dict(
+        status="complete",
+        decision="reject" if p_value <= alpha else "do_not_reject",
+        p_value=p_value,
+        unadjusted_p_value=math.exp(log_tail),
+        statistic=q,
+    )
+
+
+# FILE: tests/statistics/71_test_subtree_gaussian_reference.py
+# SHA256: fff9d0addf415dca8becabb961d66c0291d7113cc7c1d4c84e954d9ff0264f18
+"""Common-mean conditional Gaussian reference checks."""
+
+import numpy as np
+import pytest
+from scipy.linalg import helmert
+from scipy.stats import beta
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_gaussian_reference import (
+    fixed_subtree_contrast_test,
+    subtree_gaussian_chain_test,
+)
+
+
+def test_chain_preserves_subtree_mean_gram_and_outside_rows_at_full_row_rank():
+    x = np.random.default_rng(4).normal(size=(10, 12))
+    rows = [8, 1, 3, 4, 7]
+    outside = sorted(set(range(len(x))) - set(rows))
+    centered = x[rows] - x[rows].mean(0)
+
+    def score(values):
+        np.testing.assert_array_equal(values[outside], x[outside])
+        np.testing.assert_allclose(values[rows].mean(0), x[rows].mean(0), atol=1e-14)
+        y = values[rows] - values[rows].mean(0)
+        np.testing.assert_allclose(y.T @ y, centered.T @ centered, atol=1e-13)
+        return values[rows[0], 0]
+
+    r = subtree_gaussian_chain_test(x, subtree_indices=rows, score=score, steps=39, seed=17)
+    assert r["status"] == "complete"
+    assert r["accepted_moves"] == r["completed_steps"] == 39
+    assert r["chain_scores"][r["anchor_index"]] == score(x)
+    assert r["p_value"] == np.mean(np.asarray(r["chain_scores"]) >= score(x))
+    assert r["anchor_index"] == np.random.default_rng(17).integers(40)
+    assert len(r["chain_moves"]) == 40
+    assert {move[3] for move in r["chain_moves"] if move is not None} == {-1, 1}
+    sorted_rows = r["subtree_indices"]
+    sorted_centered = x[sorted_rows] - x[sorted_rows].mean(0)
+    basis = helmert(len(rows), full=False)
+    anchor = r["anchor_index"]
+    for positions in (range(anchor - 1, -1, -1), range(anchor + 1, 40)):
+        state = basis @ sorted_centered
+        for position in positions:
+            i, j, angle, sign = r["chain_moves"][position]
+            a, b = state[[i, j]]
+            c, sine = np.cos(angle), np.sin(angle)
+            state[i] = c * a - sine * b
+            state[j] = sign * (sine * a + c * b)
+            reconstructed = x[sorted_rows].mean(0) + basis.T @ state
+            assert r["chain_scores"][position] == pytest.approx(
+                reconstructed[sorted_rows.index(rows[0]), 0]
+            )
+    assert r["selection_event"] == "fixed_membership"
+    assert r == subtree_gaussian_chain_test(x, subtree_indices=rows, score=score, steps=39, seed=17)
+
+
+def test_selection_rejections_preserve_the_last_state_and_do_not_evaluate_its_score():
+    x = np.arange(12, dtype=float).reshape(6, 2)
+    rows = [0, 1, 2, 3]
+
+    def event(values):
+        return values[0, 0] <= 0.2
+
+    def score(values):
+        assert event(values)
+        return values[0, 0]
+
+    r = subtree_gaussian_chain_test(
+        x, subtree_indices=rows, score=score, selection_event=event, steps=59, seed=18
+    )
+    assert r["status"] == "complete"
+    assert r["selection_event"] == "caller_supplied"
+    assert 0 < r["accepted_moves"] < 59
+    assert max(r["chain_scores"]) <= 0.2
+    for i, (move, value) in enumerate(zip(r["chain_moves"], r["chain_scores"], strict=True)):
+        if i != r["anchor_index"] and move is None:
+            assert value == r["chain_scores"][i + (1 if i < r["anchor_index"] else -1)]
+
+
+def test_two_row_orbit_moves_by_reflection_and_upper_tail_ties_are_retained():
+    x = np.array([[1.0], [3.0], [99.0]])
+    r = subtree_gaussian_chain_test(
+        x, subtree_indices=[0, 1], score=lambda _: 1.0, steps=59, seed=11
+    )
+    assert r["decision"] == "do_not_reject" and r["p_value"] == 1.0
+    assert 0 < r["accepted_moves"] < 59
+    assert r["chain_scores"] == [1.0] * 60
+
+
+@pytest.mark.parametrize(
+    ("event", "score", "phase"),
+    [
+        (lambda _: False, lambda _: 1.0, "observation"),
+        (lambda _: 1, lambda _: 1.0, "observation"),
+        (lambda _: True, lambda _: np.nan, "observation"),
+        (lambda x: True if x[0, 0] == 0 else 1, lambda _: 1.0, "sampling"),
+        (lambda _: True, lambda x: 0.0 if x[0, 0] == 0 else np.inf, "sampling"),
+    ],
+)
+def test_callback_failures_are_explicit(event, score, phase):
+    r = subtree_gaussian_chain_test(
+        np.arange(12).reshape(6, 2),
+        subtree_indices=[0, 1, 2, 3],
+        score=score,
+        selection_event=event,
+        steps=59,
+        seed=3,
+    )
+    assert r["status"] == r["decision"] == "unresolved"
+    assert r["p_value"] is None and r["error_phase"] == phase
+
+
+def test_stall_and_insufficient_rank_resolution_are_distinct():
+    x = np.arange(12).reshape(6, 2)
+    stalled = subtree_gaussian_chain_test(
+        x,
+        subtree_indices=[0, 1, 2],
+        score=lambda _: 0.0,
+        selection_event=lambda z: np.array_equal(x, z),
+        steps=39,
+    )
+    assert stalled["decision"] == "unresolved"
+    assert stalled["sampling_status"] == "stalled" and stalled["p_value"] == 1.0
+    moved = subtree_gaussian_chain_test(x, subtree_indices=[0, 1, 2], score=lambda _: 0.0, steps=1)
+    assert moved["decision"] == "unresolved"
+    assert moved["sampling_status"] == "moved" and not moved["resolution_sufficient"]
+
+
+@pytest.mark.parametrize("indices", [[], [0], [0, 0], [-1, 0], [0, 6], [True, 2], [0.5, 1]])
+def test_invalid_subtree_indices_raise(indices):
+    with pytest.raises(ValueError, match="subtree_indices"):
+        subtree_gaussian_chain_test(np.ones((6, 2)), subtree_indices=indices, score=lambda _: 0.0)
+
+
+def test_beta_statistic_uses_unit_row_contrast_and_all_labels_count():
+    x = np.random.default_rng(12).normal(size=(10, 3))
+    rows, left = [1, 2, 3, 5, 8, 9], [2, 3]
+    a = fixed_subtree_contrast_test(x, subtree_indices=rows, left_indices=left)
+    b = fixed_subtree_contrast_test(
+        x, subtree_indices=rows, left_indices=[1, 5, 8, 9], all_labels=True
+    )
+    u, _, _ = np.linalg.svd(x[rows] - x[rows].mean(0), full_matrices=False)
+    e = np.array([-0.25, 0.5, 0.5, -0.25, -0.25, -0.25])
+    q = np.linalg.norm(u.T @ e) ** 2 / (e @ e)
+    assert a["statistic"] == pytest.approx(q)
+    assert a["p_value"] == pytest.approx(beta.sf(q, 1.5, 1.0))
+    assert b["number_of_labels"] == 31
+    assert b["p_value"] == pytest.approx(min(1.0, 31 * a["p_value"]))
+
+
+def test_beta_gram_rank_and_degenerate_support():
+    rng = np.random.default_rng(14)
+    x = rng.normal(size=(6, 10))
+    r = fixed_subtree_contrast_test(x, subtree_indices=range(6), left_indices=[0, 1])
+    assert r["decision"] == "unresolved" and r["p_value"] is None
+    r = fixed_subtree_contrast_test(x, subtree_indices=range(6), left_indices=[0, 1], rank=2)
+    assert r["status"] == "complete" and r["rank"] == 2
+    r = fixed_subtree_contrast_test(np.ones((6, 1)), subtree_indices=range(6), left_indices=[0])
+    assert r["decision"] == "unresolved"
+    with pytest.raises(ValueError, match="left_indices"):
+        fixed_subtree_contrast_test(x, subtree_indices=[0, 1, 2], left_indices=[5])
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"steps": 0},
+        {"steps": True},
+        {"seed": -1},
+        {"alpha": 1.0},
+        {"alpha": np.nan},
+        {"selection_event": 2},
+    ],
+)
+def test_invalid_chain_options_raise(options):
+    with pytest.raises(ValueError):
+        subtree_gaussian_chain_test(
+            np.ones((6, 2)), subtree_indices=[0, 1, 2], score=lambda _: 0.0, **options
+        )
+
+
+def test_beta_leading_rank_cannot_cut_a_tied_gram_eigenspace():
+    x = helmert(4, full=False).T[:, :2]
+    r = fixed_subtree_contrast_test(x, subtree_indices=range(4), left_indices=[0], rank=1)
+    assert r["decision"] == "unresolved" and "tied Gram eigenspace" in r["error"]
+
+
+def test_subtree_membership_order_cannot_change_the_chain_kernel():
+    x = np.random.default_rng(5).normal(size=(8, 4))
+
+    def score(values):
+        return values[0, 0]
+
+    forward = subtree_gaussian_chain_test(x, subtree_indices=[0, 2, 3, 5], score=score, steps=19)
+    reverse = subtree_gaussian_chain_test(x, subtree_indices=[5, 3, 2, 0], score=score, steps=19)
+    assert forward == reverse
+
+
+# FILE: tests/statistics/72_test_subtree_topology_geometry.py
+# SHA256: 8ff5ab6810a0c58df307d6f4a04062c991eeb4472a4ea5497be2ee51c2ca5d40
+import numpy as np
+import pytest
+from scipy.cluster.hierarchy import cophenet
+from scipy.spatial.distance import pdist
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_geometry import (
+    Cut,
+    cophenetic_distances,
+    fit_additive_distances,
+    rooted_binary_topologies,
+    rooted_robinson_foulds,
+    spectral_geometry,
+    spectral_subspaces,
+    tree_clades,
+    tree_edge_splits,
+    unordered_cuts,
+    ward_topology_family,
+)
+
+
+def test_cut_and_rooted_tree_families_have_different_counts():
+    cuts = unordered_cuts(4)
+    assert len(cuts) == len(set(cuts)) == 7
+    assert all(0 in cut.left and set(cut.left).isdisjoint(cut.right) for cut in cuts)
+    assert all(sorted(cut.left + cut.right) == list(range(4)) for cut in cuts)
+    trees = rooted_binary_topologies(4)
+    assert len(trees) == len(set(trees)) == 15
+    assert len(rooted_binary_topologies(6)) == 945
+    assert {cut for tree in trees for cut in tree_edge_splits(tree)} == set(cuts)
+    for tree in trees:
+        a, b = tree_clades(tree)
+        assert a <= b or b <= a or not (a & b)
+    left = ((0, 1), (2, 3))
+    right = ((0, 2), (1, 3))
+    assert rooted_robinson_foulds(left, left) == 0
+    assert rooted_robinson_foulds(left, right) == 4
+    assert len(tree_edge_splits(left)) == 5
+    np.testing.assert_array_equal(cophenetic_distances(left), [1, 2, 2, 2, 2, 1])
+    np.testing.assert_array_equal(cophenetic_distances(right), [2, 1, 2, 2, 1, 2])
+
+
+def test_whole_tied_block_rotation_preserves_geometry_and_ward_tie_convention():
+    square = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]], dtype=float)
+    angle = 0.42
+    rot = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+    (first,) = spectral_geometry(square)
+    (rotated,) = spectral_geometry(square @ rot)
+    assert first.subspace.eigenblocks == rotated.subspace.eigenblocks == ((0, 2),)
+    assert first.subspace.rank == rotated.subspace.rank == 2
+    np.testing.assert_allclose(first.subspace.projector, rotated.subspace.projector, atol=1e-12)
+    np.testing.assert_allclose(first.distances, rotated.distances)
+    np.testing.assert_allclose(first.distances, pdist(square))
+    assert first.cuts == rotated.cuts
+    assert len(first.cuts) == 6 and Cut((0, 3), (1, 2)) not in first.cuts
+    assert first.ward_tree == rotated.ward_tree
+    np.testing.assert_allclose(
+        cophenetic_distances(first.ward_linkage), cophenet(first.ward_linkage)
+    )
+
+
+def test_standalone_and_cumulative_blocks_and_saturated_span():
+    tall = np.array([[-2, -1], [-2, 1], [2, -1], [2, 1]], dtype=float)
+    spaces = {record.subspace.eigenblocks: record for record in spectral_geometry(tall)}
+    assert {ranges: item.subspace.rank for ranges, item in spaces.items()} == {
+        ((0, 1),): 1,
+        ((1, 2),): 1,
+        ((0, 1), (1, 2)): 2,
+    }
+    assert spaces[((0, 1),)].cuts == (Cut((0, 1), (2, 3)),)
+    assert spaces[((1, 2),)].cuts == (Cut((0, 2), (1, 3)),)
+    (saturated,) = spectral_geometry(np.eye(4))
+    assert saturated.subspace.rank == 3 and saturated.cuts == unordered_cuts(4)
+    np.testing.assert_allclose(saturated.subspace.projector, np.eye(4) - 0.25, atol=1e-12)
+
+
+def test_coincident_positions_and_bounds():
+    data = np.array([[0.0], [0.0], [2.0], [2.0]])
+    (record,) = spectral_geometry(data)
+    assert record.cuts == (Cut((0, 1), (2, 3)),)
+    assert spectral_subspaces(np.ones((4, 2))) == ()
+    assert spectral_subspaces(np.tile([0.1, 0.3, 1.0], (7, 1))) == ()
+    assert spectral_geometry(np.ones((4, 2))) == ()
+    with pytest.raises(ValueError, match="10"):
+        spectral_geometry(np.ones((11, 2)))
+    with pytest.raises(ValueError, match="6"):
+        rooted_binary_topologies(7)
+    with pytest.raises(ValueError, match="finite"):
+        spectral_subspaces([[0.0], [np.inf]])
+
+
+@pytest.mark.parametrize("scale", [1e-200, 1e200])
+def test_distance_and_cut_calculation_preserve_uniform_feature_rescaling(scale):
+    points = np.array([[0.0], [1.0], [3.0], [4.0]])
+    (ordinary,) = spectral_geometry(points)
+    (rescaled,) = spectral_geometry(points * scale)
+    assert ordinary.cuts == rescaled.cuts
+    assert ordinary.ward_tree == rescaled.ward_tree
+    np.testing.assert_allclose(ordinary.distances, rescaled.distances / scale)
+
+
+def test_ward_family_enumerates_and_deduplicates_all_tied_merges():
+    vertical = ((0, 1), (2, 3))
+    horizontal = ((0, 2), (1, 3))
+    square = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]])
+    assert ward_topology_family(square) == {vertical, horizontal}
+    assert ward_topology_family(pdist(square)) == {vertical, horizontal}
+    assert ward_topology_family(square[:, :1]) == {vertical}
+    assert ward_topology_family(square[:, 1:]) == {horizontal}
+    assert ward_topology_family(np.eye(4), rtol=0) == set(rooted_binary_topologies(4))
+    assert ward_topology_family(np.eye(6)) == set(rooted_binary_topologies(6))
+    (simplex,) = spectral_geometry(np.eye(4))
+    assert simplex.ward_tree in ward_topology_family(simplex.distances)
+
+
+def test_ward_family_tolerance_and_input_contract():
+    almost_square = np.array([[-1.0, -1], [-1, 1], [1 + 1e-11, -1], [1 + 1e-11, 1]])
+    assert len(ward_topology_family(almost_square, rtol=0)) == 1
+    assert len(ward_topology_family(almost_square)) == 2
+    assert len(ward_topology_family(np.array([[0], [1], [4], [10]]), rtol=0)) == 1
+    with pytest.raises(ValueError, match="6"):
+        ward_topology_family(np.zeros((7, 2)))
+    with pytest.raises(ValueError, match="Euclidean"):
+        ward_topology_family(np.array([1.0, 1.0, 3.0]))
+    with pytest.raises(ValueError, match="rtol"):
+        ward_topology_family(almost_square, rtol=-1)
+
+
+def test_additive_distance_fit_recovers_lengths_and_is_invariant_to_root():
+    observed = np.array([3, 8, 9, 9, 10, 7], dtype=float)
+    balanced = fit_additive_distances(((0, 1), (2, 3)), observed)
+    rerooted = fit_additive_distances((0, (1, (2, 3))), observed)
+    wrong = fit_additive_distances(((0, 2), (1, 3)), observed)
+    assert balanced.edge_splits == rerooted.edge_splits
+    expected = {
+        Cut((0,), (1, 2, 3)): 1,
+        Cut((0, 2, 3), (1,)): 2,
+        Cut((0, 1, 3), (2,)): 3,
+        Cut((0, 1, 2), (3,)): 4,
+        Cut((0, 1), (2, 3)): 4,
+    }
+    np.testing.assert_allclose(balanced.branch_lengths, [expected[s] for s in balanced.edge_splits])
+    np.testing.assert_allclose(balanced.branch_lengths, rerooted.branch_lengths)
+    np.testing.assert_allclose(balanced.fitted_distances, observed)
+    assert balanced.rmse < 1e-12 and balanced.max_abs_residual < 1e-12
+    assert wrong.rmse > 0.1 and wrong.max_abs_residual > 0.1
+    assert wrong.branch_lengths[wrong.edge_splits.index(Cut((0, 2), (1, 3)))] == 0
+
+
+def test_additive_distance_fit_input_contract():
+    fit = fit_additive_distances((0, 1), np.array([0.0]))
+    np.testing.assert_array_equal(fit.fitted_distances, [0])
+    assert fit.rmse == fit.max_abs_residual == 0
+    for tree in (((0, 0), 1), (0, 2)):
+        with pytest.raises(ValueError, match="labels"):
+            fit_additive_distances(tree, np.array([1.0]))
+    for distances in ([1.0], [1.0, -2.0, 3.0], [1.0, np.inf, 3.0]):
+        with pytest.raises(ValueError, match="distances"):
+            fit_additive_distances(((0, 1), 2), distances)
+
+
+# FILE: tests/statistics/73_test_subtree_topology_tests.py
+# SHA256: c5d67eeff42516c12a27ae7a43c172694ca946cf56623ce688ea569578e5695a
+"""Subtree-only candidate search, selected Ward events and retained sibling scores."""
+
+import numpy as np
+import pandas as pd
+import pytest
+from scipy.spatial.distance import pdist
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_gaussian_reference import (
+    subtree_gaussian_chain_test,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_geometry import Cut
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_tests import (
+    native_sibling_statistic,
+    sibling_cut_scores,
+    subtree_alternative_cut_test,
+    subtree_topology_search_test,
+    topology_pair_reference,
+    topology_sibling_score,
+    ward_subtree_selection,
+)
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+
+def test_sibling_score_matches_pooled_hotelling_and_parent_fallback():
+    x = np.random.default_rng(12).normal(size=(20, 3))
+    for count in (4, 10):
+        left, right = x[:count], x[count:]
+        if count < 8:
+            covariance = np.cov(x, rowvar=False)
+        else:
+            residual = np.vstack([left - left.mean(0), right - right.mean(0)])
+            covariance = residual.T @ residual / 18
+        difference = left.mean(0) - right.mean(0)
+        expected = (
+            difference @ np.linalg.solve(covariance, difference) / (1 / count + 1 / (20 - count))
+        )
+        score = sibling_cut_scores(x, [Cut(tuple(range(count)), tuple(range(count, 20)))])
+        assert score[0] == pytest.approx(expected, rel=1e-10)
+
+
+def test_joint_search_adjusts_every_returned_cut_using_the_same_maximum_path():
+    x = np.random.default_rng(83).normal(size=(5, 2))
+    result = subtree_alternative_cut_test(x, subtree_indices=range(5), steps=19, seed=32, alpha=0.1)
+    assert result["status"] == "complete"
+    assert result["candidate_family"] == "full_span_strict_affine_cuts"
+    assert result["cut_results"]
+    assert max(row["statistic"] for row in result["cut_results"]) == result["observed_score"]
+    for row in result["cut_results"]:
+        assert row["global_null_adjusted_p_value"] >= result["p_value"]
+        assert row["global_null_adjusted_p_value"] == np.mean(
+            np.array(result["chain_scores"]) >= row["statistic"]
+        )
+    assert result == subtree_alternative_cut_test(
+        x, subtree_indices=range(5), steps=19, seed=32, alpha=0.1
+    )
+
+
+def test_ward_descendant_event_freezes_ancestral_memberships():
+    x = np.random.default_rng(3).normal(size=(12, 2))
+    x[6:] += 30
+    rows, event = ward_subtree_selection(x, path=(0,))
+    assert np.array_equal(rows, ward_subtree_selection(x, path=iter([0]))[0])
+    assert rows.tolist() == list(range(6)) and event(x)
+    swapped = x.copy()
+    swapped[[0, 8]] = swapped[[8, 0]]
+    assert not event(swapped)
+
+    def score(matrix):
+        assert event(matrix)
+        np.testing.assert_array_equal(matrix[6:], x[6:])
+        return float(matrix[0, 0])
+
+    result = subtree_gaussian_chain_test(
+        x, subtree_indices=rows, selection_event=event, score=score, steps=19, seed=10, alpha=0.1
+    )
+    assert result["status"] == "complete" and result["accepted_moves"] > 0
+    assert result["subtree_indices"] == list(range(6))
+
+
+def test_preserving_node_split_is_stricter_than_its_ancestry():
+    x = np.array([[0.0], [1.0], [8.0], [10.0], [100.0], [101.0], [110.0], [111.0]])
+    rows, event = ward_subtree_selection(x, path=(0,))
+    _, pair_event = ward_subtree_selection(x, path=(0,), keep_split=True)
+    changed = x.copy()
+    changed[[1, 2]] = changed[[2, 1]]
+    assert rows.tolist() == [0, 1, 2, 3]
+    assert event(changed) and not pair_event(changed)
+
+
+def test_native_score_reproduces_the_actual_fitted_raw_root_statistic():
+    x = np.random.default_rng(9).normal(size=(16, 3))
+    x[8:, 0] += 5
+    data = pd.DataFrame(x, index=[f"S{i:012d}" for i in range(len(x))])
+    fitted = run_tbs_on_distance(
+        data,
+        pdist(x),
+        0.05,
+        tree_linkage_method="ward",
+        feature_space=continuous_feature_space_from_columns(data.columns),
+        adaptive_projection_dimension_energy_fraction=0.90,
+        branch_length_optimization_method="fixed_topology_nnls",
+        branch_length_data_df=data,
+    )
+    annotated = fitted.extra["annotations"].loc[fitted.extra["tree"].root()]
+    # The displayed statistic has already been divided by empirical inflation.
+    expected = annotated["Sibling_Test_Statistic"] * annotated["Sibling_Inflation_Factor"]
+    assert np.isfinite(expected)
+    assert native_sibling_statistic(x, range(16)) == pytest.approx(expected)
+
+
+def test_paired_topology_reference_uses_a_difference_on_each_same_data_replay():
+    x = np.random.default_rng(52).normal(size=(4, 1))
+    first, second = ((0, 1), (2, 3)), ((0, 2), (1, 3))
+    result = topology_pair_reference(
+        x, subtree_indices=range(4), first=first, second=second, steps=19, seed=1, alpha=0.1
+    )
+    assert result["status"] == "complete"
+    assert result["observed_score"] == pytest.approx(
+        abs(topology_sibling_score(x, first) - topology_sibling_score(x, second))
+    )
+    same = topology_pair_reference(
+        x, subtree_indices=range(4), first=first, second=first, steps=19, seed=1, alpha=0.1
+    )
+    assert same["p_value"] == 1 and same["observed_score"] == 0
+
+
+def test_invalid_partition_and_duplicate_tree_leaf_cannot_be_scored():
+    x = np.arange(8).reshape(4, 2)
+    with pytest.raises(ValueError, match="partition"):
+        sibling_cut_scores(x, [Cut((0, 1), (1, 2, 3))])
+    with pytest.raises(ValueError, match="each local row"):
+        topology_sibling_score(x, ((0, 1), (1, 3)))
+    with pytest.raises(ValueError, match="child positions"):
+        ward_subtree_selection(x, path=(2,))
+    with pytest.raises(ValueError, match="child positions"):
+        ward_subtree_selection(x, path=(0.0,))
+
+
+def test_joint_topology_reference_counts_ties_and_replays_the_search():
+    x = np.array([[-1.0, -1.0], [-1.0, 1.0], [1.0, -1.0], [1.0, 1.0]])
+    result = subtree_topology_search_test(x, subtree_indices=range(4), steps=9, seed=40, alpha=0.1)
+    assert result["status"] == "complete"
+    assert len(result["topology_results"]) == 2
+    assert result["observed_score"] == max(r["statistic"] for r in result["topology_results"])
+    assert all(
+        r["global_null_adjusted_p_value"] >= result["p_value"] for r in result["topology_results"]
+    )
+
+
+def test_observed_candidate_failure_remains_unresolved(monkeypatch):
+    from benchmarks.diagnostics.calibration.selected.hierarchy import subtree_topology_tests as mod
+
+    def fail(_):
+        raise RuntimeError("LP failed")
+
+    monkeypatch.setattr(mod, "_candidate_scores", fail)
+    result = mod.subtree_alternative_cut_test(
+        np.arange(8).reshape(4, 2), subtree_indices=range(4), steps=9, seed=1, alpha=0.1
+    )
+    assert result["status"] == "unresolved" and result["p_value"] is None
+    assert result["error_phase"] == "observation" and result["cut_results"] == []
+

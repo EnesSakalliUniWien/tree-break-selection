@@ -27,8 +27,11 @@ def _compute_inflation_adjusted_sibling_test(
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     family_support_cache: dict[str, dict[str, float | int]] | None = None,
-) -> tuple[InflationAdjustedSiblingTestSummary, str, CalibrationDecision | None]:
-    """Return one inflation-adjusted sibling-test summary and its calibration decision."""
+) -> tuple[InflationAdjustedSiblingTestSummary | None, str, CalibrationDecision | None]:
+    """Return one inflation-adjusted sibling-test summary and its calibration decision.
+
+    The summary is None when the decision is not internally admissible.
+    """
     if not np.isfinite(sibling_test_record.stat):
         raise ValueError(
             "Sibling record must have a finite statistic before "
@@ -60,14 +63,8 @@ def _compute_inflation_adjusted_sibling_test(
         support_thresholds=support_thresholds,
         family_support_cache=family_support_cache,
     )
-    admissible_statuses = {
-        "internal_admissible",
-    }
-    if decision.status not in admissible_statuses or decision.c_hat is None:
-        raise ValueError(
-            "Sibling empirical calibration is not internally admissible; "
-            f"status={decision.status!r}, parent={sibling_test_record.parent!r}."
-        )
+    if decision.status != "internal_admissible" or decision.c_hat is None:
+        return None, decision.estimator, decision
     empirical_inflation_factor = decision.c_hat
     if not np.isfinite(empirical_inflation_factor) or empirical_inflation_factor < 1.0:
         raise ValueError(
@@ -116,15 +113,19 @@ def compute_inflation_adjusted_sibling_tests(
     list[InflationAdjustedSiblingTestSummary],
     list[str],
     list[CalibrationDecision | None],
+    list[tuple[SiblingPairRecord, CalibrationDecision]],
 ]:
     """Return summaries, method labels and calibration decisions for tested parents.
 
     A decision is None for a zero-dimensional record, which needs no calibration.
+    Focal records whose decision is not internally admissible are returned last,
+    with their decisions, so the caller can close their gates.
     """
     tested_parent_ids: list[str] = []
     inflation_adjusted_test_summaries: list[InflationAdjustedSiblingTestSummary] = []
     inflation_adjustment_method_labels: list[str] = []
     calibration_decisions: list[CalibrationDecision | None] = []
+    inadmissible: list[tuple[SiblingPairRecord, CalibrationDecision]] = []
     family_support_cache: dict[str, dict[str, float | int]] = {}
 
     for sibling_test_record in sibling_test_records:
@@ -138,6 +139,9 @@ def compute_inflation_adjusted_sibling_tests(
             support_thresholds=support_thresholds,
             family_support_cache=family_support_cache,
         )
+        if test_summary is None:
+            inadmissible.append((sibling_test_record, decision))
+            continue
         tested_parent_ids.append(sibling_test_record.parent)
         inflation_adjusted_test_summaries.append(test_summary)
         inflation_adjustment_method_labels.append(method_label)
@@ -148,6 +152,7 @@ def compute_inflation_adjusted_sibling_tests(
         inflation_adjusted_test_summaries,
         inflation_adjustment_method_labels,
         calibration_decisions,
+        inadmissible,
     )
 
 

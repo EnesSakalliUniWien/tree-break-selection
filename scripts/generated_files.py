@@ -18,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = "reports/artifacts.json"
 DEFAULT_ARCHIVE_ROOT = Path("~/kl-te-cluster-archive")
 ROLES = {"source", "retained_result", "generated_output"}
+# Folders whose files the catalog may own; each keeps its exact ignore rules in <root>/.gitignore.
+EVIDENCE_ROOTS = ("reports", "raw")
 BEGIN = "# BEGIN catalogued generated outputs"
 END = "# END catalogued generated outputs"
 
@@ -47,12 +49,14 @@ def load_catalog(root: Path) -> dict:
     data = json.loads((root / CATALOG).read_text())
     if data.get("schema_version") != 1:
         raise ValueError("Unsupported artifact catalog schema")
-    if not isinstance(data.get("max_staged_bytes"), int) or data["max_staged_bytes"] <= 0:
-        raise ValueError("max_staged_bytes must be positive")
+    for limit in ("max_staged_bytes", "max_tracked_bytes"):
+        if not isinstance(data.get(limit), int) or data[limit] <= 0:
+            raise ValueError(f"{limit} must be positive")
     studies = data["studies"]
     for study, record in studies.items():
-        if len(PurePosixPath(study).parts) != 2 or not study.startswith("reports/"):
-            raise ValueError(f"Expected reports/<study>: {study}")
+        parts = PurePosixPath(study).parts
+        if not (parts[0] == "reports" and len(parts) == 2 or parts[0] == "raw" and len(parts) >= 3):
+            raise ValueError(f"Expected reports/<study> or raw/<area>/<study>: {study}")
         safe_path(root, study)
         if not record.get("reproduction_source") or not record.get("description"):
             raise ValueError(f"Missing study provenance: {study}")
@@ -91,11 +95,13 @@ def archive_path(item: dict, archive_root: Path | None = None) -> Path:
     return root / "sha256" / item["sha256"][:2] / item["sha256"]
 
 
-def ignore_block(data: dict) -> str:
+def ignore_block(data: dict, evidence_root: str = "reports") -> str:
     names = sorted(
-        i["path"].removeprefix("reports/")
+        i["path"].removeprefix(evidence_root + "/")
         for i in data["files"]
-        if i["role"] == "generated_output" and i.get("storage") in {"local", "archive"}
+        if i["role"] == "generated_output"
+        and i.get("storage") in {"local", "archive"}
+        and i["path"].startswith(evidence_root + "/")
     )
     # Escape Git pattern metacharacters so each rule identifies one literal file.
     escaped = ["/" + re.sub(r"([\\*?\[\]])", r"\\\1", name) for name in names]
@@ -151,13 +157,16 @@ def archive(root: Path, data: dict, destination: Path) -> int:
 
 def save_catalog(root: Path, data: dict) -> None:
     atomic_text(root / CATALOG, json.dumps(data, indent=2) + "\n")
-    ignore = root / "reports/.gitignore"
-    existing = ignore.read_text() if ignore.exists() else ""
-    if BEGIN in existing:
-        existing = re.sub(
-            re.escape(BEGIN) + r".*?" + re.escape(END) + r"\n?", "", existing, flags=re.S
-        )
-    atomic_text(ignore, existing.rstrip() + "\n\n" + ignore_block(data))
+    for evidence_root in EVIDENCE_ROOTS:
+        if not (root / evidence_root).is_dir():
+            continue
+        ignore = root / evidence_root / ".gitignore"
+        existing = ignore.read_text() if ignore.exists() else ""
+        if BEGIN in existing:
+            existing = re.sub(
+                re.escape(BEGIN) + r".*?" + re.escape(END) + r"\n?", "", existing, flags=re.S
+            )
+        atomic_text(ignore, existing.rstrip() + "\n\n" + ignore_block(data, evidence_root))
 
 
 def keep_local(root: Path, data: dict) -> int:
@@ -223,6 +232,8 @@ def check(
     for study, record in data["studies"].items():
         if not safe_path(root, record["reproduction_source"]).is_file():
             errors.append(f"Missing reproduction documentation: {study}")
+        if not study.startswith("reports/"):
+            continue  # A raw/ study catalogues only the files moved out of Git.
         for path in (root / study).rglob("*"):
             if path.is_file() and "__pycache__" not in path.parts and path.name != ".DS_Store":
                 name = path.relative_to(root).as_posix()
@@ -262,10 +273,18 @@ def check(
             and name in new_staged
         ):
             errors.append(f"Unclassified staged report file: {name}")
-    ignore = root / "reports/.gitignore"
-    if any(i.get("storage") in {"local", "archive"} for i in items.values()):
-        if not ignore.exists() or ignore_block(data) not in ignore.read_text():
-            errors.append("reports/.gitignore does not match catalogued archived outputs")
+    for evidence_root in EVIDENCE_ROOTS:
+        ignore = root / evidence_root / ".gitignore"
+        if any(name.startswith(evidence_root + "/") for name in declared_outputs(data)):
+            if not ignore.exists() or ignore_block(data, evidence_root) not in ignore.read_text():
+                errors.append(
+                    f"{evidence_root}/.gitignore does not match catalogued archived outputs"
+                )
+    tracked_sizes = git(root, "ls-files", "-z", "--format=%(objectsize) %(path)", *EVIDENCE_ROOTS)
+    for entry in filter(None, tracked_sizes.decode().split("\0")):
+        size, name = entry.split(" ", 1)
+        if int(size) > data["max_tracked_bytes"]:
+            errors.append(f"Oversized tracked evidence file ({size} bytes): {name}")
     ignored_result = subprocess.run(
         ["git", "-C", str(root), "check-ignore", "--no-index", "-z", "--stdin"],
         input=("\0".join(items) + "\0").encode(),

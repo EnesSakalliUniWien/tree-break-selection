@@ -75,6 +75,8 @@ def _sibling_gate_calibration_label(method_label: str) -> str:
         return supported_labels[method_label]
     if method_label == "zero_dimensional_sibling_record":
         return "degenerate_zero_dimensional"
+    if method_label.startswith("split_count_rule_out:"):
+        return "split_count_union_bound_rule_out"
     if "empirical_null_inflation" in method_label:
         return "empirical_null_inflation"
     raise ValueError(f"Unsupported sibling test method label: {method_label!r}.")
@@ -119,13 +121,16 @@ def apply_traversal_aligned_sibling_bh_results(
     *,
     method_labels: list[str] | None = None,
     skipped_parents: Sequence[object] | None = None,
+    closed_parents: Sequence[object] = (),
 ) -> pd.DataFrame:
     """Apply traversal-aligned sibling BH over the edge-reachable frontier.
 
     The clustering traversal can only use a sibling decision at nodes whose
     structural prerequisite and edge-divergence gate are open. Therefore the sibling FDR
     family is built top-down by tree depth over that reachable frontier instead
-    of over every internal node in the tree.
+    of over every internal node in the tree. ``closed_parents`` are edge-open focal
+    parents whose gate was closed without a p-value; like a non-rejected parent, they
+    stay out of the BH family and pass the frontier to their children.
     """
     if skipped_parents:
         annotations_df.loc[skipped_parents, "Sibling_Divergence_Skipped"] = True
@@ -153,6 +158,7 @@ def apply_traversal_aligned_sibling_bh_results(
         annotations_df.loc[parents, "Sibling_Gate_P_Value_Role"] = "active_traversal_sibling_gate"
 
     parent_index = {parent: index for index, parent in enumerate(parents)}
+    closed = set(closed_parents)
     peel_continuations = singleton_peel_continuations(tree)
     frontier = _root_nodes(tree)
 
@@ -179,14 +185,15 @@ def apply_traversal_aligned_sibling_bh_results(
             annotations_df.loc[candidate_parents, "Sibling_BH_Different"] = reject
             annotations_df.loc[candidate_parents, "Sibling_BH_Same"] = ~reject
 
+        passed = [*candidate_parents, *(parent for parent in frontier if parent in closed)]
         next_frontier: list[object] = []
-        for parent in candidate_parents:
+        for parent in passed:
             next_frontier.extend(tree.successors(parent))
         # A null-like singleton peel does not close the frontier: Tree-BH tested below it.
         next_frontier.extend(
             peel_continuations[parent]
             for parent in frontier
-            if parent in peel_continuations and parent not in candidate_parents
+            if parent in peel_continuations and parent not in passed
         )
         frontier = next_frontier
 

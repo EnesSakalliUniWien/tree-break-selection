@@ -1,0 +1,58 @@
+Below are the three tests written out step by step. All three see the same split. A subtree has n cells xᵢ in ℝᵖ (p = 30 PCs), and the tree divides them into a left side L and a right side R with n_L and n_R cells. Write π = n_L / n for the left side's share.
+
+## A. Today's sibling test (production)
+
+Code: `pair_testing/wald_statistic/sibling_divergence_test.py` and `inflation_correction/empirical_null_inflation_estimation.py`.
+
+1. **Standardized difference of means:**
+   z = Σ̂^(−1/2) (x̄_L − x̄_R) / √[(1/n_L + 1/n_R) · (1 + b / (2b̄))]
+   Σ̂ is the subtree's covariance estimate, b is the two children's branch lengths added together, and b̄ is the average branch length.
+2. **Projection:** keep only the parent's top d principal directions, P (p × d), with d chosen by the 90% energy rule. Then T = ‖P′z‖², with d degrees of freedom.
+3. **Reference distribution:** if the two sides had been fixed in advance, T would follow a χ²_d.
+4. **Inflation factor:** ĉ = max(1, Σᵢ wᵢ Tᵢ / Σᵢ wᵢ dᵢ). The sum runs over the tree's sibling records of the same feature type, and wᵢ ∈ [0, 1] is each record's weight as a noise-like comparison.
+5. **p-value:** p = P(χ²_d ≥ T / ĉ).
+6. **Decision:** Benjamini–Hochberg correction over the sibling tests at α = 0.01. A node is split if its test passes and at least one child passes the edge gate.
+
+The weak point is step 4. When the tree cuts one population in two, T grows roughly in proportion to n, but ĉ is a single number for the whole tree. Large noise splits therefore pass, which is how Markov/Ward ends up with 954 clusters.
+
+## B. Ceiling 3 (yesterday's rule)
+
+Code: `cut_rule.py`, swapped in for steps 1–5 of test A. Steps 6 onward stay the same.
+
+1. **Invariant directions:** take the eigenvalues λ₁ ≥ … ≥ λ_p of the subtree's cell covariance. Keep those above the noise edge, median(λ) / m_MP(p/n) · (1 + √(p/n))², where m_MP is the median of the Marchenko–Pastur law (the spread pure noise would show). That gives k directions V (p × k), and each cell becomes zᵢ = V′xᵢ. If k = 0, then p = 1.
+2. **Separation ratio:** ρ = π(1−π) · d′ S_w⁻¹ d, where d = z̄_L − z̄_R and S_w is the pooled within-side covariance with divisor n − 2. This is the between/within variance ratio along the best direction for this split.
+3. **Null hypothesis:** the cells come from one population with a single peak. A cut through that peak gives ρ ≤ 3, and the flat (uniform) shape reaches exactly 3.
+4. **Distribution at the limit:** nρ ≈ noncentral χ²ₖ with noncentrality 3n.
+5. **Number of cuts the tree could pick:** M_k(n) = Σ_{i≤k} C(n−1, i) flat cuts (Cover's count).
+6. **p-value:** p = min{1, M_k(n) · P(χ²ₖ(3n) ≥ nρ)}.
+
+This is a replacement, not a rescaling. The null is shifted by 3n rather than stretched by a constant ĉ, and step 5 accounts for the tree having picked this split out of all possible ones.
+
+## C. The new proposal (today's derivation)
+
+Code: `count_rule.py`. Steps 1–3 are the same as in B. Only steps 4–6 change.
+
+4. **Change of scale:** R̂ = √(ρ′ / (1 + ρ′)), with ρ′ = ρ · n / (n − 2). R̂² is between-side over total variance along the best direction.
+5. **What the best cut of one population does:** √n (R̂_max − R*) ≈ σ_R · max over unit vectors v of W(v).
+   - R* = √3/2 corresponds to ρ = 3.
+   - σ_R² = 1/40 comes from the uniform shape.
+   - W is a smooth random surface over directions, with unit variance and W(v) = W(−v). Its smoothness constant is λ = 13, an assumption for k ≠ 3.
+6. **Standardized excess:** u = √n (R̂ − √3/2) / √(1/40).
+7. **p-value:** p = min{1, envelope of ½ Σ_{j=0}^{k−1} L_j · ρ_j(u)}.
+   - L_j = 2 · C(k−1, j) · (s_k / s_{k−j}) · λ^{j/2} when k − 1 − j is even, otherwise 0. Here s_m is the surface area of the unit sphere in ℝᵐ.
+   - ρ₀(u) = 1 − Φ(u), and for j ≥ 1, ρ_j(u) = (2π)^{−(j+1)/2} · H_{j−1}(u) · e^{−u²/2}.
+   - "Envelope" means taking the largest value at u or above. This removes the formula's sign swings when k ≥ 4.
+   - In one dimension (k = 1) this reduces to p = 1 − Φ(u).
+
+Compared with B, step 5's count of about nᵏ cuts is replaced by the chance that the highest point of one smooth random surface over directions passes the level. Neighbouring cuts share almost all their cells, so they should not be counted as separate tries.
+
+## What each test treats as "noise"
+
+| | Today's test (A) | Ceiling 3 (B) | New proposal (C) |
+|---|---|---|---|
+| Statistic | T on d projected coordinates | nρ on k invariant directions | R̂ on k invariant directions |
+| Noise level | constant ĉ, fitted from the data | ρ = 3, shifted by 3n | R* = √3/2 |
+| Accounts for the tree's choice of split | no | count of all flat cuts | maximum of the random surface |
+| Error control | not guaranteed | conservative by design | checked by simulation: 1–3 directions calibrated, 6–9 conservative |
+
+All three end in the same Benjamini–Hochberg step and the same top-down traversal. Only B has been run end to end: 0.833 on Markov/Ward, 0.028 on the default tree. C has only been checked on simulations and on the saved split records.

@@ -520,23 +520,32 @@ diagnostic run. NNLS benchmark output should retain the solver status,
 normalized residual columns so quality comparisons can distinguish topology
 effects from failed branch-time fitting.
 
-Benchmark dispatch is fail-fast for method exceptions and uses three typed
-non-error outcomes. `status=ok` requires labels and contributes quality scores.
+Benchmark dispatch uses three typed non-error outcomes plus `status=error`.
+`status=ok` requires labels and contributes quality scores.
 `status=skip` is an operational non-attempt with a `skip_reason`.
 `status=unsupported` is a scientifically attempted run for which the method's
 assumptions cannot be satisfied; it has no labels, zero found clusters, `NaN`
 quality metrics, and a structured reason. The flattened result fields are
 `unsupported_reason_code`, `unsupported_stage`, `unsupported_reason`, and the
-five `unsupported_*_count` evidence columns. The initial registered reason is
-`empirical_null_no_internal_support` at `sibling_calibration`.
+five `unsupported_*_count` evidence columns. The registered reasons, both at
+`sibling_calibration`, are `empirical_null_no_internal_support` (no admissible
+calibration support at all) and `empirical_null_thin_internal_support` (strict
+support thresholds closed every focal sibling gate).
 
-Unexpected exceptions are never converted into result rows. Unsupported runs
+By default a method exception propagates at once, so the regression gate, smoke
+runs and the alpha grid stop at the first execution error with its traceback.
+Only the full benchmark (`benchmarks/full/run.py`) passes
+`allow_method_errors=True`: there a raising method becomes a `status=error` row
+whose `skip_reason` holds the exception, so the other methods' rows for that
+case are kept, and a resumed run does not retry it. The performance grid sorts
+`error_count` first, because an erroring method's mean ARI omits the cases it
+failed on. A case whose subprocess times out or crashes is still skipped
+unrecorded and retried on resume. Unsupported runs
 are excluded from quality-score denominators but remain in the scientific
 coverage denominator. Reports expose `unsupported_count` and
 `unsupported_rate = unsupported / (ok + unsupported)` by method and case
-family; operational skips are reported separately and do not change that
-denominator. Regression and maintained validation/NNLS grids therefore stop at
-the first execution error while continuing past typed unsupported outcomes.
+family; operational skips and errors (`skip_count`, `error_count`) are reported
+separately and do not change that denominator.
 
 ## Adding New Benchmark Suites
 

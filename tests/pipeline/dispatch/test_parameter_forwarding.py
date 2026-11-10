@@ -62,6 +62,7 @@ def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
             "continuous_covariance_policy": "guarded_within_child",
             "continuous_covariance_min_child_leaf_count": 8,
             "enforce_internal_support_thresholds": True,
+            "sibling_split_count_rule_out": True,
             "passthrough": True,
         },
         seed=42,
@@ -95,6 +96,7 @@ def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
     assert captured["kwargs"]["continuous_covariance_policy"] == "guarded_within_child"
     assert captured["kwargs"]["continuous_covariance_min_child_leaf_count"] == 8
     assert captured["kwargs"]["enforce_internal_support_thresholds"] is True
+    assert captured["kwargs"]["sibling_split_count_rule_out"] is True
     assert captured["kwargs"]["passthrough"] is True
 
 

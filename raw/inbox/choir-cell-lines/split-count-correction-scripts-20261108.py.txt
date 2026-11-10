@@ -1,0 +1,531 @@
+# ===== protocol.md =====
+# Protocol: correction for the tree's choice from split counts and invariant directions (frozen 2026-11-08)
+
+## Question (user-confirmed)
+
+Can the sibling test's correction for the tree's choice be built from (1) how many splits are possible for
+the known leaf set of a subtree and (2) how many of them lie in the subtree's invariant directions versus its
+fuzzy directions? User definition: a direction is invariant when its eigenvalue stands above the
+Marchenko-Pastur noise band of that subtree (production `raw_mp_signal_counts_by_node`, all-leaf spectral
+context); otherwise it is fuzzy.
+
+## Counts
+
+- All splits of a known leaf set of n cells: M_all = 2^(n-1) - 1 unordered two-group splits. (Rooted binary
+  topologies of n labelled leaves, (2n-3)!!, are reported for context only; the test at a node concerns the
+  split of its own leaf set.)
+- Splits a hyperplane can make in k invariant directions: Cover (1965) function counting theorem, n points in
+  general position, affine hyperplanes in R^k = homogeneous in R^(k+1):
+  C(n, k+1) = 2 * sum_{i=0}^{k} binom(n-1, i) labelings; M_inv = C(n, k+1) / 2 unordered splits.
+  (Cover's theorem is cited from secondary sources; the original paper was not retrieved.)
+
+## Arms (each replaces today's estimated factor; production code runs end to end otherwise)
+
+p_split = chi2.sf(T, df), the production sibling statistic and df with no inflation factor (c = 1).
+
+| Arm | p-value |
+| --- | --- |
+| today | production (replay) |
+| count_all | min(1, M_all * p_split): union bound over every split of the leaf set |
+| count_invariant | if the split is linearly separable in the subtree's k invariant directions (k >= 1): min(1, 2 * M_inv * p_split); otherwise min(1, 2 * M_all * p_split) (alpha shared between the two families) |
+
+Computed in logs. Separability: linear program on the subtree's cells projected on the first k rows of its
+all-leaf PCA basis (production `principal_component_projections_by_node`), feasibility of
+y_i (w . x_i + b) >= 1.
+
+Validity: count_all is a union bound over a family that always contains the chosen split, so it is valid
+whenever each fixed split's chi-square law holds (production's assumption). count_invariant uses a family
+chosen from the same data (the invariant directions are estimated), so its validity is not guaranteed; it is
+measured.
+
+## Data, endpoints, decision rule
+
+As in `../exact_gate_sibling_test_20261108/protocol.md`: 900 no-group and 35 real-group datasets, both trees,
+production alphas. E1 pass share of tested no-group splits by parent size bin; E2 false partitions of 300;
+E3 mean ARI on real groups. Added: E4 share of tested splits separable in the invariant directions and the
+median k by size bin; E5 (descriptive) observed T against (2/pi) n + df - 1 for tested no-group splits whose
+smaller side holds at least 25% of the cells (the share of variance a split at the mean of a normal captures
+along its axis is 2/pi; this is arithmetic, not a cited result).
+
+- Fixes large splits: Markov/Ward, sd 0.25 and 0.42, tested splits >= 40 cells pass at <= 2%.
+- Keeps real groups: default tree, mean ARI on every signal model within 0.02 of today's.
+
+## Amendment before the full run (after the 2-dataset pilot, see deviations.md)
+
+Production's `raw_mp_signal_counts_by_node` is 0 for every subtree here, including the root of data with four
+real groups: the spectral step whitens each subtree's cells with that subtree's own covariance before the
+Marchenko-Pastur cut, so every eigenvalue is near 1. It cannot tell invariant from fuzzy directions.
+
+Replacement, same definition (eigenvalue above the subtree's noise band): eigenvalues of the subtree's cell
+covariance in the shared feature coordinates (no whitening); noise level sigma^2 = median eigenvalue / median of
+the Marchenko-Pastur law with ratio p/n; invariant directions = eigenvalues above sigma^2 (1 + sqrt(p/n))^2; their
+eigenvectors span the invariant space used for the separability check. Subtrees with n <= p + 1 cells have no
+full-rank covariance and count as fuzzy (k = 0). Check on replicate 0: no-group root k = 0; four-group root k = 3.
+Production's count is still recorded (`k_production`).
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- Pilot (`run.py check`, `low` 0 and `signal_balanced` 0): production's per-subtree noise-band count was 0
+  everywhere (self-whitened spectral step), so `count_invariant` degenerated to the all-splits count. The
+  invariant count was replaced by the rule in the protocol amendment before the full run. No arm, endpoint or
+  rule changed otherwise.
+
+# ===== run.py =====
+"""Run protocol.md: sibling p-values corrected by split counts, swapped into production fits."""
+
+import json
+import sys
+from dataclasses import replace
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+sys.path.insert(1, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+from scipy.optimize import linprog  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from scipy.special import gammaln, logsumexp  # noqa: E402
+from scipy.stats import chi2  # noqa: E402
+from sklearn.metrics import adjusted_rand_score  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+import depth  # noqa: E402  (puts the frozen null folder with validate/compare on sys.path)
+from compare import fit  # noqa: E402
+from validate import MODELS as VALIDATION_MODELS  # noqa: E402
+from validate import prepare  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_helpers import (  # noqa: E402
+    precompute_descendants,
+)
+
+ARMS = ("today", "count_all", "count_invariant")
+TREES = {"symmetric_average": 1, "markov_ward": 2}
+NULLS = ("low", "matched_median", "high")
+SIGNALS = ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+LN2 = np.log(2.0)
+STATE = {"arm": "today", "splits": [], "checks": {}, "data": None, "cache": {}}
+ORIGINAL = pipeline.compute_inflation_adjusted_sibling_tests
+
+
+def count(name, ok):
+    n, k = STATE["checks"].get(name, (0, 0))
+    STATE["checks"][name] = (n + 1, k + bool(ok))
+
+
+def log_all_splits(n):
+    """log(2^(n-1) - 1): unordered two-group splits of n labelled cells."""
+    return (n - 1) * LN2 + np.log(-np.expm1(-(n - 1) * LN2)) if n > 1 else -np.inf
+
+
+def log_hyperplane_splits(n, k):
+    """log of Cover's C(n, k+1) / 2 = sum_{i=0}^{k} binom(n-1, i), capped at the count of all splits."""
+    i = np.arange(0, min(k, n - 1) + 1)
+    terms = gammaln(n) - gammaln(i + 1) - gammaln(n - i)
+    return float(min(logsumexp(terms), log_all_splits(n)))
+
+
+def mp_median(ratio):
+    """Median of the Marchenko-Pastur law with unit scale and ratio p/n < 1 (numerical)."""
+    lo, hi = (1 - np.sqrt(ratio)) ** 2, (1 + np.sqrt(ratio)) ** 2
+    grid = np.linspace(lo, hi, 20001)
+    dens = np.sqrt(np.maximum((hi - grid) * (grid - lo), 0.0)) / (2 * np.pi * ratio * grid)
+    cdf = np.cumsum(dens)
+    return float(grid[np.searchsorted(cdf / cdf[-1], 0.5)])
+
+
+def invariant_directions(points):
+    """(k, rows): eigen-directions of the cells' covariance above the noise band read from its bulk."""
+    n, p = points.shape
+    if n <= p + 1:
+        return 0, np.zeros((0, p))
+    values, vectors = np.linalg.eigh(np.cov(points.T))
+    values, vectors = values[::-1], vectors[:, ::-1]
+    ratio = p / n
+    edge = np.median(values) / mp_median(ratio) * (1 + np.sqrt(ratio)) ** 2
+    k = int(np.sum(values > edge))
+    return k, vectors[:, :k].T
+
+
+def separable(points, labels):
+    """Is there w, b with y (w.x + b) >= 1 for every row (linear program feasibility)?"""
+    y = np.where(labels, 1.0, -1.0)
+    a_ub = -np.column_stack([y[:, None] * points, y])
+    res = linprog(np.zeros(points.shape[1] + 1), A_ub=a_ub, b_ub=-np.ones(len(y)), bounds=(None, None),
+                  method="highs")
+    if res.status not in (0, 2):
+        raise RuntimeError(f"linprog status {res.status}: {res.message}")
+    return res.status == 0
+
+
+def adjusted(stat, df, log_count, extra=0.0):
+    return float(np.exp(min(0.0, log_count + extra + chi2.logsf(stat, df))))
+
+
+def swapped(records, *, model, **kwargs):
+    ids, summaries, labels, decisions, inadmissible = ORIGINAL(records, model=model, **kwargs)
+    tree = sys._getframe(1).f_locals["tree"]
+    spectral = sys._getframe(2).f_locals["spectral_context"]  # run_gate_annotation_pipeline's all-leaf context
+    arm, cache = STATE["arm"], STATE["cache"]
+    by_parent = {r.parent: r for r in records}
+    if "rows" not in cache:
+        cache["rows"] = precompute_descendants(tree, {label: i for i, label in enumerate(STATE["data"].index)})
+        cache["matrix"] = STATE["data"].to_numpy(dtype=np.float64)
+    rows, matrix = cache["rows"], cache["matrix"]
+    out = ([], [], [], [], list(inadmissible))
+    for pid, summary, label, decision in zip(ids, summaries, labels, decisions, strict=True):
+        record = by_parent[pid]
+        if decision is None:
+            for column, value in zip(out[:4], (pid, summary, label, decision), strict=True):
+                column.append(value)
+            continue
+        key = ("split", str(pid))
+        if key not in cache:
+            left, right = sorted(rows[record.left]), sorted(rows[record.right])
+            n = len(left) + len(right)
+            count("n_matches_record", n == int(record.n_parent))
+            k = int(spectral.raw_mp_signal_counts_by_node[str(pid)])
+            k_used, basis = invariant_directions(matrix[left + right])
+            sep = False
+            if k_used >= 1:
+                points = matrix[left + right] @ basis.T
+                sep = separable(points, np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)])
+            if n == 2:
+                count("two_cell_split_separable", sep or k_used == 0)
+            cache[key] = (n, min(len(left), len(right)), k, k_used, sep)
+        n, n_small, k, k_used, sep = cache[key]
+        stat, df = float(record.stat), float(record.degrees_of_freedom)
+        if arm == "today":
+            p, c = decision.p_value, decision.c_hat
+            count("replay", np.isclose(float(chi2.sf(stat / c, df)), p, rtol=1e-9, atol=1e-300))
+        elif arm == "count_all":
+            p, c = adjusted(stat, df, log_all_splits(n)), 1.0
+        else:
+            log_count = log_hyperplane_splits(n, k_used) if sep else log_all_splits(n)
+            p, c = adjusted(stat, df, log_count, extra=LN2), 1.0
+        STATE["splits"].append({"node": str(pid), "n_parent": n, "n_small": n_small, "stat": stat, "df": df, "k_production": k,
+                                "k_used": k_used, "separable": sep, "log_m_all": log_all_splits(n),
+                                "log_m_inv": log_hyperplane_splits(n, k_used) if k_used >= 1 else None,
+                                "p": p, "c_today": float(decision.c_hat)})
+        out[0].append(pid)
+        out[1].append((stat / c, df, p))
+        out[2].append(f"{label}:{arm}")
+        out[3].append(replace(decision, c_hat=float(c), p_value=p))
+    return out
+
+
+pipeline.compute_inflation_adjusted_sibling_tests = swapped
+
+
+def task(job):
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    datasets, splits = [], []
+    STATE["checks"] = {}
+    with threadpool_limits(limits=1):
+        prepared = prepare(counts)
+        STATE["data"] = prepared[0]
+        for tree_name, index in TREES.items():
+            distances = pdist(prepared[index])
+            STATE["cache"] = {}
+            for arm in ARMS:
+                STATE.update(arm=arm, splits=[])
+                start = perf_counter()
+                result = fit(prepared[0], distances, tree_name)
+                key = {"model": model, "replicate": replicate, "tree": tree_name, "arm": arm}
+                bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+                splits.extend({**key, **row, "bh_different": bool(bh[row["node"]])} for row in STATE["splits"])
+                datasets.append({**key, "status": result.status.value, "found_clusters": result.found_clusters,
+                                 "ari": float(adjusted_rand_score(np.asarray(truth), result.labels)),
+                                 "sec": perf_counter() - start})
+    return datasets, splits, {"model": model, "replicate": replicate, **STATE["checks"]}
+
+
+def jobs():
+    signal = [(m, r) for m in SIGNALS for r in range(VALIDATION_MODELS[m]["replicates"])]
+    return signal + [(m, r) for m in NULLS for r in range(300)]
+
+
+def main(workers):
+    paths = {name: HERE / f"{name}.jsonl" for name in ("datasets", "splits", "checks")}
+    done = set()
+    if paths["checks"].exists():
+        done = {(r["model"], r["replicate"]) for r in map(json.loads, paths["checks"].read_text().splitlines())}
+    todo = [j for j in jobs() if j not in done]
+    files = {name: path.open("a", buffering=1) for name, path in paths.items()}
+    with Pool(workers) as pool:
+        for i, (datasets, splits, checks) in enumerate(pool.imap_unordered(task, todo), 1):
+            files["splits"].write("".join(json.dumps(r) + "\n" for r in splits))
+            files["datasets"].write("".join(json.dumps(r) + "\n" for r in datasets))
+            files["checks"].write(json.dumps(checks) + "\n")
+            if i % 25 == 0:
+                print(f"{i}/{len(todo)}", flush=True)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "check":
+        assert np.isclose(np.exp(log_all_splits(5)), 15) and np.isclose(np.exp(log_hyperplane_splits(5, 1)), 5)
+        assert np.isclose(np.exp(log_hyperplane_splits(4, 3)), 7)  # k+1 >= n: every split (capped)
+        for job in (("low", 0), ("signal_balanced", 0)):
+            t = perf_counter()
+            datasets, splits, checks = task(job)
+            print(job, f"{perf_counter() - t:.1f}s", checks)
+            for d in datasets:
+                print(d["tree"], d["arm"], d["found_clusters"], round(d["ari"], 3), round(d["sec"], 1))
+            for s in splits:
+                if s["n_parent"] >= 100 and s["arm"] != "today":
+                    print({k: (round(v, 3) if isinstance(v, float) else v) for k, v in s.items()
+                           if k in ("tree", "arm", "n_parent", "n_small", "stat", "df", "k_used", "separable", "p")})
+    else:
+        main(int(sys.argv[1]))
+
+# ===== summarize.py =====
+"""Summarize run.py output into the protocol endpoints (protocol.md)."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+NULLS = ["low", "matched_median", "high"]
+BINS, LABELS = [1, 9, 39, 159, 400], ["2-9", "10-39", "40-159", "160-400"]
+ARMS = ["today", "count_all", "count_invariant"]
+
+
+def load(name):
+    return pd.DataFrame(map(json.loads, (HERE / f"{name}.jsonl").read_text().splitlines()))
+
+
+def main():
+    checks = load("checks")
+    for col in [c for c in checks.columns if c not in ("model", "replicate")]:
+        pairs = checks[col].dropna()
+        print(f"check {col}: {sum(p[1] for p in pairs)}/{sum(p[0] for p in pairs)}")
+    ds, sp = load("datasets"), load("splits")
+    for frame in (ds, sp):
+        frame["arm"] = pd.Categorical(frame.arm, ARMS)
+    sp["passed"] = sp.p <= 0.01
+    sp["bin"] = pd.cut(sp.n_parent, BINS, labels=LABELS)
+    null = sp[sp.model.isin(NULLS)]
+
+    e1 = null.groupby(["tree", "model", "bin", "arm"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"))
+    big = null[null.n_parent >= 40].groupby(["tree", "model", "arm"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"))
+    nds = ds[ds.model.isin(NULLS)]
+    e2 = nds.groupby(["tree", "model", "arm"], observed=True).agg(
+        false_partitions=("found_clusters", lambda x: int((x > 1).sum())), median_clusters=("found_clusters", "median"))
+    sds = ds[~ds.model.isin(NULLS)]
+    e3 = sds.groupby(["tree", "model", "arm"], observed=True).agg(
+        datasets=("ari", "size"), mean_ari=("ari", "mean"), median_clusters=("found_clusters", "median"))
+    today = null[null.arm == "today"].assign(balanced=lambda x: x.n_small >= 0.25 * x.n_parent)
+    e4 = today.groupby(["tree", "model", "bin"], observed=True).agg(
+        tested=("separable", "size"), separable=("separable", "mean"), median_k=("k_used", "median"))
+    bal = today[today.balanced]
+    e5 = bal.assign(predicted=lambda x: 2 / np.pi * x.n_parent + x.df - 1, ratio=lambda x: x.stat / (2 / np.pi * x.n_parent + x.df - 1)).groupby(
+        ["tree", "model", "bin"], observed=True).agg(tested=("ratio", "size"), median_T=("stat", "median"),
+        median_predicted=("predicted", "median"), median_ratio=("ratio", "median"))
+    for name, table in [("e1_pass_large", big), ("e1_pass_by_size", e1), ("e2_false_partitions", e2),
+                        ("e3_signal", e3), ("e4_invariant", e4), ("e5_two_over_pi", e5)]:
+        table.round(4).to_csv(HERE / f"{name}.csv")
+        print(name)
+        print(table.round(3).to_string(), "\n")
+
+    rule = big.pass_share.xs("markov_ward", level="tree")
+    ari = e3.mean_ari.xs("symmetric_average", level="tree").unstack("arm")
+    print("Decision rule:", {a: {"fixes_large_splits": bool(all(rule.loc[(m, a)] <= 0.02 for m in ("low", "matched_median"))),
+                                "keeps_real_groups": bool(((ari[a] - ari["today"]).abs() <= 0.02).all())} for a in ARMS})
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== summary.txt =====
+check n_matches_record: 11488/11488
+check replay: 11488/11488
+e1_pass_large
+                                                  tested  pass_share
+tree              model          arm                                
+markov_ward       high           today              2494       0.848
+                                 count_all          2494       0.376
+                                 count_invariant    2494       0.374
+                  low            today              2834       0.718
+                                 count_all          2834       0.143
+                                 count_invariant    2834       0.160
+                  matched_median today              2678       0.731
+                                 count_all          2678       0.106
+                                 count_invariant    2678       0.131
+symmetric_average high           today              1118       0.916
+                                 count_all          1118       0.296
+                                 count_invariant    1118       0.296
+                  low            today                11       0.000
+                                 count_all            11       0.000
+                                 count_invariant      11       0.000
+                  matched_median today               163       0.546
+                                 count_all           163       0.012
+                                 count_invariant     163       0.031 
+
+e1_pass_by_size
+                                                          tested  pass_share
+tree              model          bin     arm                                
+markov_ward       high           2-9     today                 1       0.000
+                                         count_all             1       1.000
+                                         count_invariant       1       1.000
+                                 10-39   today               172       0.093
+                                         count_all           172       0.901
+                                         count_invariant     172       0.884
+                                 40-159  today              1652       0.780
+                                         count_all          1652       0.367
+                                         count_invariant    1652       0.366
+                                 160-400 today               842       0.983
+                                         count_all           842       0.392
+                                         count_invariant     842       0.388
+                  low            10-39   today               294       0.010
+                                         count_all           294       0.929
+                                         count_invariant     294       0.925
+                                 40-159  today              1911       0.610
+                                         count_all          1911       0.210
+                                         count_invariant    1911       0.235
+                                 160-400 today               923       0.943
+                                         count_all           923       0.004
+                                         count_invariant     923       0.004
+                  matched_median 2-9     today                 1       0.000
+                                         count_all             1       1.000
+                                         count_invariant       1       1.000
+                                 10-39   today               254       0.031
+                                         count_all           254       0.854
+                                         count_invariant     254       0.870
+                                 40-159  today              1747       0.633
+                                         count_all          1747       0.161
+                                         count_invariant    1747       0.199
+                                 160-400 today               931       0.915
+                                         count_all           931       0.002
+                                         count_invariant     931       0.002
+symmetric_average high           10-39   today                40       0.550
+                                         count_all            40       0.875
+                                         count_invariant      40       0.850
+                                 40-159  today               591       0.895
+                                         count_all           591       0.481
+                                         count_invariant     591       0.481
+                                 160-400 today               527       0.939
+                                         count_all           527       0.089
+                                         count_invariant     527       0.089
+                  low            10-39   today                 2       1.000
+                                         count_all             2       1.000
+                                         count_invariant       2       1.000
+                                 160-400 today                11       0.000
+                                         count_all            11       0.000
+                                         count_invariant      11       0.000
+                  matched_median 10-39   today                11       0.364
+                                         count_all            11       1.000
+                                         count_invariant      11       0.909
+                                 40-159  today                16       0.750
+                                         count_all            16       0.125
+                                         count_invariant      16       0.312
+                                 160-400 today               147       0.524
+                                         count_all           147       0.000
+                                         count_invariant     147       0.000 
+
+e2_false_partitions
+                                                  false_partitions  median_clusters
+tree              model          arm                                               
+markov_ward       high           today                         300              8.0
+                                 count_all                     297              7.0
+                                 count_invariant               296              7.0
+                  low            today                         298              8.0
+                                 count_all                     279              7.0
+                                 count_invariant               283              8.0
+                  matched_median today                         296              8.0
+                                 count_all                     246              7.0
+                                 count_invariant               255              7.0
+symmetric_average high           today                         259              5.0
+                                 count_all                     219              4.0
+                                 count_invariant               220              4.0
+                  low            today                           2              1.0
+                                 count_all                       2              1.0
+                                 count_invariant                 2              1.0
+                  matched_median today                          50              1.0
+                                 count_all                      12              1.0
+                                 count_invariant                14              1.0 
+
+e3_signal
+                                                            datasets  mean_ari  median_clusters
+tree              model                    arm                                                 
+markov_ward       signal_balanced          today                  10     0.315             20.0
+                                           count_all              10     0.582             15.5
+                                           count_invariant        10     0.603             14.0
+                  signal_density_variation today                   5     0.025             81.0
+                                           count_all               5     0.043             63.0
+                                           count_invariant         5     0.044             63.0
+                  signal_imbalanced        today                  10     0.079             25.5
+                                           count_all              10     0.137             22.5
+                                           count_invariant        10     0.136             23.0
+                  signal_singleton         today                  10     0.092             22.0
+                                           count_all              10     0.157             17.5
+                                           count_invariant        10     0.152             18.0
+symmetric_average signal_balanced          today                  10     0.800              4.0
+                                           count_all              10     0.800              4.0
+                                           count_invariant        10     0.800              4.0
+                  signal_density_variation today                   5     0.651             13.0
+                                           count_all               5     0.652             12.0
+                                           count_invariant         5     0.670             13.0
+                  signal_imbalanced        today                  10     1.000              4.0
+                                           count_all              10     1.000              4.0
+                                           count_invariant        10     1.000              4.0
+                  signal_singleton         today                  10     0.880              4.0
+                                           count_all              10     0.880              4.0
+                                           count_invariant        10     0.880              4.0 
+
+e4_invariant
+                                          tested  separable  median_k
+tree              model          bin                                 
+markov_ward       high           2-9           1      0.000       0.0
+                                 10-39       172      0.029       0.0
+                                 40-159     1652      0.018       2.0
+                                 160-400     842      0.000       1.0
+                  low            10-39       294      0.017       0.0
+                                 40-159     1911      0.036       4.0
+                                 160-400     923      0.000       0.0
+                  matched_median 2-9           1      0.000       0.0
+                                 10-39       254      0.051       0.0
+                                 40-159     1747      0.092       7.0
+                                 160-400     931      0.000       1.0
+symmetric_average high           10-39        40      0.000       0.0
+                                 40-159      591      0.003       2.0
+                                 160-400     527      0.000       1.0
+                  low            10-39         2      0.000       0.0
+                                 160-400      11      0.000       0.0
+                  matched_median 10-39        11      0.000       0.0
+                                 40-159       16      0.188       5.0
+                                 160-400     147      0.000       1.0 
+
+e5_two_over_pi
+                                          tested  median_T  median_predicted  median_ratio
+tree              model          bin                                                      
+markov_ward       high           2-9           1    50.025             5.730         8.731
+                                 10-39       159    88.304            21.642         4.054
+                                 40-159     1537   196.971            85.659         2.182
+                                 160-400     818   413.412           186.245         2.190
+                  low            10-39       272    76.507            20.370         3.720
+                                 40-159     1576   183.769            83.749         1.905
+                                 160-400     705   267.617           193.248         1.334
+                  matched_median 2-9           1    37.436             5.456         6.861
+                                 10-39       219    78.477            21.189         3.698
+                                 40-159     1358   169.672            85.023         1.855
+                                 160-400     682   236.959           194.839         1.138
+symmetric_average high           10-39        36    93.890            21.962         3.947
+                                 40-159      532   242.603            88.206         2.531
+                                 160-400     403   319.036           237.175         1.273
+                  low            10-39         2   103.164            17.597         5.916
+                  matched_median 10-39        11    75.188            16.732         4.863
+                                 40-159       12   121.981            72.290         1.781
+                                 160-400       1   235.849           266.459         0.885 
+
+Decision rule: {'today': {'fixes_large_splits': False, 'keeps_real_groups': True}, 'count_all': {'fixes_large_splits': False, 'keeps_real_groups': True}, 'count_invariant': {'fixes_large_splits': False, 'keeps_real_groups': True}}
+

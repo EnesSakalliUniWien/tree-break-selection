@@ -1,0 +1,263 @@
+# ===== protocol.md =====
+# Independent A/B/C audit, 2026-11-09
+
+Original proposal modules remain unchanged. Reproduce C low-dimensional checks with 1,000 fresh replicates per original case (seed 20261109), C high-dimensional checks with 300 fresh replicates per original case, and the saved split analysis. Re-run the original 9-case continuous benchmark and A/B/C full-cell fits on the saved 48,879-cell PCs and diffusion coordinates, with original alphas and registered settings. C is an added diagnostic end-to-end arm, not a production change. Outputs are separate from prior runs.
+
+Additional predeclared audit checks: 2,000 replicates per n=100,400,1600 of the continuous unimodal distribution 0.9 U(0,0.001)+0.1 U(0,1), cut at 1/3; 10,000 uniform fixed-cut replicates at n=1600 to check the noncentral reference variance; 100,000 standard-normal contrasts for the contrast-energy rank rule; exact covariance-transform identity. Report binomial confidence intervals, no tuning to the new outcomes. High-dimensional searched maxima remain lower bounds; simulations with supplied k do not validate selected invariant directions or descendants.
+
+Baseline: 84 focused production tests passed, both original proposal self-checks passed, wiki-lint passed on 259 pages. Python 3.12.11, numpy 2.3.4, scipy 1.16.3, pandas 2.3.3, scikit-learn 1.7.2, pytest 8.4.2. No installs, source-method edits, commits or services.
+
+
+# ===== deviations.md =====
+# Execution notes
+
+- The first counterexample run completed its calculations and wrote all data, but its final console summary encountered a NumPy int64 JSON serialization error. Counts are now converted to Python int at summary construction. The same seed and all checks were rerun successfully; no statistic or threshold changed.
+- Added an independent two-million-point numerical check of the sphere influence-field covariance at four angles after deriving its absolute-cubic angular term. All checked differences were within five Monte Carlo standard errors.
+- Re-executed the original Gaussian-bound simulation, exhaustive best-flat-cut check (140/140), and Gaussian median-cut reference check (0.0095 at nominal 0.01). These preserve original seeds and are replays, separate from fresh-seed checks.
+
+
+# ===== rerun.py =====
+"""Independent rerun of the supplied A/B/C constructions; no production edits.
+
+Run with the project .venv/bin/python and one mode: low, high, counterexample,
+benchmark, real_default, real_ward, or saved. Outputs stay beside this script.
+The original proposal code is imported unchanged; full-data fits reuse saved PCs
+and diffusion coordinates, as did the original analysis.
+"""
+
+import importlib.util
+import json
+import sys
+from dataclasses import replace
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+from scipy.stats import binomtest, chi2, ncx2
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+ANALYSES = HERE.parent
+sys.path[:0] = [str(ROOT), str(ANALYSES / "flat_cut_sup_count_20261109"),
+               str(ANALYSES / "gaussian_cut_rule_20261108")]
+import check
+import check_highk
+from count_rule import sup_p
+from cut_rule import cut_bound_p, fisher_ratio, log_flat_cuts, unimodal_bound
+
+SEED = 20261109
+check.REPS, check.SEED = 1000, SEED
+
+
+def save(name, rows):
+    (HERE / name).write_text("".join(json.dumps(r, default=float) + "\n" for r in rows))
+
+
+def rates(rows, fields):
+    out = []
+    for field in fields:
+        for alpha in (0.01, 0.05):
+            hits = int(sum(r[field] <= alpha for r in rows))
+            ci = binomtest(hits, len(rows)).proportion_ci()
+            out.append({"field": field, "alpha": alpha, "hits": hits, "reps": len(rows),
+                        "rate": hits / len(rows), "ci_low": ci.low, "ci_high": ci.high})
+    return out
+
+
+def simulate(job):
+    shape, k, n, high = job
+    with threadpool_limits(limits=1):
+        if not high:
+            rows = check.task((shape, k, n))
+        else:
+            rng = np.random.default_rng([SEED, 73, k, n, int(shape == "gaussian")])
+            rows = []
+            for _ in range(300):
+                x = rng.standard_normal((n, k)) if shape == "gaussian" else rng.uniform(-1, 1, (n, k))
+                rho = check_highk.sup_rho(x, rng)
+                rows.append({"shape": shape, "k": k, "n": n, "rho": rho,
+                             "p_new": sup_p(rho, n, k, shape)})
+    return rows
+
+
+def simulations(high):
+    cases = [(s, k) for s in ("gaussian", "ceiling3") for k in (6, 9)] if high else check.CASES
+    ns = (400, 1600) if high else check.NS
+    name = "high" if high else "low"
+    summaries = []
+    with Pool(4) as pool, (HERE / f"{name}.jsonl").open("w") as stream:
+        for rows in pool.imap_unordered(simulate, [(s, k, n, high) for s, k in cases for n in ns]):
+            stream.write("".join(json.dumps(r) + "\n" for r in rows))
+            stream.flush()
+            meta = {key: rows[0][key] for key in ("shape", "k", "n")}
+            stats = [{**meta, **r} for r in rates(rows, ["p_new"] if high else ["p_new", "p_old"])]
+            summaries.extend(stats)
+            print(json.dumps(stats), flush=True)
+    save(f"{name}_summary.jsonl", summaries)
+
+
+def counterexample():
+    rng = np.random.default_rng(SEED)
+    summaries = []
+    for n in (100, 400, 1600):
+        rows = []
+        for _ in range(2000):
+            x = rng.random((n, 1)) * np.where(rng.random((n, 1)) < 0.1, 1.0, 0.001)
+            # A fixed threshold suffices to refute the claimed population ceiling.
+            side = x[:, 0] <= 1 / 3
+            if side.all():
+                rows.append({"p_B": 1.0, "p_C": 1.0, "rho": 0.0})
+                continue
+            p, rho = cut_bound_p(x, side, unimodal_bound)
+            rows.append({"p_B": p, "p_C": sup_p(rho, n, 1), "rho": rho})
+        save(f"counterexample_n{n}.jsonl", rows)
+        summaries.extend({"n": n, "mean_rho": np.mean([r["rho"] for r in rows]), **r}
+                         for r in rates(rows, ["p_B", "p_C"]))
+    # Exact uniform population boundary: inspect the per-cut reference separately from M.
+    n = 1600
+    rows = []
+    for _ in range(10000):
+        x = rng.uniform(-1, 1, (n, 1))
+        rho = fisher_ratio(x, x[:, 0] <= 0)
+        rows.append({"rho": rho, "p_single_B": ncx2.sf(n * rho, 1, 3 * n),
+                     "p_C": sup_p(rho, n, 1)})
+    save("uniform_fixed_cut.jsonl", rows)
+    summaries.extend({"case": "uniform_fixed_cut", "n": n,
+                      "variance_sqrt_n_rho": n * np.var([r["rho"] for r in rows], ddof=1), **r}
+                     for r in rates(rows, ["p_single_B", "p_C"]))
+    # Check A's contrast-selected rank even under independent standard normal z.
+    z = rng.standard_normal((100000, 30))
+    energy = np.cumsum(z * z, axis=1)
+    d = np.argmax(energy >= 0.9 * energy[:, -1, None], axis=1) + 1
+    selected = chi2.sf(energy[np.arange(len(z)), d - 1], d)
+    summaries.append({"case": "A_fixed_identity_basis_adaptive_rank", "reps": len(z),
+                      "hits_at_01": int((selected <= 0.01).sum()), "rate_at_01": float((selected <= 0.01).mean())})
+    # Formula self-check against the production kernel (distinct eigenvalues avoid tie extension).
+    from tree_break_selection.hierarchy_analysis.statistics.projection.projected_wald.projected_wald_kernel import run_projected_wald_kernel
+    for i in range(20):
+        result = run_projected_wald_kernel(z[i], spectral_k=30, pca_projection=np.eye(30),
+                                          pca_eigenvalues=np.arange(30, 0, -1), adaptive_dimension_energy_fraction=0.9)
+        assert result.projection_dimension == d[i]
+        assert abs(result.p_value - selected[i]) < 1e-12
+    # n/(n-2) conversion: exact ANOVA/Sherman-Morrison identity on nonsingular data.
+    x = rng.normal(size=(100, 3))
+    side = np.arange(100) < 40
+    rho = fisher_ratio(x, side)
+    diff = x[side].mean(0) - x[~side].mean(0)
+    r2 = 0.4 * 0.6 * diff @ np.linalg.solve(np.cov(x.T, bias=True), diff)
+    assert abs(r2 - (rho * 100 / 98) / (1 + rho * 100 / 98)) < 1e-12
+    save("counterexample_summary.jsonl", summaries)
+    print(json.dumps(summaries), flush=True)
+
+
+def load_real_harness():
+    spec = importlib.util.spec_from_file_location("ceiling_harness", ANALYSES / "ceiling_rule_real_20261109/run.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.HERE = HERE
+    return module
+
+
+def benchmark():
+    # Reuse the original A/B/rule-out benchmark without replacing its inputs.
+    load_real_harness().benchmark()
+
+
+def real(method):
+    # Reuse the exact original fit setup, adding C as a diagnostic arm.
+    from scipy.spatial.distance import pdist
+    from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+    from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+    from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+    from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+    harness = load_real_harness()
+    swapped_B = harness.swapped
+
+    def swapped(*args, **kwargs):
+        out = swapped_B(*args, **kwargs)
+        if harness.STATE["arm"] == "C":
+            for i, decision in enumerate(out[2]):
+                if decision is not None:
+                    s = harness.STATE["splits"][sum(d is not None for d in out[2][:i])]
+                    p = sup_p(s["rho"], s["n_parent"], s["k"])
+                    out[0][i] = (*out[0][i][:2], p)
+                    out[2][i] = replace(decision, p_value=p)
+                    s["p_B"], s["p"] = s["p"], p
+        return out
+
+    harness.pipeline.apply_split_count_rule_out = swapped
+    source = ANALYSES / "choir_cell_lines_tbs_lbfgsb_20261106"
+    metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(source / "pca.npy"), index=metadata.index, columns=[f"PC{i+1}" for i in range(30)])
+    truth = metadata.Cell_line.to_numpy()
+    params = dict(METHOD_SPECS[method].param_grid[0])
+    out = HERE / method
+    out.mkdir(exist_ok=True)
+    path = out / "diffusion_distance.npy"
+    distances = np.lib.format.open_memmap(path, mode="w+", dtype=np.float64, shape=(len(data)*(len(data)-1)//2,))
+    try:
+        pdist(np.load(source / method / "coordinates.npy"), out=distances)
+        distances.flush()
+        with threadpool_limits(limits=2), (out / "results.jsonl").open("w") as stream:
+            for arm in ("A", "B", "C"):
+                start = perf_counter()
+                harness.STATE.update(arm=arm, splits=[])
+                result = run_tbs_on_distance(data, distances, 0.01, edge_alpha=0.001,
+                    tree_linkage_method=params["tree_linkage_method"],
+                    feature_space=continuous_feature_space_from_columns(tuple(data.columns)),
+                    branch_length_data_df=data, edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+                    adaptive_projection_dimension_energy_fraction=0.90, sibling_split_count_rule_out=arm != "A",
+                    **_tbs_branch_length_optimization_kwargs(params), extra={"feature_family_diffusion_fallback_reason": None})
+                assert result.status.value == "ok", result.status
+                labels = np.asarray(result.labels, dtype=int)
+                assert len(labels) == len(data) and len(np.unique(labels)) == result.found_clusters
+                row = {"method": method, "arm": arm, "status": result.status.value,
+                       "found_clusters": result.found_clusters, "ari_cell_line": adjusted_rand_score(truth, labels),
+                       "nmi_cell_line": normalized_mutual_info_score(truth, labels),
+                       "recovered_lines_90_90": harness.recovered_lines(truth, labels),
+                       "ari_published_CHOIR_1": adjusted_rand_score(metadata.CHOIR_1, labels), "sec": perf_counter()-start}
+                stream.write(json.dumps(row) + "\n")
+                stream.flush()
+                pd.DataFrame({"cell": metadata.index, "Cell_line": truth, "cluster": labels}).to_csv(out / f"assignments_{arm}.csv.gz", index=False)
+                save(f"{method}_{arm}_splits.jsonl", harness.STATE["splits"])
+                print(json.dumps(row), flush=True)
+    finally:
+        distances._mmap.close()
+        path.unlink()
+
+
+def saved():
+    # apply.py has top-level work: redirect only its output HERE, retaining its TRACE input.
+    source = ANALYSES / "flat_cut_sup_count_20261109/apply.py"
+    code = source.read_text().replace('t.to_csv(HERE / "apply_pairs.csv", index=False)',
+                                     f't.to_csv({str(HERE / "apply_pairs.csv")!r}, index=False)')
+    exec(compile(code, str(source), "exec"), {"__file__": str(source), "__name__": "__main__"})
+
+
+if __name__ == "__main__":
+    mode = sys.argv[1]
+    if mode in ("low", "high"):
+        simulations(mode == "high")
+    elif mode == "counterexample":
+        counterexample()
+    elif mode == "benchmark":
+        benchmark()
+    elif mode in ("real_default", "real_ward"):
+        real("tbs_family_diffusion" if mode == "real_default" else "tbs_family_diffusion_markov_ward")
+    elif mode == "saved":
+        saved()
+    else:
+        raise ValueError(mode)
+
+
+# ===== original_derivation_checks.log =====
+A1 flat cut of 2e6 Gaussian draws: pi, rho, g(pi)
+   0.5 1.7534 1.7519
+   0.2 0.9605 0.9603
+   0.05 0.2883 0.2886
+A2 largest-rho split linearly separable (per smaller-side size and overall): 140/140
+A4 fixed median cut, n = 1000: share p <= 0.01 = 0.0095 (MC sd 0.0016); mean T 1750.9 vs n g + 1 = 1752.9; var T 6727 vs 4 n g + 2 = 7010, delta-method 6582

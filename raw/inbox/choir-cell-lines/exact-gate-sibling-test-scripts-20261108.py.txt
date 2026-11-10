@@ -1,0 +1,692 @@
+# ===== protocol.md =====
+# Protocol: exact sibling test given that the edge gate opened (frozen 2026-11-08)
+
+Replaces the approximation in `../gate_conditioned_sibling_test_20261108` (see its correction: the edge test
+uses only a test half of each child's cells).
+
+## Conditioning
+
+For a split v with children A and B, `split_edge_test_rows` gives each child a test half and a basis half.
+Condition on: both basis halves, the test-half pooled mean, the direction of the test-half contrast
+delta_t = mean(test A) - mean(test B), and every plug-in quantity production already treats as fixed
+(covariances, PCA bases, branch lengths, projection dimensions chosen from directions). The only free
+quantity is the test-half length, written as a factor f on delta_t (f = 1 observed).
+
+- Edge statistics use only test rows and the basis half, so both child edge statistics equal f^2 times
+  their observed value. The gate (Tree-BH family of the two edges, everything else fixed) is open exactly
+  for f >= f* = sqrt(s*), s* found by bisection as before.
+- The sibling statistic uses all cells. Moving the test rows (A by +(f-1) t_B/m_t delta_t, B by
+  -(f-1) t_A/m_t delta_t) changes the all-cell means by t_A/n_A and t_B/n_B of those shifts. T(f) is
+  production's `sibling_divergence_test` evaluated on the moved means with the captured inputs of that split.
+- Null law of the free quantity: R^2 = squared length of the whitened test-half contrast (production
+  `compute_whitened_wald_contrast`, comparison "sibling", test-half sizes, the split's covariance and branch
+  time, all p coordinates) ~ c_t * chi2(p), with c_t the inflation from the tree's choice for this quantity.
+- p-value = P(f in {T(f) >= T_obs} and f >= f*) / P(f >= f*), with R = f * R_obs. {T(f) >= T_obs} is found
+  on a grid of 101 points in [f*, 1] plus 1.25, 1.5, 2, 3, 5 and refined by bisection.
+
+## Arms
+
+| Arm | c_t |
+| --- | --- |
+| today | production p-value (replay) |
+| exact_gate | 1 (no correction for the tree's choice) |
+| exact_gate_ct | today's estimator form on the reference splits' R^2 (kernel over log projection dim and log n_parent, edge-p weights, ratio sum(k w R^2) / sum(k w p), max with 1, today's cap) |
+| exact_gate_both | as exact_gate_ct, but references whose own edges were tested and stayed closed count as R^2 observed below s*_ref R^2_obs,ref (exact here), by weighted truncated likelihood |
+
+## Self-checks
+
+T(1) equals the production sibling statistic; edge statistics recomputed with production
+`run_child_parent_projected_wald_test` at f = 0.5 and 2 equal f^2 times the observed value; the Tree-BH copy
+reproduces production rejections; the gate is open at f = 1 for tested splits and closed for own-tested
+references; untruncated truncated-likelihood c_t equals the ratio form.
+
+## Data, endpoints and decision rule
+
+As in `../gate_conditioned_sibling_test_20261108/protocol.md`: the 900 no-group datasets and 35 real-group
+datasets, both trees, production alphas; E1 pass share of tested splits by size, E2 false partitions, E3 ARI,
+E4 median f*^2. Added: E5 median c_t against today's c; E6 share of tested splits where
+{T(f) >= T_obs, f >= f*} is not [1, infinity).
+
+- Fixes large splits: Markov/Ward, sd 0.25 and 0.42, tested splits >= 40 cells pass at <= 2%.
+- Keeps real groups: default tree, mean ARI on every signal model within 0.02 of today's.
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- Pilot (`run.py check`, `low` 0 and `signal_balanced` 0), before the full run: the `exact_gate_ct` arm
+  computed the ratio without production's cap (beyond the largest reference parent, use the baseline), which
+  the protocol requires for both estimated arms; the self-check "untruncated equals ratio" caught it (28/80).
+  Fixed in code before the full run; after the fix every self-check passed (80/80, T(1) 40/40, edge scaling
+  80/80, test rows 1,932/1,932, gate 40/40 open and 36/36 closed, replay 40/40).
+- Observation from the pilot, not a change: with R^2 the cap fires for splits larger than every reference,
+  because the reference baseline of R^2/p is below 1 (0.71 on `low` 0; 0.63 for references of 2-9 cells).
+- The analysis module loads the earlier gate helpers under their own name (both folders have `run.py`).
+
+# ===== run.py =====
+"""Run protocol.md: exact sibling p-values given the edge gate, swapped into production fits."""
+
+import json
+import sys
+from dataclasses import replace
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+import importlib.util
+
+HERE = Path(__file__).resolve().parent
+_spec = importlib.util.spec_from_file_location("gate_run", HERE.parent / "gate_conditioned_sibling_test_20261108" / "run.py")
+gate = importlib.util.module_from_spec(_spec)  # tree_bh_families, gate_threshold, truncated_scale, bandwidth, ORIGINAL
+_spec.loader.exec_module(gate)  # also puts the depth/validate folders and the repo root on sys.path
+
+import numpy as np  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from scipy.stats import chi2  # noqa: E402
+from sklearn.metrics import adjusted_rand_score  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+from compare import fit  # noqa: E402
+from validate import MODELS as VALIDATION_MODELS  # noqa: E402
+from validate import prepare  # noqa: E402
+
+import depth  # noqa: E402
+import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.tree_testing as edge_testing  # noqa: E402,E501
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection as record_collection  # noqa: E402,E501
+from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (  # noqa: E402,E501
+    split_edge_test_rows,
+)
+from tree_break_selection.hierarchy_analysis.statistics.contrast_covariance import (  # noqa: E402
+    compute_whitened_wald_contrast,
+)
+
+ARMS = ("today", "exact_gate", "exact_gate_ct", "exact_gate_both")
+TREES = {"symmetric_average": 1, "markov_ward": 2}
+NULLS = ("low", "matched_median", "high")
+SIGNALS = ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+GRID_BELOW, POINTS_ABOVE = 101, (1.25, 1.5, 2.0, 3.0, 5.0)
+STATE = {"arm": "today", "splits": [], "checks": {}, "data": None, "cache": {}, "sib": {}, "edge": {}}
+ORIGINAL_SIB = record_collection.sibling_divergence_test
+ORIGINAL_EDGE = edge_testing.run_child_parent_projected_wald_test
+
+
+def count(name, ok):
+    n, k = STATE["checks"].get(name, (0, 0))
+    STATE["checks"][name] = (n + 1, k + bool(ok))
+
+
+def capture_sibling(left, right, n_left, n_right, **kwargs):
+    parent = sys._getframe(1).f_locals["parent_node_id"]
+    STATE["sib"][str(parent)] = (np.asarray(left, float), np.asarray(right, float), n_left, n_right, kwargs)
+    return ORIGINAL_SIB(left, right, n_left, n_right, **kwargs)
+
+
+def capture_edge(child_dist, parent_dist, n_child, n_parent, **kwargs):
+    caller = sys._getframe(1).f_locals
+    child = str(caller["child_ids"][caller["edge_index"]])
+    STATE["edge"][child] = (np.asarray(child_dist, float), np.asarray(parent_dist, float), n_child, n_parent, kwargs)
+    return ORIGINAL_EDGE(child_dist, parent_dist, n_child, n_parent, **kwargs)
+
+
+record_collection.sibling_divergence_test = capture_sibling
+edge_testing.run_child_parent_projected_wald_test = capture_edge
+
+
+class Split:
+    """Everything the exact test needs for one binary split, built from captured production inputs."""
+
+    def __init__(self, parent, left, right, tree, test_rows, matrix):
+        self.left_mean, self.right_mean, self.n_left, self.n_right, self.kwargs = STATE["sib"][str(parent)]
+        self.left, self.right = str(left), str(right)
+        self.t_left, self.t_right = test_rows[left], test_rows[right]
+        self.m_t = len(self.t_left) + len(self.t_right)
+        self.test_left, self.test_right = matrix[self.t_left].mean(0), matrix[self.t_right].mean(0)
+        self.delta_t = self.test_left - self.test_right
+        kw = self.kwargs
+        z = compute_whitened_wald_contrast(
+            self.test_left, self.test_right, float(len(self.t_left)), float(len(self.t_right)), comparison="sibling",
+            feature_space=kw["feature_space"], continuous_covariance_by_block=kw["continuous_covariance_by_block"],
+            tree_time=kw["branch_length_sum"],
+            tree_time_normalizer=None if kw["mean_branch_length"] is None else 2.0 * float(kw["mean_branch_length"]))
+        self.r2, self.p_dim = float(z @ z), int(z.shape[0])
+
+    def shifts(self, f):
+        """Test-row shifts of left and right that scale delta_t by f with the test pooled mean fixed."""
+        return (f - 1.0) * len(self.t_right) / self.m_t, -(f - 1.0) * len(self.t_left) / self.m_t
+
+    def sibling_stat(self, f):
+        a, b = self.shifts(f)
+        left = self.left_mean + len(self.t_left) / self.n_left * a * self.delta_t
+        right = self.right_mean + len(self.t_right) / self.n_right * b * self.delta_t
+        return float(ORIGINAL_SIB(left, right, self.n_left, self.n_right, **self.kwargs)[0])
+
+    def edge_stat(self, child, f):
+        child_dist, parent_dist, n_c, n_p, kw = STATE["edge"][child]
+        a, b = self.shifts(f)
+        moved = child_dist + (a if child == self.left else b) * self.delta_t
+        return float(ORIGINAL_EDGE(moved, parent_dist, n_c, n_p, **kw)[0])
+
+
+def survival_set(split, t_obs, f_star):
+    """Intervals of f >= f_star with T(f) >= T_obs, as [(a, b)], b = inf for the last; plus a monotone flag."""
+    grid = np.linspace(f_star, 1.0, GRID_BELOW)
+    above = np.array([split.sibling_stat(f) >= t_obs for f in grid[:-1]] + [True])
+    tail_ok = all(split.sibling_stat(f) >= t_obs for f in POINTS_ABOVE)
+
+    def edge(lo, hi, lo_above):  # bisection for the crossing between grid points
+        for _ in range(50):
+            mid = 0.5 * (lo + hi)
+            if (split.sibling_stat(mid) >= t_obs) == lo_above:
+                lo = mid
+            else:
+                hi = mid
+        return 0.5 * (lo + hi)
+
+    intervals, start = [], (grid[0] if above[0] else None)
+    for i in range(1, len(grid)):
+        if above[i] and not above[i - 1]:
+            start = edge(grid[i - 1], grid[i], False)
+        if not above[i] and above[i - 1]:
+            intervals.append((start, edge(grid[i - 1], grid[i], True)))
+            start = None
+    intervals.append((start, np.inf))
+    return intervals, bool(tail_ok and len(intervals) == 1 and np.isclose(intervals[0][0], 1.0, atol=1e-9))
+
+
+def exact_p(intervals, r2, p_dim, f_star, c):
+    """P(f in intervals) / P(f >= f_star) with (f^2 r2) ~ c chi2(p_dim)."""
+    log_den = chi2.logsf(f_star**2 * r2 / c, p_dim)
+    total = 0.0
+    for a, b in intervals:
+        log_a = chi2.logsf(a**2 * r2 / c, p_dim)
+        log_b = -np.inf if np.isinf(b) else chi2.logsf(b**2 * r2 / c, p_dim)
+        total += np.exp(log_a - log_den) * (-np.expm1(log_b - log_a) if np.isfinite(log_b) else 1.0)
+    return float(min(total, 1.0))
+
+
+def estimate_ct(model, record, r2, p_dim, upper):
+    """Today's kernel, weights and cap on the references' R^2; returns (c_t, untruncated ratio c_t)."""
+    s = model.sample
+    keep = np.array([fam == record.feature_family for fam in s.feature_families])
+    stat, dfs, w, up, ctx = r2[keep], p_dim[keep], s.weights[keep], upper[keep], s.contexts[keep]
+    width = gate.bandwidth(ctx, w)
+    target = np.array([np.log(record.sibling_projection_dimension), np.log(float(record.n_parent))])
+    active = np.array([True, record.feature_family != "bernoulli"]) & (width > 0.0)
+    log_k = -0.5 * np.sum(((ctx[:, active] - target[active]) / width[active]) ** 2, axis=1) if active.any() else 0
+    local = w * np.exp(log_k - np.max(log_k)) if active.any() else w
+
+    def capped(c, base):  # production cap: beyond every reference parent use the baseline
+        return base if active.any() and active[1] and target[1] > ctx[:, 1].max() and c > base else c
+
+    ratio = capped(max(float(np.sum(local * stat) / np.sum(local * dfs)), 1.0),
+                   max(float(np.sum(w * stat) / np.sum(w * dfs)), 1.0))
+    out = [capped(max(gate.truncated_scale(stat, dfs, bound, local), 1.0),
+                  max(gate.truncated_scale(stat, dfs, bound, w), 1.0))
+           for bound in (up, np.full_like(up, np.inf))]
+    return (ratio if STATE["arm"] == "exact_gate_ct" else out[0]), out[1], ratio
+
+
+def swapped(records, *, model, **kwargs):
+    ids, summaries, labels, decisions, inadmissible = gate.ORIGINAL(records, model=model, **kwargs)
+    caller = sys._getframe(1).f_locals
+    tree, ann = caller["tree"], caller["annotations_df"]
+    arm, cache = STATE["arm"], STATE["cache"]
+    by_parent = {r.parent: r for r in records}
+    if "context" not in cache:  # same tree and records for every arm of one fit
+        edges = {"p": ann["Child_Parent_Divergence_P_Value"].astype(float),
+                 "stat": ann["Child_Parent_Divergence_Test_Statistic"].astype(float),
+                 "df": ann["Child_Parent_Divergence_df"].astype(float)}
+        family_of, rejected = gate.tree_bh_families(tree, edges["p"])
+        significant = set(ann.index[ann["Child_Parent_Divergence_Significant"].astype(bool)].astype(str))
+        count("tree_bh_copy", rejected == significant)
+        test_rows, _ = split_edge_test_rows(tree, STATE["data"])
+        matrix = STATE["data"].to_numpy(dtype=np.float64)
+        splits = {str(r.parent): Split(r.parent, r.left, r.right, tree, test_rows, matrix) for r in records
+                  if r.degrees_of_freedom > 0}
+        for child, (child_dist, *_rest) in STATE["edge"].items():
+            count("edge_test_rows_match", np.allclose(child_dist, matrix[test_rows[child]].mean(0), rtol=0, atol=1e-12))
+        s = model.sample
+        r2 = np.array([splits[str(pid)].r2 for pid in s.parent_ids])
+        p_dim = np.array([splits[str(pid)].p_dim for pid in s.parent_ids], dtype=float)
+        upper = np.full(s.n_records, np.inf)
+        for i, pid in enumerate(s.parent_ids):
+            if not s.is_edge_blocked[i]:
+                now, s_star = gate.gate_threshold(pid, tree, family_of, edges)
+                count("reference_gate_closed", not now)
+                if np.isfinite(s_star):
+                    upper[i] = s_star * r2[i]
+        cache["context"] = (edges, family_of, splits, r2, p_dim, upper)
+    edges, family_of, splits, r2, p_dim, upper = cache["context"]
+    out = ([], [], [], [], list(inadmissible))
+    for pid, summary, label, decision in zip(ids, summaries, labels, decisions, strict=True):
+        record = by_parent[pid]
+        if decision is None:
+            for column, value in zip(out[:4], (pid, summary, label, decision), strict=True):
+                column.append(value)
+            continue
+        split = splits[str(pid)]
+        key = ("tested", str(pid))
+        if key not in cache:
+            now, s_star = gate.gate_threshold(pid, tree, family_of, edges)
+            count("tested_gate_open", now)
+            f_star = float(np.sqrt(s_star))
+            count("t_at_1_equals_production", np.isclose(split.sibling_stat(1.0), record.stat, rtol=1e-9, atol=0))
+            for child in (split.left, split.right):
+                e1 = float(edges["stat"][child])
+                count("edge_scales_with_f_squared", all(np.isclose(split.edge_stat(child, f), f * f * e1, rtol=1e-6, atol=1e-9)
+                                                        for f in (0.5, 2.0)))
+            intervals, monotone = survival_set(split, record.stat, f_star)
+            cache[key] = (f_star, intervals, monotone)
+        f_star, intervals, monotone = cache[key]
+        if arm == "today":
+            c, p = decision.c_hat, float(chi2.sf(record.stat / decision.c_hat, record.degrees_of_freedom))
+            count("replay", np.isclose(p, decision.p_value, rtol=1e-9, atol=1e-300))
+        else:
+            c = 1.0
+            if arm != "exact_gate":
+                c, c_untruncated, ratio = estimate_ct(model, record, r2, p_dim, upper)
+                count("untruncated_equals_ratio", np.isclose(c_untruncated, ratio, rtol=1e-6, atol=0))
+            p = exact_p(intervals, split.r2, split.p_dim, f_star, c)
+        STATE["splits"].append({"node": str(pid), "n_parent": int(record.n_parent), "stat": float(record.stat),
+                                "df": float(record.degrees_of_freedom), "r2": split.r2, "p_dim": split.p_dim,
+                                "f_star": f_star, "monotone": monotone, "c": float(c), "c_today": float(decision.c_hat),
+                                "p": p, "n_small": int(min(split.n_left, split.n_right))})
+        out[0].append(pid)
+        out[1].append((record.stat / decision.c_hat, float(record.degrees_of_freedom), p))
+        out[2].append(f"{label}:{arm}")
+        out[3].append(replace(decision, p_value=p))
+    return out
+
+
+pipeline.compute_inflation_adjusted_sibling_tests = swapped
+
+
+def task(job):
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    datasets, splits = [], []
+    STATE["checks"] = {}
+    with threadpool_limits(limits=1):
+        prepared = prepare(counts)
+        STATE["data"] = prepared[0]
+        for tree_name, index in TREES.items():
+            distances = pdist(prepared[index])
+            STATE["cache"] = {}
+            for arm in ARMS:
+                STATE.update(arm=arm, splits=[], sib={}, edge={})
+                start = perf_counter()
+                result = fit(prepared[0], distances, tree_name)
+                key = {"model": model, "replicate": replicate, "tree": tree_name, "arm": arm}
+                bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+                splits.extend({**key, **row, "bh_different": bool(bh[row["node"]])} for row in STATE["splits"])
+                datasets.append({**key, "status": result.status.value, "found_clusters": result.found_clusters,
+                                 "ari": float(adjusted_rand_score(np.asarray(truth), result.labels)),
+                                 "sec": perf_counter() - start})
+    return datasets, splits, {"model": model, "replicate": replicate, **STATE["checks"]}
+
+
+def jobs():
+    signal = [(m, r) for m in SIGNALS for r in range(VALIDATION_MODELS[m]["replicates"])]
+    return signal + [(m, r) for m in NULLS for r in range(300)]
+
+
+def main(workers):
+    paths = {name: HERE / f"{name}.jsonl" for name in ("datasets", "splits", "checks")}
+    done = set()
+    if paths["checks"].exists():
+        done = {(r["model"], r["replicate"]) for r in map(json.loads, paths["checks"].read_text().splitlines())}
+    todo = [j for j in jobs() if j not in done]
+    files = {name: path.open("a", buffering=1) for name, path in paths.items()}
+    with Pool(workers) as pool:
+        for i, (datasets, splits, checks) in enumerate(pool.imap_unordered(task, todo), 1):
+            files["splits"].write("".join(json.dumps(r) + "\n" for r in splits))
+            files["datasets"].write("".join(json.dumps(r) + "\n" for r in datasets))
+            files["checks"].write(json.dumps(checks) + "\n")
+            if i % 25 == 0:
+                print(f"{i}/{len(todo)}", flush=True)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "check":
+        for job in (("low", 0), ("signal_balanced", 0)):
+            t = perf_counter()
+            datasets, splits, checks = task(job)
+            print(job, f"{perf_counter() - t:.1f}s", checks)
+            for d in datasets:
+                print(d["tree"], d["arm"], d["found_clusters"], round(d["ari"], 3), round(d["sec"], 1))
+            for s in splits:
+                if s["n_parent"] >= 100 and s["tree"] == "markov_ward":
+                    print({k: (round(v, 4) if isinstance(v, float) else v) for k, v in s.items()
+                           if k in ("arm", "n_parent", "stat", "r2", "f_star", "monotone", "c", "c_today", "p", "bh_different")})
+    else:
+        main(int(sys.argv[1]))
+
+# ===== summarize.py =====
+"""Summarize run.py output into the protocol endpoints (protocol.md)."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+NULLS = ["low", "matched_median", "high"]
+BINS, LABELS = [1, 9, 39, 159, 400], ["2-9", "10-39", "40-159", "160-400"]
+ARMS = ["today", "exact_gate", "exact_gate_ct", "exact_gate_both"]
+
+
+def load(name):
+    return pd.DataFrame(map(json.loads, (HERE / f"{name}.jsonl").read_text().splitlines()))
+
+
+def main():
+    checks = load("checks")
+    for col in [c for c in checks.columns if c not in ("model", "replicate")]:
+        pairs = checks[col].dropna()
+        print(f"check {col}: {sum(p[1] for p in pairs)}/{sum(p[0] for p in pairs)}")
+    ds, sp = load("datasets"), load("splits")
+    for frame in (ds, sp):
+        frame["arm"] = pd.Categorical(frame.arm, ARMS)
+    sp["passed"] = sp.p <= 0.01
+    sp["bin"] = pd.cut(sp.n_parent, BINS, labels=LABELS)
+    null = sp[sp.model.isin(NULLS)]
+
+    e1 = null.groupby(["tree", "model", "bin", "arm"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"), factor=("c", "median"))
+    big = null[null.n_parent >= 40].groupby(["tree", "model", "arm"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"), factor=("c", "median"))
+    nds = ds[ds.model.isin(NULLS)]
+    e2 = nds.groupby(["tree", "model", "arm"], observed=True).agg(
+        false_partitions=("found_clusters", lambda x: int((x > 1).sum())), median_clusters=("found_clusters", "median"))
+    sds = ds[~ds.model.isin(NULLS)]
+    e3 = sds.groupby(["tree", "model", "arm"], observed=True).agg(
+        datasets=("ari", "size"), mean_ari=("ari", "mean"), median_clusters=("found_clusters", "median"))
+    today = null[null.arm == "today"].assign(f_star_sq=lambda x: x.f_star**2, r2_per_p=lambda x: x.r2 / x.p_dim)
+    e4 = today.groupby(["tree", "model", "bin"], observed=True).agg(
+        tested=("f_star", "size"), median_f_star_sq=("f_star_sq", "median"),
+        median_r2_per_p=("r2_per_p", "median"), not_monotone=("monotone", lambda x: 1 - x.mean()))
+    e5 = null[null.arm != "today"].groupby(["tree", "model", "bin", "arm"], observed=True).agg(
+        c_t=("c", "median"), c_today=("c_today", "median"))
+    for name, table in [("e1_pass_large", big), ("e1_pass_by_size", e1), ("e2_false_partitions", e2),
+                        ("e3_signal", e3), ("e4_gate_position", e4), ("e5_inflation", e5)]:
+        table.round(4).to_csv(HERE / f"{name}.csv")
+        print(name)
+        print(table.round(3).to_string(), "\n")
+
+    rule = big.pass_share.xs("markov_ward", level="tree")
+    ari = e3.mean_ari.xs("symmetric_average", level="tree").unstack("arm")
+    print("Decision rule:", {a: {"fixes_large_splits": bool(all(rule.loc[(m, a)] <= 0.02 for m in ("low", "matched_median"))),
+                                "keeps_real_groups": bool(((ari[a] - ari["today"]).abs() <= 0.02).all())} for a in ARMS})
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== summary.txt =====
+check tree_bh_copy: 1325/1325
+check edge_test_rows_match: 479500/479500
+check reference_gate_closed: 12296/12296
+check tested_gate_open: 11488/11488
+check t_at_1_equals_production: 11488/11488
+check edge_scales_with_f_squared: 22976/22976
+check replay: 11488/11488
+check untruncated_equals_ratio: 22976/22976
+e1_pass_large
+                                                  tested  pass_share  factor
+tree              model          arm                                        
+markov_ward       high           today              2494       0.848   2.292
+                                 exact_gate         2494       0.861   1.000
+                                 exact_gate_ct      2494       0.806   1.000
+                                 exact_gate_both    2494       0.806   1.000
+                  low            today              2834       0.718   2.541
+                                 exact_gate         2834       0.790   1.000
+                                 exact_gate_ct      2834       0.751   1.000
+                                 exact_gate_both    2834       0.751   1.000
+                  matched_median today              2678       0.731   2.523
+                                 exact_gate         2678       0.833   1.000
+                                 exact_gate_ct      2678       0.774   1.000
+                                 exact_gate_both    2678       0.774   1.000
+symmetric_average high           today              1118       0.916   1.895
+                                 exact_gate         1118       0.842   1.000
+                                 exact_gate_ct      1118       0.818   1.000
+                                 exact_gate_both    1118       0.818   1.000
+                  low            today                11       0.000   3.589
+                                 exact_gate           11       0.273   1.000
+                                 exact_gate_ct        11       0.273   1.000
+                                 exact_gate_both      11       0.273   1.000
+                  matched_median today               163       0.546   2.447
+                                 exact_gate          163       0.558   1.000
+                                 exact_gate_ct       163       0.552   1.000
+                                 exact_gate_both     163       0.552   1.000 
+
+e1_pass_by_size
+                                                          tested  pass_share  factor
+tree              model          bin     arm                                        
+markov_ward       high           2-9     today                 1       0.000  15.224
+                                         exact_gate            1       0.000   1.000
+                                         exact_gate_ct         1       0.000   1.000
+                                         exact_gate_both       1       0.000   1.000
+                                 10-39   today               172       0.093   7.821
+                                         exact_gate          172       0.285   1.000
+                                         exact_gate_ct       172       0.157   1.245
+                                         exact_gate_both     172       0.157   1.245
+                                 40-159  today              1652       0.780   2.310
+                                         exact_gate         1652       0.795   1.000
+                                         exact_gate_ct      1652       0.713   1.000
+                                         exact_gate_both    1652       0.713   1.000
+                                 160-400 today               842       0.983   2.234
+                                         exact_gate          842       0.989   1.000
+                                         exact_gate_ct       842       0.989   1.000
+                                         exact_gate_both     842       0.989   1.000
+                  low            10-39   today               294       0.010   9.151
+                                         exact_gate          294       0.279   1.000
+                                         exact_gate_ct       294       0.126   1.203
+                                         exact_gate_both     294       0.126   1.203
+                                 40-159  today              1911       0.610   2.499
+                                         exact_gate         1911       0.695   1.000
+                                         exact_gate_ct      1911       0.637   1.000
+                                         exact_gate_both    1911       0.637   1.000
+                                 160-400 today               923       0.943   2.630
+                                         exact_gate          923       0.988   1.000
+                                         exact_gate_ct       923       0.988   1.000
+                                         exact_gate_both     923       0.988   1.000
+                  matched_median 2-9     today                 1       0.000  13.077
+                                         exact_gate            1       0.000   1.000
+                                         exact_gate_ct         1       0.000   1.000
+                                         exact_gate_both       1       0.000   1.000
+                                 10-39   today               254       0.031   9.245
+                                         exact_gate          254       0.339   1.000
+                                         exact_gate_ct       254       0.177   1.277
+                                         exact_gate_both     254       0.177   1.277
+                                 40-159  today              1747       0.633   2.498
+                                         exact_gate         1747       0.753   1.000
+                                         exact_gate_ct      1747       0.663   1.000
+                                         exact_gate_both    1747       0.663   1.000
+                                 160-400 today               931       0.915   2.596
+                                         exact_gate          931       0.983   1.000
+                                         exact_gate_ct       931       0.981   1.000
+                                         exact_gate_both     931       0.981   1.000
+symmetric_average high           10-39   today                40       0.550   5.154
+                                         exact_gate           40       0.300   1.000
+                                         exact_gate_ct        40       0.250   1.043
+                                         exact_gate_both      40       0.250   1.043
+                                 40-159  today               591       0.895   1.897
+                                         exact_gate          591       0.816   1.000
+                                         exact_gate_ct       591       0.772   1.173
+                                         exact_gate_both     591       0.772   1.174
+                                 160-400 today               527       0.939   1.890
+                                         exact_gate          527       0.871   1.000
+                                         exact_gate_ct       527       0.871   1.000
+                                         exact_gate_both     527       0.871   1.000
+                  low            10-39   today                 2       1.000   6.811
+                                         exact_gate            2       0.000   1.000
+                                         exact_gate_ct         2       0.000   1.000
+                                         exact_gate_both       2       0.000   1.000
+                                 160-400 today                11       0.000   3.589
+                                         exact_gate           11       0.273   1.000
+                                         exact_gate_ct        11       0.273   1.000
+                                         exact_gate_both      11       0.273   1.000
+                  matched_median 10-39   today                11       0.364   6.230
+                                         exact_gate           11       0.636   1.000
+                                         exact_gate_ct        11       0.636   1.000
+                                         exact_gate_both      11       0.636   1.000
+                                 40-159  today                16       0.750   1.977
+                                         exact_gate           16       0.375   1.000
+                                         exact_gate_ct        16       0.312   1.121
+                                         exact_gate_both      16       0.312   1.121
+                                 160-400 today               147       0.524   2.496
+                                         exact_gate          147       0.578   1.000
+                                         exact_gate_ct       147       0.578   1.000
+                                         exact_gate_both     147       0.578   1.000 
+
+e2_false_partitions
+                                                  false_partitions  median_clusters
+tree              model          arm                                               
+markov_ward       high           today                         300              8.0
+                                 exact_gate                    300              8.5
+                                 exact_gate_ct                 300              8.0
+                                 exact_gate_both               300              8.0
+                  low            today                         298              8.0
+                                 exact_gate                    300              9.0
+                                 exact_gate_ct                 300              9.0
+                                 exact_gate_both               300              9.0
+                  matched_median today                         296              8.0
+                                 exact_gate                    300              9.0
+                                 exact_gate_ct                 300              9.0
+                                 exact_gate_both               300              9.0
+symmetric_average high           today                         259              5.0
+                                 exact_gate                    260              5.0
+                                 exact_gate_ct                 260              4.0
+                                 exact_gate_both               260              4.0
+                  low            today                           2              1.0
+                                 exact_gate                      3              1.0
+                                 exact_gate_ct                   3              1.0
+                                 exact_gate_both                 3              1.0
+                  matched_median today                          50              1.0
+                                 exact_gate                     57              1.0
+                                 exact_gate_ct                  57              1.0
+                                 exact_gate_both                57              1.0 
+
+e3_signal
+                                                            datasets  mean_ari  median_clusters
+tree              model                    arm                                                 
+markov_ward       signal_balanced          today                  10     0.315             20.0
+                                           exact_gate             10     0.297             21.0
+                                           exact_gate_ct          10     0.314             20.0
+                                           exact_gate_both        10     0.314             20.0
+                  signal_density_variation today                   5     0.025             81.0
+                                           exact_gate              5     0.026             74.0
+                                           exact_gate_ct           5     0.027             71.0
+                                           exact_gate_both         5     0.027             71.0
+                  signal_imbalanced        today                  10     0.079             25.5
+                                           exact_gate             10     0.082             25.0
+                                           exact_gate_ct          10     0.084             24.0
+                                           exact_gate_both        10     0.084             24.0
+                  signal_singleton         today                  10     0.092             22.0
+                                           exact_gate             10     0.088             24.0
+                                           exact_gate_ct          10     0.095             21.0
+                                           exact_gate_both        10     0.095             21.0
+symmetric_average signal_balanced          today                  10     0.800              4.0
+                                           exact_gate             10     0.800              4.0
+                                           exact_gate_ct          10     0.800              4.0
+                                           exact_gate_both        10     0.800              4.0
+                  signal_density_variation today                   5     0.651             13.0
+                                           exact_gate              5     0.663             14.0
+                                           exact_gate_ct           5     0.663             13.0
+                                           exact_gate_both         5     0.663             13.0
+                  signal_imbalanced        today                  10     1.000              4.0
+                                           exact_gate             10     1.000              4.0
+                                           exact_gate_ct          10     1.000              4.0
+                                           exact_gate_both        10     1.000              4.0
+                  signal_singleton         today                  10     0.880              4.0
+                                           exact_gate             10     0.880              4.0
+                                           exact_gate_ct          10     0.880              4.0
+                                           exact_gate_both        10     0.880              4.0 
+
+e4_gate_position
+                                          tested  median_f_star_sq  median_r2_per_p  not_monotone
+tree              model          bin                                                             
+markov_ward       high           2-9           1             0.964            1.365         0.000
+                                 10-39       172             0.833            2.236         0.017
+                                 40-159     1652             0.540            3.710         0.000
+                                 160-400     842             0.273            7.335         0.000
+                  low            10-39       294             0.825            2.048         0.017
+                                 40-159     1911             0.642            3.108         0.000
+                                 160-400     923             0.410            4.892         0.000
+                  matched_median 2-9           1             0.993            1.267         0.000
+                                 10-39       254             0.834            2.172         0.012
+                                 40-159     1747             0.623            3.278         0.000
+                                 160-400     931             0.459            4.370         0.000
+symmetric_average high           10-39        40             0.809            2.237         0.000
+                                 40-159      591             0.458            4.369         0.000
+                                 160-400     527             0.427            4.663         0.000
+                  low            10-39         2             0.876            1.875         0.000
+                                 160-400      11             0.892            2.277         0.000
+                  matched_median 10-39        11             0.686            2.353         0.000
+                                 40-159       16             0.835            2.664         0.000
+                                 160-400     147             0.737            2.747         0.000 
+
+e5_inflation
+                                                            c_t  c_today
+tree              model          bin     arm                            
+markov_ward       high           2-9     exact_gate       1.000   15.224
+                                         exact_gate_ct    1.000   15.224
+                                         exact_gate_both  1.000   15.224
+                                 10-39   exact_gate       1.000    7.821
+                                         exact_gate_ct    1.245    7.821
+                                         exact_gate_both  1.245    7.821
+                                 40-159  exact_gate       1.000    2.310
+                                         exact_gate_ct    1.000    2.310
+                                         exact_gate_both  1.000    2.310
+                                 160-400 exact_gate       1.000    2.234
+                                         exact_gate_ct    1.000    2.234
+                                         exact_gate_both  1.000    2.234
+                  low            10-39   exact_gate       1.000    9.151
+                                         exact_gate_ct    1.203    9.151
+                                         exact_gate_both  1.203    9.151
+                                 40-159  exact_gate       1.000    2.499
+                                         exact_gate_ct    1.000    2.499
+                                         exact_gate_both  1.000    2.499
+                                 160-400 exact_gate       1.000    2.630
+                                         exact_gate_ct    1.000    2.630
+                                         exact_gate_both  1.000    2.630
+                  matched_median 2-9     exact_gate       1.000   13.077
+                                         exact_gate_ct    1.000   13.077
+                                         exact_gate_both  1.000   13.077
+                                 10-39   exact_gate       1.000    9.245
+                                         exact_gate_ct    1.277    9.245
+                                         exact_gate_both  1.277    9.245
+                                 40-159  exact_gate       1.000    2.498
+                                         exact_gate_ct    1.000    2.498
+                                         exact_gate_both  1.000    2.498
+                                 160-400 exact_gate       1.000    2.596
+                                         exact_gate_ct    1.000    2.596
+                                         exact_gate_both  1.000    2.596
+symmetric_average high           10-39   exact_gate       1.000    5.154
+                                         exact_gate_ct    1.043    5.154
+                                         exact_gate_both  1.043    5.154
+                                 40-159  exact_gate       1.000    1.897
+                                         exact_gate_ct    1.173    1.897
+                                         exact_gate_both  1.174    1.897
+                                 160-400 exact_gate       1.000    1.890
+                                         exact_gate_ct    1.000    1.890
+                                         exact_gate_both  1.000    1.890
+                  low            10-39   exact_gate       1.000    6.811
+                                         exact_gate_ct    1.000    6.811
+                                         exact_gate_both  1.000    6.811
+                                 160-400 exact_gate       1.000    3.589
+                                         exact_gate_ct    1.000    3.589
+                                         exact_gate_both  1.000    3.589
+                  matched_median 10-39   exact_gate       1.000    6.230
+                                         exact_gate_ct    1.000    6.230
+                                         exact_gate_both  1.000    6.230
+                                 40-159  exact_gate       1.000    1.977
+                                         exact_gate_ct    1.121    1.977
+                                         exact_gate_both  1.121    1.977
+                                 160-400 exact_gate       1.000    2.496
+                                         exact_gate_ct    1.000    2.496
+                                         exact_gate_both  1.000    2.496 
+
+Decision rule: {'today': {'fixes_large_splits': False, 'keeps_real_groups': True}, 'exact_gate': {'fixes_large_splits': False, 'keeps_real_groups': True}, 'exact_gate_ct': {'fixes_large_splits': False, 'keeps_real_groups': True}, 'exact_gate_both': {'fixes_large_splits': False, 'keeps_real_groups': True}}
+

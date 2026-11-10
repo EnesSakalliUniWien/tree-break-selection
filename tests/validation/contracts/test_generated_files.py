@@ -33,6 +33,7 @@ def repo(tmp_path, monkeypatch):
     data = {
         "schema_version": 1,
         "max_staged_bytes": 1024,
+        "max_tracked_bytes": 1024,
         "studies": {
             "reports/example": {
                 "description": "Example",
@@ -230,3 +231,35 @@ tags:
     monkeypatch.setattr(lint, "ROOT", root)
     assert not lint.check_page(wiki, {"example"}, "[[example]]", declared_outputs(data))
     assert any("does not exist" in e for e in lint.check_page(wiki, {"example"}, "[[example]]"))
+
+
+def test_oversized_raw_evidence_moves_out_of_git_through_the_catalog(repo):
+    root, data, destination = repo
+    archive(root, data, destination)
+    run = root / "raw/assets/run"
+    run.mkdir(parents=True)
+    (run / "README.md").write_text("How rows.csv was made.\n")
+    rows = run / "rows.csv"
+    rows.write_bytes(b"x" * 2048)
+    subprocess.run(["git", "-C", str(root), "add", "raw"], check=True)
+    assert any("Oversized tracked evidence file" in e for e in check(root, data))
+
+    subprocess.run(["git", "-C", str(root), "rm", "-q", "--cached", str(rows)], check=True)
+    data["studies"]["raw/assets/run"] = {
+        "description": "Run",
+        "reproduction_source": "raw/assets/run/README.md",
+    }
+    data["files"].append(
+        {
+            "study": "raw/assets/run",
+            "path": "raw/assets/run/rows.csv",
+            "role": "generated_output",
+            "reason": "Test fixture",
+            "bytes": rows.stat().st_size,
+            "sha256": sha256(rows),
+        }
+    )
+    assert keep_local(root, data) == 1
+    assert "/assets/run/rows.csv" in (root / "raw/.gitignore").read_text()
+    subprocess.run(["git", "-C", str(root), "check-ignore", "-q", str(rows)], check=True)
+    assert not check(root, data)

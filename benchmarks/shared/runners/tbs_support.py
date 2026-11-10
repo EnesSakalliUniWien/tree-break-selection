@@ -36,9 +36,21 @@ def unsupported_empirical_null_reason(
     _require_columns(annotations, (calibration_column,))
     calibration_values = annotations[calibration_column].astype(str)
     focal_mask = calibration_values.eq(UNDEFINED_INTERNAL_SUPPORT)
+    code = UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT
+    message = (
+        "The selected hierarchy contains focal sibling tests but no "
+        "admissible internal empirical-null calibration support."
+    )
+    if not focal_mask.any():
+        # Strict support thresholds can close every focal gate even though support exists.
+        undefined = calibration_values.str.startswith("undefined_")
+        tested = calibration_values.ne("") & ~undefined
+        if not undefined.any() or tested.any():
+            return None
+        focal_mask = undefined
+        code = UnsupportedReasonCode.EMPIRICAL_NULL_THIN_INTERNAL_SUPPORT
+        message = "Every focal sibling test failed the internal calibration support thresholds."
     focal_record_count = int(focal_mask.sum())
-    if focal_record_count == 0:
-        return None
 
     required = (
         "Sibling_Role_Supported",
@@ -55,7 +67,9 @@ def unsupported_empirical_null_reason(
             f"were stamped with {focal_supported_count} supported roles."
         )
     admissible_support_count = int(supported_roles.sum())
-    if admissible_support_count != 0:
+    if code is UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT and (
+        admissible_support_count != 0
+    ):
         return None
 
     invalid_record_count = int(
@@ -68,12 +82,9 @@ def unsupported_empirical_null_reason(
         annotations["Child_Parent_Divergence_Significant"].fillna(False).astype(bool).sum()
     )
     return UnsupportedReason(
-        code=UnsupportedReasonCode.EMPIRICAL_NULL_NO_INTERNAL_SUPPORT,
+        code=code,
         stage="sibling_calibration",
-        message=(
-            "The selected hierarchy contains focal sibling tests but no "
-            "admissible internal empirical-null calibration support."
-        ),
+        message=message,
         evidence=UnsupportedEvidence(
             focal_record_count=focal_record_count,
             admissible_support_count=admissible_support_count,

@@ -264,6 +264,7 @@ _TBS_DISTANCE_TREE_PARAM_KEYS = _BRANCH_LENGTH_PARAM_KEYS | frozenset(
         "sibling_gate_alpha_penalty",
         "sibling_gate_method",
         "sibling_gate_profile",
+        "sibling_split_count_rule_out",
         "spectral_include_internal_barycenters",
         "spectral_internal_distribution_mode",
         "spectral_minimum_dimension",
@@ -439,6 +440,10 @@ def _run_tbs_distance_tree_method(
         enforce_internal_support_thresholds=coerce_bool_param(
             params.get("enforce_internal_support_thresholds", False),
             name="enforce_internal_support_thresholds",
+        ),
+        sibling_split_count_rule_out=coerce_bool_param(
+            params.get("sibling_split_count_rule_out", False),
+            name="sibling_split_count_rule_out",
         ),
         sibling_gate_profile=params.get("sibling_gate_profile"),
         sibling_gate_method=_resolve_tbs_sibling_gate_method(

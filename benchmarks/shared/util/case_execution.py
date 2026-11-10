@@ -54,6 +54,7 @@ def _run_case_worker(
             include_cover_pages=False,
             include_validation_page=include_validation_page,
             tree_consensus_label_dir=tree_consensus_label_dir,
+            allow_method_errors=True,
         )
         queue.put({"ok": True, "rows": df_res.to_dict(orient="records")})
     except Exception as exc:
@@ -170,6 +171,7 @@ def run_case_with_optional_isolation(
         include_cover_pages=False,
         include_validation_page=include_validation_page,
         tree_consensus_label_dir=tree_consensus_label_dir,
+        allow_method_errors=True,
     )
     return df_res
 

@@ -1,0 +1,1097 @@
+Source archive for the runnable calibration analysis. Paths are repository-relative.
+run_initial.py is the exact initial run.py before the optional budget extension.
+Its bytes reproduce the main manifest SHA-256; run.py contains the budget extension.
+
+===== results/analyses/root_validation_followup_20261109/calibration/README.md =====
+
+# Root and immediate-child calibration follow-up
+
+The protocol, paired-budget extension, and fixed-label and coordinate-threshold
+diagnostics are defined in `protocol.md`, `budget_protocol.md`, and
+`cut_protocol.md`. Run from the repository root using the existing `.venv`.
+The runner refuses to overwrite evidence. Run a rerun only in a fresh analysis
+directory with the same depth relative to the repository root.
+
+```sh
+export OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+out=results/analyses/root_validation_followup_20261109/calibration
+.venv/bin/python "$out/run.py"
+.venv/bin/python "$out/summarize.py" fresh
+.venv/bin/python "$out/cut.py"
+.venv/bin/python "$out/summarize.py" cuts
+.venv/bin/python "$out/budget.py"
+.venv/bin/python "$out/summarize.py" budget
+```
+
+Every fresh attempted family is in `fresh.jsonl`, including stored radii,
+truth-derived contrast norms and known versus plug-in scales. `replay.jsonl`
+records the 24 exact root replays and one saved immediate-child replicate
+from each of seven panels. `budget999.jsonl` contains the paired longer
+chains. `cuts.jsonl` stores all fixed-label and threshold diagnostics.
+The summary files contain exact binomial intervals and runtime diagnostics.
+Reproducibility metadata are in `manifest.json` and `budget_manifest.json`.
+Input and relevant replay-source SHA-256 values appear in each family record.
+The three existing sampler-focused test files passed all 45 tests.
+
+The fresh family run emitted scikit-learn's multiprocessing warning that
+Loky-backed loops fall back to a single job. That fallback affected the
+initial native observation geometry. The sampler already used sequential
+joblib for each proposal. The saved chain replays matched under sequential
+joblib. BLAS was pinned to one thread.
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/protocol.md =====
+
+# Fixed root and immediate-child validation
+
+Frozen before fresh inferential outcomes on 2026-11-09. The maintained native
+diffusion/average replay and the public root and family diagnostic APIs are the
+methods under test. Run the stored parity cases first with their original seeds
+and budgets. Compare all 24 exact stored root chains and the first replicate of
+each of the seven saved immediate-child panels, using the stored node summaries
+for the latter. Fail closed on parity discrepancies and retain the output.
+
+Fresh data are independently generated within every panel from independent
+N(0,I) feature rows, shifted by the stated truth where relevant. Sigma=1 is
+known except in the explicitly unsupported fitted-scale sensitivity. Each
+random-position chain uses its maintained unit proposal scale. There are no
+outcome-dependent retries, exclusions, budget changes, or stopping rules.
+
+| Panel | n | p | Replicates | Steps | Truth |
+| --- | ---: | ---: | ---: | ---: | --- |
+| small_null | 9 | 3 | 1200 | 119 | one common mean |
+| wide_null | 12 | 8 | 120 | 119 | one common mean |
+| larger_null | 24 | 5 | 120 | 119 | one common mean |
+| balanced | 24 | 5 | 48 | 119 | 12+12, feature 1 difference 4 |
+| imbalanced | 24 | 5 | 48 | 119 | 4+20, feature 1 difference 4 |
+| hierarchical | 32 | 5 | 32 | 119 | four groups of 8, feature 1 difference 12 across halves, feature 2 difference 8 within halves |
+| fitted_scale_null | 9 | 3 | 96 | 119 | one common mean, plug-in pooled marginal SD from the tested matrix |
+
+Use base entropy 462091126 with panel index and zero-based replicate in
+NumPy SeedSequence. Its first two spawned sequences generate data and the
+uint64 family seed respectively. Child chains use the maintained seed+j.
+Four single-thread worker processes maximum. The historical replay uses
+sequential joblib, as the family already does. A timing-only preflight on
+unrelated seeds at n=6,12,24,48 inspected elapsed time only.
+
+Each fresh dataset runs the family API once. Its root chain also supplies the
+standalone root p-value at 0.05 and 0.01, using the verified root event parity.
+Test every existing family position at alpha/3, with alpha=0.05. Report per
+panel exact two-sided 95% binomial intervals and one-sided upper limits for
+root rejection and any family false rejection. A family is the three possible
+positions only, with at most three tests. Report child positions separately,
+using at most one Bernoulli outcome per dataset per position. Classify a
+tested node as homogeneous when all its rows carry the same true mean. Report
+root rejection and family true-signal detection for shifted panels, and count
+pure recovery of the two intended sides separately from rejection. Homogeneous
+nodes are a subset of true equality-of-mean nulls in general. In these designs
+the tested populations are indexed by independent mean-shift coordinates or a
+single binary mean difference. Equal proportions across sibling groups can
+also give a zero mean contrast at heterogeneous nodes. Such equal-contrast
+nodes are counted as null for family error and disclosed separately.
+
+Unresolved results remain in the family denominator and do not reject. Report
+unresolved and missing positions, stalls, accepted moves, runtime and observed
+smaller-side fractions. Store each attempted node and complete chain. Check
+every complete chain rank and anchor; run independent saved-sample replay and
+confirm end-to-end expected attempt counts.
+
+Primary precision is for small_null. At 5%, its approximate two-sided margin
+is 1.23 percentage points (1200 independent datasets). At the same rate the
+120-replicate panels have a margin about 3.9 points. An upper one-sided 95%
+exact limit <=0.065 is the prespecified practical compatibility target, and
+<=0.05 would substantiate the nominal threshold in that panel. A two-sided
+interval entirely above nominal signals excess. For secondary panels, report
+limits without a pass claim. Discrete 120-state ranks leave two ranks at
+0.05/3, six at 0.05 and one at 0.01. Report under-rejection and power loss
+alongside false rejection. The 119-step study addresses that fixed budget;
+the saved 999-step cases provide replay evidence and no additional precision.
+The practical tolerance and per-panel intervals are descriptive, with no
+simultaneous coverage claim.
+
+This calibration excludes production traversal, pass-through, final
+partitions, fitted PCA, and covariance/scale estimation under the exact
+law. The fitted-scale panel is explicitly a robustness check only.
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/budget_protocol.md =====
+
+# Paired chain-budget follow-up
+
+Frozen during saved replay, before inspecting fresh inferential outcomes.
+Use the first 30 small_null and first 20 balanced replicates from the main
+protocol. Rebuild exactly the same datasets and retain the same chain seed,
+family positions, alpha, replay and proposal scale. The only requested change
+is the number of chain steps, from 119 to 999. Because the random anchor and
+chain draws depend on the budget, these are paired by input and seed without
+asserting nested trajectories. Compare each dataset's root rejection at .01
+and .05, family false or true rejection as applicable, per-position movement
+and unresolved statuses, and per-dataset elapsed time. Report the four
+paired decision counts and exact binomial intervals for the marginal rates.
+With 30/20 pairs this is a diagnostic sensitivity check and supplies no
+precise calibration claim. Preserve every attempted result and all chains.
+
+The runner gained an optional steps argument after the main process had
+loaded its code. The main manifest hashes the original bytes. The default
+remains 119 and the original source is recoverable by changing the signature
+back to `def fresh(job):` and restoring `    steps = 119` immediately after
+the PANELS lookup in fresh.
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/cut_protocol.md =====
+
+# A/B/C fixed-label and threshold diagnostics
+
+Frozen before inspecting any A/B/C outcomes from these inputs. This study
+isolates the test statistics from production traversal. A here is the
+projected-Wald kernel at full rank with a spherical oracle or estimated
+pooled covariance, and the same kernel with the 90% contrast-energy rank
+rule applied to the pooled-standardized contrast in descending covariance
+eigenvector order. It omits branch times and empirical-null inflation. B and
+C are the supplied ceiling-3 routines, evaluated with every input coordinate.
+An exact Gaussian fixed-label Hotelling F control uses the same pooled
+quadratic form. C's Gaussian-shape version is a separate comparison. The
+paired cuts are (i) fixed first half vs last half and (ii) the threshold
+maximizing the Fisher ratio among all nonempty splits along coordinate 1.
+The latter is a searched subset of all affine cuts and ties are excluded.
+The fixed-label null, the shape null at the best threshold, and selected-tree
+error control are different targets.
+
+Generate 1,000 independent datasets per panel, NumPy seed sequence
+[9462091126, panel index, replicate]. All use 60 rows and six features
+unless stated. Fixed-label groups are equal in size. Always recompute every
+covariance and count preprocessing from the tested matrix.
+
+- Unit Gaussian, with the covariance known in the oracle control.
+- Anisotropic Gaussian, paired to the same underlying unit Gaussian draw,
+  with condition number 100 in a fixed rotated basis. The spherical reference
+  uses average marginal variance and is deliberately misspecified. B, C and
+  Hotelling must agree for the paired fixed-label cuts under this invertible
+  linear map. The coordinate search changes under rotation.
+- Independent centered standardized Exp(1) features, and independent
+  standardized t(3) features, as skewed and heavy-tailed controls.
+- Unit Gaussian with 32 rows and 20 features, to probe n/p.
+- Unit Gaussian with a feature-1 group difference of 2 or 4.
+- Depth-controlled count panels with 96 rows and 80 genes. Generate independent
+  Poisson counts at fixed shared composition proportional to a log-spaced gene
+  rate vector exp(linspace(-2,2,80)). Constant depth=1200, variable depth=240
+  or 2160 correlated with fixed labels, or the same depths in random order.
+  Fit library-size normalization to 10,000, log1p, high-variance top 30,
+  scaling clipped to [-10,10] and six PCs by deterministic centered SVD for
+  every realization. This is a simplified explicit refit of the preprocessing
+  stages, excluding Scanpy's Seurat HVG criterion and downstream graph
+  analysis. Save the measured correlation of PC1 with log library size.
+  The same composition is the biological null. Unequal depth can create
+  non-identically distributed transformed data, so this is robustness only.
+
+Report both 0.01 and 0.05 with exact 95% intervals for every reference, input
+and cut. At 1,000 runs a 5% rate has approximate half-width 1.35 points.
+No pass claim is made for misspecified models or unadjusted selected-cut A.
+Keep all attempts including explicit unsupported numerical cases. Compare
+A's kernel with direct chi-square and check the B/C/Hotelling paired affine
+invariance on the fixed labels before claiming results.
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/run_initial.py =====
+
+"""Replay the stored panels and run the frozen calibration protocol."""
+import hashlib
+import json
+import sys
+from importlib.metadata import version
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from joblib import parallel_config
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import diffusion_root_conditional_mc as mc
+
+PANELS = (
+    ("small_null", 9, 3, 1200, (9,), ()),
+    ("wide_null", 12, 8, 120, (12,), ()),
+    ("larger_null", 24, 5, 120, (24,), ()),
+    ("balanced", 24, 5, 48, (12, 12), ((-2,), (2,))),
+    ("imbalanced", 24, 5, 48, (4, 20), ((-2,), (2,))),
+    ("hierarchical", 32, 5, 32, (8, 8, 8, 8), ((-6, -4), (-6, 4), (6, -4), (6, 4))),
+    ("fitted_scale_null", 9, 3, 96, (9,), ()),
+)
+
+
+def verify(node, steps):
+    if node["status"] == "complete":
+        chain = np.asarray(node["chain_radii"])
+        assert len(chain) == steps + 1
+        assert node["completed_steps"] == steps
+        assert node["unique_states"] == len(np.unique(chain))
+        assert chain[node["anchor_index"]] == node["observed_radius"]
+        assert node["p_value"] == np.mean(chain >= node["observed_radius"])
+
+
+def replay(job):
+    kind, previous = job
+    start = perf_counter()
+    with threadpool_limits(limits=1), parallel_config(backend="sequential"):
+        if kind == "root":
+            ident = previous["identifier"]
+            reference = previous["result"]
+            path = ROOT / "reports/root_conditional_sampler_20261104/generated" / f"{ident}.npy"
+            values = np.load(path)
+            assert hashlib.sha256(values.tobytes()).hexdigest() == previous["input_sha256"]
+            actual = mc.selected_diffusion_root_chain_test(
+                values, sigma=1, seed=reference["seed"], steps=999
+            )
+            fields = ("status", "decision", "chain_radii", "p_value", "accepted_moves", "anchor_index")
+            matches = {field: actual.get(field) == reference.get(field) for field in fields}
+            verify(actual, 999)
+            return dict(kind=kind, identifier=ident, matches=matches, actual=actual,
+                        seconds=perf_counter() - start)
+        ident = previous["panel"]
+        plans = {
+            "A_null_30": (0, 30, 0),
+            "B_root_signal_30": (10000, 30, 1),
+            "C_hierarchical_40": (20000, 40, 2),
+            "D_null_120": (30000, 120, 0),
+            "D_hierarchical_120": (40000, 120, 2),
+            "D_null_200": (50000, 200, 0),
+            "D_hierarchical_200": (60000, 200, 2),
+        }
+        offset, n, design = plans[ident]
+        values = np.random.default_rng(20261106000 + offset).normal(size=(n, 5))
+        if design:
+            values[:n//2, 0] -= (2 if design == 1 else 3)
+            values[n//2:, 0] += (2 if design == 1 else 3)
+        if design == 2:
+            values[:, 1] += np.repeat([-1.5, 1.5, -1.5, 1.5], n//4)
+        actual = mc.selected_diffusion_family_chain_tests(values, sigma=1, seed=2026110600, steps=999)
+        matches = {"status": actual["status"] == previous["family_status"],
+                   "positions": len(actual["nodes"]) == previous["positions"]}
+        for pos, (node, old) in enumerate(zip(actual["nodes"], previous["nodes"])):
+            verify(node, 999)
+            for field in ("role", "status", "sampling_status", "accepted_moves", "unique_states",
+                          "p_value", "decision", "error"):
+                matches[f"{pos}:{field}"] = node.get(field) == old[field]
+            matches[f"{pos}:observed_radius"] = bool(
+                np.isclose(node.get("observed_radius"), old["observed_radius"], rtol=1e-13, atol=0)
+            )
+            matches[f"{pos}:children_rows"] = list(map(len, node["children"])) == old["children_rows"]
+        return dict(kind=kind, identifier=ident, matches=matches, actual=actual,
+                    seconds=perf_counter() - start)
+
+
+def fresh(job):
+    panel_idx, replicate = job
+    name, n, p, _, sizes, shifts = PANELS[panel_idx]
+    steps = 119
+    rng_seed, chain_seed = np.random.SeedSequence([462091126, panel_idx, replicate]).spawn(2)
+    seed = int(chain_seed.generate_state(1, dtype=np.uint64)[0])
+    truth = np.repeat(np.arange(len(sizes)), sizes)
+    means = np.zeros((n, p))
+    if shifts:
+        means[:, :len(shifts[0])] = np.asarray(shifts)[truth]
+    values = np.random.default_rng(rng_seed).normal(size=(n, p)) + means
+    sigma = float(np.sqrt(values.var(axis=0, ddof=1).mean())) if name == "fitted_scale_null" else 1.0
+    start = perf_counter()
+    with threadpool_limits(limits=1):
+        family = mc.selected_diffusion_family_chain_tests(values, sigma=sigma, steps=steps, seed=seed)
+    for node in family["nodes"]:
+        verify(node, steps)
+        if "children" not in node:
+            continue
+        a, b = ([int(label[1:]) for label in group] for group in node["children"])
+        node["true_contrast_norm"] = float(np.linalg.norm(means[a].mean(axis=0) - means[b].mean(axis=0)))
+        node["null"] = node["true_contrast_norm"] < 1e-12
+        node["homogeneous"] = len(np.unique(truth[a + b])) == 1
+        node["group_counts"] = [np.bincount(truth[side], minlength=len(sizes)).tolist() for side in (a, b)]
+        assert node["homogeneous"] <= node["null"]
+    return dict(panel=name, replicate=replicate, seconds=perf_counter() - start,
+                input_sha256=hashlib.sha256(values.tobytes()).hexdigest(), family=family)
+
+
+def run_file(name, worker, jobs):
+    started = perf_counter()
+    with Pool(4) as pool, (HERE / f"{name}.jsonl").open("x") as stream:
+        for done, record in enumerate(pool.imap_unordered(worker, jobs, chunksize=1), 1):
+            stream.write(json.dumps(record, default=diagnostic_json_default, allow_nan=False) + "\n")
+            stream.flush()
+            if done % 50 == 0 or done == len(jobs):
+                print(name, done, len(jobs), round(perf_counter() - started, 1), flush=True)
+    assert done == len(jobs)
+
+
+def main():
+    root_records = ROOT / "reports/root_conditional_sampler_20261104/generated/records.jsonl"
+    child_records = ROOT / "raw/inbox/descendant-chain-validation-results-20261106.jsonl"
+    with (HERE / "manifest.json").open("x") as stream:
+        sources = [Path(mc.__file__), root_records, child_records, HERE / "run.py", HERE / "protocol.md"]
+        json.dump(dict(python=sys.version, versions={p: version(p) for p in (
+            "numpy", "scipy", "joblib", "pydiffmap", "threadpoolctl", "pytest", "scikit-learn")},
+            sha256={str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in sources}), stream, indent=2)
+    root_jobs = [("root", r) for line in root_records.open() if (r := json.loads(line))["phase"] == "parity"]
+    child_jobs = [("family", r) for line in child_records.open() if (r := json.loads(line))["replicate"] == 0]
+    assert len(root_jobs) == 24 and len(child_jobs) == 7
+    run_file("replay", replay, root_jobs + child_jobs)
+    with (HERE / "replay.jsonl").open() as stream:
+        assert all(all(r["matches"].values()) for r in map(json.loads, stream)), "saved replay differed"
+    run_file("fresh", fresh, [(idx, rep) for idx, panel in enumerate(PANELS) for rep in range(panel[3])])
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/run.py =====
+
+"""Replay the stored panels and run the frozen calibration protocol."""
+import hashlib
+import json
+import sys
+from importlib.metadata import version
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+from joblib import parallel_config
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import diffusion_root_conditional_mc as mc
+
+PANELS = (
+    ("small_null", 9, 3, 1200, (9,), ()),
+    ("wide_null", 12, 8, 120, (12,), ()),
+    ("larger_null", 24, 5, 120, (24,), ()),
+    ("balanced", 24, 5, 48, (12, 12), ((-2,), (2,))),
+    ("imbalanced", 24, 5, 48, (4, 20), ((-2,), (2,))),
+    ("hierarchical", 32, 5, 32, (8, 8, 8, 8), ((-6, -4), (-6, 4), (6, -4), (6, 4))),
+    ("fitted_scale_null", 9, 3, 96, (9,), ()),
+)
+
+
+def verify(node, steps):
+    if node["status"] == "complete":
+        chain = np.asarray(node["chain_radii"])
+        assert len(chain) == steps + 1
+        assert node["completed_steps"] == steps
+        assert node["unique_states"] == len(np.unique(chain))
+        assert chain[node["anchor_index"]] == node["observed_radius"]
+        assert node["p_value"] == np.mean(chain >= node["observed_radius"])
+
+
+def replay(job):
+    kind, previous = job
+    start = perf_counter()
+    with threadpool_limits(limits=1), parallel_config(backend="sequential"):
+        if kind == "root":
+            ident = previous["identifier"]
+            reference = previous["result"]
+            path = ROOT / "reports/root_conditional_sampler_20261104/generated" / f"{ident}.npy"
+            values = np.load(path)
+            assert hashlib.sha256(values.tobytes()).hexdigest() == previous["input_sha256"]
+            actual = mc.selected_diffusion_root_chain_test(
+                values, sigma=1, seed=reference["seed"], steps=999
+            )
+            fields = ("status", "decision", "chain_radii", "p_value", "accepted_moves", "anchor_index")
+            matches = {field: actual.get(field) == reference.get(field) for field in fields}
+            verify(actual, 999)
+            return dict(kind=kind, identifier=ident, matches=matches, actual=actual,
+                        seconds=perf_counter() - start)
+        ident = previous["panel"]
+        plans = {
+            "A_null_30": (0, 30, 0),
+            "B_root_signal_30": (10000, 30, 1),
+            "C_hierarchical_40": (20000, 40, 2),
+            "D_null_120": (30000, 120, 0),
+            "D_hierarchical_120": (40000, 120, 2),
+            "D_null_200": (50000, 200, 0),
+            "D_hierarchical_200": (60000, 200, 2),
+        }
+        offset, n, design = plans[ident]
+        values = np.random.default_rng(20261106000 + offset).normal(size=(n, 5))
+        if design:
+            values[:n//2, 0] -= (2 if design == 1 else 3)
+            values[n//2:, 0] += (2 if design == 1 else 3)
+        if design == 2:
+            values[:, 1] += np.repeat([-1.5, 1.5, -1.5, 1.5], n//4)
+        actual = mc.selected_diffusion_family_chain_tests(values, sigma=1, seed=2026110600, steps=999)
+        matches = {"status": actual["status"] == previous["family_status"],
+                   "positions": len(actual["nodes"]) == previous["positions"]}
+        for pos, (node, old) in enumerate(zip(actual["nodes"], previous["nodes"])):
+            verify(node, 999)
+            for field in ("role", "status", "sampling_status", "accepted_moves", "unique_states",
+                          "p_value", "decision", "error"):
+                matches[f"{pos}:{field}"] = node.get(field) == old[field]
+            matches[f"{pos}:observed_radius"] = bool(
+                np.isclose(node.get("observed_radius"), old["observed_radius"], rtol=1e-13, atol=0)
+            )
+            matches[f"{pos}:children_rows"] = list(map(len, node["children"])) == old["children_rows"]
+        return dict(kind=kind, identifier=ident, matches=matches, actual=actual,
+                    seconds=perf_counter() - start)
+
+
+def fresh(job, *, steps=119):
+    panel_idx, replicate = job
+    name, n, p, _, sizes, shifts = PANELS[panel_idx]
+    rng_seed, chain_seed = np.random.SeedSequence([462091126, panel_idx, replicate]).spawn(2)
+    seed = int(chain_seed.generate_state(1, dtype=np.uint64)[0])
+    truth = np.repeat(np.arange(len(sizes)), sizes)
+    means = np.zeros((n, p))
+    if shifts:
+        means[:, :len(shifts[0])] = np.asarray(shifts)[truth]
+    values = np.random.default_rng(rng_seed).normal(size=(n, p)) + means
+    sigma = float(np.sqrt(values.var(axis=0, ddof=1).mean())) if name == "fitted_scale_null" else 1.0
+    start = perf_counter()
+    with threadpool_limits(limits=1):
+        family = mc.selected_diffusion_family_chain_tests(values, sigma=sigma, steps=steps, seed=seed)
+    for node in family["nodes"]:
+        verify(node, steps)
+        if "children" not in node:
+            continue
+        a, b = ([int(label[1:]) for label in group] for group in node["children"])
+        node["true_contrast_norm"] = float(np.linalg.norm(means[a].mean(axis=0) - means[b].mean(axis=0)))
+        node["null"] = node["true_contrast_norm"] < 1e-12
+        node["homogeneous"] = len(np.unique(truth[a + b])) == 1
+        node["group_counts"] = [np.bincount(truth[side], minlength=len(sizes)).tolist() for side in (a, b)]
+        assert node["homogeneous"] <= node["null"]
+    return dict(panel=name, replicate=replicate, seconds=perf_counter() - start,
+                input_sha256=hashlib.sha256(values.tobytes()).hexdigest(), family=family)
+
+
+def run_file(name, worker, jobs):
+    started = perf_counter()
+    with Pool(4) as pool, (HERE / f"{name}.jsonl").open("x") as stream:
+        for done, record in enumerate(pool.imap_unordered(worker, jobs, chunksize=1), 1):
+            stream.write(json.dumps(record, default=diagnostic_json_default, allow_nan=False) + "\n")
+            stream.flush()
+            if done % 50 == 0 or done == len(jobs):
+                print(name, done, len(jobs), round(perf_counter() - started, 1), flush=True)
+    assert done == len(jobs)
+
+
+def main():
+    root_records = ROOT / "reports/root_conditional_sampler_20261104/generated/records.jsonl"
+    child_records = ROOT / "raw/inbox/descendant-chain-validation-results-20261106.jsonl"
+    with (HERE / "manifest.json").open("x") as stream:
+        sources = [Path(mc.__file__), root_records, child_records, HERE / "run.py", HERE / "protocol.md"]
+        json.dump(dict(python=sys.version, versions={p: version(p) for p in (
+            "numpy", "scipy", "joblib", "pydiffmap", "threadpoolctl", "pytest", "scikit-learn")},
+            sha256={str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in sources}), stream, indent=2)
+    root_jobs = [("root", r) for line in root_records.open() if (r := json.loads(line))["phase"] == "parity"]
+    child_jobs = [("family", r) for line in child_records.open() if (r := json.loads(line))["replicate"] == 0]
+    assert len(root_jobs) == 24 and len(child_jobs) == 7
+    run_file("replay", replay, root_jobs + child_jobs)
+    with (HERE / "replay.jsonl").open() as stream:
+        assert all(all(r["matches"].values()) for r in map(json.loads, stream)), "saved replay differed"
+    run_file("fresh", fresh, [(idx, rep) for idx, panel in enumerate(PANELS) for rep in range(panel[3])])
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/budget.py =====
+
+"""Compare a predeclared, data-paired subset at a longer chain budget."""
+from functools import partial
+from pathlib import Path
+
+from run import fresh, run_file
+
+if __name__ == "__main__":
+    # Same functions, generated matrices and chain seeds. Only the budget changes.
+    assert (Path(__file__).parent / "fresh.jsonl").is_file()
+    run_file("budget999", partial(fresh, steps=999),
+             [(0, r) for r in range(30)] + [(3, r) for r in range(20)])
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/cut.py =====
+
+"""Run the frozen fixed-label and searched-threshold stress checks."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.linalg import solve_triangular
+from scipy.stats import chi2, f
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+ANALYSES = HERE.parents[1]
+sys.path[:0] = [str(ROOT), str(ANALYSES / "flat_cut_sup_count_20261109"),
+               str(ANALYSES / "gaussian_cut_rule_20261108")]
+from count_rule import sup_p
+from cut_rule import cut_bound_p, unimodal_bound
+from tree_break_selection.hierarchy_analysis.statistics.projection.projected_wald.projected_wald_kernel import (
+    run_projected_wald_kernel,
+)
+
+PANELS = (
+    "gaussian", "anisotropic", "skew", "heavy_tail", "high_p", "shift2", "shift4",
+    "depth_constant", "depth_confounded", "depth_random",
+)
+Q, _ = np.linalg.qr(np.random.default_rng(7913203).normal(size=(6, 6)))
+SCALES = np.geomspace(1.0, 10.0, 6)
+
+
+def dataset(panel, idx, replicate):
+    rng = np.random.default_rng([9462091126, 0 if panel == "anisotropic" else idx, replicate])
+    n, p = (32, 20) if panel == "high_p" else (60, 6)
+    oracle_scale = 1.0
+    log_depth = None
+    if panel.startswith("depth"):
+        n = 96
+        base = np.exp(np.linspace(-2, 2, 80))
+        base /= base.sum()
+        depth = np.full(n, 1200) if panel == "depth_constant" else np.repeat([240, 2160], n//2)
+        if panel == "depth_random":
+            rng.shuffle(depth)
+        count = rng.poisson(depth[:, None] * base)
+        observed_depth = count.sum(axis=1)
+        assert (observed_depth > 0).all()
+        log_depth = np.log(observed_depth)
+        x = np.log1p(count * (10_000 / observed_depth[:, None]))
+        top = np.argsort(x.var(axis=0), kind="stable")[-30:]
+        x = x[:, top]
+        x = np.clip((x - x.mean(axis=0)) / x.std(axis=0, ddof=1), -10, 10)
+        x -= x.mean(axis=0)
+        left, singular, _ = np.linalg.svd(x, full_matrices=False)
+        x = left[:, :p] * singular[:p]
+        oracle_scale = None
+    elif panel == "skew":
+        x = rng.exponential(size=(n, p)) - 1
+    elif panel == "heavy_tail":
+        x = rng.standard_t(3, size=(n, p)) / np.sqrt(3)
+    else:
+        x = rng.standard_normal(size=(n, p))
+        if panel == "anisotropic":
+            x = (x * SCALES) @ Q.T
+            oracle_scale = float(np.sqrt(np.mean(SCALES**2)))
+        if panel.startswith("shift"):
+            x[n//2:, 0] += float(panel[-1])
+    return x, oracle_scale, log_depth
+
+
+def cuts(x):
+    n = len(x)
+    centered = x - x.mean(axis=0)
+    total = np.linalg.cholesky(centered.T @ centered / n)
+    whitened = solve_triangular(total, centered.T, lower=True).T
+    order = np.argsort(x[:, 0], kind="stable")
+    cumulative = np.cumsum(whitened[order], axis=0)[:-1]
+    sizes = np.arange(1, n)
+    r2 = (cumulative**2).sum(axis=1) / (sizes * (n - sizes))
+    r2[np.diff(x[order, 0]) == 0] = -np.inf
+    threshold = int(np.argmax(r2)) + 1
+    selected = np.zeros(n, dtype=bool)
+    selected[order[:threshold]] = True
+    return np.arange(n) < n // 2, selected
+
+
+def evaluate(x, a, sigma):
+    n, k = x.shape
+    b = ~a
+    left = x[a] - x[a].mean(0)
+    right = x[b] - x[b].mean(0)
+    within = (left.T @ left + right.T @ right) / (n - 2)
+    z = np.sqrt(a.sum() * b.sum() / n) * (x[a].mean(0) - x[b].mean(0))
+    eigenvalues, basis = np.linalg.eigh(within)
+    standardized = (basis[:, ::-1].T @ z) / np.sqrt(eigenvalues[::-1])
+    projection = np.eye(k)
+    a_full = run_projected_wald_kernel(
+        standardized, spectral_k=k, pca_projection=projection, pca_eigenvalues=eigenvalues[::-1]
+    )
+    a_rank = run_projected_wald_kernel(
+        standardized, spectral_k=k, pca_projection=projection, pca_eigenvalues=eigenvalues[::-1],
+        adaptive_dimension_energy_fraction=0.9,
+    )
+    b_p, rho = cut_bound_p(x, a, unimodal_bound)
+    np.testing.assert_allclose(a_full.statistic, n * rho, rtol=1e-10, atol=1e-11)
+    return dict(
+        a_spherical_chi2=float(chi2.sf((z @ z) / sigma**2, k)) if sigma is not None else None,
+        a_pooled_chi2=a_full.p_value, a_energy_rank_chi2=a_rank.p_value,
+        a_energy_rank=a_rank.projection_dimension, rho=rho, b=b_p,
+        c=sup_p(rho, n, k), c_gaussian=sup_p(rho, n, k, "gaussian"),
+        hotelling=float(f.sf((n-k-1)/(k*(n-2)) * n * rho, k, n-k-1)),
+        smaller_fraction=float(min(a.mean(), b.mean())),
+    )
+
+
+def main():
+    matched = []
+    with threadpool_limits(limits=1), (HERE / "cuts.jsonl").open("x") as output:
+        for idx, panel in enumerate(PANELS):
+            for r in range(1000):
+                x, scale, log_depth = dataset(panel, idx, r)
+                for cut_name, side in zip(("fixed", "threshold"), cuts(x), strict=True):
+                    record = dict(panel=panel, replicate=r, cut=cut_name, n=len(x), k=x.shape[1])
+                    try:
+                        record.update(evaluate(x, side, scale))
+                    except np.linalg.LinAlgError as error:
+                        record["error"] = str(error)
+                    if log_depth is not None:
+                        record["abs_pc1_log_depth_corr"] = float(abs(np.corrcoef(x[:, 0], log_depth)[0, 1]))
+                    if cut_name == "fixed" and idx < 2:
+                        v = [record[k] for k in ("rho", "b", "c", "c_gaussian", "hotelling")]
+                        if idx == 0:
+                            matched.append(v)
+                        else:
+                            np.testing.assert_allclose(v, matched[r], rtol=2e-10, atol=1e-12)
+                    output.write(json.dumps(record, allow_nan=False) + "\n")
+            output.flush()
+            print(panel, flush=True)
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/summarize.py =====
+
+"""Summarize the frozen simulations without dropping unresolved attempts."""
+import csv
+import json
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import binomtest
+
+from run import PANELS
+
+HERE = Path(__file__).resolve().parent
+
+
+def read(filename):
+    with (HERE / filename).open() as stream:
+        return list(map(json.loads, stream))
+
+
+def rate(events):
+    n, hits = len(events), sum(events)
+    if not n:
+        return dict(hits=0, n=0, rate=None, lower95=None, upper95=None, upper95_one_sided=None)
+    two = binomtest(hits, n).proportion_ci()
+    one = binomtest(hits, n, alternative="less").proportion_ci()
+    return dict(hits=hits, n=n, rate=hits / n, lower95=two.low, upper95=two.high,
+                upper95_one_sided=one.high)
+
+
+def quantiles(values):
+    return np.quantile(values, [0, 0.1, 0.5, 0.9, 1]).tolist() if len(values) else None
+
+
+def root_decision(record, alpha):
+    nodes = record["family"]["nodes"]
+    return bool(nodes and nodes[0].get("sampling_status") == "moved"
+                and nodes[0]["p_value"] <= alpha)
+
+
+def family_decision(record, null):
+    return any(node["decision"] == "reject" and node["null"] == null
+               for node in record["family"]["nodes"])
+
+
+def position_metrics(nodes, count):
+    statuses = Counter(node["decision"] for node in nodes)
+    defined = [node for node in nodes if "null" in node]
+    valid_geometry = [node for node in defined if "accepted_moves" in node]
+    return dict(
+        positions=len(nodes), missing=count-len(nodes), unresolved=statuses["unresolved"],
+        stalled=sum(node.get("sampling_status") == "stalled" for node in nodes),
+        false_reject=rate([node["decision"] == "reject" for node in defined if node["null"]]),
+        signal_reject=rate([node["decision"] == "reject" for node in defined if not node["null"]]),
+        signal_both_sides_pure=rate([
+            all(np.count_nonzero(counts) == 1 for counts in node["group_counts"])
+            for node in defined if not node["null"]
+        ]),
+        heterogeneous_zero_contrast=sum(node["null"] and not node["homogeneous"] for node in defined),
+        moves=quantiles([node["accepted_moves"] for node in valid_geometry]),
+        distinct_states=quantiles([node["unique_states"] for node in valid_geometry]),
+        smaller_side_fraction=quantiles(
+            [min(map(len, node["children"]))/len(node["rows"]) for node in defined]
+        ),
+    )
+
+
+def exact_root_split(row, count):
+    nodes = row["family"]["nodes"]
+    if not nodes or "group_counts" not in nodes[0]:
+        return False
+    counts = np.asarray(nodes[0]["group_counts"])
+    half = count // 2
+    return any(
+        all(np.flatnonzero(counts[i] > 0).tolist() == groups
+            for i, groups in enumerate(partition))
+        for partition in ([list(range(half)), list(range(half, count))],
+                          [list(range(half, count)), list(range(half))])
+    )
+
+
+def family_summary(rows, *, validate=True):
+    keyed = {}
+    for name, n, p, number, sizes, _ in PANELS:
+        subset = [r for r in rows if r["panel"] == name]
+        if validate:
+            assert sorted(r["replicate"] for r in subset) == list(range(number))
+        if not subset:
+            continue
+        nodes = [r["family"]["nodes"] for r in subset]
+        keyed[name] = dict(
+            n=n, p=p, datasets=len(subset), seconds=quantiles([r["seconds"] for r in subset]),
+            scale=quantiles([r["family"]["sigma"] for r in subset]),
+            unresolved_families=sum(not f or any(n["decision"] == "unresolved" for n in f)
+                                    for f in nodes),
+            unresolved_observation=sum(not f for f in nodes),
+            root_005=rate([root_decision(r, 0.05) for r in subset]),
+            root_001=rate([root_decision(r, 0.01) for r in subset]),
+            family_false_reject=rate([family_decision(r, True) for r in subset]),
+            family_signal_reject=rate([family_decision(r, False) for r in subset]) if len(sizes) > 1 else None,
+            root_exact_split=rate([exact_root_split(r, len(sizes)) for r in subset]) if len(sizes) > 1 else None,
+            positions=[position_metrics([f[i] for f in nodes if len(f) > i], len(subset)) for i in range(3)],
+        )
+    return keyed
+
+
+def paired(short, long):
+    by_id = {(r["panel"], r["replicate"]): r for r in short}
+    assert len(long) == 50
+    endpoints = {
+        "root_005": lambda r: root_decision(r, 0.05),
+        "root_001": lambda r: root_decision(r, 0.01),
+        "family_false_reject": lambda r: family_decision(r, True),
+        "family_signal_reject": lambda r: family_decision(r, False),
+    }
+    out = {}
+    for name, target in [("small_null", 30), ("balanced", 20)]:
+        pairs = [(by_id[(name, r["replicate"])], r) for r in long if r["panel"] == name]
+        assert sorted(b["replicate"] for _, b in pairs) == list(range(target))
+        for a, b in pairs:
+            assert a["input_sha256"] == b["input_sha256"] and a["family"]["seed"] == b["family"]["seed"]
+            assert [n.get("children") for n in a["family"]["nodes"]] == [
+                n.get("children") for n in b["family"]["nodes"]]
+        first, second = zip(*pairs)
+        out[name] = dict(
+            short=family_summary(first, validate=False)[name],
+            long=family_summary(second, validate=False)[name],
+            paired_counts={k: {str(i)+str(j): sum(f(a) == bool(i) and f(b) == bool(j) for a, b in pairs)
+                               for i in range(2) for j in range(2)}
+                           for k, f in endpoints.items()},
+        )
+    return out
+
+
+def summarize_cuts(rows):
+    grouped = {}
+    for row in rows:
+        grouped.setdefault((row["panel"], row["cut"]), []).append(row)
+    assert len(grouped) == 20
+    records = []
+    for (panel, cut), subset in grouped.items():
+        assert sorted(r["replicate"] for r in subset) == list(range(1000))
+        for endpoint in ("a_spherical_chi2", "a_pooled_chi2", "a_energy_rank_chi2", "b", "c",
+                         "c_gaussian", "hotelling"):
+            if endpoint == "a_spherical_chi2" and panel.startswith("depth"):
+                continue
+            for alpha in (0.01, 0.05):
+                records.append(dict(
+                    panel=panel, cut=cut, endpoint=endpoint, alpha=alpha,
+                    unresolved=sum(row.get(endpoint) is None for row in subset),
+                    median_abs_pc1_log_depth_corr=(float(np.median([
+                        r["abs_pc1_log_depth_corr"] for r in subset])) if panel.startswith("depth") else None),
+                    **rate([r.get(endpoint) is not None and r[endpoint] <= alpha for r in subset]),
+                ))
+    with (HERE / "cut_summary.csv").open("w") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(records[0]))
+        writer.writeheader()
+        writer.writerows(records)
+
+
+def main():
+    import sys
+
+    task = sys.argv[1]
+    if task == "cuts":
+        summarize_cuts(read("cuts.jsonl"))
+        return
+    short = read("fresh.jsonl")
+    if task == "budget":
+        summary = paired(short, read("budget999.jsonl"))
+    else:
+        assert task == "fresh"
+        summary = family_summary(short)
+    (HERE / f"{task}_summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/manifest.json =====
+
+{
+  "python": "3.12.11 (main, Jun  3 2025, 15:41:47) [Clang 17.0.0 (clang-1700.0.13.3)]",
+  "versions": {
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "joblib": "1.5.2",
+    "pydiffmap": "0.2.0.1",
+    "threadpoolctl": "3.6.0",
+    "pytest": "8.4.2",
+    "scikit-learn": "1.7.2"
+  },
+  "sha256": {
+    "benchmarks/diagnostics/calibration/selected/hierarchy/diffusion_root_conditional_mc.py": "9542f316c99a877c5a2d46566820a3d7dd74a0cf4e6ebfe1077802e04cb5b382",
+    "reports/root_conditional_sampler_20261104/generated/records.jsonl": "8bca2a048b9d2f01da662d6ed580bf61dcf01fbd569b4f8d71099be2d790dd13",
+    "raw/inbox/descendant-chain-validation-results-20261106.jsonl": "56e8654608af801c6e320265faf80d5cc758216d5ebe4784499010ae252b91fd",
+    "results/analyses/root_validation_followup_20261109/calibration/run.py": "46ab8e8517e6516e8258b7e47fb5bbd80995f8fdd86d849af32b2885e290fce9",
+    "results/analyses/root_validation_followup_20261109/calibration/protocol.md": "085314f1cb22d6c89d4a2c45a1740ba34799adfdd291b18adb00241fa3adfdba"
+  }
+}
+
+===== results/analyses/root_validation_followup_20261109/calibration/budget_manifest.json =====
+
+{
+  "run.py": "fa29f8e81153f425572fdc467d5288a01e9f6e758b2b3f60de07691478c41aa5",
+  "budget.py": "5d10f9440b0f2e241610a12494c5cddbea935ee9a61325c1daebdae539cc6c6d",
+  "budget_protocol.md": "dc76dcd51c336e661e37aab5e3624d2f1cafc3315be2a97d0f8bb7d2090bf1f9"
+}
+
+
+===== results/analyses/root_validation_followup_20261109/calibration/cut_manifest.json =====
+
+{
+  "sha256": {
+    "results/analyses/root_validation_followup_20261109/calibration/cut.py": "d7e481cf0eb98838252ee96f9243b9b5eb9bd000e583564c165e64553f71cf7e",
+    "results/analyses/root_validation_followup_20261109/calibration/cut_protocol.md": "199887938baa2cc22f3bb0607edc36952b923a530bcf139424df49c267c4247f",
+    "results/analyses/root_validation_followup_20261109/calibration/summarize.py": "775c8d92defa180270c093c056da9baa316e4e54e9f0ffa17a69cd7fe2cfc6b5",
+    "results/analyses/root_validation_followup_20261109/calibration/cuts.jsonl": "ae38b2b8dc01d82324fb728b87b960d604c7700b6eafc9d28f7208dcd667ae2f",
+    "results/analyses/root_validation_followup_20261109/calibration/cut_summary.csv": "b2630bf2eb032e414b2e994cf4d0561617f65b057e8bcb9d96105988e0f65a41",
+    "results/analyses/flat_cut_sup_count_20261109/count_rule.py": "4b543d303b5972659011c3807f3f1febfc09768296665389baf468b7ec8caea8",
+    "results/analyses/gaussian_cut_rule_20261108/cut_rule.py": "b663e02fc7a4ef7b94c4aa0bea3c4f9c4aaa6d440470410dc78d95f7f45c5fdf",
+    "tree_break_selection/hierarchy_analysis/statistics/projection/projected_wald/projected_wald_kernel.py": "3e2534d0ab7c066a3ca0ab4ad7514598b234a860e74a29b5d53ddca30a7583b2"
+  },
+  "c_high_p_saturation": {
+    "gaussian": {
+      "n": 32,
+      "k": 20,
+      "u_max": 5.385537505419899,
+      "envelope_at_u_max": 15685.366979756427
+    },
+    "ceiling3": {
+      "n": 32,
+      "k": 20,
+      "u_max": 4.7932208703373025,
+      "envelope_at_u_max": 4024176.569311464
+    }
+  }
+}
+
+
+===== results/analyses/gaussian_cut_rule_20261108/cut_rule.py =====
+
+"""protocol.md D2-D6: the largest split one population allows, and the p-value that a split goes beyond it."""
+
+import numpy as np
+from scipy.special import gammaln, logsumexp
+from scipy.stats import ncx2, norm
+
+UNIMODAL_BOUND = 3.0
+
+
+def gaussian_bound(pi):
+    """g(pi): between/within ratio of a flat cut of one Gaussian population into shares pi and 1 - pi."""
+    r = norm.pdf(norm.ppf(pi)) ** 2 / (pi * (1 - pi))
+    return r / (1 - r)
+
+
+def unimodal_bound(pi):
+    return UNIMODAL_BOUND
+
+
+def bayes_error(pi, delta):
+    """Error of the best rule for two unit Gaussians at separation delta with shares pi and 1 - pi."""
+    c = np.log((1 - pi) / pi) / delta  # the boundary moves toward the smaller group
+    return float(pi * norm.cdf(c - delta / 2) + (1 - pi) * norm.cdf(-c - delta / 2))
+
+
+def fisher_ratio(points, in_left):
+    """rho = pi (1 - pi) D^2; D = Mahalanobis distance of the side means, pooled within covariance (n - 2)."""
+    left, right = points[in_left], points[~in_left]
+    n, pi = len(points), len(left) / len(points)
+    centered = np.vstack([left - left.mean(0), right - right.mean(0)])
+    d = left.mean(0) - right.mean(0)
+    return float(pi * (1 - pi) * d @ np.linalg.solve(centered.T @ centered / (n - 2), d))
+
+
+def log_flat_cuts(n, k):
+    """log sum_{i<=k} binom(n-1, i): splits of n points in general position by a flat cut in k dimensions."""
+    i = np.arange(0, min(k, n - 1) + 1)
+    return float(logsumexp(gammaln(n) - gammaln(i + 1) - gammaln(n - i)))
+
+
+def cut_bound_p(points, in_left, bound):
+    """(p, rho): count of flat cuts x P(noncentral chi2_k(n bound(pi)) >= n rho); p = 1 without directions."""
+    n, k = points.shape
+    if k == 0:
+        return 1.0, float("nan")
+    rho = fisher_ratio(points, in_left)
+    log_p = log_flat_cuts(n, k) + ncx2.logsf(n * rho, k, n * bound(float(in_left.mean())))
+    return float(np.exp(min(0.0, log_p))), rho
+
+
+if __name__ == "__main__":
+    assert abs(gaussian_bound(0.5) - (2 / np.pi) / (1 - 2 / np.pi)) < 1e-12
+    assert abs(bayes_error(0.5, 2.0) - norm.cdf(-1.0)) < 1e-12
+    assert bayes_error(0.1, 2.4) < 0.1  # never above the smaller share
+    assert abs(np.exp(log_flat_cuts(5, 1)) - 5) < 1e-9  # 4 thresholds on a line + the empty cut
+    rng = np.random.default_rng(0)
+    x = np.r_[rng.standard_normal((20000, 3)) + [2, 0, 0], rng.standard_normal((20000, 3)) - [2, 0, 0]]
+    side = np.r_[np.ones(20000, bool), np.zeros(20000, bool)]
+    assert abs(fisher_ratio(x, side) - 4.0) < 0.1, fisher_ratio(x, side)  # 0.25 * 4^2
+    assert np.isfinite(ncx2.logsf(5000.0, 1, 3000.0)) and ncx2.logsf(5000.0, 1, 3000.0) < -100
+    print("self-check passed", round(gaussian_bound(0.5), 4), round(gaussian_bound(0.2), 4),
+          round(fisher_ratio(x, side), 4), float(ncx2.logsf(5000.0, 1, 3000.0)))
+
+
+===== results/analyses/flat_cut_sup_count_20261109/count_rule.py =====
+
+"""protocol.md: tail of the best flat cut of one population, in place of the count of all flat cuts.
+
+Null: n cells from one population F whose best flat cut has ratio rho* = b. The tree's split has ratio at
+most the best flat cut's (D1), so p = P(sup over flat cuts of rho_hat >= rho_obs). To first order the sup sits
+on the population's best cuts (envelope argument; Hartigan 1978, Pollard 1982): in whitened coordinates
+R_hat(v) = mean |v'x| / sd(v'x) at the cut through the centre, R^2 = rho/(1 + rho), and
+
+    sqrt(n) (rho_hat(v) - b) ~ sigma_rho W(v),  W a unit-variance even Gaussian field on the sphere S^{k-1}.
+
+Its sup tail is the expected Euler characteristic (Adler and Taylor):
+    p = 1/2 sum_j L_j(S^{k-1} of radius sqrt(lambda)) rho_j(u),  u = sqrt(n) (rho_obs - b) / sigma_rho,
+halved because W(v) = W(-v). Constants (derivations in protocol.md):
+    Gaussian F:  b = 2/(pi - 2) = 1.752, sigma_rho^2 = a^2 (1 - 3/pi) = 6.582, lambda = (1 - 2/pi)/(1 - 3/pi) = 8.063
+    ceiling 3 (uniform marginal at the cut): b = 3, sigma_rho^2 = a^2 / 40 = 19.2, lambda = 13.0 (isotropic law with
+    uniform marginals, which exists for k = 3; used for every k, an assumption)
+with a = d rho / d R = 2 R* / (1 - R*^2)^2.
+"""
+
+from functools import lru_cache
+
+import numpy as np
+from scipy.special import gammaln
+from scipy.stats import norm
+
+SHAPES = {
+    "gaussian": {"b": 2 / (np.pi - 2), "R": np.sqrt(2 / np.pi), "var_R": 1 - 3 / np.pi, "lam": (1 - 2 / np.pi) / (1 - 3 / np.pi)},
+    "ceiling3": {"b": 3.0, "R": np.sqrt(3) / 2, "var_R": 1 / 40, "lam": 13.0},
+}
+
+
+def sigma_rho(shape):
+    s = SHAPES[shape]
+    return 2 * s["R"] / (1 - s["R"] ** 2) ** 2 * np.sqrt(s["var_R"])
+
+
+def log_sphere_area(m):
+    """log s_m, the surface area of the unit sphere in R^m."""
+    return np.log(2) + (m / 2) * np.log(np.pi) - gammaln(m / 2)
+
+
+def lk_sphere(j, k, radius):
+    """L_j of the sphere S^{k-1} of the given radius (Adler-Taylor eq. 3.6.4); 0 unless k - 1 - j is even."""
+    if (k - 1 - j) % 2:
+        return 0.0
+    log_binom = gammaln(k) - gammaln(j + 1) - gammaln(k - j)
+    return float(2 * np.exp(log_binom + log_sphere_area(k) - log_sphere_area(k - j) + j * np.log(radius)))
+
+
+def ec_density(j, u):
+    """rho_j(u) of a unit-variance Gaussian field: 1 - Phi(u) for j = 0, else (2 pi)^{-(j+1)/2} H_{j-1}(u) e^{-u^2/2}."""
+    u = np.asarray(u, dtype=float)
+    if j == 0:
+        return norm.sf(u)
+    h_prev, h = np.zeros_like(u), np.ones_like(u)  # probabilists' Hermite: H_{-1} unused, H_0 = 1
+    for m in range(1, j):
+        h_prev, h = h, u * h - (m - 1) * h_prev
+    return (2 * np.pi) ** (-(j + 1) / 2) * h * np.exp(-u * u / 2)
+
+
+def sup_tail(u, k, lam, even=True):
+    """Expected-EC approximation of P(sup over S^{k-1} of a unit-variance field >= u)."""
+    total = sum(lk_sphere(j, k, np.sqrt(lam)) * ec_density(j, u) for j in range(k))
+    return total / 2 if even else total
+
+
+U_GRID = np.arange(-10.0, 60.0, 0.002)
+
+
+@lru_cache(maxsize=None)
+def _envelope(k, lam):
+    tail = np.asarray(sup_tail(U_GRID, k, lam), dtype=float)
+    return np.maximum.accumulate(tail[::-1])[::-1]  # largest value at this u or above
+
+
+def sup_tail_envelope(u, k, lam):
+    """Non-increasing upper envelope of the even-field EC tail: its largest value at u or above (deviations.md).
+
+    The EC expansion is accurate only for large u; for k >= 4 it swings between large positive and negative values
+    at moderate u. The envelope keeps the large-u values and replaces the swings by their largest later value.
+    """
+    env = _envelope(int(k), float(lam))
+    if u >= U_GRID[-1]:
+        return float(max(sup_tail(u, k, lam), 0.0))
+    return float(env[max(0, int(np.searchsorted(U_GRID, u, side="left")) - 1)])  # grid point at or below u: larger p
+
+
+def sup_p_rho_scale(rho_obs, n, k, shape="ceiling3"):
+    """Frozen version (protocol.md): linearised on the rho scale. Failed C1 (too many small p); kept for the record."""
+    if k == 0 or not np.isfinite(rho_obs):
+        return 1.0
+    s = SHAPES[shape]
+    u = np.sqrt(n) * (rho_obs - s["b"]) / sigma_rho(shape)
+    return float(min(1.0, max(0.0, sup_tail(u, k, s["lam"]))))
+
+
+def sup_p(rho_obs, n, k, shape="ceiling3"):
+    """p that a split of n cells with ratio rho_obs on k invariant directions goes beyond one population's best cut.
+
+    Amended (deviations.md): u on the scale of R = sqrt(rho'/(1 + rho')), rho' = rho n/(n - 2), where the
+    linearisation of E3 holds; rho is a convex function of R and its tail is heavier than the linear one.
+    """
+    if k == 0 or not np.isfinite(rho_obs):
+        return 1.0
+    s = SHAPES[shape]
+    rho_total = rho_obs * n / (n - 2)
+    u = np.sqrt(n) * (np.sqrt(rho_total / (1 + rho_total)) - s["R"]) / np.sqrt(s["var_R"])
+    return float(min(1.0, max(0.0, sup_tail_envelope(u, k, s["lam"]))))
+
+
+if __name__ == "__main__":
+    from scipy.stats import chi
+    for k in (1, 2, 3, 5, 12):  # A-T (4.5.15): sum_j L_j(S^{k-1}) rho_j(u) = P(chi_k >= u)
+        for u in (1.0, 3.0, 6.0):
+            assert abs(float(sup_tail(u, k, 1.0, even=False)) - chi.sf(u, k)) < 1e-9 * max(1, chi.sf(u, k)) + 1e-12, (k, u)
+    assert abs(sup_p_rho_scale(SHAPES["gaussian"]["b"] + 2.326 * sigma_rho("gaussian") / 10, 100, 1, "gaussian") - 0.01) < 1e-3
+    r = SHAPES["gaussian"]["R"] + 2.326 * np.sqrt(SHAPES["gaussian"]["var_R"]) / 10
+    assert abs(sup_p(r * r / (1 - r * r) * 98 / 100, 100, 1, "gaussian") - 0.01) < 1e-3
+    for k in (6, 9, 12):  # the envelope never gives a smaller p at a larger rho, and p = 1 at the ceiling
+        ps = [sup_p(r, 229, k) for r in np.linspace(3.0, 30.0, 60)]
+        assert all(a >= b for a, b in zip(ps, ps[1:])) and ps[0] == 1.0, (k, ps[:5])
+    assert abs(sigma_rho("gaussian") ** 2 - 6.5824) < 1e-3 and abs(sigma_rho("ceiling3") ** 2 - 19.2) < 1e-9
+    print("self-check passed", round(sigma_rho("gaussian") ** 2, 4), round(sigma_rho("ceiling3") ** 2, 4),
+          round(SHAPES["gaussian"]["lam"], 4))
+

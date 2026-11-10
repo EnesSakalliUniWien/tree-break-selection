@@ -425,9 +425,10 @@ def test_compute_inflation_adjusted_sibling_tests_can_enforce_support_thresholds
     ]
     model = fit_empirical_null_inflation_model(records)
 
-    parents, summaries, _methods, decisions = compute_inflation_adjusted_sibling_tests(
-        records, model=model
+    parents, summaries, _methods, decisions, inadmissible = (
+        compute_inflation_adjusted_sibling_tests(records, model=model)
     )
+    assert inadmissible == []
     assert parents == ["target"]
     assert summaries[0] == pytest.approx((16.0 / 3.0, 2.0, chi2.sf(16.0 / 3.0, 2.0)))
     assert decisions[0].p_value == summaries[0][2]
@@ -435,12 +436,17 @@ def test_compute_inflation_adjusted_sibling_tests_can_enforce_support_thresholds
         16.0 / (records[2].reference_scale * decisions[0].c_hat)
     )
 
-    with pytest.raises(ValueError, match="undefined_sparse_context"):
+    parents, summaries, _methods, decisions, inadmissible = (
         compute_inflation_adjusted_sibling_tests(
             records,
             model=model,
             enforce_support_thresholds=True,
         )
+    )
+    assert (parents, summaries, decisions) == ([], [], [])
+    assert [(record.parent, decision.status) for record, decision in inadmissible] == [
+        ("target", "undefined_sparse_context")
+    ]
 
 
 def test_compute_inflation_adjusted_sibling_tests_rejects_missing_internal_model() -> None:

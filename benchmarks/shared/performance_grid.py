@@ -21,6 +21,13 @@ CASE_COLUMNS = [
 ]
 
 METRIC_COLUMNS = ["ari", "nmi", "purity"]
+OPTIONAL_METRIC_COLUMNS = [
+    "ami",
+    "matched_macro_f1",
+    "matched_rare_f1",
+    "pair_split_share",
+    "pair_merge_share",
+]
 
 
 @dataclass(frozen=True)
@@ -34,6 +41,7 @@ class BenchmarkPerformanceGridArtifacts:
     purity_grid_csv: Path
     status_grid_csv: Path
     support_coverage_csv: Path
+    ami_grid_csv: Path | None = None
 
 
 def _require_columns(results: pd.DataFrame, required: set[str]) -> None:
@@ -59,6 +67,9 @@ def _normalize_grid_frame(results: pd.DataFrame) -> pd.DataFrame:
     _require_columns(results, required)
 
     frame = results.copy()
+    for column in OPTIONAL_METRIC_COLUMNS:
+        if column not in frame:
+            frame[column] = np.nan
     for column in CASE_COLUMNS + [
         "method",
         "run_id",
@@ -76,10 +87,11 @@ def _normalize_grid_frame(results: pd.DataFrame) -> pd.DataFrame:
         "true_clusters",
         "cluster_count_abs_error",
         *METRIC_COLUMNS,
+        *OPTIONAL_METRIC_COLUMNS,
     ]:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
 
-    quality_columns = [*METRIC_COLUMNS, "cluster_count_abs_error"]
+    quality_columns = [*METRIC_COLUMNS, *OPTIONAL_METRIC_COLUMNS, "cluster_count_abs_error"]
     frame.loc[~frame["status"].eq("ok"), quality_columns] = np.nan
 
     duplicated = frame.duplicated(["case_id", "run_id"], keep=False)
@@ -122,6 +134,7 @@ def _summary(frame: pd.DataFrame) -> pd.DataFrame:
     working["ok"] = working["status"].eq("ok")
     working["unsupported"] = working["status"].eq("unsupported")
     working["skip"] = working["status"].eq("skip")
+    working["error"] = working["status"].eq("error")
     working["exact_k"] = np.where(
         working["ok"] & working["true_clusters"].notna() & working["found_clusters"].notna(),
         (working["true_clusters"] == working["found_clusters"]).astype(float),
@@ -139,10 +152,12 @@ def _summary(frame: pd.DataFrame) -> pd.DataFrame:
         successful_count=("ok", "sum"),
         unsupported_count=("unsupported", "sum"),
         skip_count=("skip", "sum"),
+        error_count=("error", "sum"),
         mean_ari=("ari", "mean"),
         median_ari=("ari", "median"),
         mean_nmi=("nmi", "mean"),
         mean_purity=("purity", "mean"),
+        **{f"mean_{column}": (column, "mean") for column in OPTIONAL_METRIC_COLUMNS},
         exact_k_rate=("exact_k", "mean"),
         mean_cluster_count_abs_error=("cluster_count_abs_error", "mean"),
     )
@@ -154,8 +169,9 @@ def _summary(frame: pd.DataFrame) -> pd.DataFrame:
         np.nan,
     )
     summary = summary.sort_values(
-        ["unsupported_rate", "mean_ari", "mean_nmi", "successful_count", "run_id"],
-        ascending=[True, False, False, False, True],
+        # Errors sort first: an erroring method's mean ARI skips the cases it failed on.
+        ["error_count", "unsupported_rate", "mean_ari", "mean_nmi", "successful_count", "run_id"],
+        ascending=[True, True, False, False, False, True],
         na_position="last",
     ).reset_index(drop=True)
     summary.insert(0, "rank_support_then_mean_ari", np.arange(1, len(summary) + 1))
@@ -167,6 +183,7 @@ def _support_coverage(frame: pd.DataFrame) -> pd.DataFrame:
         successful=frame["status"].eq("ok"),
         unsupported=frame["status"].eq("unsupported"),
         skipped=frame["status"].eq("skip"),
+        errored=frame["status"].eq("error"),
     )
     coverage = (
         working.groupby(["method", "case_category"], sort=True, dropna=False)
@@ -175,6 +192,7 @@ def _support_coverage(frame: pd.DataFrame) -> pd.DataFrame:
             successful_count=("successful", "sum"),
             unsupported_count=("unsupported", "sum"),
             skip_count=("skipped", "sum"),
+            error_count=("errored", "sum"),
         )
         .reset_index()
     )
@@ -226,12 +244,14 @@ def write_benchmark_performance_grid(
     summary = _summary(frame)
     support_coverage = _support_coverage(frame)
     ari_grid = _metric_grid(frame, "ari")
+    ami_grid = _metric_grid(frame, "ami")
     nmi_grid = _metric_grid(frame, "nmi")
     purity_grid = _metric_grid(frame, "purity")
     status_grid = _metric_grid(frame, "status")
 
     summary_csv = output / "benchmark_performance_grid_summary.csv"
     ari_grid_csv = output / "benchmark_performance_grid_ari.csv"
+    ami_grid_csv = output / "benchmark_performance_grid_ami.csv"
     nmi_grid_csv = output / "benchmark_performance_grid_nmi.csv"
     purity_grid_csv = output / "benchmark_performance_grid_purity.csv"
     status_grid_csv = output / "benchmark_performance_grid_status.csv"
@@ -240,6 +260,7 @@ def write_benchmark_performance_grid(
 
     summary.to_csv(summary_csv, index=False)
     ari_grid.to_csv(ari_grid_csv, index=False)
+    ami_grid.to_csv(ami_grid_csv, index=False)
     nmi_grid.to_csv(nmi_grid_csv, index=False)
     purity_grid.to_csv(purity_grid_csv, index=False)
     status_grid.to_csv(status_grid_csv, index=False)
@@ -260,6 +281,7 @@ def write_benchmark_performance_grid(
                 "",
                 f"- Summary by run cell: `{summary_csv.name}`",
                 f"- ARI case grid: `{ari_grid_csv.name}`",
+                f"- AMI case grid: `{ami_grid_csv.name}`",
                 f"- NMI case grid: `{nmi_grid_csv.name}`",
                 f"- Purity case grid: `{purity_grid_csv.name}`",
                 f"- Status case grid: `{status_grid_csv.name}`",
@@ -280,6 +302,7 @@ def write_benchmark_performance_grid(
         report_md=report_md,
         summary_csv=summary_csv,
         ari_grid_csv=ari_grid_csv,
+        ami_grid_csv=ami_grid_csv,
         nmi_grid_csv=nmi_grid_csv,
         purity_grid_csv=purity_grid_csv,
         status_grid_csv=status_grid_csv,

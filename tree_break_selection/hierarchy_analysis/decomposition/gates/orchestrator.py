@@ -165,6 +165,7 @@ def build_gate_annotation_config_metadata(
     internal_support_thresholds: CalibrationSupportThresholds = (
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
     ),
+    sibling_split_count_rule_out: bool = False,
 ) -> GateAnnotationConfigMetadata:
     """Capture config values that affect gate annotation outputs."""
     return GateAnnotationConfigMetadata(
@@ -219,6 +220,7 @@ def build_gate_annotation_config_metadata(
             root_selective_permutation_guard_tree_linkage_method
         ),
         enforce_internal_support_thresholds=bool(enforce_internal_support_thresholds),
+        sibling_split_count_rule_out=bool(sibling_split_count_rule_out),
         internal_support_policy=CalibrationSupportPolicySnapshot(
             support_contract_version=INTERNAL_SUPPORT_CONTRACT_VERSION,
             thresholds=internal_support_thresholds,
@@ -339,6 +341,7 @@ def run_gate_annotation_pipeline(
     internal_support_thresholds: CalibrationSupportThresholds = (
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
     ),
+    sibling_split_count_rule_out: bool = False,
 ) -> GateAnnotationBundle:
     """Run the edge-gate and sibling-gate annotation pipeline.
 
@@ -357,19 +360,7 @@ def run_gate_annotation_pipeline(
         "root_stability_guard_sec": 0.0,
         "root_selective_permutation_guard_sec": 0.0,
     }
-    (
-        sibling_gate_profile_id,
-        sibling_gate_method,
-        sibling_gate_alpha_penalty,
-        root_stability_guard_threshold,
-        root_stability_subsample_replicates,
-        root_stability_feature_fraction,
-        root_stability_seed,
-        root_selective_permutation_guard_replicates,
-        root_selective_permutation_guard_seed,
-        root_selective_permutation_guard_alpha,
-        root_selective_permutation_guard_scope,
-    ) = resolve_sibling_gate_profile_config(
+    sibling_gate_profile_id, gate_settings = resolve_sibling_gate_profile_config(
         sibling_gate_profile=sibling_gate_profile,
         sibling_gate_method=sibling_gate_method,
         sibling_gate_alpha_penalty=sibling_gate_alpha_penalty,
@@ -382,6 +373,18 @@ def run_gate_annotation_pipeline(
         root_selective_permutation_guard_alpha=(root_selective_permutation_guard_alpha),
         root_selective_permutation_guard_scope=root_selective_permutation_guard_scope,
     )
+    sibling_gate_method = gate_settings["sibling_gate_method"]
+    sibling_gate_alpha_penalty = gate_settings["sibling_gate_alpha_penalty"]
+    root_stability_guard_threshold = gate_settings["root_stability_guard_threshold"]
+    root_stability_subsample_replicates = gate_settings["root_stability_subsample_replicates"]
+    root_stability_feature_fraction = gate_settings["root_stability_feature_fraction"]
+    root_stability_seed = gate_settings["root_stability_seed"]
+    root_selective_permutation_guard_replicates = gate_settings[
+        "root_selective_permutation_guard_replicates"
+    ]
+    root_selective_permutation_guard_seed = gate_settings["root_selective_permutation_guard_seed"]
+    root_selective_permutation_guard_alpha = gate_settings["root_selective_permutation_guard_alpha"]
+    root_selective_permutation_guard_scope = gate_settings["root_selective_permutation_guard_scope"]
     continuous_covariance_policy = validate_continuous_covariance_policy(
         continuous_covariance_policy
     )
@@ -429,6 +432,11 @@ def run_gate_annotation_pipeline(
             "Selected-root permutation guard requires a fixed-subspace sibling "
             "gate; projected_wald_inflation would reintroduce adaptive "
             "projection into the guarded root statistic."
+        )
+    if sibling_split_count_rule_out and sibling_gate_method != "projected_wald_inflation":
+        raise ValueError(
+            "sibling_split_count_rule_out replaces projected_wald_inflation sibling p-values; "
+            f"got sibling_gate_method={sibling_gate_method!r}."
         )
     effective_spectral_minimum_dimension = _resolve_edge_spectral_minimum_dimension(
         spectral_minimum_dimension=spectral_minimum_dimension,
@@ -509,6 +517,8 @@ def run_gate_annotation_pipeline(
             adaptive_projection_dimension_energy_fraction=adaptive_projection_fraction,
             enforce_support_thresholds=enforce_internal_support_thresholds,
             support_thresholds=internal_support_thresholds,
+            leaf_data=leaf_data,
+            split_count_rule_out=bool(sibling_split_count_rule_out),
             stage_timings=stage_timings,
         )
     else:
@@ -622,6 +632,7 @@ def run_gate_annotation_pipeline(
             ),
             enforce_internal_support_thresholds=enforce_internal_support_thresholds,
             internal_support_thresholds=internal_support_thresholds,
+            sibling_split_count_rule_out=bool(sibling_split_count_rule_out),
         ),
     )
 

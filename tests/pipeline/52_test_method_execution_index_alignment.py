@@ -141,6 +141,9 @@ def test_run_single_method_once_aligns_report_rows_by_sample_id(monkeypatch):
     assert np.isclose(result_row.ari, 1.0)
     assert np.isclose(result_row.nmi, 1.0)
     assert np.isclose(result_row.ami, 1.0)
+    assert np.isclose(result_row.matched_macro_f1, 1.0)
+    assert np.isclose(result_row.matched_rare_f1, 1.0)
+    assert result_row.pair_split_share == result_row.pair_merge_share == 0
     assert np.isclose(result_row.purity, 1.0)
     assert np.isclose(result_row.homogeneity, 1.0)
     assert np.isclose(result_row.completeness, 1.0)
@@ -363,7 +366,7 @@ def test_run_single_method_once_requires_complete_tbs_stage_timings(monkeypatch)
         )
 
 
-def test_run_single_method_once_reraises_runner_exception(monkeypatch):
+def test_run_single_method_once_records_runner_exception_as_error_row(monkeypatch):
     data_t = pd.DataFrame(
         [[0, 1], [1, 0], [0, 0], [1, 1]],
         index=["S0", "S1", "S2", "S3"],
@@ -381,23 +384,28 @@ def test_run_single_method_once_reraises_runner_exception(monkeypatch):
     )
 
     spec = MethodSpec(name="TBS", runner=lambda **_kwargs: None, param_grid=[{}])
-    with pytest.raises(ValueError, match="strict calibration support missing"):
-        method_execution.run_single_method_once(
-            method_id="tbs",
-            spec=spec,
-            params={"tree_distance_metric": "hamming", "tree_linkage_method": "average"},
-            case_idx=1,
-            case_name="unsupported_calibration_case",
-            tc_seed=42,
-            significance_level=0.05,
-            edge_alpha=DEFAULT_EDGE_ALPHA,
-            data_t=data_t,
-            y_t=y_t,
-            x_original=data_t.values.astype(float),
-            meta=_benchmark_meta(name="unsupported_calibration_case"),
-            distance_matrix=None,
-            distance_condensed=None,
-        )
+    row, computed_result = method_execution.run_single_method_once(
+        method_id="tbs",
+        spec=spec,
+        params={"tree_distance_metric": "hamming", "tree_linkage_method": "average"},
+        case_idx=1,
+        case_name="unsupported_calibration_case",
+        tc_seed=42,
+        significance_level=0.05,
+        edge_alpha=DEFAULT_EDGE_ALPHA,
+        data_t=data_t,
+        y_t=y_t,
+        x_original=data_t.values.astype(float),
+        meta=_benchmark_meta(name="unsupported_calibration_case"),
+        distance_matrix=None,
+        distance_condensed=None,
+        allow_method_errors=True,
+    )
+
+    assert row.status == "error"
+    assert row.skip_reason == "ValueError: strict calibration support missing"
+    assert row.found_clusters == 0
+    assert computed_result is None
 
 
 def test_run_single_method_once_rejects_report_index_not_sample_ids(monkeypatch):

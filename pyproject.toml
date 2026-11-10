@@ -87,11 +87,19 @@ force-exclude = true
 extend-exclude = [
     "manuscript",
     "reports/eigenspace_reassessment_20260928/spectral_blocks/historical_sources",
+    # Recorded evidence; run_panel.py's SHA-256 is in panel_manifest.json.
+    "raw/assets/diffusion-selection-event-20261102/reentry_probe.py",
+    "reports/cancer_pc_methods_20261104/plot_results.py",
+    "reports/cancer_pc_methods_20261104/run_panel.py",
 ]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = ["E402", "E501"]
+
+[tool.ruff.lint.isort]
+# Same list as deptry; keeps report scripts that import removed submodules sorted as first-party.
+known-first-party = ["applications", "benchmarks", "tree_break_selection"]
 
 [tool.deptry]
 ignore_notebooks = true

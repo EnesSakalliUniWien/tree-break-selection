@@ -1,0 +1,346 @@
+# ===== protocol.md =====
+# Protocol: the gradient behind the split-count rule-out (frozen 2026-11-08)
+
+## Question (user-confirmed)
+
+Infer the relationship behind the gradient observed on the benchmark: group recovery with the rule-out rises
+with the ratio of cells to features in the subtrees that must be split.
+
+## Predicted relationship (before running)
+
+For two groups with proportions pi and 1 - pi separated by delta noise SDs along one direction, in p features
+with n cells and unit noise:
+
+1. Invariant direction: the group direction's population eigenvalue is 1 + pi (1 - pi) delta^2. It rises above
+   the noise band when it exceeds 1 + sqrt(p/n) (spiked-covariance transition, Baik, Ben Arous and Peche 2005;
+   exact notation not verified from the paper). Predicted boundary: pi (1 - pi) delta^2 = sqrt(p/n), a smooth
+   gradient in p/n.
+2. Count of all splits: with T about n pi (1 - pi) delta^2 + p, the union bound over 2^(n-1) - 1 splits needs
+   roughly pi (1 - pi) delta^2 > 2 ln 2 = 1.39, independent of n.
+3. Implementation edge: the production rule gives no invariant directions when n <= p + 1, which the theory
+   does not require.
+
+## Grid
+
+p in {10, 30, 100}; n in {20, 40, 60, 80, 120, 160, 240, 320, 640}; delta in {0, 1, 1.5, 2, 2.5, 3, 4, 6};
+pi = 0.5; 40 replicates per cell (seed SeedSequence([20261108, 77, p, n, delta-index, rep])). Two groups of
+n/2 cells, identity covariance, means +- delta/2 along the first feature; the true split is tested (no tree), so
+this isolates the rule itself.
+
+Per run, with production `split_count_rule_out`: reason (kept, no_invariant_directions, not_separable,
+equidistant_cells), number of invariant directions, equidistant share. Count pass: T = n_L n_R / n * |mean
+difference|^2 (known unit noise, df = p), min(1, (2^(n-1) - 1) chi2.sf(T, p)) <= 0.01. Accepted = kept and
+count pass.
+
+## Endpoints
+
+- E1 kept rate by (p, n, delta); E2 kept rate against the predicted variable
+  z = log(pi (1 - pi) delta^2) - 0.5 log(p/n) for n > p + 1 (prediction: transition near z = 0), with a logistic
+  fit of kept on z and, separately, on z and log(n/p) (does n/p matter beyond z?); E3 count pass rate against
+  pi (1 - pi) delta^2 (prediction: transition near 1.39); E4 kept and accepted rates for n <= p + 1 (prediction
+  from the implementation: 0).
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- Added after E1-E4: `mechanism.py` (which rule fails as n grows, against the no-overlap prediction
+  Phi(delta/2)^n). E1 showed kept rates falling with n, which the protocol did not predict.
+
+# ===== run.py =====
+"""protocol.md: grid over cells, features and separation for the split-count rule-out."""
+import itertools
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+from scipy.stats import chi2  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    log_split_count,
+    split_count_rule_out,
+)
+
+PS, NS = (10, 30, 100), (20, 40, 60, 80, 120, 160, 240, 320, 640)
+DELTAS, REPS = (0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0), 40
+
+
+def task(job):
+    p, n, d_index = job
+    delta = DELTAS[d_index]
+    out = []
+    with threadpool_limits(limits=1):
+        for rep in range(REPS):
+            rng = np.random.default_rng(np.random.SeedSequence([20261108, 77, p, n, d_index, rep]))
+            in_left = np.r_[np.ones(n // 2, bool), np.zeros(n - n // 2, bool)]
+            x = rng.standard_normal((n, p))
+            x[:, 0] += np.where(in_left, delta / 2, -delta / 2)
+            diff = x[in_left].mean(0) - x[~in_left].mean(0)
+            t = in_left.sum() * (~in_left).sum() / n * float(diff @ diff)
+            count_pass = bool(log_split_count(n) + chi2.logsf(t, p) <= np.log(0.01))
+            r = split_count_rule_out(t, float(p), x, in_left)
+            out.append({"p": p, "n": n, "delta": delta, "rep": rep, "reason": r.reason, "k": r.invariant_directions,
+                        "tie_share": r.equidistant_share, "kept": r.reason == "kept", "count_pass": count_pass,
+                        "accepted": r.reason == "kept" and count_pass})
+    return out
+
+
+if __name__ == "__main__":
+    jobs = list(itertools.product(PS, NS, range(len(DELTAS))))
+    with Pool(10) as pool, (HERE / "grid.jsonl").open("w") as f:
+        for rows in pool.imap_unordered(task, jobs):
+            f.write("".join(json.dumps(r) + "\n" for r in rows))
+
+# ===== summarize.py =====
+"""Endpoints E1-E4 of protocol.md."""
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 250)
+g = pd.DataFrame(map(json.loads, (HERE / "grid.jsonl").read_text().splitlines()))
+g["signal"] = 0.25 * g.delta**2
+g["above_edge"] = g.n > g.p + 1
+out = []
+
+e1 = g.pivot_table(index=["p", "n"], columns="delta", values="kept", aggfunc="mean")
+out.append(("E1 kept rate (rows p, n; columns delta)", e1.round(2)))
+
+fit = g[g.above_edge & (g.delta > 0)].copy()
+fit["z"] = np.log(fit.signal) - 0.5 * np.log(fit.p / fit.n)
+fit["log_n_over_p"] = np.log(fit.n / fit.p)
+m1 = sm.Logit(fit.kept.astype(float), sm.add_constant(fit[["z"]])).fit(disp=0)
+m2 = sm.Logit(fit.kept.astype(float), sm.add_constant(fit[["z", "log_n_over_p"]])).fit(disp=0)
+coef = pd.DataFrame({"model": ["z only"] * 2 + ["z + log(n/p)"] * 3,
+                     "term": list(m1.params.index) + list(m2.params.index),
+                     "estimate": list(m1.params) + list(m2.params), "se": list(m1.bse) + list(m2.bse)})
+coef["midpoint_z"] = np.nan
+coef.loc[0, "midpoint_z"] = -m1.params["const"] / m1.params["z"]
+out.append((f"E2 logistic fits (n > p + 1, delta > 0; {len(fit)} runs; pseudo-R2 {m1.prsquared:.3f} / {m2.prsquared:.3f})", coef.round(3)))
+fit["z_bin"] = pd.cut(fit.z, [-6, -2, -1, -0.5, 0, 0.5, 1, 2, 6])
+out.append(("E2 kept rate by z (predicted transition near 0)",
+            fit.groupby("z_bin", observed=True).agg(runs=("kept", "size"), kept=("kept", "mean"),
+                                                    invariant_found=("k", lambda k: (k > 0).mean())).round(3)))
+e3 = g[g.delta > 0].groupby("signal").agg(runs=("count_pass", "size"), count_pass=("count_pass", "mean"))
+out.append(("E3 count pass by pi(1-pi) delta^2 (predicted transition near 1.39)", e3.round(3)))
+e4 = g[~g.above_edge].groupby(["p", "n"]).agg(runs=("kept", "size"), kept=("kept", "mean"), accepted=("accepted", "mean"))
+out.append(("E4 n <= p + 1", e4.round(3)))
+noise = g[g.delta == 0].groupby("above_edge").agg(runs=("kept", "size"), kept=("kept", "mean"), accepted=("accepted", "mean"))
+out.append(("Noise (delta 0): random half splits", noise.round(3)))
+acc = g.pivot_table(index=["p", "n"], columns="delta", values="accepted", aggfunc="mean")
+out.append(("Accepted rate (kept and count pass)", acc.round(2)))
+text = "\n\n".join(f"{name}\n{table.to_string()}" for name, table in out)
+(HERE / "summary.txt").write_text(text + "\n")
+print(text)
+
+# ===== summary.txt =====
+E1 kept rate (rows p, n; columns delta)
+delta    0.0  1.0   1.5  2.0   2.5   3.0   4.0   6.0
+p   n                                               
+10  20   0.0  0.0  0.02  0.0  0.08  0.28  0.62  1.00
+    40   0.0  0.0  0.00  0.0  0.05  0.02  0.57  0.98
+    60   0.0  0.0  0.00  0.0  0.00  0.00  0.40  1.00
+    80   0.0  0.0  0.00  0.0  0.00  0.00  0.20  1.00
+    120  0.0  0.0  0.00  0.0  0.00  0.00  0.10  1.00
+    160  0.0  0.0  0.00  0.0  0.00  0.00  0.05  1.00
+    240  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.85
+    320  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.82
+    640  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.60
+30  20   0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.00
+    40   0.0  0.0  0.00  0.0  0.00  0.05  0.52  1.00
+    60   0.0  0.0  0.00  0.0  0.00  0.02  0.25  1.00
+    80   0.0  0.0  0.00  0.0  0.00  0.00  0.22  1.00
+    120  0.0  0.0  0.00  0.0  0.00  0.00  0.08  1.00
+    160  0.0  0.0  0.00  0.0  0.00  0.00  0.10  0.92
+    240  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.95
+    320  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.98
+    640  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.72
+100 20   0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.00
+    40   0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.00
+    60   0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.00
+    80   0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.00
+    120  0.0  0.0  0.00  0.0  0.00  0.00  0.02  0.98
+    160  0.0  0.0  0.00  0.0  0.00  0.00  0.02  0.88
+    240  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.82
+    320  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.88
+    640  0.0  0.0  0.00  0.0  0.00  0.00  0.00  0.68
+
+E2 logistic fits (n > p + 1, delta > 0; 6160 runs; pseudo-R2 0.429 / 0.739)
+          model          term  estimate     se  midpoint_z
+0        z only         const    -6.063  0.170       2.859
+1        z only             z     2.121  0.067         NaN
+2  z + log(n/p)         const    -7.723  0.274         NaN
+3  z + log(n/p)             z     5.215  0.183         NaN
+4  z + log(n/p)  log_n_over_p    -3.338  0.142         NaN
+
+E2 kept rate by z (predicted transition near 0)
+              runs   kept  invariant_found
+z_bin                                     
+(-2.0, -1.0]   200  0.000            0.205
+(-1.0, -0.5]   240  0.000            0.217
+(-0.5, 0.0]    560  0.002            0.282
+(0.0, 0.5]     720  0.000            0.526
+(0.5, 1.0]     800  0.006            0.872
+(1.0, 2.0]    1800  0.046            0.989
+(2.0, 6.0]    1840  0.468            1.000
+
+E3 count pass by pi(1-pi) delta^2 (predicted transition near 1.39)
+        runs  count_pass
+signal                  
+0.2500  1080       0.000
+0.5625  1080       0.000
+1.0000  1080       0.000
+1.5625  1080       0.197
+2.2500  1080       0.662
+4.0000  1080       0.950
+9.0000  1080       1.000
+
+E4 n <= p + 1
+        runs  kept  accepted
+p   n                       
+30  20   320   0.0       0.0
+100 20   320   0.0       0.0
+    40   320   0.0       0.0
+    60   320   0.0       0.0
+    80   320   0.0       0.0
+
+Noise (delta 0): random half splits
+            runs  kept  accepted
+above_edge                      
+False        200   0.0       0.0
+True         880   0.0       0.0
+
+Accepted rate (kept and count pass)
+delta    0.0  1.0  1.5  2.0   2.5   3.0   4.0   6.0
+p   n                                              
+10  20   0.0  0.0  0.0  0.0  0.02  0.25  0.62  1.00
+    40   0.0  0.0  0.0  0.0  0.05  0.00  0.57  0.98
+    60   0.0  0.0  0.0  0.0  0.00  0.00  0.40  1.00
+    80   0.0  0.0  0.0  0.0  0.00  0.00  0.20  1.00
+    120  0.0  0.0  0.0  0.0  0.00  0.00  0.10  1.00
+    160  0.0  0.0  0.0  0.0  0.00  0.00  0.05  1.00
+    240  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.85
+    320  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.82
+    640  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.60
+30  20   0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.00
+    40   0.0  0.0  0.0  0.0  0.00  0.02  0.52  1.00
+    60   0.0  0.0  0.0  0.0  0.00  0.02  0.25  1.00
+    80   0.0  0.0  0.0  0.0  0.00  0.00  0.22  1.00
+    120  0.0  0.0  0.0  0.0  0.00  0.00  0.08  1.00
+    160  0.0  0.0  0.0  0.0  0.00  0.00  0.10  0.92
+    240  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.95
+    320  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.98
+    640  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.72
+100 20   0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.00
+    40   0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.00
+    60   0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.00
+    80   0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.00
+    120  0.0  0.0  0.0  0.0  0.00  0.00  0.02  0.98
+    160  0.0  0.0  0.0  0.0  0.00  0.00  0.02  0.88
+    240  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.82
+    320  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.88
+    640  0.0  0.0  0.0  0.0  0.00  0.00  0.00  0.68
+
+# ===== mechanism.py =====
+"""Added after E1-E4 (see deviations.md): which rule fails as n grows, against simple predictions."""
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.stats import norm
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 250)
+g = pd.DataFrame(map(json.loads, (HERE / "grid.jsonl").read_text().splitlines()))
+g = g[(g.n > g.p + 1) & (g.delta >= 3)]
+found = g[g.k > 0].copy()
+found["separable"] = found.reason.isin(["kept", "equidistant_cells"])
+t = found.groupby(["p", "delta", "n"]).agg(runs=("separable", "size"), separable=("separable", "mean"),
+                                           tie_ok=("tie_share", lambda s: (s <= 0.05).mean()),
+                                           median_tie_share=("tie_share", "median")).reset_index()
+t["no_overlap_prediction"] = norm.cdf(t.delta / 2) ** t.n  # every cell on its own side of the midpoint
+t["expected_wrong_side_cells"] = t.n * norm.cdf(-t.delta / 2)
+text = ("Runs with an invariant direction, delta >= 3, n > p + 1\n" + t.round(3).to_string(index=False))
+(HERE / "mechanism.txt").write_text(text + "\n")
+print(text)
+
+# ===== mechanism.txt =====
+Runs with an invariant direction, delta >= 3, n > p + 1
+  p  delta   n  runs  separable  tie_ok  median_tie_share  no_overlap_prediction  expected_wrong_side_cells
+ 10    3.0  20    37      0.297   0.297             0.000                  0.251                      1.336
+ 10    3.0  40    39      0.051   0.026             0.038                  0.063                      2.672
+ 10    3.0  60    40      0.000   0.000               NaN                  0.016                      4.008
+ 10    3.0  80    40      0.000   0.000               NaN                  0.004                      5.345
+ 10    3.0 120    40      0.000   0.000               NaN                  0.000                      8.017
+ 10    3.0 160    40      0.000   0.000               NaN                  0.000                     10.689
+ 10    3.0 240    40      0.000   0.000               NaN                  0.000                     16.034
+ 10    3.0 320    40      0.000   0.000               NaN                  0.000                     21.378
+ 10    3.0 640    40      0.000   0.000               NaN                  0.000                     42.757
+ 10    4.0  20    40      0.625   0.625             0.000                  0.631                      0.455
+ 10    4.0  40    40      0.575   0.575             0.000                  0.398                      0.910
+ 10    4.0  60    40      0.400   0.400             0.017                  0.251                      1.365
+ 10    4.0  80    40      0.225   0.200             0.012                  0.159                      1.820
+ 10    4.0 120    40      0.100   0.100             0.017                  0.063                      2.730
+ 10    4.0 160    40      0.050   0.050             0.038                  0.025                      3.640
+ 10    4.0 240    40      0.000   0.000               NaN                  0.004                      5.460
+ 10    4.0 320    40      0.000   0.000               NaN                  0.001                      7.280
+ 10    4.0 640    40      0.000   0.000               NaN                  0.000                     14.560
+ 10    6.0  20    40      1.000   1.000             0.000                  0.973                      0.027
+ 10    6.0  40    40      0.975   0.975             0.000                  0.947                      0.054
+ 10    6.0  60    40      1.000   1.000             0.000                  0.922                      0.081
+ 10    6.0  80    40      1.000   1.000             0.000                  0.898                      0.108
+ 10    6.0 120    40      1.000   1.000             0.000                  0.850                      0.162
+ 10    6.0 160    40      1.000   1.000             0.000                  0.806                      0.216
+ 10    6.0 240    40      0.850   0.850             0.004                  0.723                      0.324
+ 10    6.0 320    40      0.825   0.825             0.003                  0.649                      0.432
+ 10    6.0 640    40      0.600   0.600             0.003                  0.421                      0.864
+ 30    3.0  40    38      0.053   0.053             0.000                  0.063                      2.672
+ 30    3.0  60    40      0.025   0.025             0.000                  0.016                      4.008
+ 30    3.0  80    39      0.000   0.000               NaN                  0.004                      5.345
+ 30    3.0 120    40      0.000   0.000               NaN                  0.000                      8.017
+ 30    3.0 160    40      0.000   0.000               NaN                  0.000                     10.689
+ 30    3.0 240    40      0.000   0.000               NaN                  0.000                     16.034
+ 30    3.0 320    40      0.000   0.000               NaN                  0.000                     21.378
+ 30    3.0 640    40      0.000   0.000               NaN                  0.000                     42.757
+ 30    4.0  40    40      0.525   0.525             0.000                  0.398                      0.910
+ 30    4.0  60    40      0.250   0.250             0.000                  0.251                      1.365
+ 30    4.0  80    40      0.225   0.225             0.000                  0.159                      1.820
+ 30    4.0 120    40      0.075   0.075             0.000                  0.063                      2.730
+ 30    4.0 160    40      0.100   0.100             0.019                  0.025                      3.640
+ 30    4.0 240    40      0.000   0.000               NaN                  0.004                      5.460
+ 30    4.0 320    40      0.025   0.000             0.053                  0.001                      7.280
+ 30    4.0 640    40      0.000   0.000               NaN                  0.000                     14.560
+ 30    6.0  40    40      1.000   1.000             0.000                  0.947                      0.054
+ 30    6.0  60    40      1.000   1.000             0.000                  0.922                      0.081
+ 30    6.0  80    40      1.000   1.000             0.000                  0.898                      0.108
+ 30    6.0 120    40      1.000   1.000             0.000                  0.850                      0.162
+ 30    6.0 160    40      0.925   0.925             0.000                  0.806                      0.216
+ 30    6.0 240    40      0.950   0.950             0.004                  0.723                      0.324
+ 30    6.0 320    40      0.975   0.975             0.003                  0.649                      0.432
+ 30    6.0 640    40      0.725   0.725             0.005                  0.421                      0.864
+100    3.0 120    40      0.000   0.000               NaN                  0.000                      8.017
+100    3.0 160    40      0.000   0.000               NaN                  0.000                     10.689
+100    3.0 240    40      0.000   0.000               NaN                  0.000                     16.034
+100    3.0 320    40      0.000   0.000               NaN                  0.000                     21.378
+100    3.0 640    40      0.000   0.000               NaN                  0.000                     42.757
+100    4.0 120    40      0.025   0.025             0.000                  0.063                      2.730
+100    4.0 160    40      0.025   0.025             0.000                  0.025                      3.640
+100    4.0 240    40      0.000   0.000               NaN                  0.004                      5.460
+100    4.0 320    40      0.000   0.000               NaN                  0.001                      7.280
+100    4.0 640    40      0.000   0.000               NaN                  0.000                     14.560
+100    6.0 120    40      0.975   0.975             0.000                  0.850                      0.162
+100    6.0 160    40      0.875   0.875             0.000                  0.806                      0.216
+100    6.0 240    40      0.825   0.825             0.000                  0.723                      0.324
+100    6.0 320    40      0.875   0.875             0.003                  0.649                      0.432
+100    6.0 640    40      0.675   0.675             0.012                  0.421                      0.864
+

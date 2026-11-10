@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-09",
+  "scope": "Matched subtree context, eigenvalue magnitude and native test diagnostics; no production changes",
+  "files": {
+    "reports/subtree_context_statistics_20261109/README.md": "b707bd30a5b14bc5990d6b7503189da6b84aed62dc412b1b04b5d5da11df7251",
+    "reports/subtree_context_statistics_20261109/protocol.md": "cbb9ab7f6717d6ca8d070bcd7683130831d7b21d02d9ff7a4a5dbf35d34fd33d",
+    "reports/subtree_context_statistics_20261109/structure/report.md": "431b7e3d4fcd4cf612634fd2c3286c492f3769794c046cfe87ea9c0d463115c6",
+    "reports/subtree_context_statistics_20261109/math/README.md": "c2307ed208414cd18406369a8436a08da7d04e671dcc1526cbb028925ceaba9b",
+    "reports/subtree_context_statistics_20261109/math/wolfram_evidence.json": "5e9fbec030875205db0feedd73753e2493dc669051ab6452c2c0ccaee9a92371",
+    "reports/subtree_context_statistics_20261109/math/kernel_controls.json": "da655b92859307a49328604c35cf0d0b1cc20e91a0929b30c54664bb6a24f489",
+    "reports/subtree_context_statistics_20261109/relationships/README.md": "5cb7f78d28e4d80b6d93fc881bc6a0d4f479471b79d40b8bbcd8830e2dbab824",
+    "reports/subtree_context_statistics_20261109/relationships/manifest.json": "c673472a9a5e40050fca91f0043480befb66be7f60d187af390c350ef372e759",
+    "reports/subtree_context_statistics_20261109/native/manifest.json": "883a1287270207f08c8f41736c15b2d05bfe0b8ebb202c25e6ecbda98be9df60",
+    "reports/subtree_context_statistics_20261109/native/verification.json": "def7cf417204f5bf787d10bd3e9a7688424be33045fc35b83a43d8ab24052415",
+    "reports/subtree_context_statistics_20261109/native_summary.md": "5b2d9daa179aa4aee19bb5241ee67d90f65e5e0b0743f7f3103114b65ef669ec",
+    "reports/subtree_context_statistics_20261109/native_summary.json": "09814652198263783a67749fae2de5c769f07e6e4ae2adde7eb72fddcf781f31",
+    "reports/subtree_context_statistics_20261109/native_covariance_spans_corrected.jsonl.gz": "a32a1c78dd87b2f279e16c4556d43ae0a3659c0e180902a15e60e4be898f462c",
+    "reports/subtree_context_statistics_20261109/source_during_native_run.py.txt": "f12319ce1585c55f3a3ed341fd86ef524fbd08deee8586a040cc2f11609ec798",
+    "reports/subtree_context_statistics_20261109/run.py": "3be6d0d365e37196e9bcbdc57e2298438c6f2dcf1a6af20d7e406a4ae21ce920",
+    "reports/subtree_context_statistics_20261109/summarize_native.py": "36d9ed4d9ff271233772adfb760a1e2f6a60031c5be71fdfa900d4dd9224965d",
+    "reports/subtree_context_statistics_20261109/relationships/run.py": "16d196c535d0282a6af3d30b6f1f7e9d807530e46b960667b2b507c550d06b84",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_context.py": "f82c1bccc13d93f6cecacd43f4a04b80f43d8a36f7a5d7e52b60d4fbdd18fef7",
+    "tests/statistics/79_test_subtree_topology_context.py": "d6f4f02f6285e8dc59df09f510597ac58c35223f7f43c70ffee2ce6b6dfbf43a",
+    "tests/statistics/80_test_subtree_context_native_replay.py": "75af506b62ca8dc014018dcd942c2af588016c9609d7116e2ed37b3349670134",
+    "raw/inbox/choir-cell-lines/subtree-context-statistics-20261109-sources.py.txt": "78992966ee96c157757ce0459fda2848feb9c21bb148a5a4840e36b7d2c9631b"
+  },
+  "native_fits": 160,
+  "independent_reused_matrices": 16,
+  "node_comparisons": 16128,
+  "prior_saved_alternative_rows_reanalysed": 5120,
+  "corrected_span_rows": 8064,
+  "native_fit_reruns_for_span_correction": 0
+}

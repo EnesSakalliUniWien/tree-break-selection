@@ -1,0 +1,290 @@
+# ===== protocol.md =====
+# Protocol: distances in the different subspaces and cells equidistant in two spaces (frozen 2026-11-08)
+
+## Question (user-confirmed)
+
+Check the distances in the different subspaces, including whether specific cells are equidistant to each other
+in two different spaces, which also leads to a herd decision. Reading used here: a cell that is about equally
+far from both sides of a split is a tie the tree has to break; when that happens in two spaces at once, or the
+spaces disagree about the side, the tree's choice for that cell is forced rather than supported.
+
+## Spaces, for a split of subtree v into children A and B
+
+- tree: the coordinates the tree was built in (symmetric diffusion for the default tree, Markov diffusion for
+  Markov/Ward), Euclidean.
+- pcs: the 30 test PCs, Euclidean.
+- test: the 30 test PCs whitened by the pooled within-children covariance of v (the metric of the sibling
+  test), Euclidean after whitening.
+- invariant: the pcs coordinates projected on the eigenvectors of v's covariance above its noise band (rule of
+  `subtree_spectrum_topology_20261108`); skipped when k = 0.
+- fuzzy: the projection on the remaining p - k eigenvectors. (pcs squared distances = invariant + fuzzy.)
+
+## Per cell and per split
+
+Margin of cell x in its own child O against the other child R: m(x) = (|x - mu_R| - |x - mu_O|) / |mu_O - mu_R|,
+centroids of the two children in that space (1 at its own centroid, 0 equidistant, -1 at the other centroid).
+Tie: |m| < 0.1 (also reported at 0.05). Misplaced: m < 0. Separation: |mu_O - mu_R|^2 / mean squared distance of
+cells to their own centroid.
+
+Per split and space: share of tied cells, share misplaced, median margin, separation. Across spaces: share of
+cells tied in both tree and test; share whose side differs between tree and test (sign of m); the same for
+invariant and fuzzy.
+
+Split types (true labels): between groups (each child >= 90% one label and the two labels differ), within one
+group (v >= 90% one label), mixed otherwise. Real data: lines cut by the split as in
+`subtree_spectrum_topology_20261108` and the share of tied cells among cells of cut lines against the rest.
+
+## Data
+
+As in `subtree_spectrum_topology_20261108`: 50 replicates of each no-group model and the 35 group datasets
+(subtrees >= 60 cells), and the real CHOIR trees (subtrees >= 500 cells whose smaller child has >= 50).
+Tree coordinates for the real trees: `choir_cell_lines_tbs_merged_20261106/diffusion_coordinates.npy` (default)
+and `choir_tbs_recovery_comparison_20261103_174622/markov_ward/coordinates.npy`; both reproduce the first
+leaf-leaf merge heights of their saved linkages (49/49, 16/16).
+
+Descriptive; no decision rule. The 0.1 tie cut is a stated convention, not a test.
+
+# ===== run.py =====
+"""protocol.md: per-split margins of cells in the tree, pcs, test, invariant and fuzzy spaces.
+
+usage: run.py sim WORKERS | real
+"""
+
+import importlib.util
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+sys.path.insert(1, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from scipy.cluster.hierarchy import linkage  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+_spec = importlib.util.spec_from_file_location("subtree_spectrum", HERE.parent / "subtree_spectrum_topology_20261108" / "run.py")
+spec_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(spec_mod)
+TIE, TIE_STRICT = 0.1, 0.05
+
+
+def margins(points, own_a):
+    """m(x) = (|x - mu_other| - |x - mu_own|) / |mu_A - mu_B| for every cell."""
+    mu_a, mu_b = points[own_a].mean(0), points[~own_a].mean(0)
+    da, db = np.linalg.norm(points - mu_a, axis=1), np.linalg.norm(points - mu_b, axis=1)
+    gap = np.linalg.norm(mu_a - mu_b)
+    m = np.where(own_a, db - da, da - db) / gap
+    within = np.r_[da[own_a] ** 2, db[~own_a] ** 2].mean()
+    return m, float(gap**2 / within)
+
+
+def whiten(points, own_a):
+    centered = np.vstack([points[own_a] - points[own_a].mean(0), points[~own_a] - points[~own_a].mean(0)])
+    values, vectors = np.linalg.eigh(centered.T @ centered / (len(points) - 2))
+    values = np.maximum(values, values.max() * 1e-12)
+    return points @ vectors / np.sqrt(values)
+
+
+def split_row(tree_xy, pcs, own_a):
+    s = spec_mod.spectrum(pcs)
+    values, vectors = np.linalg.eigh(np.cov(pcs.T))
+    vectors = vectors[:, ::-1]
+    spaces = {"tree": tree_xy, "pcs": pcs, "test": whiten(pcs, own_a)}
+    if s["k"] >= 1:
+        spaces["invariant"] = pcs @ vectors[:, :s["k"]]
+        spaces["fuzzy"] = pcs @ vectors[:, s["k"]:]
+    row, m = {"k": s["k"], "multiplicity": "+".join(map(str, s["multiplicity"]))}, {}
+    for name, points in spaces.items():
+        m[name], separation = margins(points, own_a)
+        row |= {f"{name}_tie": float(np.mean(np.abs(m[name]) < TIE)),
+                f"{name}_tie_strict": float(np.mean(np.abs(m[name]) < TIE_STRICT)),
+                f"{name}_misplaced": float(np.mean(m[name] < 0)), f"{name}_median_margin": float(np.median(m[name])),
+                f"{name}_separation": separation}
+    for a, b in (("tree", "test"), ("invariant", "fuzzy")):
+        if a in m and b in m:
+            row[f"{a}_{b}_tie_both"] = float(np.mean((np.abs(m[a]) < TIE) & (np.abs(m[b]) < TIE)))
+            row[f"{a}_{b}_disagree"] = float(np.mean(np.sign(m[a]) != np.sign(m[b])))
+    return row, m
+
+
+def analyse(tree_xy, pcs, z, labels, *, min_n, min_small, real):
+    codes, uniq = pd.factorize(labels)
+    n = len(codes)
+    left, right, counts = spec_mod.children_and_counts(z, codes, len(uniq))
+    sizes = counts.sum(1)
+    rows = []
+    for i in range(n - 1):
+        v, a, b = n + i, left[i], right[i]
+        small = int(min(sizes[a], sizes[b]))
+        if sizes[v] < min_n or small < min_small:
+            continue
+        _, la = spec_mod.descendants(a, n, left, right)
+        _, lb = spec_mod.descendants(b, n, left, right)
+        cells = np.r_[la, lb]
+        own_a = np.r_[np.ones(len(la), bool), np.zeros(len(lb), bool)]
+        row, m = split_row(tree_xy[cells], pcs[cells], own_a)
+        pa, pb, pv = (counts[x].max() / counts[x].sum() for x in (a, b, v))
+        kind = ("between groups" if min(pa, pb) >= 0.9 and counts[a].argmax() != counts[b].argmax()
+                else "within one group" if pv >= 0.9 else "mixed")
+        row |= {"node": int(v), "is_root": v == 2 * n - 2, "n": int(sizes[v]), "n_small": small, "kind": kind}
+        if real:
+            present = np.flatnonzero(counts[v] >= 20)
+            lc, rc = counts[a][present], counts[b][present]
+            cut = present[np.minimum(lc, rc) >= 0.10 * (lc + rc)]
+            in_cut = np.isin(codes[cells], cut)
+            tie = np.abs(m["test"]) < TIE
+            row |= {"lines_cut": int(len(cut)), "test_tie_cut_lines": float(tie[in_cut].mean()) if in_cut.any() else None,
+                    "test_tie_other_cells": float(tie[~in_cut].mean()) if (~in_cut).any() else None}
+        rows.append(row)
+    return rows
+
+
+def sim_task(job):
+    import depth  # noqa: PLC0415
+    from validate import prepare  # noqa: PLC0415
+
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    out = []
+    with threadpool_limits(limits=1):
+        data, symmetric, markov = prepare(counts)
+        pcs = data.to_numpy(dtype=np.float64)
+        for name, coords, method in (("symmetric_average", symmetric, "average"), ("markov_ward", markov, "ward")):
+            coords = np.asarray(coords, dtype=np.float64)
+            rows = analyse(coords, pcs, linkage(pdist(coords), method=method), np.asarray(truth).astype(str),
+                           min_n=60, min_small=5, real=False)
+            out += [{"model": model, "replicate": replicate, "tree": name, **r} for r in rows]
+    return out
+
+
+def simulate(workers):
+    import depth  # noqa: F401,PLC0415
+    from validate import MODELS  # noqa: PLC0415
+
+    jobs = [(m, r) for m in ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+            for r in range(MODELS[m]["replicates"])] + [(m, r) for m in ("low", "matched_median", "high") for r in range(50)]
+    with Pool(workers) as pool, (HERE / "sim_splits.jsonl").open("w") as f:
+        for rows in pool.imap_unordered(sim_task, jobs):
+            f.write("".join(json.dumps(r) + "\n" for r in rows))
+
+
+def real():
+    base = HERE.parent
+    meta = pd.read_csv(base / "choir_cell_lines_tbs_merged_20261106/cell_metadata.csv", index_col=0, dtype=str)
+    pcs = np.load(base / "choir_cell_lines_tbs_merged_20261106/pca.npy").astype(np.float64)
+    trees = {"symmetric_average": ("choir_cell_lines_tbs_merged_20261106/linkage.npy",
+                                   "choir_cell_lines_tbs_merged_20261106/diffusion_coordinates.npy"),
+             "markov_ward": ("choir_tbs_recovery_comparison_20261103_174622/markov_ward/linkage.npy",
+                             "choir_tbs_recovery_comparison_20261103_174622/markov_ward/coordinates.npy")}
+    with threadpool_limits(limits=4), (HERE / "real_splits.jsonl").open("w") as f:
+        for name, (zp, cp) in trees.items():
+            rows = analyse(np.load(base / cp).astype(np.float64), pcs, np.load(base / zp), meta.Cell_line.to_numpy(),
+                           min_n=500, min_small=50, real=True)
+            f.write("".join(json.dumps({"tree": name, **r}) + "\n" for r in rows))
+            print(name, len(rows), "splits", flush=True)
+
+
+if __name__ == "__main__":
+    real() if sys.argv[1] == "real" else simulate(int(sys.argv[2]))
+
+# ===== summarize.py =====
+"""Summaries of sim_splits.jsonl and real_splits.jsonl (protocol.md)."""
+import json
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 250)
+SPACES = ["tree", "pcs", "test", "invariant", "fuzzy"]
+
+
+def load(name):
+    return pd.DataFrame(map(json.loads, (HERE / f"{name}.jsonl").read_text().splitlines()))
+
+
+def table(df, keys):
+    agg = {"splits": ("n", "size"), "median_n": ("n", "median")}
+    for s in SPACES:
+        agg[f"{s}_tie"] = (f"{s}_tie", "median")
+        agg[f"{s}_mis"] = (f"{s}_misplaced", "median")
+        agg[f"{s}_sep"] = (f"{s}_separation", "median")
+    for a, b in (("tree", "test"), ("invariant", "fuzzy")):
+        agg[f"{a}_{b}_both"] = (f"{a}_{b}_tie_both", "median")
+        agg[f"{a}_{b}_disagree"] = (f"{a}_{b}_disagree", "median")
+    return df.groupby(keys).agg(**agg)
+
+
+def main():
+    sim = load("sim_splits")
+    sim["size"] = pd.cut(sim.n, [59, 159, 399, 3000], labels=["60-159", "160-399", "400+"])
+    t = table(sim, ["model", "tree", "kind"])
+    real = load("real_splits")
+    r = table(real, ["tree"])
+    real["cut"] = real.lines_cut > 0
+    r2 = real[real.cut].groupby("tree").agg(splits_cutting=("n", "size"), lines_cut=("lines_cut", "sum"),
+                                            tie_cut_line_cells=("test_tie_cut_lines", "median"),
+                                            tie_other_cells=("test_tie_other_cells", "median"))
+    with open(HERE / "summary.txt", "w") as f:
+        for name, tab in [("Simulated by model, tree and split type", t), ("Real", r), ("Real splits that cut lines", r2)]:
+            f.write(f"{name}\n{tab.round(3).to_string()}\n\n")
+    t.round(4).to_csv(HERE / "sim_summary.csv")
+    r.round(4).to_csv(HERE / "real_summary.csv")
+    r2.round(4).to_csv(HERE / "real_cut_lines.csv")
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== summary.txt =====
+Simulated by model, tree and split type
+                                                             splits  median_n  tree_tie  tree_mis  tree_sep  pcs_tie  pcs_mis  pcs_sep  test_tie  test_mis  test_sep  invariant_tie  invariant_mis  invariant_sep  fuzzy_tie  fuzzy_mis  fuzzy_sep  tree_test_both  tree_test_disagree  invariant_fuzzy_both  invariant_fuzzy_disagree
+model                    tree              kind                                                                                                                                                                                                                                                                                       
+high                     markov_ward       within one group     483     104.0     0.071     0.053     1.365    0.174    0.099    0.218     0.110     0.050     0.339          0.060          0.192          1.220      0.286      0.210      0.060           0.016               0.083                 0.014                     0.393
+                         symmetric_average within one group     556     112.5     0.071     0.052     1.259    0.156    0.146    0.186     0.139     0.108     0.196          0.045          0.278          0.766      0.283      0.216      0.041           0.016               0.121                 0.011                     0.401
+low                      markov_ward       within one group     490     114.0     0.109     0.056     0.519    0.202    0.079    0.170     0.125     0.051     0.325          0.100          0.202          0.320      0.237      0.163      0.120           0.041               0.070                 0.015                     0.364
+                         symmetric_average within one group     817     244.0     0.079     0.041     0.657    0.206    0.084    0.159     0.163     0.076     0.244          0.071          0.367          0.129      0.196      0.089      0.179           0.033               0.077                 0.011                     0.411
+matched_median           markov_ward       within one group     491     112.0     0.106     0.056     0.553    0.187    0.098    0.146     0.131     0.061     0.309          0.114          0.185          0.185      0.233      0.188      0.101           0.035               0.078                 0.017                     0.359
+                         symmetric_average within one group     746     181.5     0.079     0.043     0.694    0.213    0.101    0.106     0.158     0.085     0.194          0.019          0.473          0.066      0.204      0.111      0.107           0.028               0.091                 0.003                     0.509
+signal_balanced          markov_ward       between groups        10     500.0     0.000     0.000    29.082    0.000    0.000    3.965     0.000     0.000    79.115          0.000          0.000        885.357      0.365      0.489      0.000           0.000               0.000                 0.000                     0.489
+                                           mixed                 20     875.0     0.000     0.000     3.068    0.000    0.000    1.490     0.000     0.000    52.671          0.000          0.000          3.548      0.347      0.470      0.000           0.000               0.000                 0.000                     0.470
+                                           within one group     235     105.0     0.083     0.061     1.082    0.196    0.080    0.199     0.121     0.042     0.364          0.094          0.217          0.471      0.255      0.196      0.105           0.027               0.072                 0.015                     0.398
+                         symmetric_average between groups        10     500.0     0.000     0.000    13.769    0.000    0.000    3.518     0.000     0.000    76.283          0.000          0.000       1933.440      0.347      0.486      0.000           0.000               0.000                 0.000                     0.486
+                                           mixed                 20     874.0     0.000     0.000     2.587    0.000    0.000    1.480     0.000     0.000    53.176          0.000          0.000          3.506      0.351      0.497      0.000           0.000               0.000                 0.000                     0.497
+                                           within one group     359     159.0     0.069     0.052     1.257    0.241    0.129    0.143     0.192     0.095     0.220          0.028          0.410          0.105      0.256      0.162      0.127           0.020               0.118                 0.006                     0.452
+signal_density_variation markov_ward       between groups         5    2700.0     0.000     0.000     2.038    0.001    0.000    2.620     0.000     0.000    27.850          0.000          0.000          6.542      0.389      0.493      0.000           0.000               0.000                 0.000                     0.493
+                                           mixed                 10    2970.0     0.000     0.000     6.272    0.000    0.000    2.467     0.000     0.000    24.518          0.000          0.000          4.103      0.388      0.467      0.001           0.000               0.000                 0.000                     0.467
+                                           within one group     373     112.0     0.073     0.050     1.098    0.206    0.091    0.207     0.131     0.046     0.348          0.070          0.200          0.895      0.303      0.255      0.066           0.027               0.070                 0.016                     0.434
+                         symmetric_average between groups         5    2480.0     0.000     0.000     3.324    0.000    0.000    3.053     0.000     0.000    31.227          0.000          0.000          8.065      0.400      0.487      0.000           0.000               0.000                 0.000                     0.487
+                                           mixed                 29    2850.0     0.010     0.010     4.630    0.009    0.054    2.155     0.009     0.054     0.757          0.006          0.054          3.840      0.374      0.376      0.009           0.000               0.042                 0.003                     0.425
+                                           within one group     502     162.0     0.070     0.047     1.176    0.216    0.115    0.189     0.178     0.081     0.251          0.055          0.336          0.495      0.283      0.199      0.102           0.027               0.088                 0.013                     0.440
+signal_imbalanced        markov_ward       between groups        10     900.0     0.000     0.000    19.372    0.000    0.000    3.532     0.000     0.000    76.429          0.000          0.000       2047.285      0.346      0.513      0.000           0.000               0.000                 0.000                     0.513
+                                           mixed                 20     990.0     0.000     0.000    21.054    0.000    0.000    3.513     0.000     0.000    50.596          0.000          0.000          8.428      0.344      0.419      0.002           0.000               0.000                 0.000                     0.419
+                                           within one group     238     102.0     0.092     0.060     0.695    0.193    0.077    0.206     0.116     0.044     0.369          0.099          0.169          0.510      0.262      0.243      0.081           0.031               0.074                 0.016                     0.397
+                         symmetric_average between groups        10     900.0     0.000     0.000    12.565    0.000    0.000    3.532     0.000     0.000    76.429          0.000          0.000       2047.285      0.346      0.513      0.000           0.000               0.000                 0.000                     0.513
+                                           mixed                 20     990.0     0.000     0.000    15.218    0.000    0.000    3.513     0.000     0.000    50.596          0.000          0.000          8.428      0.344      0.419      0.002           0.000               0.000                 0.000                     0.419
+                                           within one group     351     344.0     0.073     0.043     0.840    0.233    0.115    0.150     0.209     0.105     0.189          0.072          0.378          0.152      0.253      0.170      0.126           0.028               0.109                 0.012                     0.434
+signal_singleton         markov_ward       between groups        10     901.0     0.000     0.000    19.355    0.001    0.000    3.555     0.000     0.000    56.139          0.000          0.000       1353.387      0.377      0.469      0.000           0.000               0.000                 0.000                     0.469
+                                           mixed                 20     991.0     0.000     0.000    21.030    0.000    0.000    3.518     0.000     0.000    48.175          0.000          0.000          8.327      0.357      0.401      0.003           0.000               0.000                 0.000                     0.401
+                                           within one group     231     110.0     0.099     0.057     0.664    0.190    0.083    0.211     0.126     0.048     0.353          0.102          0.183          0.479      0.265      0.225      0.088           0.036               0.070                 0.017                     0.393
+                         symmetric_average between groups        10     901.0     0.000     0.000    12.373    0.001    0.000    3.555     0.000     0.000    56.139          0.000          0.000       1353.387      0.377      0.469      0.000           0.000               0.000                 0.000                     0.469
+                                           mixed                 20     991.0     0.000     0.000    15.188    0.000    0.000    3.518     0.000     0.000    48.175          0.000          0.000          8.327      0.357      0.401      0.003           0.000               0.000                 0.000                     0.401
+                                           within one group     353     328.0     0.071     0.043     0.795    0.236    0.119    0.152     0.206     0.103     0.196          0.056          0.386          0.159      0.260      0.171      0.123           0.027               0.110                 0.010                     0.433
+
+Real
+                   splits  median_n  tree_tie  tree_mis  tree_sep  pcs_tie  pcs_mis  pcs_sep  test_tie  test_mis  test_sep  invariant_tie  invariant_mis  invariant_sep  fuzzy_tie  fuzzy_mis  fuzzy_sep  tree_test_both  tree_test_disagree  invariant_fuzzy_both  invariant_fuzzy_disagree
+tree                                                                                                                                                                                                                                                                                        
+markov_ward           171    1292.0     0.006     0.003     7.836    0.055    0.042    1.182     0.013     0.007     1.175          0.057          0.050          1.290      0.263      0.428      0.009           0.001               0.012                 0.011                     0.452
+symmetric_average     172    1628.0     0.035     0.014     4.279    0.070    0.092    0.661     0.035     0.021     0.711          0.075          0.094          0.689      0.259      0.414      0.013           0.004               0.037                 0.013                     0.450
+
+Real splits that cut lines
+                   splits_cutting  lines_cut  tie_cut_line_cells  tie_other_cells
+tree                                                                             
+markov_ward                    47         70               0.228            0.076
+symmetric_average              85        423               0.396            0.067
+
+

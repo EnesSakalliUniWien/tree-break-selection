@@ -28,6 +28,7 @@ from ..inflation_correction.inflation_adjusted_sibling_tests import (
 from ..inflation_correction.types.inflation_model import CalibrationSupportThresholds
 from ..pair_testing.collection.record_collection import collect_sibling_pair_records
 from ..pair_testing.types.sibling_pair_record import SiblingPairRecord
+from ..split_count_rule_out import apply_split_count_rule_out
 from .fdr_annotation import (
     apply_traversal_aligned_sibling_bh_results,
     init_sibling_annotation_df,
@@ -116,9 +117,24 @@ def annotate_sibling_divergence(
     enforce_support_thresholds: bool = False,
     support_thresholds: CalibrationSupportThresholds = DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     adaptive_projection_dimension_energy_fraction: float | None = None,
+    leaf_data: pd.DataFrame | None = None,
+    split_count_rule_out: bool = False,
     stage_timings: MutableMapping[str, float] | None = None,
 ) -> pd.DataFrame:
-    """Test sibling divergence using context-weighted empirical-null inflation."""
+    """Test sibling divergence using context-weighted empirical-null inflation.
+
+    With ``split_count_rule_out`` each tested split's p-value is replaced by the opt-in
+    split-count rule-out p-value (``sibling_divergence.split_count_rule_out``), computed on
+    ``leaf_data``; it needs continuous features.
+    """
+    if split_count_rule_out and (
+        leaf_data is None or feature_space is None or feature_space.family_label != "continuous"
+    ):
+        raise ValueError(
+            "split_count_rule_out needs leaf_data and a continuous feature_space; "
+            f"got leaf_data={'missing' if leaf_data is None else 'given'}, "
+            f"feature family={None if feature_space is None else feature_space.family_label!r}."
+        )
     annotations_df = init_sibling_annotation_df(annotations_df)
 
     collection_start_sec = perf_counter()
@@ -185,13 +201,36 @@ def annotate_sibling_divergence(
         inflation_adjusted_test_summaries,
         inflation_adjustment_method_labels,
         calibration_decisions,
+        inadmissible,
     ) = compute_inflation_adjusted_sibling_tests(
         records,
         model=model,
         enforce_support_thresholds=enforce_support_thresholds,
         support_thresholds=support_thresholds,
     )
+    if split_count_rule_out:
+        (
+            inflation_adjusted_test_summaries,
+            inflation_adjustment_method_labels,
+            calibration_decisions,
+        ) = apply_split_count_rule_out(
+            tree,
+            leaf_data,
+            records,
+            tested_parent_ids,
+            inflation_adjusted_test_summaries,
+            inflation_adjustment_method_labels,
+            calibration_decisions,
+        )
     write_inflation_evidence(annotations_df, records, tested_parent_ids, calibration_decisions)
+    # A focal record without internally admissible support closes only its own gate.
+    for status in sorted({decision.status for _record, decision in inadmissible}):
+        annotations_df = _mark_empirical_calibration_as_fail_closed(
+            annotations_df,
+            [record for record, decision in inadmissible if decision.status == status],
+            method=model.method,
+            calibration_status=status,
+        )
     if stage_timings is not None:
         stage_timings["sibling_gate_adjusted_tests_sec"] = float(
             stage_timings.get("sibling_gate_adjusted_tests_sec", 0.0)
@@ -206,6 +245,7 @@ def annotate_sibling_divergence(
         significance_level_alpha,
         method_labels=inflation_adjustment_method_labels,
         skipped_parents=skipped_parents,
+        closed_parents=[record.parent for record, _decision in inadmissible],
     )
     if stage_timings is not None:
         stage_timings["sibling_gate_fdr_sec"] = float(

@@ -59,6 +59,10 @@ class ClusteringMetrics:
     outlier_f1: float
     singleton_outlier_isolated: float
     grouped_outlier_cluster_recovered: float
+    matched_macro_f1: float = np.nan
+    matched_rare_f1: float = np.nan
+    pair_split_share: float = np.nan
+    pair_merge_share: float = np.nan
 
 
 def nan_clustering_metrics() -> ClusteringMetrics:
@@ -290,6 +294,69 @@ def _remap_predicted_labels_to_truth(
     return y_true_enc, y_pred_remapped_enc
 
 
+def _matched_recovery_from_table(
+    table: pd.DataFrame, rare_labels
+) -> tuple[pd.DataFrame, float, float]:
+    counts = table.to_numpy(dtype=np.int64)
+    truth_n, pred_n = counts.sum(axis=1), counts.sum(axis=0)
+    f1 = 2 * counts / (truth_n[:, None] + pred_n)
+    rows, cols = linear_sum_assignment(f1, maximize=True)
+    shared = counts[rows, cols]
+    keep = shared > 0
+    rows, cols, shared = rows[keep], cols[keep], shared[keep]
+    matched = pd.DataFrame({"group": table.index, "truth_n": truth_n})
+    matched["predicted"] = pd.Series(index=matched.index, dtype=object)
+    matched[["precision", "recall", "f1"]] = 0.0
+    matched.loc[rows, "predicted"] = table.columns[cols].to_numpy(dtype=object)
+    matched.loc[rows, "precision"] = shared / pred_n[cols]
+    matched.loc[rows, "recall"] = shared / truth_n[rows]
+    matched.loc[rows, "f1"] = f1[rows, cols]
+    if rare_labels is None:
+        rare_labels = matched.sort_values(["truth_n", "group"]).head((len(matched) + 3) // 4).group
+    matched["rare"] = matched.group.isin(rare_labels)
+    matched["matched_90_90"] = (matched.precision >= 0.9) & (matched.recall >= 0.9)
+    biggest = counts.argmax(axis=1)
+    matched["legacy_90_90"] = (counts.max(axis=1) / truth_n >= 0.9) & (
+        counts.max(axis=0)[biggest] / pred_n[biggest] >= 0.9
+    )
+    shared_pairs = (counts * (counts - 1)).sum()
+    truth_pairs = (truth_n * (truth_n - 1)).sum()
+    predicted_pairs = (pred_n * (pred_n - 1)).sum()
+    split = 1 - shared_pairs / truth_pairs if truth_pairs else np.nan
+    merge = 1 - shared_pairs / predicted_pairs if predicted_pairs else np.nan
+    return matched, float(split), float(merge)
+
+
+def matched_group_recovery(true_labels, predicted_labels, *, rare_labels=None) -> pd.DataFrame:
+    """One-to-one maximum-total-F1 recovery with unmatched truth groups scored zero.
+
+    Two Series are aligned by their unique indexes. Other inputs are aligned
+    by position. Rare defaults to the smallest ceil(K/4) truth groups, with
+    label order breaking size ties. Pass an empty collection for no rare groups.
+    """
+    if isinstance(true_labels, pd.Series) and isinstance(predicted_labels, pd.Series):
+        if (
+            not true_labels.index.is_unique
+            or not predicted_labels.index.is_unique
+            or len(true_labels) != len(predicted_labels)
+            or not true_labels.index.isin(predicted_labels.index).all()
+        ):
+            raise ValueError("Truth and prediction Series must share a unique sample index.")
+        predicted_labels = predicted_labels.reindex(true_labels.index)
+    truth, predicted = np.asarray(true_labels), np.asarray(predicted_labels)
+    if (
+        truth.ndim != 1
+        or predicted.shape != truth.shape
+        or not len(truth)
+        or pd.isna(truth).any()
+        or pd.isna(predicted).any()
+    ):
+        raise ValueError(
+            "Expected aligned nonempty truth and predicted labels without missing values."
+        )
+    return _matched_recovery_from_table(pd.crosstab(truth, predicted), rare_labels)[0]
+
+
 def calculate_clustering_metrics(
     report_df: pd.DataFrame | None,
     sample_names: pd.Index,
@@ -354,6 +421,9 @@ def calculate_clustering_metrics(
             y_pred,
         )
         fowlkes_mallows = fowlkes_mallows_score(y_true, y_pred)
+        matched, pair_split_share, pair_merge_share = _matched_recovery_from_table(
+            pd.crosstab(y_true, y_pred), None if metadata is None else metadata.get("rare_labels")
+        )
         y_true_enc, y_pred_remapped_enc = _remap_predicted_labels_to_truth(y_true, y_pred)
         labels = np.arange(len(np.unique(y_true_enc)), dtype=int)
         if labels.size == 0:
@@ -426,4 +496,8 @@ def calculate_clustering_metrics(
         outlier_f1=float(outlier_f1),
         singleton_outlier_isolated=float(singleton_outlier_isolated),
         grouped_outlier_cluster_recovered=float(grouped_outlier_cluster_recovered),
+        matched_macro_f1=float(matched.f1.mean()),
+        matched_rare_f1=float(matched.loc[matched.rare, "f1"].mean()),
+        pair_split_share=pair_split_share,
+        pair_merge_share=pair_merge_share,
     )

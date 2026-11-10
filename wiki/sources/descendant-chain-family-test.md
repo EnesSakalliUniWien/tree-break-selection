@@ -2,8 +2,9 @@
 title: Descendant Chain Family Test
 type: source
 status: reviewed
-updated: 2026-11-06
+updated: 2026-11-09
 sources:
+  - raw/inbox/choir-cell-lines/root-validation-calibration-20261109.md
   - raw/inbox/descendant-chain-validation-20261106.md
   - raw/inbox/descendant-chain-validation-protocol-20261106.md
   - raw/inbox/descendant-chain-validation-summary-20261106.csv
@@ -28,8 +29,9 @@ tags:
 `selected_diffusion_family_chain_tests` extends the root conditional chain test
 to a pre-set family: the root and its internal children. Each node is tested
 conditional on its ancestor path, at a fixed Bonferroni level `alpha / 3`. On
-known-noise Gaussian panels its null p-values are calibrated; children's power
-is low because the diffusion tree splits them as small peels.
+known-noise Gaussian panels the observed null rates are compatible with the
+reference, with finite-panel uncertainty; children's power is often low because
+the diffusion tree splits them as small peels.
 
 ## Key Points
 
@@ -66,8 +68,17 @@ The test covers known-noise Gaussian rows, the root and its immediate children
 only; counts, fitted PCA, unknown covariance and production traversal with
 pass-through remain outside it.
 
+The 9 November 119-step follow-up has family errors 19/1,200 at n=9,p=3
+(one-sided upper limit .02315), 3/120 at n=12,p=8 (.06334), and 7/120 at
+n=24,p=5 (.10677). Those secondary limits do not substantiate the .05 target.
+The strong four-group top split is recovered on 32/32 inputs, but the selected
+immediate-child cuts often mix subgroups and reject only 2/28 and 2/32 true
+contrasts. [[root-validation-generalisation-evidence]] records fixed budgets,
+truth definitions and the paired longer-chain check.
+
 ## Links
 
+- [[root-validation-generalisation-evidence]]
 - [[root-conditional-sampler]]
 - [[conditional-diffusion-monte-carlo-evidence]]
 - [[choir-cell-lines-recovery-plan]]

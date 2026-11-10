@@ -2,7 +2,7 @@
 title: Generated Report Files
 type: tool
 status: reviewed
-updated: 2026-10-14
+updated: 2026-11-07
 sources:
   - docs/generated-files.md
   - docs/generated-output-inventory.md
@@ -29,8 +29,14 @@ exact ignore rules; the four run logs stay local-only.
 ## Usage
 
 Run `make generated-files-check` to check classification, frozen-result hashes,
-local references, exact ignore rules and the 5 MiB staged-file limit. This
-command is part of `make check`; a pending storage decision fails the check.
+local references, exact ignore rules, the 5 MiB staged-file limit and the
+10 MiB limit for tracked `reports/` and `raw/` files. This command is part of
+`make check`; a pending storage decision fails the check.
+
+Raw evidence over 10 MiB leaves Git through the same catalog as a
+`raw/<area>/<study>` study; its ignore rules go to `raw/.gitignore`. The 19
+generated benchmark files over 10 MiB and the two Gonçalves inputs moved out on
+2026-11-07 are local-only and still in Git history.
 
 Use `scripts/generated_files.py archive --archive-root /chosen/archive` with
 the project Python after choosing a destination outside the repository. Copies

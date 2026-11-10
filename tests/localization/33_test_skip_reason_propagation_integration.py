@@ -66,3 +66,39 @@ def test_forced_runner_failure_raises_everywhere(monkeypatch):
             base_seed=13,
             verbose=False,
         )
+
+
+def test_full_benchmark_mode_keeps_a_failed_method_as_an_error_row(monkeypatch):
+    original_tbs = METHOD_SPECS["tbs"]
+
+    def _raise_runner(*_args, **_kwargs):
+        raise RuntimeError("forced integration failure")
+
+    monkeypatch.setitem(
+        METHOD_SPECS,
+        "tbs",
+        MethodSpec(
+            name=original_tbs.name, runner=_raise_runner, param_grid=original_tbs.param_grid
+        ),
+    )
+    case = {
+        "name": "forced_fail_case",
+        "generator": "blobs",
+        "n_samples": 12,
+        "n_features": 8,
+        "n_clusters": 3,
+        "cluster_std": 0.4,
+        "seed": 11,
+        "category": "forced_failure_contract",
+    }
+
+    rows = benchmark_cluster_algorithm(
+        test_cases=[case],
+        verbose=False,
+        methods=["tbs", "kmeans"],
+        allow_method_errors=True,
+    )
+
+    by_method = rows.set_index("method")["status"]
+    assert by_method["tbs"] == "error"
+    assert by_method["kmeans"] == "ok"

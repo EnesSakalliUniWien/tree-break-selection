@@ -157,5 +157,13 @@ def test_selected_hierarchy_focal_rows_use_empirical_adjusted_p_values() -> None
 
 def test_production_pipeline_enforces_requested_support_thresholds() -> None:
     tree = _binary_tree()
-    with pytest.raises(ValueError, match="undefined_sparse_context"):
-        _annotate(tree, _edge_annotations(tree), enforce_support_thresholds=True)
+    result = _annotate(tree, _edge_annotations(tree), enforce_support_thresholds=True)
+
+    # Thin support closes each focal gate instead of stopping the whole annotation.
+    focal_parents = ["N4", "N2"]
+    rows = result.loc[focal_parents]
+    assert rows["Sibling_Divergence_Skipped"].all()
+    assert not rows["Sibling_BH_Different"].any()
+    assert rows["Sibling_Gate_P_Value_Calibration"].eq("undefined_sparse_context").all()
+    assert rows["Sibling_Gate_P_Value_Role"].eq("fail_closed_sibling_gate").all()
+    assert rows["Sibling_Divergence_P_Value"].notna().all()

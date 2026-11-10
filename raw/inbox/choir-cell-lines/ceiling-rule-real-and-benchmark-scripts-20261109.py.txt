@@ -1,0 +1,945 @@
+# ===== protocol.md =====
+# Protocol: the ceiling-3 rule on the CHOIR cell lines and the continuous benchmark (frozen 2026-11-09)
+
+User choice: test the ceiling-3 rule of `gaussian_cut_rule_20261108` on the real cell lines and the continuous
+benchmark. Descriptive; no production change.
+
+## Rule
+
+For each tested sibling split: k invariant directions of its subtree (production `invariant_directions`),
+rho = pi (1 - pi) D^2 along them, and
+
+    p = min{1, sum_{i<=k} binom(n-1, i) P(chi2_k(3 n) >= n rho)},  p = 1 when k = 0
+
+(`cut_rule.cut_bound_p` with `unimodal_bound`, unchanged). The p-value goes to the usual sibling BH step.
+
+## How it runs
+
+Both parts use the production opt-in path `sibling_split_count_rule_out=True`. Arm `rule_out` runs it as is;
+arm `ceiling3` swaps `pipeline.apply_split_count_rule_out` for a function that returns the ceiling-3 p-value on
+the same `leaf_data`, the same leaf rows (`_leaf_rows`) and the same statistic.
+
+1. Real: `split_count_exclusion_real_20261108/run.py` setup (48,879 cells, 30 PCs, the saved diffusion
+   coordinates of `choir_cell_lines_tbs_lbfgsb_20261106`, registry parameters, edge alpha 1e-3, sibling alpha
+   1e-2), both registered methods, arms `rule_out` and `ceiling3`. Replay check: `rule_out` should give the
+   2026-11-08 harness result, 69 and 664 clusters.
+2. Benchmark: `rule_out_continuous_benchmark_20261108/run.py` setup (9 continuous cases, both methods, registered
+   cell and the same cell with the opt-in, default alphas). Replay check: today and `rule_out` rows equal the
+   2026-11-08 `results.csv` in found clusters and ARI. Then the opt-in cell again with arm `ceiling3`.
+
+## Endpoints
+
+- Real, per method and arm: found clusters, ARI and NMI against the cell lines, lines recovered at 90/90, ARI
+  against published CHOIR_1, clusters at least 90% pure, clusters under 20 cells, median clusters per line;
+  per tested split: size, share, k, rho, p, kept (p <= 0.01 before BH) and BH acceptance, by size bin.
+- Benchmark, per case and method: found clusters and ARI for today, `rule_out` and `ceiling3`.
+
+## Expected before running
+
+- Benchmark: a subtree of n <= p + 1 cells has no invariant directions under either rule, so `ceiling3` keeps
+  the losses of `rule_out` on gauss_clear_medium (60 cells, 40 features), gauss_moderate_3c (45, 30) and
+  gauss_dense_signal_highd (40, 20,000).
+- Real: at 48,879 cells the ceiling-3 rule allows about 4% overlap for balanced splits where separability
+  allows none, so it should keep more of the large splits than `rule_out`. Whether that raises or lowers
+  agreement with the cell lines is not predicted. These data have no known no-group parts, so false splits can
+  only be read from lines split into several clusters.
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- First run (2026-11-09 00:14): the ceiling3 arm used the method label `ceiling3`, which the sibling FDR step
+  rejects ("Unsupported sibling test method label"), so all 18 ceiling3 benchmark runs ended with status error
+  and the real-data run was stopped before its first arm finished. The label was changed to
+  `split_count_rule_out:ceiling3` (the prefix the FDR step accepts for the opt-in rule-out); the rule is
+  unchanged. Both parts were rerun from the start.
+- Added after the endpoints: `breakdown.py` counts, per method and arm, the lines that miss 90/90 because they
+  are split across clusters, merged with other lines, or both (`breakdown.txt`).
+- Expectation "ceiling3 keeps more of the large splits than rule_out" held for Markov/Ward (1000+ cells: 40.8%
+  vs 34.0%) and failed for the default tree (10.2% vs 18.4%).
+
+# ===== run.py =====
+"""protocol.md: production rule-out vs the ceiling-3 rule on the CHOIR cell lines and the continuous suite.
+
+usage: run.py real METHOD | run.py benchmark
+"""
+
+import json
+import os
+import sys
+from dataclasses import replace
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "gaussian_cut_rule_20261108"))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from cut_rule import cut_bound_p, unimodal_bound  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    _leaf_rows,
+    invariant_directions,
+)
+
+ORIGINAL = pipeline.apply_split_count_rule_out
+STATE = {"arm": "rule_out", "splits": []}
+
+
+def swapped(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions):
+    """rule_out: production as is. ceiling3: p from the at-the-mode ceiling 3, same rows and statistic."""
+    by_parent = {record.parent: record for record in records}
+    shape = list(leaf_data.shape)
+    if STATE["arm"] == "rule_out":
+        out = ORIGINAL(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions)
+        for parent, label, decision in zip(tested_parent_ids, out[1], out[2], strict=True):
+            if decision is not None:
+                STATE["splits"].append({"shape": shape, "node": str(parent), "n_parent": int(by_parent[parent].n_parent),
+                                        "reason": label.split(":")[-1], "p": float(decision.p_value)})
+        return out
+    row_of_label = {label: row for row, label in enumerate(leaf_data.index)}
+    matrix = leaf_data.to_numpy(dtype=np.float64)
+    new = ([], [], [])
+    for parent, summary, label, decision in zip(tested_parent_ids, summaries, method_labels, decisions, strict=True):
+        if decision is None:
+            for column, value in zip(new, (summary, label, decision), strict=True):
+                column.append(value)
+            continue
+        record = by_parent[parent]
+        left, right = _leaf_rows(tree, record.left, row_of_label), _leaf_rows(tree, record.right, row_of_label)
+        points = matrix[left + right]
+        in_left = np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)]
+        directions = invariant_directions(points)
+        p, rho = cut_bound_p(points @ directions.T, in_left, unimodal_bound)
+        assert np.isfinite(p), (parent, rho)  # a NaN tail would silently read as p = 1
+        statistic = float(record.stat) / float(record.reference_scale)
+        STATE["splits"].append({"shape": shape, "node": str(parent), "n_parent": len(points),
+                                "n_small": int(min(len(left), len(right))), "k": len(directions),
+                                "pi": float(in_left.mean()), "rho": rho, "p": p})
+        new[0].append((statistic, float(record.degrees_of_freedom), p))
+        new[1].append("split_count_rule_out:ceiling3")  # the FDR step accepts this prefix
+        new[2].append(replace(decision, c_hat=1.0, p_value=p))
+    return new
+
+
+pipeline.apply_split_count_rule_out = swapped
+
+
+def recovered_lines(truth, labels):
+    table = pd.crosstab(truth, labels)
+    recall = table.max(axis=1) / table.sum(axis=1)
+    purity = table.max(axis=0) / table.sum(axis=0)
+    return int(((recall >= 0.9) & (purity[table.idxmax(axis=1)].to_numpy() >= 0.9)).sum())
+
+
+def real(method):
+    from scipy.spatial.distance import pdist
+    from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+    from threadpoolctl import threadpool_limits
+
+    from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+    from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+    from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(source / "pca.npy"), index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+    truth = metadata.Cell_line.to_numpy()
+    params = dict(METHOD_SPECS[method].param_grid[0])
+    out = HERE / method
+    out.mkdir(exist_ok=True)
+    distance_path = out / "diffusion_distance.npy"
+    distances = np.lib.format.open_memmap(distance_path, mode="w+", dtype=np.float64,
+                                          shape=(len(data) * (len(data) - 1) // 2,))
+    pdist(np.load(source / method / "coordinates.npy"), metric="euclidean", out=distances)
+    distances.flush()
+    with threadpool_limits(limits=4), (out / "results.jsonl").open("w") as f:
+        for arm in ("rule_out", "ceiling3"):
+            STATE.update(arm=arm, splits=[])
+            start = perf_counter()
+            result = run_tbs_on_distance(
+                data, distances, 0.01, edge_alpha=0.001, tree_linkage_method=params["tree_linkage_method"],
+                feature_space=continuous_feature_space_from_columns(tuple(data.columns)), branch_length_data_df=data,
+                edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+                adaptive_projection_dimension_energy_fraction=0.90, sibling_split_count_rule_out=True,
+                **_tbs_branch_length_optimization_kwargs(params),
+                extra={"feature_family_diffusion_fallback_reason": None})
+            labels = np.asarray(result.labels, dtype=int)
+            bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+            splits = [{**s, "bh_different": bool(bh[s["node"]])} for s in STATE["splits"]]
+            row = {"method": method, "arm": arm, "status": result.status.value, "found_clusters": result.found_clusters,
+                   "ari_cell_line": adjusted_rand_score(truth, labels), "nmi_cell_line": normalized_mutual_info_score(truth, labels),
+                   "recovered_lines_90_90": recovered_lines(truth, labels),
+                   "ari_published_CHOIR_1": adjusted_rand_score(metadata.CHOIR_1, labels),
+                   "sec": perf_counter() - start, "splits": splits}
+            f.write(json.dumps(row, default=float) + "\n")
+            pd.DataFrame({"cell": metadata.index, "Cell_line": truth, "cluster": labels}).to_csv(
+                out / f"assignments_{arm}.csv.gz", index=False)
+            print(json.dumps({k: v for k, v in row.items() if k != "splits"}, default=float), flush=True)
+    distances._mmap.close()
+    distance_path.unlink()
+
+
+def benchmark():
+    from benchmarks.shared.benchmark_runs.runtime import apply_single_thread_runtime_defaults
+    from benchmarks.shared.cases import get_test_cases_by_suite
+    from benchmarks.shared.pipeline import benchmark_cluster_algorithm
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+
+    methods = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+    apply_single_thread_runtime_defaults()
+    opt_in = {m: {**METHOD_SPECS[m].param_grid[0], "sibling_split_count_rule_out": True} for m in methods}
+    frames, splits = [], []
+    for arm, params in (("rule_out", {m: [dict(METHOD_SPECS[m].param_grid[0]), opt_in[m]] for m in methods}),
+                        ("ceiling3", {m: [opt_in[m]] for m in methods})):
+        STATE.update(arm=arm, splits=[])
+        results = benchmark_cluster_algorithm(test_cases=get_test_cases_by_suite("continuous"), methods=methods,
+                                              method_params=params, verbose=False, plot_umap=False,
+                                              include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=True)
+        results["arm"] = np.where(results.params.str.contains("sibling_split_count_rule_out=True"), arm, "today")
+        frames.append(results)
+        splits += [{"arm": arm, **s} for s in STATE["splits"]]
+    pd.concat(frames).to_csv(HERE / "benchmark_results.csv", index=False)
+    (HERE / "benchmark_splits.jsonl").write_text("".join(json.dumps(s, default=float) + "\n" for s in splits))
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "real":
+        real(sys.argv[2])
+        os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (run_lbfgsb.py)
+    benchmark()
+
+# ===== summarize.py =====
+"""Summaries for protocol.md: replay checks, real-data metrics and split facts, benchmark table."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+OLD_REAL = HERE.parent / "split_count_exclusion_real_20261108"
+OLD_BENCH = HERE.parent / "rule_out_continuous_benchmark_20261108" / "results.csv"
+METHODS = {"tbs_family_diffusion": "default", "tbs_family_diffusion_markov_ward": "markov_ward"}
+pd.set_option("display.width", 220)
+BINS, NAMES = [1, 31, 159, 999, 50000], ["<=31", "32-159", "160-999", "1000+"]
+
+
+def real():
+    rows, splits = [], []
+    old = pd.read_csv(OLD_REAL / "metrics.csv")
+    for method, short in METHODS.items():
+        path = HERE / method / "results.jsonl"
+        if not path.exists():
+            continue
+        for r in map(json.loads, path.read_text().splitlines()):
+            a = pd.read_csv(HERE / method / f"assignments_{r['arm']}.csv.gz")
+            t = pd.crosstab(a.Cell_line, a.cluster)
+            purity = t.max(axis=0) / t.sum(axis=0)
+            rows.append({"method": short, "arm": r["arm"], "clusters": r["found_clusters"], "ari": r["ari_cell_line"],
+                         "nmi": r["nmi_cell_line"], "lines_90_90": r["recovered_lines_90_90"],
+                         "ari_choir1": r["ari_published_CHOIR_1"], "clusters_ge90_pure": int((purity >= 0.9).sum()),
+                         "clusters_lt20_cells": int((t.sum(axis=0) < 20).sum()),
+                         "largest_cluster": int(t.sum(axis=0).max()),
+                         "median_clusters_per_line": float((t >= 0.05 * t.sum(axis=1).to_numpy()[:, None]).sum(axis=1).median()),
+                         "sec": round(r["sec"])})
+            splits += [{"method": short, "arm": r["arm"], **s} for s in r["splits"]]
+    m = pd.DataFrame(rows)
+    print("REAL: earlier runs (2026-11-08 harness)\n", old.round(3).to_string(index=False), "\n")
+    print("REAL: this run\n", m.round(3).to_string(index=False), "\n")
+    for _, r in m[m.arm == "rule_out"].iterrows():
+        o = old[(old.method == r.method) & (old.arm == "rule_out")].iloc[0]
+        print(f"replay {r.method}: clusters {r.clusters} vs {o.clusters}, ARI {r.ari:.4f} vs {o.ari:.4f}")
+    s = pd.DataFrame(splits)
+    s["bin"] = pd.cut(s.n_parent, BINS, labels=NAMES)
+    s["kept"] = s.p <= 0.01
+    print("\nREAL: tested splits by size (kept = p <= 0.01 before BH; accepted = BH)")
+    print(s.groupby(["method", "arm", "bin"], observed=True).agg(
+        tested=("p", "size"), kept=("kept", "mean"), accepted=("bh_different", "mean")).round(3).to_string())
+    c = s[s.arm == "ceiling3"]
+    has_k = c[c.k > 0]
+    print("\nREAL ceiling3: splits with k >= 1, rho and k by size")
+    print(has_k.groupby(["method", "bin"], observed=True).agg(
+        n=("rho", "size"), k_median=("k", "median"), rho_median=("rho", "median"),
+        rho_q10=("rho", lambda x: x.quantile(0.1)), rho_q90=("rho", lambda x: x.quantile(0.9)),
+        above_3=("rho", lambda x: (x > 3).mean())).round(3).to_string())
+    both = s.pivot_table(index=["method", "node"], columns="arm", values="kept", aggfunc="first").dropna()
+    print("\nREAL: same split tested in both arms, kept by rule_out x ceiling3")
+    for method, g in both.groupby(level=0):
+        print(method, pd.crosstab(g.rule_out, g.ceiling3).to_dict())
+    m.round(4).to_csv(HERE / "real_metrics.csv", index=False)
+
+
+def benchmark():
+    b = pd.read_csv(HERE / "benchmark_results.csv")
+    old = pd.read_csv(OLD_BENCH)
+    old["arm"] = np.where(old.params.str.contains("sibling_split_count_rule_out=True"), "rule_out", "today")
+    key = ["case_id", "method", "arm"]
+    replay = b[b.arm != "ceiling3"].merge(old[key + ["found_clusters", "ari"]], on=key, suffixes=("", "_old"))
+    same = (replay.found_clusters == replay.found_clusters_old) & np.isclose(replay.ari, replay.ari_old)
+    print(f"BENCHMARK replay: {int(same.sum())}/{len(replay)} rows with the same clusters and ARI")
+    print(replay.loc[~same, key + ["found_clusters", "found_clusters_old", "ari", "ari_old"]].to_string(index=False))
+    b["cell"] = b.found_clusters.astype(str) + ", " + b.ari.map("{:.3f}".format)
+    b["m"] = b.method.map(METHODS)
+    table = b.pivot_table(index=["case_id", "true_clusters", "samples", "features"], columns=["m", "arm"],
+                          values="cell", aggfunc="first")
+    print("\nBENCHMARK: found clusters, ARI\n", table.to_string())
+    print("\nmean ARI\n", b.groupby(["m", "arm"]).ari.mean().round(3).to_string())
+    print("exact cluster count\n", b.assign(exact=b.found_clusters == b.true_clusters)
+          .groupby(["m", "arm"]).exact.sum().to_string())
+    s = pd.read_json(HERE / "benchmark_splits.jsonl", lines=True)
+    c = s[s.arm == "ceiling3"].copy()
+    c["case"] = c["shape"].map(tuple)
+    print("\nBENCHMARK ceiling3 splits per data shape (cells, features)")
+    print(c.groupby("case").agg(tested=("p", "size"), with_k=("k", lambda x: (x > 0).sum()),
+                                kept=("p", lambda x: (x <= 0.01).sum()), rho_max=("rho", "max")).to_string())
+
+
+if __name__ == "__main__":
+    {"real": real, "benchmark": benchmark}[sys.argv[1]]()
+
+# ===== breakdown.py =====
+"""Added after the endpoints (deviations.md): why lines miss 90/90 - split across clusters, merged with others, or both."""
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+for method in ("tbs_family_diffusion", "tbs_family_diffusion_markov_ward"):
+    for arm in ("rule_out", "ceiling3"):
+        a = pd.read_csv(HERE / method / f"assignments_{arm}.csv.gz")
+        t = pd.crosstab(a.Cell_line, a.cluster)
+        main = t.idxmax(axis=1)
+        split = t.max(axis=1) / t.sum(axis=1) < 0.9  # under 90% of the line in its main cluster
+        merged = (t.max(axis=0) / t.sum(axis=0))[main].to_numpy() < 0.9  # main cluster under 90% this line
+        print(method, arm, {"lines": len(t), "recovered": int((~split & ~merged).sum()),
+                            "split_only": int((split & ~merged).sum()), "merged_only": int((~split & merged).sum()),
+                            "both": int((split & merged).sum())})
+
+# ===== benchmark_summary.txt =====
+BENCHMARK replay: 36/36 rows with the same clusters and ARI
+Empty DataFrame
+Columns: [case_id, method, arm, found_clusters, found_clusters_old, ari, ari_old]
+Index: []
+
+BENCHMARK: found clusters, ARI
+ m                                                                    default                     markov_ward                    
+arm                                                                 ceiling3  rule_out     today    ceiling3  rule_out     today
+case_id                             true_clusters samples features                                                              
+dim_consolidated_4c_24f_continuous  4             160     24        4, 1.000  4, 1.000  4, 1.000    4, 1.000  4, 1.000  5, 0.920
+dim_consolidated_4c_72f_continuous  4             160     72        4, 1.000  4, 1.000  5, 0.913    4, 1.000  4, 1.000  6, 0.824
+dim_diffuse_6c_136f_continuous      6             180     136       1, 0.000  1, 0.000  5, 0.017    1, 0.000  1, 0.000  4, 0.006
+gauss_clear_medium_continuous       4             60      40        3, 0.704  3, 0.704  4, 1.000    3, 0.704  3, 0.704  4, 1.000
+gauss_dense_signal_highd_continuous 4             40      20000     1, 0.000  1, 0.000  4, 1.000    1, 0.000  1, 0.000  4, 0.932
+gauss_moderate_3c_continuous        3             45      30        2, 0.560  2, 0.560  3, 1.000    2, 0.560  2, 0.560  3, 1.000
+gauss_null_large_continuous         1             200     80        1, 1.000  1, 1.000  1, 1.000    1, 1.000  1, 1.000  1, 1.000
+gauss_outlier_cluster_4c_continuous 5             166     40        5, 1.000  5, 1.000  5, 1.000    5, 1.000  5, 1.000  5, 1.000
+gauss_single_outlier_4c_continuous  5             161     40        4, 0.992  4, 0.992  4, 0.992    4, 0.992  4, 0.992  4, 0.992
+
+mean ARI
+ m            arm     
+default      ceiling3    0.695
+             rule_out    0.695
+             today       0.880
+markov_ward  ceiling3    0.695
+             rule_out    0.695
+             today       0.852
+exact cluster count
+ m            arm     
+default      ceiling3    4
+             rule_out    4
+             today       6
+markov_ward  ceiling3    4
+             rule_out    4
+             today       5
+
+BENCHMARK ceiling3 splits per data shape (cells, features)
+             tested  with_k  kept      rho_max
+case                                          
+(40, 20000)       6       0     0          NaN
+(45, 30)          4       2     2   548.829231
+(60, 40)          6       4     4  2171.426116
+(160, 24)         7       7     6    23.302679
+(160, 72)        11       6     6    15.858647
+(161, 40)         9       6     6  1129.862403
+(166, 40)        11       8     8   925.983969
+(180, 136)       13       2     0     1.619876
+(200, 80)         7       3     0     0.280862
+
+# ===== real_summary.txt =====
+REAL: earlier runs (2026-11-08 harness)
+      method       arm  clusters   ari   nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  lines_main_cluster_ge90  median_clusters_per_line
+    default     today        75 0.028 0.548           27       0.014                  48                   20            28611                      177                       1.0
+    default count_all        82 0.027 0.549           29       0.014                  54                   23            28611                      174                       1.0
+    default  rule_out        69 0.018 0.497           29       0.009                  49                   12            32680                      174                       1.0
+markov_ward     today       954 0.549 0.863           41       0.445                 761                  374             1451                       56                       3.0
+markov_ward count_all      1605 0.402 0.833           24       0.334                1330                  940             1451                       28                       5.0
+markov_ward  rule_out       664 0.765 0.901           80       0.514                 494                  253             1990                       91                       2.0 
+
+REAL: this run
+      method      arm  clusters   ari   nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  median_clusters_per_line  sec
+    default rule_out        69 0.018 0.497           29       0.009                  49                   12            32680                       1.0  109
+    default ceiling3        64 0.028 0.549           29       0.014                  46                    9            28611                       1.0  106
+markov_ward rule_out       664 0.765 0.901           80       0.514                 494                  253             1990                       2.0  140
+markov_ward ceiling3       217 0.833 0.940          119       0.538                 164                   25             1990                       1.0  135 
+
+replay default: clusters 69 vs 69, ARI 0.0182 vs 0.0182
+replay markov_ward: clusters 664 vs 664, ARI 0.7652 vs 0.7652
+
+REAL: tested splits by size (kept = p <= 0.01 before BH; accepted = BH)
+                              tested   kept  accepted
+method      arm      bin                             
+default     ceiling3 <=31          8  0.000     0.000
+                     32-159       12  0.250     0.250
+                     160-999      21  0.286     0.286
+                     1000+        49  0.102     0.102
+            rule_out <=31          8  0.000     0.000
+                     32-159       12  0.500     0.500
+                     160-999      21  0.333     0.333
+                     1000+        49  0.184     0.184
+markov_ward ceiling3 <=31        363  0.000     0.000
+                     32-159      867  0.016     0.015
+                     160-999     505  0.129     0.129
+                     1000+       103  0.408     0.408
+            rule_out <=31        363  0.000     0.000
+                     32-159      867  0.174     0.172
+                     160-999     505  0.143     0.143
+                     1000+       103  0.340     0.340
+
+REAL ceiling3: splits with k >= 1, rho and k by size
+                       n  k_median  rho_median  rho_q10  rho_q90  above_3
+method      bin                                                          
+default     32-159    12       6.0       2.490    0.218   21.835    0.500
+            160-999   21      11.0       0.732    0.067    8.009    0.333
+            1000+     49      14.0       0.107    0.003    4.211    0.122
+markov_ward 32-159   867       6.0       0.970    0.332    2.483    0.069
+            160-999  505       9.0       0.997    0.220    6.760    0.172
+            1000+    103      14.0       3.127    0.111    9.564    0.505
+
+REAL: same split tested in both arms, kept by rule_out x ceiling3
+default {False: {False: 66, True: 10}, True: {False: 2, True: 12}}
+markov_ward {False: {False: 1540, True: 177}, True: {False: 40, True: 81}}
+
+# ===== breakdown.txt =====
+tbs_family_diffusion rule_out {'lines': 190, 'recovered': 29, 'split_only': 4, 'merged_only': 145, 'both': 12}
+tbs_family_diffusion ceiling3 {'lines': 190, 'recovered': 29, 'split_only': 4, 'merged_only': 145, 'both': 12}
+tbs_family_diffusion_markov_ward rule_out {'lines': 190, 'recovered': 80, 'split_only': 72, 'merged_only': 11, 'both': 27}
+tbs_family_diffusion_markov_ward ceiling3 {'lines': 190, 'recovered': 119, 'split_only': 16, 'merged_only': 33, 'both': 22}
+
+# ===== real_tbs_family_diffusion.log (metric lines) =====
+{"method": "tbs_family_diffusion", "arm": "rule_out", "status": "ok", "found_clusters": 69, "ari_cell_line": 0.018152642915704793, "nmi_cell_line": 0.4965577595043011, "recovered_lines_90_90": 29, "ari_published_CHOIR_1": 0.009114700234420058, "sec": 108.6861955409986}
+{"method": "tbs_family_diffusion", "arm": "ceiling3", "status": "ok", "found_clusters": 64, "ari_cell_line": 0.02752094371471196, "nmi_cell_line": 0.5494933595760242, "recovered_lines_90_90": 29, "ari_published_CHOIR_1": 0.013861583855865273, "sec": 105.71668408397818}
+
+# ===== real_tbs_family_diffusion_markov_ward.log (metric lines) =====
+{"method": "tbs_family_diffusion_markov_ward", "arm": "rule_out", "status": "ok", "found_clusters": 664, "ari_cell_line": 0.7651600941523182, "nmi_cell_line": 0.9006331704544697, "recovered_lines_90_90": 80, "ari_published_CHOIR_1": 0.5139064680750106, "sec": 140.00717829196947}
+{"method": "tbs_family_diffusion_markov_ward", "arm": "ceiling3", "status": "ok", "found_clusters": 217, "ari_cell_line": 0.8329479737360578, "nmi_cell_line": 0.9396611317255158, "recovered_lines_90_90": 119, "ari_published_CHOIR_1": 0.5376383338490804, "sec": 135.49741620902205}
+
+# ===== merge_protocol.md =====
+# Protocol: which cell lines ceiling 3 merges (frozen 2026-11-09, before running merges.py)
+
+User choice: check which cell lines ceiling 3 merges and whether they are the small ones. Markov/Ward
+assignments of `run.py real` (arms rule_out and ceiling3); no new fits.
+
+1. Per line and arm: status recovered / split only / merged only / both (as `breakdown.py`).
+2. Lines merged under ceiling3 (merged only or both): size against all 190 line sizes (median, rank
+   percentile), status under rule_out, cancer type.
+3. Each ceiling3 cluster holding two or more lines with >= 5% of its cells: composition. For its two largest
+   lines, the true-label split on the 30 PCs: n, share pi, k invariant directions, rho, p under ceiling 3 and
+   under the Gaussian ceiling (`cut_rule.cut_bound_p`), and whether rule_out and the published CHOIR_1 put the
+   two lines in different clusters.
+
+Expected: if the merges come from the constant ceiling asking small groups for a larger gap, the merged lines
+are smaller than typical and their true-label splits have small pi and rho below 3 but above g(pi).
+
+# ===== merges.py =====
+"""merge_protocol.md: which cell lines ceiling 3 merges under Markov/Ward, and the true-label split of each merge."""
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "gaussian_cut_rule_20261108"))
+from cut_rule import cut_bound_p, gaussian_bound, unimodal_bound  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+SOURCE = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+METHOD = HERE / "tbs_family_diffusion_markov_ward"
+pd.set_option("display.width", 220)
+
+
+def status(a):
+    t = pd.crosstab(a.Cell_line, a.cluster)
+    split = t.max(axis=1) / t.sum(axis=1) < 0.9
+    merged = pd.Series((t.max(axis=0) / t.sum(axis=0))[t.idxmax(axis=1)].to_numpy() < 0.9, index=t.index)
+    return pd.Series(np.select([split & merged, split, merged], ["both", "split", "merged"], "recovered"), index=t.index)
+
+
+meta = pd.read_csv(SOURCE / "cell_metadata.csv", index_col=0, dtype=str)
+pca = np.load(SOURCE / "pca.npy")
+row = {c: i for i, c in enumerate(meta.index)}
+arms = {arm: pd.read_csv(METHOD / f"assignments_{arm}.csv.gz") for arm in ("rule_out", "ceiling3")}
+sizes = meta.Cell_line.value_counts()
+lines = pd.DataFrame({"size": sizes, "size_pct": sizes.rank(pct=True).round(2),
+                      "cancer": meta.groupby("Cell_line").Cancer_type.first()})
+for arm, a in arms.items():
+    lines[arm] = status(a)
+print("status counts\n", pd.crosstab(lines.rule_out, lines.ceiling3), "\n")
+print("line size by ceiling3 status\n", lines.groupby("ceiling3")["size"].describe().round(0).to_string(), "\n")
+merged = lines[lines.ceiling3.isin(["merged", "both"])].sort_values("size")
+print("lines merged under ceiling3\n", merged.to_string(), "\n")
+
+c3 = arms["ceiling3"].set_index("cell")
+ro = arms["rule_out"].set_index("cell").cluster
+rows = []
+for cluster, cells in c3.groupby("cluster"):
+    share = cells.Cell_line.value_counts(normalize=True)
+    big = share[share >= 0.05]
+    if len(big) < 2:
+        continue
+    a_line, b_line = big.index[:2]
+    pick = cells[cells.Cell_line.isin([a_line, b_line])]
+    points = pca[[row[c] for c in pick.index]]
+    in_a = (pick.Cell_line == a_line).to_numpy()
+    directions = invariant_directions(points)
+    p3, rho = cut_bound_p(points @ directions.T, in_a, unimodal_bound)
+    pg, _ = cut_bound_p(points @ directions.T, in_a, gaussian_bound)
+    pi = float(min(in_a.mean(), 1 - in_a.mean()))
+
+    def apart(labels):
+        main = labels.loc[pick.index].groupby(pick.Cell_line.to_numpy()).agg(lambda x: x.value_counts().idxmax())
+        return bool(main[a_line] != main[b_line])
+
+    rows.append({"cluster": cluster, "cells": len(cells), "lines_ge5pct": len(big),
+                 "pair": f"{a_line} + {b_line}", "n": len(pick), "pi": round(pi, 3), "k": len(directions),
+                 "rho": rho, "g_pi": gaussian_bound(pi), "p_ceiling3": p3, "p_gaussian": pg,
+                 "apart_rule_out": apart(ro), "apart_choir1": apart(meta.CHOIR_1)})
+m = pd.DataFrame(rows).sort_values("rho")
+print("ceiling3 clusters with >= 2 lines at >= 5%: true-label split of the two largest lines\n",
+      m.round(3).to_string(index=False))
+lines.to_csv(HERE / "merge_lines.csv")
+m.to_csv(HERE / "merge_pairs.csv", index=False)
+
+# ===== merges.txt =====
+status counts
+ ceiling3   both  merged  recovered  split
+rule_out                                 
+both         17       9          0      1
+merged        0       7          4      0
+recovered     0       5         75      0
+split         5      12         40     15 
+
+line size by ceiling3 status
+            count   mean    std   min    25%    50%    75%     max
+ceiling3                                                         
+both        22.0  228.0  108.0  56.0  136.0  238.0  296.0   506.0
+merged      33.0  216.0  114.0  64.0  126.0  206.0  244.0   593.0
+recovered  119.0  276.0  221.0  73.0  161.0  226.0  307.0  1990.0
+split       16.0  245.0  112.0  99.0  182.0  218.0  287.0   478.0 
+
+lines merged under ceiling3
+                                       size  size_pct                   cancer   rule_out ceiling3
+Cell_line                                                                                        
+HUPT4_PANCREAS                          56      0.01        Pancreatic Cancer      split     both
+HDQP1_BREAST                            64      0.01            Breast Cancer      split   merged
+BICR56_UPPER_AERODIGESTIVE_TRACT        81      0.04     Head and Neck Cancer       both     both
+SU8686_PANCREAS                         82      0.04        Pancreatic Cancer      split   merged
+SNU899_UPPER_AERODIGESTIVE_TRACT        83      0.05     Head and Neck Cancer       both   merged
+SNU308_BILIARY_TRACT                    94      0.07       Gallbladder Cancer  recovered   merged
+SJSA1_BONE                             110      0.11              Bone Cancer      split     both
+NCIH1792_LUNG                          111      0.12              Lung Cancer  recovered   merged
+SW1271_LUNG                            115      0.12              Lung Cancer     merged   merged
+MKN45_STOMACH                          118      0.14           Gastric Cancer     merged   merged
+BT474_BREAST                           125      0.15            Breast Cancer       both   merged
+OSRC2_KIDNEY                           126      0.16            Kidney Cancer  recovered   merged
+CCK81_LARGE_INTESTINE                  127      0.17  Colon/Colorectal Cancer       both     both
+SW1088_CENTRAL_NERVOUS_SYSTEM          128      0.18             Brain Cancer       both     both
+CAS1_CENTRAL_NERVOUS_SYSTEM            133      0.19             Brain Cancer       both     both
+MDAMB361_BREAST                        135      0.20            Breast Cancer      split   merged
+MCF7_BREAST                            143      0.23            Breast Cancer       both   merged
+BHY_UPPER_AERODIGESTIVE_TRACT          145      0.25     Head and Neck Cancer      split   merged
+NCIH2347_LUNG                          145      0.25              Lung Cancer       both     both
+HS852T_SKIN                            162      0.29              Skin Cancer     merged   merged
+DETROIT562_UPPER_AERODIGESTIVE_TRACT   163      0.30     Head and Neck Cancer      split     both
+EBC1_LUNG                              186      0.35              Lung Cancer      split   merged
+SNU1214_UPPER_AERODIGESTIVE_TRACT      188      0.36     Head and Neck Cancer       both     both
+SKMEL3_SKIN                            194      0.37              Skin Cancer       both     both
+HCC38_BREAST                           200      0.40            Breast Cancer  recovered   merged
+PECAPJ49_UPPER_AERODIGESTIVE_TRACT     202      0.41     Head and Neck Cancer      split   merged
+TE1_OESOPHAGUS                         206      0.42        Esophageal Cancer      split   merged
+RCC10RGB_KIDNEY                        233      0.52            Kidney Cancer      split   merged
+NCIH226_LUNG                           235      0.52              Lung Cancer      split   merged
+HS939T_SKIN                            236      0.53              Skin Cancer     merged   merged
+SNU46_UPPER_AERODIGESTIVE_TRACT        236      0.53     Head and Neck Cancer      split     both
+NCIH2444_LUNG                          237      0.54              Lung Cancer      split   merged
+UACC257_SKIN                           239      0.55              Skin Cancer       both     both
+RVH421_SKIN                            239      0.55              Skin Cancer     merged   merged
+HUCCT1_BILIARY_TRACT                   241      0.56         Bile Duct Cancer      split   merged
+WM88_SKIN                              242      0.56              Skin Cancer     merged   merged
+PATU8988S_PANCREAS                     244      0.58        Pancreatic Cancer  recovered   merged
+BICR31_UPPER_AERODIGESTIVE_TRACT       248      0.60     Head and Neck Cancer       both     both
+PK45H_PANCREAS                         271      0.67        Pancreatic Cancer     merged   merged
+DKMG_CENTRAL_NERVOUS_SYSTEM            271      0.67             Brain Cancer       both     both
+COLO792_SKIN                           271      0.67              Skin Cancer       both     both
+KPL1_BREAST                            276      0.69            Breast Cancer      split   merged
+SKMEL2_SKIN                            276      0.69              Skin Cancer       both   merged
+BICR6_UPPER_AERODIGESTIVE_TRACT        286      0.72     Head and Neck Cancer       both   merged
+A2058_SKIN                             294      0.76              Skin Cancer       both     both
+SKMEL5_SKIN                            297      0.77              Skin Cancer       both     both
+SW1990_PANCREAS                        307      0.78        Pancreatic Cancer       both     both
+COLO741_SKIN                           329      0.82              Skin Cancer       both     both
+IGR37_SKIN                             347      0.84              Skin Cancer       both     both
+SKMEL30_SKIN                           353      0.85              Skin Cancer       both     both
+LS180_LARGE_INTESTINE                  361      0.86  Colon/Colorectal Cancer       both   merged
+CL34_LARGE_INTESTINE                   378      0.87  Colon/Colorectal Cancer       both   merged
+SNUC4_LARGE_INTESTINE                  467      0.91  Colon/Colorectal Cancer       both   merged
+PANC0203_PANCREAS                      506      0.93        Pancreatic Cancer      split     both
+A375_SKIN                              593      0.97              Skin Cancer       both   merged 
+
+ceiling3 clusters with >= 2 lines at >= 5%: true-label split of the two largest lines
+  cluster  cells  lines_ge5pct                                                                    pair   n    pi  k    rho  g_pi  p_ceiling3  p_gaussian  apart_rule_out  apart_choir1
+     192    108             2                                SJSA1_BONE + CAS1_CENTRAL_NERVOUS_SYSTEM 101 0.079  6  1.482 0.426       1.000         1.0            True          True
+     183     35             2                      KALS1_CENTRAL_NERVOUS_SYSTEM + HUH28_BILIARY_TRACT  35 0.057  6  2.042 0.323       1.000         1.0           False          True
+      85    232             2                       TE9_OESOPHAGUS + BICR16_UPPER_AERODIGESTIVE_TRACT 222 0.059  9  2.576 0.329       1.000         0.0           False          True
+      15    418             2                                               KPL1_BREAST + MCF7_BREAST 418 0.342 10  2.612 1.496       1.000         1.0            True          True
+     205    246             2                                          NCIH226_LUNG + NCIH2452_PLEURA 245 0.118 10  3.163 0.603       1.000         0.0            True          True
+     196    226             2             DKMG_CENTRAL_NERVOUS_SYSTEM + SW1088_CENTRAL_NERVOUS_SYSTEM 213 0.141  9  3.428 0.703       1.000         0.0            True          True
+      52     90             2                                           RERFLCKJ_LUNG + NCIH2126_LUNG  90 0.078  9  3.477 0.419       1.000         0.0            True          True
+      40    234             2                                                IGR37_SKIN + SKMEL3_SKIN 233 0.215  8  3.877 1.022       1.000         0.0           False          True
+     193    251             3             CAS1_CENTRAL_NERVOUS_SYSTEM + SW1088_CENTRAL_NERVOUS_SYSTEM 187 0.481  9  4.648 1.748       1.000         0.0            True          True
+     100     36             2                    KYSE520_OESOPHAGUS + SNU46_UPPER_AERODIGESTIVE_TRACT  36 0.056  6  4.673 0.315       1.000         0.0           False          True
+      37    149             4                                              SKMEL5_SKIN + UACC257_SKIN 121 0.190  9  4.810 0.918       1.000         0.0            True          True
+      42    229             3                                                IGR37_SKIN + SKMEL3_SKIN 209 0.474  8  5.489 1.744       0.000         0.0           False          True
+      20    258             2                                          MDAMB361_BREAST + BT474_BREAST 257 0.475  8  5.814 1.745       0.000         0.0            True          True
+      32     89             3                            CCK81_LARGE_INTESTINE + CL34_LARGE_INTESTINE  79 0.215  6  5.836 1.024       0.398         0.0           False          True
+     178    540             2                                        SW1990_PANCREAS + PK45H_PANCREAS 534 0.498 10  6.004 1.752       0.000         0.0           False          True
+      41    131             2                                              UACC257_SKIN + SKMEL5_SKIN 126 0.151  8  6.008 0.747       0.001         0.0           False          True
+      78    214             4 DETROIT562_UPPER_AERODIGESTIVE_TRACT + BICR31_UPPER_AERODIGESTIVE_TRACT 157 0.159  9  6.049 0.784       0.000         0.0            True          True
+     101    269             2                                           TE1_OESOPHAGUS + HDQP1_BREAST 260 0.235 10  6.231 1.105       0.000         0.0            True          True
+      28    359             2                                      PATU8988S_PANCREAS + MKN45_STOMACH 357 0.325 10  6.865 1.442       0.000         0.0            True          True
+      30   1207             3                            SNUC4_LARGE_INTESTINE + CL34_LARGE_INTESTINE 804 0.425 11  7.571 1.692       0.000         0.0            True          True
+      69    114             2                     SNU1214_UPPER_AERODIGESTIVE_TRACT + TE14_OESOPHAGUS 111 0.090  9  7.692 0.475       0.000         0.0           False          True
+      38     88             3                                              COLO741_SKIN + SKMEL3_SKIN  68 0.426  5  7.868 1.693       0.000         0.0           False          True
+      39    118             2                                              SKMEL5_SKIN + UACC257_SKIN 115 0.435  9  8.076 1.706       0.000         0.0           False          True
+      86    119             2                                  SNU308_BILIARY_TRACT + TE14_OESOPHAGUS 107 0.140  7  8.353 0.700       0.000         0.0            True          True
+      62     57             3                        SNU46_UPPER_AERODIGESTIVE_TRACT + TE6_OESOPHAGUS  51 0.157  8  9.233 0.773       0.000         0.0            True          True
+      72    895             5      BICR6_UPPER_AERODIGESTIVE_TRACT + BICR31_UPPER_AERODIGESTIVE_TRACT 468 0.436 10  9.331 1.707       0.000         0.0            True          True
+      43    896             2                                                 A375_SKIN + SKMEL2_SKIN 865 0.317 11  9.429 1.415       0.000         0.0           False          True
+     172     68             3                                             RERFLCAI_LUNG + JHOS2_OVARY  38 0.289  7  9.644 1.319       0.000         0.0           False          True
+     124    636             2                                           PANC0203_PANCREAS + EBC1_LUNG 613 0.274 10  9.764 1.261       0.000         0.0            True          True
+     123    341             3                                  HUCCT1_BILIARY_TRACT + SU8686_PANCREAS 311 0.241 10 11.451 1.132       0.000         0.0            True          True
+     120    309             3                                          NCIH2444_LUNG + HUPT4_PANCREAS 282 0.167 10 11.493 0.816       0.000         0.0            True          True
+      44   1451             7                                                 WM88_SKIN + HS939T_SKIN 476 0.494 11 13.128 1.752       0.000         0.0           False          True
+      36    283             5                                              SKMEL5_SKIN + COLO741_SKIN 114 0.447  7 13.213 1.722       0.000         0.0            True          True
+     134    360             2                                          RCC10RGB_KIDNEY + OSRC2_KIDNEY 348 0.356 10 13.563 1.537       0.000         0.0            True          True
+      89    103             2                 BICR56_UPPER_AERODIGESTIVE_TRACT + VMCUB1_URINARY_TRACT  94 0.287  7 14.927 1.310       0.000         0.0           False          True
+      35    485             5                                             COLO792_SKIN + COLO741_SKIN 279 0.412  8 15.563 1.669       0.000         0.0            True          True
+     173    320             2                         SNU46_UPPER_AERODIGESTIVE_TRACT + NCIH1792_LUNG 246 0.423 11 16.216 1.687       0.000         0.0            True          True
+     121    187             2                                       NCIH2347_LUNG + PANC0203_PANCREAS 174 0.264  9 17.331 1.224       0.000         0.0           False          True
+      61     36             2                    SNU46_UPPER_AERODIGESTIVE_TRACT + KYSE520_OESOPHAGUS  35 0.171  6 27.747 0.837       0.000         0.0            True          True
+      34     42             4                            CL34_LARGE_INTESTINE + CCK81_LARGE_INTESTINE  28 0.429  0    NaN 1.697       1.000         1.0           False          True
+      60      7             5       BICR31_UPPER_AERODIGESTIVE_TRACT + YD38_UPPER_AERODIGESTIVE_TRACT   4 0.500  0    NaN 1.752       1.000         1.0           False          True
+      65      5             4                          TE9_OESOPHAGUS + BHY_UPPER_AERODIGESTIVE_TRACT   3 0.333  0    NaN 1.469       1.000         1.0           False          True
+      73      3             2                                     UMUC1_URINARY_TRACT + DANG_PANCREAS   3 0.333  0    NaN 1.469       1.000         1.0           False          True
+      74     22             2              UMUC1_URINARY_TRACT + DETROIT562_UPPER_AERODIGESTIVE_TRACT  21 0.095  0    NaN 0.499       1.000         1.0           False          True
+      80     16             3                                        TE9_OESOPHAGUS + TE14_OESOPHAGUS  15 0.067  0    NaN 0.367       1.000         1.0           False          True
+      82     13             2                       BICR16_UPPER_AERODIGESTIVE_TRACT + TE9_OESOPHAGUS  13 0.308  0    NaN 1.384       1.000         1.0           False          True
+      84      6             2                                        TE9_OESOPHAGUS + TE14_OESOPHAGUS   6 0.333  0    NaN 1.469       1.000         1.0           False          True
+      90      6             5                             SNU308_BILIARY_TRACT + VMCUB1_URINARY_TRACT   3 0.333  0    NaN 1.469       1.000         1.0           False          True
+      99     16             7                        TE6_OESOPHAGUS + SNU46_UPPER_AERODIGESTIVE_TRACT  11 0.364  0    NaN 1.558       1.000         1.0           False          True
+     114     26             3                                          HUPT3_PANCREAS + NCIH2087_LUNG  20 0.250  0    NaN 1.167       1.000         1.0           False          True
+     115     13             2                                     PANC0203_PANCREAS + SU8686_PANCREAS  13 0.077  0    NaN 0.415       1.000         1.0           False          True
+     133     13             4                                        RCC10RGB_KIDNEY + VMRCRCZ_KIDNEY  11 0.364  0    NaN 1.558       1.000         1.0           False          True
+     151      3             2                                       HEC251_ENDOMETRIUM + OVSAHO_OVARY   3 0.333  0    NaN 1.469       1.000         1.0           False          True
+     166     49             6                                              NCIH226_LUNG + JHOS2_OVARY  22 0.500  0    NaN 1.752       1.000         1.0            True          True
+     194     11             4             CAS1_CENTRAL_NERVOUS_SYSTEM + SW1088_CENTRAL_NERVOUS_SYSTEM   9 0.222  0    NaN 1.054       1.000         1.0           False          True
+     207      3             3                                          NCIH2452_PLEURA + NCIH460_LUNG   2 0.500  0    NaN 1.752       1.000         1.0           False          True
+
+# ===== merges_counts.txt =====
+pairs 56 with k 39 k=0 17 max cells k=0 49
+true split fails ceiling3 12 of which passes gaussian 9 median pi fail 0.1295 ok 0.317
+true split passes ceiling3 27 apart under rule_out 16 ; fail apart rule_out 7
+smallest 10 merged 5
+smallest 19 merged 6
+smallest 38 merged 16
+smallest 190 merged 55
+merged share overall 0.289
+
+# ===== trace_protocol.md =====
+# Protocol: why the Markov/Ward tree hides the line boundary (2026-11-09)
+
+User choice: find why the tree does not offer the line boundary for the 27 merged pairs whose true-label split
+passes ceiling 3 (`merge_pairs.csv`: k >= 1, p_ceiling3 <= 0.01).
+
+1. `trace_fit.py`: refit Markov/Ward with ceiling3 exactly as `run.py real` and keep the tree, annotations and
+   split records. Replay: the same 1,838 tested splits and BH decisions as the earlier ceiling3 run (the
+   cluster labels were not printed because `os._exit` dropped buffered output; checked on the splits).
+   Result: 120 BH acceptances in both; p-values equal to the last digits (59 differ by float rounding only).
+2. `trace.py`, per pair, inside its ceiling3 cluster:
+   - cluster node: the smallest tree node holding all the cluster's cells; why traversal stopped there (child
+     edge flags, sibling skipped, sibling p, BH decision, k and rho of its split);
+   - boundary node: the smallest node holding all cells of both lines in the cluster; its depth below the
+     cluster node; how its two children divide the two lines (share of each line in its majority child);
+   - best tree node per line (F1 against the line's cells in the cluster).
+3. Classify each pair: (a) boundary is the cluster node's own split, stopped by the sibling rule or an edge
+   gate; (b) boundary deeper, the cluster node's split cuts elsewhere and was not accepted, so traversal never
+   reached the boundary; (c) no node separates the lines (best F1 < 0.9 for either line).
+
+Descriptive; no production change.
+
+# ===== trace_fit.py =====
+"""trace_protocol.md step 1: refit Markov/Ward with ceiling3 and keep the tree, annotations and split records."""
+import json
+import os
+import pickle
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import run  # noqa: E402  (patches apply_split_count_rule_out)
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance  # noqa: E402
+from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+data = pd.DataFrame(np.load(source / "pca.npy"), index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+params = dict(METHOD_SPECS[METHOD].param_grid[0])
+out = HERE / "trace"
+out.mkdir(exist_ok=True)
+distance_path = out / "diffusion_distance.npy"
+distances = np.lib.format.open_memmap(distance_path, mode="w+", dtype=np.float64, shape=(len(data) * (len(data) - 1) // 2,))
+pdist(np.load(source / METHOD / "coordinates.npy"), metric="euclidean", out=distances)
+distances.flush()
+run.STATE.update(arm="ceiling3", splits=[])
+with threadpool_limits(limits=4):
+    result = run_tbs_on_distance(
+        data, distances, 0.01, edge_alpha=0.001, tree_linkage_method=params["tree_linkage_method"],
+        feature_space=continuous_feature_space_from_columns(tuple(data.columns)), branch_length_data_df=data,
+        edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+        adaptive_projection_dimension_energy_fraction=0.90, sibling_split_count_rule_out=True,
+        **_tbs_branch_length_optimization_kwargs(params), extra={"feature_family_diffusion_fallback_reason": None})
+labels = np.asarray(result.labels, dtype=int)
+earlier = pd.read_csv(HERE / METHOD / "assignments_ceiling3.csv.gz").cluster.to_numpy()
+print(json.dumps({"found_clusters": result.found_clusters, "same_labels_as_run": bool((labels == earlier).all())}))
+tree = result.extra["tree"]
+with (out / "tree.pkl").open("wb") as f:
+    pickle.dump(nx_tree := __import__("networkx").DiGraph(tree), f)
+result.extra["annotations"].drop(columns="distribution", errors="ignore").to_csv(out / "annotations.csv")
+(out / "splits.jsonl").write_text("".join(json.dumps(s, default=float) + "\n" for s in run.STATE["splits"]))
+distances._mmap.close()
+distance_path.unlink()
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (run_lbfgsb.py)
+
+# ===== trace.py =====
+"""trace_protocol.md step 2-3: where the line boundary sits in the tree for the 27 merged pairs, and why it is not reached."""
+import json
+import pickle
+from pathlib import Path
+
+import networkx as nx
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 250)
+tree = pickle.load((HERE / "trace" / "tree.pkl").open("rb"))
+ann = pd.read_csv(HERE / "trace" / "annotations.csv", index_col=0, low_memory=False)
+splits = {s["node"]: s for s in map(json.loads, (HERE / "trace" / "splits.jsonl").read_text().splitlines())}
+assign = pd.read_csv(HERE / "tbs_family_diffusion_markov_ward" / "assignments_ceiling3.csv.gz").set_index("cell")
+pairs = pd.read_csv(HERE / "merge_pairs.csv")
+pairs = pairs[(pairs.k > 0) & (pairs.p_ceiling3 <= 0.01)].reset_index(drop=True)
+assert len(pairs) == 27, len(pairs)
+
+order = list(nx.topological_sort(tree))[::-1]  # children before parents
+leaf_cell = {n: tree.nodes[n]["label"] for n in tree if tree.out_degree(n) == 0}
+total = {}
+for n in order:
+    total[n] = 1 if n in leaf_cell else sum(total[c] for c in tree.successors(n))
+
+
+def counts(cells):
+    """Number of the given cells below each node."""
+    member = set(cells)
+    out = {}
+    for n in order:
+        out[n] = int(leaf_cell[n] in member) if n in leaf_cell else sum(out[c] for c in tree.successors(n))
+    return out
+
+
+def smallest_holding(cnt, size):
+    return min((n for n, v in cnt.items() if v == size), key=total.get)
+
+
+def depth_between(top, node):
+    return nx.shortest_path_length(tree, top, node)
+
+
+def node_facts(n):
+    kids = list(tree.successors(n))
+    a = ann.loc[n]
+    s = splits.get(n, {})
+    return {"children": [total[c] for c in kids], "edge_sig": [bool(ann.loc[c, "Child_Parent_Divergence_Significant"]) for c in kids],
+            "skipped": bool(a.Sibling_Divergence_Skipped), "bh_different": bool(a.Sibling_BH_Different),
+            "k": s.get("k"), "rho": s.get("rho"), "p": s.get("p")}
+
+
+rows = []
+for _, pr in pairs.iterrows():
+    line_a, line_b = pr.pair.split(" + ")
+    cells = assign[assign.cluster == pr.cluster]
+    c_all = counts(cells.index)
+    top = smallest_holding(c_all, len(cells))
+    ca, cb = counts(cells.index[cells.Cell_line == line_a]), counts(cells.index[cells.Cell_line == line_b])
+    na, nb = ca[top], cb[top]
+    both = {n: ca[n] + cb[n] for n in order}
+    boundary = smallest_holding(both, na + nb)
+    kids = list(tree.successors(boundary))
+    a_major = max(ca[k] for k in kids) / na
+    b_major = max(cb[k] for k in kids) / nb
+    same_child = int(np.argmax([ca[k] for k in kids])) == int(np.argmax([cb[k] for k in kids]))
+    f1 = lambda c, n_line: max(2 * c[n] / (total[n] + n_line) for n in nx.descendants(tree, top) | {top})  # noqa: E731
+    top_f, bnd_f = node_facts(top), node_facts(boundary)
+    rows.append({"pair": pr.pair[:44], "cluster_cells": len(cells), "cluster_node_cells": total[top],
+                 "top_children": top_f["children"], "top_edge_sig": top_f["edge_sig"], "top_skipped": top_f["skipped"],
+                 "top_k": top_f["k"], "top_rho": top_f["rho"], "top_p": top_f["p"], "top_bh": top_f["bh_different"],
+                 "boundary_depth": depth_between(top, boundary), "boundary_cells": total[boundary],
+                 "a_in_major_child": round(a_major, 2), "b_in_major_child": round(b_major, 2), "lines_same_child": same_child,
+                 "boundary_k": bnd_f["k"], "boundary_rho": bnd_f["rho"], "boundary_p": bnd_f["p"],
+                 "true_rho": pr.rho, "best_f1_a": round(f1(ca, na), 2), "best_f1_b": round(f1(cb, nb), 2)})
+t = pd.DataFrame(rows)
+
+
+def kind(r):
+    if min(r.best_f1_a, r.best_f1_b) < 0.9:
+        return "c_no_node_separates"
+    return "a_boundary_is_top_split" if r.boundary_depth == 0 else "b_boundary_deeper"
+
+
+t["kind"] = t.apply(kind, axis=1)
+t["top_stop"] = np.where(~t.top_edge_sig.map(any), "edge_gate", np.where(t.top_skipped, "sibling_skipped",
+                         np.where(t.top_p.fillna(1) > 0.01, "ceiling3_p", "bh")))
+print(t.drop(columns=["pair"]).assign(pair=t.pair).round(3).to_string(index=False), "\n")
+print(pd.crosstab(t.kind, t.top_stop), "\n")
+print("top split rho (median by kind)\n", t.groupby("kind")[["top_rho", "true_rho", "boundary_rho"]].median().round(2))
+t.to_csv(HERE / "trace_pairs.csv", index=False)
+
+# rho a split of this size, share and dimension needs for p <= 0.01 under ceiling 3 (bisection on cut_rule's tail)
+import sys  # noqa: E402
+
+sys.path.insert(0, str(HERE.parent / "gaussian_cut_rule_20261108"))
+from cut_rule import log_flat_cuts  # noqa: E402
+from scipy.optimize import brentq  # noqa: E402
+from scipy.stats import ncx2  # noqa: E402
+
+
+def needed_rho(n, k, bound=3.0):
+    return brentq(lambda r: log_flat_cuts(n, k) + ncx2.logsf(n * r, k, n * bound) - np.log(0.01), bound, 100.0)
+
+
+t["top_needed_rho"] = [needed_rho(r.cluster_node_cells, int(r.top_k)) if r.top_k == r.top_k else np.nan for r in t.itertuples()]
+t["clean_boundary"] = (~t.lines_same_child) & (t.a_in_major_child >= 0.85) & (t.b_in_major_child >= 0.85) & (t.boundary_depth == 0)
+print(t[["pair", "cluster_node_cells", "top_k", "top_rho", "top_needed_rho", "true_rho", "a_in_major_child",
+         "b_in_major_child", "clean_boundary", "top_stop"]].round(2).to_string(index=False))
+print("\nclean boundary at the top split:", int(t.clean_boundary.sum()), "| needed rho median",
+      round(t.top_needed_rho.median(), 2), "range", round(t.top_needed_rho.min(), 2), "-", round(t.top_needed_rho.max(), 2))
+t.to_csv(HERE / "trace_pairs.csv", index=False)
+
+# ===== trace.txt =====
+ cluster_cells  cluster_node_cells top_children   top_edge_sig  top_skipped  top_k  top_rho  top_p  top_bh  boundary_depth  boundary_cells  a_in_major_child  b_in_major_child  lines_same_child  boundary_k  boundary_rho  boundary_p  true_rho  best_f1_a  best_f1_b                    kind   top_stop                                         pair
+           229                 229   [113, 116]   [True, True]        False    8.0    0.323    1.0   False               0             229              0.52              0.52              True         8.0         0.323         1.0     5.489       0.65       0.60     c_no_node_separates ceiling3_p                     IGR37_SKIN + SKMEL3_SKIN
+           258                 258   [122, 136]   [True, True]        False    9.0    4.384    1.0   False               0             258              0.90              1.00             False         9.0         4.384         1.0     5.814       0.95       0.95 a_boundary_is_top_split ceiling3_p               MDAMB361_BREAST + BT474_BREAST
+           540                 540    [22, 518]   [True, True]        False   11.0    0.526    1.0   False               0             540              0.92              1.00              True        11.0         0.526         1.0     6.004       0.91       0.95 a_boundary_is_top_split ceiling3_p             SW1990_PANCREAS + PK45H_PANCREAS
+           131                 131     [53, 78]   [True, True]        False    8.0    1.202    1.0   False               0             131              0.51              1.00              True         8.0         1.202         1.0     6.008       0.90       0.56     c_no_node_separates ceiling3_p                   UACC257_SKIN + SKMEL5_SKIN
+           214                 214    [37, 177]   [True, True]        False    8.0    0.358    1.0   False               0             214              0.94              0.76              True         8.0         0.358         1.0     6.049       0.80       0.61     c_no_node_separates ceiling3_p DETROIT562_UPPER_AERODIGESTIVE_TRACT + BICR3
+           269                 269     [260, 9]   [True, True]        False   11.0    0.852    1.0   False               0             269              0.98              1.00              True        11.0         0.852         1.0     6.231       0.97       0.92 a_boundary_is_top_split ceiling3_p                TE1_OESOPHAGUS + HDQP1_BREAST
+           359                 359   [235, 124]   [True, True]        False    9.0    3.098    1.0   False               0             359              0.95              0.95             False         9.0         3.098         1.0     6.865       0.96       0.92 a_boundary_is_top_split ceiling3_p           PATU8988S_PANCREAS + MKN45_STOMACH
+          1207                1207   [640, 567]   [True, True]        False   12.0    2.122    1.0   False               0            1207              0.88              0.97             False        12.0         2.122         1.0     7.571       0.76       0.73     c_no_node_separates ceiling3_p SNUC4_LARGE_INTESTINE + CL34_LARGE_INTESTINE
+           114                 114     [19, 95]   [True, True]        False    9.0    2.221    1.0   False               0             114              0.94              1.00             False         9.0         2.221         1.0     7.692       0.97       0.75     c_no_node_separates ceiling3_p SNU1214_UPPER_AERODIGESTIVE_TRACT + TE14_OES
+            88                  88     [39, 49] [False, False]         True    NaN      NaN    NaN   False               0              88              0.77              0.62             False         NaN           NaN         NaN     7.868       0.68       0.53     c_no_node_separates  edge_gate                   COLO741_SKIN + SKMEL3_SKIN
+           118                 118     [36, 82]   [True, True]        False    9.0    0.560    1.0   False               0             118              0.82              0.56              True         9.0         0.560         1.0     8.076       0.72       0.60     c_no_node_separates ceiling3_p                   SKMEL5_SKIN + UACC257_SKIN
+           119                 119    [18, 101]   [True, True]        False    9.0    2.454    1.0   False               0             119              1.00              0.80             False         9.0         2.454         1.0     8.353       0.99       0.79     c_no_node_separates ceiling3_p       SNU308_BILIARY_TRACT + TE14_OESOPHAGUS
+            57                  57      [2, 55]   [True, True]        False    9.0    0.532    1.0   False               0              57              1.00              0.88              True         9.0         0.532         1.0     9.233       0.89       0.93     c_no_node_separates ceiling3_p SNU46_UPPER_AERODIGESTIVE_TRACT + TE6_OESOPH
+           895                 895   [505, 390]   [True, True]        False   12.0    1.603    1.0   False               0             895              0.69              1.00             False        12.0         1.603         1.0     9.331       0.73       0.66     c_no_node_separates ceiling3_p BICR6_UPPER_AERODIGESTIVE_TRACT + BICR31_UPP
+           896                 896    [31, 865]   [True, True]        False   12.0    0.262    1.0   False               0             896              0.98              0.99              True        12.0         0.262         1.0     9.429       0.87       0.61     c_no_node_separates ceiling3_p                      A375_SKIN + SKMEL2_SKIN
+            68                  68     [18, 50]   [True, True]        False    8.0    5.183    1.0   False               0              68              1.00              0.82              True         8.0         5.183         1.0     9.644       0.70       0.56     c_no_node_separates ceiling3_p                  RERFLCAI_LUNG + JHOS2_OVARY
+           636                 636    [613, 23]   [True, True]        False   11.0    1.290    1.0   False               0             636              1.00              0.99              True        11.0         1.290         1.0     9.764       0.95       0.87     c_no_node_separates ceiling3_p                PANC0203_PANCREAS + EBC1_LUNG
+           341                 341    [318, 23]   [True, True]        False   10.0    3.201    1.0   False               1             318              0.99              0.96             False        10.0         4.941         1.0    11.451       0.98       0.95       b_boundary_deeper ceiling3_p       HUCCT1_BILIARY_TRACT + SU8686_PANCREAS
+           309                 309    [42, 267]   [True, True]        False   11.0    3.657    1.0   False               0             309              1.00              0.85             False        11.0         3.657         1.0    11.493       0.99       0.90 a_boundary_is_top_split ceiling3_p               NCIH2444_LUNG + HUPT4_PANCREAS
+          1451                1451    [3, 1448] [False, False]         True    NaN      NaN    NaN   False               2            1292              1.00              0.88              True         NaN           NaN         NaN    13.128       0.81       0.91     c_no_node_separates  edge_gate                      WM88_SKIN + HS939T_SKIN
+           283                 283   [147, 136]   [True, True]        False   10.0    1.223    1.0   False               0             283              0.76              0.67              True        10.0         1.223         1.0    13.213       0.58       0.72     c_no_node_separates ceiling3_p                   SKMEL5_SKIN + COLO741_SKIN
+           360                 360   [226, 134]   [True, True]        False   10.0    4.528    1.0   False               0             360              0.97              0.98             False        10.0         4.528         1.0    13.563       0.98       0.94 a_boundary_is_top_split ceiling3_p               RCC10RGB_KIDNEY + OSRC2_KIDNEY
+           103                 103     [26, 77]   [True, True]        False    8.0    3.121    1.0   False               0             103              1.00              0.89             False         8.0         3.121         1.0    14.927       0.93       0.91 a_boundary_is_top_split ceiling3_p BICR56_UPPER_AERODIGESTIVE_TRACT + VMCUB1_UR
+           485                 485   [279, 206]   [True, True]        False   11.0    1.346    1.0   False               0             485              0.59              0.56             False        11.0         1.346         1.0    15.563       0.51       0.67     c_no_node_separates ceiling3_p                  COLO792_SKIN + COLO741_SKIN
+           320                 320    [265, 55]   [True, True]        False   12.0    4.063    1.0   False               0             320              0.97              1.00              True        12.0         4.063         1.0    16.216       0.95       1.00 a_boundary_is_top_split ceiling3_p SNU46_UPPER_AERODIGESTIVE_TRACT + NCIH1792_L
+           187                 187    [37, 150]   [True, True]        False    8.0    1.963    1.0   False               0             187              1.00              0.72             False         8.0         1.963         1.0    17.331       0.97       0.80     c_no_node_separates ceiling3_p            NCIH2347_LUNG + PANC0203_PANCREAS
+            36                  36     [25, 11]   [True, True]        False    6.0    1.626    1.0   False               0              36              0.86              1.00             False         6.0         1.626         1.0    27.747       0.93       0.73     c_no_node_separates ceiling3_p SNU46_UPPER_AERODIGESTIVE_TRACT + KYSE520_OE 
+
+top_stop                 ceiling3_p  edge_gate
+kind                                          
+a_boundary_is_top_split           8          0
+b_boundary_deeper                 1          0
+c_no_node_separates              16          2 
+
+top split rho (median by kind)
+                          top_rho  true_rho  boundary_rho
+kind                                                    
+a_boundary_is_top_split     3.39      9.18          3.39
+b_boundary_deeper           3.20     11.45          4.94
+c_no_node_separates         1.32      9.28          1.32
+                                        pair  cluster_node_cells  top_k  top_rho  top_needed_rho  true_rho  a_in_major_child  b_in_major_child  clean_boundary   top_stop
+                    IGR37_SKIN + SKMEL3_SKIN                 229    8.0     0.32            5.23      5.49              0.52              0.52           False ceiling3_p
+              MDAMB361_BREAST + BT474_BREAST                 258    9.0     4.38            5.23      5.81              0.90              1.00            True ceiling3_p
+            SW1990_PANCREAS + PK45H_PANCREAS                 540   11.0     0.53            4.75      6.00              0.92              1.00           False ceiling3_p
+                  UACC257_SKIN + SKMEL5_SKIN                 131    8.0     1.20            5.85      6.01              0.51              1.00           False ceiling3_p
+DETROIT562_UPPER_AERODIGESTIVE_TRACT + BICR3                 214    8.0     0.36            5.30      6.05              0.94              0.76           False ceiling3_p
+               TE1_OESOPHAGUS + HDQP1_BREAST                 269   11.0     0.85            5.39      6.23              0.98              1.00           False ceiling3_p
+          PATU8988S_PANCREAS + MKN45_STOMACH                 359    9.0     3.10            4.92      6.87              0.95              0.95            True ceiling3_p
+SNUC4_LARGE_INTESTINE + CL34_LARGE_INTESTINE                1207   12.0     2.12            4.27      7.57              0.88              0.97            True ceiling3_p
+SNU1214_UPPER_AERODIGESTIVE_TRACT + TE14_OES                 114    9.0     2.22            6.19      7.69              0.94              1.00            True ceiling3_p
+                  COLO741_SKIN + SKMEL3_SKIN                  88    NaN      NaN             NaN      7.87              0.77              0.62           False  edge_gate
+                  SKMEL5_SKIN + UACC257_SKIN                 118    9.0     0.56            6.14      8.08              0.82              0.56           False ceiling3_p
+      SNU308_BILIARY_TRACT + TE14_OESOPHAGUS                 119    9.0     2.45            6.13      8.35              1.00              0.80           False ceiling3_p
+SNU46_UPPER_AERODIGESTIVE_TRACT + TE6_OESOPH                  57    9.0     0.53            7.26      9.23              1.00              0.88           False ceiling3_p
+BICR6_UPPER_AERODIGESTIVE_TRACT + BICR31_UPP                 895   12.0     1.60            4.45      9.33              0.69              1.00           False ceiling3_p
+                     A375_SKIN + SKMEL2_SKIN                 896   12.0     0.26            4.45      9.43              0.98              0.99           False ceiling3_p
+                 RERFLCAI_LUNG + JHOS2_OVARY                  68    8.0     5.18            6.78      9.64              1.00              0.82           False ceiling3_p
+               PANC0203_PANCREAS + EBC1_LUNG                 636   11.0     1.29            4.63      9.76              1.00              0.99           False ceiling3_p
+      HUCCT1_BILIARY_TRACT + SU8686_PANCREAS                 341   10.0     3.20            5.06     11.45              0.99              0.96           False ceiling3_p
+              NCIH2444_LUNG + HUPT4_PANCREAS                 309   11.0     3.66            5.25     11.49              1.00              0.85            True ceiling3_p
+                     WM88_SKIN + HS939T_SKIN                1451    NaN      NaN             NaN     13.13              1.00              0.88           False  edge_gate
+                  SKMEL5_SKIN + COLO741_SKIN                 283   10.0     1.22            5.24     13.21              0.76              0.67           False ceiling3_p
+              RCC10RGB_KIDNEY + OSRC2_KIDNEY                 360   10.0     4.53            5.01     13.56              0.97              0.98            True ceiling3_p
+BICR56_UPPER_AERODIGESTIVE_TRACT + VMCUB1_UR                 103    8.0     3.12            6.17     14.93              1.00              0.89            True ceiling3_p
+                 COLO792_SKIN + COLO741_SKIN                 485   11.0     1.35            4.84     15.56              0.59              0.56           False ceiling3_p
+SNU46_UPPER_AERODIGESTIVE_TRACT + NCIH1792_L                 320   12.0     4.06            5.30     16.22              0.97              1.00           False ceiling3_p
+           NCIH2347_LUNG + PANC0203_PANCREAS                 187    8.0     1.96            5.44     17.33              1.00              0.72           False ceiling3_p
+SNU46_UPPER_AERODIGESTIVE_TRACT + KYSE520_OE                  36    6.0     1.63            7.39     27.75              0.86              1.00            True ceiling3_p
+
+clean boundary at the top split: 8 | needed rho median 5.25 range 4.27 - 7.39
+
+# ===== trace_counts.txt =====
+clean 8 rho 1.63 4.53 needed 4.27 7.39 true 5.81 27.75
+edge 2
+other 17 top rho median 1.22 max 5.18 deeper node isolates both lines 4
+all top splits below needed True top rho above 3: 8
+

@@ -1,0 +1,443 @@
+# ===== alternative_separations.py =====
+"""Prototype: report alternative separations where a subtree's top eigenvalues tie.
+
+For a subtree whose top eigenvalues above the noise band form one eigenspace of multiplicity m >= 2
+(block equality test, `subtree_spectrum_topology_20261108/run.py`), the tree is cut into m + 1 blocks by
+following its own splits (largest merge height first; peels smaller than `min_block` are walked through and
+their cells left out). Every two-sided split of the blocks is reported with its strength
+n_S n_R / n * d' W^-1 d (W = pooled within-block covariance) and whether the tree holds it (one side is the
+block set under a node of the tree). Splits the tree does not hold are the alternative separations.
+"""
+
+import importlib.util
+import itertools
+from pathlib import Path
+
+import numpy as np
+
+_spec = importlib.util.spec_from_file_location(
+    "subtree_spectrum", Path(__file__).resolve().parent.parent / "subtree_spectrum_topology_20261108" / "run.py")
+spectrum_module = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(spectrum_module)
+spectrum = spectrum_module.spectrum
+
+
+class Tree:
+    """Children, sizes and merge heights of a scipy linkage (leaves 0..n-1)."""
+
+    def __init__(self, z):
+        self.n = len(z) + 1
+        self.left, self.right = z[:, 0].astype(int), z[:, 1].astype(int)
+        self.height = np.r_[np.zeros(self.n), z[:, 2]]
+        self.size = np.r_[np.ones(self.n, dtype=int), z[:, 3].astype(int)]
+
+    def children(self, u):
+        return (self.left[u - self.n], self.right[u - self.n]) if u >= self.n else None
+
+    def leaves(self, u):
+        stack, out = [u], []
+        while stack:
+            w = stack.pop()
+            if w < self.n:
+                out.append(w)
+            else:
+                stack += list(self.children(w))
+        return np.array(out)
+
+    def effective_children(self, u, min_block):
+        """First split below u whose two sides both hold >= min_block cells (walking down the larger side)."""
+        while u >= self.n:
+            a, b = self.children(u)
+            if min(self.size[a], self.size[b]) >= min_block:
+                return a, b
+            u = a if self.size[a] >= self.size[b] else b
+        return None
+
+
+def blocks_of(tree, v, count, min_block):
+    """Cut subtree v into `count` blocks along the tree; returns block nodes and the held block sets."""
+    first = tree.effective_children(v, min_block)
+    if first is None:
+        return [], set(), frozenset()
+    blocks, held, top = list(first), [frozenset([0]), frozenset([1])], {0}  # top: blocks of v's first child
+    while len(blocks) < count:
+        splittable = [(tree.height[b], i) for i, b in enumerate(blocks) if tree.effective_children(b, min_block)]
+        if not splittable:
+            break
+        _, i = max(splittable)
+        a, b = tree.effective_children(blocks[i], min_block)
+        j = len(blocks)
+        blocks[i] = a
+        blocks.append(b)
+        # every held set containing block i now contains the new block j as well; i and j alone are new clades
+        held = [h | {j} if i in h else h for h in held] + [frozenset([i]), frozenset([j])]
+        if i in top:
+            top.add(j)
+    return blocks, set(held), frozenset(top)
+
+
+def report_node(points, tree, v, min_block):
+    """Alternative-separation rows for subtree v, or [] when its top eigenvalues do not tie."""
+    cells = tree.leaves(v)
+    s = spectrum(points[cells])
+    m = s["multiplicity"][0] if s["multiplicity"] else 0
+    if m < 2:
+        return [], s
+    blocks, held, top = blocks_of(tree, v, m + 1, min_block)
+    g = len(blocks)
+    if g < 3:
+        return [], s
+    block_cells = [tree.leaves(b) for b in blocks]
+    x = [points[c] for c in block_cells]
+    centered = np.vstack([b - b.mean(0) for b in x])
+    w_inv = np.linalg.pinv(centered.T @ centered / (len(centered) - g))
+    sizes = np.array([len(c) for c in block_cells])
+    means = np.array([b.mean(0) for b in x])
+    rows = []
+    for size in range(1, g // 2 + 1):
+        for side in itertools.combinations(range(g), size):
+            if 2 * size == g and 0 not in side:
+                continue
+            other = [i for i in range(g) if i not in side]
+            n_s, n_r = sizes[list(side)].sum(), sizes[other].sum()
+            d = sizes[list(side)] @ means[list(side)] / n_s - sizes[other] @ means[other] / n_r
+            rows.append({"node": int(v), "n": int(len(cells)), "k": s["k"], "multiplicity": "+".join(map(str, s["multiplicity"])),
+                         "m": int(m), "blocks": g, "block_sizes": sizes.tolist(), "left_out": int(len(cells) - sizes.sum()),
+                         "side": list(side), "strength": float(n_s * n_r / (n_s + n_r) * d @ w_inv @ d),
+                         "held": frozenset(side) in held or frozenset(other) in held,
+                         "tree_split": top in (frozenset(side), frozenset(other)),
+                         "block_cells": block_cells})
+    first_strength = next(r["strength"] for r in rows if r["tree_split"])
+    for r in rows:
+        r["ratio_to_tree_split"] = r["strength"] / first_strength
+    return rows, s
+
+
+def report(points, z, *, min_n=60, min_block=None, min_small=0):
+    """Rows for every subtree of the tree whose top eigenvalues tie."""
+    tree = Tree(z)
+    rows = []
+    for v in range(tree.n, 2 * tree.n - 1):
+        if tree.size[v] < min_n:
+            continue
+        a, b = tree.children(v)
+        if min(tree.size[a], tree.size[b]) < min_small:
+            continue
+        block = min_block if min_block is not None else max(20, int(0.02 * tree.size[v]))
+        node_rows, _ = report_node(points, tree, v, block)
+        rows += node_rows
+    return rows
+
+
+def _self_check():
+    """Tied case: 4 groups at the corners of a regular simplex; distinct case: groups at unequal spacing."""
+    from scipy.cluster.hierarchy import linkage
+
+    rng = np.random.default_rng(7)
+    p, per = 30, 250
+    corners = np.c_[np.eye(4) - 0.25, np.zeros((4, p - 4))] * 8.0  # equal pairwise distances
+    tied = np.vstack([c + rng.standard_normal((per, p)) for c in corners])
+    rows = report(tied, linkage(tied, "ward"), min_n=900)
+    root = [r for r in rows if r["n"] == 4 * per]
+    assert root and root[0]["m"] == 3 and root[0]["blocks"] == 4, "tied simplex root must be flagged with 4 blocks"
+    assert len(root) == 7 and sum(r["held"] for r in root) == 5, "4 blocks: 7 splits, the tree holds 5"
+    alternatives = [r for r in root if not r["held"]]
+    assert all(r["ratio_to_tree_split"] > 0.9 for r in alternatives), "dropped 2+2 splits must be about as strong"
+    for block in root[0]["block_cells"]:
+        assert len(np.unique(block // per)) == 1, "each block must be one simulated group"
+    spaced = np.vstack([c * f + rng.standard_normal((per, p)) for c, f in zip(corners, (1.0, 1.6, 2.4, 3.4))])
+    rows = report(spaced, linkage(spaced, "ward"), min_n=900)
+    assert not [r for r in rows if r["n"] == 4 * per], "unequal spacing must not be flagged at the root"
+    print("self-check passed:", [round(r["ratio_to_tree_split"], 3) for r in alternatives])
+
+
+if __name__ == "__main__":
+    _self_check()
+
+# ===== run.py =====
+"""Run the alternative-separation prototype on simulated data (both trees) and the real CHOIR trees.
+
+usage: run.py sim WORKERS | real
+"""
+
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+sys.path.insert(1, str(HERE.parents[2]))
+sys.path.insert(2, str(HERE))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from scipy.cluster.hierarchy import linkage  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+from alternative_separations import report  # noqa: E402
+
+
+def describe(rows, labels):
+    """Drop cell lists; add each block's main label and its share, and whether every block is one label."""
+    out = []
+    for r in rows:
+        tops = [pd.Series(labels[c]).value_counts(normalize=True) for c in r["block_cells"]]
+        r = {k: v for k, v in r.items() if k != "block_cells"}
+        r["block_labels"] = [str(t.index[0]) for t in tops]
+        r["block_purity"] = [round(float(t.iloc[0]), 3) for t in tops]
+        r["side"] = [int(i) for i in r["side"]]
+        out.append(r)
+    return out
+
+
+def sim_task(job):
+    import depth  # noqa: PLC0415
+    from validate import prepare  # noqa: PLC0415
+
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    labels = np.asarray(truth).astype(str)
+    rows = []
+    with threadpool_limits(limits=1):
+        data, symmetric, markov = prepare(counts)
+        points = data.to_numpy(dtype=np.float64)
+        for name, coords, method in (("symmetric_average", symmetric, "average"), ("markov_ward", markov, "ward")):
+            z = linkage(pdist(np.asarray(coords)), method=method)
+            rows += [{"model": model, "replicate": replicate, "tree": name, **r}
+                     for r in describe(report(points, z, min_n=60), labels)]
+    return model, replicate, rows
+
+
+def simulate(workers):
+    import depth  # noqa: F401,PLC0415
+    from validate import MODELS  # noqa: PLC0415
+
+    jobs = [(m, r) for m in ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+            for r in range(MODELS[m]["replicates"])] + [(m, r) for m in ("low", "matched_median", "high") for r in range(50)]
+    with Pool(workers) as pool, (HERE / "sim_rows.jsonl").open("w") as f, (HERE / "sim_done.jsonl").open("w") as d:
+        for model, replicate, rows in pool.imap_unordered(sim_task, jobs):
+            f.write("".join(json.dumps(r) + "\n" for r in rows))
+            d.write(json.dumps({"model": model, "replicate": replicate}) + "\n")
+
+
+def real():
+    base = HERE.parent
+    meta = pd.read_csv(base / "choir_cell_lines_tbs_merged_20261106/cell_metadata.csv", index_col=0, dtype=str)
+    points = np.load(base / "choir_cell_lines_tbs_merged_20261106/pca.npy").astype(np.float64)
+    labels = meta.Cell_line.to_numpy()
+    trees = {"symmetric_average": base / "choir_cell_lines_tbs_merged_20261106/linkage.npy",
+             "markov_ward": base / "choir_tbs_recovery_comparison_20261103_174622/markov_ward/linkage.npy"}
+    with threadpool_limits(limits=4), (HERE / "real_rows.jsonl").open("w") as f:
+        for name, path in trees.items():
+            rows = describe(report(points, np.load(path), min_n=500, min_small=50), labels)
+            f.write("".join(json.dumps({"tree": name, **r}) + "\n" for r in rows))
+            print(name, len({r["node"] for r in rows}), "flagged nodes", flush=True)
+
+
+if __name__ == "__main__":
+    real() if sys.argv[1] == "real" else simulate(int(sys.argv[2]))
+
+# ===== summarize.py =====
+"""Summaries of the prototype's output (sim_rows.jsonl, real_rows.jsonl)."""
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 250)
+pd.set_option("display.max_colwidth", 120)
+
+
+def load(name):
+    return pd.DataFrame(map(json.loads, (HERE / f"{name}.jsonl").read_text().splitlines()))
+
+
+def per_node(rows, keys):
+    def one(x):
+        alt = x[~x.held]
+        return pd.Series({"n": x.n.iloc[0], "m": x.m.iloc[0], "blocks": x.blocks.iloc[0], "left_out": x.left_out.iloc[0],
+                          "pure_blocks": bool(min(x.block_purity.iloc[0]) >= 0.9),
+                          "between_groups": len(set(x.block_labels.iloc[0])) >= 2,
+                          "alternatives": len(alt), "best_alternative": alt.ratio_to_tree_split.max() if len(alt) else np.nan})
+    return rows.groupby(keys + ["node"]).apply(one, include_groups=False).reset_index()
+
+
+def main():
+    sim, done = load("sim_rows"), load("sim_done")
+    nodes = per_node(sim, ["model", "replicate", "tree"])
+    datasets = done.groupby("model").size().rename("datasets")
+    table = nodes.groupby(["model", "tree", "between_groups"]).agg(
+        flagged=("node", "size"), median_n=("n", "median"), median_m=("m", "median"),
+        share_pure_blocks=("pure_blocks", "mean"), median_alternatives=("alternatives", "median"),
+        median_best_alternative=("best_alternative", "median"),
+        share_best_alt_ge_090=("best_alternative", lambda x: (x >= 0.9).mean())).join(datasets, on="model")
+    table["flagged_per_dataset"] = table.flagged / table.datasets
+    print("Simulated\n", table.round(3).to_string(), "\n")
+    print("Flagged nodes by m\n", nodes.groupby(["between_groups", "m"]).agg(nodes=("node", "size"),
+          median_alternatives=("alternatives", "median"), best_alt=("best_alternative", "median")).round(3).to_string(), "\n")
+    roots = nodes[nodes.n >= nodes.groupby(["model", "replicate", "tree"]).n.transform("max")]
+    print("Flagged roots\n", roots.groupby(["model", "tree"]).agg(flagged_roots=("node", "size"),
+          m=("m", "median"), pure=("pure_blocks", "mean"), best_alt=("best_alternative", "median")).round(3).to_string(), "\n")
+    real = load("real_rows")
+    rn = per_node(real, ["tree"])
+    print("Real flagged nodes\n", rn.round(3).to_string(index=False), "\n")
+    alt = real[~real.held].sort_values("ratio_to_tree_split", ascending=False)
+    show = alt.groupby(["tree", "node"]).head(2)[["tree", "node", "n", "m", "block_sizes", "block_labels", "block_purity",
+                                                   "side", "ratio_to_tree_split"]]
+    print("Real: two strongest alternatives per flagged node\n", show.round(3).to_string(index=False))
+    table.round(4).to_csv(HERE / "sim_summary.csv")
+    rn.to_csv(HERE / "real_nodes.csv", index=False)
+    show.to_csv(HERE / "real_alternatives.csv", index=False)
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== summary.txt =====
+Simulated
+                                                            flagged  median_n  median_m  share_pure_blocks  median_alternatives  median_best_alternative  share_best_alt_ge_090  datasets  flagged_per_dataset
+model                    tree              between_groups                                                                                                                                                    
+high                     markov_ward       False                65     103.0       2.0                1.0                  0.0                    0.635                  0.031        50                 1.30
+                         symmetric_average False                52     120.5       2.0                1.0                  0.0                    0.868                  0.058        50                 1.04
+low                      markov_ward       False               159     114.0       3.0                1.0                  0.0                    0.872                  0.119        50                 3.18
+                         symmetric_average False                12      95.5       2.5                1.0                  0.0                      NaN                  0.000        50                 0.24
+matched_median           markov_ward       False               197     124.0       7.0                1.0                  0.0                    0.940                  0.254        50                 3.94
+                         symmetric_average False                26     114.0       5.0                1.0                  0.0                    1.717                  0.077        50                 0.52
+signal_balanced          markov_ward       False               122     125.0       3.0                1.0                  0.0                    0.865                  0.131        10                12.20
+                                           True                 20     875.0       2.5                1.0                  1.0                    1.046                  0.500        10                 2.00
+                         symmetric_average False                69     197.0       2.0                1.0                  0.0                    2.797                  0.072        10                 6.90
+                                           True                 23     998.0       3.0                1.0                  2.0                    1.031                  0.565        10                 2.30
+signal_density_variation markov_ward       False               137     148.0       2.0                1.0                  0.0                    0.891                  0.124         5                27.40
+                         symmetric_average False               127     218.0       2.0                1.0                  0.0                    1.470                  0.150         5                25.40
+signal_imbalanced        markov_ward       False               131     129.0       4.0                1.0                  0.0                    0.898                  0.229        10                13.10
+                         symmetric_average False                69     135.0       2.0                1.0                  0.0                    0.766                  0.043        10                 6.90
+signal_singleton         markov_ward       False               132     129.0       4.0                1.0                  1.0                    0.900                  0.250        10                13.20
+                         symmetric_average False                69     154.0       2.0                1.0                  0.0                    0.930                  0.101        10                 6.90 
+
+Flagged nodes by m
+                    nodes  median_alternatives  best_alt
+between_groups m                                       
+False          2     554                  0.0       NaN
+               3     315                  2.0     0.879
+               4     226                  0.0     0.964
+               5     110                  0.0     0.983
+               6      49                  0.0     0.949
+               7      51                  0.0     0.940
+               8      35                  2.0     0.899
+               9      22                  2.0     0.941
+               10      5                  2.0     0.920
+True           2      20                  0.0       NaN
+               3      23                  2.0     1.043 
+
+Flagged roots
+                                             flagged_roots    m  pure  best_alt
+model                    tree                                                 
+high                     markov_ward                   39  2.0   1.0     0.573
+                         symmetric_average             35  2.0   1.0     0.510
+low                      markov_ward                   48  2.5   1.0     0.920
+                         symmetric_average             10  2.5   1.0       NaN
+matched_median           markov_ward                   50  5.0   1.0     0.993
+                         symmetric_average             15  6.0   1.0     1.717
+signal_balanced          markov_ward                   10  3.0   1.0     1.046
+                         symmetric_average             10  3.0   1.0     1.035
+signal_density_variation markov_ward                    5  2.0   1.0       NaN
+                         symmetric_average              5  2.0   1.0     6.180
+signal_imbalanced        markov_ward                   10  2.5   1.0     0.869
+                         symmetric_average             10  2.0   1.0       NaN
+signal_singleton         markov_ward                   11  3.0   1.0     0.887
+                         symmetric_average             10  2.0   1.0     1.270 
+
+Real flagged nodes
+              tree  node    n  m  blocks  left_out  pure_blocks  between_groups  alternatives  best_alternative
+      markov_ward 86744  566  2       3         0         True           False             0               NaN
+      markov_ward 91457 1052  2       3         0         True           False             0               NaN
+      markov_ward 95565  538  2       3         0         True           False             0               NaN
+      markov_ward 97012  503  2       3        19         True           False             0               NaN
+      markov_ward 97193  727  2       3         0         True           False             0               NaN
+      markov_ward 97508  524  2       3        14         True           False             0               NaN
+      markov_ward 97636 2059  2       3         0        False            True             0               NaN
+      markov_ward 97647 1537  2       3         0        False            True             0               NaN
+      markov_ward 97659 2584  2       3         0        False            True             0               NaN
+      markov_ward 97678  826  2       3         0        False            True             0               NaN
+symmetric_average 94492  545  2       3         0        False            True             0               NaN
+symmetric_average 95298  608  2       3         0        False            True             0               NaN
+symmetric_average 95503  561  2       3        15        False            True             0               NaN
+symmetric_average 95645 1863  2       3         0        False            True             0               NaN
+symmetric_average 95676 1221  2       3         1        False            True             0               NaN
+symmetric_average 95699 1446  2       3         0        False            True             0               NaN
+symmetric_average 95740  625  2       3         0        False            True             0               NaN
+symmetric_average 96133  700  2       3         0        False            True             0               NaN
+symmetric_average 96289 3265  2       3         0        False            True             0               NaN
+symmetric_average 97115  517  2       3         0         True           False             0               NaN
+symmetric_average 97170  744  2       3        18        False            True             0               NaN 
+
+Real: two strongest alternatives per flagged node
+ Empty DataFrame
+Columns: [tree, node, n, m, block_sizes, block_labels, block_purity, side, ratio_to_tree_split]
+Index: []
+
+# ===== extra_real_small.txt (exploratory, added after the first run) =====
+symmetric_average flagged 206 | m counts {2: 151, 3: 43, 4: 12}
+ node 82938 n 130 m 4 blocks [22, 47, 27, 34] ['NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 2] ratio to tree split 0.881
+   alternative side [0, 1] ratio to tree split 0.704
+ node 86146 n 131 m 3 blocks [21, 43, 43, 24] ['BICR31_UPPER_AERODIGESTIVE_TRACT', 'YD38_UPPER_AERODIGESTIVE_TRACT', 'VMCUB1_URINARY_TRACT', 'BICR6_UPPER_AERODIGESTIVE_TRACT'] [0.524, 0.953, 0.628, 0.5]
+   alternative side [0, 1] ratio to tree split 0.26
+   alternative side [0, 2] ratio to tree split 0.188
+ node 86434 n 156 m 4 blocks [39, 26, 44, 24, 21] ['NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG'] [1.0, 1.0, 1.0, 1.0, 1.0]
+   alternative side [1, 3] ratio to tree split 1.213
+   alternative side [0, 2] ratio to tree split 0.966
+   alternative side [0, 4] ratio to tree split 0.847
+ node 87466 n 116 m 4 blocks [38, 26, 21, 31] ['NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 2] ratio to tree split 1.393
+   alternative side [0, 3] ratio to tree split 0.701
+ node 87898 n 131 m 3 blocks [33, 38, 27, 33] ['NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 1] ratio to tree split 0.896
+   alternative side [0, 2] ratio to tree split 0.396
+ node 89181 n 105 m 3 blocks [39, 39, 27] ['NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG'] [1.0, 1.0, 1.0]
+ node 89747 n 144 m 3 blocks [27, 33, 43, 33] ['SW1990_PANCREAS', 'SW1990_PANCREAS', 'PK45H_PANCREAS', 'PK45H_PANCREAS'] [0.519, 0.606, 0.535, 0.606]
+   alternative side [0, 2] ratio to tree split 1.483
+   alternative side [0, 1] ratio to tree split 1.401
+ node 90004 n 119 m 3 blocks [46, 24, 22, 20] ['PANC0203_PANCREAS', 'EBC1_LUNG', 'PANC0203_PANCREAS', 'PANC0203_PANCREAS'] [0.804, 1.0, 0.955, 1.0]
+   alternative side [0, 3] ratio to tree split 0.489
+   alternative side [0, 2] ratio to tree split 0.349
+ node 91329 n 115 m 4 blocks [20, 59, 31] ['HT1080_SOFT_TISSUE', 'HT1080_SOFT_TISSUE', 'HT1080_SOFT_TISSUE'] [1.0, 1.0, 1.0]
+ node 91465 n 108 m 4 blocks [33, 45, 30] ['TE6_OESOPHAGUS', 'TE6_OESOPHAGUS', 'TE6_OESOPHAGUS'] [1.0, 1.0, 1.0]
+ node 91963 n 143 m 3 blocks [33, 41, 33, 29] ['NCIH2452_PLEURA', 'NCIH2452_PLEURA', 'NCIH2452_PLEURA', 'NCIH2452_PLEURA'] [0.97, 0.976, 0.97, 1.0]
+   alternative side [0, 1] ratio to tree split 1.719
+   alternative side [0, 2] ratio to tree split 1.365
+ node 92093 n 187 m 3 blocks [36, 38, 78, 35] ['NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG', 'NCIH2110_LUNG'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 1] ratio to tree split 0.7
+   alternative side [0, 2] ratio to tree split 0.437
+ node 93334 n 116 m 3 blocks [21, 28, 39, 28] ['SH10TC_STOMACH', 'SH10TC_STOMACH', 'SH10TC_STOMACH', 'SH10TC_STOMACH'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 2] ratio to tree split 0.485
+   alternative side [0, 1] ratio to tree split 0.447
+ node 93488 n 113 m 3 blocks [54, 33, 24] ['HCC38_BREAST', 'HCC38_BREAST', 'HCC38_BREAST'] [1.0, 1.0, 1.0]
+ node 93909 n 113 m 3 blocks [43, 46, 24] ['NCIH2126_LUNG', 'NCIH2126_LUNG', 'NCIH2126_LUNG'] [0.605, 0.891, 0.792]
+ node 94022 n 130 m 4 blocks [28, 57, 30] ['DAOY_CENTRAL_NERVOUS_SYSTEM', 'DAOY_CENTRAL_NERVOUS_SYSTEM', 'DAOY_CENTRAL_NERVOUS_SYSTEM'] [1.0, 0.895, 1.0]
+ node 94217 n 103 m 4 blocks [31, 39, 32] ['SNU1196_BILIARY_TRACT', 'SNU1196_BILIARY_TRACT', 'SNU1196_BILIARY_TRACT'] [1.0, 1.0, 1.0]
+ node 94303 n 181 m 3 blocks [23, 56, 59, 21] ['HT1080_SOFT_TISSUE', 'HT1080_SOFT_TISSUE', 'HT1080_SOFT_TISSUE', 'HT1080_SOFT_TISSUE'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 2] ratio to tree split 1.304
+   alternative side [0, 1] ratio to tree split 1.243
+ node 94416 n 141 m 3 blocks [40, 22, 35, 39] ['VMRCRCZ_KIDNEY', 'VMRCRCZ_KIDNEY', 'OSRC2_KIDNEY', 'KMRC3_KIDNEY'] [0.975, 0.364, 0.543, 0.872]
+   alternative side [0, 1] ratio to tree split 0.527
+   alternative side [0, 2] ratio to tree split 0.394
+ node 94491 n 136 m 3 blocks [39, 31, 28, 33] ['NCIH650_LUNG', 'NCIH650_LUNG', 'NCIH650_LUNG', 'NCIH650_LUNG'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 1] ratio to tree split 0.78
+   alternative side [0, 2] ratio to tree split 0.772
+ node 94626 n 129 m 3 blocks [24, 37, 36, 30] ['HOS_BONE', 'HOS_BONE', 'HOS_BONE', 'HOS_BONE'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 2] ratio to tree split 0.566
+   alternative side [0, 1] ratio to tree split 0.511
+ node 94649 n 135 m 3 blocks [41, 21, 41, 32] ['CALU6_LUNG', 'CALU6_LUNG', 'CALU6_LUNG', 'CALU6_LUNG'] [1.0, 1.0, 1.0, 1.0]
+   alternative side [0, 3] ratio to tree split 1.644
+   alternative side [0, 1] ratio to tree split 0.97
+ node 94815 n 150 m 4 blocks [23, 44, 47, 35] ['HUCCT1_BILIARY_TRACT', 'PANC0203_PANCREAS', 'PANC0203_PANCREAS', 'NCIH358_LUNG'] [0.87, 0.75, 0.681, 0.543]
+   alternative side [0, 2] ratio to tree split 0.473
+   alternative side [0, 1] ratio to tree split 0.424
+ node 95118 n 133 m 3 blocks [39, 20, 40, 30] ['MKN7_STOMACH', 'MKN7_STOMACH', 'MKN7_STOMACH', 'MKN7_STOMACH'] [1.0, 1.0, 1.0, 0.967]
+   alternative side [0, 1] ratio to tree split 0.976
+   alternative side [0, 3] ratio to tree split 0.627

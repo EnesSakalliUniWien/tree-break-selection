@@ -1,12 +1,14 @@
 """Tests for Goncalves benchmark manifest timestamps."""
 
 import builtins
+import hashlib
 import importlib
 import json
 import re
 import sys
 
 import pandas as pd
+import pytest
 
 
 class _FakeAdata:
@@ -122,3 +124,18 @@ def test_goncalves_benchmark_manifest_and_summary_record_generated_timestamp(mon
         manifest["generated_at"],
     )
     assert f"Generated at: {manifest['generated_at']}" in summary
+
+
+def test_goncalves_inputs_must_match_the_pinned_sha256(monkeypatch, tmp_path):
+    module = _load_benchmark_module(monkeypatch)
+    expr = tmp_path / "exprMatrix.tsv.gz"
+    meta = tmp_path / "meta.tsv"
+    expr.write_bytes(b"expression")
+    meta.write_bytes(b"metadata")
+
+    with pytest.raises(RuntimeError, match="SHA-256"):
+        module._ensure_inputs(expr, meta, skip_download=True)
+
+    monkeypatch.setattr(module, "EXPR_SHA256", hashlib.sha256(b"expression").hexdigest())
+    monkeypatch.setattr(module, "META_SHA256", hashlib.sha256(b"metadata").hexdigest())
+    module._ensure_inputs(expr, meta, skip_download=True)

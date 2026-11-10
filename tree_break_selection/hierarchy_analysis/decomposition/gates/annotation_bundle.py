@@ -66,6 +66,7 @@ class GateAnnotationConfigMetadata:
     root_selective_permutation_guard_tree_distance_metric: str = DEFAULT_BINARY_TREE_DISTANCE_METRIC
     root_selective_permutation_guard_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD
     enforce_internal_support_thresholds: bool = False
+    sibling_split_count_rule_out: bool = False
     internal_support_policy: CalibrationSupportPolicySnapshot = DEFAULT_INTERNAL_SUPPORT_POLICY
 
 

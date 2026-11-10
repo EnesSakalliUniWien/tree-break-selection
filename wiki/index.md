@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-11-04
+updated: 2026-11-09
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -34,10 +34,72 @@ renamed, or promoted.
 
 ### Project
 
+- [[subtree-path-statistics-evidence]] - 569,954 paths on saved native trees,
+  disappearing neighborhoods, endpoint decisions and exact contrast checks.
+- [[subtree-paths-and-missing-neighborhoods]] - preserved endpoint contrasts,
+  changed intermediate hypotheses, half-row contexts and root reachability.
+- [[subtree-context-statistics-evidence]] - four structural cases, 160 native
+  replays, eigenvalue magnitudes, actual edge/sibling contexts and corrected spans.
+- [[subtree-context-and-eigenvalue-statistics]] - preserved hypotheses, branch
+  factors, three eigenvalue roles and their connection to calibration.
+- [[subtree-spectral-alignment-evidence]] - eigenvector/reflection checks,
+  5,120 alternative outcomes and 160 native parent/child replays on shared data.
+- [[subtree-spectral-alignment-and-crossing-clusters]] - degree transport,
+  parent/child covariance, crossing partitions and loss from rank truncation.
+- [[subtree-clustering-research-evidence]] - implemented research tasks, 4,000
+  development fits, statistical profiles, conditional families and failed promotion gates.
+- [[subtree-clustering-production-gates]] - distance fits, branch/covariance/rank
+  equations, joint-selection limits and prerequisites for production changes.
+- [[subtree-topology-reference-evidence]] - distance-conditioned alternatives,
+  topology distance fits, Gaussian references, native score replay and bootstrap comparisons.
+- [[subtree-distance-topology-families]] - cuts versus trees, equidistances,
+  cross-space conflicts, identifiability and the limits of subtree joint testing.
+- [[root-validation-generalisation-evidence]] - three-Sol follow-up: expanded chain
+  panels, 1,248 fresh full fits, metrics beyond ARI, rare-group and power failures.
+- [[gaussian-root-calibration-and-cut-geometry]] - exact Gaussian root Beta law,
+  all-label threshold limit, imbalance penalty and the later restricted subtree reference.
+- [[three-tests-construction-audit]] - Wolfram-checked A/B/C audit, unimodal
+  counterexample, failed boundary calibration, field regularity and independent reruns.
 - [[adaptive-alpha-tree-procedures]] - alpha-investing, event-fixed and learned
   alphas, and manifold weighting on 650 chain families; tree-assumption tests.
 - [[descendant-chain-family-test]] - root-plus-children chain family conditional
-  on ancestor paths; calibrated on 390 Gaussian families, low child power from peels.
+  on ancestor paths; Gaussian finite-panel evidence and low child power from peels.
+- [[topology-correction-chain-comparison]] - default vs Markov/Ward trees on 900
+  count nulls; applied vs needed sibling correction; root chain test 0/900, low power.
+- [[path-depth-weight-correction]] - tree depth, edge-blocked weight and whole paths
+  in the sibling correction; large splits still pass at 50%, edge gate sorts by score.
+- [[gate-conditioned-sibling-test]] - sibling p-value given the edge gate opened (approximate:
+  edge test uses half the cells); fewer false splits, large splits still pass at 63%.
+- [[exact-gate-sibling-test]] - exact sibling test given the edge gate (basis half held fixed);
+  less calibrated than today: tree's choice inflates the test half 2-7x, references see ~1x.
+- [[split-count-correction]] - union bound over all splits of a leaf set fixes the largest
+  noise splits (94% to 0.4%) but not small ones; invariant directions add little.
+- [[subtree-spectrum-topology]] - per-subtree eigenvalues, multiplicity and separations a tree
+  cannot hold; degenerate eigenspaces give equally strong alternative clusterings.
+- [[alternative-separations-prototype]] - prototype reporting splits a tree drops where top
+  eigenvalues tie; finds balanced groups, over-flags inside tree-chosen subtrees.
+- [[subspace-distance-ties]] - cells equidistant to both sides across tree, test, invariant and
+  fuzzy spaces; cut cell lines are cut where their cells are equidistant.
+- [[split-count-exclusion]] - split count plus ruling out splits outside invariant directions or
+  with equidistant cells; first arm to meet the frozen rule on simulated data.
+- [[split-count-exclusion-real]] - rule-out test on all CHOIR cells: Markov/Ward lines recovered
+  41 to 80, clusters 954 to 664; default tree unchanged (topology).
+- [[rule-out-continuous-benchmark]] - rule-out on the 9 continuous benchmark cases: fixes
+  over-splitting, loses groups in small wide subtrees; mean ARI 0.85-0.88 to 0.70.
+- [[rule-out-gradient]] - three terms govern the rule-out; zero-overlap separability needs
+  separation growing with cells (4.7 SD at 100, 8.2 at 48,879).
+- [[rule-out-overlap-redesign]] - overlap-fraction rule stops the tightening on clean groups
+  but admits tree-chosen noise splits; production keeps zero overlap.
+- [[single-population-split-bound]] - a split is real when its between/within ratio beats
+  the most one population can give (Gaussian 1.75, unimodal-at-mode 3); overlap grows with n.
+- [[ceiling-rule-real-and-benchmark]] - ceiling 3 on all CHOIR cells: Markov/Ward 664 to 217
+  clusters, lines 80 to 119; continuous benchmark unchanged from the rule-out.
+- [[ceiling-rule-literature-comparison]] - ceiling rule vs SigClust/SHC, selective inference,
+  dip test, Cover: same null, closed form not found in the sources checked.
+- [[flat-cut-sup-count]] - best-cut EC approximation, audited calibration and
+  regularity gaps, full-cell diagnostic fits and a high-dimensional power failure.
+- [[sequencing-depth-normalization-literature]] - checked depth-normalization
+  papers; log-of-normalized-counts artefact matches the measured depth effect.
 - [[root-conditional-sampler]] - maintained root-split chain diagnostic,
   explicit unresolved decisions, tests and fresh-case validation.
 - [[selective-rebuild-comparison]] - paired conditional sampler/root-event and

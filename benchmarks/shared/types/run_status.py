@@ -11,6 +11,8 @@ class BenchmarkRunStatus(str, Enum):
     OK = "ok"
     SKIP = "skip"
     UNSUPPORTED = "unsupported"
+    # The method raised; skip_reason holds the exception so other methods' rows survive.
+    ERROR = "error"
 
     def __str__(self) -> str:
         """Return the stable wire value used in CSV and DataFrame outputs."""

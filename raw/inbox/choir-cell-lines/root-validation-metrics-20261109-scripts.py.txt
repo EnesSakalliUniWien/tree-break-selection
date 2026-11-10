@@ -1,0 +1,394 @@
+# metrics.py
+"""From project root: .venv/bin/python results/analyses/root_validation_followup_20261109/metrics/metrics.py [saved|fresh]."""
+import hashlib
+import importlib.util
+import json
+import math
+import platform
+import sys
+from dataclasses import replace
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+import scipy
+import sklearn
+from scipy.optimize import linear_sum_assignment
+from sklearn.metrics import (
+    adjusted_mutual_info_score, adjusted_rand_score, homogeneity_completeness_v_measure,
+    normalized_mutual_info_score,
+)
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+ANALYSES = HERE.parents[1]
+AUDIT = ANALYSES / "three_tests_audit_20261109"
+ORIGINAL = ANALYSES / "ceiling_rule_real_20261109"
+CHOIR = ANALYSES / "choir_cell_lines_tbs_lbfgsb_20261106"
+PREVIOUS_RULE = ANALYSES / "split_count_exclusion_real_20261108"
+METHODS = {"tbs_family_diffusion": "symmetric_average", "tbs_family_diffusion_markov_ward": "markov_ward"}
+ARMS = ("A", "B", "C", "rule_out")
+
+
+def metrics(truth, labels, rare=None):
+    table = pd.crosstab(truth, labels)
+    counts = table.to_numpy()
+    truth_n, pred_n = counts.sum(axis=1), counts.sum(axis=0)
+    f1 = 2 * counts / (truth_n[:, None] + pred_n)
+    rr, cc = linear_sum_assignment(f1, maximize=True)
+    cc, rr = cc[counts[rr, cc] > 0], rr[counts[rr, cc] > 0]
+    group = pd.DataFrame({"group": table.index, "truth_n": truth_n})
+    group["predicted"] = pd.Series(dtype=object)
+    group[["precision", "recall", "f1"]] = 0.0
+    group.loc[rr, "predicted"] = table.columns[cc].to_numpy(dtype=object)
+    group.loc[rr, "precision"] = counts[rr, cc] / pred_n[cc]
+    group.loc[rr, "recall"] = counts[rr, cc] / truth_n[rr]
+    group.loc[rr, "f1"] = f1[rr, cc]
+    if rare is None:
+        rare = group.sort_values(["truth_n", "group"]).head(math.ceil(len(group) / 4)).group
+    group["rare"] = group.group.isin(rare)
+    group["matched_90_90"] = (group.precision >= 0.9) & (group.recall >= 0.9)
+    biggest = counts.argmax(axis=1)
+    group["legacy_90_90"] = (counts.max(axis=1) / truth_n >= 0.9) & (
+        counts.max(axis=0)[biggest] / pred_n[biggest] >= 0.9)
+    group["predicted_clusters_touched"] = (counts > 0).sum(axis=1)
+    shared_pairs = (counts * (counts - 1)).sum()
+    truth_pairs = (truth_n * (truth_n - 1)).sum()
+    predicted_pairs = (pred_n * (pred_n - 1)).sum()
+    homogeneity, completeness, _ = homogeneity_completeness_v_measure(truth, labels)
+    row = {
+        "n": len(truth), "true_clusters": len(truth_n), "found_clusters": len(pred_n),
+        "cluster_count_error": len(pred_n) - len(truth_n),
+        "ari": adjusted_rand_score(truth, labels), "ami": adjusted_mutual_info_score(truth, labels),
+        "homogeneity": homogeneity, "completeness": completeness,
+        "truth_pair_split": 1 - shared_pairs / truth_pairs if truth_pairs else np.nan,
+        "predicted_pair_merge": 1 - shared_pairs / predicted_pairs if predicted_pairs else np.nan,
+        "matched_90_90": group.matched_90_90.sum(), "legacy_90_90": group.legacy_90_90.sum(),
+        "rare_matched_90_90": group.loc[group.rare, "matched_90_90"].sum(),
+    }
+    for column in ("precision", "recall", "f1"):
+        row[f"macro_{column}"] = group[column].mean()
+        row[f"rare_{column}"] = group.loc[group.rare, column].mean()
+    return row, group
+
+
+def verify_metric():
+    truth = ["a", "a", "b", "b"]
+    exact, _ = metrics(truth, [1, 1, 0, 0])
+    split, _ = metrics(truth, [1, 2, 3, 3])
+    merge, _ = metrics(truth, [1, 1, 1, 1])
+    assert exact["ari"] == exact["ami"] == exact["macro_f1"] == 1
+    assert split["truth_pair_split"] == 0.5 and split["predicted_pair_merge"] == 0
+    assert merge["truth_pair_split"] == 0 and np.isclose(merge["predicted_pair_merge"], 2 / 3)
+    assert merge["legacy_90_90"] == merge["matched_90_90"] == 0
+
+
+def digest(path):
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def write_manifest(mode, inputs, extras):
+    paths = sorted(set(inputs) | {Path(__file__).resolve(), HERE / "protocol.md"})
+    hashes = {str(path.relative_to(ROOT)): digest(path) for path in paths}
+    old = json.loads((AUDIT / "manifest.json").read_text())["hashes"]
+    overlap = {path: value == old[path] for path, value in hashes.items() if path in old}
+    (HERE / f"{mode}_manifest.json").write_text(json.dumps({
+        "python": platform.python_version(), "platform": platform.platform(), "numpy": np.__version__,
+        "pandas": pd.__version__, "scipy": scipy.__version__, "sklearn": sklearn.__version__,
+        "hashes": hashes, "audit_manifest_hash_matches": overlap, **extras,
+    }, indent=2) + "\n")
+
+
+def saved():
+    paths = [CHOIR / "cell_metadata.csv", AUDIT / "manifest.json"]
+    meta = pd.read_csv(paths[0], index_col=0, dtype=str)
+    assert len(meta) == 48879 and meta.index.is_unique and meta.Cell_line.notna().all()
+    rows, groups = [], []
+    for method in METHODS:
+        for arm in ARMS:
+            folder = (ORIGINAL if arm == "rule_out" else AUDIT) / method
+            assignment = folder / f"assignments_{arm}.csv.gz"
+            result = folder / "results.jsonl"
+            paths.extend([assignment, result])
+            assigned = pd.read_csv(assignment, dtype={"cell": str, "Cell_line": str})
+            assert np.array_equal(assigned.cell, meta.index)
+            assert np.array_equal(assigned.Cell_line, meta.Cell_line)
+            if arm == "rule_out":
+                earlier = PREVIOUS_RULE / method / assignment.name
+                paths.append(earlier)
+                pd.testing.assert_frame_equal(assigned, pd.read_csv(earlier))
+            row, group = metrics(assigned.Cell_line, assigned.cluster)
+            old = next(record for record in map(json.loads, result.read_text().splitlines()) if record["arm"] == arm)
+            assert row["found_clusters"] == old["found_clusters"]
+            assert row["legacy_90_90"] == old["recovered_lines_90_90"]
+            assert abs(row["ari"] - old["ari_cell_line"]) <= 1e-12
+            assert abs(normalized_mutual_info_score(assigned.Cell_line, assigned.cluster) - old["nmi_cell_line"]) <= 1e-12
+            assert abs(adjusted_rand_score(meta.CHOIR_1, assigned.cluster) - old["ari_published_CHOIR_1"]) <= 1e-12
+            rows.append(dict(method=method, arm=arm, archive_runtime_s=old["sec"], **row))
+            groups.append(group.assign(method=method, arm=arm))
+    pd.DataFrame(rows).to_csv(HERE / "choir_metrics.csv", index=False)
+    pd.concat(groups, ignore_index=True).to_csv(HERE / "choir_groups.csv", index=False)
+    saved_splits(paths)
+    write_manifest("saved", paths, {"verified_assignments": len(rows), "metadata_cells": len(meta)})
+
+
+def saved_splits(paths):
+    spec = ANALYSES / "subtree_spectrum_topology_20261108/real_nodes.jsonl"
+    ties = ANALYSES / "subspace_distance_ties_20261108/real_splits.jsonl"
+    paths.extend([spec, ties])
+    spectrum = pd.read_json(spec, lines=True)
+    distances = pd.read_json(ties, lines=True)
+    joins = ["tree", "node", "n", "n_small"]
+    ancillary = spectrum[joins + ["top_multiplicity"]].merge(
+        distances[joins + ["kind", "test_tie", "tree_tie", "invariant_tie", "fuzzy_tie", "lines_cut"]],
+        on=joins, validate="one_to_one")
+    frames = []
+    for method, tree in METHODS.items():
+        split_b = AUDIT / f"{method}_B_splits.jsonl"
+        split_c = AUDIT / f"{method}_C_splits.jsonl"
+        linkage_file = CHOIR / method / "linkage.npy"
+        paths.extend([split_b, split_c, linkage_file])
+        b = pd.read_json(split_b, lines=True).rename(columns={"n_parent": "n", "p": "p_B"})
+        c = pd.read_json(split_c, lines=True).rename(columns={"n_parent": "n", "p": "p_C"})
+        pd.testing.assert_frame_equal(b[["node", "n", "n_small", "k", "rho"]], c[["node", "n", "n_small", "k", "rho"]])
+        linkage = np.load(linkage_file)
+        n = len(linkage) + 1
+        sizes = np.r_[np.ones(n, dtype=int), linkage[:, 3].astype(int)]
+        depth = np.zeros(2 * n - 1, dtype=int)
+        for i in reversed(range(len(linkage))):
+            depth[linkage[i, :2].astype(int)] = depth[n + i] + 1
+        node = b.node.str.removeprefix("N").astype(int)
+        assert (sizes[node] == b.n).all()
+        assert (sizes[linkage[node - n, :2].astype(int)].min(axis=1) == b.n_small).all()
+        b = b.assign(tree=tree, node=node, depth=depth[node], p_C=c.p_C)
+        frames.append(b.merge(ancillary, on=joins, how="left", validate="one_to_one"))
+    merged = pd.concat(frames, ignore_index=True)
+    merged["small_share"] = merged.n_small / merged.n
+    merged["B_pass"] = merged.p_B <= 0.01
+    merged["C_pass"] = merged.p_C <= 0.01
+    merged.to_csv(HERE / "choir_split_relationships.csv", index=False)
+
+
+REGIMES = {
+    "base": (240, 12, 5, "balanced"), "larger_n": (480, 12, 5, "balanced"),
+    "wider_p": (240, 72, 5, "balanced"), "imbalanced": (240, 12, 5, "imbalanced"),
+    "lower_gap": (240, 12, 2.5, "balanced"), "anisotropic": (240, 12, 5, "anisotropic"),
+    "one_population": (240, 12, 0, "null"),
+}
+
+
+def simulate(n, p, gap, shape, seed):
+    rng = np.random.default_rng(seed)
+    x = rng.standard_normal((n, p))
+    if shape == "anisotropic":
+        x[:, :2] = (x[:, :2] * [2, 0.5]) @ (np.array([[1, -1], [1, 1]]) / np.sqrt(2))
+    sizes = [n] if shape == "null" else ([132, 60, 36, 12] if shape == "imbalanced" else [n // 4] * 4)
+    truth = np.repeat(np.arange(len(sizes)), sizes)
+    x[:, :2] += gap * (np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]]) / 2)[truth]
+    order = rng.permutation(n)
+    return x[order], truth[order]
+
+
+def load_audit():
+    sys.path.insert(0, str(ROOT))
+    spec = importlib.util.spec_from_file_location("matched_audit", AUDIT / "rerun.py")
+    audit = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(audit)
+    return audit, audit.load_real_harness()
+
+
+def fresh():
+    audit, harness = load_audit()
+    from benchmarks.shared.runners.dispatch import run_clustering_result
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+    from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+    def sibling_hook(*args):
+        result = harness.swapped(*args)
+        if harness.STATE["arm"] == "C":
+            splits = iter(harness.STATE["splits"])
+            for i, decision in enumerate(result[2]):
+                if decision is None:
+                    continue
+                split = next(splits)
+                p = audit.sup_p(split["rho"], split["n_parent"], split["k"])
+                result[0][i] = (*result[0][i][:2], p)
+                result[2][i] = replace(decision, p_value=p)
+                split["p"] = p
+            assert next(splits, None) is None
+        return result
+
+    harness.pipeline.apply_split_count_rule_out = sibling_hook
+    sources = [ROOT / path for path in json.loads((AUDIT / "manifest.json").read_text())["hashes"]
+               if (ROOT / path).is_file() and not path.endswith((".npy", ".csv"))]
+    sources += [AUDIT / "rerun.py"]
+    write_manifest("fresh", sources, {"seeds": list(range(731901, 731905)), "BLAS_threads": 1})
+    rows, groups, assignments = [], [], []
+    for regime, (n, p, gap, shape) in REGIMES.items():
+        for seed in range(731901, 731905):
+            x, truth = simulate(n, p, gap, shape, seed)
+            jitter = np.random.default_rng([seed, 42]).normal(0, 0.1, x.shape)
+            for method in METHODS:
+                for arm in ARMS:
+                    original = None
+                    for perturbed in (False, True):
+                        df = pd.DataFrame(x + jitter if perturbed else x, columns=[f"x{i}" for i in range(p)])
+                        fs = continuous_feature_space_from_columns(tuple(df.columns))
+                        harness.STATE.update(arm=arm, splits=[])
+                        params = dict(METHOD_SPECS[method].param_grid[0], sibling_split_count_rule_out=arm != "A")
+                        start = perf_counter()
+                        out = run_clustering_result(df, method, params, seed=seed, significance_level=0.01,
+                                                    edge_alpha=0.001, feature_space=fs)
+                        seconds = perf_counter() - start
+                        assert out.status.value == "ok", (regime, seed, method, arm, out.status)
+                        assert out.extra["feature_family_diffusion_fallback_reason"] is None
+                        if hasattr(out.labels, "index"):
+                            assert out.labels.index.equals(df.index)
+                        labels = np.asarray(out.labels)
+                        scores, group = metrics(truth, labels, [3] if shape == "imbalanced" else [])
+                        assert scores["found_clusters"] == out.found_clusters
+                        if not perturbed:
+                            original = labels.copy()
+                        ids = dict(regime=regime, seed=seed, method=method, arm=arm, perturbed=perturbed)
+                        splits = harness.STATE["splits"]
+                        rows.append(dict(**ids, p=p, runtime_s=seconds, **scores,
+                                         stability_ari=adjusted_rand_score(original, labels) if perturbed else np.nan,
+                                         tested_opt_in_splits=len(splits),
+                                         raw_opt_in_hits=sum(s["p"] <= 0.01 for s in splits)))
+                        groups.append(group.assign(**ids))
+                        assignments.append(pd.DataFrame(dict(cell=np.arange(n), truth=truth, cluster=labels)).assign(**ids))
+            print(regime, seed, flush=True)
+        pd.DataFrame(rows).to_csv(HERE / "fresh_metrics.csv", index=False)
+    pd.concat(groups, ignore_index=True).to_csv(HERE / "fresh_groups.csv", index=False)
+    pd.concat(assignments, ignore_index=True).to_csv(HERE / "fresh_assignments.csv.gz", index=False)
+    assert len(rows) == len(REGIMES) * 4 * len(METHODS) * len(ARMS) * 2
+
+
+if __name__ == "__main__":
+    verify_metric()
+    with threadpool_limits(limits=1):
+        {"saved": saved, "fresh": fresh}[sys.argv[1]]()
+
+# summarize.py
+"""Summarize saved relationships or the completed synthetic panel."""
+import json
+import sys
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+from metrics import AUDIT, CHOIR, HERE, METHODS, REGIMES, digest, metrics, simulate, write_manifest
+
+
+def relationships():
+    relationship_path = HERE / "choir_split_relationships.csv"
+    splits = pd.read_csv(relationship_path)
+    paths = [relationship_path, HERE / "saved_manifest.json", HERE / "summarize.py"]
+    joined = []
+    for method, tree in METHODS.items():
+        folder = CHOIR / method
+        original, audit = folder / "cluster_assignments.csv", AUDIT / method / "assignments_A.csv.gz"
+        annotation = folder / "annotations.csv"
+        paths.extend([original, audit, annotation])
+        assigned, target = pd.read_csv(original), pd.read_csv(audit)
+        assert np.array_equal(assigned.CellID, target.cell)
+        assert np.array_equal(assigned.Cell_line, target.Cell_line)
+        assert adjusted_rand_score(assigned.TBS_cluster, target.cluster) == 1
+        cols = {
+            "node_id": "node", "leaf_count": "n",
+            "Sibling_Null_Weight": "A_saved_null_weight",
+            "Sibling_Test_Method": "A_saved_test_method",
+            "Sibling_BH_Different": "A_saved_bh_different",
+            "Sibling_Inflation_Factor": "A_saved_inflation_factor",
+        }
+        a = pd.read_csv(annotation, usecols=list(cols), low_memory=False).rename(columns=cols)
+        a = a.loc[a.A_saved_test_method.notna()].copy()
+        a["node"] = a.node.str.removeprefix("N").astype(int)
+        # The archived A tested-node set matches the B/C eligibility set.
+        assert set(map(tuple, a[["node", "n"]].to_numpy())) == set(
+            map(tuple, splits.loc[splits.tree == tree, ["node", "n"]].to_numpy()))
+        joined.append(splits.loc[splits.tree == tree].merge(a, on=["node", "n"], validate="one_to_one"))
+    x = pd.concat(joined, ignore_index=True)
+    x["A_saved_inflation_context"] = x.A_saved_test_method.str.rsplit(":", n=1).str[-1]
+    x["A_saved_log10_null_weight"] = np.log10(x.A_saved_null_weight)
+    x["size"] = pd.cut(x.n, [0, 31, 159, 999, np.inf])
+    x["smaller_share"] = pd.cut(x.small_share, [0, .05, .15, .30, .50])
+    x["depth_bin"] = pd.cut(x.depth, [-1, 5, 10, 20, 40, np.inf])
+    x.to_csv(HERE / "choir_split_relationships_annotated.csv", index=False)
+    pieces = []
+    for key in ["size", "smaller_share", "depth_bin", "k", "top_multiplicity", "kind", "A_saved_inflation_context"]:
+        summary = x.groupby(["tree", key], observed=True).agg(
+            n=("n", "size"), B_raw_pass=("B_pass", "sum"), C_raw_pass=("C_pass", "sum"),
+            median_n=("n", "median"), median_depth=("depth", "median"),
+            median_log10_A_saved_null_weight=("A_saved_log10_null_weight", "median"),
+            median_A_saved_inflation_factor=("A_saved_inflation_factor", "median"),
+        ).reset_index().rename(columns={key: "stratum"})
+        pieces.append(summary.assign(variable=key))
+    pd.concat(pieces, ignore_index=True).to_csv(HERE / "choir_split_strata.csv", index=False)
+    x.groupby(["tree", "B_pass", "C_pass"], observed=True).agg(
+        rows=("n", "size"), rows_with_distance=("test_tie", "count"),
+        test_tie=("test_tie", "median"), tree_tie=("tree_tie", "median"),
+        invariant_tie=("invariant_tie", "median"), fuzzy_tie=("fuzzy_tie", "median"),
+        median_log10_A_saved_null_weight=("A_saved_log10_null_weight", "median"),
+        median_A_saved_inflation_factor=("A_saved_inflation_factor", "median"),
+    ).to_csv(HERE / "choir_split_pass_profiles.csv")
+    write_manifest("relationships", paths, {"annotation_partition_agreement": 1, "joined_tested_nodes": len(x)})
+
+
+def fresh_summary():
+    source = HERE / "fresh_metrics.csv"
+    x = pd.read_csv(source)
+    keys = ["regime", "method", "arm"]
+    assert len(x) == 448 and x.groupby(keys + ["perturbed"], observed=True).size().eq(4).all()
+    assert not x.duplicated(keys + ["seed", "perturbed"]).any()
+    assignment_file = HERE / "fresh_assignments.csv.gz"
+    assignments = pd.read_csv(assignment_file)
+    run_keys = keys + ["seed", "perturbed"]
+    assert len(assignments) == x.n.sum()
+    labels = assignments.groupby(run_keys, sort=False)
+    for row in x.itertuples(index=False):
+        run = labels.get_group(tuple(getattr(row, key) for key in run_keys))
+        _, truth = simulate(*REGIMES[row.regime], row.seed)
+        assert np.array_equal(run.cell, np.arange(row.n))
+        assert np.array_equal(run.truth, truth)
+        scores, _ = metrics(truth, run.cluster, [3] if row.regime == "imbalanced" else [])
+        assert all(np.isclose(value, getattr(row, name), equal_nan=True) for name, value in scores.items())
+        if row.perturbed:
+            original = labels.get_group((row.regime, row.method, row.arm, row.seed, False))
+            assert np.isclose(adjusted_rand_score(original.cluster, run.cluster), row.stability_ari)
+    base = x.loc[~x.perturbed].copy()
+    stability = x.loc[x.perturbed, keys + ["seed", "stability_ari"]]
+    base = base.drop(columns="stability_ari").merge(stability, on=keys + ["seed"], validate="one_to_one")
+    base["under_count"] = base.cluster_count_error < 0
+    base["over_count"] = base.cluster_count_error > 0
+    numeric = ["ari", "ami", "macro_f1", "rare_f1", "cluster_count_error", "found_clusters",
+               "homogeneity", "completeness", "truth_pair_split", "predicted_pair_merge",
+               "legacy_90_90", "stability_ari", "runtime_s"]
+    result = base.groupby(keys, sort=False)[numeric].agg(["mean", "min", "max"])
+    result.columns = [f"{name}_{summary}" for name, summary in result.columns]
+    for col in ["under_count", "over_count"]:
+        result[f"{col}_runs"] = base.groupby(keys, sort=False)[col].sum()
+    result.to_csv(HERE / "fresh_regime_summary.csv")
+    d = ["ari", "ami", "macro_f1", "rare_f1", "stability_ari", "cluster_count_error"]
+    a = base.loc[base.arm == "A", ["regime", "method", "seed"] + d]
+    pairs = base.merge(a, on=["regime", "method", "seed"], suffixes=("", "_A"), validate="many_to_one")
+    paired = pairs[keys + ["seed"]].copy()
+    for metric in d:
+        paired[f"delta_{metric}"] = pairs[metric] - pairs[f"{metric}_A"]
+    paired.to_csv(HERE / "fresh_paired_deltas.csv", index=False)
+    hashes = json.loads((HERE / "fresh_manifest.json").read_text())["hashes"]
+    root = HERE.parents[3]
+    assert all(digest(root / name) == sha for name, sha in hashes.items())
+    write_manifest("fresh_output", [source, HERE / "fresh_groups.csv", assignment_file,
+                                   HERE / "fresh_manifest.json", HERE / "summarize.py",
+                                   HERE / "fresh_regime_summary.csv", HERE / "fresh_paired_deltas.csv",
+                                   HERE / "dispatcher_sha256.txt"],
+                   {"verified_assignment_metric_rows": len(x), "verified_stability_pairs": len(stability)})
+
+
+if __name__ == "__main__":
+    {"relationships": relationships, "fresh": fresh_summary}[sys.argv[1]]()

@@ -1,0 +1,67 @@
+[
+  {
+    "code": "Module[{m,t,a,b,w,rows},t[n_]:=Factorial2[2 n-3]; rows=Table[{m,t[m],Sum[Binomial[m,a]t[a]t[m-a],{a,1,m-1}]/2,2^(m-1)-1,2^(m-1)-m-1,2^m-m-2},{m,3,8}]; {rows,Table[Sum[Binomial[7,a],{a,0,b}]-1,{b,1,7}],Table[{a,t[a] t[6-a]},{a,1,5}]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {{{3, 3, 3, 3, 0, 3}, {4, 15, 15, 7, 3, 10}, {5, 105, 105, 15, 10, 25}, {6, 945, 945, 31, 25, 56}, {7, 10395, 10395, 63, 56, 119}, {8, 135135, 135135, 127, 119, 246}}, {7, 28, 63, 98, 119, 126, 127}, {{1, 105}, {2, 15}, {3, 9}, {4, 15}, {5, 105}}}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  {
+    "code": "Module[{x={0,1,2,10},y={0,1,9,10},s={{-1,-1},{1,-1},{-1,1},{1,1}},a,b,weights,d},d[z_]:=Outer[Abs[#1-#2]&,z,z]; {Variance[x],Variance[y],Variance[x/Sqrt[Variance[x]]],Variance[y/Sqrt[Variance[y]]],d[x],d[y],Transpose[s].s/4,(s.{{0,1},{1,0}}),{Mean[Abs[x[[{1,2}]]-x[[3]]]],Mean[Abs[x[[{2,3}]]-x[[1]]]]}}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {251/12, 82/3, 1, (171/82 + (-5*Sqrt[3/82] + 5*Sqrt[6/41])^2)/3, {{0, 1, 2, 10}, {1, 0, 1, 9}, {2, 1, 0, 8}, {10, 9, 8, 0}}, {{0, 1, 9, 10}, {1, 0, 8, 9}, {9, 8, 0, 1}, {10, 9, 1, 0}}, {{1, 0}, {0, 1}}, {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}, {3/2, 3/2}}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  {
+    "code": "Module[{a,b,r,u}, {FullSimplify[(u/(1+u))^(a-1) (1/(1+u))^(b-1)/(1+u)^2-u^(a-1)/(1+u)^(a+b),a>0&&b>0&&u>0],Table[N[{CDF[BetaDistribution[2,7/2],r],CDF[FRatioDistribution[4,7],(7/4)r/(1-r)]},16],{r,{1/10,1/2,3/4}}],Sum[Boole[Mod[j,4]==0],{j,0,7}]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {0, {{0.0663533322235868441239875198205464998`16., 0.0663533322235868441239875198205464998`16.}, {0.75693204396712428848720975052645814276`16., 0.75693204396712428848720975052645814276`16.}, {0.97167968750000000000000000000000000002`16., 0.97167968750000000000000000000000000002`16.}}, 2}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  {
+    "code": "Module[{y={0,1,9,10},s={1,5,5,3,2},r}, r=Table[Count[s,_?(#>=s[[j]]&)],{j,Length[s]}]; {FullSimplify[Variance[y/Sqrt[Variance[y]]]],r,Table[{a,Count[r,_?(#<=a&)]/Length[r]},{a,0,Length[s]}]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {1, {5, 2, 2, 3, 4}, {{0, 0}, {1, 0}, {2, 2/5}, {3, 3/5}, {4, 4/5}, {5, 1}}}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  {
+    "code": "Module[{sq={{-1,-1},{1,-1},{-1,1},{1,1}},c,d,v,s,t,w}, w[a_,b_]:= 2 Length[a] Length[b]/(Length[a]+Length[b]) Total[(Mean[a]-Mean[b])^2]; {Table[w[{sq[[i]]},{sq[[j]]}],{i,1,4},{j,1,4}],{w[sq[[{1,2}]],{sq[[3]]}],w[sq[[{1,2}]],{sq[[4]]}],w[{sq[[3]]},{sq[[4]]}]},FullSimplify[((v+s)+(v+t)-v)/(v+s+t)],Table[{j,Factorial2[2j-3],j!(j-1)!/2^(j-1)},{j,3,7}],FullSimplify[{w[{{0},{1}},{{3}}],w[{{3}},{{3+5/Sqrt[3]}}]}]}]",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Out[1]= {{{0, 4, 4, 8}, {4, 0, 8, 4}, {4, 8, 0, 4}, {8, 4, 4, 0}}, {20/3, 20/3, 4}, 1, {{3, 3, 3}, {4, 15, 18}, {5, 105, 180}, {6, 945, 2700}, {7, 10395, 56700}}, {25/3, 25/3}}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  }
+]

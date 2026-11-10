@@ -1,0 +1,797 @@
+# ===== protocol.md =====
+# Protocol: the single-population bound on a split (frozen 2026-11-08)
+
+## Question (user-confirmed)
+
+Infer the mathematical rule for the allowed overlap against noise splits the tree picks, instead of an
+empirical calibration, keeping the rule from tightening as the number of cells grows.
+
+## Derivation to check
+
+Notation: a split of n cells into shares pi and 1 - pi; D = Mahalanobis distance of the two side means under the
+pooled within-sides covariance; rho = pi (1 - pi) D^2 = between / within variance along the split's Fisher
+discriminant; Hotelling T = n rho.
+
+- D1. For a fixed direction u and share pi, the threshold cut on u at the pi-quantile has the largest
+  between/within ratio along u of all splits with that share (it maximises the gap of the side means while the
+  total variance along u is fixed). Fisher's D^2 is the maximum over u. So the largest rho over all 2^(n-1) - 1
+  splits is reached by a flat cut.
+- D2. One Gaussian population, any covariance: every flat cut at share pi has rho = g(pi) = r / (1 - r),
+  r = phi(Phi^-1(pi))^2 / (pi (1 - pi)). Balanced: r = 2/pi, g = 1.752. By D1, no split of one Gaussian
+  population exceeds g(pi).
+- D3. One population whose projections are unimodal: rho <= 3 (Khintchine representation X = mode + U Y; proof
+  for cuts at the mode, numerical check for the rest). Reached by the uniform distribution at its median.
+- D4. Two Gaussian groups at separation delta > 0: a flat cut through the gap exceeds g(pi), so every delta > 0
+  is detectable as n grows. If the split's labels are the true groups, rho = pi (1 - pi) delta^2, which exceeds
+  g(pi) only if delta > delta_0(pi) = sqrt(g(pi) / (pi (1 - pi))); their overlap (Bayes error) may then be up to
+  tau_0(pi). Balanced: delta_0 = 2.647, tau_0 = 9.3%.
+- D5. The overlap fraction does not decide: a flat cut of one population has zero overlap and is separable.
+- D6. Finite n, on the k invariant directions of the subtree (noise band, as in production): at the null
+  boundary (a fixed flat cut of one Gaussian population), T is about noncentral chi2 with k degrees of freedom
+  and noncentrality n g(pi). The tree may pick any split; by D1 the worst picks are flat cuts, of which there are
+  M_k(n) = sum_{i=0}^{k} binom(n-1, i) (Cover 1965). Rule:
+  p = min{1, M_k(n) P(chi2_k(n g(pi_hat)) >= T)}, and p = 1 when k = 0 (always when n <= p_features + 1).
+  Unimodal variant: g replaced by 3. The required rho falls toward g(pi) as n grows (excess about
+  sqrt(g log n / n)), so the allowed overlap rises toward tau_0(pi) instead of shrinking.
+
+## Part A checks (derive.py)
+
+- A0. Bayes error of two unit Gaussians with shares pi, 1 - pi at separation delta: formula
+  pi Phi(c - delta/2) + (1 - pi) Phi(-c - delta/2), c = ln((1 - pi)/pi) / delta, against 2 x 10^6 simulated cells
+  at pi = 0.1 and 0.5; also the `allowed_overlap` of `rule_out_overlap_20261108` (suspected swapped terms).
+- A1. 2 x 10^6 Gaussian draws cut at the pi-quantile, pi in {0.5, 0.2, 0.05}: rho within 1% of g(pi).
+- A2. n = 12 points in 2 dimensions, 20 seeds: over all 2^11 - 1 splits, the split with the largest rho, overall
+  and for each smaller-side size, is linearly separable.
+- A3. Largest rho over cuts for uniform, Gaussian, Laplace, logistic, t5, exponential and lognormal(1)
+  (2 x 10^6 draws), and over 20,000 random mixtures of uniforms anchored at the mode: at most 3 (+1%).
+- A4. Fixed median cut, 1 dimension, n = 1,000, 4,000 replicates: share of P(chi2_1(n g) >= T) <= 0.01 is at
+  most 0.01 plus Monte Carlo error; mean and variance of T against n g + 1 and 4 n g + 2 (derived delta-method
+  variance (4a^2 - 6a^4)/(1 - a^2)^4 n = 6.58 n, a^2 = 2/pi).
+- A5. Tree-picked splits: Ward's top split on the same 30 coordinates; k from the noise band
+  (`split_count_rule_out.invariant_directions`, same rule as the E2 harness). Populations: Gaussian gradient
+  (variance 9 on one axis), flat gradient (uniform, variance 9 on one axis), two unit Gaussian groups at
+  delta in {2, 3, 4} along one axis with shares 0.5 and 0.2. n in {64, 128, 256, 512, 1024, 2048, 4096};
+  200 replicates for the gradients, 100 for the groups. Predictions: Gaussian gradient kept (p <= 0.01) at most
+  1% at every n under both bounds; flat gradient kept at most 1% under the unimodal bound and rising with n
+  under the Gaussian bound (a flat gradient is not Gaussian; a limit of D2, stated in advance); two groups:
+  kept does not fall with n under the Gaussian bound; under the unimodal bound groups at delta <= 2 (one-mode
+  mixtures) stay out. The separable share (old rule) is reported for contrast.
+- A6. Allowed overlap table: smallest rho with p <= 0.01 for k = 1, n in {100, 1,000, 10,000, 48,879},
+  pi in {0.5, 0.2, 0.1}, both bounds, and the Bayes error of true-label groups at that rho.
+
+## Part B: end to end (run_e2.py)
+
+935 simulated datasets, both trees, the harness and data of `rule_out_overlap_20261108` (production fits; the
+sibling p of each tested split is the arm's p, c = 1). Arms:
+
+- rule_out: the old rule (replay; found clusters must equal that run's for every dataset);
+- rule_out_overlap_fixed: the redesigned overlap rule with the Bayes-error terms corrected (old ties);
+- gaussian_cut: D6 with g(pi);
+- unimodal_cut: D6 with 3.
+
+Endpoints as in `rule_out_overlap_20261108/summary_e2.txt`: share p <= 0.01 on no-group splits (>= 40 and
+10-39 cells), false partitions of 300, mean ARI and median clusters on real groups; per split rho, pi, k.
+Descriptive comparison; no production change in this task.
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- A3 failed: the random search over unimodal mixtures found rho = 7.84 (> 3.03). The case is a unimodal
+  population with a thin, long, flat tail, cut inside the tail. Construction added to derive.py: a flat tail
+  U(-L, 0) of mass eps cut at a L from the mode gives rho -> 3 (1 - a)(1 + a)^2 / ((1 - a)^3 + 4 a^3) = 8 at
+  a = 1/3 (computed 7.998). D3 holds only for cuts at the mode. The unimodal_cut arm keeps the frozen bound 3
+  and is reported as the at-the-mode bound, not as an upper bound for all unimodal populations. The A3 asserts
+  were replaced by reporting.
+- A5 prediction "Gaussian gradient kept at most 1% at every n" missed at 64 cells: 3 of 200 (1.5%, Monte Carlo
+  sd 0.7%); 0 of 200 at every larger n.
+
+# ===== cut_rule.py =====
+"""protocol.md D2-D6: the largest split one population allows, and the p-value that a split goes beyond it."""
+
+import numpy as np
+from scipy.special import gammaln, logsumexp
+from scipy.stats import ncx2, norm
+
+UNIMODAL_BOUND = 3.0
+
+
+def gaussian_bound(pi):
+    """g(pi): between/within ratio of a flat cut of one Gaussian population into shares pi and 1 - pi."""
+    r = norm.pdf(norm.ppf(pi)) ** 2 / (pi * (1 - pi))
+    return r / (1 - r)
+
+
+def unimodal_bound(pi):
+    return UNIMODAL_BOUND
+
+
+def bayes_error(pi, delta):
+    """Error of the best rule for two unit Gaussians at separation delta with shares pi and 1 - pi."""
+    c = np.log((1 - pi) / pi) / delta  # the boundary moves toward the smaller group
+    return float(pi * norm.cdf(c - delta / 2) + (1 - pi) * norm.cdf(-c - delta / 2))
+
+
+def fisher_ratio(points, in_left):
+    """rho = pi (1 - pi) D^2; D = Mahalanobis distance of the side means, pooled within covariance (n - 2)."""
+    left, right = points[in_left], points[~in_left]
+    n, pi = len(points), len(left) / len(points)
+    centered = np.vstack([left - left.mean(0), right - right.mean(0)])
+    d = left.mean(0) - right.mean(0)
+    return float(pi * (1 - pi) * d @ np.linalg.solve(centered.T @ centered / (n - 2), d))
+
+
+def log_flat_cuts(n, k):
+    """log sum_{i<=k} binom(n-1, i): splits of n points in general position by a flat cut in k dimensions."""
+    i = np.arange(0, min(k, n - 1) + 1)
+    return float(logsumexp(gammaln(n) - gammaln(i + 1) - gammaln(n - i)))
+
+
+def cut_bound_p(points, in_left, bound):
+    """(p, rho): count of flat cuts x P(noncentral chi2_k(n bound(pi)) >= n rho); p = 1 without directions."""
+    n, k = points.shape
+    if k == 0:
+        return 1.0, float("nan")
+    rho = fisher_ratio(points, in_left)
+    log_p = log_flat_cuts(n, k) + ncx2.logsf(n * rho, k, n * bound(float(in_left.mean())))
+    return float(np.exp(min(0.0, log_p))), rho
+
+
+if __name__ == "__main__":
+    assert abs(gaussian_bound(0.5) - (2 / np.pi) / (1 - 2 / np.pi)) < 1e-12
+    assert abs(bayes_error(0.5, 2.0) - norm.cdf(-1.0)) < 1e-12
+    assert bayes_error(0.1, 2.4) < 0.1  # never above the smaller share
+    assert abs(np.exp(log_flat_cuts(5, 1)) - 5) < 1e-9  # 4 thresholds on a line + the empty cut
+    rng = np.random.default_rng(0)
+    x = np.r_[rng.standard_normal((20000, 3)) + [2, 0, 0], rng.standard_normal((20000, 3)) - [2, 0, 0]]
+    side = np.r_[np.ones(20000, bool), np.zeros(20000, bool)]
+    assert abs(fisher_ratio(x, side) - 4.0) < 0.1, fisher_ratio(x, side)  # 0.25 * 4^2
+    assert np.isfinite(ncx2.logsf(5000.0, 1, 3000.0)) and ncx2.logsf(5000.0, 1, 3000.0) < -100
+    print("self-check passed", round(gaussian_bound(0.5), 4), round(gaussian_bound(0.2), 4),
+          round(fisher_ratio(x, side), 4), float(ncx2.logsf(5000.0, 1, 3000.0)))
+
+# ===== derive.py =====
+"""protocol.md part A: checks of the single-population bound (A0-A4, A6) and tree-picked splits (A5)."""
+
+import itertools
+import json
+import sys
+import zlib
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.cluster.hierarchy import fcluster, linkage
+from scipy.optimize import brentq
+from scipy.stats import ncx2, norm
+from threadpoolctl import threadpool_limits
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(1, str(HERE.parent / "rule_out_overlap_20261108"))
+from cut_rule import (  # noqa: E402
+    bayes_error,
+    cut_bound_p,
+    fisher_ratio,
+    gaussian_bound,
+    log_flat_cuts,
+    unimodal_bound,
+)
+from overlap_rule import allowed_overlap  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+    is_separable,
+)
+
+P = 30
+NS = (64, 128, 256, 512, 1024, 2048, 4096)
+OUT = []
+
+
+def say(*parts):
+    line = " ".join(str(p) for p in parts)
+    OUT.append(line)
+    print(line, flush=True)
+
+
+def cut_ratios(sorted_x):
+    """rho of every threshold cut of a sorted 1D sample (left = the first i values)."""
+    n = len(sorted_x)
+    i = np.arange(1, n)
+    s1, s2 = np.cumsum(sorted_x)[:-1], np.cumsum(sorted_x**2)[:-1]
+    t1, t2 = sorted_x.sum(), (sorted_x**2).sum()
+    between = (s1 / i - (t1 - s1) / (n - i)) ** 2 * i * (n - i) / n**2
+    total = t2 / n - (t1 / n) ** 2
+    return i / n, between / (total - between)
+
+
+def a0_bayes_error():
+    say("A0 Bayes error, 2e6 cells: pi, delta, simulated, formula, overlap_rule.allowed_overlap")
+    rng = np.random.default_rng(10)
+    for pi in (0.1, 0.5):
+        delta = np.sqrt(2 * np.log(2) / (pi * (1 - pi)))  # the separation allowed_overlap uses
+        a = rng.random(2_000_000) < pi
+        x = rng.standard_normal(len(a)) + np.where(a, delta / 2, -delta / 2)
+        c = np.log((1 - pi) / pi) / delta
+        simulated = np.mean((x > c) != a)
+        say("  ", pi, round(delta, 3), round(simulated, 4), round(bayes_error(pi, delta), 4),
+            round(allowed_overlap(pi), 4))
+
+
+def a1_gaussian_cut():
+    say("A1 flat cut of 2e6 Gaussian draws: pi, rho, g(pi)")
+    x = np.sort(np.random.default_rng(11).standard_normal(2_000_000))
+    share, rho = cut_ratios(x)
+    for pi in (0.5, 0.2, 0.05):
+        value = rho[np.searchsorted(share, pi)]
+        say("  ", pi, round(value, 4), round(gaussian_bound(pi), 4))
+        assert abs(value / gaussian_bound(pi) - 1) < 0.01
+
+
+def a2_best_split_is_flat():
+    hits, total = 0, 0
+    for seed in range(20):
+        x = np.random.default_rng(seed).standard_normal((12, 2))
+        best = {}
+        for mask in itertools.product((False, True), repeat=11):
+            side = np.r_[True, mask]
+            if side.all():
+                continue
+            m = int(min(side.sum(), (~side).sum()))
+            rho = fisher_ratio(x, side)
+            if rho > best.get(m, (-1, None))[0]:
+                best[m] = (rho, side)
+        overall = max(best.values(), key=lambda b: b[0])
+        for rho, side in [*best.values(), overall]:
+            total += 1
+            hits += is_separable(x, side)
+    say(f"A2 largest-rho split linearly separable (per smaller-side size and overall): {hits}/{total}")
+    assert hits == total
+
+
+def uniform_mixture_ratios(lo, hi, w, cuts):
+    """rho at each cut for a mixture of uniforms on [lo_j, hi_j] with weights w_j (one mixture)."""
+    width = hi - lo
+
+    def below(t):
+        c = np.clip(t[:, None], lo, hi)
+        return ((c - lo) / width @ w, (c**2 - lo**2) / (2 * width) @ w, (c**3 - lo**3) / (3 * width) @ w)
+
+    m0, m1, m2 = below(cuts)
+    t1, t2 = (hi**2 - lo**2) / (2 * width) @ w, (hi**3 - lo**3) / (3 * width) @ w
+    ok = (m0 > 1e-9) & (m0 < 1 - 1e-9)
+    mean_l, mean_r = m1[ok] / m0[ok], (t1 - m1[ok]) / (1 - m0[ok])
+    between = m0[ok] * (1 - m0[ok]) * (mean_r - mean_l) ** 2
+    return between / (t2 - t1**2 - between)
+
+
+def a3_unimodal():
+    say("A3 largest rho over cuts (2e6 draws): family, rho, at pi")
+    rng = np.random.default_rng(12)
+    families = {"uniform": rng.random, "gaussian": rng.standard_normal, "laplace": lambda n: rng.laplace(size=n),
+                "logistic": lambda n: rng.logistic(size=n), "t5": lambda n: rng.standard_t(5, n),
+                "exponential": lambda n: rng.exponential(size=n), "lognormal1": lambda n: rng.lognormal(0, 1, n)}
+    for name, draw in families.items():
+        share, rho = cut_ratios(np.sort(draw(2_000_000)))
+        j = int(np.argmax(rho))
+        say("  ", name, round(rho[j], 4), round(share[j], 4))
+    best = 0.0
+    for _ in range(20000):
+        m = rng.integers(1, 7)
+        ends = np.where(rng.random(m) < 0.5, -1, 1) * np.exp(rng.normal(0, 1.5, m))
+        lo, hi = np.minimum(ends, 0.0), np.maximum(ends, 0.0)  # Khintchine: uniforms anchored at the mode 0
+        w = rng.dirichlet(np.ones(m))
+        cuts = np.r_[np.linspace(lo.min(), hi.max(), 1500), ends, 0.0]
+        best = max(best, float(uniform_mixture_ratios(lo, hi, w, np.sort(cuts)).max()))
+    say(f"A3 random unimodal mixtures (20,000): largest rho {best:.4f} (protocol expected <= 3.03)")
+    # added after the search exceeded 3 (deviations.md): a thin flat tail U(-L, 0) of mass eps cut at a L from the
+    # mode gives rho -> 3 (1 - a)(1 + a)^2 / ((1 - a)^3 + 4 a^3), which is 8 at a = 1/3
+    tail = uniform_mixture_ratios(np.array([0.0, -1e4]), np.array([1.0, 0.0]), np.array([1 - 1e-4, 1e-4]),
+                                  np.array([-1e4 / 3]))
+    say(f"A3 thin flat tail cut at a third of its length: rho {tail[0]:.4f} (construction: 8)")
+
+
+def a4_fixed_cut():
+    n, reps = 1000, 4000
+    g = gaussian_bound(0.5)
+    rng = np.random.default_rng(13)
+    t = np.empty(reps)
+    for r in range(reps):
+        z = rng.standard_normal(n)
+        t[r] = n * fisher_ratio(z[:, None], z < np.median(z))
+    p = ncx2.sf(t, 1, n * g)
+    a2 = 2 / np.pi
+    say(f"A4 fixed median cut, n = {n}: share p <= 0.01 = {np.mean(p <= 0.01):.4f} (MC sd 0.0016); mean T "
+        f"{t.mean():.1f} vs n g + 1 = {n * g + 1:.1f}; var T {t.var():.0f} vs 4 n g + 2 = {4 * n * g + 2:.0f}, "
+        f"delta-method {(4 * a2 - 6 * a2**2) / (1 - a2) ** 4 * n:.0f}")
+
+
+def population(name, n, rng):
+    x = rng.standard_normal((n, P))
+    if name == "gaussian_gradient":
+        x[:, 0] *= 3.0
+    elif name == "flat_gradient":
+        x[:, 0] = rng.uniform(-3 * np.sqrt(3), 3 * np.sqrt(3), n)
+    else:  # groups_<delta>_<share>
+        _, delta, share = name.split("_")
+        x[: int(round(float(share) * n)), 0] += float(delta)
+    return x
+
+
+def a5_task(job):
+    name, n, rep = job
+    with threadpool_limits(limits=1):
+        rng = np.random.default_rng([zlib.crc32(name.encode()), n, rep])
+        x = population(name, n, rng)
+        side = fcluster(linkage(x, "ward"), 2, "maxclust") == 1
+        directions = invariant_directions(x)
+        row = {"population": name, "n": n, "rep": rep, "k": len(directions), "pi": float(side.mean())}
+        if len(directions) == 0:
+            return {**row, "rho": np.nan, "p_gaussian": 1.0, "p_unimodal": 1.0, "p_gaussian_no_count": 1.0,
+                    "separable": False}
+        z = x @ directions.T
+        p_g, rho = cut_bound_p(z, side, gaussian_bound)
+        p_u, _ = cut_bound_p(z, side, unimodal_bound)
+        no_count = float(np.exp(min(0.0, ncx2.logsf(n * rho, len(directions), n * gaussian_bound(row["pi"])))))
+        return {**row, "rho": rho, "g": gaussian_bound(row["pi"]), "p_gaussian": p_g, "p_unimodal": p_u,
+                "p_gaussian_no_count": no_count, "separable": bool(is_separable(z, side))}
+
+
+def a5_jobs():
+    groups = [f"groups_{d}_{s}" for d in (2, 3, 4) for s in (0.5, 0.2)]
+    jobs = [(name, n, r) for name in ("gaussian_gradient", "flat_gradient") for n in NS for r in range(200)]
+    return jobs + [(name, n, r) for name in groups for n in NS for r in range(100)]
+
+
+def a5_summary(rows):
+    t = pd.DataFrame(rows)
+    t["kept_gaussian"] = t.p_gaussian <= 0.01
+    t["kept_unimodal"] = t.p_unimodal <= 0.01
+    t["kept_no_count"] = t.p_gaussian_no_count <= 0.01
+    s = t.groupby(["population", "n"]).agg(
+        runs=("k", "size"), with_direction=("k", lambda k: (k > 0).mean()), median_pi=("pi", "median"),
+        median_rho=("rho", "median"), median_g=("g", "median"), kept_gaussian=("kept_gaussian", "mean"),
+        kept_unimodal=("kept_unimodal", "mean"), kept_no_count=("kept_no_count", "mean"),
+        separable=("separable", "mean"))
+    return s.round(3).to_string()
+
+
+def a6_allowed_overlap():
+    say("A6 smallest rho with p <= 0.01 (k = 1) and the overlap of true-label groups at that rho")
+    rows = []
+    for bound_name, bound in (("gaussian", gaussian_bound), ("unimodal", unimodal_bound)):
+        for pi in (0.5, 0.2, 0.1):
+            for n in (100, 1000, 10000, 48879):
+                b = bound(pi)
+                rho = brentq(lambda v: log_flat_cuts(n, 1) + ncx2.logsf(n * v, 1, n * b) - np.log(0.01), b, b + 100)
+                delta = np.sqrt(rho / (pi * (1 - pi)))
+                rows.append({"bound": bound_name, "pi": pi, "n": n, "limit_rho": round(b, 3), "rho_needed": round(rho, 3),
+                             "delta_true_labels": round(delta, 3), "allowed_overlap": round(bayes_error(pi, delta), 4)})
+            delta0 = np.sqrt(b / (pi * (1 - pi)))
+            rows.append({"bound": bound_name, "pi": pi, "n": "limit", "limit_rho": round(b, 3), "rho_needed": round(b, 3),
+                         "delta_true_labels": round(delta0, 3), "allowed_overlap": round(bayes_error(pi, delta0), 4)})
+    say(pd.DataFrame(rows).to_string(index=False))
+
+
+if __name__ == "__main__":
+    pd.set_option("display.width", 250)
+    if sys.argv[1] == "closed":
+        a0_bayes_error()
+        a1_gaussian_cut()
+        a2_best_split_is_flat()
+        a3_unimodal()
+        a4_fixed_cut()
+        a6_allowed_overlap()
+        (HERE / "closed_form.txt").write_text("\n".join(OUT) + "\n")
+    else:
+        with Pool(int(sys.argv[2])) as pool, (HERE / "tree_splits.jsonl").open("w") as f:
+            rows = []
+            for i, row in enumerate(pool.imap_unordered(a5_task, a5_jobs(), chunksize=4), 1):
+                rows.append(row)
+                f.write(json.dumps(row, default=float) + "\n")
+                if i % 1000 == 0:
+                    print(i, flush=True)
+        text = "A5 Ward's top split, p = 30 coordinates, k from the noise band\n" + a5_summary(rows)
+        (HERE / "tree_splits.txt").write_text(text + "\n")
+        print(text)
+
+# ===== run_e2.py =====
+"""protocol.md part B: old rule-out, fixed overlap rule and the single-population bound, in production fits.
+
+usage: run_e2.py check | run_e2.py WORKERS
+"""
+
+import importlib.util
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+_spec = importlib.util.spec_from_file_location("overlap_e2", HERE.parent / "rule_out_overlap_20261108" / "run_e2.py")
+old = importlib.util.module_from_spec(_spec)
+sys.modules["overlap_e2"] = old
+_spec.loader.exec_module(old)  # same data, fits and helpers as the 2026-11-08 overlap run
+sys.path.insert(0, str(HERE))
+
+import numpy as np  # noqa: E402
+from cut_rule import bayes_error, cut_bound_p, gaussian_bound, unimodal_bound  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+
+ARMS = ("rule_out", "rule_out_overlap_fixed", "gaussian_cut", "unimodal_cut")
+old.ARMS = ARMS  # old.task loops over its module-level ARMS
+
+
+def allowed_overlap_fixed(pi):
+    """The redesign's allowance with the Bayes-error terms in the right order."""
+    pi = min(max(pi, 1e-9), 1 - 1e-9)
+    return bayes_error(pi, np.sqrt(2 * np.log(2) / (pi * (1 - pi))))
+
+
+def split_facts(points, own_a):
+    n = len(points)
+    k, basis = old.counting.invariant_directions(points)
+    z = points @ basis.T
+    m, _ = old.distances.margins(old.distances.whiten(points, own_a), own_a)
+    pi = float(own_a.mean())
+    misplaced = old.misplaced_fraction(z, own_a) if k >= 1 else 1.0
+    p_gaussian, rho = cut_bound_p(z, own_a, gaussian_bound)
+    p_unimodal, _ = cut_bound_p(z, own_a, unimodal_bound)
+    return {"n_parent": n, "n_small": int(min(own_a.sum(), (~own_a).sum())), "k": k, "pi": pi,
+            "separable": bool(k >= 1 and old.counting.separable(z, own_a)),
+            "tie_share": float(np.mean(np.abs(m) < old.TIE_MARGIN)), "misplaced": misplaced,
+            "low_overlap_fixed": bool(k >= 1 and misplaced <= allowed_overlap_fixed(pi)),
+            "rho": rho, "g": gaussian_bound(pi), "p_gaussian": p_gaussian, "p_unimodal": p_unimodal}
+
+
+def swapped(records, *, model, **kwargs):
+    ids, summaries, labels, decisions, inadmissible = old.ORIGINAL(records, model=model, **kwargs)
+    arm, cache = old.STATE["arm"], old.STATE["cache"]
+    tree = sys._getframe(1).f_locals["tree"]
+    by_parent = {r.parent: r for r in records}
+    if "rows" not in cache:
+        cache["rows"] = old.precompute_descendants(tree, {label: i for i, label in enumerate(old.STATE["data"].index)})
+        cache["matrix"] = old.STATE["data"].to_numpy(dtype=np.float64)
+    rows, matrix = cache["rows"], cache["matrix"]
+    out = ([], [], [], [], list(inadmissible))
+    for pid, summary, label, decision in zip(ids, summaries, labels, decisions, strict=True):
+        record = by_parent[pid]
+        if decision is None:
+            for column, value in zip(out[:4], (pid, summary, label, decision), strict=True):
+                column.append(value)
+            continue
+        key = ("split", str(pid))
+        if key not in cache:
+            left, right = sorted(rows[record.left]), sorted(rows[record.right])
+            cache[key] = split_facts(matrix[left + right], np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)])
+            old.count("n_matches_record", cache[key]["n_parent"] == int(record.n_parent))
+        s = cache[key]
+        stat, df = float(record.stat), float(record.degrees_of_freedom)
+        if arm in ("rule_out", "rule_out_overlap_fixed"):
+            real = (s["separable"] if arm == "rule_out" else s["low_overlap_fixed"]) and s["tie_share"] <= old.MAX_TIE_SHARE
+            p = old.adjusted(stat, df, old.counting.log_all_splits(s["n_parent"])) if real else 1.0
+        else:
+            real = None
+            p = s["p_gaussian"] if arm == "gaussian_cut" else s["p_unimodal"]
+        old.STATE["splits"].append({"node": str(pid), **s, "stat": stat, "df": df, "real": real, "p": p,
+                                    "c_today": float(decision.c_hat)})
+        out[0].append(pid)
+        out[1].append((stat, df, p))
+        out[2].append(f"{label}:{arm}")
+        out[3].append(old.replace(decision, c_hat=1.0, p_value=p))
+    return out
+
+
+pipeline.compute_inflation_adjusted_sibling_tests = swapped
+
+
+def task(job):
+    return old.task(job)
+
+
+def main(workers):
+    paths = {name: HERE / f"{name}.jsonl" for name in ("datasets", "splits", "checks")}
+    done = set()
+    if paths["checks"].exists():
+        done = {(r["model"], r["replicate"]) for r in map(json.loads, paths["checks"].read_text().splitlines())}
+    todo = [j for j in old.jobs() if j not in done]
+    files = {name: path.open("a", buffering=1) for name, path in paths.items()}
+    with Pool(workers) as pool:
+        for i, (datasets, splits, checks) in enumerate(pool.imap_unordered(task, todo), 1):
+            files["splits"].write("".join(json.dumps(r, default=float) + "\n" for r in splits))
+            files["datasets"].write("".join(json.dumps(r) + "\n" for r in datasets))
+            files["checks"].write(json.dumps(checks) + "\n")
+            if i % 25 == 0:
+                print(f"{i}/{len(todo)}", flush=True)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "check":
+        for job in (("high", 0), ("signal_density_variation", 0)):
+            t = perf_counter()
+            datasets, splits, checks = task(job)
+            print(job, f"{perf_counter() - t:.1f}s", checks)
+            for d in datasets:
+                print(d["tree"], d["arm"], d["found_clusters"], round(d["ari"], 3), round(d["sec"], 1))
+            for s in splits:
+                if s["arm"] == "gaussian_cut" and s["n_parent"] >= 100 and s["tree"] == "markov_ward":
+                    print({k: (round(v, 3) if isinstance(v, float) else v) for k, v in s.items()
+                           if k in ("n_parent", "k", "pi", "misplaced", "rho", "g", "p_gaussian", "p_unimodal")})
+    else:
+        main(int(sys.argv[1]))
+
+# ===== summarize_e2.py =====
+"""protocol.md part B: tables as in rule_out_overlap_20261108/summary_e2.txt, replay check, rho of tree-picked splits."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+OVERLAP = HERE.parent / "rule_out_overlap_20261108"
+EXCLUSION = HERE.parent / "split_count_exclusion_20261108"
+NULLS = ["low", "matched_median", "high"]
+ARMS = ["rule_out", "rule_out_overlap_fixed", "gaussian_cut", "unimodal_cut", "today"]
+pd.set_option("display.width", 250)
+
+
+def load(path):
+    return pd.DataFrame(map(json.loads, path.read_text().splitlines()))
+
+
+new = load(HERE / "datasets.jsonl")
+ds = pd.concat([new, load(EXCLUSION / "datasets.jsonl").query("arm == 'today'")])
+sp = load(HERE / "splits.jsonl")
+sp["passed"] = sp.p <= 0.01
+null = sp[sp.model.isin(NULLS)]
+large = null[null.n_parent >= 40].groupby(["tree", "model", "arm"]).passed.mean().unstack("arm")
+small = null[null.n_parent.between(10, 39)].groupby(["tree", "model", "arm"]).passed.mean().unstack("arm")
+fp = ds[ds.model.isin(NULLS)].groupby(["tree", "model", "arm"]).found_clusters.apply(lambda x: int((x > 1).sum())).unstack("arm")
+ari = ds[~ds.model.isin(NULLS)].groupby(["tree", "model", "arm"]).ari.mean().unstack("arm")
+clusters = ds[~ds.model.isin(NULLS)].groupby(["tree", "model", "arm"]).found_clusters.median().unstack("arm")
+lines = [f"{name}\n{t[[a for a in ARMS if a in t.columns]].round(3).to_string()}" for name, t in [
+    ("Large no-group splits (>= 40 cells), share p <= 0.01", large), ("Small no-group splits (10-39), share p <= 0.01", small),
+    ("False partitions of 300", fp), ("Mean ARI, real groups", ari), ("Median clusters, real groups", clusters)]]
+
+key = ["model", "replicate", "tree"]
+replay = new.query("arm == 'rule_out'").merge(load(OVERLAP / "datasets.jsonl").query("arm == 'rule_out'"), on=key)
+lines.append(f"Replay of rule_out (found clusters equal to the 2026-11-08 overlap run): "
+             f"{int((replay.found_clusters_x == replay.found_clusters_y).sum())}/{len(replay)} datasets")
+checks = load(HERE / "checks.jsonl")
+lines.append(f"cell-count check: {sum(c[1] for c in checks.n_matches_record)}/{sum(c[0] for c in checks.n_matches_record)}")
+
+facts = sp[(sp.arm == "gaussian_cut") & (sp.k > 0)].copy()  # split facts do not depend on the arm
+facts["kind"] = np.where(facts.model.isin(NULLS), "no-group", "group data")
+facts["size"] = pd.cut(facts.n_parent, [31, 79, 159, 399, np.inf], labels=["32-79", "80-159", "160-399", "400+"])
+facts["balance"] = pd.cut(np.minimum(facts.pi, 1 - facts.pi), [0, 0.1, 0.3, 0.5], labels=["<0.1", "0.1-0.3", "0.3-0.5"])
+facts["rho_over_g"] = facts.rho / facts.g
+
+
+def table(by):
+    return facts.groupby(by, observed=True).agg(
+        splits=("rho", "size"), median_rho_over_g=("rho_over_g", "median"), above_g=("rho_over_g", lambda s: (s > 1).mean()),
+        above_3=("rho", lambda s: (s > 3).mean()), kept_gaussian=("p_gaussian", lambda s: (s <= 0.01).mean()),
+        kept_unimodal=("p_unimodal", lambda s: (s <= 0.01).mean()), median_misplaced=("misplaced", "median"),
+        separable=("separable", "mean")).round(3).to_string()
+
+
+lines.append("Tested splits with an invariant direction: rho against g(pi) by size\n" + table(["kind", "tree", "size"]))
+lines.append("... by balance of the split (smaller share)\n" + table(["kind", "tree", "balance"]))
+text = "\n\n".join(lines)
+(HERE / "summary_e2.txt").write_text(text + "\n")
+print(text)
+
+# ===== closed_form.txt =====
+A0 Bayes error, 2e6 cells: pi, delta, simulated, formula, overlap_rule.allowed_overlap
+   0.1 3.925 0.0132 0.0133 0.0729
+   0.5 2.355 0.1192 0.1195 0.1195
+A1 flat cut of 2e6 Gaussian draws: pi, rho, g(pi)
+   0.5 1.7534 1.7519
+   0.2 0.9605 0.9603
+   0.05 0.2883 0.2886
+A2 largest-rho split linearly separable (per smaller-side size and overall): 140/140
+A3 largest rho over cuts (2e6 draws): family, rho, at pi
+   uniform 3.0002 0.4994
+   gaussian 1.7523 0.5001
+   laplace 0.9985 0.5255
+   logistic 1.4059 0.501
+   t5 1.1782 0.4993
+   exponential 1.8399 0.7963
+   lognormal1 1.2123 0.9255
+A3 random unimodal mixtures (20,000): largest rho 7.8389 (protocol expected <= 3.03)
+A3 thin flat tail cut at a third of its length: rho 7.9976 (construction: 8)
+A4 fixed median cut, n = 1000: share p <= 0.01 = 0.0095 (MC sd 0.0016); mean T 1750.9 vs n g + 1 = 1752.9; var T 6727 vs 4 n g + 2 = 7010, delta-method 6582
+A6 smallest rho with p <= 0.01 (k = 1) and the overlap of true-label groups at that rho
+   bound  pi     n  limit_rho  rho_needed  delta_true_labels  allowed_overlap
+gaussian 0.5   100      1.752       2.875              3.391           0.0450
+gaussian 0.5  1000      1.752       2.127              2.917           0.0724
+gaussian 0.5 10000      1.752       1.880              2.742           0.0852
+gaussian 0.5 48879      1.752       1.813              2.693           0.0891
+gaussian 0.5 limit      1.752       1.752              2.647           0.0928
+gaussian 0.2   100      0.960       1.827              3.380           0.0344
+gaussian 0.2  1000      0.960       1.243              2.787           0.0605
+gaussian 0.2 10000      0.960       1.056              2.569           0.0729
+gaussian 0.2 48879      0.960       1.006              2.507           0.0767
+gaussian 0.2 limit      0.960       0.960              2.450           0.0803
+gaussian 0.1   100      0.520       1.195              3.644           0.0180
+gaussian 0.1  1000      0.520       0.733              2.854           0.0382
+gaussian 0.1 10000      0.520       0.591              2.563           0.0482
+gaussian 0.1 48879      0.520       0.554              2.481           0.0512
+gaussian 0.1 limit      0.520       0.520              2.404           0.0541
+unimodal 0.5   100      3.000       4.427              4.208           0.0177
+unimodal 0.5  1000      3.000       3.485              3.734           0.0310
+unimodal 0.5 10000      3.000       3.167              3.559           0.0376
+unimodal 0.5 48879      3.000       3.080              3.510           0.0396
+unimodal 0.5 limit      3.000       3.000              3.464           0.0416
+unimodal 0.2   100      3.000       4.427              5.260           0.0033
+unimodal 0.2  1000      3.000       3.485              4.667           0.0076
+unimodal 0.2 10000      3.000       3.167              4.449           0.0101
+unimodal 0.2 48879      3.000       3.080              4.387           0.0109
+unimodal 0.2 limit      3.000       3.000              4.330           0.0117
+unimodal 0.1   100      3.000       4.427              7.013           0.0001
+unimodal 0.1  1000      3.000       3.485              6.223           0.0005
+unimodal 0.1 10000      3.000       3.167              5.932           0.0009
+unimodal 0.1 48879      3.000       3.080              5.850           0.0010
+unimodal 0.1 limit      3.000       3.000              5.774           0.0011
+
+# ===== tree_splits.txt =====
+A5 Ward's top split, p = 30 coordinates, k from the noise band
+                        runs  with_direction  median_pi  median_rho  median_g  kept_gaussian  kept_unimodal  kept_no_count  separable
+population        n                                                                                                                  
+flat_gradient     64     200            1.00      0.391       2.102     1.625          0.105           0.00          0.325      0.075
+                  128    200            1.00      0.414       2.072     1.672          0.145           0.00          0.360      0.005
+                  256    200            1.00      0.395       1.976     1.633          0.180           0.00          0.515      0.000
+                  512    200            1.00      0.396       1.946     1.638          0.210           0.00          0.570      0.000
+                  1024   200            1.00      0.391       1.935     1.626          0.375           0.00          0.690      0.000
+                  2048   200            1.00      0.402       1.970     1.648          0.605           0.00          0.795      0.000
+                  4096   200            1.00      0.406       1.929     1.656          0.635           0.00          0.790      0.000
+gaussian_gradient 64     200            1.00      0.352       1.290     1.501          0.015           0.00          0.025      0.105
+                  128    200            1.00      0.383       1.225     1.607          0.000           0.00          0.000      0.000
+                  256    200            1.00      0.375       1.200     1.587          0.000           0.00          0.000      0.000
+                  512    200            1.00      0.371       1.174     1.577          0.000           0.00          0.000      0.000
+                  1024   200            1.00      0.367       1.155     1.566          0.000           0.00          0.000      0.000
+                  2048   200            1.00      0.382       1.165     1.604          0.000           0.00          0.000      0.000
+                  4096   200            1.00      0.370       1.147     1.575          0.000           0.00          0.000      0.000
+groups_2_0.2      64     100            0.37      0.359       0.596     1.546          0.000           0.00          0.010      0.020
+                  128    100            0.50      0.363       0.386     1.500          0.000           0.00          0.000      0.000
+                  256    100            0.85      0.377       0.294     1.567          0.000           0.00          0.000      0.000
+                  512    100            1.00      0.341       0.297     1.483          0.000           0.00          0.000      0.000
+                  1024   100            1.00      0.278       0.309     1.251          0.000           0.00          0.000      0.000
+                  2048   100            1.00      0.258       0.303     1.183          0.000           0.00          0.000      0.000
+                  4096   100            1.00      0.245       0.313     1.149          0.000           0.00          0.000      0.000
+groups_2_0.5      64     100            0.48      0.359       0.659     1.546          0.000           0.00          0.000      0.010
+                  128    100            0.94      0.398       0.507     1.607          0.000           0.00          0.000      0.000
+                  256    100            1.00      0.398       0.473     1.625          0.000           0.00          0.000      0.000
+                  512    100            1.00      0.400       0.505     1.646          0.000           0.00          0.000      0.000
+                  1024   100            1.00      0.436       0.491     1.703          0.000           0.00          0.000      0.000
+                  2048   100            1.00      0.437       0.496     1.697          0.000           0.00          0.000      0.000
+                  4096   100            1.00      0.423       0.513     1.687          0.000           0.00          0.000      0.000
+groups_3_0.2      64     100            0.86      0.312       0.827     1.400          0.010           0.00          0.040      0.020
+                  128    100            0.98      0.234       0.828     1.104          0.000           0.00          0.010      0.000
+                  256    100            1.00      0.213       0.775     1.015          0.010           0.00          0.060      0.000
+                  512    100            1.00      0.197       0.823     0.949          0.020           0.00          0.080      0.000
+                  1024   100            1.00      0.184       0.857     0.892          0.020           0.00          0.160      0.000
+                  2048   100            1.00      0.190       0.854     0.919          0.050           0.00          0.230      0.000
+                  4096   100            1.00      0.183       0.921     0.887          0.130           0.00          0.350      0.000
+groups_3_0.5      64     100            1.00      0.438       1.245     1.686          0.000           0.00          0.020      0.000
+                  128    100            1.00      0.445       1.267     1.714          0.000           0.00          0.020      0.000
+                  256    100            1.00      0.461       1.288     1.726          0.000           0.00          0.000      0.000
+                  512    100            1.00      0.453       1.262     1.724          0.000           0.00          0.010      0.000
+                  1024   100            1.00      0.470       1.309     1.741          0.000           0.00          0.020      0.000
+                  2048   100            1.00      0.463       1.372     1.737          0.000           0.00          0.000      0.000
+                  4096   100            1.00      0.470       1.433     1.742          0.000           0.00          0.000      0.000
+groups_4_0.2      64     100            0.99      0.219       1.637     1.039          0.230           0.00          0.500      0.130
+                  128    100            1.00      0.195       1.682     0.940          0.450           0.00          0.770      0.010
+                  256    100            1.00      0.191       1.755     0.924          0.770           0.00          0.900      0.000
+                  512    100            1.00      0.189       1.807     0.915          0.940           0.00          0.980      0.000
+                  1024   100            1.00      0.194       1.921     0.934          1.000           0.00          1.000      0.000
+                  2048   100            1.00      0.191       1.912     0.921          1.000           0.00          1.000      0.000
+                  4096   100            1.00      0.194       1.965     0.936          1.000           0.00          1.000      0.000
+groups_4_0.5      64     100            1.00      0.469       2.536     1.741          0.300           0.04          0.470      0.070
+                  128    100            1.00      0.469       2.743     1.741          0.500           0.02          0.780      0.020
+                  256    100            1.00      0.490       2.749     1.748          0.730           0.02          0.900      0.000
+                  512    100            1.00      0.486       2.882     1.748          0.960           0.03          0.990      0.000
+                  1024   100            1.00      0.488       2.986     1.750          0.990           0.11          0.990      0.000
+                  2048   100            1.00      0.489       2.980     1.750          1.000           0.08          1.000      0.000
+                  4096   100            1.00      0.490       3.071     1.751          1.000           0.14          1.000      0.000
+
+# ===== summary_e2.txt =====
+Large no-group splits (>= 40 cells), share p <= 0.01
+arm                               rule_out  rule_out_overlap_fixed  gaussian_cut  unimodal_cut
+tree              model                                                                       
+markov_ward       high               0.004                   0.009         0.002           0.0
+                  low                0.000                   0.004         0.000           0.0
+                  matched_median     0.009                   0.006         0.000           0.0
+symmetric_average high               0.000                   0.005         0.000           0.0
+                  low                0.000                   0.000         0.000           0.0
+                  matched_median     0.000                   0.000         0.000           0.0
+
+Small no-group splits (10-39), share p <= 0.01
+arm                               rule_out  rule_out_overlap_fixed  gaussian_cut  unimodal_cut
+tree              model                                                                       
+markov_ward       high               0.023                   0.047         0.006           0.0
+                  low                0.007                   0.007         0.000           0.0
+                  matched_median     0.016                   0.016         0.000           0.0
+symmetric_average high               0.000                   0.000         0.000           0.0
+                  low                0.000                   0.000         0.000           0.0
+                  matched_median     0.000                   0.000         0.000           0.0
+
+False partitions of 300
+arm                               rule_out  rule_out_overlap_fixed  gaussian_cut  unimodal_cut  today
+tree              model                                                                              
+markov_ward       high                  15                      28             5             0    300
+                  low                    2                      13             0             0    298
+                  matched_median        25                      17             0             0    296
+symmetric_average high                   0                       6             0             0    259
+                  low                    0                       0             0             0      2
+                  matched_median         0                       0             0             0     50
+
+Mean ARI, real groups
+arm                                         rule_out  rule_out_overlap_fixed  gaussian_cut  unimodal_cut  today
+tree              model                                                                                        
+markov_ward       signal_balanced              1.000                   0.989         1.000         1.000  0.315
+                  signal_density_variation     0.867                   0.547         0.568         1.000  0.025
+                  signal_imbalanced            1.000                   0.867         1.000         1.000  0.079
+                  signal_singleton             0.879                   0.730         0.997         0.997  0.092
+symmetric_average signal_balanced              0.800                   0.800         0.800         0.800  0.800
+                  signal_density_variation     0.667                   0.667         0.685         0.667  0.651
+                  signal_imbalanced            1.000                   1.000         1.000         1.000  1.000
+                  signal_singleton             0.880                   0.880         0.880         0.880  0.880
+
+Median clusters, real groups
+arm                                         rule_out  rule_out_overlap_fixed  gaussian_cut  unimodal_cut  today
+tree              model                                                                                        
+markov_ward       signal_balanced                4.0                     4.0           4.0           4.0   20.0
+                  signal_density_variation       5.0                    12.0           7.0           4.0   81.0
+                  signal_imbalanced              4.0                     4.0           4.0           4.0   25.5
+                  signal_singleton               4.0                     5.0           4.0           4.0   22.0
+symmetric_average signal_balanced                4.0                     4.0           4.0           4.0    4.0
+                  signal_density_variation       7.0                     7.0           7.0           7.0   13.0
+                  signal_imbalanced              4.0                     4.0           4.0           4.0    4.0
+                  signal_singleton               4.0                     4.0           4.0           4.0    4.0
+
+Replay of rule_out (found clusters equal to the 2026-11-08 overlap run): 1870/1870 datasets
+
+cell-count check: 11488/11488
+
+Tested splits with an invariant direction: rho against g(pi) by size
+                                      splits  median_rho_over_g  above_g  above_3  kept_gaussian  kept_unimodal  median_misplaced  separable
+kind       tree              size                                                                                                           
+group data markov_ward       32-79       333              0.564    0.165    0.006          0.000          0.000             0.137      0.063
+                             80-159      417              0.374    0.072    0.000          0.000          0.000             0.177      0.010
+                             160-399     248              0.207    0.073    0.000          0.012          0.000             0.224      0.008
+                             400+        159            169.756    0.755    0.660          0.711          0.660             0.000      0.660
+           symmetric_average 32-79        10              0.680    0.400    0.100          0.000          0.000             0.100      0.400
+                             80-159       11              0.726    0.091    0.000          0.000          0.000             0.085      0.000
+                             160-399       4              0.830    0.000    0.000          0.000          0.000             0.080      0.000
+                             400+        110            214.165    0.964    0.855          0.945          0.855             0.000      0.864
+no-group   markov_ward       32-79      2135              0.497    0.135    0.003          0.000          0.000             0.147      0.121
+                             80-159     2994              0.281    0.031    0.000          0.000          0.000             0.200      0.008
+                             160-399    1145              0.234    0.075    0.000          0.000          0.000             0.187      0.000
+                             400+        507              0.376    0.065    0.000          0.008          0.000             0.130      0.000
+           symmetric_average 32-79       186              0.328    0.059    0.000          0.000          0.000             0.195      0.027
+                             80-159      403              0.414    0.057    0.000          0.000          0.000             0.172      0.000
+                             160-399     336              0.338    0.071    0.000          0.000          0.000             0.098      0.000
+                             400+        305              0.365    0.000    0.000          0.000          0.000             0.112      0.000
+
+... by balance of the split (smaller share)
+                                      splits  median_rho_over_g  above_g  above_3  kept_gaussian  kept_unimodal  median_misplaced  separable
+kind       tree              balance                                                                                                        
+group data markov_ward       <0.1         52            184.613    0.962    0.962          0.962          0.962             0.000      0.962
+                             0.1-0.3     294              0.581    0.310    0.119          0.153          0.119             0.132      0.143
+                             0.3-0.5     811              0.375    0.101    0.027          0.026          0.025             0.185      0.049
+           symmetric_average <0.1         63            176.253    0.937    0.778          0.937          0.778             0.000      0.794
+                             0.1-0.3      34            221.304    0.853    0.853          0.853          0.853             0.000      0.853
+                             0.3-0.5      38              1.268    0.605    0.447          0.421          0.421             0.064      0.526
+no-group   markov_ward       <0.1         33              0.406    0.424    0.000          0.000          0.000             0.069      0.121
+                             0.1-0.3    1791              0.481    0.165    0.002          0.002          0.000             0.147      0.084
+                             0.3-0.5    4957              0.316    0.038    0.000          0.000          0.000             0.194      0.026
+           symmetric_average <0.1         76              0.005    0.000    0.000          0.000          0.000             0.060      0.000
+                             0.1-0.3     337              0.318    0.030    0.000          0.000          0.000             0.148      0.006
+                             0.3-0.5     817              0.409    0.059    0.000          0.000          0.000             0.135      0.004
+

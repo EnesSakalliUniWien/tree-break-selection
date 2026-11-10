@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import nan
 
 from benchmarks.shared.types.run_status import BenchmarkRunStatus
 
@@ -91,6 +92,10 @@ class BenchmarkResultRow:
     unsupported_upstream_tested_count: float
     unsupported_upstream_rejected_count: float
     labels_length: int
+    matched_macro_f1: float = nan
+    matched_rare_f1: float = nan
+    pair_split_share: float = nan
+    pair_merge_share: float = nan
 
 
 __all__ = [

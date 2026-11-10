@@ -1,0 +1,338 @@
+##### protocol.md
+# Protocol: tree topology, the estimated correction and the chain test on the same no-group data
+
+Frozen 2026-11-07 before any full result. The only results seen before freezing are the
+`timing.py` / `pilot_chain.py` runs (chain test on low/high replicates 0-3, 99 steps), used for runtime only.
+
+## Data
+Count nulls with one true group (every split is a no-difference split), 400 cells, 3000 genes, NB dispersion 8:
+`low` (log-depth sd 0.25) and `high` (sd 1.0) from the frozen generator, and `matched_median` (sd 0.42, the median
+within-line sd of the real data), all via `depth_confound_20261107/depth.py::generate`. Replicates 0-299 each.
+Preparation: frozen `validate.prepare` (log-normalised counts, 2000 HVG, scale, 30 PCs, kernel, symmetric and Markov
+diffusion coordinates).
+
+## Trees and gates
+`compare.fit(data, pdist(coords), variant)` with `symmetric_average` (default method tree) and `markov_ward`;
+production alphas (edge 1e-3, sibling 1e-2) and pass-through as in that frozen helper. Nothing is tuned.
+
+## Q1 Topology
+Per dataset and tree: size of the smaller side of the root split; share of internal nodes with >= 40 cells whose smaller
+child holds <= 5% of the node ("peel share"); final cluster count.
+
+## Q2 Estimated correction (today's empirical-null inflation)
+Every split in these data is a no-difference split. For each tested sibling node record the raw statistic `T`, reference
+scale `s`, degrees of freedom `df`, applied factor `c` (and local / family-baseline factors) and the adjusted p.
+- Needed factor for a group of nodes at level 0.01: the 99th percentile over nodes of `T / (s * chi2.ppf(0.99, df))`.
+- Applied factor: median `c` in the group.
+- Share of nodes with adjusted p <= 0.01 (target 0.01).
+Groups: tree x model x parent-size bin {2-9, 10-39, 40-159, 160-400}, and the root node alone.
+
+## Q3 Chain test (works out the test's answer given how the tree chose the split)
+`selected_diffusion_root_chain_test` on the root of the default tree only (it replays only that tree build), on the
+30 PCs, steps 199, seed = replicate, alpha 0.01. Its contract needs independent Gaussian rows with known spherical
+covariance; count data break both. Fixed rule: sigma^2 = mean of the 30 PC sample variances (plug-in, not tuned).
+Endpoints per model: share rejected at 0.01 with one-sided 95% Clopper-Pearson upper bound (target 0.01), share with
+p <= 0.05, stall share (chain never moved), runtime. Compared on the same datasets with the production root decision
+(root adjusted sibling p <= 0.01).
+Self-check: the chain test's replayed root partition must equal the production default tree's root partition; mismatches
+are reported, not dropped.
+
+## Compute
+Q1/Q2: 4 processes x 1 thread. Q3: 4 processes x 1 thread. jsonl / csv per run, resumable. Results never change the rules above.
+##### deviations.md
+# Deviations from protocol.md
+
+- Q3 compute: after 197 of 900 chain tests the runner was stopped and restarted with 8 instead of 4 worker processes
+  (the Q1/Q2 run had finished and freed the cores). Each test is seeded by its replicate, so tests that were in flight
+  when stopped rerun identically. No rule, endpoint or parameter changed.
+- Added after Q3 results (not in the protocol): a power check of the chain test on data with real groups. On the
+  full 1,000-cell signal datasets it did not finish (one 9-step timing run on `signal_balanced` replicate 0 ran over
+  10 minutes; four 199-step workers ran 20 minutes without one result) and was stopped. It was rerun on 400-cell random
+  subsets (seed SeedSequence([20261107, 400, replicate])) of `signal_balanced`, `signal_imbalanced` and
+  `signal_singleton`, 10 replicates each, with the same chain settings, next to the production decision on the same subset.
+- Q2 reference set: the annotations store sibling scores only for splits whose side-versus-whole gate opened, so the
+  splits the correction is fitted from (low weight on splits with significant child-parent edges) cannot be read from
+  the saved output. Q2 therefore compares the applied factor with the needed factor on tested splits only, as specified.
+##### run.py
+"""Q1/Q2 (protocol.md): topology and the applied sibling correction on both trees, per no-group dataset."""
+
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+
+import networkx as nx  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+import depth  # noqa: E402  (also puts the frozen null folder on sys.path)
+from compare import fit  # noqa: E402
+from validate import prepare  # noqa: E402
+
+MODELS = ("low", "high", "matched_median")
+TREES = {"symmetric_average": 1, "markov_ward": 2}  # index into prepare()'s output
+COLS = ["Sibling_Raw_Test_Statistic", "Sibling_Reference_Scale", "Sibling_Degrees_of_Freedom",
+        "Sibling_Inflation_Factor", "Sibling_Local_Inflation_Factor",
+        "Sibling_Family_Baseline_Inflation_Factor", "Sibling_Divergence_P_Value",
+        "Sibling_Divergence_P_Value_Corrected", "Sibling_BH_Different", "Sibling_Divergence_Skipped"]
+
+
+def nodes_and_topology(result):
+    tree, ann = result.extra["tree"], result.extra["annotations"]
+    root = next(n for n in tree.nodes if tree.in_degree(n) == 0)
+    level = nx.shortest_path_length(tree, root)
+    size = ann["leaf_count"].astype(int)
+    rows, peels, big = [], 0, 0
+    for node in tree.nodes:
+        kids = list(tree.successors(node))
+        if len(kids) != 2:
+            continue
+        small = int(min(size[k] for k in kids))
+        if size[node] >= 40:
+            big += 1
+            peels += small <= 0.05 * size[node]
+        row = {"node": str(node), "is_root": node == root, "level": int(level[node]),
+               "n_parent": int(size[node]), "n_small": small,
+               "edge_gate": bool(ann.loc[kids, "Child_Parent_Divergence_Significant"].astype(bool).any())}
+        row.update({c: ann.loc[node, c] if c in ann.columns else None for c in COLS})
+        rows.append(row)
+    kids = list(tree.successors(root))
+    topo = {"root_small": int(min(size[k] for k in kids)), "peel_share_ge40": peels / big if big else np.nan,
+            "n_ge40": big, "found_clusters": result.found_clusters, "status": result.status.value}
+    return rows, topo
+
+
+def task(job):
+    model, replicate = job
+    counts, _ = depth.generate(model, replicate)
+    out_nodes, out_topo = [], []
+    with threadpool_limits(limits=1):
+        prepared = prepare(counts)
+        data = prepared[0]
+        for tree_name, idx in TREES.items():
+            base = {"model": model, "replicate": replicate, "tree": tree_name}
+            try:
+                rows, topo = nodes_and_topology(fit(data, pdist(prepared[idx]), tree_name))
+            except Exception as error:  # recorded, never dropped
+                out_topo.append({**base, "status": "exception", "error": f"{type(error).__name__}: {error}"})
+                continue
+            out_nodes += [{**base, **r} for r in rows]
+            out_topo.append({**base, **topo})
+    return out_nodes, out_topo
+
+
+def main():
+    topo_path = HERE / "topology.jsonl"
+    done = set()
+    if topo_path.exists():
+        done = {(r["model"], r["replicate"]) for r in map(json.loads, topo_path.read_text().splitlines())}
+    jobs = [(m, r) for m in MODELS for r in range(300) if (m, r) not in done]
+    with Pool(4) as pool, topo_path.open("a", buffering=1) as topo_out:
+        for i, (nodes, topo) in enumerate(pool.imap_unordered(task, jobs), 1):
+            if nodes:
+                key = f"{nodes[0]['model']}_{nodes[0]['replicate']}"
+                pd.DataFrame(nodes).to_csv(HERE / "nodes" / f"{key}.csv.gz", index=False)
+            for row in topo:
+                topo_out.write(json.dumps(row, default=str) + "\n")
+            if i % 100 == 0:
+                print(f"{i}/{len(jobs)}", flush=True)
+
+
+if __name__ == "__main__":
+    (HERE / "nodes").mkdir(exist_ok=True)
+    if sys.argv[1:] == ["check"]:
+        nodes, topo = task(("low", 0))
+        print(topo)
+        print(pd.DataFrame(nodes).query("is_root").T)
+    else:
+        main()
+##### chain.py
+"""Q3 (protocol.md): root chain test on the default tree for every no-group dataset."""
+
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+sys.path.insert(0, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+from scipy.cluster.hierarchy import linkage, to_tree  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+import depth  # noqa: E402
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_conditional_mc import (  # noqa: E402
+    selected_diffusion_root_chain_test,
+)
+from validate import prepare  # noqa: E402
+
+MODELS = ("low", "high", "matched_median")
+
+
+def task(job):
+    model, replicate = job
+    counts, _ = depth.generate(model, replicate)
+    with threadpool_limits(limits=1):
+        data, symmetric, _ = prepare(counts)
+        sigma = float(np.sqrt(data.to_numpy().var(axis=0, ddof=1).mean()))
+        root = to_tree(linkage(pdist(symmetric), method="average"))
+        production = {frozenset(data.index[root.left.pre_order()]), frozenset(data.index[root.right.pre_order()])}
+        start = perf_counter()
+        r = selected_diffusion_root_chain_test(data, sigma=sigma, steps=199, seed=replicate, alpha=0.01)
+    replayed = {frozenset(c) for c in r.get("root_children", ())}
+    return {"model": model, "replicate": replicate, "sigma": sigma, "sec": perf_counter() - start,
+            "status": r["status"], "sampling_status": r.get("sampling_status"), "decision": r["decision"],
+            "p_value": r.get("p_value"), "accepted_moves": r.get("accepted_moves"),
+            "root_small": min(map(len, replayed)) if replayed else None,
+            "same_root_as_production": replayed == production, "error": r.get("error")}
+
+
+def main():
+    path = HERE / "chain.jsonl"
+    done = set()
+    if path.exists():
+        done = {(r["model"], r["replicate"]) for r in map(json.loads, path.read_text().splitlines())}
+    jobs = [(m, r) for m in MODELS for r in range(300) if (m, r) not in done]
+    with Pool(8) as pool, path.open("a", buffering=1) as out:
+        for i, row in enumerate(pool.imap_unordered(task, jobs), 1):
+            out.write(json.dumps(row, default=str) + "\n")
+            if i % 50 == 0:
+                print(f"{i}/{len(jobs)}", flush=True)
+
+
+if __name__ == "__main__":
+    print(task(("low", 0))) if sys.argv[1:] == ["check"] else main()
+##### signals_chain.py
+"""Added after Q3 (deviations.md): chain test and production root decision on 400-cell random subsets of the
+1,000-cell signal datasets (the chain test does not finish at 1,000 cells; subset seed = replicate)."""
+import json, sys
+from multiprocessing import Pool
+from pathlib import Path
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+sys.path.insert(0, str(HERE.parents[2]))
+import numpy as np
+from scipy.spatial.distance import pdist
+from sklearn.metrics import adjusted_rand_score
+from threadpoolctl import threadpool_limits
+import depth
+from compare import fit
+from validate import MODELS, prepare
+from run import nodes_and_topology
+from benchmarks.diagnostics.calibration.selected.hierarchy.diffusion_root_conditional_mc import selected_diffusion_root_chain_test
+
+def task(job):
+    model, rep = job
+    counts, truth = depth.generate(model, rep)
+    keep = np.sort(np.random.default_rng(np.random.SeedSequence([20261107, 400, rep])).choice(len(counts), 400, replace=False))
+    counts, truth = counts[keep], np.asarray(truth)[keep]
+    with threadpool_limits(limits=1):
+        data, sym, _ = prepare(counts)
+        res = fit(data, pdist(sym), "symmetric_average")
+        rows, topo = nodes_and_topology(res)
+        rootrow = next(r for r in rows if r["is_root"])
+        sigma = float(np.sqrt(data.to_numpy().var(axis=0, ddof=1).mean()))
+        r = selected_diffusion_root_chain_test(data, sigma=sigma, steps=199, seed=rep, alpha=0.01)
+    return {"model": model, "replicate": rep, "true_groups": int(len(np.unique(truth))), "root_small": topo["root_small"],
+            "production_root_split": bool(rootrow["edge_gate"] and rootrow["Sibling_BH_Different"]),
+            "production_clusters": res.found_clusters, "production_ari": adjusted_rand_score(truth, res.labels),
+            "chain_decision": r["decision"], "chain_p": r.get("p_value"), "chain_moves": r.get("accepted_moves"),
+            "chain_sampling": r.get("sampling_status")}
+
+if __name__ == "__main__":
+    jobs = [(m, i) for m in MODELS if m in ("signal_balanced", "signal_imbalanced", "signal_singleton") for i in range(MODELS[m]["replicates"])]
+    with Pool(6) as p, (HERE / "signals_chain.jsonl").open("w") as out:
+        for row in p.imap_unordered(task, jobs):
+            out.write(json.dumps(row, default=str) + "\n")
+            print(json.dumps(row, default=str), flush=True)
+##### summarize.py
+"""Q1-Q3 tables (protocol.md)."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.stats import beta, chi2
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 200)
+
+
+def upper95(k, n):
+    return 1.0 if k >= n else float(beta.ppf(0.95, k + 1, n - k))
+
+
+topo = pd.DataFrame([json.loads(x) for x in (HERE / "topology.jsonl").read_text().splitlines()])
+topo["false_partition"] = topo.status.ne("ok") | topo.found_clusters.fillna(2).gt(1)
+q1 = topo.groupby(["tree", "model"]).agg(
+    datasets=("replicate", "size"), exceptions=("status", lambda s: int(s.ne("ok").sum())),
+    root_small_median=("root_small", "median"), root_small_le5=("root_small", lambda s: float((s <= 5).mean())),
+    peel_share_median=("peel_share_ge40", "median"), false_partitions=("false_partition", "sum"),
+    clusters_median=("found_clusters", "median")).reset_index()
+print("Q1 topology on no-group data\n", q1.round(3).to_string(index=False))
+q1.to_csv(HERE / "q1_topology.csv", index=False)
+
+nodes = pd.concat([pd.read_csv(p) for p in sorted((HERE / "nodes").glob("*.csv.gz"))], ignore_index=True)
+root = nodes[nodes.is_root]
+gates = root.groupby(["tree", "model"]).agg(
+    datasets=("replicate", "size"), edge_gate_open=("edge_gate", "mean"),
+    sibling_tested=("Sibling_Divergence_Skipped", lambda s: float((~s.astype(bool)).mean())),
+    sibling_different=("Sibling_BH_Different", "mean"),
+    root_split=("edge_gate", lambda s: float((s & root.loc[s.index, "Sibling_BH_Different"].astype(bool)).mean())),
+).reset_index()
+print("\nRoot gates (share of datasets)\n", gates.round(3).to_string(index=False))
+gates.to_csv(HERE / "q2_root_gates.csv", index=False)
+
+t = nodes[~nodes.Sibling_Divergence_Skipped.astype(bool) & np.isfinite(nodes.Sibling_Raw_Test_Statistic)
+          & (nodes.Sibling_Degrees_of_Freedom > 0)].copy()
+scale = t.Sibling_Reference_Scale * t.Sibling_Degrees_of_Freedom
+t["score_vs_expected"] = t.Sibling_Raw_Test_Statistic / scale
+t["r99"] = t.Sibling_Raw_Test_Statistic / (t.Sibling_Reference_Scale * chi2.ppf(0.99, t.Sibling_Degrees_of_Freedom))
+t["bin"] = pd.cut(t.n_parent, [1, 9, 39, 159, 400], labels=["2-9", "10-39", "40-159", "160-400"])
+
+
+def correction_table(frame, keys):
+    return frame.groupby(keys, observed=True).agg(
+        nodes=("r99", "size"), score_vs_expected_median=("score_vs_expected", "median"),
+        needed_factor=("r99", lambda s: float(np.quantile(s, 0.99))),
+        applied_factor_median=("Sibling_Inflation_Factor", "median"),
+        applied_below_needed=("Sibling_Inflation_Factor", lambda s: float(
+            (s < np.quantile(frame.loc[s.index, "r99"], 0.99)).mean())),
+        adjusted_p_le_001=("Sibling_Divergence_P_Value", lambda s: float((s <= 0.01).mean()))).reset_index()
+
+
+q2 = correction_table(t, ["tree", "model", "bin"])
+q2_root = correction_table(t[t.is_root], ["tree", "model"])
+print("\nQ2 correction by parent size (tested sibling nodes; all are no-difference splits)\n", q2.round(3).to_string(index=False))
+print("\nQ2 correction at the root\n", q2_root.round(3).to_string(index=False))
+q2.to_csv(HERE / "q2_correction_by_size.csv", index=False)
+q2_root.to_csv(HERE / "q2_correction_root.csv", index=False)
+
+path = HERE / "chain.jsonl"
+if path.exists():
+    ch = pd.DataFrame([json.loads(x) for x in path.read_text().splitlines()])
+    prod = root[root.tree == "symmetric_average"][["model", "replicate", "edge_gate", "Sibling_BH_Different"]]
+    ch = ch.merge(prod, on=["model", "replicate"], how="left")
+    ch["chain_reject"] = ch.decision.eq("reject")
+    ch["production_root_split"] = ch.edge_gate.astype(bool) & ch.Sibling_BH_Different.astype(bool)
+    q3 = ch.groupby("model").agg(
+        datasets=("replicate", "size"), rejected=("chain_reject", "sum"),
+        p_le_005=("p_value", lambda s: float((s <= 0.05).mean())),
+        stalled=("sampling_status", lambda s: float(s.eq("stalled").mean())),
+        unresolved=("decision", lambda s: float(s.eq("unresolved").mean())),
+        moves_median=("accepted_moves", "median"), sec_median=("sec", "median"),
+        root_mismatch=("same_root_as_production", lambda s: int((~s.astype(bool)).sum())),
+        production_root_splits=("production_root_split", "sum")).reset_index()
+    q3["rejected_upper95"] = [upper95(k, n) for k, n in zip(q3.rejected, q3.datasets)]
+    print("\nQ3 chain test at the default tree's root\n", q3.round(3).to_string(index=False))
+    q3.to_csv(HERE / "q3_chain.csv", index=False)

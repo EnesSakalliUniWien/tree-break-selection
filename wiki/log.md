@@ -9383,3 +9383,559 @@ version comparison report and wiki source summary. Production code unchanged.
 - Captured `raw/inbox/adaptive-alpha-tree-20261106.md` with its protocol,
   library note, results and scripts; added [[adaptive-alpha-tree-procedures]]
   and the index entry. Nothing was committed.
+
+## 2026-11-07 — Repository audit fixes
+
+- Strict support mode (`enforce_internal_support_thresholds=True`) no longer
+  stops gate annotation when one focal record fails the internal support
+  thresholds: that record's sibling gate closes (`fail_closed_sibling_gate`
+  with the decision status) and the sibling BH frontier passes through it like a
+  non-rejected parent. On four 4-blob binary datasets (60 to 200 rows) strict
+  mode now returns one cluster instead of raising; default mode still finds 4.
+- In the full benchmark a method that raises now yields a `status=error` row,
+  so the case's other rows survive; the performance grid sorts `error_count`
+  first. Every other caller of `benchmark_cluster_algorithm` still stops at the
+  first method exception. A TBS run whose every focal sibling gate was closed by
+  strict support thresholds is `unsupported`
+  (`empirical_null_thin_internal_support`), not a one-cluster `ok` answer.
+- The generated-files catalog now covers `raw/` studies and fails on tracked
+  `reports/` or `raw/` files over 10 MiB. The 19 generated benchmark files over
+  10 MiB under `raw/assets/benchmark-results/` and the Gonçalves inputs under
+  `raw/inbox/goncalves_human_pancreas_dev/` were untracked (local-only, SHA-256
+  recorded); `goncalves_benchmark.py` checks the pinned input hashes. They stay
+  in Git history.
+- Three recorded evidence scripts are excluded from `ruff format`. Ruff's
+  isort now lists `applications`, `benchmarks` and `tree_break_selection` as
+  first-party: report scripts importing removed submodules had flipped import
+  groups once the lint cache was refreshed; one `source` script's imports were
+  reordered. The effective sibling alpha is resolved by one function; gate
+  settings are read by name. Tree-BH and sibling BH keep accepting forests,
+  which gate tests use as calibration support. Nothing was committed.
+
+## 2026-11-07 — Full benchmark after the audit fixes
+
+- Reran the default full benchmark (`uv run --no-sync --offline python -m
+  benchmarks.full.run`, plots on; 126 cases, 1,386 rows, 610 s, exit 0) into
+  `benchmarks/results/run_20261107_audit_fixes_full`. All 1,386 rows match the
+  2026-11-06 run in status, cluster count and ARI; no case failed and no row has
+  `status=error`. The default methods never use strict support mode, so fix 1
+  could not change them. Nothing was committed.
+
+## 2026-11-07 — Cancer cell-line rerun after the audit fixes
+
+- Reran `tbs_family_diffusion` on all 48,879 CHOIR cells with the unchanged
+  2026-11-06 script and hashed inputs (`pca.npy` a2ef1e69…, `cell_metadata.csv`
+  744d353a…) on `cbc317b2` plus the staged audit fixes (153 s, exit 0). Linkage
+  and cluster assignments are byte-identical to the 2026-11-06 L-BFGS-B run: 75
+  clusters, ARI 0.0275 and NMI 0.548 against 190 cell lines, 27 lines
+  recovered at 90%/90%; the largest cluster holds 58.5% of cells from 144 lines.
+  Outputs are local-only in
+  `results/analyses/choir_cell_lines_tbs_audit_fixes_20261107/`. Nothing was
+  committed.
+
+## 2026-11-07 — Count splitting and Markov/Ward gate calibration tested
+
+- Two protocol-first experiments (local-only, `results/analyses/count_split_small_peel_20261107/`
+  and `results/analyses/markov_ward_calibration_20261107/`) on the frozen 600
+  count nulls and all 48,879 CHOIR cells. Integer counts are recoverable from
+  the stored CPM (library = 1e6 / smallest non-zero CPM; max deviation 2e-11).
+- Count splitting (ε 0.5, beta-binomial b 8) removes low-depth false
+  partitions: default tree k=10 28 → 0/300, Markov/Ward 298 → 0/300 (4 NNLS
+  non-convergences). It does not help high-depth nulls (default 262 → 282,
+  Markov/Ward 300/300); production k=1 without splitting is itself 259/300 there.
+  Test-part PCs correlate with log library size (|Spearman| up to 0.99), so
+  depth variation shared by both parts is a separate, unresolved failure.
+- Real data, none calibrated: split k=10 (estimated b) 447 clusters, ARI 0.249,
+  40 lines; Poisson split k=10 ARI 0.632; split Markov/Ward 826 clusters, ARI
+  0.508; Markov/Ward with edge 1e-9 / sibling 1e-6 gives 175 clusters, ARI 0.671,
+  NMI 0.917, 77 lines (`CHOIR_1` 0.664, 79) but splits 178/300 low-depth and
+  277/300 high-depth nulls. No alpha in the 12-cell grid meets the 0.01 target.
+  Nothing was committed.
+
+## 2026-11-07 — Library-depth confound tested
+
+- Protocol-first run (`results/analyses/depth_confound_20261107/`, local-only):
+  production `tbs_family_diffusion` gates on 1,200 count nulls (frozen low sd
+  0.25 and high sd 1.0, plus new depth-matched sd 0.42 and 0.61 from the real
+  within-line log-depth spread, median 0.42, max 0.61) and the 35 signal sets,
+  under four preparations. Baseline matches the frozen preparation exactly.
+- False partitions /300 (low, 0.42, 0.61, high); signal mean ARI: baseline
+  2/50/238/259, 0.859; PC depth regression 2/16/11/231, 0.848; Pearson
+  residuals 1/1/7/33, 0.655; downsampling to the 10th-percentile depth
+  5/11/18/12, 0.902. No arm meets 0/300; depth drives false splits at
+  real-data depth levels too.
+- Real data (counts recovered from CPM, default tree, uncalibrated): baseline
+  116 clusters, ARI 0.030, 27 lines; downsampling 38, 0.010, 20; Pearson 73,
+  0.007, 17. Depth fixes alone shrink the default tree's splits and do not open
+  the giant cluster. Nothing was committed.
+- Follow-up: the negative parent-child p-value correlation (Spearman -0.14 and
+  -0.12) was measured with the conditional chain test on known-noise Gaussian
+  families. Under the production gates on 160 count-null fits (40 per model and
+  arm, `covariance.py`), parent and child edge p-values are positively
+  correlated (Spearman 0.23 to 0.32). At high depth, baseline significant edges
+  have a median child-parent depth gap of 0.30 depth-sd versus 0.06 for
+  non-significant ones (Spearman 0.18 with -log p); downsampling removes the link
+  (-0.035). At the real-median depth (sd 0.42) edge significance shows no depth
+  link (0.000); sibling p-values were not examined.
+
+## 2026-11-07 — Topologies, estimated correction and chain test compared
+
+- On 900 one-group count datasets (log-depth sd 0.25, 0.42, 1.0; 300 each) the
+  default tree's root splits off a median 2, 5.5 and 125.5 cells (false
+  partitions 2, 50, 259 of 300); Markov/Ward splits 138.5 to 161 cells and
+  partitions 296 to 300 of 300 (median 8 clusters).
+- Today's empirical-null inflation is close for 10-39-cell splits (applied 9.2,
+  needed 9.4) and about three times too small for 40-400-cell splits (2.5 vs
+  7.0 to 7.6); Markov/Ward roots need 7.7 to 22.1 and get 2.2 to 2.6.
+- The root chain test rejected 0/900 nulls (production split 0, 20, 254 roots)
+  but only 4/30 400-cell signal subsets with four groups (production 30/30);
+  a 9-step run at 1,000 cells did not finish in 10 minutes. The signal check
+  was added after the protocol.
+- Looked up nine depth-normalization works (PubMed, bioRxiv); Lun (2018,
+  preprint) reports artificial structure from the log of depth-normalized
+  counts, consistent with the measured depth effect.
+- Captured `raw/inbox/choir-cell-lines/topology-correction-chain-20261107.md`,
+  its scripts and `sequencing-depth-literature-20261107.md`; added
+  [[topology-correction-chain-comparison]] and
+  [[sequencing-depth-normalization-literature]] and two index lines. Nothing
+  was committed.
+
+## 2026-11-08 — Tree depth, weight and whole paths in the large-split correction
+
+- Tested four changes to today's empirical-null inflation, chosen with the user:
+  tree depth as a kernel axis, edge-blocked reference records only, reference
+  records on the split's whole paths (ancestors and descendants), and all three.
+  Production code ran end to end on the 900 no-group datasets and 35 signal
+  datasets, both trees; replay of today's factor matched 11,488/11,488 splits.
+- No change fixes large splits: Markov/Ward splits >= 40 cells pass at 66% to
+  72% with one change and 50% with all three (target about 1%); false partitions
+  stay at 290 to 300 of 300. Default-tree ARI on the signal data is unchanged.
+- At the same size, tested no-difference splits score 1.3 to 7 times more than
+  reference splits: the edge gate sorts splits by nearly the same difference the
+  sibling score measures.
+- Captured `raw/inbox/choir-cell-lines/path-depth-weight-correction-20261108.md`
+  and its scripts; added [[path-depth-weight-correction]] and one index line.
+  Nothing was committed.
+
+## 2026-11-08 — Sibling test conditioned on the edge gate
+
+- Showed that for continuous data the edge gate is a cutoff on the split's own
+  sibling score (pooled parent mean, common scaling of edge and sibling
+  statistics, monotone Tree-BH family decision) and computed the sibling p-value
+  given that the gate opened. Self-checks passed at full scale (Tree-BH copy
+  5,300/5,300 fits, replay 11,488/11,488 splits).
+- With today's c the gate condition lowers Markov/Ward large-split passes on
+  no-group data from 72-73% to 63% and default-tree false partitions from 2 to
+  0 (sd 0.25) and 50 to 34 (sd 0.42); real-group ARI is unchanged. Without c it
+  is worse than today. A truncated-likelihood c moves by under 0.5%.
+- No arm meets the frozen rule for large splits; the tree's choice of the split,
+  not the gate, carries most of the excess.
+- Captured `raw/inbox/choir-cell-lines/gate-conditioned-sibling-test-20261108.md`
+  and its scripts; added [[gate-conditioned-sibling-test]] and one index line.
+  Nothing was committed.
+
+## 2026-11-08 — Correction to the gate-conditioned sibling test
+
+- The edge test uses only a test half of each child's cells
+  (`split_edge_test_rows`), so edge statistics are not multiples of the
+  all-cell sibling statistic; the earlier "exact" claim was wrong. On 92 large
+  Markov/Ward no-group splits the gate cuts the sibling score at a median 0.72
+  of its observed value with the basis half held fixed, against s* = 0.47 used
+  in the arms. The arms are approximations that correct too little.
+- Added the check and a correction section to
+  `raw/inbox/choir-cell-lines/gate-conditioned-sibling-test-20261108.md` and its
+  scripts file; rewrote the summary of [[gate-conditioned-sibling-test]] and its
+  index line. Nothing was committed.
+
+## 2026-11-08 — Exact sibling test given the edge gate
+
+- Built the exact conditional sibling test (basis halves and test-half direction
+  held fixed; gate exact in the test-half length) and ran it end to end on the
+  935 datasets; every exactness self-check passed with production code.
+- It is less calibrated than today's test: Markov/Ward splits >= 40 cells pass
+  75-79% (today 72%), 10-39 cells 13-28% (today 1%). The tree's choice inflates
+  the test-half length 2-7 times; the references estimate about 1.
+- Captured `raw/inbox/choir-cell-lines/exact-gate-sibling-test-20261108.md` and
+  its scripts; added [[exact-gate-sibling-test]] and one index line. Nothing was
+  committed.
+
+## 2026-11-08 — Correction for the tree's choice from split counts
+
+- Tested the user's idea of correcting the sibling test by the number of possible
+  splits of a subtree's known leaf set, with splits in invariant directions counted
+  by Cover's hyperplane count. Production's per-subtree Marchenko-Pastur count is
+  always 0 here, so invariant directions were read from the subtree covariance's
+  eigenvalue bulk (amendment before the full run).
+- All-splits union bound: Markov/Ward 160-400-cell noise splits 94% to 0.4%, 40-159
+  61% to 21%, but 10-39 cells 1% to 93%; default-tree false partitions 50 to 12 at
+  sd 0.42; real groups kept. Invariant counting changed little (noise splits are
+  separable in invariant directions in 0-9% of cases).
+- Captured `raw/inbox/choir-cell-lines/split-count-correction-20261108.md` and its
+  scripts; added [[split-count-correction]] and one index line. Nothing was
+  committed.
+
+## 2026-11-08 — Subtree spectrum, multiplicity and separations outside the topology
+
+- Analysed per subtree the number of splits, leaves, eigenvectors above the
+  noise band, eigenvalues and geometric multiplicity (block equality test,
+  calibrated by simulation), and which group separations the tree cannot hold,
+  on 185 simulated datasets (both trees) and the real CHOIR trees.
+- A tree holds 2g - 3 of 2^(g-1) - 1 group separations. With balanced groups
+  (one eigenspace of multiplicity 3) the dropped 2+2 separations are 0.95-0.97 as
+  strong as the kept one; with distinct eigenvalues they are 8% weaker near
+  copies. Multiplicity depends on the number of cells; subtrees chosen by the
+  tree show directions above the noise band even in pure noise.
+- Captured `raw/inbox/choir-cell-lines/subtree-spectrum-topology-20261108.md`
+  and its scripts; added [[subtree-spectrum-topology]] and one index line.
+  Nothing was committed.
+
+## 2026-11-08 — Prototype for alternative separations at tied eigenvalues
+
+- Wrote a prototype that flags subtrees whose top eigenvalues tie, cuts them
+  along the tree into m + 1 blocks and reports the splits the tree cannot hold,
+  with an assert-based self-check on equal-distance groups.
+- It flags every simulated balanced root (dropped 2+2 splits at 1.03-1.05 of the
+  tree's split) but also ties inside single populations in tree-chosen subtrees;
+  in the real CHOIR data it finds no clean tie between cell lines.
+- Captured `raw/inbox/choir-cell-lines/alternative-separations-prototype-20261108.md`
+  and its code; added [[alternative-separations-prototype]] and one index line.
+  Nothing was committed.
+
+## 2026-11-08 — Distances in different subspaces and equidistant cells
+
+- Compared each cell's distance to the two children of every split in the tree's
+  coordinates, the test PCs, the test metric and the invariant and fuzzy
+  subspaces, on 185 simulated datasets and the real CHOIR trees.
+- Real separations leave no cell equidistant; splits inside one population leave
+  7-21% equidistant and 7-12% on different sides in the tree and test spaces. In
+  the real data, cut cell lines have 23-40% equidistant cells against 7% elsewhere.
+- Captured `raw/inbox/choir-cell-lines/subspace-distance-ties-20261108.md` and its
+  code; added [[subspace-distance-ties]] and one index line. Nothing was committed.
+
+## 2026-11-08 — Split counts with exclusions from subspaces and equidistant cells
+
+- Tested both readings of the user's idea (count all possible splits, then exclude
+  possibilities by subspaces and equidistant cells) end to end on the 935 datasets:
+  ruling splits out as real (rule_out), shrinking the count (shrink), and both.
+- rule_out met the frozen rule: Markov/Ward no-group passes 0.0-0.9% (>= 40 cells)
+  and 0.7-1.6% (10-39 cells), false partitions 298/296 to 2/25, default tree 2/50 to
+  0/0; Markov/Ward real-group ARI 0.87-1.00. shrink made the test looser and failed.
+- Limits: error control measured, not guaranteed; subtrees of <= 31 cells cannot be
+  accepted; real CHOIR data not run end to end.
+- Captured `raw/inbox/choir-cell-lines/split-count-exclusion-20261108.md` and its
+  code; added [[split-count-exclusion]] and one index line. Nothing was committed.
+
+## 2026-11-08 — Rule-out test on the real CHOIR data
+
+- Ran today's test, count_all and rule_out end to end on all 48,879 CHOIR cells for
+  both registered methods; today's arm reproduced the 2026-11-06 results exactly.
+- Markov/Ward with rule_out: lines recovered 41 to 80, ARI 0.549 to 0.765, clusters
+  954 to 664 (190 lines). Default tree unchanged (giant cluster from the topology).
+  count_all alone was worse than today (1,605 clusters).
+- Captured `raw/inbox/choir-cell-lines/split-count-exclusion-real-20261108.md` and its
+  code; added [[split-count-exclusion-real]] and one index line. Nothing was committed.
+
+## 2026-11-08 — Split-count rule-out added as an opt-in production setting
+
+- Added `sibling_split_count_rule_out` (default off): new module
+  `sibling_divergence/split_count_rule_out.py`, wired through the sibling
+  pipeline, gate orchestrator (config metadata), `run_tbs_on_distance` and
+  dispatch; the per-split reason goes to `Sibling_Test_Method`. Unit, orchestrator,
+  forwarding and end-to-end tests added.
+- Found while testing: with 10 coordinates one population still split (6
+  clusters), because small subtrees keep invariant directions; the rule was
+  measured with 30 coordinates only, which the module and [[split-count-exclusion]]
+  now state. Nothing was committed.
+
+## 2026-11-08 — Split-count rule-out on the continuous benchmark suite
+
+- Ran the 9 continuous benchmark cases with both family-diffusion methods, today vs
+  `sibling_split_count_rule_out=True`, benchmark defaults unchanged (user choice).
+- Rule-out fixed over-splitting on dim_consolidated (ARI to 1.000) but refused real
+  splits where the subtree had <= p + 1 cells (60 cells in 40 features, 45 in 30, 40
+  in 20,000); mean ARI 0.880/0.852 today, 0.695 with rule-out.
+- Changed the module to measure equidistant cells only for separable splits (wide
+  data). Captured the run in `raw/inbox/choir-cell-lines/` and added
+  [[rule-out-continuous-benchmark]] and one index line. Nothing was committed.
+
+## 2026-11-08 — The gradient behind the split-count rule-out
+
+- Inferred the relationship behind the benchmark gradient on a frozen grid (8,640
+  runs, two Gaussian groups, p 10-100, n 20-640, separation 0-6). Invariant
+  directions follow the spiked-covariance transition; the count of all splits needs
+  pi(1-pi) delta^2 about 2 at any n; separability follows Phi(delta/2)^n, so the
+  rule asks for zero overlap and the required separation grows with n (4.7 SD at
+  100 cells, 8.2 at 48,879).
+- Mechanism analysis added after the frozen endpoints (deviations.md). Captured the
+  run in `raw/inbox/choir-cell-lines/`; added [[rule-out-gradient]] and one index
+  line. Nothing was committed.
+
+## 2026-11-08 — Redesigning the zero-overlap rule
+
+- Replaced the zero-overlap rule with an overlap fraction tied to the count of all
+  splits (and, after an amendment, a matching tie rule). On clean Gaussian groups the
+  tightening with n is gone; end to end on 935 datasets, Markov/Ward false partitions
+  rose (2/25/15 to 17/46/141) and real-group ARI fell, because tree-chosen noise
+  splits overlap only 10-20%, like weak real groups.
+- The protocol's replacement clause was not applied; production keeps the
+  zero-overlap rule. Captured the run in `raw/inbox/choir-cell-lines/`; added
+  [[rule-out-overlap-redesign]] and one index line. Nothing was committed.
+
+## 2026-11-08 — The largest split one population allows
+
+- Derived the rule behind the allowed overlap: the best of all splits is a flat cut, a
+  flat cut of one Gaussian population has between/within ratio g(pi) (1.75 balanced),
+  so a split is real when its ratio beats that ceiling; with a count of flat cuts the
+  allowed overlap grows with cells (balanced 4.5% at 100 to 8.9% at 48,879). The
+  unimodal ceiling 3 holds only for cuts at the mode (long flat tails reach 8).
+- End to end on 935 datasets, Markov/Ward false partitions 0/0/5 (Gaussian ceiling) and
+  0/0/0 (ceiling 3) against 2/25/15 for zero overlap; ceiling 3 kept ARI 1.00 on all
+  group types. Found and fixed swapped terms in the redesign's `allowed_overlap`.
+  Captured the run in `raw/inbox/choir-cell-lines/`; added
+  [[single-population-split-bound]], one index line and a correction on
+  [[rule-out-overlap-redesign]]. No production change; nothing was committed.
+
+## 2026-11-09 — The ceiling-3 rule on real cell lines and the continuous benchmark
+
+- Swapped the rule-out for the ceiling-3 rule in the production opt-in path. On all
+  48,879 CHOIR cells, Markov/Ward went from 664 to 217 clusters, ARI 0.765 to 0.833 and
+  lines recovered 80 to 119, with more merged lines (11 to 33); the default tree barely
+  changed. On the 9 continuous benchmark cases the result equals the rule-out (mean ARI
+  0.695).
+- Replays matched (69 / 664 clusters; benchmark 36/36). A first run failed on a method
+  label the FDR step rejects; relabelled and rerun. Captured the run in
+  `raw/inbox/choir-cell-lines/`; added [[ceiling-rule-real-and-benchmark]] and one index
+  line. No production change; nothing was committed.
+
+## 2026-11-09 — The ceiling rule against the literature
+
+- Looked up SigClust/SHC, selective inference for hierarchical clustering, the dip
+  test, the two-normal bimodality threshold, Cover's count, Engelman-Hartigan and
+  CHOIR. Same null as SigClust/SHC (CI = 1/(1 + rho) in 1D, so 1.75 is CI 0.363);
+  ceiling 3 is the uniform, the dip test's least favourable shape; the Gaussian
+  ceiling's over-splitting of skewed groups matches SHC's heavy-tail failure.
+- Captured the lookups in `raw/inbox/choir-cell-lines/`; added
+  [[ceiling-rule-literature-comparison]] and one index line. Nothing was committed.
+
+## 2026-11-09 — Which cell lines ceiling 3 merges
+
+- Checked the 55 lines Markov/Ward merges under ceiling 3. Of 39 merged line pairs with
+  invariant directions, 27 pass ceiling 3 on their true labels (the tree does not offer
+  the boundary) and 12 fail it, mostly small lines beside large ones (9 pass the
+  Gaussian ceiling); 17 merged clusters of at most 49 cells have no invariant directions.
+  Added to the raw note and [[ceiling-rule-real-and-benchmark]]. Nothing was committed.
+
+## 2026-11-09 — Why the tree hides the line boundary
+
+- Refit Markov/Ward with ceiling 3 and kept the tree. For the 27 merged pairs whose
+  true split passes ceiling 3, traversal stops at the cluster's top split: 8 follow the
+  boundary but fall short of the rho the flat-cut count needs (4.3-7.4), 2 stop at the
+  edge gate, 17 cut elsewhere and hide deeper nodes. Added to the raw note and
+  [[ceiling-rule-real-and-benchmark]]. Nothing was committed.
+
+## 2026-11-09 — The tail of one population's best cut
+
+- Derived a replacement for the count of all flat cuts: the tail of one population's
+  best cut, an even Gaussian field on the sphere of directions (Euler-characteristic
+  tail). The frozen rho-scale version failed its null check; the R-scale amendment is
+  calibrated for k = 1-3 and near exact for the Gaussian null at k = 6-9; for ceiling 3
+  it is no tighter than the count below about 1,000 cells. None of the 27 hidden-boundary
+  splits passes. Captured in `raw/inbox/choir-cell-lines/`; added [[flat-cut-sup-count]]
+  and one index line. No production change; nothing was committed.
+
+## 2026-11-09 — Independent A/B/C construction audit and rerun
+
+- Audited the supplied three-test comparison against live source and primary
+  mathematical references, with exact Wolfram evaluator captures. Ceiling 3
+  does not bound arbitrary unimodal cuts; a continuous example has rho 7.39984.
+  The uniform boundary has asymptotic rho variance 19.2/n, not B's 12/n.
+  C's 1/40 and sphere-3 lambda 13 are correct, but uniform marginals in every
+  direction cannot exist above three dimensions, and the influence field does
+  not meet the cited C2 regularity assumption. The EC envelope is not a proved
+  survival bound. These findings qualify the preceding entry's calibration claim.
+- Fresh checks: 15,000 low-dimensional and 2,400 high-dimensional best-cut
+  replicates, 6,000 unimodal counterexample samples, 10,000 uniform fixed-cut
+  samples, and 100,000 standard-normal rank-selection controls. B rejects
+  40/1,000 sphere-3 boundary samples at nominal 0.01 for n=100; C rejects
+  75/1,000 scalar uniform samples at nominal 0.05. Recorded pointwise binomial
+  intervals and searched-maximum limitations.
+- Reproduced all 54 continuous-benchmark rows, the saved split replay, and all
+  four full-cell A/B assignments exactly. New full-cell C: Markov/Ward 173
+  clusters, ARI 0.815201, 111 recovered lines (B: 217, 0.832948, 119); default
+  57 clusters, ARI 0.027748. Independently verified all 1,928 C replacement tails.
+- Captured report, supplied text, code/protocol, Wolfram outputs and numerical
+  evidence under `raw/inbox/choir-cell-lines/`; added
+  [[three-tests-construction-audit]] and qualified the affected wiki summaries.
+  Baseline 84 focused tests and both proposal self-checks passed; recorded
+  production/input hashes remained unchanged and temporary distance files were
+  removed. No production replacement, installation, commit or push.
+
+## 2026-11-09 — Root validation, cut geometry and generalisation by three Sol agents
+
+- Executed the confirmed prompt using the Claude "Root sampler validation
+  framework" source and the corrected A/B/C audit. Replayed 24 historical root
+  chains, seven descendant summaries and six count/tree cases. Ran 1,664 fresh
+  119-step chain families and a fixed 50-input 999-step comparison. The primary
+  small Gaussian root/family rates are conservative; larger strata remain
+  imprecise and child cuts can miss subgroup boundaries.
+- Recomputed eight saved full-cell partitions with AMI, homogeneity/completeness,
+  matched macro/rare F1, 90/90 recovery and pair split/merge metrics. Completed
+  and independently rescored 448 Gaussian-mixture fits and 800 full-refit count
+  fits, plus 224 same-cell stability comparisons. B improves overall Ward
+  recovery, but rare-group and weaker-signal cases reveal losses; stable collapse
+  to one cluster does not establish successful recovery.
+- Added four actual Wolfram checks, exact Gaussian root Beta/all-label
+  derivation, its fixed-rank rho=3 threshold limit, and an explicit imbalance
+  penalty. Reviewed the Chen–Gao unknown-covariance polar construction; its TBS
+  adaptation remains unimplemented. Twenty thousand isolated cut records expose
+  B high-dimensional false rejections and C structural non-rejection.
+- Preserved protocols, numerical summaries, source captures, selected Claude
+  excerpts and Wolfram evidence under `raw/inbox/choir-cell-lines/`; detailed
+  outputs and PNG/PDF/SVG comparison are in the ignored run directory. Added
+  [[root-validation-generalisation-evidence]] and
+  [[gaussian-root-calibration-and-cut-geometry]], updated related summaries and
+  qualified stale index claims. Wiki-lint passes on 262 pages and all 315
+  coordinator source/configuration hashes remain unchanged. No production edits,
+  installation, commit or push.
+
+## 2026-11-09 — Subtree distance families and conditional Gaussian score references
+
+- Assessed the confirmed distance/equidistance criterion with three Sol agents.
+  Implemented bounded exact cut and topology enumeration, tied Ward families,
+  whole spectral projectors, RF/cophenetic comparisons and topology-conditioned
+  nonnegative additive distance fits. Rectangle views give crossing trees;
+  square and simplex Ward families contain two and 15 rooted binary outputs.
+  All simplex additive fits collapse to an unresolved star.
+- Implemented the opt-in Gaussian Beta helper and common-mean conditional
+  rotation reference, preserving subtree means/Grams and outside rows. Added
+  native raw sibling replay, individual candidate ranks, paired topology
+  contrasts and regenerated cut/topology search maxima. Conditioning covers
+  declared events, not arbitrary TBS eligibility, traversal or final partitions.
+- Retained 2,900 primary Gaussian datasets, 480 maximum/descendant datasets,
+  138 integration attempts, four disclosed exploratory power follow-ups and
+  12,000 bootstrap/permutation replicates. Selection conditioning changed
+  219/1,200 naive rejections to 60/1,200 at .05. Native signal recovery did not
+  imply short-budget rejection; stronger paired signals rejected at .034/.017.
+- Preserved the row-order correction, initial attempts, source snapshots,
+  independent integration checks and five Wolfram evaluations. Added
+  [[subtree-topology-reference-evidence]] and [[subtree-distance-topology-families]];
+  updated prior unimplemented-reference summaries. Final 123 focused tests,
+  Ruff/format checks and wiki lint (264 pages) pass. Production sources/defaults
+  were preserved; no installation, commit, push or persistent service.
+
+## 2026-11-09 — Subtree research implementation and rejected production candidate
+
+- Implemented the confirmed plan with three Sol agents: matched group recovery,
+  statistical profiles, native branch/covariance/rank attribution, bounded
+  whole-eigenspace topology candidates, compressed all-pair NNLS, common-event
+  Ward family inference, reproducible panels and phase-aware validation summaries.
+  Shared benchmark metrics retain legacy fields and add AMI reporting.
+- Completed 2,400 factorial and 1,600 recovery fits on 850 distinct inputs;
+  regenerated inputs match every stored data/truth hash. Both examined NNLS
+  configurations reject 47/50 Gaussian roots at sibling alpha .01. The complete
+  Markov/Ward configuration loses mean AMI .05550 on the development grid, with
+  paired interval [-.06360,-.04740]. Software completion is not calibration.
+- Retained 300 restricted Gaussian/attribution records, four native-orbit
+  illustrations, 10,000 declared perturbations, eight geometry fits and saved-data
+  profiles. Exact Wolfram queries and outputs qualify the fixed-ridge identity
+  and Holm resolution. Common-event node homogeneity control does not establish
+  full production selection, traversal or final-partition error control.
+- The isolated 36-fit timing panel fails the fivefold cap at 14.10 and 24.88
+  times baseline. Mixed-root family power is unestablished. The candidate remains
+  diagnostic; the 120,000 frozen calibration datasets and 3,200 frozen recovery
+  datasets were not run under the prespecified failed-prerequisite rule.
+- Preserved original attempts, numerical corrections, source archives and report
+  artifacts. Added [[subtree-clustering-research-evidence]] and
+  [[subtree-clustering-production-gates]], and updated the earlier topology
+  synthesis. The broad 214-test run plus final 18-test validator rerun contain
+  216 distinct passing cases. Changed-file Ruff/format and diff checks pass;
+  final wiki verification is recorded with the report. All 110 recorded
+  production source hashes remain unchanged. No installation, commit or push.
+
+## 2026-11-09 — Parent–child spectral alignment and crossing cluster alternatives
+
+- Analysed the confirmed equality, reflection and eigenvalue questions with the
+  existing three Sol agents. Added rank-aware whole-block comparisons,
+  covariance decomposition, Markov left/right degree transport and explicit
+  parent-row restriction. Exact Wolfram checks and primary references are
+  retained. Production sources and thresholds were preserved.
+- On 80 shared simulated matrices, completed 5,120 alternative-space outcomes,
+  160 native fits and 320 parent/child comparisons. Regenerated input hashes
+  match both panels. Crossing factors appear across separate spectral views in
+  20/20 distinct-amplitude examples and cannot coexist in one tree, while the
+  full tree still retains their four joint groups. Leading-rank truncation
+  separately reduces compatible four-group clade recovery from 20/20 to 6/20.
+- Parent restriction loses rank in 239/320 unweighted selected Markov-right
+  spans; 316/320 induced and refitted operators differ above the declared
+  numerical tolerance. A separate same-input check preserves the distinction
+  between those windows and production spans: 154 induced and 160 refitted
+  windows contain clipped modes. No additional native fits or independent
+  datasets are counted for that check.
+- Null datasets also yield 63 alternatives each, and both native configurations
+  reject the root in 20/20 null datasets. Neither symmetry, count nor better
+  distance fit repairs selection calibration. Added
+  [[subtree-spectral-alignment-evidence]] and
+  [[subtree-spectral-alignment-and-crossing-clusters]], linked production
+  requirements, and preserved source/output hashes and the import-only source
+  correction. Final focused tests pass 48 cases; final lint and artifact checks
+  are recorded with the report. No installation, commit, push or preset change.
+
+## 2026-11-09 — Matched subtree contexts, eigenvalue magnitude and native tests
+
+- Implemented the confirmed four structural cases using exact labeled clades:
+  focal node absent; both original children absent; node present with original
+  parent absent; and node present with original parent and both children absent.
+  Cases overlap; adjacency, incoming-root applicability, raw records, available
+  BH decisions and actual traversal remain separate. An exact six-leaf Ward
+  witness demonstrates case 4 through distinct covariance eigendirections.
+- Completed 160 native fits on 16 reused matrices and 16,128 dependent node
+  comparisons, with all fits successful. Case counts are
+  15,316/5,271/401/102. All 32 native references reproduce their prior root
+  splits, decisions and partitions. Same-clade covariance agrees, while all
+  19 same-parent/same-children nonroot comparisons change raw T and branch g.
+- Reanalysed 5,120 prior outcomes without new fits. PC2 with median variance
+  share .2885 preserves a crossing factor in 20/20 datasets; the leading span
+  with median share .9300 omits it. Exact Wolfram and live-kernel controls
+  distinguish diffusion distance weights, covariance whitening and PCA
+  ordering/ties/rank from the final projected sum. Actual edge-half contexts
+  were captured separately from all-leaf sibling contexts.
+- Review found three local rebuilt ranks slicing numerical tie blocks. Preserved
+  every initial native trace and its exact executed source, corrected the helper,
+  and recomputed only 8,064 covariance-span records. Three ranks change, no
+  corrected cutoff slices a tie, and aggregate span classifications stay fixed.
+  Added numerical boundary tests and made zero-trace variance share undefined.
+- Added [[subtree-context-statistics-evidence]] and
+  [[subtree-context-and-eigenvalue-statistics]], linked earlier production gates,
+  and captured source/output hashes. Final focused tests pass 69 cases and all
+  six changed Python files pass Ruff/style checks. Final wiki/archive checks are
+  recorded with the report. Production algorithms, thresholds and presets stay
+  unchanged; frozen validation remains unrun after failed prior prerequisites.
+  No installation, commit, push or persistent service.
+
+## 2026-11-09 — Surviving paths and disappearing neighborhoods
+
+- Extended the confirmed diagnostic to both ancestor–descendant and cross-branch
+  paths, including missing parents, children and siblings. Reused 160 saved fits
+  on 16 matrices; all 256 tree pairs yield 569,954 shared-endpoint paths. The
+  primary internal/internal subset contains 1,890 paths, of which 1,628 lose an
+  intermediate clade. These are dependent comparisons, not independent tests.
+- Distinguished a globally absent clade from a surviving clade moved off the
+  new path. Cross-branch original LCAs are absent in 416 internal comparisons
+  and survive elsewhere in 147. Neighborhood roles and displaced survivors
+  remain separately recoverable from the source graphs and recorded paths.
+- Verified full-data contrast telescoping, nested-chain orthogonality and
+  cross-branch LCA covariance with exact Wolfram output. A four-leaf example
+  has summed edge scores 42 and endpoint score 4.5. Captured native half-row
+  context discrepancies and fitted path lengths without constructing new p-values.
+- Endpoint traversal records change in 150 internal paths, including 16
+  reachability changes. Six of 201 unchanged paths change a boundary/split
+  decision with changed neighborhoods. One example fragments a known single
+  16-observation group after changing its children from 14|2 to 8|8; AMI falls
+  from 1 to .9366 despite larger raw sibling T. This is a descriptive witness.
+- Added [[subtree-path-statistics-evidence]] and
+  [[subtree-paths-and-missing-neighborhoods]], exact path diagnostics, source
+  archives and input/output hashes. The focused suite passes 31 tests and four
+  Python files pass Ruff/style checks; final wiki/provenance checks are recorded
+  with the report. Original fit artifacts and production defaults are preserved.
+  No installation, commit, push or persistent service; no new analysis fit or
+  frozen validation run.

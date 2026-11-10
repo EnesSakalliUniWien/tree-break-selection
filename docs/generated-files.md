@@ -37,8 +37,9 @@ make generated-files-check
 
 `make check` runs it; a new output with `pending` storage fails it. It
 detects unclassified report files, changed retained results, missing source files, unresolved local Markdown
-references, incorrect ignore rules, force-added generated outputs, and staged
-blobs larger than 5 MiB. The staged-size check reads Git's index, not the
+references, incorrect ignore rules, force-added generated outputs, staged
+blobs larger than 5 MiB, and tracked `reports/` or `raw/` files larger than
+10 MiB. The staged-size check reads Git's index, not the
 potentially different working file. Already tracked legacy evidence is not
 automatically migrated; modifying/staging an oversized legacy file still triggers
 the size check. The 5 MiB value is a review guard, not a Git service limit.
@@ -95,4 +96,17 @@ Fetch or reproduce the outputs before running analyses that consume them.
 New report files require explicit catalog entries, including files in ignored
 `generated/` directories. Existing `reports/audits/generated/` remains under
 its older local-output rule. Caches such as `__pycache__/` are not research
-outputs. Historical tracked `raw/assets/` evidence is outside this migration.
+outputs.
+
+## Raw evidence over the tracked-size limit
+
+The check also fails when any tracked file under `reports/` or `raw/` is larger
+than `max_tracked_bytes` (10 MiB). Such a file leaves Git through the same
+catalog: add its study (`raw/<area>/<study>`) and a `generated_output` entry
+with its byte count and SHA-256, run `git rm --cached` on it, then run
+`keep-local` (or `archive`). The exact ignore rule is written to
+`raw/.gitignore`. A `raw/` study lists only these files; its other tracked
+files stay in Git unclassified. On 2026-11-07 the 19 generated benchmark files
+over 10 MiB under `raw/assets/benchmark-results/` and the two Gonçalves input
+files under `raw/inbox/` were moved out this way. They are local-only, with no
+separate backup yet, and remain in Git history until it is rewritten.

@@ -163,12 +163,15 @@ def test_write_benchmark_performance_grid_outputs_case_grids(tmp_path: Path):
     assert artifacts.report_md.exists()
     assert artifacts.summary_csv.exists()
     assert artifacts.ari_grid_csv.exists()
+    assert artifacts.ami_grid_csv.exists()
     assert artifacts.status_grid_csv.exists()
     assert artifacts.support_coverage_csv.exists()
 
     summary = pd.read_csv(artifacts.summary_csv)
     assert list(summary["run_id"]) == ["kmeans::default", "tbs::default"]
     assert summary.loc[0, "mean_ari"] == pytest.approx(0.8333333333)
+    assert summary["mean_ami"].isna().all()
+    assert summary["mean_matched_macro_f1"].isna().all()
     assert summary.loc[0, "exact_k_rate"] == pytest.approx(2 / 3)
     tbs_summary = summary.loc[summary["run_id"].eq("tbs::default")].iloc[0]
     assert tbs_summary["attempted_count"] == 2
@@ -204,8 +207,53 @@ def test_write_benchmark_performance_grid_outputs_case_grids(tmp_path: Path):
     assert "kmeans::default" in report
 
 
+def test_performance_grid_reports_optional_metrics_only_for_successes(tmp_path: Path):
+    rows = _rows().assign(
+        ami=-0.1,
+        matched_macro_f1=0.5,
+        matched_rare_f1=0.2,
+        pair_split_share=0.4,
+        pair_merge_share=0.3,
+    )
+    artifacts = write_benchmark_performance_grid(rows, tmp_path)
+    summary = pd.read_csv(artifacts.summary_csv)
+    assert summary.mean_ami.tolist() == pytest.approx([-0.1, -0.1])
+    assert summary.mean_matched_macro_f1.tolist() == pytest.approx([0.5, 0.5])
+    assert summary.mean_matched_rare_f1.tolist() == pytest.approx([0.2, 0.2])
+    assert summary.mean_pair_split_share.tolist() == pytest.approx([0.4, 0.4])
+    assert summary.mean_pair_merge_share.tolist() == pytest.approx([0.3, 0.3])
+    ami = pd.read_csv(artifacts.ami_grid_csv)
+    assert ami.loc[0, "tbs::default"] == -0.1
+    assert pd.isna(ami.loc[1, "tbs::default"])
+
+
 def test_write_benchmark_performance_grid_rejects_duplicate_case_run(tmp_path: Path):
     rows = pd.concat([_rows(), _rows().iloc[[0]]], ignore_index=True)
 
     with pytest.raises(ValueError, match="unique case_id/run_id"):
         write_benchmark_performance_grid(rows, tmp_path)
+
+
+def test_a_method_with_error_rows_ranks_below_error_free_methods(tmp_path: Path):
+    rows = _rows()
+    kmeans = rows[rows["method"].eq("kmeans")]
+    lucky = kmeans.iloc[[0]].assign(method="hdbscan", run_id="hdbscan::default", ari=0.99)
+    failed = kmeans.iloc[[1]].assign(
+        method="hdbscan",
+        run_id="hdbscan::default",
+        status="error",
+        skip_reason="ValueError: boom",
+        found_clusters=0,
+        ari=float("nan"),
+        nmi=float("nan"),
+        purity=float("nan"),
+    )
+    artifacts = write_benchmark_performance_grid(
+        pd.concat([rows, lucky, failed], ignore_index=True),
+        tmp_path,
+        source_path=Path("benchmark.csv"),
+    )
+
+    summary = pd.read_csv(artifacts.summary_csv)
+    assert list(summary["run_id"])[-1] == "hdbscan::default"
+    assert summary.set_index("run_id").loc["hdbscan::default", "error_count"] == 1

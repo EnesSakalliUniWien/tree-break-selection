@@ -1,0 +1,562 @@
+# ===== protocol.md =====
+# Protocol: counting all possible splits, with exclusions from subspaces and equidistant cells (frozen 2026-11-08)
+
+## Question (user-confirmed, both readings tested as the user asked)
+
+Count all possible splits of a subtree's cells, then exclude possibilities based on the numbers of different
+subspaces and equidistant relationships. "Exclude" is tested in both readings: ruling splits out as real
+separations, and shrinking the count of possible splits.
+
+## Per tested split (subtree v with children A and B, n cells)
+
+- p_split = chi2.sf(T, df), production sibling statistic, no inflation factor.
+- Invariant directions: eigenvectors of v's covariance in the test PCs above its noise band (rule of
+  `split_count_correction_20261108`; n <= p + 1 gives k = 0). Separable: a flat cut in those k directions puts A
+  and B on different sides (linear program); k = 0 is not separable.
+- Equidistant cells: margin |m| < 0.1 in the test metric (PCs whitened by the pooled within-children covariance;
+  measure of `subspace_distance_ties_20261108`); f = their number, tie share = f / n.
+- Counts: M_all = 2^(n-1) - 1; M_inv(n', k) = sum_{i=0}^{k} binom(n'-1, i) (Cover's flat-cut count, capped at
+  2^(n'-1) - 1).
+
+## Arms (production code end to end; only each tested split's p-value changes)
+
+| Arm | p-value |
+| --- | --- |
+| today | production (replay) |
+| count_all | min(1, M_all p_split) |
+| rule_out | count_all, and p = 1 unless the split is separable in its invariant directions and its tie share <= 0.05 |
+| shrink | equidistant cells left out of the count (n' = n - f); if separable: min(1, 2 M_inv(n', k) p_split), else min(1, 2 (2^(n'-1) - 1) p_split) |
+| both | shrink, and p = 1 unless separable with tie share <= 0.05 |
+
+The 0.05 tie share and the 0.1 margin are conventions fixed here before any result of these arms. Validity:
+count_all is a union bound; the exclusions use the observed split, so their error control is not guaranteed by
+construction and is measured.
+
+## Data, endpoints, decision rule
+
+The 900 no-group and 35 real-group datasets of 2026-11-08, both trees, production alphas.
+E1 tested no-group splits with p <= 0.01 by size bin (2-9, 10-39, 40-159, 160-400); E2 false partitions of 300;
+E3 mean ARI on real groups; E4 share of tested splits excluded by each criterion (not separable / tie share).
+
+- Fixes large splits: Markov/Ward, sd 0.25 and 0.42, tested splits >= 40 cells pass at <= 2%.
+- Fixes small splits (added for this comparison): Markov/Ward, sd 0.25 and 0.42, tested splits of 10-39 cells
+  pass at <= 2%.
+- Keeps real groups: default tree, mean ARI on every signal model within 0.02 of today's.
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- None at launch. Pilot (`run.py check`, `low` 0 and `signal_balanced` 0): replay 40/40, cell counts 40/40.
+
+# ===== run.py =====
+"""Run protocol.md: split-count p-values with exclusions, swapped into production fits."""
+
+import importlib.util
+import json
+import sys
+from dataclasses import replace
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+
+
+def _load(name, folder):
+    spec = importlib.util.spec_from_file_location(name, HERE.parent / folder / "run.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+counting = _load("split_count_run", "split_count_correction_20261108")  # puts depth/validate/repo on sys.path
+distances = _load("subspace_ties_run", "subspace_distance_ties_20261108")
+
+import numpy as np  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from scipy.stats import chi2  # noqa: E402
+from sklearn.metrics import adjusted_rand_score  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+import depth  # noqa: E402
+from compare import fit  # noqa: E402
+from validate import MODELS as VALIDATION_MODELS  # noqa: E402
+from validate import prepare  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_helpers import (  # noqa: E402
+    precompute_descendants,
+)
+
+ARMS = ("today", "count_all", "rule_out", "shrink", "both")
+MAX_TIE_SHARE, TIE_MARGIN = 0.05, 0.1
+TREES = {"symmetric_average": 1, "markov_ward": 2}
+NULLS = ("low", "matched_median", "high")
+SIGNALS = ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+STATE = {"arm": "today", "splits": [], "checks": {}, "data": None, "cache": {}}
+ORIGINAL = counting.ORIGINAL
+
+
+def count(name, ok):
+    n, k = STATE["checks"].get(name, (0, 0))
+    STATE["checks"][name] = (n + 1, k + bool(ok))
+
+
+def log_count(n, k, sep):
+    """log of the number of possible splits of n cells; flat cuts in k invariant directions when separable."""
+    if n < 2:
+        return 0.0
+    return counting.log_hyperplane_splits(n, k) if sep else counting.log_all_splits(n)
+
+
+def adjusted(stat, df, log_m):
+    return float(np.exp(min(0.0, log_m + chi2.logsf(stat, df))))
+
+
+def swapped(records, *, model, **kwargs):
+    ids, summaries, labels, decisions, inadmissible = ORIGINAL(records, model=model, **kwargs)
+    arm, cache = STATE["arm"], STATE["cache"]
+    tree = sys._getframe(1).f_locals["tree"]
+    by_parent = {r.parent: r for r in records}
+    if "rows" not in cache:
+        cache["rows"] = precompute_descendants(tree, {label: i for i, label in enumerate(STATE["data"].index)})
+        cache["matrix"] = STATE["data"].to_numpy(dtype=np.float64)
+    rows, matrix = cache["rows"], cache["matrix"]
+    out = ([], [], [], [], list(inadmissible))
+    for pid, summary, label, decision in zip(ids, summaries, labels, decisions, strict=True):
+        record = by_parent[pid]
+        if decision is None:
+            for column, value in zip(out[:4], (pid, summary, label, decision), strict=True):
+                column.append(value)
+            continue
+        key = ("split", str(pid))
+        if key not in cache:
+            left, right = sorted(rows[record.left]), sorted(rows[record.right])
+            points = matrix[left + right]
+            own_a = np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)]
+            n = len(points)
+            count("n_matches_record", n == int(record.n_parent))
+            k, basis = counting.invariant_directions(points)
+            sep = bool(k >= 1 and counting.separable(points @ basis.T, own_a))
+            m, _ = distances.margins(distances.whiten(points, own_a), own_a)
+            ties = int(np.sum(np.abs(m) < TIE_MARGIN))
+            cache[key] = (n, int(min(len(left), len(right))), k, sep, ties)
+        n, n_small, k, sep, ties = cache[key]
+        stat, df = float(record.stat), float(record.degrees_of_freedom)
+        real = sep and ties / n <= MAX_TIE_SHARE
+        if arm == "today":
+            p, c = decision.p_value, decision.c_hat
+            count("replay", np.isclose(float(chi2.sf(stat / c, df)), p, rtol=1e-9, atol=1e-300))
+        else:
+            c = 1.0
+            if arm in ("count_all", "rule_out"):
+                p = adjusted(stat, df, counting.log_all_splits(n))
+            else:
+                p = adjusted(stat, df, log_count(n - ties, k, sep) + np.log(2.0))
+            if arm in ("rule_out", "both") and not real:
+                p = 1.0
+        STATE["splits"].append({"node": str(pid), "n_parent": n, "n_small": n_small, "stat": stat, "df": df, "k": k,
+                                "separable": sep, "tie_share": ties / n, "real": real, "p": p,
+                                "c_today": float(decision.c_hat)})
+        out[0].append(pid)
+        out[1].append((stat / c, df, p))
+        out[2].append(f"{label}:{arm}")
+        out[3].append(replace(decision, c_hat=float(c), p_value=p))
+    return out
+
+
+pipeline.compute_inflation_adjusted_sibling_tests = swapped
+
+
+def task(job):
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    datasets, splits = [], []
+    STATE["checks"] = {}
+    with threadpool_limits(limits=1):
+        prepared = prepare(counts)
+        STATE["data"] = prepared[0]
+        for tree_name, index in TREES.items():
+            dist = pdist(prepared[index])
+            STATE["cache"] = {}
+            for arm in ARMS:
+                STATE.update(arm=arm, splits=[])
+                start = perf_counter()
+                result = fit(prepared[0], dist, tree_name)
+                key = {"model": model, "replicate": replicate, "tree": tree_name, "arm": arm}
+                bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+                splits.extend({**key, **row, "bh_different": bool(bh[row["node"]])} for row in STATE["splits"])
+                datasets.append({**key, "status": result.status.value, "found_clusters": result.found_clusters,
+                                 "ari": float(adjusted_rand_score(np.asarray(truth), result.labels)),
+                                 "sec": perf_counter() - start})
+    return datasets, splits, {"model": model, "replicate": replicate, **STATE["checks"]}
+
+
+def jobs():
+    signal = [(m, r) for m in SIGNALS for r in range(VALIDATION_MODELS[m]["replicates"])]
+    return signal + [(m, r) for m in NULLS for r in range(300)]
+
+
+def main(workers):
+    paths = {name: HERE / f"{name}.jsonl" for name in ("datasets", "splits", "checks")}
+    done = set()
+    if paths["checks"].exists():
+        done = {(r["model"], r["replicate"]) for r in map(json.loads, paths["checks"].read_text().splitlines())}
+    todo = [j for j in jobs() if j not in done]
+    files = {name: path.open("a", buffering=1) for name, path in paths.items()}
+    with Pool(workers) as pool:
+        for i, (datasets, splits, checks) in enumerate(pool.imap_unordered(task, todo), 1):
+            files["splits"].write("".join(json.dumps(r) + "\n" for r in splits))
+            files["datasets"].write("".join(json.dumps(r) + "\n" for r in datasets))
+            files["checks"].write(json.dumps(checks) + "\n")
+            if i % 25 == 0:
+                print(f"{i}/{len(todo)}", flush=True)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "check":
+        for job in (("low", 0), ("signal_balanced", 0)):
+            t = perf_counter()
+            datasets, splits, checks = task(job)
+            print(job, f"{perf_counter() - t:.1f}s", checks)
+            for d in datasets:
+                print(d["tree"], d["arm"], d["found_clusters"], round(d["ari"], 3), round(d["sec"], 1))
+            for s in splits:
+                if s["arm"] == "both" and s["n_parent"] >= 100:
+                    print({k: (round(v, 3) if isinstance(v, float) else v) for k, v in s.items()
+                           if k in ("tree", "n_parent", "k", "separable", "tie_share", "real", "p")})
+    else:
+        main(int(sys.argv[1]))
+
+# ===== summarize.py =====
+"""Summarize run.py output into the protocol endpoints (protocol.md)."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+NULLS = ["low", "matched_median", "high"]
+BINS, LABELS = [1, 9, 39, 159, 400], ["2-9", "10-39", "40-159", "160-400"]
+ARMS = ["today", "count_all", "rule_out", "shrink", "both"]
+
+
+def load(name):
+    return pd.DataFrame(map(json.loads, (HERE / f"{name}.jsonl").read_text().splitlines()))
+
+
+def main():
+    checks = load("checks")
+    for col in [c for c in checks.columns if c not in ("model", "replicate")]:
+        pairs = checks[col].dropna()
+        print(f"check {col}: {sum(p[1] for p in pairs)}/{sum(p[0] for p in pairs)}")
+    ds, sp = load("datasets"), load("splits")
+    for frame in (ds, sp):
+        frame["arm"] = pd.Categorical(frame.arm, ARMS)
+    sp["passed"] = sp.p <= 0.01
+    sp["bin"] = pd.cut(sp.n_parent, BINS, labels=LABELS)
+    null = sp[sp.model.isin(NULLS)]
+
+    e1 = null.groupby(["tree", "model", "bin", "arm"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"))
+    big = null[null.n_parent >= 40].groupby(["tree", "model", "arm"], observed=True).agg(
+        tested=("passed", "size"), pass_share=("passed", "mean"))
+    nds = ds[ds.model.isin(NULLS)]
+    e2 = nds.groupby(["tree", "model", "arm"], observed=True).agg(
+        false_partitions=("found_clusters", lambda x: int((x > 1).sum())), median_clusters=("found_clusters", "median"))
+    sds = ds[~ds.model.isin(NULLS)]
+    e3 = sds.groupby(["tree", "model", "arm"], observed=True).agg(
+        datasets=("ari", "size"), mean_ari=("ari", "mean"), median_clusters=("found_clusters", "median"))
+    today = sp[sp.arm == "today"].copy()
+    today["kind"] = np.where(today.model.isin(NULLS), "no-group", "group data")
+    e4 = today.groupby(["kind", "tree", "bin"], observed=True).agg(
+        tested=("real", "size"), separable=("separable", "mean"), tie_share_le_005=("tie_share", lambda x: (x <= 0.05).mean()),
+        kept_as_real=("real", "mean"))
+    for name, table in [("e1_pass_large", big), ("e1_pass_by_size", e1), ("e2_false_partitions", e2),
+                        ("e3_signal", e3), ("e4_exclusion", e4)]:
+        table.round(4).to_csv(HERE / f"{name}.csv")
+        print(name)
+        print(table.round(3).to_string(), "\n")
+
+    small = null[null.n_parent.between(10, 39)].groupby(["tree", "model", "arm"], observed=True).passed.mean()
+    small.round(4).to_csv(HERE / "e1_pass_small.csv")
+    print("pass 10-39\n", small.round(3).to_string(), "\n")
+    rule = big.pass_share.xs("markov_ward", level="tree")
+    ari = e3.mean_ari.xs("symmetric_average", level="tree").unstack("arm")
+    sm = small.xs("markov_ward", level="tree")
+    print("Decision rule:", {a: {"fixes_large_splits": bool(all(rule.loc[(m, a)] <= 0.02 for m in ("low", "matched_median"))),
+                                "fixes_small_splits": bool(all(sm.loc[(m, a)] <= 0.02 for m in ("low", "matched_median"))),
+                                "keeps_real_groups": bool(((ari[a] - ari["today"]).abs() <= 0.02).all())} for a in ARMS})
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== summary.txt =====
+check n_matches_record: 11488/11488
+check replay: 11488/11488
+e1_pass_large
+                                            tested  pass_share
+tree              model          arm                          
+markov_ward       high           today        2494       0.848
+                                 count_all    2494       0.376
+                                 rule_out     2494       0.004
+                                 shrink       2494       0.464
+                                 both         2494       0.008
+                  low            today        2834       0.718
+                                 count_all    2834       0.143
+                                 rule_out     2834       0.000
+                                 shrink       2834       0.209
+                                 both         2834       0.018
+                  matched_median today        2678       0.731
+                                 count_all    2678       0.106
+                                 rule_out     2678       0.009
+                                 shrink       2678       0.170
+                                 both         2678       0.031
+symmetric_average high           today        1118       0.916
+                                 count_all    1118       0.296
+                                 rule_out     1118       0.000
+                                 shrink       1118       0.346
+                                 both         1118       0.002
+                  low            today          11       0.000
+                                 count_all      11       0.000
+                                 rule_out       11       0.000
+                                 shrink         11       0.000
+                                 both           11       0.000
+                  matched_median today         163       0.546
+                                 count_all     163       0.012
+                                 rule_out      163       0.000
+                                 shrink        163       0.037
+                                 both          163       0.018 
+
+e1_pass_by_size
+                                                    tested  pass_share
+tree              model          bin     arm                          
+markov_ward       high           2-9     today           1       0.000
+                                         count_all       1       1.000
+                                         rule_out        1       0.000
+                                         shrink          1       1.000
+                                         both            1       0.000
+                                 10-39   today         172       0.093
+                                         count_all     172       0.901
+                                         rule_out      172       0.023
+                                         shrink        172       0.884
+                                         both          172       0.029
+                                 40-159  today        1652       0.780
+                                         count_all    1652       0.367
+                                         rule_out     1652       0.007
+                                         shrink       1652       0.442
+                                         both         1652       0.013
+                                 160-400 today         842       0.983
+                                         count_all     842       0.392
+                                         rule_out      842       0.000
+                                         shrink        842       0.506
+                                         both          842       0.000
+                  low            10-39   today         294       0.010
+                                         count_all     294       0.929
+                                         rule_out      294       0.007
+                                         shrink        294       0.925
+                                         both          294       0.014
+                                 40-159  today        1911       0.610
+                                         count_all    1911       0.210
+                                         rule_out     1911       0.001
+                                         shrink       1911       0.301
+                                         both         1911       0.027
+                                 160-400 today         923       0.943
+                                         count_all     923       0.004
+                                         rule_out      923       0.000
+                                         shrink        923       0.017
+                                         both          923       0.000
+                  matched_median 2-9     today           1       0.000
+                                         count_all       1       1.000
+                                         rule_out        1       0.000
+                                         shrink          1       1.000
+                                         both            1       0.000
+                                 10-39   today         254       0.031
+                                         count_all     254       0.854
+                                         rule_out      254       0.016
+                                         shrink        254       0.870
+                                         both          254       0.031
+                                 40-159  today        1747       0.633
+                                         count_all    1747       0.161
+                                         rule_out     1747       0.014
+                                         shrink       1747       0.258
+                                         both         1747       0.048
+                                 160-400 today         931       0.915
+                                         count_all     931       0.002
+                                         rule_out      931       0.000
+                                         shrink        931       0.004
+                                         both          931       0.000
+symmetric_average high           10-39   today          40       0.550
+                                         count_all      40       0.875
+                                         rule_out       40       0.000
+                                         shrink         40       0.850
+                                         both           40       0.000
+                                 40-159  today         591       0.895
+                                         count_all     591       0.481
+                                         rule_out      591       0.000
+                                         shrink        591       0.562
+                                         both          591       0.003
+                                 160-400 today         527       0.939
+                                         count_all     527       0.089
+                                         rule_out      527       0.000
+                                         shrink        527       0.104
+                                         both          527       0.000
+                  low            10-39   today           2       1.000
+                                         count_all       2       1.000
+                                         rule_out        2       0.000
+                                         shrink          2       1.000
+                                         both            2       0.000
+                                 160-400 today          11       0.000
+                                         count_all      11       0.000
+                                         rule_out       11       0.000
+                                         shrink         11       0.000
+                                         both           11       0.000
+                  matched_median 10-39   today          11       0.364
+                                         count_all      11       1.000
+                                         rule_out       11       0.000
+                                         shrink         11       0.909
+                                         both           11       0.000
+                                 40-159  today          16       0.750
+                                         count_all      16       0.125
+                                         rule_out       16       0.000
+                                         shrink         16       0.375
+                                         both           16       0.188
+                                 160-400 today         147       0.524
+                                         count_all     147       0.000
+                                         rule_out      147       0.000
+                                         shrink        147       0.000
+                                         both          147       0.000 
+
+e2_false_partitions
+                                            false_partitions  median_clusters
+tree              model          arm                                         
+markov_ward       high           today                   300              8.0
+                                 count_all               297              7.0
+                                 rule_out                 15              1.0
+                                 shrink                  299              7.0
+                                 both                     25              1.0
+                  low            today                   298              8.0
+                                 count_all               279              7.0
+                                 rule_out                  2              1.0
+                                 shrink                  294              8.0
+                                 both                     48              1.0
+                  matched_median today                   296              8.0
+                                 count_all               246              7.0
+                                 rule_out                 25              1.0
+                                 shrink                  265              8.0
+                                 both                     77              1.0
+symmetric_average high           today                   259              5.0
+                                 count_all               219              4.0
+                                 rule_out                  0              1.0
+                                 shrink                  233              4.0
+                                 both                      2              1.0
+                  low            today                     2              1.0
+                                 count_all                 2              1.0
+                                 rule_out                  0              1.0
+                                 shrink                    2              1.0
+                                 both                      0              1.0
+                  matched_median today                    50              1.0
+                                 count_all                12              1.0
+                                 rule_out                  0              1.0
+                                 shrink                   15              1.0
+                                 both                      3              1.0 
+
+e3_signal
+                                                      datasets  mean_ari  median_clusters
+tree              model                    arm                                           
+markov_ward       signal_balanced          today            10     0.315             20.0
+                                           count_all        10     0.582             15.5
+                                           rule_out         10     1.000              4.0
+                                           shrink           10     0.484             17.0
+                                           both             10     0.989              4.0
+                  signal_density_variation today             5     0.025             81.0
+                                           count_all         5     0.043             63.0
+                                           rule_out          5     0.867              5.0
+                                           shrink            5     0.032             68.0
+                                           both              5     0.700              6.0
+                  signal_imbalanced        today            10     0.079             25.5
+                                           count_all        10     0.137             22.5
+                                           rule_out         10     1.000              4.0
+                                           shrink           10     0.110             23.0
+                                           both             10     0.813              4.0
+                  signal_singleton         today            10     0.092             22.0
+                                           count_all        10     0.157             17.5
+                                           rule_out         10     0.879              4.0
+                                           shrink           10     0.134             18.5
+                                           both             10     0.595              8.0
+symmetric_average signal_balanced          today            10     0.800              4.0
+                                           count_all        10     0.800              4.0
+                                           rule_out         10     0.800              4.0
+                                           shrink           10     0.800              4.0
+                                           both             10     0.800              4.0
+                  signal_density_variation today             5     0.651             13.0
+                                           count_all         5     0.652             12.0
+                                           rule_out          5     0.667              7.0
+                                           shrink            5     0.670             13.0
+                                           both              5     0.685              8.0
+                  signal_imbalanced        today            10     1.000              4.0
+                                           count_all        10     1.000              4.0
+                                           rule_out         10     1.000              4.0
+                                           shrink           10     1.000              4.0
+                                           both             10     1.000              4.0
+                  signal_singleton         today            10     0.880              4.0
+                                           count_all        10     0.880              4.0
+                                           rule_out         10     0.880              4.0
+                                           shrink           10     0.880              4.0
+                                           both             10     0.880              4.0 
+
+e4_exclusion
+                                      tested  separable  tie_share_le_005  kept_as_real
+kind       tree              bin                                                       
+group data markov_ward       10-39        84      0.036             1.000         0.036
+                             40-159      754      0.029             0.318         0.021
+                             160-400     257      0.008             0.004         0.000
+           symmetric_average 10-39         3      0.333             1.000         0.333
+                             40-159       20      0.150             0.300         0.100
+                             160-400       4      0.000             0.000         0.000
+no-group   markov_ward       2-9           2      0.000             1.000         0.000
+                             10-39       720      0.032             1.000         0.032
+                             40-159     5310      0.049             0.270         0.041
+                             160-400    2696      0.000             0.002         0.000
+           symmetric_average 10-39        53      0.000             1.000         0.000
+                             40-159      607      0.008             0.186         0.008
+                             160-400     685      0.000             0.004         0.000 
+
+pass 10-39
+ tree               model           arm      
+markov_ward        high            today        0.093
+                                   count_all    0.901
+                                   rule_out     0.023
+                                   shrink       0.884
+                                   both         0.029
+                   low             today        0.010
+                                   count_all    0.929
+                                   rule_out     0.007
+                                   shrink       0.925
+                                   both         0.014
+                   matched_median  today        0.031
+                                   count_all    0.854
+                                   rule_out     0.016
+                                   shrink       0.870
+                                   both         0.031
+symmetric_average  high            today        0.550
+                                   count_all    0.875
+                                   rule_out     0.000
+                                   shrink       0.850
+                                   both         0.000
+                   low             today        1.000
+                                   count_all    1.000
+                                   rule_out     0.000
+                                   shrink       1.000
+                                   both         0.000
+                   matched_median  today        0.364
+                                   count_all    1.000
+                                   rule_out     0.000
+                                   shrink       0.909
+                                   both         0.000 
+
+Decision rule: {'today': {'fixes_large_splits': False, 'fixes_small_splits': False, 'keeps_real_groups': True}, 'count_all': {'fixes_large_splits': False, 'fixes_small_splits': False, 'keeps_real_groups': True}, 'rule_out': {'fixes_large_splits': True, 'fixes_small_splits': True, 'keeps_real_groups': True}, 'shrink': {'fixes_large_splits': False, 'fixes_small_splits': False, 'keeps_real_groups': True}, 'both': {'fixes_large_splits': False, 'fixes_small_splits': False, 'keeps_real_groups': False}}
+

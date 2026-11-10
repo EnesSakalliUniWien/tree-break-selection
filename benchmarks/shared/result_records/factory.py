@@ -15,19 +15,13 @@ from benchmarks.shared.util.time import normalize_stage_timings
 def _normalize_status(status: str | BenchmarkRunStatus) -> BenchmarkRunStatus:
     if isinstance(status, BenchmarkRunStatus):
         return status
-    raw = str(status).strip().lower()
-    if raw == BenchmarkRunStatus.OK.value:
-        return BenchmarkRunStatus.OK
-    if raw == BenchmarkRunStatus.SKIP.value:
-        return BenchmarkRunStatus.SKIP
-    if raw == BenchmarkRunStatus.UNSUPPORTED.value:
-        return BenchmarkRunStatus.UNSUPPORTED
-    raise ValueError(
-        f"Invalid benchmark status: {status!r}. "
-        "Expected one of: "
-        f"{BenchmarkRunStatus.OK.value!r}, {BenchmarkRunStatus.SKIP.value!r}, "
-        f"{BenchmarkRunStatus.UNSUPPORTED.value!r}."
-    )
+    try:
+        return BenchmarkRunStatus(str(status).strip().lower())
+    except ValueError:
+        raise ValueError(
+            f"Invalid benchmark status: {status!r}. "
+            f"Expected one of: {[member.value for member in BenchmarkRunStatus]!r}."
+        ) from None
 
 
 def build_benchmark_result_row(
@@ -77,13 +71,14 @@ def build_benchmark_result_row(
             raise ValueError("status=ok must not include skip_reason.")
         if unsupported_reason is not None:
             raise ValueError("status=ok must not include unsupported_reason.")
-    elif normalized_status is BenchmarkRunStatus.SKIP:
+    elif normalized_status in (BenchmarkRunStatus.SKIP, BenchmarkRunStatus.ERROR):
+        status_name = normalized_status.value
         if found_clusters != 0 or labels_length != 0:
-            raise ValueError("status=skip requires zero clusters and labels.")
+            raise ValueError(f"status={status_name} requires zero clusters and labels.")
         if normalized_skip_reason is None:
-            raise ValueError("status=skip requires a non-empty skip_reason.")
+            raise ValueError(f"status={status_name} requires a non-empty skip_reason.")
         if unsupported_reason is not None:
-            raise ValueError("status=skip must not include unsupported_reason.")
+            raise ValueError(f"status={status_name} must not include unsupported_reason.")
     else:
         if found_clusters != 0 or labels_length != 0:
             raise ValueError("status=unsupported requires zero clusters and labels.")

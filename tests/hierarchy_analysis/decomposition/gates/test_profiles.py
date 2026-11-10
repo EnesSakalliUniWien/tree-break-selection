@@ -34,48 +34,36 @@ def test_fixed_profile_resolves_candidate_constants(
     root_selective_alpha: float | None,
     root_selective_scope: str,
 ) -> None:
-    resolved = resolve_sibling_gate_profile_config(sibling_gate_profile=profile_id)
+    resolved_id, settings = resolve_sibling_gate_profile_config(sibling_gate_profile=profile_id)
 
-    assert resolved[:11] == (
-        profile_id,
-        "fixed_coordinate_bh",
-        50.0,
-        0.24,
-        12,
-        0.8,
-        0,
-        root_selective_replicates,
-        0,
-        root_selective_alpha,
-        root_selective_scope,
-    )
+    assert resolved_id == profile_id
+    assert settings == {
+        "sibling_gate_method": "fixed_coordinate_bh",
+        "sibling_gate_alpha_penalty": 50.0,
+        "root_stability_guard_threshold": 0.24,
+        "root_stability_subsample_replicates": 12,
+        "root_stability_feature_fraction": 0.8,
+        "root_stability_seed": 0,
+        "root_selective_permutation_guard_replicates": root_selective_replicates,
+        "root_selective_permutation_guard_seed": 0,
+        "root_selective_permutation_guard_alpha": root_selective_alpha,
+        "root_selective_permutation_guard_scope": root_selective_scope,
+    }
     assert SIBLING_GATE_PROFILES[profile_id].status == "diagnostic_candidate"
 
 
 def test_fixed_profile_allows_explicit_root_selective_guard_when_disabled() -> None:
-    (
-        _profile_id,
-        _method,
-        _penalty,
-        _threshold,
-        _stability_replicates,
-        _fraction,
-        _stability_seed,
-        root_selective_replicates,
-        root_selective_seed,
-        root_selective_alpha,
-        root_selective_scope,
-    ) = resolve_sibling_gate_profile_config(
+    _profile_id, settings = resolve_sibling_gate_profile_config(
         sibling_gate_profile="fixed_coordinate_guarded_v1",
         root_selective_permutation_guard_replicates=5,
         root_selective_permutation_guard_seed=123,
         root_selective_permutation_guard_alpha=0.01,
     )
 
-    assert root_selective_replicates == 5
-    assert root_selective_seed == 123
-    assert root_selective_alpha == 0.01
-    assert root_selective_scope == "root"
+    assert settings["root_selective_permutation_guard_replicates"] == 5
+    assert settings["root_selective_permutation_guard_seed"] == 123
+    assert settings["root_selective_permutation_guard_alpha"] == 0.01
+    assert settings["root_selective_permutation_guard_scope"] == "root"
 
 
 def test_profile_rejects_conflicting_guard_replicates() -> None:

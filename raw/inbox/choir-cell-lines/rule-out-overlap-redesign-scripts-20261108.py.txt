@@ -1,0 +1,605 @@
+# ===== protocol.md =====
+# Protocol: replacing the zero-overlap rule with an overlap fraction (frozen 2026-11-08)
+
+## Question (user-confirmed)
+
+Redesign the zero-overlap rule of the split-count rule-out so that it does not tighten as the number of cells
+grows (`rule_out_gradient_20261108`: separable share follows Phi(delta/2)^n).
+
+## New rule (everything else unchanged)
+
+Old: the split is separable by a flat cut in the subtree's invariant directions (no cell on the wrong side).
+New: the Fisher discriminant of the split in the invariant directions (pooled within-sides covariance, priors =
+the split's proportions pi and 1 - pi) misplaces a fraction of cells no larger than the overlap of the weakest
+separation the count of all splits can accept:
+
+- count bound: pi (1 - pi) delta^2 > 2 ln 2, so delta_min(pi) = sqrt(2 ln 2 / (pi (1 - pi)));
+- allowed fraction tau(pi) = Bayes error of two unit-variance Gaussians with proportions pi, 1 - pi at
+  separation delta_min(pi): pi Phi(-delta_min/2 - c) + (1 - pi) Phi(-delta_min/2 + c), c = ln((1 - pi)/pi) / delta_min.
+
+Balanced: delta_min = 2.355, tau = 0.119. The invariant directions (noise band), the n <= p + 1 edge, the 5%
+equidistant-cell rule and the count of all splits are unchanged.
+
+## Checks
+
+Self-check (assert): two Gaussians at delta = 4, 2,000 cells: misplaced fraction within 0.01 of Phi(-2) = 0.023;
+tau(0.5) within 0.001 of 0.119.
+
+E1 grid (`rule_out_gradient_20261108` grid, same seeds, 8,640 runs): kept rate by (p, n, delta) under the new
+rule; prediction: no decline with n at fixed delta; transition near delta = 2.36 for n > p + 1.
+E2 935 simulated datasets, both trees, end to end (harness of `split_count_exclusion_20261108`), arms rule_out
+(old) and rule_out_overlap (new), with the frozen rule of that protocol: Markov/Ward no-group passes <= 2% for
+>= 40 and 10-39 cells at sd 0.25 and 0.42; default-tree ARI within 0.02 of today's (today taken from the
+2026-11-08 exclusion run).
+E3 real CHOIR data, both methods, end to end: clusters, ARI, lines recovered (90/90), old vs new.
+E4 the 9 continuous benchmark cases: clusters and ARI, old vs new.
+
+The new rule replaces the old one in production only if E2 passes the frozen rule; otherwise it is reported and
+production stays as it is.
+
+## Amendment after E1 (before E2-E4; see deviations.md)
+
+E1 showed the overlap rule removes the decline at delta = 6 but the unchanged 5% equidistant-cell rule (full
+whitened p-dimensional metric) then binds at delta = 3-4 and also tightens with n and p. Amended rule, same
+principle: margins are measured on the Fisher-discriminant coordinate of the split within the invariant
+directions (1D, scaled to unit pooled within-sides SD), m = (|x - mu_other| - |x - mu_own|) / |mu_own - mu_other|
+on that coordinate, tie |m| < 0.1 as before; allowed share = the expected share for two unit Gaussians with
+proportions pi, 1 - pi at delta_min(pi) (numerical integration; balanced 0.047). E1 is repeated with both rules
+(E1b), and E2-E4 run three arms: rule_out (old), rule_out_overlap (new overlap, old ties, as frozen) and
+rule_out_overlap_ties (new overlap, new ties, amendment). The production replacement is the arm that passes
+E2's frozen rule; if both pass, the amendment arm.
+
+# ===== deviations.md =====
+# Deviations from protocol.md
+
+- After E1: the equidistant-cell rule was found to tighten with n and p; the amendment section adds a
+  redesigned tie rule and a third arm before E2-E4 ran.
+- After E2: all three arms pass the frozen rule, but the new rules raise false partitions and lower
+  Markov/Ward real-group ARI, which the frozen rule does not check. The replacement clause (replace production
+  with the amendment arm) was not applied; the decision is left to the user. E3 and E4 were planned after a
+  replacement and were not run. `overlap_by_size.txt` (overlap of tree-chosen splits by size) was added after E2.
+
+# ===== overlap_rule.py =====
+"""New rule: Fisher-discriminant misplaced fraction in invariant directions against the count-bound overlap."""
+import numpy as np
+from scipy.stats import norm
+
+
+def allowed_overlap(pi):
+    """Bayes error at the weakest separation the count of all splits can accept, delta^2 pi(1-pi) = 2 ln 2."""
+    pi = min(max(pi, 1e-9), 1 - 1e-9)
+    delta = np.sqrt(2 * np.log(2) / (pi * (1 - pi)))
+    c = np.log((1 - pi) / pi) / delta
+    return float(pi * norm.cdf(-delta / 2 - c) + (1 - pi) * norm.cdf(-delta / 2 + c))
+
+
+def misplaced_fraction(points, in_left):
+    """Share of cells the Fisher discriminant (pooled covariance, observed priors) puts on the other side."""
+    left, right = points[in_left], points[~in_left]
+    pi = len(left) / len(points)
+    centered = np.vstack([left - left.mean(0), right - right.mean(0)])
+    within = centered.T @ centered / max(len(points) - 2, 1)
+    w = np.linalg.pinv(np.atleast_2d(within)) @ (left.mean(0) - right.mean(0))
+    midpoint = (left.mean(0) + right.mean(0)) / 2
+    score = (points - midpoint) @ w + np.log(pi / (1 - pi))
+    return float(np.mean((score > 0) != in_left))
+
+
+if __name__ == "__main__":
+    rng = np.random.default_rng(0)
+    x = np.r_[rng.standard_normal(1000) + 2, rng.standard_normal(1000) - 2][:, None]
+    side = np.r_[np.ones(1000, bool), np.zeros(1000, bool)]
+    assert abs(misplaced_fraction(x, side) - norm.cdf(-2)) < 0.01, misplaced_fraction(x, side)
+    assert abs(allowed_overlap(0.5) - 0.119) < 0.001, allowed_overlap(0.5)
+    print("self-check passed", round(misplaced_fraction(x, side), 4), round(allowed_overlap(0.5), 4),
+          {p: round(allowed_overlap(p), 4) for p in (0.1, 0.25, 0.5)})
+
+
+def discriminant_coordinate(points, in_left):
+    """Fisher-discriminant coordinate of every cell, scaled to unit pooled within-sides SD."""
+    left, right = points[in_left], points[~in_left]
+    centered = np.vstack([left - left.mean(0), right - right.mean(0)])
+    within = centered.T @ centered / max(len(points) - 2, 1)
+    w = np.linalg.pinv(np.atleast_2d(within)) @ (left.mean(0) - right.mean(0))
+    z = points @ w
+    sd = np.sqrt(np.mean(np.r_[z[in_left] - z[in_left].mean(), z[~in_left] - z[~in_left].mean()] ** 2))
+    return z / sd
+
+
+def tie_share_1d(z, in_left, margin=0.1):
+    mu_l, mu_r = z[in_left].mean(), z[~in_left].mean()
+    to_l, to_r = np.abs(z - mu_l), np.abs(z - mu_r)
+    m = np.where(in_left, to_r - to_l, to_l - to_r) / abs(mu_l - mu_r)
+    return float(np.mean(np.abs(m) < margin))
+
+
+def allowed_tie_share(pi, margin=0.1):
+    """Expected tie share for unit Gaussians with proportions pi, 1 - pi at the weakest acceptable separation."""
+    pi = min(max(pi, 1e-9), 1 - 1e-9)
+    delta = np.sqrt(2 * np.log(2) / (pi * (1 - pi)))
+    # |m| < margin  <=>  |x| < margin * delta / 2 on a line with means at +- delta / 2 (midpoint at 0)
+    half = margin * delta / 2
+    left = norm.cdf(half - delta / 2) - norm.cdf(-half - delta / 2)  # mass of the side centred at +delta/2 near 0
+    return float(pi * left + (1 - pi) * left)
+
+# ===== grid.py =====
+"""E1: the gradient grid of rule_out_gradient_20261108 (same seeds) under the new overlap rule."""
+import itertools
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path[:0] = [str(HERE), str(HERE.parents[2])]
+
+import numpy as np  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+from overlap_rule import allowed_overlap, misplaced_fraction  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    MAX_EQUIDISTANT_SHARE,
+    equidistant_share,
+    invariant_directions,
+)
+
+PS, NS = (10, 30, 100), (20, 40, 60, 80, 120, 160, 240, 320, 640)
+DELTAS, REPS = (0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0), 40
+
+
+def task(job):
+    p, n, d_index = job
+    out = []
+    with threadpool_limits(limits=1):
+        for rep in range(REPS):
+            rng = np.random.default_rng(np.random.SeedSequence([20261108, 77, p, n, d_index, rep]))
+            in_left = np.r_[np.ones(n // 2, bool), np.zeros(n - n // 2, bool)]
+            x = rng.standard_normal((n, p))
+            x[:, 0] += np.where(in_left, DELTAS[d_index] / 2, -DELTAS[d_index] / 2)
+            directions = invariant_directions(x)
+            misplaced = misplaced_fraction(x @ directions.T, in_left) if len(directions) else np.nan
+            if len(directions) == 0:
+                reason = "no_invariant_directions"
+            elif misplaced > allowed_overlap(in_left.mean()):
+                reason = "overlap"
+            else:
+                reason = "kept" if equidistant_share(x, in_left) <= MAX_EQUIDISTANT_SHARE else "equidistant_cells"
+            out.append({"p": p, "n": n, "delta": DELTAS[d_index], "rep": rep, "reason": reason, "misplaced": misplaced,
+                        "kept": reason == "kept"})
+    return out
+
+
+if __name__ == "__main__":
+    with Pool(10) as pool, (HERE / "grid.jsonl").open("w") as f:
+        for rows in pool.imap_unordered(task, list(itertools.product(PS, NS, range(len(DELTAS))))):
+            f.write("".join(json.dumps(r) + "\n" for r in rows))
+
+# ===== grid_b.py =====
+"""E1: the gradient grid of rule_out_gradient_20261108 (same seeds) under the new overlap rule."""
+import itertools
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path[:0] = [str(HERE), str(HERE.parents[2])]
+
+import numpy as np  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+from overlap_rule import allowed_overlap, allowed_tie_share, discriminant_coordinate, misplaced_fraction, tie_share_1d  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    MAX_EQUIDISTANT_SHARE,
+    equidistant_share,
+    invariant_directions,
+)
+
+PS, NS = (10, 30, 100), (20, 40, 60, 80, 120, 160, 240, 320, 640)
+DELTAS, REPS = (0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0), 40
+
+
+def task(job):
+    p, n, d_index = job
+    out = []
+    with threadpool_limits(limits=1):
+        for rep in range(REPS):
+            rng = np.random.default_rng(np.random.SeedSequence([20261108, 77, p, n, d_index, rep]))
+            in_left = np.r_[np.ones(n // 2, bool), np.zeros(n - n // 2, bool)]
+            x = rng.standard_normal((n, p))
+            x[:, 0] += np.where(in_left, DELTAS[d_index] / 2, -DELTAS[d_index] / 2)
+            directions = invariant_directions(x)
+            misplaced = misplaced_fraction(x @ directions.T, in_left) if len(directions) else np.nan
+            if len(directions) == 0:
+                reason = "no_invariant_directions"
+            elif misplaced > allowed_overlap(in_left.mean()):
+                reason = "overlap"
+            else:
+                z = discriminant_coordinate(x @ directions.T, in_left)
+                reason = "kept" if tie_share_1d(z, in_left) <= allowed_tie_share(in_left.mean()) else "equidistant_cells"
+            out.append({"p": p, "n": n, "delta": DELTAS[d_index], "rep": rep, "reason": reason, "misplaced": misplaced,
+                        "kept": reason == "kept"})
+    return out
+
+
+if __name__ == "__main__":
+    with Pool(10) as pool, (HERE / "grid_b.jsonl").open("w") as f:
+        for rows in pool.imap_unordered(task, list(itertools.product(PS, NS, range(len(DELTAS))))):
+            f.write("".join(json.dumps(r) + "\n" for r in rows))
+
+# ===== grid_summary.txt =====
+New rule, kept rate
+delta    0.0  1.0   1.5   2.0   2.5   3.0   4.0  6.0
+p   n                                               
+10  20   0.0  0.0  0.05  0.02  0.35  0.68  0.95  1.0
+    40   0.0  0.0  0.00  0.05  0.32  0.57  0.90  1.0
+    60   0.0  0.0  0.00  0.00  0.08  0.45  0.98  1.0
+    80   0.0  0.0  0.00  0.00  0.08  0.35  0.78  1.0
+    120  0.0  0.0  0.00  0.00  0.00  0.12  0.78  1.0
+    160  0.0  0.0  0.00  0.00  0.00  0.12  0.75  1.0
+    240  0.0  0.0  0.00  0.00  0.00  0.02  0.95  1.0
+    320  0.0  0.0  0.00  0.00  0.00  0.08  0.88  1.0
+    640  0.0  0.0  0.00  0.00  0.00  0.00  0.98  1.0
+30  20   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.0
+    40   0.0  0.0  0.00  0.02  0.12  0.48  0.98  1.0
+    60   0.0  0.0  0.00  0.02  0.25  0.70  0.95  1.0
+    80   0.0  0.0  0.00  0.00  0.05  0.25  0.98  1.0
+    120  0.0  0.0  0.00  0.00  0.00  0.12  0.88  1.0
+    160  0.0  0.0  0.00  0.00  0.00  0.02  0.88  1.0
+    240  0.0  0.0  0.00  0.00  0.00  0.00  0.57  1.0
+    320  0.0  0.0  0.00  0.00  0.00  0.00  0.22  1.0
+    640  0.0  0.0  0.00  0.00  0.00  0.00  0.08  1.0
+100 20   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.0
+    40   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.0
+    60   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.0
+    80   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.0
+    120  0.0  0.0  0.00  0.00  0.02  0.72  1.00  1.0
+    160  0.0  0.0  0.00  0.00  0.08  0.57  1.00  1.0
+    240  0.0  0.0  0.00  0.00  0.00  0.00  0.62  1.0
+    320  0.0  0.0  0.00  0.00  0.00  0.00  0.08  1.0
+    640  0.0  0.0  0.00  0.00  0.00  0.00  0.00  1.0
+
+# ===== grid_b_summary.txt =====
+E1b both new rules, kept rate
+delta    0.0  1.0   1.5   2.0   2.5   3.0   4.0   6.0
+p   n                                                
+10  20   0.0  0.0  0.05  0.00  0.15  0.25  0.48  0.98
+    40   0.0  0.0  0.00  0.02  0.15  0.35  0.68  0.98
+    60   0.0  0.0  0.00  0.00  0.22  0.38  0.88  1.00
+    80   0.0  0.0  0.00  0.08  0.28  0.55  0.85  1.00
+    120  0.0  0.0  0.00  0.00  0.30  0.70  0.90  1.00
+    160  0.0  0.0  0.00  0.00  0.32  0.65  0.92  1.00
+    240  0.0  0.0  0.00  0.00  0.32  0.82  1.00  1.00
+    320  0.0  0.0  0.00  0.00  0.40  0.82  1.00  1.00
+    640  0.0  0.0  0.00  0.00  0.48  0.85  1.00  1.00
+30  20   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.00
+    40   0.0  0.0  0.00  0.00  0.08  0.15  0.78  1.00
+    60   0.0  0.0  0.00  0.02  0.18  0.55  0.92  1.00
+    80   0.0  0.0  0.00  0.00  0.12  0.45  0.95  1.00
+    120  0.0  0.0  0.00  0.00  0.28  0.60  0.90  1.00
+    160  0.0  0.0  0.00  0.00  0.15  0.70  0.92  1.00
+    240  0.0  0.0  0.00  0.00  0.38  0.85  1.00  1.00
+    320  0.0  0.0  0.00  0.00  0.42  0.85  1.00  1.00
+    640  0.0  0.0  0.00  0.00  0.52  0.92  1.00  1.00
+100 20   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.00
+    40   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.00
+    60   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.00
+    80   0.0  0.0  0.00  0.00  0.00  0.00  0.00  0.00
+    120  0.0  0.0  0.00  0.00  0.02  0.48  0.88  1.00
+    160  0.0  0.0  0.00  0.00  0.05  0.40  1.00  1.00
+    240  0.0  0.0  0.00  0.00  0.02  0.62  0.95  1.00
+    320  0.0  0.0  0.00  0.00  0.05  0.78  1.00  1.00
+    640  0.0  0.0  0.00  0.00  0.22  0.85  1.00  1.00
+
+# ===== run_e2.py =====
+"""E2 of protocol.md: old rule-out vs the redesigned overlap and tie rules, swapped into production fits."""
+
+import importlib.util
+import json
+import sys
+from dataclasses import replace
+from multiprocessing import Pool
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+
+
+def _load(name, folder):
+    spec = importlib.util.spec_from_file_location(name, HERE.parent / folder / "run.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+counting = _load("split_count_run", "split_count_correction_20261108")  # puts depth/validate/repo on sys.path
+distances = _load("subspace_ties_run", "subspace_distance_ties_20261108")
+sys.path.insert(0, str(HERE))
+from overlap_rule import (  # noqa: E402
+    allowed_overlap,
+    allowed_tie_share,
+    discriminant_coordinate,
+    misplaced_fraction,
+    tie_share_1d,
+)
+
+import numpy as np  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from scipy.stats import chi2  # noqa: E402
+from sklearn.metrics import adjusted_rand_score  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+import depth  # noqa: E402
+from compare import fit  # noqa: E402
+from validate import MODELS as VALIDATION_MODELS  # noqa: E402
+from validate import prepare  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+from tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_helpers import (  # noqa: E402
+    precompute_descendants,
+)
+
+ARMS = ("rule_out", "rule_out_overlap", "rule_out_overlap_ties")
+MAX_TIE_SHARE, TIE_MARGIN = 0.05, 0.1
+TREES = {"symmetric_average": 1, "markov_ward": 2}
+NULLS = ("low", "matched_median", "high")
+SIGNALS = ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+STATE = {"arm": "today", "splits": [], "checks": {}, "data": None, "cache": {}}
+ORIGINAL = counting.ORIGINAL
+
+
+def count(name, ok):
+    n, k = STATE["checks"].get(name, (0, 0))
+    STATE["checks"][name] = (n + 1, k + bool(ok))
+
+
+def log_count(n, k, sep):
+    """log of the number of possible splits of n cells; flat cuts in k invariant directions when separable."""
+    if n < 2:
+        return 0.0
+    return counting.log_hyperplane_splits(n, k) if sep else counting.log_all_splits(n)
+
+
+def adjusted(stat, df, log_m):
+    return float(np.exp(min(0.0, log_m + chi2.logsf(stat, df))))
+
+
+def swapped(records, *, model, **kwargs):
+    ids, summaries, labels, decisions, inadmissible = ORIGINAL(records, model=model, **kwargs)
+    arm, cache = STATE["arm"], STATE["cache"]
+    tree = sys._getframe(1).f_locals["tree"]
+    by_parent = {r.parent: r for r in records}
+    if "rows" not in cache:
+        cache["rows"] = precompute_descendants(tree, {label: i for i, label in enumerate(STATE["data"].index)})
+        cache["matrix"] = STATE["data"].to_numpy(dtype=np.float64)
+    rows, matrix = cache["rows"], cache["matrix"]
+    out = ([], [], [], [], list(inadmissible))
+    for pid, summary, label, decision in zip(ids, summaries, labels, decisions, strict=True):
+        record = by_parent[pid]
+        if decision is None:
+            for column, value in zip(out[:4], (pid, summary, label, decision), strict=True):
+                column.append(value)
+            continue
+        key = ("split", str(pid))
+        if key not in cache:
+            left, right = sorted(rows[record.left]), sorted(rows[record.right])
+            points = matrix[left + right]
+            own_a = np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)]
+            n = len(points)
+            count("n_matches_record", n == int(record.n_parent))
+            k, basis = counting.invariant_directions(points)
+            sep = bool(k >= 1 and counting.separable(points @ basis.T, own_a))
+            m, _ = distances.margins(distances.whiten(points, own_a), own_a)
+            ties = int(np.sum(np.abs(m) < TIE_MARGIN))
+            pi = float(own_a.mean())
+            misplaced = misplaced_fraction(points @ basis.T, own_a) if k >= 1 else 1.0
+            tie_1d = tie_share_1d(discriminant_coordinate(points @ basis.T, own_a), own_a) if k >= 1 else 1.0
+            low_overlap = bool(k >= 1 and misplaced <= allowed_overlap(pi))
+            few_ties_1d = bool(k >= 1 and tie_1d <= allowed_tie_share(pi))
+            cache[key] = (n, int(min(len(left), len(right))), k, sep, ties, low_overlap, few_ties_1d, misplaced, tie_1d)
+        n, n_small, k, sep, ties, low_overlap, few_ties_1d, misplaced, tie_1d = cache[key]
+        stat, df = float(record.stat), float(record.degrees_of_freedom)
+        few_ties = ties / n <= MAX_TIE_SHARE
+        real = {"rule_out": sep and few_ties, "rule_out_overlap": low_overlap and few_ties,
+                "rule_out_overlap_ties": low_overlap and few_ties_1d}[arm]
+        c = 1.0
+        p = adjusted(stat, df, counting.log_all_splits(n)) if real else 1.0
+        STATE["splits"].append({"node": str(pid), "n_parent": n, "n_small": n_small, "stat": stat, "df": df, "k": k,
+                                "separable": sep, "tie_share": ties / n, "low_overlap": low_overlap, "few_ties_1d": few_ties_1d,
+                                "misplaced": misplaced, "tie_1d": tie_1d, "real": real, "p": p,
+                                "c_today": float(decision.c_hat)})
+        out[0].append(pid)
+        out[1].append((stat / c, df, p))
+        out[2].append(f"{label}:{arm}")
+        out[3].append(replace(decision, c_hat=float(c), p_value=p))
+    return out
+
+
+pipeline.compute_inflation_adjusted_sibling_tests = swapped
+
+
+def task(job):
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    datasets, splits = [], []
+    STATE["checks"] = {}
+    with threadpool_limits(limits=1):
+        prepared = prepare(counts)
+        STATE["data"] = prepared[0]
+        for tree_name, index in TREES.items():
+            dist = pdist(prepared[index])
+            STATE["cache"] = {}
+            for arm in ARMS:
+                STATE.update(arm=arm, splits=[])
+                start = perf_counter()
+                result = fit(prepared[0], dist, tree_name)
+                key = {"model": model, "replicate": replicate, "tree": tree_name, "arm": arm}
+                bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+                splits.extend({**key, **row, "bh_different": bool(bh[row["node"]])} for row in STATE["splits"])
+                datasets.append({**key, "status": result.status.value, "found_clusters": result.found_clusters,
+                                 "ari": float(adjusted_rand_score(np.asarray(truth), result.labels)),
+                                 "sec": perf_counter() - start})
+    return datasets, splits, {"model": model, "replicate": replicate, **STATE["checks"]}
+
+
+def jobs():
+    signal = [(m, r) for m in SIGNALS for r in range(VALIDATION_MODELS[m]["replicates"])]
+    return signal + [(m, r) for m in NULLS for r in range(300)]
+
+
+def main(workers):
+    paths = {name: HERE / f"{name}.jsonl" for name in ("datasets", "splits", "checks")}
+    done = set()
+    if paths["checks"].exists():
+        done = {(r["model"], r["replicate"]) for r in map(json.loads, paths["checks"].read_text().splitlines())}
+    todo = [j for j in jobs() if j not in done]
+    files = {name: path.open("a", buffering=1) for name, path in paths.items()}
+    with Pool(workers) as pool:
+        for i, (datasets, splits, checks) in enumerate(pool.imap_unordered(task, todo), 1):
+            files["splits"].write("".join(json.dumps(r) + "\n" for r in splits))
+            files["datasets"].write("".join(json.dumps(r) + "\n" for r in datasets))
+            files["checks"].write(json.dumps(checks) + "\n")
+            if i % 25 == 0:
+                print(f"{i}/{len(todo)}", flush=True)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "check":
+        for job in (("low", 0), ("signal_balanced", 0)):
+            t = perf_counter()
+            datasets, splits, checks = task(job)
+            print(job, f"{perf_counter() - t:.1f}s", checks)
+            for d in datasets:
+                print(d["tree"], d["arm"], d["found_clusters"], round(d["ari"], 3), round(d["sec"], 1))
+            for s in splits:
+                if s["arm"] == "rule_out_overlap_ties" and s["n_parent"] >= 100:
+                    print({k: (round(v, 3) if isinstance(v, float) else v) for k, v in s.items()
+                           if k in ("tree", "n_parent", "k", "separable", "low_overlap", "few_ties_1d", "misplaced", "tie_1d", "real", "p")})
+    else:
+        main(int(sys.argv[1]))
+
+# ===== summarize_e2.py =====
+"""E2 of protocol.md: frozen rule for rule_out, rule_out_overlap and rule_out_overlap_ties (today from the exclusion run)."""
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+OLD = HERE.parent / "split_count_exclusion_20261108"
+pd.set_option("display.width", 250)
+NULLS = ["low", "matched_median", "high"]
+
+
+def load(path):
+    return pd.DataFrame(map(json.loads, path.read_text().splitlines()))
+
+
+ds = pd.concat([load(HERE / "datasets.jsonl"), load(OLD / "datasets.jsonl").query("arm == 'today'")])
+sp = load(HERE / "splits.jsonl")
+sp["passed"] = sp.p <= 0.01
+sp["bin"] = pd.cut(sp.n_parent, [1, 9, 39, 159, 400], labels=["2-9", "10-39", "40-159", "160-400"])
+null = sp[sp.model.isin(NULLS)]
+large = null[null.n_parent >= 40].groupby(["tree", "model", "arm"]).passed.mean().unstack("arm")
+small = null[null.n_parent.between(10, 39)].groupby(["tree", "model", "arm"]).passed.mean().unstack("arm")
+fp = ds[ds.model.isin(NULLS)].groupby(["tree", "model", "arm"]).found_clusters.apply(lambda x: int((x > 1).sum())).unstack("arm")
+ari = ds[~ds.model.isin(NULLS)].groupby(["tree", "model", "arm"]).ari.mean().unstack("arm")
+clusters = ds[~ds.model.isin(NULLS)].groupby(["tree", "model", "arm"]).found_clusters.median().unstack("arm")
+lines = []
+for name, t in [("Large splits (>= 40 cells), share p <= 0.01", large), ("Small splits (10-39), share p <= 0.01", small),
+                ("False partitions of 300", fp), ("Mean ARI, real groups", ari), ("Median clusters, real groups", clusters)]:
+    lines.append(f"{name}\n{t.round(3).to_string()}")
+arms = ["rule_out", "rule_out_overlap", "rule_out_overlap_ties"]
+mw_l, mw_s = large.loc["markov_ward"], small.loc["markov_ward"]
+today_ari = ari.loc["symmetric_average", "today"]
+rule = {a: {"fixes_large": bool(all(mw_l.loc[m, a] <= 0.02 for m in ("low", "matched_median"))),
+            "fixes_small": bool(all(mw_s.loc[m, a] <= 0.02 for m in ("low", "matched_median"))),
+            "keeps_real_groups": bool(((ari.loc["symmetric_average", a] - today_ari).abs() <= 0.02).all())} for a in arms}
+lines.append("Frozen rule: " + json.dumps(rule))
+checks = load(HERE / "checks.jsonl")
+lines.append(f"cell-count check: {sum(c[1] for c in checks.n_matches_record)}/{sum(c[0] for c in checks.n_matches_record)}")
+text = "\n\n".join(lines)
+(HERE / "summary_e2.txt").write_text(text + "\n")
+print(text)
+
+# ===== summary_e2.txt =====
+Large splits (>= 40 cells), share p <= 0.01
+arm                               rule_out  rule_out_overlap  rule_out_overlap_ties
+tree              model                                                            
+markov_ward       high               0.004             0.013                  0.071
+                  low                0.000             0.004                  0.006
+                  matched_median     0.009             0.016                  0.019
+symmetric_average high               0.000             0.008                  0.044
+                  low                0.000             0.000                  0.000
+                  matched_median     0.000             0.000                  0.000
+
+Small splits (10-39), share p <= 0.01
+arm                               rule_out  rule_out_overlap  rule_out_overlap_ties
+tree              model                                                            
+markov_ward       high               0.023             0.047                  0.041
+                  low                0.007             0.007                  0.007
+                  matched_median     0.016             0.020                  0.016
+symmetric_average high               0.000             0.000                  0.000
+                  low                0.000             0.000                  0.000
+                  matched_median     0.000             0.000                  0.000
+
+False partitions of 300
+arm                               rule_out  rule_out_overlap  rule_out_overlap_ties  today
+tree              model                                                                   
+markov_ward       high                  15                36                    141    300
+                  low                    2                13                     17    298
+                  matched_median        25                42                     46    296
+symmetric_average high                   0                 9                     47    259
+                  low                    0                 0                      0      2
+                  matched_median         0                 0                      0     50
+
+Mean ARI, real groups
+arm                                         rule_out  rule_out_overlap  rule_out_overlap_ties  today
+tree              model                                                                             
+markov_ward       signal_balanced              1.000             0.989                  0.956  0.315
+                  signal_density_variation     0.867             0.530                  0.264  0.025
+                  signal_imbalanced            1.000             0.821                  0.637  0.079
+                  signal_singleton             0.879             0.728                  0.757  0.092
+symmetric_average signal_balanced              0.800             0.800                  0.800  0.800
+                  signal_density_variation     0.667             0.667                  0.660  0.651
+                  signal_imbalanced            1.000             1.000                  1.000  1.000
+                  signal_singleton             0.880             0.880                  0.880  0.880
+
+Median clusters, real groups
+arm                                         rule_out  rule_out_overlap  rule_out_overlap_ties  today
+tree              model                                                                             
+markov_ward       signal_balanced                4.0               4.0                    4.0   20.0
+                  signal_density_variation       5.0              15.0                   17.0   81.0
+                  signal_imbalanced              4.0               4.0                    7.5   25.5
+                  signal_singleton               4.0               5.0                    4.0   22.0
+symmetric_average signal_balanced                4.0               4.0                    4.0    4.0
+                  signal_density_variation       7.0               7.0                    7.0   13.0
+                  signal_imbalanced              4.0               4.0                    4.0    4.0
+                  signal_singleton               4.0               4.0                    4.0    4.0
+
+Frozen rule: {"rule_out": {"fixes_large": true, "fixes_small": true, "keeps_real_groups": true}, "rule_out_overlap": {"fixes_large": true, "fixes_small": true, "keeps_real_groups": true}, "rule_out_overlap_ties": {"fixes_large": true, "fixes_small": true, "keeps_real_groups": true}}
+
+cell-count check: 11488/11488
+
+# ===== overlap_by_size.txt =====
+Tested splits with an invariant direction: Fisher misplaced fraction by subtree size
+                                      splits  median_misplaced  share_misplaced_le_allowed  share_zero_overlap
+kind       tree              size                                                                             
+group data markov_ward       32-79       333             0.137                       0.447               0.063
+                             80-159      417             0.177                       0.242               0.010
+                             160-399     248             0.224                       0.109               0.008
+                             400+        159             0.000                       0.824               0.660
+           symmetric_average 32-79        10             0.100                       0.800               0.400
+                             80-159       11             0.085                       0.909               0.000
+                             160-399       4             0.080                       1.000               0.000
+                             400+        110             0.000                       0.900               0.864
+no-group   markov_ward       32-79      2135             0.147                       0.403               0.121
+                             80-159     2994             0.200                       0.148               0.008
+                             160-399    1145             0.187                       0.286               0.000
+                             400+        507             0.130                       0.412               0.000
+           symmetric_average 32-79       186             0.195                       0.258               0.027
+                             80-159      403             0.172                       0.310               0.000
+                             160-399     336             0.098                       0.503               0.000
+                             400+        305             0.112                       0.456               0.000
+

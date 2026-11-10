@@ -1,0 +1,458 @@
+# ===== protocol.md =====
+# Protocol: splits, leaves, eigenvectors, eigenvalues, geometric multiplicity and separations that do not fit the topology (frozen 2026-11-08)
+
+## Question (user-confirmed)
+
+Analyse, per subtree, the number of splits, the given number of leaves, the number of eigenvectors, the
+eigenvalues and the geometrical multiplicity, including that not all separations fit into a topology, which
+leads to alternative clusters.
+
+## Per-subtree quantities (feature space = the 30 PCs the tests use)
+
+- n = leaves; number of two-group splits of the leaf set 2^(n-1) - 1 (reported as n - 1 bits); rooted binary
+  topologies (2n - 3)!! (log10).
+- Eigenvalues of the subtree's cell covariance (no whitening). Noise level = median eigenvalue / median of the
+  Marchenko-Pastur law with ratio p/n; noise edge = level * (1 + sqrt(p/n))^2. Number of eigenvectors above the
+  edge = k (invariant directions); the bulk below it (p - k directions) is the fuzzy part.
+- Geometric multiplicity of the eigenvalues above the edge: consecutive eigenvalues are put in one group while
+  a likelihood-ratio test of equality for the block does not reject at 0.01:
+  stat = (n - 1) * [m * log(mean of block) - sum(log l_i)], reference chi2 with (m - 1)(m + 2)/2 df (derived
+  here as the sphericity test of an m-dimensional block; attribution to Anderson 1963 / Lawley 1956 is not
+  verified). Calibration of this rule is checked by simulation (E2) before it is read.
+- Subtrees analysed: simulated data, every node with n >= 60; real data, nodes with n >= 500 whose smaller
+  child has >= 50 cells (splits that are not peels).
+
+## Separations that do not fit the topology
+
+A two-group separation of a subtree's cells fits the rooted topology below the subtree when one of its sides
+is a clade (a node's leaf set) below it. With true labels: groups present = labels with >= 5 cells (simulated)
+or >= 20 cells (real) in the subtree.
+
+- Simulated data (g <= 5 groups): every group bipartition (2^(g-1) - 1) of the subtree's labelled cells;
+  strength = n_S n_R / n * d' W^-1 d, d = mean difference, W = pooled within-group covariance of the subtree;
+  fits = some clade below the subtree holds >= 95% of side S (or of its complement) with >= 95% purity.
+  An alternative cluster = a bipartition that does not fit. Reported: share of bipartitions that fit, and the
+  strength of the strongest non-fitting bipartition relative to the strongest fitting one, by the
+  multiplicity pattern of the subtree's top eigenvalues.
+- Real data (190 cell lines, too many to enumerate): per analysed node, lines present and lines cut by the
+  node's split (each child holds >= 10% of the line's cells in the node), by k and multiplicity pattern.
+
+## Data and trees
+
+- Simulated: 50 replicates of each no-group model (`low`, `matched_median`, `high`) and all 35 real-group
+  datasets of 2026-11-08; frozen preparation (`validate.prepare`); default tree = average linkage on the
+  symmetric diffusion coordinates, Markov/Ward = Ward linkage on the Markov coordinates (scipy, same inputs
+  as production; production's canonical sample order is not applied, so ties may break differently).
+- Real: the CHOIR cell-line data (48,879 cells, 190 lines), the saved trees of 2026-11-06
+  (`choir_cell_lines_tbs_merged_20261106/linkage.npy` default, `choir_tbs_recovery_comparison_20261103_174622/
+  markov_ward/linkage.npy`), the 30 PCs in `choir_cell_lines_tbs_merged_20261106/pca.npy`; leaf i = cell i
+  in `cell_metadata.csv` order (as the 2026-11-06 comparison read them).
+
+## Endpoints (descriptive; no decision rule)
+
+- E1 k and multiplicity pattern by model, tree and subtree role (root; nodes with >= 2 true groups; nodes
+  with one group).
+- E2 calibration of the multiplicity rule: Gaussian samples with p = 30, n in {100, 400, 1000}, top
+  eigenvalue patterns (20,20,20), (20), (30,20,10) on a unit bulk, 500 replicates: share of runs whose grouping
+  equals the true pattern.
+- E3 simulated alternative separations as above.
+- E4 real-data lines cut per analysed node by k and multiplicity pattern; share of lines kept whole.
+
+# ===== run.py =====
+"""protocol.md: per-subtree spectrum, geometric multiplicity and separations that do not fit the topology.
+
+usage: run.py calib | sim WORKERS | real
+"""
+
+import itertools
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "depth_confound_20261107"))
+sys.path.insert(1, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from scipy.cluster.hierarchy import linkage  # noqa: E402
+from scipy.spatial.distance import pdist  # noqa: E402
+from scipy.special import gammaln  # noqa: E402
+from scipy.stats import chi2  # noqa: E402
+from threadpoolctl import threadpool_limits  # noqa: E402
+
+ALPHA = 0.01
+
+
+def mp_median(ratio):
+    """Median of the unit-scale Marchenko-Pastur law with ratio p/n < 1 (numerical)."""
+    lo, hi = (1 - np.sqrt(ratio)) ** 2, (1 + np.sqrt(ratio)) ** 2
+    grid = np.linspace(lo, hi, 20001)
+    dens = np.sqrt(np.maximum((hi - grid) * (grid - lo), 0.0)) / (2 * np.pi * ratio * grid)
+    cdf = np.cumsum(dens)
+    return float(grid[np.searchsorted(cdf / cdf[-1], 0.5)])
+
+
+def multiplicities(values, n):
+    """Greedy groups of consecutive eigenvalues whose equality the block likelihood-ratio test keeps."""
+    groups, start = [], 0
+    while start < len(values):
+        end = start + 1
+        while end < len(values):
+            block = values[start:end + 1]
+            m = len(block)
+            stat = (n - 1) * (m * np.log(block.mean()) - np.log(block).sum())
+            if chi2.sf(stat, (m - 1) * (m + 2) / 2) < ALPHA:
+                break
+            end += 1
+        groups.append(end - start)
+        start = end
+    return groups
+
+
+def spectrum(points):
+    """Eigenvalues (descending), noise edge, k above it and their multiplicity groups."""
+    n, p = points.shape
+    values = np.sort(np.linalg.eigvalsh(np.cov(points.T)))[::-1]
+    ratio = p / n
+    level = np.median(values) / mp_median(ratio)
+    edge = level * (1 + np.sqrt(ratio)) ** 2
+    k = int(np.sum(values > edge))
+    return {"n": n, "eig": values, "noise_level": float(level), "edge": float(edge), "k": k,
+            "multiplicity": multiplicities(values[:k], n)}
+
+
+def log10_topologies(n):
+    """log10 of (2n - 3)!!, the rooted binary topologies of n labelled leaves."""
+    return float((gammaln(2 * n - 1) - gammaln(n) - (n - 1) * np.log(2)) / np.log(10)) if n >= 2 else 0.0
+
+
+def children_and_counts(z, codes, n_labels):
+    """Child arrays and per-label leaf counts for every node of a scipy linkage (leaves 0..n-1)."""
+    n = len(codes)
+    left, right = z[:, 0].astype(int), z[:, 1].astype(int)
+    counts = np.zeros((2 * n - 1, n_labels), dtype=np.int32)
+    counts[np.arange(n), codes] = 1
+    for i in range(n - 1):
+        counts[n + i] = counts[left[i]] + counts[right[i]]
+    return left, right, counts
+
+
+def descendants(node, n, left, right):
+    """All nodes below `node` (inclusive) and its leaves."""
+    stack, nodes = [node], []
+    while stack:
+        u = stack.pop()
+        nodes.append(u)
+        if u >= n:
+            stack += [left[u - n], right[u - n]]
+    nodes = np.array(nodes)
+    return nodes, nodes[nodes < n]
+
+
+def bipartitions(points, labels, groups, clade_counts, clade_sizes):
+    """Every bipartition of the groups: strength and whether a clade below holds one side."""
+    keep = np.isin(labels, groups)
+    x, y = points[keep], labels[keep]
+    centered = np.vstack([x[y == g] - x[y == g].mean(0) for g in groups])
+    within = centered.T @ centered / (len(x) - len(groups))
+    w_inv = np.linalg.pinv(within)
+    rows = []
+    for size in range(1, len(groups) // 2 + 1):
+        for side in itertools.combinations(groups, size):
+            if 2 * size == len(groups) and groups[0] not in side:
+                continue  # each balanced bipartition once
+            in_s = np.isin(y, side)
+            d = x[in_s].mean(0) - x[~in_s].mean(0)
+            strength = in_s.sum() * (~in_s).sum() / len(y) * float(d @ w_inv @ d)
+            fits = False
+            for s_groups in (list(side), [g for g in groups if g not in side]):
+                total = clade_counts[:, s_groups].sum(1)
+                n_side = int(np.isin(y, s_groups).sum())
+                fits |= bool(np.any((total >= 0.95 * n_side) & (total >= 0.95 * clade_sizes)))
+            rows.append({"side": "+".join(map(str, side)), "size": size, "strength": strength, "fits": fits})
+    return rows
+
+
+def calibrate():
+    rng = np.random.default_rng(np.random.SeedSequence([20261108, 2]))
+    rows = []
+    for pattern in ((20, 20, 20), (20,), (30, 20, 10)):
+        for n in (100, 400, 1000):
+            truth = [len(list(g)) for _, g in itertools.groupby(pattern)]
+            hits = 0
+            for _ in range(500):
+                scale = np.sqrt(np.r_[pattern, np.ones(30 - len(pattern))])
+                s = spectrum(rng.standard_normal((n, 30)) * scale)
+                hits += s["k"] == len(pattern) and s["multiplicity"] == truth
+            rows.append({"pattern": str(pattern), "n": n, "true_grouping": str(truth), "share_exact": hits / 500})
+    out = pd.DataFrame(rows)
+    out.to_csv(HERE / "e2_calibration.csv", index=False)
+    print(out.to_string(index=False))
+
+
+def analyse_tree(points, z, labels, groups_min, min_n, real=False):
+    """Rows for the subtree table (E1) and the bipartition table (E3) of one tree."""
+    codes, uniq = pd.factorize(labels)
+    n = len(codes)
+    left, right, counts = children_and_counts(z, codes, len(uniq))
+    sizes = counts.sum(1)
+    nodes, bips = [], []
+    for i in range(n - 1):
+        v = n + i
+        small = int(min(sizes[left[i]], sizes[right[i]]))
+        if sizes[v] < min_n or (real and small < 50):
+            continue
+        below, leaves = descendants(v, n, left, right)
+        s = spectrum(points[leaves])
+        present = np.flatnonzero(counts[v] >= groups_min)
+        row = {"node": int(v), "is_root": v == 2 * n - 2, "n": int(sizes[v]), "n_small": small,
+               "split_bits": int(sizes[v] - 1), "log10_topologies": log10_topologies(int(sizes[v])),
+               "k": s["k"], "multiplicity": "+".join(map(str, s["multiplicity"])),
+               "top_multiplicity": s["multiplicity"][0] if s["multiplicity"] else 0,
+               "eig_top6": np.round(s["eig"][:6], 3).tolist(), "noise_level": s["noise_level"], "edge": s["edge"],
+               "groups_present": int(len(present))}
+        if real:
+            lc, rc = counts[left[i]][present], counts[right[i]][present]
+            row["lines_cut"] = int(np.sum(np.minimum(lc, rc) >= 0.10 * (lc + rc)))
+        nodes.append(row)
+        if not real and 2 <= len(present) <= 5:
+            clades = below[below != v]
+            for b in bipartitions(points[leaves], codes[leaves], list(present), counts[clades], sizes[clades]):
+                bips.append({"node": int(v), "n": int(sizes[v]), "g": int(len(present)), "k": s["k"],
+                             "multiplicity": row["multiplicity"], **b})
+    return nodes, bips
+
+
+def sim_task(job):
+    import depth  # noqa: PLC0415  (frozen generator; also puts validate on sys.path)
+    from validate import prepare  # noqa: PLC0415
+
+    model, replicate = job
+    counts, truth = depth.generate(model, replicate)
+    with threadpool_limits(limits=1):
+        data, symmetric, markov = prepare(counts)
+        points = data.to_numpy(dtype=np.float64)
+        labels = np.asarray(truth).astype(str)
+        out_nodes, out_bips = [], []
+        for name, coords, method in (("symmetric_average", symmetric, "average"), ("markov_ward", markov, "ward")):
+            z = linkage(pdist(np.asarray(coords)), method=method)
+            nodes, bips = analyse_tree(points, z, labels, groups_min=5, min_n=60)
+            key = {"model": model, "replicate": replicate, "tree": name}
+            out_nodes += [{**key, **r} for r in nodes]
+            out_bips += [{**key, **r} for r in bips]
+    return out_nodes, out_bips
+
+
+def simulate(workers):
+    import depth  # noqa: PLC0415
+    from validate import MODELS  # noqa: PLC0415
+
+    jobs = [(m, r) for m in ("signal_balanced", "signal_imbalanced", "signal_singleton", "signal_density_variation")
+            for r in range(MODELS[m]["replicates"])] + [(m, r) for m in ("low", "matched_median", "high") for r in range(50)]
+    with Pool(workers) as pool, (HERE / "sim_nodes.jsonl").open("w") as fn, (HERE / "sim_bipartitions.jsonl").open("w") as fb:
+        for i, (nodes, bips) in enumerate(pool.imap_unordered(sim_task, jobs), 1):
+            fn.write("".join(json.dumps(r, default=float) + "\n" for r in nodes))
+            fb.write("".join(json.dumps(r, default=float) + "\n" for r in bips))
+            if i % 25 == 0:
+                print(f"{i}/{len(jobs)}", flush=True)
+
+
+def real():
+    base = HERE.parent
+    meta = pd.read_csv(base / "choir_cell_lines_tbs_merged_20261106/cell_metadata.csv", index_col=0, dtype=str)
+    points = np.load(base / "choir_cell_lines_tbs_merged_20261106/pca.npy").astype(np.float64)
+    assert points.shape == (len(meta), 30)
+    trees = {"symmetric_average": base / "choir_cell_lines_tbs_merged_20261106/linkage.npy",
+             "markov_ward": base / "choir_tbs_recovery_comparison_20261103_174622/markov_ward/linkage.npy"}
+    with threadpool_limits(limits=4), (HERE / "real_nodes.jsonl").open("w") as f:
+        for name, path in trees.items():
+            z = np.load(path)
+            assert z.shape == (len(meta) - 1, 4) and int(z[-1, 3]) == len(meta)
+            nodes, _ = analyse_tree(points, z, meta.Cell_line.to_numpy(), groups_min=20, min_n=500, real=True)
+            f.write("".join(json.dumps({"tree": name, **r}, default=float) + "\n" for r in nodes))
+            print(name, len(nodes), "nodes", flush=True)
+
+
+if __name__ == "__main__":
+    {"calib": calibrate, "real": real}.get(sys.argv[1], lambda: simulate(int(sys.argv[2])))()
+
+# ===== summarize.py =====
+"""Summaries for protocol.md endpoints E1, E3, E4 (E2 is written by run.py calib)."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 220)
+
+
+def load(name):
+    return pd.DataFrame(map(json.loads, (HERE / f"{name}.jsonl").read_text().splitlines()))
+
+
+def top(series, n=3):
+    counts = series.replace("", "none").value_counts(normalize=True).head(n)
+    return "; ".join(f"{k} {v:.0%}" for k, v in counts.items())
+
+
+def main():
+    nodes, bips, real = load("sim_nodes"), load("sim_bipartitions"), load("real_nodes")
+    nodes["role"] = np.where(nodes.is_root, "root", np.where(nodes.groups_present >= 2, "several groups", "one group"))
+    e1 = nodes.groupby(["model", "tree", "role"]).agg(
+        nodes=("k", "size"), median_n=("n", "median"), share_k0=("k", lambda x: (x == 0).mean()),
+        median_k=("k", "median"), multiplicity=("multiplicity", top))
+    print("E1\n", e1.round(3).to_string(), "\n")
+
+    per_node = bips.groupby(["model", "replicate", "tree", "node"]).apply(lambda b: pd.Series({
+        "g": b.g.iloc[0], "k": b.k.iloc[0], "multiplicity": b.multiplicity.iloc[0] or "none",
+        "bipartitions": len(b), "fit": int(b.fits.sum()),
+        "ratio_best_nonfit": (b.strength[~b.fits].max() / b.strength[b.fits].max()) if (~b.fits).any() and b.fits.any() else np.nan,
+    }), include_groups=False).reset_index()
+    e3 = per_node.groupby(["model", "tree", "g", "multiplicity"]).agg(
+        nodes=("fit", "size"), bipartitions=("bipartitions", "first"), median_fit=("fit", "median"),
+        median_ratio_best_nonfit=("ratio_best_nonfit", "median"),
+        share_nonfit_within_10pct=("ratio_best_nonfit", lambda x: (x >= 0.9).mean()))
+    print("E3\n", e3.round(3).to_string(), "\n")
+    balanced = bips[(bips.model == "signal_balanced") & (bips.g == 4)]
+    e3b = balanced.groupby(["tree", "size"]).agg(bipartitions=("fits", "size"), share_fit=("fits", "mean"),
+                                                 median_strength=("strength", "median"))
+    print("E3 balanced roots by side size\n", e3b.round(3).to_string(), "\n")
+
+    real["cut_any"] = real.lines_cut > 0
+    e4 = real.groupby(["tree", "top_multiplicity"]).agg(
+        nodes=("n", "size"), median_n=("n", "median"), median_k=("k", "median"), median_lines=("groups_present", "median"),
+        median_lines_cut=("lines_cut", "median"), share_nodes_cutting=("cut_any", "mean"))
+    print("E4\n", e4.round(3).to_string(), "\n")
+    roots = real[real.n == real.n.max()][["tree", "n", "n_small", "k", "multiplicity", "eig_top6", "groups_present", "lines_cut"]]
+    print("E4 roots\n", roots.to_string(index=False))
+    for name, table in [("e1_subtrees", e1), ("e3_alternatives", e3), ("e3_balanced", e3b), ("e4_real", e4)]:
+        table.round(4).to_csv(HERE / f"{name}.csv")
+    per_node.to_csv(HERE / "e3_per_node.csv", index=False)
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== e2_calibration.csv =====
+pattern,n,true_grouping,share_exact
+"(20, 20, 20)",100,[3],0.986
+"(20, 20, 20)",400,[3],0.992
+"(20, 20, 20)",1000,[3],0.99
+"(20,)",100,[1],0.944
+"(20,)",400,[1],0.932
+"(20,)",1000,[1],0.958
+"(30, 20, 10)",100,"[1, 1, 1]",0.058
+"(30, 20, 10)",400,"[1, 1, 1]",0.852
+"(30, 20, 10)",1000,"[1, 1, 1]",0.998
+
+# ===== summary.txt =====
+E1
+                                                            nodes  median_n  share_k0  median_k            multiplicity
+model                    tree              role                                                                       
+high                     markov_ward       one group         433      96.0     0.192       2.0  1 30%; none 19%; 2 19%
+                                           root               50     400.0     0.000       1.0                  1 100%
+                         symmetric_average one group         582     102.0     0.146       1.0  1 53%; none 15%; 2 13%
+                                           root               50     400.0     0.000       1.0                  1 100%
+low                      markov_ward       one group         440     105.5     0.209       3.0  4 22%; none 21%; 5 19%
+                                           root               50     400.0     1.000       0.0               none 100%
+                         symmetric_average one group         915     263.0     0.861       0.0    none 86%; 1 5%; 2 3%
+                                           root               50     400.0     1.000       0.0               none 100%
+matched_median           markov_ward       one group         441     102.0     0.082       7.0     8 15%; 7 15%; 6 10%
+                                           root               50     400.0     0.400       1.0         1 60%; none 40%
+                         symmetric_average one group         756     173.5     0.634       0.0   none 63%; 1 26%; 6 3%
+                                           root               50     400.0     0.400       1.0         1 60%; none 40%
+signal_balanced          markov_ward       one group         235     105.0     0.026       3.0     3 37%; 4 23%; 2 22%
+                                           root               10    1000.0     0.000       3.0                  3 100%
+                                           several groups     20     625.0     0.000       2.0   2 50%; 1 25%; 1+1 25%
+                         symmetric_average one group         391     160.0     0.251       1.0  1 48%; none 25%; 2 23%
+                                           root               10    1000.0     0.000       3.0                  3 100%
+                                           several groups     23     748.0     0.000       2.0     2 43%; 1 39%; 3 13%
+signal_density_variation markov_ward       one group         373     112.0     0.029       2.0     2 33%; 1 23%; 3 20%
+                                           root                5    3000.0     0.000       4.0            1+1+1+1 100%
+                                           several groups     10    2820.5     0.000       2.5      1+1 50%; 1+1+1 50%
+                         symmetric_average one group         542     161.0     0.094       1.0   1 41%; 2 29%; none 9%
+                                           root                5    3000.0     0.000       4.0            1+1+1+1 100%
+                                           several groups     32    2700.0     0.000       2.0      1+1 56%; 1+1+1 44%
+signal_imbalanced        markov_ward       one group         238     102.0     0.063       4.0     4 29%; 3 26%; 5 19%
+                                           root               10    1000.0     0.000       3.0              1+1+1 100%
+                                           several groups     20     940.0     0.000       1.5          1 50%; 1+1 50%
+                         symmetric_average one group         369     333.0     0.593       0.0  none 59%; 2 17%; 1 12%
+                                           root               10    1000.0     0.000       3.0              1+1+1 100%
+                                           several groups     20     940.0     0.000       1.5          1 50%; 1+1 50%
+signal_singleton         markov_ward       one group         231     110.0     0.048       4.0     4 39%; 3 25%; 5 14%
+                                           root               10    1001.0     0.000       3.0              1+1+1 100%
+                                           several groups     20     941.0     0.000       1.5          1 50%; 1+1 50%
+                         symmetric_average one group         378     317.0     0.497       1.0  none 50%; 1 20%; 2 16%
+                                           root               10    1001.0     0.000       3.0              1+1+1 100%
+                                           several groups     22     901.0     0.000       1.0          1 55%; 1+1 45% 
+
+E3
+                                                            nodes  bipartitions  median_fit  median_ratio_best_nonfit  share_nonfit_within_10pct
+model                    tree              g multiplicity                                                                                      
+signal_balanced          markov_ward       2 1                 5             1         1.0                       NaN                        0.0
+                                             1+1               5             1         1.0                       NaN                        0.0
+                                           3 2                10             3         3.0                       NaN                        0.0
+                                           4 3                10             7         5.0                     0.985                        1.0
+                         symmetric_average 2 1                 9             1         1.0                       NaN                        0.0
+                                             1+1               1             1         1.0                       NaN                        0.0
+                                           3 2                10             3         3.0                       NaN                        0.0
+                                           4 3                13             7         5.0                     0.972                        1.0
+signal_density_variation markov_ward       2 1+1               5             1         1.0                       NaN                        0.0
+                                           3 1+1+1             5             3         3.0                       NaN                        0.0
+                                           4 1+1+1+1           5             7         6.0                     0.968                        1.0
+                         symmetric_average 2 1+1              18             1         1.0                       NaN                        0.0
+                                           3 1+1+1            14             3         2.0                     1.013                        1.0
+                                           4 1+1+1+1           5             7         5.0                     1.005                        1.0
+signal_imbalanced        markov_ward       2 1                10             1         1.0                       NaN                        0.0
+                                           3 1+1              10             3         3.0                       NaN                        0.0
+                                           4 1+1+1            10             7         6.0                     0.918                        0.9
+                         symmetric_average 2 1                10             1         1.0                       NaN                        0.0
+                                           3 1+1              10             3         3.0                       NaN                        0.0
+                                           4 1+1+1            10             7         6.0                     0.918                        0.9
+signal_singleton         markov_ward       2 1                10             1         1.0                       NaN                        0.0
+                                           3 1+1              10             3         3.0                       NaN                        0.0
+                                           4 1+1+1            10             7         6.0                     0.915                        0.6
+                         symmetric_average 2 1                12             1         1.0                       NaN                        0.0
+                                           3 1+1              10             3         3.0                       NaN                        0.0
+                                           4 1+1+1            10             7         6.0                     0.915                        0.6 
+
+E3 balanced roots by side size
+                         bipartitions  share_fit  median_strength
+tree              size                                          
+markov_ward       1               40      1.000       288605.785
+                  2               30      0.333       286833.348
+symmetric_average 1               52      1.000       290321.988
+                  2               39      0.333       286414.335 
+
+E4
+                                     nodes  median_n  median_k  median_lines  median_lines_cut  share_nodes_cutting
+tree              top_multiplicity                                                                                
+markov_ward       1                   161    1300.0      13.0           6.0               0.0                0.261
+                  2                    10     776.5      11.0           1.0               0.5                0.500
+symmetric_average 1                   161    1715.0      13.0          13.0               0.0                0.484
+                  2                    11     700.0      12.0          10.0               1.0                0.636 
+
+E4 roots
+        tree     n  n_small  k          multiplicity                                         eig_top6  groups_present  lines_cut
+markov_ward 48879      267 14 1+1+1+1+1+1+1+1+3+2+1 [53.093, 35.746, 24.753, 20.404, 18.238, 16.163]             190          0
+
+## Follow-up: which separations the tree drops (g = 4 nodes)
+                               size  median  <lambda_0>
+model                    side                          
+signal_balanced          0+1     15   0.968       0.200
+                         0+2     17   0.971       0.412
+                         0+3     14   0.946       0.143
+signal_density_variation 0+2     10   0.971       0.200
+                         1        5   1.005       1.000
+signal_imbalanced        0+2     20   0.918       0.000
+signal_singleton         0+2     20   0.915       0.000
+
+
+## Follow-up: failure modes of the multiplicity rule for (30, 20, 10)
+100 cells: (k=3, (2,1)) 391, (1,2) 62, (1,1,1) 33, (3,) 13 of 500
+400 cells: (1,1,1) 437, (2,1) 63 of 500

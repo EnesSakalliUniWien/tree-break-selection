@@ -1,0 +1,1550 @@
+
+# SOURCE: reports/subtree_context_statistics_20261109/run.py
+"""Trace matched clades through native gates under fixed subspace alternatives."""
+
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import importlib
+import json
+from dataclasses import asdict
+from pathlib import Path
+from unittest.mock import patch
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage
+from scipy.spatial.distance import pdist
+
+from benchmarks.diagnostics.calibration import subtree_research as research
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import (
+    subtree_spectral_alignment as align,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_candidate import (
+    topology_from_linkage,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_context import (
+    compare_node_contexts,
+)
+from reports.subtree_spectral_alignment_20261109.alternatives.run import (
+    REGIMES,
+    build_ward,
+    dataset,
+    spans,
+)
+from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (
+    compute_mean_branch_length,
+)
+from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.spectral_context import (
+    split_edge_test_rows,
+)
+from tree_break_selection.tree.distributions import resolve_node_continuous_covariance_by_block
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+EDGE_MODULE = importlib.import_module(
+    "tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence."
+    "child_parent_divergence_annotation.child_parent_divergence_annotation"
+)
+
+
+def key(rows):
+    return ",".join(str(i) for i in sorted(rows))
+
+
+def proposals(values):
+    data, space = research._frame(values)
+    for name, operator, method in (
+        ("symmetric_average", "symmetric", "average"),
+        ("markov_ward", "markov", "ward"),
+    ):
+        geometry = research.feature_family_diffusion_geometry(
+            data, space, coordinate_operator=operator
+        )
+        yield (
+            name,
+            linkage(geometry.distance_condensed, method=method),
+            geometry.coordinates,
+            None,
+            {},
+        )
+    cov = align.covariance_spectrum(values)
+    all_spans = list(spans(values))
+    leading = next(
+        blocks
+        for blocks, coords in all_spans
+        if coords.shape[1] >= 2
+        and blocks[0][0] == 0
+        and all(a[1] == b[0] for a, b in zip(blocks, blocks[1:]))
+    )
+    for blocks, coordinates in all_spans:
+        if len(blocks) != 1 and blocks != leading:
+            continue
+        columns = [i for start, stop in blocks for i in range(start, stop)]
+        name = "cov_" + "_".join(f"{a}_{b}" for a, b in blocks)
+        z, _tree = build_ward(coordinates)
+        yield (
+            name,
+            z,
+            coordinates,
+            cov.eigenvectors[:, columns],
+            {
+                "covariance_blocks": blocks,
+                "proposal_covariance_eigenvalues": cov.eigenvalues[columns],
+                "proposal_covariance_trace_share": float(
+                    cov.eigenvalues[columns].sum() / cov.eigenvalues.sum()
+                ),
+            },
+        )
+    z, _tree = build_ward(values)
+    yield (
+        "cov_full",
+        z,
+        values,
+        np.eye(values.shape[1]),
+        {
+            "proposal_covariance_eigenvalues": cov.eigenvalues,
+            "proposal_covariance_trace_share": 1.0,
+        },
+    )
+
+
+def spectral_record(context, node):
+    return {
+        "eigenvalues": context.principal_component_eigenvalues_by_node.get(node),
+        "projection": context.principal_component_projections_by_node.get(node),
+        "raw_mp": context.raw_mp_signal_counts_by_node.get(node),
+        "test_dimension": context.test_projection_dimensions_by_node.get(node),
+    }
+
+
+def covariance_span_record(raw_cov, source_basis, source_coordinates):
+    positive = np.count_nonzero(
+        raw_cov.eigenvalues
+        > max(raw_cov.eigenvalues[0], 0)
+        * np.finfo(float).eps
+        * max(source_coordinates.shape[0], source_basis.shape[0])
+    )
+    # A block crossing the numerical zero boundary cannot supply a stable partial span.
+    available = max((stop for _, stop in raw_cov.blocks if stop <= positive), default=0)
+    rank = min(source_basis.shape[1], available)
+    for start, stop in raw_cov.blocks:
+        if start < rank <= stop:
+            rank = stop
+            break
+    trace = float(raw_cov.eigenvalues.sum())
+    return {
+        "inherited_vs_rebuilt_covariance_span": asdict(
+            align.compare_subspaces(source_basis, raw_cov.eigenvectors[:, :rank])
+        ),
+        "inherited_local_variance_share": (
+            float(np.var(source_coordinates, axis=0, ddof=1).sum() / trace) if trace > 0 else None
+        ),
+    }
+
+
+def fit_tree(values, truth, z, source_coordinates, source_basis):
+    data, space = research._frame(values)
+    captured = {}
+    original_spectral = EDGE_MODULE.compute_child_parent_spectral_context
+    original_gate = research.run_gate_annotation_pipeline
+
+    def spectral(tree, *args, **kwargs):
+        result = original_spectral(tree, *args, **kwargs)
+        name = "edge_half" if kwargs.get("basis_row_indices_by_node") is not None else "all_leaf"
+        captured[name] = result
+        return result
+
+    def gate(tree, *args, **kwargs):
+        result = original_gate(tree, *args, **kwargs)
+        captured["tree"] = tree
+        return result
+
+    with (
+        patch.object(EDGE_MODULE, "compute_child_parent_spectral_context", spectral),
+        patch.object(research, "run_gate_annotation_pipeline", gate),
+    ):
+        metrics, detail = research.evaluate_tree(data, truth, space, z, trace=True)
+    if "tree" not in captured:
+        return {"metrics": metrics, "nodes": {}, "trace": detail}
+    tree = captured["tree"]
+    position = {name: i for i, name in enumerate(data.index)}
+    leaves = {
+        node: tuple(sorted(position[label] for label in labels))
+        for node, labels in tree.compute_descendant_sets().items()
+    }
+    test_rows, basis_rows = split_edge_test_rows(tree, data)
+    mean_length = compute_mean_branch_length(tree)
+    records = {str(row["parent"]): row for row in detail["raw_records"]}
+    annotations = {str(row["node_id"]): row for row in detail["annotations"]}
+    traversal = detail.get("traversal", {})
+    visited = {str(row["node_id"]): row for row in traversal.get("traversal_trace", [])}
+    nodes = {}
+    for node in tree:
+        children = list(tree.successors(node))
+        if len(children) != 2:
+            continue
+        parents = list(tree.predecessors(node))
+        parent = parents[0] if parents else None
+        rows = list(leaves[node])
+        raw_cov = align.covariance_spectrum(values[rows])
+        covariances = resolve_node_continuous_covariance_by_block(
+            tree,
+            node,
+            space,
+            continuous_covariance_policy="guarded_within_child",
+            continuous_covariance_min_child_leaf_count=8,
+        )
+        ann = annotations[str(node)]
+        raw = records.get(str(node))
+        trace = visited.get(str(node))
+        eligible = (
+            not bool(ann["Sibling_Divergence_Skipped"])
+            and not bool(ann["Sibling_Divergence_Invalid"])
+            and ann["Sibling_Gate_P_Value_Role"] == "active_traversal_sibling_gate"
+            and np.isfinite(ann["Sibling_Divergence_P_Value"])
+        )
+        active = eligible and np.isfinite(ann["Sibling_Divergence_P_Value_Corrected"])
+        record = {
+            "native_node_id": str(node),
+            "leaves": leaves[node],
+            "parent": leaves[parent] if parent is not None else None,
+            "children": sorted(leaves[child] for child in children),
+            "raw_covariance_eigenvalues": raw_cov.eigenvalues,
+            "guarded_covariance_eigenvalues": {
+                name: np.linalg.eigvalsh(cov) if cov.ndim == 2 else cov
+                for name, cov in covariances.items()
+            },
+            "sibling_all_leaf_context": spectral_record(captured["all_leaf"], node),
+            "outgoing_edge_half_context": spectral_record(captured["edge_half"], node),
+            "incoming_edge_half_context": spectral_record(captured["edge_half"], parent)
+            if parent is not None
+            else None,
+            "incoming_test_rows": sorted(test_rows[node]) if parent is not None else None,
+            "incoming_parent_test_rows": sorted(
+                i for child in tree.successors(parent) for i in test_rows[child]
+            )
+            if parent is not None
+            else None,
+            "incoming_basis_rows": sorted(basis_rows.get(parent, []))
+            if parent is not None
+            else None,
+            "outgoing_basis_rows": sorted(basis_rows.get(node, [])),
+            "outgoing_edges": [
+                {
+                    "leaves": leaves[child],
+                    "test_rows": sorted(test_rows[child]),
+                    "annotations": annotations[str(child)],
+                }
+                for child in children
+            ],
+            "annotations": ann,
+            "raw_sibling": raw,
+            "sibling_gate_state": "active_reject"
+            if active and ann["Sibling_BH_Different"]
+            else "active_nonreject"
+            if active
+            else "eligible_not_bh_tested"
+            if eligible
+            else "unavailable",
+            "visited": trace is not None,
+            "traversal_decision": None if trace is None else trace["decision"],
+            "final_boundary": None if trace is None else trace["final_boundary"],
+            "mean_positive_branch": mean_length,
+            "sibling_branch_factor": None
+            if raw is None
+            else 1.0
+            if mean_length is None
+            else 1 + raw["branch_length_sum"] / (2 * mean_length),
+            "incoming_branch_factor": None
+            if parent is None
+            else 1.0
+            if mean_length is None
+            else 1 + tree.edges[parent, node]["branch_length"] / mean_length,
+        }
+        if source_basis is not None:
+            record.update(covariance_span_record(raw_cov, source_basis, source_coordinates[rows]))
+        nodes[key(rows)] = record
+    return {"metrics": metrics, "nodes": nodes, "trace": detail}
+
+
+def compare(reference_tree, alternative_tree, reference, alternative):
+    for context in compare_node_contexts(reference_tree, alternative_tree):
+        r = reference["nodes"][key(context.node)]
+        a = alternative["nodes"].get(key(context.node))
+        out = asdict(context)
+        out.update(
+            reference_node_id=r["native_node_id"],
+            alternative_node_id=None if a is None else a["native_node_id"],
+            node_size=len(context.node),
+        )
+        for name in (
+            "sibling_gate_state",
+            "visited",
+            "traversal_decision",
+            "final_boundary",
+            "sibling_branch_factor",
+        ):
+            out["reference_" + name] = r[name]
+            out["alternative_" + name] = None if a is None else a[name]
+        fields = (
+            "Sibling_Raw_Test_Statistic",
+            "Sibling_Test_Statistic",
+            "Sibling_Degrees_of_Freedom",
+            "Sibling_Inflation_Factor",
+            "Sibling_Divergence_P_Value",
+            "Sibling_Divergence_P_Value_Corrected",
+            "Child_Parent_Divergence_Test_Statistic",
+            "Child_Parent_Divergence_df",
+            "Child_Parent_Divergence_P_Value",
+            "Child_Parent_Divergence_Tested",
+            "Child_Parent_Divergence_Ancestor_Blocked",
+            "Child_Parent_Divergence_Significant",
+        )
+        for name in fields:
+            incoming_root = name.startswith("Child_Parent_") and context.original_parent is None
+            out["reference_" + name] = None if incoming_root else r["annotations"][name]
+            out["alternative_" + name] = (
+                None if a is None or incoming_root else a["annotations"][name]
+            )
+        for name in ("stat", "degrees_of_freedom", "p_value", "reference_scale"):
+            out["reference_collected_sibling_" + name] = (
+                None if r["raw_sibling"] is None else r["raw_sibling"][name]
+            )
+            out["alternative_collected_sibling_" + name] = (
+                None if a is None or a["raw_sibling"] is None else a["raw_sibling"][name]
+            )
+        if a is not None:
+            np.testing.assert_allclose(
+                r["raw_covariance_eigenvalues"], a["raw_covariance_eigenvalues"], atol=1e-12
+            )
+            out["same_incoming_test_rows"] = (
+                None
+                if context.original_parent is None
+                else r["incoming_test_rows"] == a["incoming_test_rows"]
+                and r["incoming_parent_test_rows"] == a["incoming_parent_test_rows"]
+            )
+            out["same_incoming_basis_rows"] = (
+                None
+                if context.original_parent is None
+                else r["incoming_basis_rows"] == a["incoming_basis_rows"]
+            )
+            out["same_outgoing_basis_rows"] = r["outgoing_basis_rows"] == a["outgoing_basis_rows"]
+        yield out
+
+
+def source_hashes():
+    paths = sorted((ROOT / "tree_break_selection").rglob("*.py"))
+    paths += [
+        Path(__file__),
+        ROOT / "benchmarks/diagnostics/calibration/subtree_research.py",
+        ROOT / "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_context.py",
+        ROOT
+        / "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_spectral_alignment.py",
+        ROOT
+        / "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_candidate.py",
+        ROOT / "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_geometry.py",
+        ROOT / "benchmarks/shared/metrics.py",
+        ROOT / "benchmarks/shared/statistical_profiles.py",
+        ROOT / "reports/subtree_spectral_alignment_20261109/alternatives/run.py",
+    ]
+    return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+
+
+def run(output, replicates=4):
+    if not 1 <= replicates <= 4:
+        raise ValueError("Expected 1 through 4 declared replicates")
+    output.mkdir(parents=True, exist_ok=True)
+    if (output / "manifest.json").exists():
+        raise FileExistsError(f"Refusing to overwrite {output}")
+    before = source_hashes()
+    (output / "manifest.json").write_text(
+        json.dumps({"replicates": replicates, "source_hashes": before}, indent=2)
+    )
+    attempts = []
+    count = 0
+    with gzip.open(output / "comparisons.jsonl.gz", "xt") as comparisons:
+        for case in REGIMES:
+            for replicate in range(replicates):
+                values, truth, seed = dataset(case, replicate)
+                labels = np.zeros(len(values), dtype=int) if truth is None else truth[2]
+                fitted = {}
+                for name, z, coords, basis, metadata in proposals(values):
+                    base = {
+                        "case": case,
+                        "replicate": replicate,
+                        "seed": seed,
+                        "method": name,
+                        "data_hash": hashlib.sha256(values.tobytes()).hexdigest(),
+                        **metadata,
+                    }
+                    try:
+                        result = fit_tree(values, labels, z, coords, basis)
+                        base.update(status=result["metrics"]["status"], metrics=result["metrics"])
+                        if result["nodes"]:
+                            fitted[name] = (topology_from_linkage(z), result)
+                        with gzip.open(
+                            output / f"fit_{case}_{replicate}_{name}.json.gz", "xt"
+                        ) as stream:
+                            json.dump(
+                                {**base, "linkage": z, "source_distances": pdist(coords), **result},
+                                stream,
+                                default=diagnostic_json_default,
+                            )
+                    except Exception as exc:
+                        base.update(status="error", reason=f"{type(exc).__name__}: {exc}")
+                    attempts.append(base)
+                for reference_name in ("symmetric_average", "markov_ward"):
+                    if reference_name not in fitted:
+                        continue
+                    rt, r = fitted[reference_name]
+                    for name, (at, a) in fitted.items():
+                        if not name.startswith("cov_"):
+                            continue
+                        for comparison in compare(rt, at, r, a):
+                            record = {
+                                "case": case,
+                                "replicate": replicate,
+                                "reference_method": reference_name,
+                                "alternative_method": name,
+                                **comparison,
+                            }
+                            comparisons.write(
+                                json.dumps(record, default=diagnostic_json_default) + "\n"
+                            )
+                            count += 1
+                print(f"{case} {replicate}: {len(fitted)} traces", flush=True)
+    (output / "attempts.json").write_text(
+        json.dumps(attempts, default=diagnostic_json_default, indent=2)
+    )
+    after = source_hashes()
+    changed = [p for p in set(before) | set(after) if before.get(p) != after.get(p)]
+    verification = {
+        "attempts": len(attempts),
+        "status_counts": {
+            s: sum(r["status"] == s for r in attempts)
+            for s in sorted({r["status"] for r in attempts})
+        },
+        "node_comparisons": count,
+        "source_files_changed": changed,
+    }
+    (output / "verification.json").write_text(json.dumps(verification, indent=2))
+    print(json.dumps(verification), flush=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--replicates", type=int, default=4)
+    args = parser.parse_args()
+    run(args.output, args.replicates)
+
+# SOURCE: reports/subtree_context_statistics_20261109/summarize_native.py
+"""Summarize saved native node-context comparisons without rerunning fits."""
+
+from __future__ import annotations
+
+import gzip
+import hashlib
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+from benchmarks.diagnostics.calibration.reporting import diagnostic_json_default
+from benchmarks.diagnostics.calibration.selected.hierarchy import (
+    subtree_spectral_alignment as align,
+)
+from reports.subtree_context_statistics_20261109.run import covariance_span_record
+from reports.subtree_spectral_alignment_20261109.alternatives.run import dataset
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+NATIVE = HERE / "native"
+PRIOR = HERE.parent / "subtree_spectral_alignment_20261109/parent_child/rows.jsonl.gz"
+REFS = {"symmetric_average": "symmetric", "markov_ward": "markov"}
+DF = "collected_sibling_degrees_of_freedom"
+T = "collected_sibling_stat"
+KEYS = ["case", "replicate", "reference_method", "alternative_method", "reference_node_id"]
+
+
+def read(path, lines=False):
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt") as stream:
+        return [json.loads(line) for line in stream] if lines else json.load(stream)
+
+
+def describe(values):
+    x = np.asarray(values, dtype=float)
+    x = x[np.isfinite(x)]
+    return (
+        dict(n=len(x), min=float(x.min()), median=float(np.median(x)), max=float(x.max()))
+        if len(x)
+        else dict(n=0, min=None, median=None, max=None)
+    )
+
+
+def paired(frame, field):
+    a, b = (
+        pd.to_numeric(frame[f"{arm}_{field}"], errors="coerce")
+        for arm in ("reference", "alternative")
+    )
+    keep = np.isfinite(a) & np.isfinite(b)
+    a, b = a[keep], b[keep]
+    delta = b - a
+    changed = ~np.isclose(a, b, atol=1e-10, rtol=1e-10)
+    denominator = np.maximum(np.maximum(np.abs(a), np.abs(b)), np.finfo(float).tiny)
+    return describe(delta) | {
+        "changed": int(changed.sum()),
+        "median_abs_delta": float(np.median(np.abs(delta))) if len(delta) else None,
+        "changed_abs_delta": describe(np.abs(delta[changed])),
+        "changed_relative_delta": describe(np.abs(delta[changed]) / denominator[changed]),
+    }
+
+
+def transitions(frame, field):
+    a = frame["reference_" + field].astype("string").fillna("not_recorded")
+    b = (
+        frame["alternative_" + field]
+        .astype("string")
+        .fillna("not_recorded")
+        .where(frame.node_exists, "absent")
+    )
+    return [
+        {"reference": left, "alternative": right, "n": int(count)}
+        for (left, right), count in pd.DataFrame({"a": a, "b": b}).value_counts().items()
+    ]
+
+
+def context(frame):
+    return {
+        "comparisons": len(frame),
+        "datasets": len(frame[["case", "replicate"]].drop_duplicates()),
+        "T": paired(frame, T),
+        "df": paired(frame, DF),
+        "T_over_df": paired(frame, "T_over_df"),
+        "branch_factor": paired(frame, "sibling_branch_factor"),
+        "branch_unscaled_T": paired(frame, "branch_unscaled_T"),
+        "inflation": paired(frame, "Sibling_Inflation_Factor"),
+        **{
+            name: int(frame[name].eq(True).sum())
+            for name in (
+                "same_incoming_test_rows",
+                "same_incoming_basis_rows",
+                "same_outgoing_basis_rows",
+            )
+        },
+        **{
+            field: transitions(frame, field)
+            for field in ("sibling_gate_state", "visited", "traversal_decision", "final_boundary")
+        },
+    }
+
+
+def structure(frame):
+    assert not frame.duplicated(KEYS).any()
+    frame["root"] = frame.original_parent.isna()
+    assert not frame.loc[frame.root, ["case_1", "case_3", "case_4"]].any().any()
+    assert frame.case_4.eq(frame.case_2 & frame.case_3).all()
+    assert frame.case_1.eq(~frame.node_exists).all()
+    assert frame.loc[~frame.node_exists, "alternative_" + T].isna().all()
+    for arm in ("reference", "alternative"):
+        stat = pd.to_numeric(frame[f"{arm}_{T}"], errors="coerce")
+        df = pd.to_numeric(frame[f"{arm}_{DF}"], errors="coerce")
+        frame[f"{arm}_T_over_df"] = stat / df.where(df > 0)
+        frame[f"{arm}_branch_unscaled_T"] = stat * pd.to_numeric(
+            frame[f"{arm}_sibling_branch_factor"], errors="coerce"
+        )
+    cases = {
+        name: int(frame[name].sum())
+        for name in ("case_1", "case_2", "case_3", "case_4", "at_least_one_child_absent")
+    }
+    cases["case_2_present_node"] = int((frame.case_2 & frame.node_exists).sum())
+    cases["root_case_2"] = int((frame.root & frame.case_2).sum())
+    present = frame.loc[frame.node_exists & ~frame.root]
+    contexts = {}
+    for parent in (True, False):
+        for children in (True, False):
+            name = f"parent_{'same' if parent else 'changed'}_children_{'same' if children else 'changed'}"
+            mask = present.direct_parent_preserved.eq(
+                parent
+            ) & present.direct_children_preserved.eq(children)
+            contexts[name] = context(present.loc[mask])
+    assert sum(stats["comparisons"] for stats in contexts.values()) == len(present)
+    same_children = present.loc[present.direct_children_preserved.eq(True)]
+    size_presence = []
+    for lower, upper in ((2, 3), (4, 7), (8, 15), (16, 31), (32, 63), (64, 64)):
+        selected = frame.loc[frame.node_size.between(lower, upper)]
+        size_presence.append(
+            {
+                "range": [lower, upper],
+                "comparisons": len(selected),
+                "present": int(selected.node_exists.sum()),
+                "absent": int((~selected.node_exists).sum()),
+            }
+        )
+    roots = {
+        key: context(frame.loc[frame.root & frame.direct_children_preserved.eq(keep)])
+        for key, keep in (("root_children_same", True), ("root_children_changed", False))
+    }
+    examples = {}
+    cols = KEYS + [
+        "node",
+        "original_parent",
+        "alternative_parent",
+        "original_children",
+        "alternative_children",
+    ]
+    cols += [
+        f"{arm}_{field}"
+        for arm in ("reference", "alternative")
+        for field in (
+            T,
+            DF,
+            "sibling_branch_factor",
+            "Sibling_Inflation_Factor",
+            "sibling_gate_state",
+            "visited",
+        )
+    ]
+    numeric = frame.loc[
+        np.isfinite(frame.reference_T_over_df) & np.isfinite(frame.alternative_T_over_df)
+    ]
+    for name, mask in (
+        ("case4", numeric.case_4),
+        (
+            "same_children_changed_parent",
+            numeric.node_exists
+            & ~numeric.root
+            & numeric.direct_parent_preserved.eq(False)
+            & numeric.direct_children_preserved,
+        ),
+    ):
+        rows = numeric.loc[mask].sort_values(KEYS)
+        if len(rows):
+            examples[name] = json.loads(rows[cols].iloc[:1].to_json(orient="records"))[0]
+    return {
+        "comparisons": len(frame),
+        "root_comparisons": int(frame.root.sum()),
+        "present_nonroot": len(present),
+        "cases": cases,
+        "nonroot_2x2": contexts,
+        "same_children_nonroot_branch_unscaled_T": paired(same_children, "branch_unscaled_T"),
+        "presence_by_node_size": size_presence,
+        "root": roots,
+        "all_gate_transitions": transitions(frame, "sibling_gate_state"),
+        "all_visit_transitions": transitions(frame, "visited"),
+        "finite_raw_p_without_active_alternative_BH": int(
+            (
+                frame.node_exists
+                & np.isfinite(frame.alternative_collected_sibling_p_value)
+                & ~frame.alternative_sibling_gate_state.isin(["active_reject", "active_nonreject"])
+            ).sum()
+        ),
+        "examples": examples,
+    }
+
+
+def span_group_summary(table):
+    return [
+        {
+            "method": method,
+            "root": bool(root),
+            "n": len(rows),
+            "same_span": int(rows.same.sum()),
+            "rank_mismatch": int(rows.rank_mismatch.sum()),
+            "projector_gap": describe(rows.gap),
+            "equal_rank_projector_gap": describe(rows.loc[~rows.rank_mismatch, "gap"]),
+            "equal_rank_different_span": int((~rows.rank_mismatch & ~rows.same).sum()),
+            "local_share": describe(rows.local_share),
+        }
+        for (method, root), rows in table.groupby(["method", "root"])
+    ]
+
+
+def trace_summary(attempts):
+    previous = {(r["case"], r["replicate"], r["operator"]): r for r in read(PRIOR, lines=True)}
+    regenerated, covariance = {}, {}
+    parity, nodes, paths = [], [], []
+    corrected_nodes, sidecar = [], []
+    worst = 0.0
+    traced_nodes = 0
+    for item in attempts:
+        case, rep, method = item["case"], item["replicate"], item["method"]
+        key = case, rep
+        if key not in regenerated:
+            x, _, seed = dataset(case, rep)
+            regenerated[key] = (x, seed, hashlib.sha256(x.tobytes()).hexdigest())
+        x, seed, data_hash = regenerated[key]
+        assert item["data_hash"] == data_hash and item["seed"] == seed
+        path = NATIVE / f"fit_{case}_{rep}_{method}.json.gz"
+        if not path.is_file():
+            assert item["status"] != "ok"
+            continue
+        paths.append(path)
+        saved = read(path)
+        assert (
+            saved["data_hash"] == data_hash
+            and saved["seed"] == seed
+            and saved["status"] == item["status"]
+        )
+        basis = None
+        if method == "cov_full":
+            basis = np.eye(x.shape[1])
+        elif "covariance_blocks" in saved:
+            columns = [i for start, stop in saved["covariance_blocks"] for i in range(start, stop)]
+            basis = align.covariance_spectrum(x).eigenvectors[:, columns]
+        for node in saved["nodes"].values():
+            traced_nodes += 1
+            leaves = tuple(node["leaves"])
+            cache_key = case, rep, leaves
+            if cache_key not in covariance:
+                cov = np.cov(x[list(leaves)], rowvar=False, ddof=1)
+                covariance[cache_key] = np.maximum(np.linalg.eigvalsh(cov)[::-1], 0)
+            observed = np.asarray(node["raw_covariance_eigenvalues"])
+            expected = covariance[cache_key]
+            worst = max(worst, float(np.max(np.abs(expected - observed))))
+            np.testing.assert_allclose(observed, expected, atol=1e-11, rtol=1e-11)
+            sub = node.get("inherited_vs_rebuilt_covariance_span")
+            if sub is not None:
+                positive = int(
+                    np.count_nonzero(
+                        observed
+                        > max(observed[0], 0) * np.finfo(float).eps * max(len(leaves), x.shape[1])
+                    )
+                )
+                ties = tied_eigenvalue_neighbors(observed)
+                rebuilt = sub["rank_b"]
+                nodes.append(
+                    {
+                        "method": method,
+                        "case": case,
+                        "replicate": rep,
+                        "size": len(leaves),
+                        "root": node["parent"] is None,
+                        "gap": sub["projector_frobenius"],
+                        "same": sub["same_span"],
+                        "rank_mismatch": sub["rank_a"] != sub["rank_b"],
+                        "zero_local_trace": bool(observed.sum() <= 0),
+                        "positive_cutoff_slices_tie": bool(
+                            0 < positive < len(observed) and ties[positive - 1]
+                        ),
+                        "rebuilt_cutoff_slices_tie": bool(
+                            0 < rebuilt < len(observed) and ties[rebuilt - 1]
+                        ),
+                        "local_share": node["inherited_local_variance_share"],
+                    }
+                )
+                assert basis is not None
+                local = x[list(leaves)]
+                rebuilt_cov = align.covariance_spectrum(local)
+                corrected = covariance_span_record(rebuilt_cov, basis, local @ basis)
+                new = corrected["inherited_vs_rebuilt_covariance_span"]
+                share = corrected["inherited_local_variance_share"]
+                np.testing.assert_allclose(
+                    share, node["inherited_local_variance_share"], rtol=1e-10, atol=1e-12
+                )
+                new_rank = new["rank_b"]
+                assert not (0 < new_rank < len(observed) and ties[new_rank - 1])
+                corrected_nodes.append(
+                    nodes[-1]
+                    | {
+                        "gap": new["projector_frobenius"],
+                        "same": new["same_span"],
+                        "rank_mismatch": new["rank_a"] != new_rank,
+                        "local_share": share,
+                    }
+                )
+                sidecar.append(
+                    {
+                        "case": case,
+                        "replicate": rep,
+                        "method": method,
+                        "data_hash": data_hash,
+                        "native_node_id": node["native_node_id"],
+                        "leaves": leaves,
+                        "original_rebuilt_rank": rebuilt,
+                        "original_projector_gap": sub["projector_frobenius"],
+                        **corrected,
+                    }
+                )
+        if method not in REFS:
+            continue
+        old = previous[(case, rep, REFS[method])]
+        assert old["data_hash"] == data_hash and old["seed"] == seed
+        prior, current = old["result"]["native"], saved["metrics"]
+        root = next((node for node in saved["nodes"].values() if node["parent"] is None), None)
+        a, b = current.get("root_sibling_p"), prior.get("root_sibling_p")
+        parity.append(
+            {
+                "case": case,
+                "replicate": rep,
+                "method": method,
+                "status_equal": current["status"] == prior["status"],
+                "root_p_equal": a is not None
+                and b is not None
+                and bool(np.isclose(a, b, rtol=1e-8, atol=0, equal_nan=True)),
+                "root_split_equal": root is not None
+                and sorted(root["children"])
+                == sorted(child["rows"] for child in old["result"]["children"]),
+                "root_reject_equal": current.get("root_sibling_reject")
+                == prior.get("root_sibling_reject"),
+                "partition_ari": adjusted_rand_score(current["labels"], prior["labels"])
+                if "labels" in current and "labels" in prior
+                else None,
+                "ami_difference": current["ami"] - prior["ami"]
+                if "ami" in current and "ami" in prior
+                else None,
+            }
+        )
+    table = pd.DataFrame(nodes)
+    gaps = span_group_summary(table)
+    pairs = pd.DataFrame(parity)
+    return (
+        {
+            "datasets": len(regenerated),
+            "trace_files": len(paths),
+            "traced_nodes": traced_nodes,
+            "unique_dataset_clades": len(covariance),
+            "max_abs_raw_covariance_eigenvalue_error": worst,
+            "native_prior": {
+                "pairs": len(parity),
+                **{
+                    field: int(pairs[field].sum())
+                    for field in (
+                        "status_equal",
+                        "root_p_equal",
+                        "root_split_equal",
+                        "root_reject_equal",
+                    )
+                },
+                "partitions_ari_one": int(pairs.partition_ari.eq(1).sum()),
+                "ami_difference": describe(pairs.ami_difference),
+                "detail": parity,
+            },
+            "inherited_vs_rebuilt": span_group_summary(pd.DataFrame(corrected_nodes)),
+            "initial_inherited_vs_rebuilt": gaps,
+            "corrected_span_sidecar": {
+                "rows": len(sidecar),
+                "rebuilt_rank_changed": sum(
+                    row["original_rebuilt_rank"]
+                    != row["inherited_vs_rebuilt_covariance_span"]["rank_b"]
+                    for row in sidecar
+                ),
+                "rebuilt_cutoff_slices_tie": 0,
+            },
+            "inherited_boundary_audit": {
+                "comparisons": len(table),
+                **{
+                    name: int(table[name].sum())
+                    for name in (
+                        "zero_local_trace",
+                        "positive_cutoff_slices_tie",
+                        "rebuilt_cutoff_slices_tie",
+                    )
+                },
+            },
+        },
+        paths,
+        sidecar,
+    )
+
+
+def main():
+    verification_file = NATIVE / "verification.json"
+    verification = read(verification_file)
+    assert verification["attempts"] == 160 and not verification["source_files_changed"]
+    attempts_file, comparisons_file = NATIVE / "attempts.json", NATIVE / "comparisons.jsonl.gz"
+    attempts = read(attempts_file)
+    assert len({(a["case"], a["replicate"], a["method"]) for a in attempts}) == len(attempts) == 160
+    comparisons = read(comparisons_file, lines=True)
+    assert len(comparisons) == verification["node_comparisons"] == 16128
+    comparison_summary = structure(pd.DataFrame(comparisons))
+    traces, trace_paths, sidecar = trace_summary(attempts)
+    assert len(sidecar) == 8064
+    sidecar_path = HERE / "native_covariance_spans_corrected.jsonl.gz"
+    with gzip.open(sidecar_path, "wt") as stream:
+        for row in sidecar:
+            stream.write(json.dumps(row, default=diagnostic_json_default, allow_nan=False) + "\n")
+    archive = HERE / "source_during_native_run.py.txt"
+    initial_runner_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
+    manifest = read(NATIVE / "manifest.json")
+    runner = HERE / "run.py"
+    assert initial_runner_hash == manifest["source_hashes"][str(runner.relative_to(ROOT))]
+    paths = [
+        Path(__file__),
+        archive,
+        runner,
+        sidecar_path,
+        verification_file,
+        attempts_file,
+        comparisons_file,
+        NATIVE / "manifest.json",
+        PRIOR,
+        HERE.parent / "subtree_spectral_alignment_20261109/alternatives/run.py",
+        *trace_paths,
+    ]
+    summary = {
+        "verification": verification,
+        "structure": comparison_summary,
+        "traces": traces,
+        "source_history": {
+            "initial_runner": archive.name,
+            "initial_runner_sha256": initial_runner_hash,
+            "corrected_helper": "run.py:covariance_span_record",
+            "corrected_helper_source_sha256": hashlib.sha256(runner.read_bytes()).hexdigest(),
+            "clustering_refits": 0,
+        },
+        "sha256": {
+            str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in paths
+        },
+    }
+    (HERE / "native_summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
+
+
+if __name__ == "__main__":
+    main()
+
+# SOURCE: reports/subtree_context_statistics_20261109/relationships/run.py
+"""Join saved subspace coverage to raw covariance and native spectral magnitudes."""
+
+from __future__ import annotations
+
+import ast
+import gzip
+import hashlib
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from benchmarks.diagnostics.calibration.selected.hierarchy import (
+    subtree_spectral_alignment as align,
+)
+from reports.subtree_spectral_alignment_20261109.alternatives.run import REGIMES, dataset
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+PRIOR = ROOT / "reports/subtree_spectral_alignment_20261109"
+ALTERNATIVES = PRIOR / "alternatives"
+NATIVE = PRIOR / "parent_child"
+TRACES = sorted(NATIVE.glob("trace_*.json.gz"))
+INPUTS = (
+    ALTERNATIVES / "rows.csv.gz",
+    ALTERNATIVES / "summary.csv",
+    ALTERNATIVES / "evidence.json",
+    ALTERNATIVES / "run.py",
+    ALTERNATIVES / "source_during_run.py.txt",
+    ALTERNATIVES / "source_change_review.json",
+    NATIVE / "rows.jsonl.gz",
+    NATIVE / "manifest.json",
+    NATIVE / "production_span_summary.json",
+    *TRACES,
+    Path(__file__),
+    Path(align.__file__),
+    Path(tied_eigenvalue_neighbors.__code__.co_filename),
+)
+
+
+def digest(path):
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def inputs_hashes():
+    return {str(path.relative_to(ROOT)): digest(path) for path in INPUTS}
+
+
+def score_magnitudes():
+    rows = pd.read_csv(ALTERNATIVES / "rows.csv.gz")
+    assert len(rows) == 5120 and rows.status.eq("ok").all()
+    enriched, paired = [], []
+    spectra = {}
+    for (regime, rep), original in rows.groupby(["regime", "replicate"], sort=False):
+        x, truth, seed = dataset(regime, rep)
+        data_hash = hashlib.sha256(x.tobytes()).hexdigest()
+        assert original.seed.eq(seed).all() and original.data_sha256.eq(data_hash).all()
+        spectrum = align.covariance_spectrum(x)
+        values = spectrum.eigenvalues
+        trace = float(values.sum())
+        shares = values / trace
+        spectra[(regime, rep)] = (data_hash, seed, values)
+        group = original.copy()
+        subspaces = group.blocks.map(ast.literal_eval)
+        assert set(block for blocks in subspaces for block in blocks) == set(spectrum.blocks)
+        group["covariance_trace"] = trace
+        group["covariance_eigenvalue_sum"] = [
+            float(sum(values[a:b].sum() for a, b in blocks)) if blocks else trace
+            for blocks in subspaces
+        ]
+        group["covariance_trace_share"] = group.covariance_eigenvalue_sum / trace
+        assert group.covariance_trace_share.between(0, 1 + 1e-12).all()
+        enriched.append(group)
+        if truth is None:
+            continue
+        full = group.loc[group.is_full_coordinates].iloc[0]
+        leading = group.loc[group.is_leading].iloc[0]
+        selected = group.loc[group.selected_common_target].iloc[0]
+        candidates = group.loc[~group.is_full_coordinates]
+        for factor, split, ami in (
+            ("A", "split_a", "factor_a_ami"),
+            ("B", "split_b", "contrast_b_ami"),
+        ):
+            covered = candidates.loc[candidates[split].eq(True)]
+            ranked = covered.sort_values(["covariance_trace_share", "rank", "blocks"])
+            minimum = ranked.iloc[0] if len(ranked) else None
+            fit_covered = covered.loc[covered.shortlisted].sort_values("target_rmse")
+            paired.append(
+                {
+                    "regime": regime,
+                    "replicate": rep,
+                    "seed": seed,
+                    "data_hash": data_hash,
+                    "factor": factor,
+                    "full_split": full[split],
+                    "leading_split": leading[split],
+                    "selected_split": selected[split],
+                    "full_ami": full[ami],
+                    "leading_ami": leading[ami],
+                    "selected_ami": selected[ami],
+                    "family_max_ami_oracle": candidates[ami].max(),
+                    "family_split": bool(len(ranked)),
+                    "minimum_covering_share": minimum.covariance_trace_share
+                    if minimum is not None
+                    else np.nan,
+                    "minimum_covering_blocks": minimum.blocks if minimum is not None else "",
+                    "minimum_covering_rank": minimum["rank"] if minimum is not None else np.nan,
+                    "minimum_covering_ami": minimum[ami] if minimum is not None else np.nan,
+                    "leading_share": leading.covariance_trace_share,
+                    "pc1_share": shares[0],
+                    "pc2_share": shares[1],
+                    "common_target_full_rmse": full.target_rmse,
+                    "common_target_selected_rmse": selected.target_rmse,
+                    "common_target_best_covering_rmse": fit_covered.target_rmse.iloc[0]
+                    if len(fit_covered)
+                    else np.nan,
+                }
+            )
+    assert len(spectra) == 80 and len(paired) == 120
+    return pd.concat(enriched, ignore_index=True), pd.DataFrame(paired), spectra
+
+
+def native_magnitudes(spectra):
+    with gzip.open(NATIVE / "rows.jsonl.gz", "rt") as stream:
+        records = [json.loads(line) for line in stream]
+    assert len(records) == 160 and len(TRACES) == 8
+    rows, traced = [], []
+    for item in records:
+        case, rep, operator = (item[key] for key in ("case", "replicate", "operator"))
+        data_hash, seed, values = spectra[(case, rep)]
+        assert item["data_hash"] == data_hash and item["seed"] == seed
+        assert item["status"] == "ok" and item["result"]["native"]["status"] == "ok"
+        result = item["result"]
+        raw = np.asarray(result["covariance"]["eigenvalues"])
+        np.testing.assert_allclose(raw, values, rtol=1e-12, atol=1e-12)
+        native = result["native"]
+        root = result["native_nodes"][0]
+        context = result["native_context"][root]
+        whitened = np.asarray(context["principal_component_eigenvalues_by_node"])
+        d = result["diffusion"]
+        start, end = d["window"]
+        spectrum = np.asarray(d["eigenvalues"])
+        coefficients = np.maximum(spectrum[start:end], 0) ** 6
+        total = float(coefficients.sum())
+        first_block = next(
+            (a, b) for item in d["whole_blocks"] for a, b in (item["block"],) if a <= start < b
+        )
+        first_block_count = min(end, first_block[1]) - start
+        row = {
+            "regime": case,
+            "replicate": rep,
+            "seed": seed,
+            "data_hash": data_hash,
+            "operator": operator,
+            "root_p": native["root_sibling_p"],
+            "root_reject": native["root_sibling_reject"],
+            "native_ami": native["ami"],
+            "native_clusters": native["found_clusters"],
+            "root_first_child": repr(sorted(result["children"][0]["rows"])),
+            "root_split": repr(sorted(sorted(child["rows"]) for child in result["children"])),
+            "covariance_trace": float(raw.sum()),
+            "raw_pc1_share": float(raw[0] / raw.sum()),
+            "between_covariance_share": result["covariance"]["between_trace"] / raw.sum(),
+            "diffusion_first_retained_lambda": spectrum[start],
+            "diffusion_first_retained_coefficient_share": float(coefficients[0] / total),
+            "diffusion_first_retained_block_rank": first_block_count,
+            "diffusion_first_retained_block_coefficient_share": float(
+                coefficients[:first_block_count].sum() / total
+            ),
+            "diffusion_coefficient_sum": total,
+            "native_whitened_min_eig": float(whitened.min()),
+            "native_whitened_max_eig": float(whitened.max()),
+            "native_test_dimension": context["test_projection_dimensions_by_node"],
+            "native_raw_mp_count": context["raw_mp_signal_counts_by_node"],
+        }
+        rows.append(row)
+        if rep != 0:
+            continue
+        with gzip.open(NATIVE / f"trace_{case}_{operator}.json.gz", "rt") as stream:
+            evidence = json.load(stream)
+        spec = align.reversible_diffusion_spectrum(evidence["matrix_evidence"]["parent_weights"])
+        np.testing.assert_allclose(spectrum, spec.eigenvalues, rtol=1e-12, atol=1e-12)
+        basis = spec.symmetric_vectors if operator == "symmetric" else spec.right_vectors
+        coordinates = basis[:, start:end] * np.sqrt(coefficients)
+        component_energy = len(coordinates) * np.sum(
+            (coordinates - coordinates.mean(axis=0)) ** 2, axis=0
+        )
+        squared_pair_energy = float(
+            np.sum(np.asarray(evidence["baseline_diffusion_distance"]) ** 2)
+        )
+        np.testing.assert_allclose(
+            component_energy.sum(), squared_pair_energy, rtol=1e-10, atol=1e-12
+        )
+        statistic = next(record for record in evidence["raw_records"] if record["parent"] == root)
+        annotation = next(record for record in evidence["annotations"] if record["node_id"] == root)
+        traced.append(
+            row
+            | {
+                "diffusion_actual_first_mode_pair_energy_share": float(
+                    component_energy[0] / component_energy.sum()
+                ),
+                "diffusion_actual_first_block_pair_energy_share": float(
+                    component_energy[:first_block_count].sum() / component_energy.sum()
+                ),
+                "actual_pair_energy_total": squared_pair_energy,
+                "sibling_raw_statistic": statistic["stat"],
+                "sibling_reference_scale": statistic["reference_scale"],
+                "sibling_degrees_of_freedom": statistic["degrees_of_freedom"],
+                "sibling_applied_inflation": annotation["Sibling_Inflation_Factor"],
+                "sibling_branch_variance_multiplier": 1
+                + statistic["branch_length_sum"] / (2 * native["mean_positive_branch"]),
+            }
+        )
+    native = pd.DataFrame(rows)
+    left = native.loc[native.operator == "symmetric"].drop(columns="operator")
+    right = native.loc[native.operator == "markov"].drop(columns="operator")
+    paired = left.merge(
+        right,
+        on=["regime", "replicate", "seed", "data_hash"],
+        suffixes=("_symmetric", "_markov"),
+        validate="one_to_one",
+    )
+    assert len(paired) == 80 and len(traced) == 8
+    return native, paired, pd.DataFrame(traced)
+
+
+def main():
+    hashes = inputs_hashes()
+    old = json.loads((ALTERNATIVES / "evidence.json").read_text())
+    source = json.loads((ALTERNATIVES / "source_change_review.json").read_text())
+    assert source["archive_sha256"] == digest(ALTERNATIVES / "source_during_run.py.txt")
+    assert (
+        source["archive_sha256"] == old["hashes"][str((ALTERNATIVES / "run.py").relative_to(ROOT))]
+    )
+    assert source["current_sha256"] == digest(ALTERNATIVES / "run.py")
+    enriched, recovery, spectra = score_magnitudes()
+    native, paired, traces = native_magnitudes(spectra)
+    tables = {
+        "alternatives_with_magnitudes.csv.gz": enriched,
+        "factor_pairs.csv": recovery,
+        "native_rows.csv": native,
+        "native_pairs.csv": paired,
+        "root_trace_scales.csv": traces,
+    }
+    for name, table in tables.items():
+        table.to_csv(HERE / name, index=False)
+    assert hashes == inputs_hashes()
+    (HERE / "manifest.json").write_text(
+        json.dumps(
+            {
+                "regimes": REGIMES,
+                "datasets": len(spectra),
+                "inputs_sha256": hashes,
+                "outputs": {
+                    name: {"rows": len(table), "sha256": digest(HERE / name)}
+                    for name, table in tables.items()
+                },
+                "clustering_refits": 0,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+# SOURCE: benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_context.py
+"""Compare node and adjacency identities across labeled binary topologies."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from numbers import Integral
+
+import numpy as np
+
+from .subtree_topology_geometry import Tree
+
+type Clade = tuple[int, ...]
+type Children = tuple[Clade, Clade]
+
+
+@dataclass(frozen=True)
+class NodeContext:
+    """Context of one reference internal node in the alternative tree."""
+
+    node: Clade
+    original_parent: Clade | None
+    original_children: Children
+    node_exists: bool
+    original_parent_exists: bool | None
+    original_children_exist: tuple[bool, bool]
+    both_children_absent: bool
+    at_least_one_child_absent: bool
+    alternative_parent: Clade | None
+    alternative_children: Children | None
+    direct_parent_preserved: bool | None
+    direct_children_preserved: bool
+    case_1: bool
+    case_2: bool
+    case_3: bool
+    case_4: bool
+
+
+def _index_tree(tree: Tree) -> tuple[Clade, dict[Clade, Clade | None], dict[Clade, Children]]:
+    parents: dict[Clade, Clade | None] = {}
+    children: dict[Clade, Children] = {}
+    leaves: set[int] = set()
+
+    def visit(node: Tree) -> Clade:
+        if isinstance(node, Integral) and not isinstance(node, (bool, np.bool_)):
+            leaf = int(node)
+            if leaf in leaves:
+                raise ValueError("Tree leaf labels must be unique")
+            leaves.add(leaf)
+            return (leaf,)
+        if not isinstance(node, tuple) or len(node) != 2:
+            raise ValueError("Expected a binary nested tuple with integer leaf labels")
+        left, right = sorted(map(visit, node))
+        clade = tuple(sorted(left + right))
+        children[clade] = left, right
+        parents[left] = parents[right] = clade
+        return clade
+
+    root = visit(tree)
+    parents[root] = None
+    return root, parents, children
+
+
+def compare_node_contexts(reference: Tree, alternative: Tree) -> list[NodeContext]:
+    """Compare exact descendant leaf sets for every reference internal node.
+
+    Cases can overlap. Case 1 means the node is absent. Case 2 means both
+    original child clades are absent, independently of node presence. Case 3
+    means the node remains and its original parent clade is absent. Case 4
+    means case 3 with both original children absent. The root's parent and
+    direct-parent fields are not applicable. A clade can remain elsewhere
+    in the alternative without preserving its direct adjacency.
+    """
+    root, parents, children = _index_tree(reference)
+    other_root, other_parents, other_children = _index_tree(alternative)
+    if root != other_root:
+        raise ValueError("Reference and alternative must have the same labeled leaf set")
+
+    rows = []
+    for node, original_children in sorted(
+        children.items(), key=lambda item: (len(item[0]), item[0])
+    ):
+        parent = parents[node]
+        exists = node in other_parents
+        parent_exists = None if parent is None else parent in other_parents
+        left_exists = original_children[0] in other_parents
+        right_exists = original_children[1] in other_parents
+        both_absent = not (left_exists or right_exists)
+        alternative_parent = other_parents.get(node)
+        alternative_children = other_children.get(node)
+        case_3 = exists and parent_exists is False
+        rows.append(
+            NodeContext(
+                node=node,
+                original_parent=parent,
+                original_children=original_children,
+                node_exists=exists,
+                original_parent_exists=parent_exists,
+                original_children_exist=(left_exists, right_exists),
+                both_children_absent=both_absent,
+                at_least_one_child_absent=not (left_exists and right_exists),
+                alternative_parent=alternative_parent,
+                alternative_children=alternative_children,
+                direct_parent_preserved=None if parent is None else alternative_parent == parent,
+                direct_children_preserved=alternative_children == original_children,
+                case_1=not exists,
+                case_2=both_absent,
+                case_3=case_3,
+                case_4=case_3 and both_absent,
+            )
+        )
+    return rows
+
+# SOURCE: tests/statistics/79_test_subtree_topology_context.py
+"""Exact labeled witnesses for subtree context changes."""
+
+import numpy as np
+import pytest
+from scipy.cluster.hierarchy import linkage
+
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_candidate import (
+    topology_from_linkage,
+)
+from benchmarks.diagnostics.calibration.selected.hierarchy.subtree_topology_context import (
+    compare_node_contexts,
+)
+
+
+def node_row(reference, alternative, node):
+    return next(row for row in compare_node_contexts(reference, alternative) if row.node == node)
+
+
+def test_absent_node_and_both_absent_children_can_overlap():
+    row = node_row((((0, 1), (2, 3)), (4, 5)), (((0, 2), (1, 4)), (3, 5)), (0, 1, 2, 3))
+    assert row.case_1 and row.case_2
+    assert not row.case_3 and not row.case_4
+    assert not row.node_exists and row.original_parent_exists
+    assert row.original_children_exist == (False, False)
+    assert row.both_children_absent and row.at_least_one_child_absent
+    assert row.alternative_parent is None and row.alternative_children is None
+    assert not row.direct_parent_preserved and not row.direct_children_preserved
+
+
+def test_node_with_same_children_but_original_parent_absent():
+    reference = ((((0, 1), (2, 3)), 4), 5)
+    alternative = ((((0, 1), (2, 3)), 5), 4)
+    row = node_row(reference, alternative, (0, 1, 2, 3))
+    assert row.node_exists and row.case_3
+    assert not row.case_1 and not row.case_2 and not row.case_4
+    assert row.original_parent == (0, 1, 2, 3, 4)
+    assert row.alternative_parent == (0, 1, 2, 3, 5)
+    assert not row.direct_parent_preserved and row.direct_children_preserved
+
+
+def test_six_leaf_witness_preserves_node_and_loses_parent_and_both_children():
+    reference = ((((0, 1), (2, 3)), 4), 5)
+    alternative = ((((0, 2), (1, 3)), 5), 4)
+    row = node_row(reference, alternative, (0, 1, 2, 3))
+    assert row.node_exists and not row.case_1
+    assert row.case_2 and row.case_3 and row.case_4
+    assert row.original_children == ((0, 1), (2, 3))
+    assert row.original_children_exist == (False, False)
+    assert row.alternative_children == ((0, 2), (1, 3))
+    assert row.alternative_parent == (0, 1, 2, 3, 5)
+    assert not row.direct_parent_preserved and not row.direct_children_preserved
+
+
+def test_six_leaf_case_four_is_realized_by_distinct_covariance_eigendirections():
+    x = [0, 1, 10, 11, 30, 100]
+    y = [0, 10, 1, 11, 1000, -12751 / 224]
+    data = np.column_stack([x, y])
+    covariance = np.cov(data, rowvar=False)
+    assert covariance[0, 1] == pytest.approx(0.0, abs=1e-12)
+    assert covariance[1, 1] > 100 * covariance[0, 0]
+    reference = topology_from_linkage(linkage(data[:, :1], method="ward"))
+    alternative = topology_from_linkage(linkage(data[:, 1:], method="ward"))
+    row = node_row(reference, alternative, (0, 1, 2, 3))
+    assert row.case_4
+    assert row.original_children == ((0, 1), (2, 3))
+    assert row.alternative_children == ((0, 2), (1, 3))
+
+
+def test_parent_and_one_child_can_exist_without_the_original_adjacencies():
+    reference = (((0, 1), (2, 3)), 4)
+    alternative = ((((0, 1), 2), 3), 4)
+    row = node_row(reference, alternative, (0, 1))
+    assert row.node_exists and row.original_parent_exists
+    assert row.alternative_parent == (0, 1, 2) and not row.direct_parent_preserved
+    assert row.original_children_exist == (True, True) and row.direct_children_preserved
+
+    row = node_row(reference, alternative, (0, 1, 2, 3))
+    assert row.original_children_exist == (True, False)
+    assert row.at_least_one_child_absent and not row.both_children_absent
+    assert not row.case_2 and not row.direct_children_preserved
+    assert row.alternative_children == ((0, 1, 2), (3,))
+
+
+def test_root_and_child_reversal_equal_tree():
+    a = ((0, 1), (2, 3))
+    reversed_a = ((3, 2), (1, 0))
+    rows = compare_node_contexts(a, reversed_a)
+    assert rows == compare_node_contexts(reversed_a, a)
+    assert {row.node for row in rows} == {(0, 1), (2, 3), (0, 1, 2, 3)}
+    assert all(row.node_exists and row.direct_children_preserved for row in rows)
+    assert all(not (row.case_1 or row.case_2 or row.case_3 or row.case_4) for row in rows)
+    root = node_row(a, reversed_a, (0, 1, 2, 3))
+    assert root.original_parent is root.original_parent_exists is None
+    assert root.alternative_parent is root.direct_parent_preserved is None
+    assert all(row.direct_parent_preserved for row in rows if row.original_parent is not None)
+
+
+def test_root_can_lose_children_but_has_no_missing_parent_case():
+    root = node_row(((0, 1), (2, 3)), ((0, 2), (1, 3)), (0, 1, 2, 3))
+    assert root.case_2 and root.node_exists
+    assert not root.case_3 and not root.case_4
+
+
+@pytest.mark.parametrize(
+    "invalid", [(0, 1, 2), ((0, 1), 0), ((0, 1), 2.0), ((False, 1), 2), ((0, 1), np.bool_(True))]
+)
+def test_invalid_tree_fails_explicitly(invalid):
+    with pytest.raises(ValueError):
+        compare_node_contexts(((0, 1), 2), invalid)
+
+
+def test_different_leaf_universe_fails_and_integer_labels_are_normalized():
+    with pytest.raises(ValueError, match="same"):
+        compare_node_contexts(((0, 1), 2), ((0, 1), 3))
+    rows = compare_node_contexts(((np.int64(0), 1), 2), ((0, 1), 2))
+    assert all(type(leaf) is int for row in rows for leaf in row.node)
+
+# SOURCE: tests/statistics/80_test_subtree_context_native_replay.py
+"""Native context capture must preserve decisions and structural absence."""
+
+import json
+
+import numpy as np
+import pytest
+
+from reports.subtree_context_statistics_20261109 import run
+
+
+@pytest.fixture(scope="module")
+def replay():
+    values, truth, _ = run.dataset("crossed", 0)
+    proposals = list(run.proposals(values))
+    results = []
+    for name, z, coords, basis, _ in (proposals[0], proposals[-1]):
+        results.append(
+            (run.topology_from_linkage(z), run.fit_tree(values, truth[2], z, coords, basis))
+        )
+    return values, truth[2], proposals[0], results
+
+
+def test_capture_preserves_native_pipeline_and_distinguishes_basis_halves(replay):
+    values, truth, (_, z, _, _, _), results = replay
+    untouched = values.copy()
+    data, space = run.research._frame(values)
+    expected, _ = run.research.evaluate_tree(data, truth, space, z, trace=True)
+    actual = results[0][1]
+    assert actual["metrics"] == expected
+    np.testing.assert_array_equal(values, untouched)
+    root = actual["nodes"][run.key(range(len(values)))]
+    assert len(root["outgoing_basis_rows"]) == 32
+    assert not np.allclose(
+        root["sibling_all_leaf_context"]["eigenvalues"],
+        root["outgoing_edge_half_context"]["eigenvalues"],
+    )
+    assert sum(len(edge["test_rows"]) for edge in root["outgoing_edges"]) == 32
+    for node in actual["nodes"].values():
+        if node["sibling_gate_state"].startswith("active_"):
+            assert np.isfinite(node["annotations"]["Sibling_Divergence_P_Value_Corrected"])
+
+
+def test_same_tree_matches_context_and_root_has_no_incoming_comparison(replay):
+    _, _, _, results = replay
+    tree, result = results[0]
+    rows = list(run.compare(tree, tree, result, result))
+    assert len(rows) == 63
+    assert all(row["node_exists"] and row["direct_children_preserved"] for row in rows)
+    assert not any(row[f"case_{i}"] for row in rows for i in range(1, 5))
+    for row in rows:
+        if row["original_parent"] is None:
+            assert row["same_incoming_test_rows"] is None
+            assert row["reference_Child_Parent_Divergence_P_Value"] is None
+        else:
+            assert row["same_incoming_test_rows"] and row["same_incoming_basis_rows"]
+        assert row["reference_collected_sibling_stat"] == row["alternative_collected_sibling_stat"]
+
+
+def test_absent_node_has_no_alternative_test_or_traversal_decision(replay):
+    _, _, _, results = replay
+    (rt, r), (at, a) = results
+    rows = list(run.compare(rt, at, r, a))
+    absent = [row for row in rows if not row["node_exists"]]
+    assert absent
+    for row in absent:
+        assert row["case_1"]
+        for name in (
+            "Sibling_Divergence_P_Value",
+            "Child_Parent_Divergence_P_Value",
+            "collected_sibling_stat",
+            "sibling_gate_state",
+            "visited",
+            "final_boundary",
+        ):
+            assert row["alternative_" + name] is None
+
+
+def test_capture_restores_functions_after_exception(monkeypatch):
+    spectral = run.EDGE_MODULE.compute_child_parent_spectral_context
+    gate = run.research.run_gate_annotation_pipeline
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("intentional failure")
+
+    monkeypatch.setattr(run.research, "evaluate_tree", fail)
+    with pytest.raises(RuntimeError, match="intentional failure"):
+        run.fit_tree(np.eye(4), np.zeros(4), None, None, None)
+    assert run.EDGE_MODULE.compute_child_parent_spectral_context is spectral
+    assert run.research.run_gate_annotation_pipeline is gate
+
+
+def test_native_failure_without_tree_keeps_reason(monkeypatch):
+    def fail(*args, **kwargs):
+        return {"status": "error", "reason": "NNLS fixture"}, {}
+
+    monkeypatch.setattr(run.research, "evaluate_tree", fail)
+    result = run.fit_tree(np.eye(4), np.zeros(4), None, None, None)
+    assert result["metrics"]["reason"] == "NNLS fixture"
+    assert result["nodes"] == {}
+
+
+def test_panel_retains_failures_and_refuses_overwrite(monkeypatch, tmp_path):
+    def fail(*args, **kwargs):
+        raise RuntimeError("intentional replay failure")
+
+    monkeypatch.setattr(run, "fit_tree", fail)
+    run.run(tmp_path, replicates=1)
+    attempts = json.loads((tmp_path / "attempts.json").read_text())
+    assert len(attempts) == 40
+    assert all(row["status"] == "error" and "replay failure" in row["reason"] for row in attempts)
+    assert json.loads((tmp_path / "verification.json").read_text())["node_comparisons"] == 0
+    with pytest.raises(FileExistsError, match="Refusing to overwrite"):
+        run.run(tmp_path, replicates=1)
+
+
+@pytest.mark.parametrize(
+    "eigenvalues,blocks,input_rank,expected_rank",
+    [
+        ([1, 1e-14, 0, 0, 0, 0], ((0, 1), (1, 6)), 2, 1),
+        ([2, 2, 1], ((0, 2), (2, 3)), 1, 2),
+        ([0, 0], ((0, 2),), 2, 0),
+    ],
+)
+def test_local_covariance_span_keeps_whole_positive_blocks(
+    eigenvalues, blocks, input_rank, expected_rank
+):
+    eigenvalues = np.array(eigenvalues, dtype=float)
+    basis = np.eye(len(eigenvalues))
+    spectrum = run.align.EigenSystem(np.diag(eigenvalues), eigenvalues, basis, blocks)
+    result = run.covariance_span_record(spectrum, basis[:, :input_rank], np.zeros((3, input_rank)))
+    assert result["inherited_vs_rebuilt_covariance_span"]["rank_b"] == expected_rank
+    if not eigenvalues.any():
+        assert result["inherited_local_variance_share"] is None

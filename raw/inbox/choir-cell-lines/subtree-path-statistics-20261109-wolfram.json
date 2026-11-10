@@ -1,0 +1,14 @@
+{
+  "code": "Module[{a,chain,cross,w,v,x,gram},a[s_,n_]:=Table[If[MemberQ[s,i],1/Length[s],0],{i,0,n-1}];chain=({a[#,6]}& /@ {{0,1,2,3,4,5},{0,1,2,3},{0,1},{0}})//Flatten[#,1]&; w=Differences[chain];cross=a[#,4]& /@ {{0},{0,1},{0,1,2,3},{2,3},{2}};v=Differences[cross];x={0,2,3,7};gram=v.Transpose[v];<|\"nested_increment_gram\"->w.Transpose[w],\"nested_telescope\"->Total[w]-(Last[chain]-First[chain]),\"cross_increment_gram\"->gram,\"cross_telescope\"->Total[v]-(Last[cross]-First[cross]),\"cross_sum_edge_wald\"->Total[(v.x)^2/Diagonal[gram]],\"cross_endpoint_wald\"->(Total[v].x)^2/(Total[v].Total[v]),\"cross_endpoint_variance\"->Total[v].Total[v],\"sum_cross_edge_variances\"->Tr[gram]|>]",
+  "timeConstraint": 25,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Out[1]= <|\"nested_increment_gram\" -> {{1/12, 0, 0}, {0, 1/4, 0}, {0, 0, 1/2}}, \"nested_telescope\" -> {0, 0, 0, 0, 0, 0}, \"cross_increment_gram\" -> {{1/2, 0, 0, 0}, {0, 1/4, 1/4, 0}, {0, 1/4, 1/4, 0}, {0, 0, 0, 1/2}}, \"cross_telescope\" -> {0, 0, 0, 0}, \"cross_sum_edge_wald\" -> 42, \"cross_endpoint_wald\" -> 9/2, \"cross_endpoint_variance\" -> 2, \"sum_cross_edge_variances\" -> 3/2|>"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  }
+}
