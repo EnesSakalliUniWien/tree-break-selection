@@ -5,6 +5,7 @@ from __future__ import annotations
 import multiprocessing as mp
 import os
 import time
+import traceback
 from queue import Empty
 
 import pandas as pd
@@ -57,8 +58,8 @@ def _run_case_worker(
             allow_method_errors=True,
         )
         queue.put({"ok": True, "rows": df_res.to_dict(orient="records")})
-    except Exception as exc:
-        queue.put({"ok": False, "error": str(exc)})
+    except Exception:
+        queue.put({"ok": False, "error": traceback.format_exc()})
 
 
 def run_case_isolated(

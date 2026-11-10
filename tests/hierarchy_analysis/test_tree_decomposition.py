@@ -60,6 +60,35 @@ def _cluster_leaf_sets(decomposition_results: dict[str, object]) -> list[set[str
     return [set(cluster["leaves"]) for cluster in cluster_assignments.values()]
 
 
+class TestTreeDecompositionAnnotationValidation:
+    def test_rejects_duplicate_annotation_index(self) -> None:
+        tree = _make_binary_tree()
+        annotations_df = _make_annotations(
+            tree,
+            edge_divergent={node: True for node in tree.nodes},
+            sibling_different={node: True for node in tree.nodes},
+        )
+        duplicated = pd.concat([annotations_df, annotations_df.iloc[[0]]])
+
+        with pytest.raises(ValueError, match="index must be unique"):
+            _decompose_with_annotations(tree, duplicated, passthrough=False)
+
+    def test_rejects_text_boolean_decision_value(self) -> None:
+        tree = _make_binary_tree()
+        annotations_df = _make_annotations(
+            tree,
+            edge_divergent={node: True for node in tree.nodes},
+            sibling_different={node: True for node in tree.nodes},
+        )
+        annotations_df["Sibling_BH_Different"] = annotations_df["Sibling_BH_Different"].astype(
+            object
+        )
+        annotations_df.iloc[0, annotations_df.columns.get_loc("Sibling_BH_Different")] = "False"
+
+        with pytest.raises(ValueError, match="must contain booleans"):
+            _decompose_with_annotations(tree, annotations_df, passthrough=False)
+
+
 class TestTreeDecompositionTraversal:
     def test_decompose_tree_splits_to_leaf_clusters(self) -> None:
         tree = _make_binary_tree()

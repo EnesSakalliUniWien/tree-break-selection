@@ -84,6 +84,18 @@ def test_populate_node_distributions_rejects_duplicate_sample_labels():
         G.populate_node_distributions(leaf_data)
 
 
+def test_populate_node_distributions_leaf_distribution_does_not_alias_input():
+    leaf_data = pd.DataFrame([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]], index=["S1", "S2", "S3"])
+    G = tree_from_linkage(
+        np.array([[0, 1, 1.0, 2], [2, 3, 2.0, 3]]),
+        leaf_names=leaf_data.index.tolist(),
+    )
+    G.populate_node_distributions(leaf_data)
+
+    leaf = next(n for n in G.nodes if G.nodes[n]["is_leaf"])
+    assert not np.shares_memory(G.nodes[leaf]["distribution"], leaf_data.to_numpy())
+
+
 def test_compute_ultrametric_branch_lengths_requires_merge_distances():
     children = np.array([[0, 1]], dtype=int)
 

@@ -629,7 +629,8 @@ def _normalize_method_key(value: str) -> str:
 def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
     try:
         df = pd.read_csv(audit_path)
-    except Exception:
+    except (OSError, ValueError) as exc:
+        print(f"Skipping audit summary {audit_path}: {type(exc).__name__}: {exc}")
         return None
 
     if not _AUDIT_SUMMARY_REQUIRED_COLUMNS.issubset(df.columns):
@@ -637,7 +638,8 @@ def _extract_audit_summary(audit_path: Path) -> dict[str, float] | None:
 
     try:
         root_idx = df["leaf_count"].astype(float).idxmax()
-    except Exception:
+    except ValueError as exc:
+        print(f"Skipping audit summary {audit_path}: bad leaf_count ({exc})")
         return None
 
     root_row = df.loc[root_idx]
@@ -762,7 +764,8 @@ def _fit_relationship_model(
             family=family,
             point=point,
         )
-    except Exception:
+    except (ValueError, np.linalg.LinAlgError) as exc:
+        print(f"Skipping {family} model for {target}: {type(exc).__name__}: {exc}")
         return None, {}
 
     terms = ["Intercept", *X.columns.tolist()]
@@ -1883,6 +1886,7 @@ def _bootstrap_interval_summary(
     if n_obs == 0:
         raise ValueError("Cannot bootstrap an empty design matrix")
 
+    n_failed = 0
     for _ in range(n_boot):
         sample_idx = rng.integers(0, n_obs, size=n_obs)
         X_boot = X.iloc[sample_idx]
@@ -1891,9 +1895,13 @@ def _bootstrap_interval_summary(
             continue
         try:
             draw, _ = _fit_point_estimate(X_boot, y_boot, family=family)
-        except Exception:
+        except (ValueError, np.linalg.LinAlgError):
+            n_failed += 1
             continue
         draws.append(draw)
+
+    if n_failed:
+        print(f"Skipped {n_failed} of {n_boot} bootstrap fits that failed to converge.")
 
     if len(draws) < min_success:
         std_err = np.full_like(point, np.nan, dtype=float)

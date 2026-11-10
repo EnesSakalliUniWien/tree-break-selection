@@ -325,3 +325,23 @@ def test_isolated_worker_passes_tree_consensus_label_dir(
 
     assert queue.payload["ok"] is True
     assert captured["tree_consensus_label_dir"] == str(label_dir)
+
+
+def test_isolated_worker_sends_traceback_on_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _failing(**kwargs):
+        raise ValueError("boom")
+
+    monkeypatch.setattr(case_execution, "_get_benchmark_fn", lambda: _failing)
+
+    class Queue:
+        payload = None
+
+        def put(self, payload) -> None:
+            self.payload = payload
+
+    queue = Queue()
+    case_execution._run_case_worker(queue, {"name": "c"}, ["tbs"], False, False, False, None, False)
+
+    assert queue.payload["ok"] is False
+    assert "Traceback" in queue.payload["error"]
+    assert "ValueError: boom" in queue.payload["error"]

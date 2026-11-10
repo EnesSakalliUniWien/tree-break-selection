@@ -91,6 +91,12 @@ extend-exclude = [
     "raw/assets/diffusion-selection-event-20261102/reentry_probe.py",
     "reports/cancer_pc_methods_20261104/plot_results.py",
     "reports/cancer_pc_methods_20261104/run_panel.py",
+    # Recorded evidence; each script's SHA-256 is in its study's manifests.
+    "reports/subtree_clustering_research_20261109/calibration/run.py",
+    "reports/subtree_clustering_research_20261109/calibration/run_initial.py",
+    "reports/subtree_clustering_research_20261109/calibration/variant.py",
+    "reports/subtree_clustering_research_20261109/profiles/run.py",
+    "reports/subtree_spectral_alignment_20261109/alternatives/run.py",
 ]
 
 [tool.ruff.lint]

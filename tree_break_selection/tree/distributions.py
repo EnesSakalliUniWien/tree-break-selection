@@ -323,7 +323,7 @@ def populate_distributions(
 
     # Vectorized extraction of leaf values; avoids per-row Series allocation from iterrows().
     leaf_feature_matrix = validate_feature_matrix(
-        leaf_data.to_numpy(dtype=np.float64, copy=False),
+        leaf_data.to_numpy(dtype=np.float64, copy=True),
         active_feature_space,
         value_name="leaf_data",
     )

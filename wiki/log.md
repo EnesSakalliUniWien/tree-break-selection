@@ -9939,3 +9939,46 @@ version comparison report and wiki source summary. Production code unchanged.
   with the report. Original fit artifacts and production defaults are preserved.
   No installation, commit, push or persistent service; no new analysis fit or
   frozen validation run.
+
+## 2026-11-10 — Full benchmark and `cancer_pc` suite rerun
+
+- Reran the default full benchmark (`uv run --no-sync --offline python -m
+  benchmarks.full.run`, plots on; 126 cases, 1,386 rows, exit 0) into
+  `benchmarks/results/run_20261110_122947Z_full`. Mean ARI per method and the
+  status counts match `run_20261107_audit_fixes_full` to four decimals; no case
+  failed.
+- Ran the `cancer_pc` suite (4 cases, 44 rows, exit 0) into
+  `benchmarks/results/run_20261110_124455Z_cancer_pc`. `tbs` returns one cluster
+  on all four cases; `tbs_family_diffusion` has mean ARI 0.8218 against
+  `spectral` 0.8769 and `kmeans` 0.8471, which receive the known cluster count.
+  Both runs used the sources before the fixes below.
+
+## 2026-11-10 — Second round of repository audit fixes
+
+- `_validated_annotations` and `extract_bool_column_dict` raise `ValueError`
+  on a non-unique annotation index or on a decision value that is not a
+  boolean. Before, the last duplicate node row won silently and the text
+  `"False"` counted as true. Integer 0/1 decision values are rejected too.
+- `populate_distributions` copies the leaf matrix, so a leaf `distribution` no
+  longer shares memory with the caller's float DataFrame.
+- `calculate_clustering_metrics` raises `ValueError` on a length mismatch,
+  duplicate sample ids or unmapped labels instead of returning NaN metrics on a
+  `status=ok` row. The call sits outside the method-error handler in
+  `method_execution.py`, so the error stops the case rather than writing an
+  error row. An empty report and a missing `cluster_id` column still return NaN.
+- The four silent `except Exception` blocks in `relationship_analysis.py` catch
+  `OSError`, `ValueError` and `np.linalg.LinAlgError` only and print what was
+  skipped. The isolated case worker sends the full traceback.
+  `benchmark_cluster_algorithm` no longer writes `test_case_num` into the
+  caller's case dicts.
+- `export_subspace_cluster_rosters.py` uses the shared `safe_name`; the radial
+  PDF file name is unchanged. Five recorded evidence scripts under
+  `reports/subtree_clustering_research_20261109` and
+  `reports/subtree_spectral_alignment_20261109` are excluded from Ruff.
+- Verification: the ordered suite passes 1,238 tests; Ruff, deptry, vulture and
+  wiki-lint pass; a `cancer_pc` rerun matches the run above in status, cluster
+  count and ARI on all 44 rows. `scripts/generated_files.py check` still fails
+  on 411 unclassified files in the four untracked `reports/subtree_*_20261109`
+  folders.
+- The 8 and 9 November evidence manifests hash the sources before these fixes;
+  that state is commit `d2f26455`.

@@ -198,6 +198,11 @@ class TreeDecomposition:
             raise ValueError("Traversal annotations are missing decision columns.")
         if any(annotations_df[column].isna().any() for column in required_gate_decision_columns):
             raise ValueError("Traversal decision columns must not contain missing values.")
+        if not annotations_df.index.is_unique:
+            raise ValueError("Traversal annotations index must be unique.")
+        for column in required_gate_decision_columns:
+            if not annotations_df[column].map(lambda v: isinstance(v, (bool, np.bool_))).all():
+                raise ValueError(f"Traversal decision column {column!r} must contain booleans.")
         if set(self._node_ids) - set(annotations_df.index):
             raise ValueError("Traversal annotations must cover every tree node.")
         return annotations_df

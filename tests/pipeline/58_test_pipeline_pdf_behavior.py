@@ -48,3 +48,22 @@ def test_pipeline_preserves_explicit_case_identity(monkeypatch):
     )
 
     assert seen_case_numbers == [41, 42]
+
+
+def test_pipeline_does_not_mutate_input_cases(monkeypatch):
+    seen_case_numbers: list[int] = []
+
+    def fake_run_single_case(**kwargs):
+        seen_case_numbers.append(kwargs["tc"]["test_case_num"])
+        return [], []
+
+    monkeypatch.setattr(pipeline, "run_single_case", fake_run_single_case)
+    cases = [{"name": "case_a", "seed": 1}, {"name": "case_b", "seed": 2, "test_case_num": 9}]
+
+    pipeline.benchmark_cluster_algorithm(test_cases=cases, verbose=False, methods=["tbs"])
+
+    assert seen_case_numbers == [1, 9]
+    assert cases == [
+        {"name": "case_a", "seed": 1},
+        {"name": "case_b", "seed": 2, "test_case_num": 9},
+    ]

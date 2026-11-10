@@ -29,7 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from applications.endotypes._shared import load_binary_feature_matrix, parse_go_term
+from applications.endotypes._shared import load_binary_feature_matrix, parse_go_term, safe_name
 from applications.endotypes.reports.artifact_index import load_artifact_index
 
 # The PDF builder reads the subspace folders this script writes, so both use its naming rule.
@@ -74,8 +74,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def safe_name(value: object) -> str:
-    return "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in str(value)).strip("_")
+def radial_pdf_name(dataset_label: object) -> str:
+    return f"{safe_name(dataset_label).strip('_').lower()}_radial_tree_clusters.pdf"
 
 
 def safe_int(value: object, default: int = 0) -> int:
@@ -1000,9 +1000,7 @@ def main() -> None:
         clusters=clusters,
         gene_preview=args.markdown_gene_preview,
     )
-    write_radial_pdf(
-        output_dir / f"{safe_name(dataset_label).lower()}_radial_tree_clusters.pdf", status
-    )
+    write_radial_pdf(output_dir / radial_pdf_name(dataset_label), status)
     structure = {
         "dataset_label": dataset_label,
         "experiment_dir": str(experiment_dir),
@@ -1013,7 +1011,7 @@ def main() -> None:
             "subspace_cluster_status.csv",
             "subspace_cluster_roster.md",
             "full_space_embedding_coordinates.csv",
-            f"{safe_name(dataset_label).lower()}_radial_tree_clusters.pdf",
+            radial_pdf_name(dataset_label),
         ],
         "subspace_directory_patterns": [
             "subspaces/rank##_weighting_block_name/",

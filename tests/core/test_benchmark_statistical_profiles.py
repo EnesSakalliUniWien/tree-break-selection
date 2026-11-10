@@ -15,11 +15,8 @@ def test_one_to_one_fragmentation_differs_from_legacy_majority_remap():
     assert metrics.matched_rare_f1 == 1
     assert metrics.pair_split_share == pytest.approx(4 / 7)
     assert metrics.pair_merge_share == 0
-    assert np.isnan(
-        calculate_clustering_metrics(
-            report.rename(index={"a": "z"}), report.index, truth
-        ).matched_macro_f1
-    )
+    with pytest.raises(ValueError, match="Unmapped"):
+        calculate_clustering_metrics(report.rename(index={"a": "z"}), report.index, truth)
 
 
 def test_matching_aligns_series_and_leaves_unmatched_truth_groups_at_zero():
@@ -96,3 +93,17 @@ def test_centroid_overlap_gives_equidistant_rows_half_weight_after_rotation():
     for x in (points, rotated):
         node = build_statistical_profiles(x, subtrees={"s": ([0, 1], [2, 3])}).subtrees.iloc[0]
         assert node.centroid_overlap_share == 0.25
+
+
+@pytest.mark.parametrize(
+    ("names", "truth", "report_index", "match"),
+    [
+        (list("abc"), [0, 0], list("abc"), "true_labels"),
+        (list("abc"), [0, 0, 1], list("ab"), "report_df has"),
+        (list("aab"), [0, 0, 1], list("aab"), "Duplicate"),
+    ],
+)
+def test_calculate_clustering_metrics_rejects_misaligned_input(names, truth, report_index, match):
+    report = pd.DataFrame({"cluster_id": range(len(report_index))}, index=report_index)
+    with pytest.raises(ValueError, match=match):
+        calculate_clustering_metrics(report, pd.Index(names), np.array(truth))

@@ -376,18 +376,24 @@ def calculate_clustering_metrics(
 
     # Metrics are only valid when predicted labels and truth align by sample.
     if len(sample_index) != len(true_arr):
-        return nan_clustering_metrics()
+        raise ValueError(
+            f"true_labels has {len(true_arr)} entries for {len(sample_index)} samples."
+        )
     if len(report_df.index) != len(sample_index):
-        return nan_clustering_metrics()
+        raise ValueError(
+            f"report_df has {len(report_df.index)} rows for {len(sample_index)} samples."
+        )
     if sample_index.has_duplicates or report_df.index.has_duplicates:
-        return nan_clustering_metrics()
+        raise ValueError("Duplicate sample ids in sample_names or report_df index.")
 
     true_lookup = pd.Series(true_arr, index=sample_index)
     true_cluster = report_df.index.to_series().map(true_lookup)
     pred_cluster = report_df["cluster_id"]
 
     if true_cluster.isna().any() or pred_cluster.isna().any():
-        return nan_clustering_metrics()
+        raise ValueError(
+            "Unmapped or missing labels: report_df ids not in sample_names, or NaN cluster_id."
+        )
 
     y_true = true_cluster.to_numpy()
     y_pred = pred_cluster.to_numpy()

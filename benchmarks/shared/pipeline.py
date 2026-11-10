@@ -163,8 +163,8 @@ def benchmark_cluster_algorithm(
             )
 
         for i, tc in enumerate(test_cases, 1):
-            if "test_case_num" not in tc:
-                tc["test_case_num"] = i
+            # Copy instead of writing into the caller's case; an explicit test_case_num wins.
+            tc = {"test_case_num": i, **tc}
             case_result_rows, case_computed_results = run_single_case(
                 tc=tc,
                 total_cases=total_cases,

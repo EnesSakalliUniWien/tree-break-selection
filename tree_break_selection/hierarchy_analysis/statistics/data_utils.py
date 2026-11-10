@@ -236,4 +236,6 @@ def extract_bool_column_dict(
             f"Column {column_name!r} contains missing values. "
             "Ensure all nodes are annotated before extraction."
         )
+    if not series.map(lambda v: isinstance(v, (bool, np.bool_))).all():
+        raise ValueError(f"Column {column_name!r} must contain boolean values.")
     return {node_id: bool(value) for node_id, value in series.items()}
