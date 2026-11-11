@@ -1,0 +1,949 @@
+# ===== protocol.md =====
+# Gaussian best-flat-cut reference, 10-11 November 2026
+#
+# Statistic: rho = pi(1-pi) D^2 of the best flat cut of one sample, pooled within covariance, divisor n - 2.
+# Population: one Gaussian, k fixed, or k chosen by the package's invariant_directions from the same data.
+# Seed 20261110 with one stream id per job kind; every script is deterministic.
+#
+# Run order and command (repository root, no installs, no source edits):
+#   OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python <script> <args>
+#   check_open_points.py out.json        table n = 50..800, k = 1..6, and the first selection test
+#   verify_enumerator.py out.json        checks of the exact enumerator and of the search wrapper
+#   point2_small_n.py out.json           table n = 10..40 with exact enumeration (first run; about 35 minutes)
+#   point4_large_n.py out.json 65 "50,100,200:3,4,5,6" 2000 200 150 60 60     search comparison (first run)
+#   analyse.py point2|point4 ...         summaries of the two first-run files
+#   reverify.py out.json                 same-seed re-run of 10 small-n cells and 3 search cells
+#   missing_points.py out.json 18        more than 30 features, k above 6, n = 400 search check; 18-minute cap
+#
+# Searches: S0 = fixed grid of directions and re-sorts from the single best one (check_open_points.best_rho);
+# S1 = same grid, re-sorts from the top 50 plus single-point moves; S2 = 30,000 directions, top 50 plus moves;
+# S3 = 300,000 directions, top 50 plus moves; S4 = 30,000 directions, top 500 plus moves;
+# S5 = 200 random labelings plus moves; EX = exact enumeration of all flat cuts.
+#
+# Deviations: the first run was stopped during the n = 400 search comparison; its selection test with more
+# than 30 features and its k above 6 cells never started. Its per-dataset files were not retained. Its replicate
+# counts for the search comparison were reduced from 4,000 to 2,000 per cell while it ran. missing_points.py
+# replaces the cells that never started, with fewer n values and replicates. In analyse.py the count of datasets
+# "larger" than the exact value uses a relative tolerance of 1e-9 after one cell at n = 10, k = 6 showed a
+# difference of 3.5e-9 on a value near 5,000.
+
+
+# ===== check_open_points.py =====
+"""Two open points of the Gaussian best-flat-cut reference.
+
+1. Table: distribution of the best flat cut's rho for one Gaussian population, per (n, k), k fixed.
+2. k chosen from the same data: invariant directions from the subtree's own covariance (the package's
+   ``invariant_directions``), then the best flat cut inside them, compared with the table at the chosen k.
+"""
+
+import json
+import os
+import sys
+from multiprocessing import Pool
+
+import numpy as np
+from scipy.stats import binomtest
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (
+    invariant_directions,
+)
+
+SEED = 20261110
+NS, KS, TABLE_REPS, SELECT_REPS = (50, 100, 200, 400, 800), (1, 2, 3, 4, 5, 6), 4000, 2000
+SPECTRA = {
+    "isotropic, p=10": np.ones(10),
+    "isotropic, p=30": np.ones(30),
+    "one weak direction (2.5), p=10": np.r_[2.5, np.ones(9)],
+    "two strong directions (16, 4), p=10": np.r_[16.0, 4.0, np.ones(8)],
+    "geometric 100 to 1, p=10": np.geomspace(100, 1, 10),
+}
+
+
+def directions(k):
+    if k == 1:
+        return np.ones((1, 1))
+    if k == 2:
+        a = np.linspace(0, np.pi, 720, endpoint=False)
+        return np.c_[np.cos(a), np.sin(a)]
+    if k == 3:
+        i = np.arange(2000) + 0.5
+        z, phi = i / 2000, np.pi * (1 + 5**0.5) * i
+        r = np.sqrt(1 - z * z)
+        return np.c_[r * np.cos(phi), r * np.sin(phi), z]
+    v = np.random.default_rng([SEED, 7, k]).standard_normal((3000, k))
+    return v / np.linalg.norm(v, axis=1, keepdims=True)
+
+
+def best_rho(x, grid):
+    """rho of the best flat cut found: all thresholds on the grid directions, then Fisher re-sorts."""
+    n = len(x)
+    y = x - x.mean(0)
+    y = y @ np.linalg.inv(np.linalg.cholesky(y.T @ y / n)).T
+    sizes = np.arange(1, n)
+
+    def along(v):
+        order = np.argsort(y @ v, axis=0)
+        prefix = np.cumsum(y[order], axis=0)[:-1]
+        r2 = (prefix**2).sum(-1) / (sizes * (n - sizes)).reshape((-1,) + (1,) * (prefix.ndim - 2))
+        return r2, order
+
+    r2, order = along(grid.T)
+    i, j = np.unravel_index(np.argmax(r2), r2.shape)
+    best = (r2[i, j], order[:, j], i + 1)
+    for _ in range(20):
+        left = np.zeros(n, bool)
+        left[best[1][: best[2]]] = True
+        d = y[left].mean(0) - y[~left].mean(0)
+        r2, order = along(d / np.linalg.norm(d))
+        i = int(np.argmax(r2))
+        if r2[i] <= best[0] + 1e-12:
+            break
+        best = (r2[i], order, i + 1)
+    return (n - 2) / n * best[0] / (1 - best[0])
+
+
+def table_job(job):
+    n, k = job
+    rng = np.random.default_rng([SEED, 51, n, k])
+    grid = directions(k)
+    return n, k, [best_rho(rng.standard_normal((n, k)), grid) for _ in range(TABLE_REPS)]
+
+
+def select_job(job):
+    name, n = job
+    spectrum = SPECTRA[name]
+    rng = np.random.default_rng([SEED, 52, n, list(SPECTRA).index(name)])
+    grids = {k: directions(k) for k in KS}
+    out = []
+    for _ in range(SELECT_REPS):
+        x = rng.standard_normal((n, len(spectrum))) * np.sqrt(spectrum)
+        chosen = invariant_directions(x)
+        k = len(chosen)
+        out.append((k, best_rho(x @ chosen.T, grids[k]) if k in grids else float("nan")))
+    return name, n, out
+
+
+if __name__ == "__main__":
+    out_path = sys.argv[1]
+    workers = max(1, min(10, (os.cpu_count() or 2) - 2))
+    result = {"table": [], "selection": []}
+    with Pool(workers) as pool:
+        points = {}
+        for n, k, rho in pool.imap_unordered(table_job, [(n, k) for k in KS for n in NS]):
+            rho = np.array(rho)
+            half = TABLE_REPS // 2
+            row = dict(n=n, k=k, mean=float(rho.mean()), q95=float(np.quantile(rho, 0.95)), q99=float(np.quantile(rho, 0.99)),
+                       q99_first_half=float(np.quantile(rho[:half], 0.99)), q99_second_half=float(np.quantile(rho[half:], 0.99)))
+            points[n, k] = row["q99"]
+            result["table"].append(row)
+            print("TABLE", json.dumps(row), flush=True)
+        for name, n, rows in pool.imap_unordered(select_job, [(name, n) for name in SPECTRA for n in (100, 400)]):
+            ks = np.array([k for k, _ in rows])
+            rho = np.array([r for _, r in rows])
+            reject = np.array([k in KS and r > points[n, k] for k, r in rows])
+            ci = binomtest(int(reject.sum()), len(rows)).proportion_ci()
+            by_k = {int(k): [int(reject[ks == k].sum()), int((ks == k).sum())] for k in np.unique(ks)}
+            row = dict(spectrum=name, n=n, datasets=len(rows), rejections=int(reject.sum()), ci_low=ci.low, ci_high=ci.high,
+                       rejections_and_count_by_k=by_k, outside_table=int(((ks > max(KS))).sum()))
+            result["selection"].append(row)
+            print("SELECT", json.dumps(row), flush=True)
+    json.dump(result, open(out_path, "w"), indent=1)
+    print("DONE", flush=True)
+
+
+# ===== lib.py =====
+"""Shared search code for open_points_2. Reuses check_open_points.directions/best_rho conventions.
+
+Facts used (derived in whitened coordinates y, total covariance = I with divisor n, so sum(y) = 0):
+for a split with left sum S and left size s, r2 = |S|^2 / (s (n - s)) is the largest between/total ratio
+over directions, and rho = (n-2)/n * r2/(1-r2). Between scatter = n * r2, so maximising r2 over all
+2-partitions is the 2-means problem in whitened coordinates.
+"""
+
+import itertools
+import os
+import sys
+
+import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from check_open_points import SEED, best_rho, directions  # noqa: E402,F401
+
+
+def whiten(x):
+    n = len(x)
+    y = x - x.mean(0)
+    return y @ np.linalg.inv(np.linalg.cholesky(y.T @ y / n)).T
+
+
+def to_rho(r2, n):
+    return (n - 2) / n * r2 / (1 - r2)
+
+
+def grid(k, m, stream=0):
+    """m unit directions; k=1 exact, k=2 equal angles, k=3 Fibonacci sphere, k>=4 random (own stream)."""
+    if k == 1:
+        return np.ones((1, 1))
+    if k == 2:
+        a = np.linspace(0, np.pi, m, endpoint=False)
+        return np.c_[np.cos(a), np.sin(a)]
+    if k == 3:
+        i = np.arange(m) + 0.5
+        z, phi = i / m, np.pi * (1 + 5**0.5) * i
+        r = np.sqrt(1 - z * z)
+        return np.c_[r * np.cos(phi), r * np.sin(phi), z]
+    v = np.random.default_rng([SEED, 60, k, m, stream]).standard_normal((m, k))
+    return v / np.linalg.norm(v, axis=1, keepdims=True)
+
+
+def _along_one(y, v):
+    n = len(y)
+    order = np.argsort(y @ v)
+    prefix = np.cumsum(y[order], axis=0)[:-1]
+    s = np.arange(1, n)
+    r2 = (prefix**2).sum(-1) / (s * (n - s))
+    i = int(np.argmax(r2))
+    mask = np.zeros(n, bool)
+    mask[order[: i + 1]] = True
+    return r2[i], mask
+
+
+def _r2_mask(y, mask):
+    s = mask.sum()
+    return (y[mask].sum(0) ** 2).sum() / (s * (len(y) - s))
+
+
+def resort(y, mask, r2, steps=20):
+    """Fisher re-sorts as in best_rho: sort along the mean difference, take the best threshold."""
+    for _ in range(steps):
+        d = y[mask].mean(0) - y[~mask].mean(0)
+        r2_new, m_new = _along_one(y, d / np.linalg.norm(d))
+        if r2_new <= r2 + 1e-12:
+            break
+        r2, mask = r2_new, m_new
+    return r2, mask
+
+
+def swap(y, mask, r2):
+    """Single-point moves (Hartigan) while any move raises r2; then re-sort; repeat until stable."""
+    n = len(y)
+    while True:
+        improved = False
+        while True:
+            S, s = y[mask].sum(0), mask.sum()
+            sign = np.where(mask, -1.0, 1.0)
+            S_new = S + sign[:, None] * y
+            s_new = s + sign
+            ok = (s_new >= 1) & (s_new <= n - 1)
+            cand = np.where(ok, (S_new**2).sum(1) / np.maximum(s_new * (n - s_new), 1), -1)
+            i = int(np.argmax(cand))
+            if cand[i] <= r2 + 1e-12:
+                break
+            mask = mask.copy()
+            mask[i] = ~mask[i]
+            r2, improved = cand[i], True
+        r2b, maskb = resort(y, mask, r2)
+        if r2b > r2 + 1e-12:
+            r2, mask, improved = r2b, maskb, True
+        if not improved:
+            return r2, mask
+
+
+def search(x, dirs, top=1, local_swap=False, chunk=2000):
+    """rho of the best flat cut found. top=1, local_swap=False reproduces check_open_points.best_rho."""
+    y = whiten(x)
+    n = len(y)
+    s = np.arange(1, n)[:, None]
+    best_r2 = np.empty(len(dirs))
+    for a in range(0, len(dirs), chunk):
+        g = dirs[a : a + chunk]
+        order = np.argsort(y @ g.T, axis=0)
+        prefix = np.cumsum(y[order], axis=0)[:-1]
+        best_r2[a : a + chunk] = ((prefix**2).sum(-1) / (s * (n - s))).max(0)
+    picks = np.argsort(-best_r2, kind="stable")[:top]
+    out = 0.0
+    for j in picks:
+        r2, mask = _along_one(y, dirs[j])
+        r2, mask = resort(y, mask, r2)
+        if local_swap:
+            r2, mask = swap(y, mask, r2)
+        out = max(out, r2)
+    return to_rho(out, n)
+
+
+_SUBSETS = {}
+
+
+def exact_r2(y, return_masks=False, chunk=4000):
+    """Exact best flat cut: hyperplanes through every k of the n points, all 2^k on-plane assignments.
+
+    For points in general position every non-trivial linearly separable dichotomy arises this way (each
+    cell of the dual arrangement has a vertex = a hyperplane through k points), and every candidate is
+    separable (a small tilt realises any sign pattern on k affinely independent points)."""
+    n, k = y.shape
+    key = (n, k)
+    if key not in _SUBSETS:
+        _SUBSETS[key] = np.array(list(itertools.combinations(range(n), k)))
+    subs = _SUBSETS[key]
+    assign = np.array(list(itertools.product([0, 1], repeat=k)), float)  # (2^k, k)
+    best, masks = 0.0, set()
+    for a in range(0, len(subs), chunk):
+        sb = subs[a : a + chunk]
+        P = y[sb]  # (M, k, k)
+        A = np.concatenate([P, -np.ones(P.shape[:2] + (1,))], axis=2)  # w.p - c = 0
+        wc = np.linalg.svd(A)[2][:, -1, :]  # (M, k+1)
+        side = y @ wc[:, :k].T - wc[:, k]  # (n, M)
+        pos = side > 0
+        pos[sb.T, np.arange(len(sb))] = False  # on-plane points handled by the assignments
+        S0 = pos.T.astype(float) @ y  # (M, k)
+        c0 = pos.sum(0)  # (M,)
+        S = S0[:, None, :] + np.einsum("ak,mkd->mad", assign, P)  # (M, 2^k, k)
+        c = c0[:, None] + assign.sum(1)[None, :]
+        valid = (c >= 1) & (c <= n - 1)
+        r2 = np.where(valid, (S**2).sum(-1) / np.maximum(c * (n - c), 1), -1)
+        best = max(best, r2.max())
+        if return_masks:
+            w = 1 << np.arange(n, dtype=np.int64)
+            base = (pos.T.astype(np.int64) * w).sum(1)
+            sub_bits = w[sb]  # (M, k)
+            full = base[:, None] + (assign.astype(np.int64)[None, :, :] * sub_bits[:, None, :]).sum(-1)
+            allbits = (1 << n) - 1
+            canon = np.where(full & 1, allbits ^ full, full)  # point 0 always on side "0"
+            masks.update(canon[valid].tolist())
+    return (best, masks) if return_masks else best
+
+
+def exact_rho(x):
+    return to_rho(exact_r2(whiten(x)), len(x))
+
+
+# ===== verify_enumerator.py =====
+"""Checks of lib.exact_r2 and lib.search before they are used.
+
+1. Distinct dichotomies found = Cover count sum_{i=1..k} binom(n-1, i) (non-trivial, unordered).
+2. Every enumerated dichotomy is linearly separable (package is_separable LP) on a small case.
+3. Brute force over all 2^(n-1)-1 splits (n <= 14): max r2 over all splits = exact flat-cut max
+   (2-means optimum is separable), and max over the separable ones = exact.
+4. k=1: exact == best_rho; k=2: exact vs best_rho (720 angles).
+5. search(top=1, local_swap=False) == check_open_points.best_rho bit for bit.
+"""
+
+import itertools
+import os
+import json
+import sys
+from math import comb
+
+import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lib import SEED, best_rho, directions, exact_r2, search, to_rho, whiten  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import is_separable  # noqa: E402
+
+rng = np.random.default_rng([SEED, 61])
+out = {}
+
+cover = []
+for n, k in [(8, 2), (10, 2), (10, 3), (12, 3), (12, 4), (13, 5), (12, 6), (16, 4)]:
+    y = whiten(rng.standard_normal((n, k)))
+    _, masks = exact_r2(y, return_masks=True)
+    cover.append(dict(n=n, k=k, found=len(masks), cover=sum(comb(n - 1, i) for i in range(1, k + 1))))
+out["cover_count"] = cover
+print(cover, flush=True)
+
+n, k = 10, 3
+y = whiten(rng.standard_normal((n, k)))
+_, masks = exact_r2(y, return_masks=True)
+bad = sum(not is_separable(y, (np.int64(m) >> np.arange(n)) & 1 == 1) for m in masks)
+nonsep = 0
+for m in range(1, 1 << (n - 1)):
+    if m not in masks:
+        nonsep += 1
+out["separability"] = dict(n=n, k=k, enumerated=len(masks), not_separable_among_enumerated=int(bad))
+print(out["separability"], flush=True)
+
+brute = []
+for n, k in [(10, 2), (12, 3), (12, 4), (14, 5), (14, 6)]:
+    for rep in range(20):
+        y = whiten(rng.standard_normal((n, k)))
+        ex, masks = exact_r2(y, return_masks=True)
+        bits = (np.arange(1, 1 << (n - 1))[:, None] >> np.arange(n)) & 1  # point n-1 always right
+        s = bits.sum(1)
+        S = bits @ y
+        r2 = (S**2).sum(1) / (s * (n - s))
+        sep = np.array([m in masks or ((1 << n) - 1 - m) in masks for m in range(1, 1 << (n - 1))])
+        brute.append(dict(n=n, k=k, exact=ex, all_splits_max=r2.max(), separable_max=r2[sep].max()))
+d_all = max(abs(b["all_splits_max"] - b["exact"]) for b in brute)
+d_sep = max(abs(b["separable_max"] - b["exact"]) for b in brute)
+out["brute_force"] = dict(datasets=len(brute), max_abs_diff_all_splits=d_all, max_abs_diff_separable=d_sep)
+print(out["brute_force"], flush=True)
+
+cmp = []
+for k in (1, 2):
+    for n in (12, 16, 20):
+        diffs = []
+        for _ in range(200):
+            x = rng.standard_normal((n, k))
+            diffs.append(to_rho(exact_r2(whiten(x)), n) - best_rho(x, directions(k)))
+        diffs = np.array(diffs)
+        cmp.append(dict(n=n, k=k, datasets=200, min_diff=diffs.min(), max_diff=diffs.max(), n_exact_larger=int((diffs > 1e-9).sum())))
+out["exact_vs_best_rho_k1_k2"] = cmp
+print(cmp, flush=True)
+
+same = 0
+for k in (1, 2, 3, 4, 6):
+    for n in (20, 100):
+        for _ in range(20):
+            x = rng.standard_normal((n, k))
+            same += search(x, directions(k)) == best_rho(x, directions(k))
+out["search_top1_equals_best_rho"] = f"{same}/200"
+print(out["search_top1_equals_best_rho"], flush=True)
+json.dump(out, open(sys.argv[1], "w"), indent=1, default=float)
+
+
+# ===== point2_small_n.py =====
+"""Point 2 (and the exact ground truth of point 4): best flat cut rho for one Gaussian population, n = 10..40.
+
+Per dataset: S0 = check_open_points.best_rho (current search), S1 = same grid + re-sorts from the top 50
+grid candidates + local swap, S2 = 30,000 directions (k=2: 7,200 angles; k=3: Fibonacci) + top 50 + swap,
+EX = exact enumeration (lib.exact_r2) where C(n,k) 2^k <= 5e6. Cells where exact is too costly get exact
+(and S3 = 300,000 directions + top 50 + swap) on the first EXACT_SUBSET datasets only.
+Degenerate check: n = k+1 and n = k+2 with exact enumeration.
+"""
+
+import json
+import os
+import sys
+from math import comb
+from multiprocessing import Pool
+
+import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lib import SEED, best_rho, directions, exact_r2, grid, search, to_rho, whiten  # noqa: E402
+
+NS, KS, REPS, BLOCK = (10, 15, 20, 30, 40), (1, 2, 3, 4, 5, 6), 4000, 500
+S2_REPS = 1000  # S2 on the first 1000 datasets of each cell
+EXACT_SUBSET = {(30, 6): 100, (40, 5): 100, (40, 6): 20}
+
+
+def feasible(n, k):
+    return comb(n, k) * 2**k <= 5e6
+
+
+def job(args):
+    n, k, b = args
+    rng = np.random.default_rng([SEED, 63, n, k, b])
+    g0, g2 = directions(k), grid(k, 7200 if k == 2 else 30000)
+    g3 = grid(k, 300000, stream=1) if k >= 3 else g2
+    rows = []
+    for i in range(BLOCK):
+        idx = b * BLOCK + i
+        x = rng.standard_normal((n, k))
+        r = dict(S0=best_rho(x, g0), S1=search(x, g0, 50, True))
+        if idx < S2_REPS:
+            r["S2"] = search(x, g2, 50, True)
+        if feasible(n, k) or idx < EXACT_SUBSET.get((n, k), 0):
+            r["EX"] = to_rho(exact_r2(whiten(x)), n)
+        if not feasible(n, k) and idx < EXACT_SUBSET.get((n, k), 0):
+            r["S3"] = search(x, g3, 50, True)
+        rows.append(r)
+    return n, k, b, rows
+
+
+def degenerate(k):
+    rng = np.random.default_rng([SEED, 64, k])
+    out = {}
+    for n in (k + 1, k + 2):
+        vals = []
+        for _ in range(200):
+            x = rng.standard_normal((n, k))
+            with np.errstate(divide="ignore", invalid="ignore"):
+                vals.append(float(to_rho(exact_r2(whiten(x)), n)))
+        v = np.array(vals)
+        out[n] = dict(datasets=200, infinite=int(np.isinf(v).sum()), q50=float(np.quantile(v, 0.5)),
+                      q99=float(np.quantile(v, 0.99)), max=float(v.max()))
+    return k, out
+
+
+if __name__ == "__main__":
+    out_path = sys.argv[1]
+    jobs = [(n, k, b) for n in NS for k in KS for b in range(REPS // BLOCK)]
+    jobs.sort(key=lambda j: -comb(j[0], j[1]) * 2 ** j[1])  # expensive first
+    res = {}
+    with Pool(10) as pool:
+        deg = dict(pool.map(degenerate, KS))
+        for n, k, b, rows in pool.imap_unordered(job, jobs):
+            res.setdefault((n, k), {})[b] = rows
+            print("done", n, k, b, flush=True)
+    raw = {f"{n},{k}": [r for b in sorted(v) for r in v[b]] for (n, k), v in sorted(res.items())}
+    json.dump(dict(raw=raw, degenerate=deg), open(out_path, "w"))
+    print("DONE", flush=True)
+
+
+# ===== point4_large_n.py =====
+"""Point 4 for n where exact enumeration is infeasible (also used for point 1 with other cells).
+
+Searches on the same datasets (4,000 per cell unless REPS given):
+  S0 = check_open_points.best_rho (current: fixed grid, re-sorts from the single best grid candidate)
+  S1 = same grid + re-sorts from the top 50 grid candidates + local swap
+  S2 = 30,000 directions + top 50 + swap         (run on the first R2 datasets + the top T2 by S1)
+  S3 = 300,000 directions + top 50 + swap        (run on the first R3 datasets + the top T3 by max(S1,S2))
+The first indices are random datasets (unbiased shortfall estimates); the top sets refine the upper tail.
+Invariance: first INV datasets, S0 and S1 recomputed on x @ M + c with M a random Gaussian k x k matrix.
+
+usage: point4_large_n.py out.json stream "n1,n2:k1,k2" REPS R2 T2 R3 T3 [grid0_size]
+"""
+
+import json
+import os
+import sys
+from multiprocessing import Pool
+
+import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lib import SEED, best_rho, directions, grid, search  # noqa: E402
+
+BLOCK, INV = 400, 200
+
+
+def g0(k):
+    return directions(k) if k <= 6 else grid(k, 3000, stream=7)
+
+
+def data(stream, n, k, b):
+    rng = np.random.default_rng([SEED, stream, n, k, b])
+    return rng.standard_normal((BLOCK, n, k))
+
+
+def stage1(args):
+    stream, n, k, b = args
+    X, g = data(stream, n, k, b), g0(k)
+    rows = []
+    rng = np.random.default_rng([SEED, stream, n, k, b, 1])
+    for i, x in enumerate(X):
+        r = dict(S0=best_rho(x, g), S1=search(x, g, 50, True))
+        if b * BLOCK + i < INV:
+            xm = x @ rng.standard_normal((k, k)) + rng.standard_normal(k) * 5
+            r["S0_mapped"], r["S1_mapped"] = best_rho(xm, g), search(xm, g, 50, True)
+        rows.append(r)
+    return n, k, b, rows
+
+
+def stage(args):
+    stream, n, k, b, idx, m, gstream = args
+    X, g = data(stream, n, k, b), grid(k, m, stream=gstream)
+    return n, k, [(int(i), search(X[i - b * BLOCK], g, 50, True)) for i in idx]
+
+
+def run_stage(pool, stream, rows, name, m, gstream, first, top):
+    jobs = []
+    for (n, k), r in rows.items():
+        best = np.array([max(v for key, v in d.items() if key in ("S0", "S1", "S2", "S3")) for d in r])
+        pick = sorted(set(range(first)) | set(np.argsort(-best)[:top].tolist()))
+        for b in range(len(r) // BLOCK):
+            idx = [i for i in pick if b * BLOCK <= i < (b + 1) * BLOCK]
+            for c in range(0, len(idx), 10):
+                jobs.append((stream, n, k, b, idx[c : c + 10], m, gstream))
+    for n, k, out in pool.imap_unordered(stage, jobs):
+        for i, v in out:
+            rows[n, k][i][name] = v
+    print("stage", name, "done", flush=True)
+
+
+if __name__ == "__main__":
+    out_path, stream, cells = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+    reps, r2, t2, r3, t3 = map(int, sys.argv[4:9])
+    ns, ks = ([int(v) for v in part.split(",")] for part in cells.split(":"))
+    rows = {}
+    with Pool(10) as pool:
+        jobs = [(stream, n, k, b) for n in ns for k in ks for b in range(reps // BLOCK)]
+        for n, k, b, r in pool.imap_unordered(stage1, jobs[::-1]):
+            rows.setdefault((n, k), [None] * reps)[b * BLOCK : (b + 1) * BLOCK] = r
+        print("stage S0/S1 done", flush=True)
+        json.dump({f"{n},{k}": v for (n, k), v in rows.items()}, open(out_path, "w"))
+        run_stage(pool, stream, rows, "S2", 30000, 0, r2, t2)
+        json.dump({f"{n},{k}": v for (n, k), v in rows.items()}, open(out_path, "w"))
+        if r3 + t3 > 0:
+            run_stage(pool, stream, rows, "S3", 300000, 1, r3, t3)
+    json.dump({f"{n},{k}": v for (n, k), v in rows.items()}, open(out_path, "w"))
+    print("DONE", flush=True)
+
+
+# ===== analyse.py =====
+"""Summaries of the open_points_2 results. usage: analyse.py point2|point4|point1|point3 out.json in.json [more]"""
+
+import json
+import sys
+
+import numpy as np
+from scipy.stats import binomtest
+
+B = 1000
+EPS = 1e-9
+
+
+def q99(v):
+    return float(np.quantile(v, 0.99))
+
+
+def boot_se(v, seed=0):
+    v = np.asarray(v)
+    rng = np.random.default_rng(seed)
+    return float(np.std([q99(v[rng.integers(0, len(v), len(v))]) for _ in range(B)]))
+
+
+def boot_paired_diff(a, b, seed=1):
+    a, b = np.asarray(a), np.asarray(b)
+    rng = np.random.default_rng(seed)
+    d = []
+    for _ in range(B):
+        i = rng.integers(0, len(a), len(a))
+        d.append(q99(a[i]) - q99(b[i]))
+    return float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975))
+
+
+def qrow(v):
+    v = np.asarray(v)
+    h = len(v) // 2
+    return dict(datasets=len(v), q99=q99(v), se_boot=boot_se(v), q99_half1=q99(v[:h]), q99_half2=q99(v[h:]))
+
+
+def shortfall(found, truth):
+    d = np.asarray(truth) - np.asarray(found)
+    return dict(datasets=len(d), larger=int((d > EPS * np.abs(np.asarray(truth))).sum()), mean=float(d.mean()), max=float(d.max()),
+                max_relative=float((d / np.asarray(truth)).max()))
+
+
+def point2(paths):
+    d = json.load(open(paths[0]))
+    out = dict(degenerate=d["degenerate"], cells=[])
+    for key, rows in d["raw"].items():
+        n, k = map(int, key.split(","))
+        get = lambda name: np.array([r[name] for r in rows if name in r])
+        S0, S1, S2, EX = get("S0"), get("S1"), get("S2"), get("EX")
+        cell = dict(n=n, k=k, S0=qrow(S0), S1=qrow(S1))
+        m2 = len(S2)
+        cell["S2_first_datasets"] = qrow(S2)
+        if len(EX) == len(rows):
+            cell["EX"] = qrow(EX)
+            cell["q99_EX_minus_S0_ci95"] = boot_paired_diff(EX, S0)
+            for s, v in (("S0", S0), ("S1", S1)):
+                cell[f"shortfall_{s}_vs_EX"] = shortfall(v, EX)
+            cell["shortfall_S2_vs_EX"] = shortfall(S2, EX[:m2])
+        else:
+            m = len(EX)
+            cell["EX_subset"] = dict(datasets=m)
+            for s, v in (("S0", S0), ("S1", S1), ("S2", S2), ("S3", get("S3"))):
+                cell[f"shortfall_{s}_vs_EX"] = shortfall(v[:m], EX)
+            best = np.maximum(np.maximum(S0, S1)[:m2], S2)
+            cell["best_of_S0_S1_S2_first_datasets"] = qrow(best)
+            cell["shortfall_S0_vs_best_first_datasets"] = shortfall(S0[:m2], best)
+        out["cells"].append(cell)
+    return out
+
+
+def large(paths):
+    out = []
+    for p in paths:
+        for key, rows in json.load(open(p)).items():
+            n, k = map(int, key.split(","))
+            S0 = np.array([r["S0"] for r in rows])
+            S1 = np.array([r["S1"] for r in rows])
+            best1 = np.maximum(S0, S1)
+            best2 = np.array([max(r["S0"], r["S1"], r.get("S2", 0)) for r in rows])
+            best3 = np.array([max(r["S0"], r["S1"], r.get("S2", 0), r.get("S3", 0)) for r in rows])
+            has2 = np.array(["S2" in r for r in rows])
+            has3 = np.array(["S3" in r for r in rows])
+            first2 = int(np.argmin(has2)) if not has2.all() else len(rows)  # leading random block
+            first3 = int(np.argmin(has3)) if not has3.all() else len(rows)
+            cell = dict(n=n, k=k, S0=qrow(S0), S1=qrow(S1), best_S0_S1_S2=qrow(best2))
+            cell["q99_best2_minus_S0_ci95"] = boot_paired_diff(best2, S0)
+            cell["shortfall_S0_vs_S1_all"] = shortfall(S0, best1)
+            cell["shortfall_S0_vs_best2_random"] = shortfall(S0[:first2], best2[:first2])
+            cell["shortfall_S1_vs_best2_random"] = shortfall(best1[:first2], best2[:first2])
+            # tail safety: datasets not refined by S2 are ranked by best1; largest unrefined best1 + max random S2 gain
+            gain2 = float((best2[:first2] - best1[:first2]).max())
+            cell["tail_check_S2"] = dict(q99_best2=q99(best2), max_unrefined_value=float(best1[~has2].max()),
+                                         max_random_gain=gain2, refined=int(has2.sum()))
+            if has3.any():
+                cell["best_S0_S1_S2_S3"] = qrow(best3)
+                cell["q99_best3_minus_best2_ci95"] = boot_paired_diff(best3, best2)
+                cell["shortfall_S0_vs_best3_random"] = shortfall(S0[:first3], best3[:first3])
+                cell["shortfall_best2_vs_best3_random"] = shortfall(best2[:first3], best3[:first3])
+                gain3 = float((best3[:first3] - best2[:first3]).max())
+                cell["tail_check_S3"] = dict(q99_best3=q99(best3), max_unrefined_value=float(best2[~has3].max()),
+                                             max_random_gain=gain3, refined=int(has3.sum()))
+            inv = [r for r in rows if "S0_mapped" in r]
+            for s in ("S0", "S1"):
+                dd = np.array([r[f"{s}_mapped"] - r[s] for r in inv])
+                cell[f"invariance_{s}"] = dict(datasets=len(dd), differ=int((np.abs(dd) > 1e-6).sum()),
+                                               mean_abs=float(np.abs(dd).mean()), max_abs=float(np.abs(dd).max()))
+            out.append(cell)
+    return sorted(out, key=lambda c: (c["k"], c["n"]))
+
+
+def point3(paths):
+    d = json.load(open(paths[0]))
+    tabs = json.load(open(paths[1]))  # {"S0": {"n,k": q99}, "S1": {...}}
+    out = dict(probe=d["probe"], cells=[])
+    for key, rows in d["raw"].items():
+        shape, p, n = key.split("|")
+        n = int(n[2:])
+        ks = np.array([r[0] for r in rows])
+        cell = dict(spectrum=shape, p=int(p[2:]), n=n, datasets=len(rows),
+                    k_counts={int(k): int((ks == k).sum()) for k in np.unique(ks)}, k0=int((ks == 0).sum()))
+        for j, s in ((1, "S0"), (2, "S1")):
+            tab = tabs[s]
+            outside = [r for r in rows if r[0] > 0 and f"{n},{r[0]}" not in tab]
+            rej = sum(r[0] > 0 and f"{n},{r[0]}" in tab and r[j] > tab[f"{n},{r[0]}"] for r in rows)
+            pos = int((ks >= 1).sum())
+            ci = binomtest(rej, len(rows)).proportion_ci()
+            c = dict(rejections=int(rej), ci95=[ci.low, ci.high], outside_table_k_above=len(outside), k_ge_1=pos)
+            if pos:
+                ci = binomtest(rej, pos).proportion_ci()
+                c["ci95_given_k_ge_1"] = [ci.low, ci.high]
+            cell[s] = c
+        out["cells"].append(cell)
+    return out
+
+
+if __name__ == "__main__":
+    what, out_path, *paths = sys.argv[1:]
+    res = dict(point2=point2, point4=large, point1=large, point3=point3)[what](paths)
+    json.dump(res, open(out_path, "w"), indent=1)
+    print(json.dumps(res)[:200])
+
+
+# ===== reverify.py =====
+"""Re-run a sample of the first run's cells with the same seeds; the printed numbers must match its printed summary.
+
+Small n: S0 (current search) and EX (exact enumeration), seeds [SEED, 63, n, k, b], 8 blocks of 500.
+Larger n: point4_large_n.stage1 (S0, S1, invariance), stream 65, 5 blocks of 400.
+"""
+
+import json
+import os
+import sys
+from multiprocessing import Pool
+
+import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lib import SEED, best_rho, directions, exact_r2, to_rho, whiten  # noqa: E402
+from point4_large_n import stage1  # noqa: E402
+
+SMALL = [(10, 3), (15, 2), (15, 4), (15, 5), (20, 1), (20, 3), (20, 4), (30, 2), (30, 3), (40, 2)]
+LARGE = [(100, 5), (200, 6), (100, 4)]
+
+
+def small(args):
+    n, k, b = args
+    rng = np.random.default_rng([SEED, 63, n, k, b])
+    g = directions(k)
+    rows = []
+    for _ in range(500):
+        x = rng.standard_normal((n, k))
+        rows.append((best_rho(x, g), float(to_rho(exact_r2(whiten(x)), n))))
+    return n, k, b, rows
+
+
+if __name__ == "__main__":
+    out = {}
+    with Pool(10) as pool:
+        res = {}
+        for n, k, b, rows in pool.imap_unordered(small, [(n, k, b) for n, k in SMALL for b in range(8)]):
+            res.setdefault((n, k), {})[b] = rows
+        for (n, k), v in sorted(res.items()):
+            a = np.array([r for b in sorted(v) for r in v[b]])
+            row = dict(n=n, k=k, datasets=len(a), q99_EX=float(np.quantile(a[:, 1], 0.99)), q99_S0=float(np.quantile(a[:, 0], 0.99)),
+                       S0_below_EX=int((a[:, 1] - a[:, 0] > 1e-9 * np.abs(a[:, 1])).sum()))
+            out[f"small {n},{k}"] = row
+            print("SMALL", json.dumps(row), flush=True)
+        res = {}
+        for n, k, b, rows in pool.imap_unordered(stage1, [(65, n, k, b) for n, k in LARGE for b in range(5)]):
+            res.setdefault((n, k), {})[b] = rows
+        for (n, k), v in sorted(res.items()):
+            rows = [r for b in sorted(v) for r in v[b]]
+            s0, s1 = (np.array([r[s] for r in rows]) for s in ("S0", "S1"))
+            inv = [r for r in rows if "S0_mapped" in r]
+            row = dict(n=n, k=k, datasets=len(rows), q99_S0=float(np.quantile(s0, 0.99)), q99_S1=float(np.quantile(s1, 0.99)),
+                       S0_below_S1=int((np.maximum(s0, s1) - s0 > 1e-9).sum()), max_shortfall=float((s1 - s0).max()),
+                       invariance_datasets=len(inv),
+                       S0_differs=int(sum(abs(r["S0_mapped"] - r["S0"]) > 1e-6 for r in inv)),
+                       S1_differs=int(sum(abs(r["S1_mapped"] - r["S1"]) > 1e-6 for r in inv)))
+            out[f"large {n},{k}"] = row
+            print("LARGE", json.dumps(row), flush=True)
+    json.dump(out, open(sys.argv[1], "w"), indent=1)
+    print("DONE", flush=True)
+
+
+# ===== missing_points.py =====
+"""The two points the stopped run never reached, under a wall-clock cap.
+
+A. More than 30 features: k chosen by the package's invariant_directions from the same data, best flat cut
+   inside the chosen directions (search S1), compared with a fresh S1 table's 99% point at the chosen k.
+B. k above 6: 99% point of the best flat cut's rho for one Gaussian population, with a search ladder on the
+   first datasets of each cell to see whether any affordable search is adequate.
+
+Searches: S1 = 3,000 directions, re-sorts from the top 50 + single-point moves (lib.search)
+          S2 = 30,000 directions, top 50 + moves;  S4 = 30,000 directions, top 500 + moves
+          S5 = 200 random labelings + moves (a search family that does not use the direction grid)
+Jobs started after the deadline are skipped and counted.
+
+usage: missing_points.py out.json minutes
+"""
+
+import json
+import os
+import sys
+import time
+from multiprocessing import Pool
+
+import numpy as np
+from scipy.stats import binomtest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lib import SEED, _r2_mask, directions, grid, search, swap, to_rho, whiten  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+SHAPES = ["isotropic", "one weak direction (2.5)", "two strong directions (16, 4)", "geometric 100 to 1 over 10, rest 1"]
+SELECT_CELLS = [(100, 50), (100, 80), (400, 50), (400, 100), (400, 200)]  # (n, p) with p < n - 1
+TABLE_KS = range(1, 9)
+HIGH_NS, HIGH_KS = (100, 200, 400), (8, 10, 15, 20)
+DEEP = 60
+
+
+def spectrum(name, p):
+    s = np.ones(p)
+    if name == SHAPES[1]:
+        s[0] = 2.5
+    elif name == SHAPES[2]:
+        s[:2] = 16.0, 4.0
+    elif name == SHAPES[3]:
+        s[:10] = np.geomspace(100, 1, 10)
+    return s
+
+
+def g0(k):
+    return directions(k) if k <= 6 else grid(k, 3000, stream=7)
+
+
+def restarts(x, m, rng):
+    y = whiten(x)
+    n, best = len(y), 0.0
+    for _ in range(m):
+        mask = rng.random(n) < 0.5
+        if not 0 < mask.sum() < n:
+            continue
+        best = max(best, swap(y, mask, _r2_mask(y, mask))[0])
+    return float(to_rho(best, n))
+
+
+def job(args):
+    kind, deadline, *rest = args
+    if time.time() > deadline:
+        return kind, rest, None
+    if kind == "table":
+        n, k, b = rest
+        rng = np.random.default_rng([SEED, 71, n, k, b])
+        return kind, rest, [float(search(rng.standard_normal((n, k)), g0(k), 50, True)) for _ in range(500)]
+    if kind == "select":
+        si, n, p, b = rest
+        rng = np.random.default_rng([SEED, 72, si, p, n, b])
+        sd = np.sqrt(spectrum(SHAPES[si], p))
+        out = []
+        for _ in range(250):
+            x = rng.standard_normal((n, p)) * sd
+            chosen = invariant_directions(x)
+            k = len(chosen)
+            out.append((k, float(search(x @ chosen.T, g0(k), 50, True)) if 0 < k < n - 3 else None))
+        return kind, rest, out
+    n, k, b = rest[:3]
+    X = np.random.default_rng([SEED, 73, n, k, b]).standard_normal((100, n, k))
+    if kind == "high":
+        return kind, rest, [float(search(x, g0(k), 50, True)) for x in X]
+    c = rest[3]  # deep: datasets c*10 .. c*10+9 of block 0
+    g2, rng = grid(k, 30000), np.random.default_rng([SEED, 74, n, k, c])
+    return kind, rest, [dict(S1=float(search(x, g0(k), 50, True)), S2=float(search(x, g2, 50, True)),
+                             S4=float(search(x, g2, 500, True)), S5=restarts(x, 200, rng)) for x in X[c * 10 : c * 10 + 10]]
+
+
+def q99(v):
+    return float(np.quantile(v, 0.99))
+
+
+def qrow(v):
+    v = np.asarray(v)
+    rng, h = np.random.default_rng(0), len(v) // 2
+    se = float(np.std([q99(v[rng.integers(0, len(v), len(v))]) for _ in range(500)]))
+    return dict(datasets=len(v), q99=q99(v), se_boot=se, q99_half1=q99(v[:h]), q99_half2=q99(v[h:]), mean=float(v.mean()))
+
+
+if __name__ == "__main__":
+    out_path, minutes = sys.argv[1], float(sys.argv[2])
+    deadline = time.time() + 60 * minutes
+    probe = {}
+    for n, p in [(100, 97), (100, 98), (100, 99), (100, 100), (100, 200), (100, 500), (400, 397), (400, 398), (400, 399), (400, 500)]:
+        probe[f"n={n},p={p}"] = int(len(invariant_directions(np.random.default_rng([SEED, 75, n, p]).standard_normal((n, p)))))
+    print("PROBE chosen k under isotropic noise", json.dumps(probe), flush=True)
+
+    jobs = [("table", deadline, n, k, b) for n in (100, 400) for k in TABLE_KS for b in range(6)]
+    jobs += [("select", deadline, si, n, p, b) for n, p in SELECT_CELLS for si in range(4) for b in range(8)]
+    jobs += [("high", deadline, n, k, b) for k in HIGH_KS for n in HIGH_NS for b in range(10)]
+    jobs += [("deep", deadline, n, k, 0, c) for k in HIGH_KS for n in HIGH_NS for c in range(DEEP // 10)]
+    jobs += [("deep", deadline, 400, k, 0, c) for k in (4, 5, 6) for c in range(DEEP // 10)]
+    raw, skipped = {}, {}
+    with Pool(10) as pool:
+        for kind, rest, out in pool.imap_unordered(job, jobs, chunksize=1):
+            key = f"{kind}|" + ",".join(map(str, rest[:-1] if kind != "deep" else rest[:2]))
+            if out is None:
+                skipped[key] = skipped.get(key, 0) + 1
+            else:
+                raw.setdefault(key, {})[rest[-1]] = out
+    raw = {key: [r for b in sorted(v) for r in v[b]] for key, v in raw.items()}
+    json.dump(dict(probe=probe, raw=raw, skipped=skipped), open(out_path, "w"))
+    print("SKIPPED job counts", json.dumps(skipped), flush=True)
+
+    tab = {}
+    for key, v in sorted(raw.items()):
+        if key.startswith("table|"):
+            n, k = map(int, key.split("|")[1].split(","))
+            row = qrow(v)
+            tab[n, k] = row["q99"]
+            print("TABLE", n, k, json.dumps(row), flush=True)
+    for key, v in sorted(raw.items()):
+        if not key.startswith("select|"):
+            continue
+        si, n, p = map(int, key.split("|")[1].split(","))
+        ks = np.array([r[0] for r in v])
+        inside = [(k, r) for k, r in v if (n, k) in tab]
+        rej, pos = sum(r > tab[n, k] for k, r in inside), int((ks >= 1).sum())
+        ci = binomtest(rej, len(v)).proportion_ci()
+        row = dict(spectrum=SHAPES[si], n=n, p=p, datasets=len(v), k_counts={int(k): int((ks == k).sum()) for k in np.unique(ks)},
+                   outside_table=int(pos - len(inside)), rejections=int(rej), ci95=[ci.low, ci.high], k_ge_1=pos)
+        if pos:
+            ci = binomtest(rej, pos).proportion_ci()
+            row["ci95_given_k_ge_1"] = [ci.low, ci.high]
+        print("SELECT", json.dumps(row), flush=True)
+    for key, v in sorted(raw.items()):
+        if key.startswith("high|"):
+            n, k = map(int, key.split("|")[1].split(","))
+            print("HIGH", n, k, json.dumps(qrow(v)), flush=True)
+    for key, v in sorted(raw.items()):
+        if not key.startswith("deep|"):
+            continue
+        n, k = map(int, key.split("|")[1].split(","))
+        a = {s: np.array([r[s] for r in v]) for s in ("S1", "S2", "S4", "S5")}
+        best = np.max(list(a.values()), axis=0)
+        row = dict(n=n, k=k, datasets=len(v))
+        for s, x in a.items():
+            d = best - x
+            row[s] = dict(below_best=int((d > 1e-9 * best).sum()), mean_shortfall=float(d.mean()), max_shortfall=float(d.max()))
+        row["S4_equals_S5"] = int((np.abs(a["S4"] - a["S5"]) <= 1e-9 * best).sum())
+        row["mean_best"] = float(best.mean())
+        print("DEEP", json.dumps(row), flush=True)
+    print("DONE", flush=True)

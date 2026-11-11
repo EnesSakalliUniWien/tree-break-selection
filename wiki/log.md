@@ -9982,3 +9982,28 @@ version comparison report and wiki source summary. Production code unchanged.
   folders.
 - The 8 and 9 November evidence manifests hash the sources before these fixes;
   that state is commit `d2f26455`.
+
+## 2026-11-11 — Gaussian reference table for the best flat cut: limits measured
+
+- Recorded simulation checks of a candidate reference for the sibling test: the
+  99% point of the best flat cut's `rho` for one Gaussian population, per
+  (n, k). No production code was changed.
+- Settled: the table is finite and ordered for n from 15 and k = 1 to 6; the
+  best flat cut equals the best of all splits on brute-forced small cases;
+  re-sorts from the top 50 directions plus single-point moves find the best
+  flat cut up to k = 6; k = 8 and 10 are settled with 30,000 directions and 500
+  starts.
+- Not settled: k = 15 and 20 are lower bounds only; n = 10 is unusable for k of
+  3 and above; with k chosen from the same data there is a small excess at
+  n = 100 with 50 or 80 features (152/12,000, grouping chosen after the cells
+  were seen) and none at n = 400 (163/18,000).
+- The search behind the first table misses the best flat cut for k of 4 and
+  above (1,075 of 2,000 datasets at n = 200, k = 6) and its found value is not
+  invariant under linear maps.
+- The first run of the small-n table and the search comparison was stopped and
+  its per-dataset files were not retained; 13 of its 42 cells were reproduced
+  from the same seeds, the rest rely on its printed summary.
+- New page [[gaussian-best-flat-cut-reference]]; links added in
+  [[flat-cut-sup-count]] and [[single-population-split-bound]]; index updated.
+  Raw capture, evidence JSON and scripts are under
+  `raw/inbox/choir-cell-lines/gaussian-best-flat-cut-reference-*-20261111.*`.

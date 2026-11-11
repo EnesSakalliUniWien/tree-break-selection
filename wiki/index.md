@@ -2,7 +2,7 @@
 title: Wiki Index
 type: control
 status: reviewed
-updated: 2026-11-09
+updated: 2026-11-11
 sources:
   - AGENTS.md
   - wiki/schema.md
@@ -98,6 +98,8 @@ renamed, or promoted.
   dip test, Cover: same null, closed form not found in the sources checked.
 - [[flat-cut-sup-count]] - best-cut EC approximation, audited calibration and
   regularity gaps, full-cell diagnostic fits and a high-dimensional power failure.
+- [[gaussian-best-flat-cut-reference]] - Gaussian 99% point table of the best flat cut's rho:
+  settled for n from 15 and k up to 10, search misses for k of 4 and above, small excess at n = 100.
 - [[sequencing-depth-normalization-literature]] - checked depth-normalization
   papers; log-of-normalized-counts artefact matches the measured depth effect.
 - [[root-conditional-sampler]] - maintained root-split chain diagnostic,

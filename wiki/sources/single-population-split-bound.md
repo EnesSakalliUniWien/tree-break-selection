@@ -2,7 +2,7 @@
 title: The Largest Split One Population Allows
 type: source
 status: draft
-updated: 2026-11-09
+updated: 2026-11-11
 sources:
   - raw/inbox/choir-cell-lines/single-population-split-bound-20261108.md
   - raw/inbox/choir-cell-lines/single-population-split-bound-scripts-20261108.py.txt
@@ -63,3 +63,4 @@ arXiv:2208.08813; the original 1938 paper and Cover's count formula were not che
 - [[rule-out-gradient]]
 - [[split-count-exclusion]]
 - [[three-tests-construction-audit]]
+- [[gaussian-best-flat-cut-reference]]

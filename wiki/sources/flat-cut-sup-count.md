@@ -2,7 +2,7 @@
 title: The Tail of One Population's Best Cut
 type: source
 status: draft
-updated: 2026-11-09
+updated: 2026-11-11
 sources:
   - raw/inbox/choir-cell-lines/root-validation-calibration-20261109.md
   - raw/inbox/choir-cell-lines/flat-cut-sup-count-20261109.md
@@ -65,3 +65,4 @@ checks, application and literature; protocol, deviations, code and outputs are i
 - [[ceiling-rule-real-and-benchmark]]
 - [[ceiling-rule-literature-comparison]]
 - [[three-tests-construction-audit]]
+- [[gaussian-best-flat-cut-reference]]
