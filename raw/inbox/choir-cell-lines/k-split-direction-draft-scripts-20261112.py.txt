@@ -1,0 +1,215 @@
+# ===== protocol.md =====
+# # Protocol: draft definition of k that does not count variance inside one population (frozen 2026-11-12, before the run)
+#
+# ## Why
+#
+# k today is a count of eigenvalues of the node's covariance above an edge. On real cells one population has real
+# directions of variation (cell cycle and others), so that count is 5 to 12 inside one cell line and cannot tell
+# one population from several (wiki pages `k-margin-prototype`, `line-non-sphericity`). The reference itself does
+# not need a variance count: for one Gaussian population with any covariance, `rho` of the best flat cut in k
+# fixed directions depends only on (n, k), and any split's `rho` is at most the best flat cut's. What the
+# reference needs is that the directions do not depend on the cells that are tested.
+#
+# ## Draft definition
+#
+# For a node with cells X and the tree's split into left and right:
+#
+# 1. Halves. Divide the node's cells into a basis half and a test half, alternating within each side in the
+#    order of the cells (first cell of a side to the test half), as the edge test does. The division ignores the
+#    data values.
+# 2. Direction, from the basis half only. One direction w, so k = 1:
+#    - variant A (uses the tree's split): w = S^-1 (mean of the left basis cells - mean of the right basis cells),
+#      S the pooled within covariance of the two sides in the basis half;
+#    - variant B (does not use the tree's split): the same formula for the two groups of a 2-means clustering of
+#      the basis half.
+#    When the basis half has no more than p + 2 cells, w is the difference of the two means without S^-1.
+# 3. Test, on the test half only. `rho` of the tree's split of the test cells along w, against the reference at
+#    (number of test cells, 1): `reference_p_value(rho, n_test, 1)`.
+# 4. Fail closed (p = 1): fewer than 15 test cells, or a side without basis cells or without test cells.
+#
+# Under one Gaussian population, variant B is exact up to the Monte Carlo error of the table: w is fixed given the
+# basis half, the test cells are independent of it, and the tree's split is one of the splits the best flat cut
+# covers. Variant A lets the test cells influence w through the tree's split, so its level has to be measured
+# (the wiki page `exact-gate-sibling-test` found that the tree's choice inflates the test half).
+#
+# ## Measurements (`check.py`, output `check.txt`, `check.json`)
+#
+# Tree: Ward linkage on the data itself (the tree is built from the tested cells). Node: the root, and for the
+# null also the larger child of the root (a node chosen by the tree). 1,000 datasets per setting, seed 20261112.
+# Reported per setting: share of datasets with p <= 0.01 for variant A, variant B and the current rule
+# (`invariant_directions` on all cells of the node, `rho` of the tree's split in those directions, reference at
+# (n, k)).
+#
+# - N1 one Gaussian population, identity covariance, 30 features, 64, 256 and 1,000 cells; root and larger child.
+# - N2 one Gaussian population with unequal variances (the 30 eigenvalues of the CHOIR root, 53.09 to 5.12),
+#   256 and 1,000 cells; root and larger child.
+# - N3 one Gaussian population, 30 cells in 40 features; root.
+# - S1 two balanced groups, 256 cells, 30 features, identity noise, population `rho` 2, 3, 5, 10.
+# - S2 two balanced groups, 256 cells, 30 features, within-group variances 16, 8, 4, 2, 1, ..., 1, separated along
+#   the last feature, population `rho` 5 and 10.
+# - S3 two groups of 15 cells in 40 features, population `rho` 50.
+# - Self-check (assert): the halves are disjoint, cover the node, and each side has cells in both halves when it
+#   has at least 2 cells.
+#
+# ## Predictions, stated before the run
+#
+# - Q1 variant B holds the level: p <= 0.01 in at most 2.0% of the datasets in every null setting (N1, N2, N3).
+# - Q2 variant A exceeds the level in at least one null setting.
+# - Q3 at population `rho` 5 and 10 in S1 both variants reach p <= 0.01 in at least 90% of the datasets.
+# - Q4 in S2 both variants reach p <= 0.01 more often than the current rule.
+#
+# ## Limits known before the run
+#
+# Gaussian data; Ward linkage on the raw features, not the method's diffusion tree; k is fixed at 1; half of the
+# cells are not used for the test; the reference's population class (one Gaussian population) is unchanged, so a
+# skewed or bimodal variation inside one population is not addressed by this definition.
+
+
+# ===== check.py =====
+"""protocol.md: level and power of the draft definition (one direction from the basis half, test on the test half)."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage, to_tree
+from sklearn.cluster import KMeans
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    MAX_DIRECTIONS,
+    reference_p_value,
+    split_rho,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+DATASETS = 1000
+CHOIR_ROOT = np.array([53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58,
+                       6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12])
+rng = np.random.default_rng(20261112)
+
+
+def halves(left, right):
+    """Test and basis cells per side: alternate within each side, first cell to the test half."""
+    test = (left[0::2], right[0::2])
+    basis = (left[1::2], right[1::2])
+    assert sorted(np.concatenate(test + basis).tolist()) == sorted(np.concatenate([left, right]).tolist())
+    for side, t, b in zip((left, right), test, basis, strict=True):
+        assert len(t) >= 1 and (len(side) < 2 or len(b) >= 1)
+    return test, basis
+
+
+def direction(points, in_first):
+    """S^-1 (difference of the two means), or the difference alone when S cannot be inverted safely."""
+    a, b = points[in_first], points[~in_first]
+    difference = a.mean(axis=0) - b.mean(axis=0)
+    if len(points) <= points.shape[1] + 2:
+        return difference
+    within = (np.cov(a.T) * (len(a) - 1) + np.cov(b.T) * (len(b) - 1)) / (len(points) - 2) if min(len(a), len(b)) >= 2 else np.cov(points.T)
+    return np.linalg.solve(within, difference)
+
+
+def draft_p(points, left, right, variant):
+    (test_left, test_right), (basis_left, basis_right) = halves(left, right)
+    n_test = len(test_left) + len(test_right)
+    if n_test < 15 or len(basis_left) == 0 or len(basis_right) == 0:
+        return 1.0
+    basis = points[np.concatenate([basis_left, basis_right])]
+    if variant == "A":
+        in_first = np.r_[np.ones(len(basis_left), bool), np.zeros(len(basis_right), bool)]
+    else:
+        in_first = KMeans(n_clusters=2, n_init=5, random_state=0).fit_predict(basis) == 0
+        if in_first.all() or not in_first.any():
+            return 1.0
+    w = direction(basis, in_first)
+    projected = points[np.concatenate([test_left, test_right])] @ w[:, None]
+    rho = split_rho(projected, np.r_[np.ones(len(test_left), bool), np.zeros(len(test_right), bool)])
+    return reference_p_value(rho, n_test, 1)[0]
+
+
+def current_p(points, left, right):
+    cells = points[np.concatenate([left, right])]
+    directions = invariant_directions(cells)
+    k = len(directions)
+    if k == 0 or k > MAX_DIRECTIONS or len(cells) < 15 or (k > 10 and len(cells) < 50):
+        return 1.0
+    rho = split_rho(cells @ directions.T, np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)])
+    return reference_p_value(rho, len(cells), k)[0]
+
+
+def splits_of(points):
+    """Root split and the split of the root's larger child, from Ward linkage on the data."""
+    root = to_tree(linkage(points, method="ward"))
+    larger = max((root.left, root.right), key=lambda node: node.count)
+    out = {"root": (np.array(root.left.pre_order()), np.array(root.right.pre_order()))}
+    if not larger.is_leaf():
+        out["larger child"] = (np.array(larger.left.pre_order()), np.array(larger.right.pre_order()))
+    return out
+
+
+def two_groups(n, p, rho, scale=None):
+    points = rng.normal(size=(n, p)) * (1.0 if scale is None else scale)
+    points[: n // 2, -1] += np.sqrt(rho / 0.25) * (1.0 if scale is None else scale[-1])
+    return points
+
+
+unequal = np.ones(30)
+unequal[:4] = np.sqrt([16, 8, 4, 2])
+settings = [(f"N1 one population, identity, ({n}, 30)", lambda n=n: rng.normal(size=(n, 30)), ("root", "larger child")) for n in (64, 256, 1000)]
+settings += [(f"N2 one population, variances of the CHOIR root, ({n}, 30)", lambda n=n: rng.normal(size=(n, 30)) * np.sqrt(CHOIR_ROOT),
+              ("root", "larger child")) for n in (256, 1000)]
+settings += [("N3 one population, (30, 40)", lambda: rng.normal(size=(30, 40)), ("root",))]
+settings += [(f"S1 two groups, (256, 30), identity noise, rho {rho}", lambda rho=rho: two_groups(256, 30, rho), ("root",)) for rho in (2, 3, 5, 10)]
+settings += [(f"S2 two groups, (256, 30), unequal within-group variances, rho {rho}", lambda rho=rho: two_groups(256, 30, rho, unequal), ("root",))
+             for rho in (5, 10)]
+settings += [("S3 two groups, (30, 40), rho 50", lambda: two_groups(30, 40, 50), ("root",))]
+
+results, lines = [], []
+for name, make, nodes in settings:
+    counts = {node: {"A": 0, "B": 0, "current": 0, "n": 0, "pure": 0} for node in nodes}
+    for _ in range(DATASETS):
+        points = make()
+        for node, (left, right) in splits_of(points).items():
+            if node not in counts:
+                continue
+            c = counts[node]
+            c["n"] += 1
+            c["A"] += draft_p(points, left, right, "A") <= 0.01
+            c["B"] += draft_p(points, left, right, "B") <= 0.01
+            c["current"] += current_p(points, left, right) <= 0.01
+            if name.startswith("S"):  # does the tree's root split equal the two groups?
+                half = len(points) // 2
+                c["pure"] += len({bool(i < half) for i in left}) == 1 and len({bool(i < half) for i in right}) == 1
+    for node, c in counts.items():
+        line = (f"{name} | {node}: p <= 0.01 in variant A {c['A']}/{c['n']}, variant B {c['B']}/{c['n']}, current rule {c['current']}/{c['n']}"
+                + (f"; tree's root split equals the two groups in {c['pure']}/{c['n']}" if name.startswith("S") else ""))
+        print(line, flush=True)
+        lines.append(line)
+        results.append(dict(setting=name, node=node, **{k: int(v) for k, v in c.items()}))
+(HERE / "check.txt").write_text("\n".join(lines) + "\n")
+(HERE / "check.json").write_text(json.dumps(results, indent=1))
+
+
+# ===== check.txt =====
+# N1 one population, identity, (64, 30) | root: p <= 0.01 in variant A 1/1000, variant B 0/1000, current rule 0/1000
+# N1 one population, identity, (64, 30) | larger child: p <= 0.01 in variant A 3/1000, variant B 0/1000, current rule 0/1000
+# N1 one population, identity, (256, 30) | root: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N1 one population, identity, (256, 30) | larger child: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N1 one population, identity, (1000, 30) | root: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N1 one population, identity, (1000, 30) | larger child: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N2 one population, variances of the CHOIR root, (256, 30) | root: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N2 one population, variances of the CHOIR root, (256, 30) | larger child: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N2 one population, variances of the CHOIR root, (1000, 30) | root: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N2 one population, variances of the CHOIR root, (1000, 30) | larger child: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000
+# N3 one population, (30, 40) | root: p <= 0.01 in variant A 13/1000, variant B 0/1000, current rule 0/1000
+# S1 two groups, (256, 30), identity noise, rho 2 | root: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000; tree's root split equals the two groups in 0/1000
+# S1 two groups, (256, 30), identity noise, rho 3 | root: p <= 0.01 in variant A 63/1000, variant B 39/1000, current rule 164/1000; tree's root split equals the two groups in 0/1000
+# S1 two groups, (256, 30), identity noise, rho 5 | root: p <= 0.01 in variant A 914/1000, variant B 882/1000, current rule 996/1000; tree's root split equals the two groups in 0/1000
+# S1 two groups, (256, 30), identity noise, rho 10 | root: p <= 0.01 in variant A 1000/1000, variant B 1000/1000, current rule 1000/1000; tree's root split equals the two groups in 290/1000
+# S2 two groups, (256, 30), unequal within-group variances, rho 5 | root: p <= 0.01 in variant A 0/1000, variant B 0/1000, current rule 0/1000; tree's root split equals the two groups in 0/1000
+# S2 two groups, (256, 30), unequal within-group variances, rho 10 | root: p <= 0.01 in variant A 535/1000, variant B 249/1000, current rule 543/1000; tree's root split equals the two groups in 35/1000
+# S3 two groups, (30, 40), rho 50 | root: p <= 0.01 in variant A 1000/1000, variant B 1000/1000, current rule 0/1000; tree's root split equals the two groups in 1000/1000

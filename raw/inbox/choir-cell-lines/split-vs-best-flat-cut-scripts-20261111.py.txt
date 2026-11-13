@@ -1,0 +1,356 @@
+# ===== protocol.md =====
+# # Protocol: how far is each tested split from the best flat cut in the rebuilt directions (frozen 2026-11-11, before the run)
+#
+# Descriptive; no production change. Data and setup of `best_flat_cut_reference_real_20261111` (48,879 CHOIR
+# cells, 30 PCs, saved diffusion coordinates, registry parameters, both registered methods,
+# `sibling_best_flat_cut_reference=True`). The fit is repeated only to capture the cells of every tested split;
+# replay check: 138 and 53 clusters.
+#
+# For every tested split whose subtree has at least one invariant direction (`invariant_directions` of the
+# subtree's own cells, the rebuilt geometry), in those directions:
+#
+# - tree split: its `rho`, and the size of its smaller side;
+# - nearest flat cut: start at the tree split, re-sort along its mean difference and move single cells until
+#   stable (`resort`, `swap` of the table builder); its `rho` and the adjusted Rand index (ARI) with the tree split;
+# - best flat cut: the table's search (grid, top 50 re-sorts, single-cell moves); its `rho`, its smaller side,
+#   and the ARI with the tree split. For k above 10 the search gives a lower bound only;
+# - reference p-values of the tree split and of the best flat cut where n >= 15 and k <= 10;
+# - cell lines: for each of the three partitions the share of the subtree's cells that sit on the minority side
+#   of their own cell line ("line cut share"; 0 means no line is cut).
+#
+# Summaries by subtree size (32-159, 160-999, 1,000 and more) and tree, with medians and counts.
+#
+# Expected before running: the 9 November run gave a median tree-split `rho` of 0.97 (32-159 cells) and 1.00
+# (160-999 cells), below the 1.75 that the median cut of one Gaussian population reaches, and 3.13 at 1,000
+# cells and more. So in small subtrees the best flat cut should differ from the tree split in most cases (low
+# ARI) and the tree split should rarely be a flat cut itself; in large subtrees agreement should be higher.
+# Whether the best flat cut cuts fewer cell lines than the tree split is not predicted. The best flat cut may
+# isolate a few outlying cells; its smaller side is recorded for that reason.
+#
+# Limits known before running: dependent splits of two trees on one dataset; cell lines are the only truth; the
+# best flat cut is found by search, not proved.
+
+
+# ===== measure_lib.py =====
+"""Best flat cut of a subtree with its partition, and the flat cut nearest to a given split."""
+import sys
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
+from build_best_flat_cut_reference import _along_one, directions, resort, swap  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    to_rho,
+    whiten,
+)
+
+
+def r2_of(y, mask):
+    s = int(mask.sum())
+    return float((y[mask].sum(0) ** 2).sum() / (s * (len(y) - s)))
+
+
+def best_flat_cut(coordinates, top=50):
+    """The table's search (grid, top re-sorts, single-point moves), returning rho and the partition."""
+    y = whiten(coordinates)
+    n, k = y.shape
+    dirs = directions(k)
+    s = np.arange(1, n)[:, None]
+    chunk = max(1, min(2000, int(2e7 // (n * k))))
+    best = np.empty(len(dirs))
+    for a in range(0, len(dirs), chunk):
+        g = dirs[a : a + chunk]
+        order = np.argsort(y @ g.T, axis=0)
+        prefix = np.cumsum(y[order], axis=0)[:-1]
+        best[a : a + chunk] = ((prefix**2).sum(-1) / (s * (n - s))).max(0)
+    out_r2, out_mask = -1.0, None
+    for j in np.argsort(-best, kind="stable")[:top]:
+        r2, mask = _along_one(y, dirs[j])
+        r2, mask = resort(y, mask, r2)
+        r2, mask = swap(y, mask, r2)
+        if r2 > out_r2:
+            out_r2, out_mask = float(r2), mask
+    return float(to_rho(out_r2, n)), out_mask
+
+
+def nearest_flat_cut(coordinates, in_left):
+    """Start at the given split, re-sort along its mean difference and move single cells until stable."""
+    y = whiten(coordinates)
+    start = r2_of(y, in_left)
+    r2, mask = resort(y, in_left, start)
+    r2, mask = swap(y, mask, r2)
+    return float(to_rho(start, len(y))), float(to_rho(r2, len(y))), mask
+
+
+# ===== fit.py =====
+"""protocol.md: refit one method with the reference and save the cells of every tested split. usage: fit.py METHOD"""
+import json
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import _leaf_rows  # noqa: E402
+
+ORIGINAL = pipeline.apply_best_flat_cut_reference
+SPLITS = []
+
+
+def recording(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions):
+    out = ORIGINAL(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions)
+    row_of_label = {label: row for row, label in enumerate(leaf_data.index)}
+    by_parent = {record.parent: record for record in records}
+    for parent, summary, label, decision in zip(tested_parent_ids, out[0], out[1], out[2], strict=True):
+        if decision is None:
+            continue
+        record = by_parent[parent]
+        SPLITS.append({"node": str(parent), "reason": label.split(":")[-1], "k": int(summary[1]), "p": float(decision.p_value),
+                       "left": _leaf_rows(tree, record.left, row_of_label), "right": _leaf_rows(tree, record.right, row_of_label)})
+    return out
+
+
+pipeline.apply_best_flat_cut_reference = recording
+
+
+def main(method):
+    from scipy.spatial.distance import pdist
+    from threadpoolctl import threadpool_limits
+
+    from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+    from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+    from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(source / "pca.npy"), index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+    params = dict(METHOD_SPECS[method].param_grid[0])
+    distance_path = HERE / f"diffusion_distance_{method}.npy"
+    distances = np.lib.format.open_memmap(distance_path, mode="w+", dtype=np.float64, shape=(len(data) * (len(data) - 1) // 2,))
+    pdist(np.load(source / method / "coordinates.npy"), metric="euclidean", out=distances)
+    distances.flush()
+    try:
+        with threadpool_limits(limits=4):
+            result = run_tbs_on_distance(
+                data, distances, 0.01, edge_alpha=0.001, tree_linkage_method=params["tree_linkage_method"],
+                feature_space=continuous_feature_space_from_columns(tuple(data.columns)), branch_length_data_df=data,
+                edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+                adaptive_projection_dimension_energy_fraction=0.90, sibling_best_flat_cut_reference=True,
+                **_tbs_branch_length_optimization_kwargs(params),
+                extra={"feature_family_diffusion_fallback_reason": None})
+        bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+        rows = np.concatenate([np.r_[s["left"], s["right"]] for s in SPLITS]).astype(np.int32)
+        sizes = np.array([[len(s["left"]), len(s["right"])] for s in SPLITS], dtype=np.int64)
+        np.savez_compressed(HERE / f"splits_{method}.npz", rows=rows, sizes=sizes)
+        meta = [{"node": s["node"], "reason": s["reason"], "k": s["k"], "p": s["p"], "bh_different": bool(bh[s["node"]])} for s in SPLITS]
+        (HERE / f"splits_{method}.json").write_text(json.dumps({"found_clusters": int(result.found_clusters), "splits": meta}))
+        print(method, "clusters", result.found_clusters, "tested splits", len(SPLITS), flush=True)
+    finally:
+        distances._mmap.close()
+        distance_path.unlink()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1])
+    os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (run_lbfgsb.py)
+
+
+# ===== measure.py =====
+"""protocol.md: tree split, nearest flat cut and best flat cut of every tested split with invariant directions."""
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+
+from measure_lib import best_flat_cut, nearest_flat_cut  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    MAX_DIRECTIONS,
+    MIN_CELLS,
+    reference_p_value,
+    split_rho,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+
+METHODS = ["tbs_family_diffusion_markov_ward", "tbs_family_diffusion"]
+STATE = {}
+
+
+def init():
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    STATE["x"] = np.load(source / "pca.npy")
+    lines = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str).Cell_line
+    STATE["line"] = pd.factorize(lines)[0]
+    for method in METHODS:
+        z = np.load(HERE / f"splits_{method}.npz")
+        STATE[method] = (z["rows"], z["sizes"], np.r_[0, np.cumsum(z["sizes"].sum(1))])
+
+
+def line_cut_share(lines, mask):
+    left = np.bincount(lines[mask], minlength=lines.max() + 1)
+    right = np.bincount(lines[~mask], minlength=lines.max() + 1)
+    return float(np.minimum(left, right).sum() / len(lines))
+
+
+def job(args):
+    method, i = args
+    rows, sizes, offsets = STATE[method]
+    idx = rows[offsets[i] : offsets[i + 1]]
+    n_left = int(sizes[i, 0])
+    points = STATE["x"][idx]
+    in_left = np.arange(len(idx)) < n_left
+    d = invariant_directions(points)
+    out = {"method": method, "i": i, "n": len(idx), "k": len(d), "small_tree": int(min(n_left, len(idx) - n_left))}
+    if len(d) == 0:
+        return out
+    c = points @ d.T
+    lines = STATE["line"][idx]
+    rho_tree, rho_near, near = nearest_flat_cut(c, in_left)
+    rho_best, best = best_flat_cut(c)
+    out.update(rho_tree=rho_tree, rho_tree_check=float(split_rho(c, in_left)), rho_near=rho_near, rho_best=rho_best,
+               ari_near=float(adjusted_rand_score(in_left, near)), ari_best=float(adjusted_rand_score(in_left, best)),
+               moved_near=float(min((near != in_left).mean(), (near == in_left).mean())),
+               small_best=int(min(best.sum(), (~best).sum())),
+               cut_tree=line_cut_share(lines, in_left), cut_near=line_cut_share(lines, near), cut_best=line_cut_share(lines, best),
+               lines_in_subtree=int(len(np.unique(lines))))
+    if len(idx) >= MIN_CELLS and len(d) <= MAX_DIRECTIONS:
+        out.update(p_tree=float(reference_p_value(rho_tree, len(idx), len(d))[0]), p_best=float(reference_p_value(rho_best, len(idx), len(d))[0]))
+    return out
+
+
+if __name__ == "__main__":
+    init()
+    jobs = sorted(((m, i) for m in METHODS for i in range(len(STATE[m][1]))), key=lambda a: -int(STATE[a[0]][1][a[1]].sum()))
+    meta = {m: json.loads((HERE / f"splits_{m}.json").read_text())["splits"] for m in METHODS}
+    with Pool(10, initializer=init) as pool, (HERE / "measures.jsonl").open("w") as f:
+        for done, row in enumerate(pool.imap_unordered(job, jobs), 1):
+            row.update({key: meta[row["method"]][row["i"]][key] for key in ("node", "reason", "p", "bh_different")})
+            f.write(json.dumps(row) + "\n")
+            if done % 200 == 0:
+                print(done, "of", len(jobs), flush=True)
+    print("DONE", flush=True)
+
+
+# ===== summarize.py =====
+"""Summaries for protocol.md."""
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 250)
+m = pd.read_json(HERE / "measures.jsonl", lines=True)
+m["tree"] = m.method.map({"tbs_family_diffusion": "default", "tbs_family_diffusion_markov_ward": "markov_ward"})
+m["bin"] = pd.cut(m.n, [1, 31, 159, 999, 50000], labels=["<=31", "32-159", "160-999", "1000+"])
+print("tested splits per tree:", m.groupby("tree").size().to_dict(), "with invariant directions:", m[m.k > 0].groupby("tree").size().to_dict())
+d = m[m.k > 0].copy()
+print("rho of the tree split equals split_rho:", bool(np.allclose(d.rho_tree, d.rho_tree_check, rtol=1e-8, atol=1e-10)))
+d["tree_is_flat"] = d.ari_near > 0.999999
+d["best_equals_tree"] = d.ari_best > 0.999999
+d["best_tiny"] = d.small_best < 5
+q = lambda c: (c, "median")
+print("\nBY TREE AND SIZE")
+print(d.groupby(["tree", "bin"], observed=True).agg(
+    splits=("n", "size"), k=q("k"), rho_tree=q("rho_tree"), rho_near=q("rho_near"), rho_best=q("rho_best"),
+    ari_near=q("ari_near"), ari_best=q("ari_best"), moved_near=q("moved_near"), tree_is_flat=("tree_is_flat", "sum"),
+    best_equals_tree=("best_equals_tree", "sum"), ari_best_ge_09=("ari_best", lambda x: (x >= 0.9).sum()),
+    ari_best_lt_05=("ari_best", lambda x: (x < 0.5).sum()), best_tiny=("best_tiny", "sum"),
+    cut_tree=q("cut_tree"), cut_near=q("cut_near"), cut_best=q("cut_best")).round(3).T.to_string())
+print("\nLINE CUT SHARE: best flat cut against tree split (splits with at least 2 lines in the subtree)")
+two = d[d.lines_in_subtree >= 2]
+print(two.groupby(["tree", "bin"], observed=True).apply(lambda g: pd.Series({
+    "splits": len(g), "best_lower": int((g.cut_best < g.cut_tree - 1e-12).sum()), "equal": int((abs(g.cut_best - g.cut_tree) <= 1e-12).sum()),
+    "tree_lower": int((g.cut_tree < g.cut_best - 1e-12).sum()), "mean_tree": g.cut_tree.mean(), "mean_near": g.cut_near.mean(), "mean_best": g.cut_best.mean(),
+    "tree_cuts_none": int((g.cut_tree == 0).sum()), "best_cuts_none": int((g.cut_best == 0).sum())}), include_groups=False).round(4).to_string())
+t = d[d.p_tree.notna()]
+print("\nREFERENCE p-values (n >= 15, k <= 10): tree split against best flat cut, p <= 0.01")
+print(t.groupby(["tree", "bin"], observed=True).apply(lambda g: pd.Series({
+    "splits": len(g), "tree_only": int(((g.p_tree <= 0.01) & (g.p_best > 0.01)).sum()), "both": int(((g.p_tree <= 0.01) & (g.p_best <= 0.01)).sum()),
+    "best_only": int(((g.p_tree > 0.01) & (g.p_best <= 0.01)).sum()), "neither": int(((g.p_tree > 0.01) & (g.p_best > 0.01)).sum())}), include_groups=False).to_string())
+b = t[(t.p_tree > 0.01) & (t.p_best <= 0.01)]
+print("\nbest flat cut passes where the tree split does not:", len(b), "| best cut tiny (<5 cells):", int(b.best_tiny.sum()),
+      "| median ARI with tree split:", round(b.ari_best.median(), 3), "| line cut share tree / best (mean):", round(b.cut_tree.mean(), 4), round(b.cut_best.mean(), 4))
+acc = d[d.bh_different]
+print("\nsplits accepted by BH:", len(acc), "| median ARI best vs tree:", round(acc.ari_best.median(), 3), "| tree split is a flat cut:", int(acc.tree_is_flat.sum()))
+print("\nk above 10 (search gives a lower bound):", int((d.k > 10).sum()), "splits; median ARI best vs tree", round(d[d.k > 10].ari_best.median(), 3),
+      "median rho tree / best", round(d[d.k > 10].rho_tree.median(), 2), round(d[d.k > 10].rho_best.median(), 2))
+m.to_csv(HERE / "measures.csv", index=False)
+
+
+# ===== summary.txt =====
+# tested splits per tree: {'default': 90, 'markov_ward': 1838} with invariant directions: {'default': 82, 'markov_ward': 1475}
+# rho of the tree split equals split_rho: True
+#
+# BY TREE AND SIZE
+# tree             default                 markov_ward                  
+# bin               32-159 160-999   1000+      32-159  160-999    1000+
+# splits            12.000  21.000  49.000     867.000  505.000  103.000
+# k                  6.000  11.000  14.000       6.000    9.000   14.000
+# rho_tree           2.490   0.732   0.107       0.970    0.997    3.127
+# rho_near           5.321   6.352   3.987       3.190    2.645    4.965
+# rho_best           6.173   7.935   8.151       4.189    3.330    7.197
+# ari_near           0.626   0.476   0.020       0.305    0.303    0.769
+# ari_best           0.232   0.100  -0.009       0.036    0.020    0.077
+# moved_near         0.031   0.068   0.162       0.206    0.210    0.041
+# tree_is_flat       6.000   4.000   0.000      24.000   19.000    4.000
+# best_equals_tree   4.000   1.000   0.000      10.000   12.000    2.000
+# ari_best_ge_09     4.000   5.000   3.000      14.000   52.000   12.000
+# ari_best_lt_05     8.000  15.000  46.000     800.000  414.000   80.000
+# best_tiny          0.000   0.000   0.000      38.000    6.000    0.000
+# cut_tree           0.005   0.064   0.000       0.297    0.116    0.001
+# cut_near           0.000   0.000   0.011       0.371    0.348    0.008
+# cut_best           0.000   0.002   0.008       0.403    0.332    0.006
+#
+# LINE CUT SHARE: best flat cut against tree split (splits with at least 2 lines in the subtree)
+#                      splits  best_lower  equal  tree_lower  mean_tree  mean_near  mean_best  tree_cuts_none  best_cuts_none
+# tree        bin                                                                                                            
+# default     32-159     11.0         4.0    5.0         2.0     0.0557     0.0618     0.0476             6.0             8.0
+#             160-999    19.0        13.0    2.0         4.0     0.1228     0.0169     0.0029             6.0            10.0
+#             1000+      49.0         5.0    1.0        43.0     0.0142     0.0199     0.0077            14.0             0.0
+# markov_ward 32-159    297.0       105.0   29.0       163.0     0.1747     0.2039     0.2411            37.0            51.0
+#             160-999   299.0       147.0   21.0       131.0     0.1123     0.1794     0.1711            36.0            68.0
+#             1000+      98.0        35.0    6.0        57.0     0.0103     0.0160     0.0077            21.0             8.0
+#
+# REFERENCE p-values (n >= 15, k <= 10): tree split against best flat cut, p <= 0.01
+#                      splits  tree_only  both  best_only  neither
+# tree        bin                                                 
+# default     32-159       12          0     3          4        5
+#             160-999      10          0     3          6        1
+# markov_ward 32-159      867          0    15        101      751
+#             160-999     418          0    42        120      256
+#
+# best flat cut passes where the tree split does not: 231 | best cut tiny (<5 cells): 20 | median ARI with tree split: 0.05 | line cut share tree / best (mean): 0.1972 0.1755
+#
+# splits accepted by BH: 37 | median ARI best vs tree: 0.968 | tree split is a flat cut: 10
+#
+# k above 10 (search gives a lower bound): 250 splits; median ARI best vs tree 0.034 median rho tree / best 2.05 8.14
+#
+# ADDED AFTER THE ENDPOINTS (Markov/Ward, n >= 15, k <= 10)
+# subtrees holding one cell line only: 765
+#          subtrees  best_p_le_0.01  best_p_le_0.05  tree_p_le_0.01  best_tiny_among_sig  median_k  median_rho_best  accepted_by_BH
+# bin                                                                                                                              
+# 32-159      570.0            38.0            58.0             1.0                  6.0       6.0             4.06             1.0
+# 160-999     195.0            48.0            60.0             2.0                  0.0       9.0             3.05             0.0
+# subtrees holding two or more cell lines: 520
+#          subtrees  best_p_le_0.01  tree_p_le_0.01  sig_best_cuts_no_line  sig_best_cut_share_le_0.05  sig_best_mean_cut_best  sig_best_mean_cut_tree  accepted_by_BH
+# bin                                                                                                                                                                 
+# 32-159      297.0            78.0            14.0                   38.0                        62.0                   0.056                   0.136             4.0
+# 160-999     223.0           114.0            40.0                   42.0                        86.0                   0.074                   0.123            26.0
+# two or more lines, best flat cut passes and tree split does not: 138 | best cut share <= 0.05: 95 | tree cut share <= 0.05: 44 | best lower than tree: 98

@@ -1,0 +1,266 @@
+# ===== protocol.md =====
+# # Protocol: the prototype rule for k with the opt-in reference on the CHOIR cells (frozen 2026-11-12, before the run)
+#
+# - Question: what does the prototype rule for k (`results/analyses/k_margin_prototype_20261112/k_rule.py`,
+#   `directions_with_margin`, alpha 0.01) change on the real data, compared with the current rule
+#   `invariant_directions`, when both feed the opt-in `sibling_best_flat_cut_reference`?
+# - Setup: the harness `results/analyses/spr_refit_20261111/harness.py` on the unchanged Markov/Ward tree
+#   `results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz`
+#   (48,879 cells, 30 PCs, method `tbs_family_diffusion_markov_ward`, sibling alpha 0.01, edge alpha 0.001).
+#   One variable: `invariant_directions` inside `best_flat_cut_reference` is replaced at run time by the
+#   prototype rule (`run.py`). Outputs with prefix `kmargin` in this folder.
+# - Baseline, already recorded with the current rule on the same tree (`spr_refit_20261111/k15_base_*`): 230
+#   clusters, ARI 0.8219, NMI 0.9358, 116 lines recovered, 21 split only, 38 merged only, 15 both, largest
+#   cluster 1,990; 1,838 calls of which 1,475 tested and 363 `no_invariant_directions` (all 363 have at most 31
+#   cells; 285 of them have 15 to 31 cells); k of the tested calls 3 to 15.
+# - Comparison (`compare.py`): the metrics above; call reasons; k by rule; calls with 15 to 31 cells (tested,
+#   p <= 0.01, accepted by BH); clusters below 20 cells; ARI between the two assignments.
+# - Predictions, stated before the run:
+#   P1 calls with 15 to 31 cells are no longer all refused as `no_invariant_directions`.
+#   P2 found clusters are at least 230.
+#   P3 ARI against the cell lines is within 0.05 of 0.8219.
+#   Each is reported as held or not held.
+# - Self-check: `run.py` asserts that the replaced rule was called and that the number of cells is 48,879.
+# - Limits known before the run: one dataset, one tree; the prototype's null is one spherical Gaussian
+#   population and the PCs do not have equal variances; the default tree is not run.
+
+
+# ===== deviations.md =====
+# # Deviations (written 2026-11-12, after the result)
+#
+# - `cause.py` was added after the comparison showed the drop in ARI. It measures the steps of the prototype rule
+#   at the root and the k of the cells of each single cell line with at least 100 cells under both rules. It is
+#   not part of the protocol. `run.py` and `compare.py` were not changed after the run.
+
+
+# ===== run.py =====
+"""protocol.md: the CHOIR harness of spr_refit_20261111 with the prototype rule for k plugged in at run time."""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "k_margin_prototype_20261112"))
+
+import harness  # noqa: E402
+from k_rule import directions_with_margin  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence import (  # noqa: E402
+    best_flat_cut_reference as mod,
+)
+
+calls = {"count": 0}
+
+
+def rule(points):
+    calls["count"] += 1
+    return directions_with_margin(points, alpha=0.01, max_directions=None)
+
+
+mod.invariant_directions = rule
+harness.HERE = HERE  # outputs go to this folder; the data folder is found through HERE.parent as before
+harness.main("results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "kmargin")
+assert calls["count"] > 0, "the prototype rule was never called"
+print("prototype rule calls:", calls["count"], flush=True)
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== compare.py =====
+"""protocol.md: the CHOIR fit with the prototype rule (kmargin_*) against the current rule (k15_base_*)."""
+import json
+from collections import Counter
+from pathlib import Path
+
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+BASE = HERE.parent / "spr_refit_20261111"
+runs = {"current rule": (BASE, "k15_base"), "prototype rule": (HERE, "kmargin")}
+metrics = {name: json.loads((folder / f"{prefix}_metrics.json").read_text()) for name, (folder, prefix) in runs.items()}
+splits = {name: json.loads((folder / f"{prefix}_splits.json").read_text())["splits"] for name, (folder, prefix) in runs.items()}
+labels = {name: pd.read_csv(folder / f"{prefix}_assignments.csv.gz", index_col=0)["cluster"] for name, (folder, prefix) in runs.items()}
+
+print("== metrics ==")
+for key in ("found_clusters", "ari_cell_line", "nmi_cell_line", "recovered", "split_only", "merged_only", "both", "largest_cluster",
+            "clusters_ge90_pure", "clusters_lt20_cells", "tested_splits", "kept_p_le_0.01", "accepted_bh", "sec"):
+    print(f"{key}: " + "; ".join(f"{name} {metrics[name][key]:.4f}" if isinstance(metrics[name][key], float) else f"{name} {metrics[name][key]}"
+                                for name in runs))
+a, b = labels["current rule"], labels["prototype rule"]
+assert a.index.equals(b.index) and len(a) == 48879
+print(f"ARI between the two assignments: {adjusted_rand_score(a, b):.4f}")
+
+print("\n== calls of best_flat_cut_reference ==")
+for name in runs:
+    s = splits[name]
+    print(f"{name}: calls {len(s)}; reasons {dict(sorted(Counter(x['reason'] for x in s).items()))}")
+    print(f"  k of all calls: {dict(sorted(Counter(x['k'] for x in s).items()))}")
+    for label, keep in (("fewer than 15 cells", lambda x: x["n_leaves"] < 15), ("15 to 31 cells", lambda x: 15 <= x["n_leaves"] <= 31),
+                        ("32 to 99 cells", lambda x: 32 <= x["n_leaves"] <= 99), ("100 to 999 cells", lambda x: 100 <= x["n_leaves"] <= 999),
+                        ("1,000 cells and more", lambda x: x["n_leaves"] >= 1000)):
+        part = [x for x in s if keep(x)]
+        tested = [x for x in part if x["reason"] == "tested"]
+        ks = sorted(x["k"] for x in tested)
+        print(f"  {label}: calls {len(part)}, reasons {dict(sorted(Counter(x['reason'] for x in part).items()))}, p <= 0.01 in "
+              f"{sum(x['p'] <= 0.01 for x in tested)}, accepted by BH {sum(x['bh_different'] for x in part)}, "
+              f"k median {ks[len(ks) // 2] if ks else '-'} (min {ks[0] if ks else '-'}, max {ks[-1] if ks else '-'})")
+
+print("\n== the same node under both rules ==")
+by_node = {name: {x["node"]: x for x in splits[name]} for name in runs}
+shared = sorted(set(by_node["current rule"]) & set(by_node["prototype rule"]))
+change = Counter()
+for node in shared:
+    x, y = by_node["current rule"][node], by_node["prototype rule"][node]
+    change["k lower" if y["k"] < x["k"] else "k higher" if y["k"] > x["k"] else "k equal"] += 1
+    change[f"accepted {x['bh_different']} -> {y['bh_different']}"] += 1
+print(f"nodes called under both rules: {len(shared)}; only current {len(set(by_node['current rule']) - set(shared))}; "
+      f"only prototype {len(set(by_node['prototype rule']) - set(shared))}")
+print(dict(sorted(change.items())))
+diff = [by_node["prototype rule"][n]["k"] - by_node["current rule"][n]["k"] for n in shared if by_node["current rule"][n]["n_leaves"] >= 32]
+print("k prototype minus k current at shared nodes with at least 32 cells:", dict(sorted(Counter(diff).items())))
+
+print("\n== cluster sizes ==")
+for name in runs:
+    sizes = labels[name].value_counts()
+    print(f"{name}: clusters {len(sizes)}; below 20 cells {int((sizes < 20).sum())}; 20 to 99 {int(((sizes >= 20) & (sizes < 100)).sum())}; "
+          f"100 to 999 {int(((sizes >= 100) & (sizes < 1000)).sum())}; 1,000 and more {int((sizes >= 1000).sum())}")
+
+
+# ===== compare.txt =====
+# == metrics ==
+# found_clusters: current rule 230; prototype rule 64
+# ari_cell_line: current rule 0.8219; prototype rule 0.1285
+# nmi_cell_line: current rule 0.9358; prototype rule 0.7336
+# recovered: current rule 116; prototype rule 36
+# split_only: current rule 21; prototype rule 2
+# merged_only: current rule 38; prototype rule 143
+# both: current rule 15; prototype rule 9
+# largest_cluster: current rule 1990; prototype rule 12884
+# clusters_ge90_pure: current rule 174; prototype rule 41
+# clusters_lt20_cells: current rule 25; prototype rule 2
+# tested_splits: current rule 1838; prototype rule 1838
+# kept_p_le_0.01: current rule 149; prototype rule 26
+# accepted_bh: current rule 134; prototype rule 9
+# sec: current rule 126.1680; prototype rule 319.5492
+# ARI between the two assignments: 0.1544
+#
+# == calls of best_flat_cut_reference ==
+# current rule: calls 1838; reasons {'no_invariant_directions': 363, 'tested': 1475}
+#   k of all calls: {0: 363, 3: 8, 4: 52, 5: 164, 6: 246, 7: 254, 8: 244, 9: 178, 10: 139, 11: 61, 12: 44, 13: 23, 14: 54, 15: 8}
+#   fewer than 15 cells: calls 78, reasons {'no_invariant_directions': 78}, p <= 0.01 in 0, accepted by BH 0, k median - (min -, max -)
+#   15 to 31 cells: calls 285, reasons {'no_invariant_directions': 285}, p <= 0.01 in 0, accepted by BH 0, k median - (min -, max -)
+#   32 to 99 cells: calls 606, reasons {'tested': 606}, p <= 0.01 in 10, accepted by BH 8, k median 6 (min 3, max 10)
+#   100 to 999 cells: calls 766, reasons {'tested': 766}, p <= 0.01 in 87, accepted by BH 76, k median 9 (min 5, max 13)
+#   1,000 cells and more: calls 103, reasons {'tested': 103}, p <= 0.01 in 52, accepted by BH 50, k median 14 (min 11, max 15)
+# prototype rule: calls 1838; reasons {'no_invariant_directions': 2, 'tested': 1268, 'too_few_cells': 151, 'too_many_invariant_directions': 417}
+#   k of all calls: {0: 2, 1: 20, 2: 63, 3: 108, 4: 67, 5: 67, 6: 59, 7: 87, 8: 79, 9: 125, 10: 117, 11: 160, 12: 103, 13: 143, 14: 118, 15: 103, 16: 83, 17: 70, 18: 44, 19: 34, 20: 23, 21: 33, 22: 19, 23: 17, 24: 4, 25: 17, 26: 7, 27: 17, 28: 49}
+#   fewer than 15 cells: calls 78, reasons {'no_invariant_directions': 2, 'too_few_cells': 76}, p <= 0.01 in 0, accepted by BH 0, k median - (min -, max -)
+#   15 to 31 cells: calls 285, reasons {'tested': 267, 'too_few_cells': 11, 'too_many_invariant_directions': 7}, p <= 0.01 in 2, accepted by BH 0, k median 4 (min 1, max 9)
+#   32 to 99 cells: calls 606, reasons {'tested': 517, 'too_few_cells': 64, 'too_many_invariant_directions': 25}, p <= 0.01 in 5, accepted by BH 1, k median 9 (min 3, max 15)
+#   100 to 999 cells: calls 766, reasons {'tested': 484, 'too_many_invariant_directions': 282}, p <= 0.01 in 19, accepted by BH 8, k median 13 (min 6, max 15)
+#   1,000 cells and more: calls 103, reasons {'too_many_invariant_directions': 103}, p <= 0.01 in 0, accepted by BH 0, k median - (min -, max -)
+#
+# == the same node under both rules ==
+# nodes called under both rules: 1838; only current 0; only prototype 0
+# {'accepted False -> False': 1704, 'accepted True -> False': 125, 'accepted True -> True': 9, 'k equal': 23, 'k higher': 1815}
+# k prototype minus k current at shared nodes with at least 32 cells: {0: 21, 1: 71, 2: 155, 3: 169, 4: 228, 5: 191, 6: 149, 7: 136, 8: 95, 9: 56, 10: 56, 11: 34, 12: 22, 13: 32, 14: 49, 15: 9, 16: 1, 19: 1}
+#
+# == cluster sizes ==
+# current rule: clusters 230; below 20 cells 25; 20 to 99 47; 100 to 999 155; 1,000 and more 3
+# prototype rule: clusters 64; below 20 cells 2; 20 to 99 8; 100 to 999 45; 1,000 and more 9
+
+
+# ===== cause.py =====
+"""Added after the result (deviations.md): why k rises on the CHOIR cells. Root steps and single cell lines."""
+import sys
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "k_margin_prototype_20261112"))
+
+from k_rule import directions_with_margin, null_quantile  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+pcs = np.load(source / "pca.npy")
+n, p = pcs.shape
+values = np.linalg.eigvalsh(np.cov(pcs.T))[::-1]
+print(f"== root: {n} cells, {p} PCs; eigenvalue j over the median of the remaining, against the 99% point ==")
+print("eigenvalues:", np.round(values, 2).tolist())
+for j in range(p - 2):
+    ratio, q = values[j] / np.median(values[j:]), null_quantile(n, p - j)
+    print(f"step {j + 1}: ratio {ratio:.3f}, 99% point {q:.3f}, {'passes' if ratio > q else 'stops'}")
+    if ratio <= q:
+        break
+print("k at the root: current rule", len(invariant_directions(pcs)), "| prototype rule", len(directions_with_margin(pcs)))
+
+print("\n== single cell lines with at least 100 cells: k of the line's own cells ==")
+rows = []
+for line, index in metadata.groupby("Cell_line").indices.items():
+    if len(index) >= 100:
+        cells = pcs[index]
+        own = np.linalg.eigvalsh(np.cov(cells.T))[::-1]
+        rows.append(dict(line=line, n=len(index), current=len(invariant_directions(cells)), prototype=len(directions_with_margin(cells)),
+                         first_over_median=own[0] / np.median(own), q=null_quantile(len(index), p)))
+table = pd.DataFrame(rows)
+print(f"lines: {len(table)}; cells per line median {int(table['n'].median())} (min {table['n'].min()}, max {table['n'].max()})")
+print("current rule k:", dict(sorted(Counter(table["current"]).items())))
+print("prototype rule k:", dict(sorted(Counter(table["prototype"]).items())))
+print(f"largest eigenvalue over the median eigenvalue within a line: median {table['first_over_median'].median():.2f} "
+      f"(min {table['first_over_median'].min():.2f}, max {table['first_over_median'].max():.2f}); "
+      f"99% point for one spherical Gaussian population at these sizes: {table['q'].min():.2f} to {table['q'].max():.2f}")
+print(f"lines with k = 0: current rule {int((table['current'] == 0).sum())}, prototype rule {int((table['prototype'] == 0).sum())}; "
+      f"lines with prototype k above 15: {int((table['prototype'] > 15).sum())}; above 10: {int((table['prototype'] > 10).sum())}")
+
+
+# ===== cause.txt =====
+# == root: 48879 cells, 30 PCs; eigenvalue j over the median of the remaining, against the 99% point ==
+# eigenvalues: [53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58, 6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12]
+# step 1: ratio 6.383, 99% point 1.055, passes
+# step 2: ratio 4.373, 99% point 1.056, passes
+# step 3: ratio 3.078, 99% point 1.053, passes
+# step 4: ratio 2.580, 99% point 1.054, passes
+# step 5: ratio 2.355, 99% point 1.052, passes
+# step 6: ratio 2.132, 99% point 1.051, passes
+# step 7: ratio 2.161, 99% point 1.051, passes
+# step 8: ratio 1.956, 99% point 1.050, passes
+# step 9: ratio 1.770, 99% point 1.049, passes
+# step 10: ratio 1.769, 99% point 1.048, passes
+# step 11: ratio 1.765, 99% point 1.046, passes
+# step 12: ratio 1.565, 99% point 1.046, passes
+# step 13: ratio 1.566, 99% point 1.045, passes
+# step 14: ratio 1.459, 99% point 1.044, passes
+# step 15: ratio 1.372, 99% point 1.043, passes
+# step 16: ratio 1.357, 99% point 1.042, passes
+# step 17: ratio 1.323, 99% point 1.040, passes
+# step 18: ratio 1.278, 99% point 1.039, passes
+# step 19: ratio 1.180, 99% point 1.037, passes
+# step 20: ratio 1.154, 99% point 1.037, passes
+# step 21: ratio 1.131, 99% point 1.035, passes
+# step 22: ratio 1.112, 99% point 1.034, passes
+# step 23: ratio 1.067, 99% point 1.032, passes
+# step 24: ratio 1.056, 99% point 1.031, passes
+# step 25: ratio 1.043, 99% point 1.029, passes
+# step 26: ratio 1.039, 99% point 1.027, passes
+# step 27: ratio 1.040, 99% point 1.023, passes
+# step 28: ratio 1.023, 99% point 1.024, stops
+# k at the root: current rule 14 | prototype rule 27
+#
+# == single cell lines with at least 100 cells: k of the line's own cells ==
+# lines: 175; cells per line median 238 (min 102, max 1990)
+# current rule k: {5: 1, 6: 1, 7: 18, 8: 48, 9: 46, 10: 45, 11: 13, 12: 3}
+# prototype rule k: {6: 1, 8: 2, 9: 3, 10: 3, 11: 11, 12: 15, 13: 18, 14: 26, 15: 25, 16: 21, 17: 18, 18: 12, 19: 6, 20: 6, 21: 4, 22: 1, 23: 1, 25: 1, 27: 1}
+# largest eigenvalue over the median eigenvalue within a line: median 25.64 (min 7.03, max 94.13); 99% point for one spherical Gaussian population at these sizes: 1.30 to 2.93
+# lines with k = 0: current rule 0, prototype rule 0; lines with prototype k above 15: 71; above 10: 166

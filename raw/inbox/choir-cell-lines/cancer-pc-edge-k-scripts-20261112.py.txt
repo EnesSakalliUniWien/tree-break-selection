@@ -1,0 +1,324 @@
+# ===== protocol.md =====
+# # Protocol: why the edge test's k is 28 with markov/ward and 3 to 9 in the other cells (frozen 2026-11-12, before the run)
+#
+# - Question: at nodes of one true group the edge test's projection dimension k has median 28 with operator
+#   "markov" and linkage "ward" and 6, 9 and 3 in the other three cells
+#   (`results/analyses/cancer_pc_edge_test_20261112`). What decides k?
+# - What was known before this run: the k of the 146 nodes from that folder's `edges.jsonl` (seen: k is 2, or
+#   30 minus the number of test rows at small nodes, or 28 to 30), and the code:
+#   - k = max(Marchenko-Pastur signal count, minimum 2), then extended through the numerical eigenvalue group
+#     at its boundary (`extend_rank_through_ties`, relative tolerance 1e-10).
+#   - The eigenvalues are those of the node's basis rows (one half of each child's rows), whitened by the
+#     pooled within-child covariance of the basis rows themselves when both basis children have at least 8
+#     rows and basis rows minus 2 is at least the 30 features ("within route"), and otherwise by the node's
+#     total covariance over all its rows ("total route").
+# - Predictions, derived from the code before running:
+#   P1 within route: whitening rows by their own pooled within-child covariance leaves 29 numerically tied
+#      eigenvalues below the first, so the minimum 2 is extended to all 30 directions.
+#   P2 total route: with n_test test rows, the basis rows have exactly the total variance in the directions
+#      the test rows do not span, so the top 30 - n_test eigenvalues are tied and k = max(2, 30 - n_test);
+#      with 30 or more test rows there is no tie and k = 2 unless the signal count is higher.
+#   P3 markov/ward has the largest share of nodes on the within route, because its splits are balanced.
+#   Each is reported as supported or not, with counts.
+# - Measurement (`measure.py`, `nodes.jsonl`): the 16 fits of the 4 cells x 4 cases with `TBS_N_JOBS=1`; the
+#   per-node spectral worker and the Marchenko-Pastur estimator are wrapped at run time while the edge test's
+#   basis is computed. Per internal node: cells, basis rows per child, test rows, true groups, the route (the
+#   whitening covariance equals the node's stored covariance or not), all eigenvalues, the signal count, k.
+#   No production code is changed.
+# - Summary (`summarize.py`): nodes of one true group with at least 40 cells (146) and all nodes with at least
+#   40 cells; per route and per cell the size of the tied group at the boundary and k; and, joined with the
+#   earlier `edges.jsonl`, the raw p <= 0.001 share of the tree's split and of the random splits by route.
+# - Self-checks (asserts): found clusters and ARI as before; k equals the k in the earlier `edges.jsonl` at
+#   every one of the 146 nodes; k recomputed from the recorded eigenvalues with the two rules equals the
+#   recorded k.
+# - Limits known before running: one seed per case, identity noise covariance, 30 features.
+
+
+# ===== deviations.md =====
+# # Deviations (written 2026-11-12, after the first output of summarize.py)
+#
+# - A check line that compared k with the end of the tied group over all 3,241 recorded nodes was restricted to
+#   the nodes with at least 40 cells; over all nodes it ignored the number of positive eigenvalues at small
+#   nodes. The protocol's check (k recomputed with the pipeline's two rules) holds at 3,241 of 3,241 nodes.
+# - A per-cell table of the within route (edges, raw p <= 0.001, Tree-BH tested and significant) was added.
+# - `measure.py` was not changed after its run.
+
+
+# ===== measure.py =====
+"""protocol.md: the eigenvalues behind the edge test's k at every internal node, 4 cells x 4 cases."""
+import json
+import os
+import sys
+from pathlib import Path
+
+os.environ["TBS_N_JOBS"] = "1"  # sequential spectral worker, so the wrappers below see one node at a time
+
+import networkx as nx  # noqa: E402
+import numpy as np  # noqa: E402
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.child_parent_divergence_annotation as edge_module  # noqa: E402
+import tree_break_selection.hierarchy_analysis.statistics.projection.spectral.marchenko_pastur as worker_module  # noqa: E402
+import tree_break_selection.hierarchy_analysis.statistics.projection.spectral.tree_estimator as estimator_module  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.generators import generate_case_data  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+from tree_break_selection.eigenvalue_groups import extend_rank_through_ties  # noqa: E402
+from tree_break_selection.tree.distributions import (
+    require_node_continuous_covariance_by_block,  # noqa: E402
+)
+
+METHOD = "tbs_family_diffusion"
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+state = dict(basis=False, node=None, records={}, tree=None, basis_rows=None)
+original_context, original_node, original_estimate = (
+    edge_module.compute_child_parent_spectral_context, estimator_module._process_node, worker_module.estimate_marchenko_pastur_dimension)
+
+
+def recording_context(tree, leaf_data, **kwargs):
+    state["basis"] = kwargs.get("basis_row_indices_by_node") is not None
+    if state["basis"]:
+        state.update(tree=tree, basis_rows=kwargs["basis_row_indices_by_node"], records={})
+    try:
+        return original_context(tree, leaf_data, **kwargs)
+    finally:
+        state["basis"] = False
+
+
+def recording_node(task, *args):
+    state["node"] = task
+    try:
+        return original_node(task, *args)
+    finally:
+        state["node"] = None
+
+
+def recording_estimate(eigenvalues, **kwargs):
+    out = original_estimate(eigenvalues, **kwargs)
+    if state["basis"]:
+        task = state["node"]
+        stored = require_node_continuous_covariance_by_block(state["tree"], task.node_id, task.feature_space)
+        used = task.continuous_covariance_by_block or {}
+        route = "total" if all(np.shape(used[name]) == np.shape(stored[name]) and np.array_equal(used[name], stored[name]) for name in stored) else "within"
+        state["records"][task.node_id] = dict(
+            eigenvalues=np.asarray(eigenvalues, dtype=np.float64).tolist(), signal_count=int(out.raw_mp_signal_count),
+            k=int(out.test_projection_dimension), basis_rows=len(task.row_indices), route=route,
+            covariance_variances_only=bool(all(np.ndim(v) == 1 for v in used.values())), threshold_rows=int(kwargs["mp_threshold_rows"]),
+            active_features=int(kwargs["n_features"]), minimum=int(kwargs["minimum_projection_dimension"]))
+    return out
+
+
+edge_module.compute_child_parent_spectral_context = recording_context
+estimator_module._process_node = recording_node
+worker_module.estimate_marchenko_pastur_dimension = recording_estimate
+apply_single_thread_runtime_defaults()
+earlier_runs, earlier_k = {}, {}
+for line in open(HERE.parent / "cancer_pc_edge_test_20261112" / "edges.jsonl"):
+    edge = json.loads(line)
+    earlier_k[edge["case"], edge["cell"], edge["parent"]] = edge["k"]
+for line in open(HERE.parent / "cancer_pc_operator_linkage_20261112" / "nodes.jsonl"):
+    node = json.loads(line)
+    earlier_runs[node["case"], node["method"]] = (node["found"], node["ari"])
+checked = 0
+with open(HERE / "nodes.jsonl", "w") as out:
+    for case in get_test_cases_by_suite("cancer_pc"):
+        data, truth, _, _ = generate_case_data(case)
+        row_of = {name: row for row, name in enumerate(data.index)}
+        for operator, linkage in CELLS:
+            cell = f"{operator}/{linkage}"
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                              plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            assert (int(res["found_clusters"].iloc[0]), float(res["ari"].iloc[0])) == earlier_runs[case["name"], cell], (case["name"], cell)
+            tree, basis_rows, records = state["tree"], state["basis_rows"], state["records"]
+            rows_under = {}
+            for node in reversed(list(nx.topological_sort(tree))):
+                children = list(tree.successors(node))
+                rows_under[node] = [row_of[tree.nodes[node]["label"]]] if not children else sum((rows_under[c] for c in children), [])
+            written = 0
+            for node, record in records.items():
+                children = list(tree.successors(node))
+                basis = set(basis_rows[node])
+                values = np.array(record["eigenvalues"])
+                positive = int((values > 0).sum())  # shortcut: the pipeline's positive count has its own tolerance; checked by the assert below
+                again = extend_rank_through_ties(values[: min(record["active_features"], positive)], max(record["signal_count"], record["minimum"]))
+                key = (case["name"], cell, str(node))
+                if key in earlier_k:
+                    assert record["k"] == earlier_k[key], (key, record["k"], earlier_k[key])
+                    checked += 1
+                out.write(json.dumps(dict(
+                    case=case["name"], cell=cell, node=str(node), n=len(rows_under[node]), n_children=[len(rows_under[c]) for c in children],
+                    basis_children=[sum(row in basis for row in rows_under[c]) for c in children],
+                    n_test=len(rows_under[node]) - len(basis), groups=sorted({int(g) for g in truth[rows_under[node]]}),
+                    k_recomputed=int(again), **record)) + "\n")
+                written += 1
+            print(case["name"], cell, "nodes", written, flush=True)
+assert checked == len(earlier_k), (checked, len(earlier_k))
+print("k equal to the earlier run at", checked, "nodes")
+
+
+# ===== summarize.py =====
+"""protocol.md: what decides the edge test's k, from nodes.jsonl, and the rejections by route from the earlier edges.jsonl."""
+import json
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors
+
+HERE = Path(__file__).resolve().parent
+nodes = [json.loads(line) for line in open(HERE / "nodes.jsonl")]
+edges = [json.loads(line) for line in open(HERE.parent / "cancer_pc_edge_test_20261112" / "edges.jsonl")]
+CELLS = [f"{operator}/{linkage}" for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+
+
+def boundary_group(node):
+    """First and last 0-based index of the tied eigenvalue group holding the direction at position max(signal count, minimum)."""
+    values = np.array(node["eigenvalues"])
+    tied = tied_eigenvalue_neighbors(values)
+    last = first = max(node["signal_count"], node["minimum"]) - 1
+    while last < len(values) - 1 and tied[last]:
+        last += 1
+    while first > 0 and tied[first - 1]:
+        first -= 1
+    return first, last
+
+
+for node in nodes:
+    node["first"], node["last"] = boundary_group(node)
+    node["group_size"] = node["last"] - node["first"] + 1
+    node["one_group"] = len(node["groups"]) == 1
+
+print("k recomputed from the recorded eigenvalues equals k:", sum(n["k_recomputed"] == n["k"] for n in nodes), "of", len(nodes))
+big = [n for n in nodes if n["n"] >= 40]
+print("nodes with at least 40 cells: k equals the end of the boundary group at", sum(n["k"] == n["last"] + 1 for n in big), "of", len(big))
+
+for title, select in (("nodes of one true group, at least 40 cells", lambda n: n["one_group"] and n["n"] >= 40),
+                      ("all nodes with at least 40 cells", lambda n: n["n"] >= 40)):
+    part = [n for n in nodes if select(n)]
+    print(f"\n== {title}: {len(part)} ==")
+    for route in ("within", "total"):
+        sub = [n for n in part if n["route"] == route]
+        print(f"route {route}: {len(sub)} nodes; variances only {sum(n['covariance_variances_only'] for n in sub)}; "
+              f"signal count {dict(sorted(Counter(n['signal_count'] for n in sub).items()))}; k {dict(sorted(Counter(n['k'] for n in sub).items()))}")
+        if route == "within":
+            print(f"  P1: tied group below the first eigenvalue has 29 members at {sum(n['first'] == 1 and n['group_size'] == 29 for n in sub)} nodes; "
+                  f"size of the boundary group {dict(sorted(Counter(n['group_size'] for n in sub).items()))}; k = 30 at {sum(n['k'] == 30 for n in sub)}; "
+                  f"basis rows min {min(n['basis_rows'] for n in sub)}, smaller basis child min {min(min(n['basis_children']) for n in sub)}")
+            odd = [n for n in sub if n["k"] != 30]
+            print("  k below 30:", [(n["cell"], n["n"], n["basis_children"], n["signal_count"], n["k"], n["first"], n["group_size"],
+                                     [round(v, 4) for v in n["eigenvalues"][:3]], round(n["eigenvalues"][-1], 4)) for n in odd][:8])
+        else:
+            small = [n for n in sub if n["n_test"] < 30]
+            large = [n for n in sub if n["n_test"] >= 30]
+            print(f"  P2, fewer than 30 test rows: {len(small)} nodes; tied group starts at the first eigenvalue and has 30 - n_test members at "
+                  f"{sum(n['first'] == 0 and n['group_size'] == 30 - n['n_test'] for n in small)}; k = max(2, 30 - n_test) at "
+                  f"{sum(n['k'] == max(2, 30 - n['n_test']) for n in small)}")
+            print(f"  P2, 30 or more test rows: {len(large)} nodes; no tie at the boundary at {sum(n['group_size'] == 1 for n in large)}; "
+                  f"k = max(2, signal count) at {sum(n['k'] == max(2, n['signal_count']) for n in large)}; k {dict(sorted(Counter(n['k'] for n in large).items()))}")
+            print(f"  why the total route: smaller basis child under 8 rows at {sum(min(n['basis_children']) < 8 for n in sub)}, "
+                  f"basis rows minus 2 under 30 at {sum(n['basis_rows'] - 2 < 30 for n in sub)}, neither at "
+                  f"{sum(min(n['basis_children']) >= 8 and n['basis_rows'] - 2 >= 30 for n in sub)}")
+    print("per cell (P3):")
+    for cell in CELLS:
+        sub = [n for n in part if n["cell"] == cell]
+        ks = np.array([n["k"] for n in sub])
+        print(f"  {cell}: {len(sub)} nodes, within route {sum(n['route'] == 'within' for n in sub)} ({np.mean([n['route'] == 'within' for n in sub]):.2f}), "
+              f"k median {np.median(ks):.0f}, k = 2 at {int((ks == 2).sum())}, k from 3 to 27 at {int(((ks > 2) & (ks < 28)).sum())}, k from 28 to 30 at {int((ks >= 28).sum())}; "
+              f"smaller child share median {np.median([min(n['n_children']) / n['n'] for n in sub]):.3f}")
+
+print("\n== rejections by route and k (edges of the 146 nodes, from cancer_pc_edge_test_20261112) ==")
+route_of = {(n["case"], n["cell"], n["node"]): n for n in nodes}
+for label, select in (("within route, k 28 to 30", lambda n: n["route"] == "within"),
+                      ("total route, k = 30 - n_test (3 to 10)", lambda n: n["route"] == "total" and n["k"] > 2),
+                      ("total route, k = 2", lambda n: n["route"] == "total" and n["k"] == 2)):
+    sub = [e for e in edges if select(route_of[e["case"], e["cell"], e["parent"]])]
+    tree_p = np.array([e["p_without_time"] for e in sub])
+    random_p = np.array(sum((e["random_p_without_time"] for e in sub), []))
+    print(f"{label}: {len(sub)} edges, by cell { {c: sum(e['cell'] == c for e in sub) for c in CELLS} }; "
+          f"tree's split raw p <= 0.001 {int((tree_p <= 0.001).sum())}/{len(sub)} ({(tree_p <= 0.001).mean():.3f}); "
+          f"random splits raw p <= 0.001 {int((random_p <= 0.001).sum())}/{len(random_p)} ({(random_p <= 0.001).mean():.4f}), "
+          f"<= 0.01 {(random_p <= 0.01).mean():.4f}; statistic per k of the tree's split, median "
+          f"{np.median([e['statistic_without_time'] / e['df_without_time'] for e in sub]):.2f}")
+
+print("\n== added after the first output: the within route per cell ==")
+for cell in CELLS:
+    sub = [e for e in edges if e["cell"] == cell and route_of[e["case"], e["cell"], e["parent"]]["route"] == "within"]
+    rest = [e for e in edges if e["cell"] == cell and route_of[e["case"], e["cell"], e["parent"]]["route"] == "total"]
+    print(f"{cell}: within route {len(sub)} edges, tree's split raw p <= 0.001 {sum(e['p_without_time'] <= 0.001 for e in sub)}, "
+          f"tested by Tree-BH {sum(e['tested'] for e in sub)}, significant {sum(e['significant'] for e in sub)}; "
+          f"total route {len(rest)} edges, raw p <= 0.001 {sum(e['p_without_time'] <= 0.001 for e in rest)}, "
+          f"tested {sum(e['tested'] for e in rest)}, significant {sum(e['significant'] for e in rest)}")
+
+
+# ===== measure.log =====
+# cancer_pc_hub_disconnected symmetric/average nodes 205
+# cancer_pc_hub_disconnected symmetric/ward nodes 204
+# cancer_pc_hub_disconnected markov/average nodes 204
+# cancer_pc_hub_disconnected markov/ward nodes 191
+# cancer_pc_hub_connected symmetric/average nodes 212
+# cancer_pc_hub_connected symmetric/ward nodes 202
+# cancer_pc_hub_connected markov/average nodes 205
+# cancer_pc_hub_connected markov/ward nodes 198
+# cancer_pc_nohub_disconnected symmetric/average nodes 203
+# cancer_pc_nohub_disconnected symmetric/ward nodes 204
+# cancer_pc_nohub_disconnected markov/average nodes 203
+# cancer_pc_nohub_disconnected markov/ward nodes 195
+# cancer_pc_nohub_connected symmetric/average nodes 207
+# cancer_pc_nohub_connected symmetric/ward nodes 199
+# cancer_pc_nohub_connected markov/average nodes 207
+# cancer_pc_nohub_connected markov/ward nodes 202
+# k equal to the earlier run at 146 nodes
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python   14.62s user 0.33s system 97% cpu 15.312 total
+
+
+# ===== summary.txt =====
+# k recomputed from the recorded eigenvalues equals k: 3241 of 3241
+# nodes with at least 40 cells: k equals the end of the boundary group at 383 of 383
+#
+# == nodes of one true group, at least 40 cells: 146 ==
+# route within: 51 nodes; variances only 0; signal count {0: 18, 1: 33}; k {28: 1, 29: 4, 30: 46}
+#   P1: tied group below the first eigenvalue has 29 members at 46 nodes; size of the boundary group {27: 1, 28: 4, 29: 46}; k = 30 at 46; basis rows min 32, smaller basis child min 8
+#   k below 30: [('symmetric/average', 66, [8, 25], 1, 29, 1, 28, [31.7802, 0.9394, 0.9394], 0.9394), ('markov/ward', 69, [14, 20], 1, 28, 1, 27, [16.8997, 0.9412, 0.9412], 0.9412), ('markov/ward', 64, [14, 18], 1, 29, 1, 28, [149.4583, 0.9375, 0.9375], 0.9375), ('symmetric/ward', 69, [10, 24], 1, 29, 1, 28, [14.1309, 0.9412, 0.9412], 0.9412), ('markov/ward', 64, [14, 18], 1, 29, 1, 28, [149.4583, 0.9375, 0.9375], 0.9375)]
+# route total: 95 nodes; variances only 0; signal count {0: 95}; k {2: 55, 3: 4, 4: 4, 5: 3, 6: 4, 7: 5, 8: 6, 9: 9, 10: 5}
+#   P2, fewer than 30 test rows: 46 nodes; tied group starts at the first eigenvalue and has 30 - n_test members at 43; k = max(2, 30 - n_test) at 46
+#   P2, 30 or more test rows: 49 nodes; no tie at the boundary at 49; k = max(2, signal count) at 49; k {2: 49}
+#   why the total route: smaller basis child under 8 rows at 69, basis rows minus 2 under 30 at 66, neither at 0
+# per cell (P3):
+#   symmetric/average: 48 nodes, within route 14 (0.29), k median 6, k = 2 at 20, k from 3 to 27 at 14, k from 28 to 30 at 14; smaller child share median 0.124
+#   symmetric/ward: 29 nodes, within route 12 (0.41), k median 9, k = 2 at 8, k from 3 to 27 at 9, k from 28 to 30 at 12; smaller child share median 0.228
+#   markov/average: 45 nodes, within route 12 (0.27), k median 3, k = 2 at 21, k from 3 to 27 at 12, k from 28 to 30 at 12; smaller child share median 0.206
+#   markov/ward: 24 nodes, within route 13 (0.54), k median 28, k = 2 at 6, k from 3 to 27 at 5, k from 28 to 30 at 13; smaller child share median 0.382
+#
+# == all nodes with at least 40 cells: 383 ==
+# route within: 180 nodes; variances only 0; signal count {0: 29, 1: 151}; k {28: 3, 29: 9, 30: 168}
+#   P1: tied group below the first eigenvalue has 29 members at 168 nodes; size of the boundary group {27: 3, 28: 9, 29: 168}; k = 30 at 168; basis rows min 32, smaller basis child min 8
+#   k below 30: [('symmetric/average', 66, [8, 25], 1, 29, 1, 28, [31.7802, 0.9394, 0.9394], 0.9394), ('symmetric/ward', 65, [21, 11], 1, 29, 1, 28, [187.5532, 0.9375, 0.9375], 0.9375), ('markov/ward', 65, [11, 21], 1, 29, 1, 28, [60.1455, 0.9375, 0.9375], 0.9375), ('markov/ward', 69, [14, 20], 1, 28, 1, 27, [16.8997, 0.9412, 0.9412], 0.9412), ('markov/ward', 64, [14, 18], 1, 29, 1, 28, [149.4583, 0.9375, 0.9375], 0.9375), ('symmetric/average', 65, [11, 21], 1, 29, 1, 28, [187.5532, 0.9375, 0.9375], 0.9375), ('symmetric/ward', 67, [18, 15], 1, 28, 1, 27, [43.5187, 0.9394, 0.9394], 0.9394), ('symmetric/ward', 65, [21, 11], 1, 29, 1, 28, [187.5532, 0.9375, 0.9375], 0.9375)]
+# route total: 203 nodes; variances only 0; signal count {0: 203}; k {2: 112, 3: 6, 4: 9, 5: 5, 6: 22, 7: 8, 8: 16, 9: 19, 10: 6}
+#   P2, fewer than 30 test rows: 100 nodes; tied group starts at the first eigenvalue and has 30 - n_test members at 96; k = max(2, 30 - n_test) at 100
+#   P2, 30 or more test rows: 103 nodes; no tie at the boundary at 103; k = max(2, signal count) at 103; k {2: 103}
+#   why the total route: smaller basis child under 8 rows at 146, basis rows minus 2 under 30 at 134, neither at 0
+# per cell (P3):
+#   symmetric/average: 128 nodes, within route 44 (0.34), k median 6, k = 2 at 54, k from 3 to 27 at 30, k from 28 to 30 at 44; smaller child share median 0.112
+#   symmetric/ward: 83 nodes, within route 46 (0.55), k median 29, k = 2 at 15, k from 3 to 27 at 22, k from 28 to 30 at 46; smaller child share median 0.250
+#   markov/average: 96 nodes, within route 46 (0.48), k median 10, k = 2 at 33, k from 3 to 27 at 17, k from 28 to 30 at 46; smaller child share median 0.174
+#   markov/ward: 76 nodes, within route 44 (0.58), k median 30, k = 2 at 10, k from 3 to 27 at 22, k from 28 to 30 at 44; smaller child share median 0.324
+#
+# == rejections by route and k (edges of the 146 nodes, from cancer_pc_edge_test_20261112) ==
+# within route, k 28 to 30: 102 edges, by cell {'symmetric/average': 28, 'symmetric/ward': 24, 'markov/average': 24, 'markov/ward': 26}; tree's split raw p <= 0.001 84/102 (0.824); random splits raw p <= 0.001 135/20400 (0.0066), <= 0.01 0.0289; statistic per k of the tree's split, median 2.74
+# total route, k = 30 - n_test (3 to 10): 80 edges, by cell {'symmetric/average': 28, 'symmetric/ward': 18, 'markov/average': 24, 'markov/ward': 10}; tree's split raw p <= 0.001 2/80 (0.025); random splits raw p <= 0.001 2/16000 (0.0001), <= 0.01 0.0006; statistic per k of the tree's split, median 1.16
+# total route, k = 2: 110 edges, by cell {'symmetric/average': 40, 'symmetric/ward': 16, 'markov/average': 42, 'markov/ward': 12}; tree's split raw p <= 0.001 38/110 (0.345); random splits raw p <= 0.001 15/22000 (0.0007), <= 0.01 0.0076; statistic per k of the tree's split, median 1.59
+#
+# == added after the first output: the within route per cell ==
+# symmetric/average: within route 28 edges, tree's split raw p <= 0.001 16, tested by Tree-BH 0, significant 0; total route 68 edges, raw p <= 0.001 10, tested 12, significant 0
+# symmetric/ward: within route 24 edges, tree's split raw p <= 0.001 18, tested by Tree-BH 4, significant 0; total route 34 edges, raw p <= 0.001 4, tested 8, significant 0
+# markov/average: within route 24 edges, tree's split raw p <= 0.001 24, tested by Tree-BH 0, significant 0; total route 66 edges, raw p <= 0.001 14, tested 24, significant 2
+# markov/ward: within route 26 edges, tree's split raw p <= 0.001 26, tested by Tree-BH 26, significant 26; total route 22 edges, raw p <= 0.001 12, tested 16, significant 8

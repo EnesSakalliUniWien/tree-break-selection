@@ -1,0 +1,636 @@
+# ===== protocol.md =====
+# # Protocol: the Gaussian best-flat-cut reference extended to 11 to 15 invariant directions (frozen 2026-11-11, before any run)
+#
+# Reason: on the 48,879 CHOIR cells every split with 1,000 cells or more has 11 to 15 invariant directions and the
+# opt-in `sibling_best_flat_cut_reference` returns p = 1 for them (`too_many_invariant_directions`, 190 splits on
+# the Markov/Ward tree). The opt-in stays opt-in; no default changes.
+#
+# ## Part 1: production change
+#
+# - `scripts/build_best_flat_cut_reference.py`: `K_GRID` becomes 1 to 15. A new option `--k-min` computes only the
+#   cells with k at or above it and takes the others from the existing table (same n grid, B and seed required),
+#   so the cells for k up to 10 stay exactly as they are. The search is unchanged (grid of 3,000 directions for
+#   k above 6, re-sorts from the top 50, single-point moves), B = 1,999, seed `[20261110, 81, n, k, block]`.
+# - For k above 10 the cells with n below 50 are not built: at n = 15 the whitening fails for k = 15 and `rho` is
+#   3,000 to 1e10 for k = 11 and 13 (timing run). They are stored as NaN and the module fails closed there with
+#   reason `too_few_cells`. Nodes with 11 or more invariant directions in 30 features have more than 31 cells
+#   anyway.
+# - `best_flat_cut_reference.py`: `MAX_DIRECTIONS` becomes 15; the docstring states what is and is not known for k
+#   above 10 (below). Tests 82, 83 and integration 66 and the statistics README follow.
+# - Check: the cells for k up to 10 are bit-identical to the table before the change; two of them are recomputed
+#   from their seeds and equal the stored values; the new cells are finite, rise with k and fall with n.
+#
+# ## What is known for k above 10 (recorded earlier, wiki page gaussian-best-flat-cut-reference)
+#
+# The search does not reliably find the best flat cut for k of 15 and 20: its 99% points are lower bounds. The
+# stored null is therefore the null of the searched value. It is exact for a statistic that is itself the
+# searched value. For an arbitrary split (the tree's split) the argument "any split's `rho` is at most the best
+# flat cut's `rho`" still holds for the true best flat cut, but not for the searched value, so the p-value for k
+# above 10 is not guaranteed conservative. Part 2 measures this.
+#
+# ## Part 2: validity study under one Gaussian population (no production file)
+#
+# For k = 11, 13, 15 and n = 200 and 800, with the 99% point of the searched null from the builder's own cells:
+#
+# 1. Fresh datasets: the searched value's rejection rate at the 99% point (about 1% expected).
+# 2. The split of a Ward tree built on the same data (root split): its `rho` against the 99% point. This is the
+#    use in the pipeline. Expected far below 1%.
+# 3. Stronger searches than the table's (more directions; single-point moves started from the Ward split and
+#    from the table's result): how often and by how much they exceed the searched value, and how often they exceed
+#    the 99% point. This is the size of the gap. Expected above 1% at k = 15; how much is not predicted.
+# 4. k chosen by `invariant_directions` in 30 features with 11 to 15 strong directions (n = 400 and 2,000): the
+#    rejection rate of the Ward root split and of the searched value through the whole function
+#    `best_flat_cut_reference`.
+#
+# At least 1,000 datasets per cell for the rates, exact binomial intervals, seeds stated, counts reported.
+#
+# ## Part 3: the real data again (harness of `spr_refit_20261111`)
+#
+# The unchanged Markov/Ward tree and the tree after the sprs (`tree_spr.npz`) through the harness with the
+# extended reference. Endpoints as in `spr_refit_20261111` (clusters, ARI, NMI, lines recovered, split only,
+# merged only, both, largest cluster, tested, kept, accepted), plus the reasons and verdicts of the splits with
+# 11 to 15 invariant directions.
+#
+# ## Expected before running
+#
+# - 99% points at n = 800 near the run-time values of the divisive trial (399 datasets): 2.533, 2.562, 2.600,
+#   2.659, 2.682 for k = 11 to 15.
+# - Real data: ceiling 3 accepted 77 of the 190 large splits. With the extension a comparable part should pass, the
+#   largest cluster (7,678 cells, 40 lines) should break up and the ARI should rise well above 0.30; the exact value
+#   is not predicted. Splits at the lowest possible p that BH refuses will remain.
+# - n above 800 is rounded down to 800, which is strict.
+#
+# ## Limits known before running
+#
+# The reference for k above 10 is measured, not guaranteed; one Gaussian population only; k is chosen from the
+# same data; the real-data part is one dataset and one tree; the p-value floor 1/2,000 and its interaction with
+# BH are unchanged; no benchmark panel is run in this protocol.
+
+# ===== part2_deviations.md =====
+# # Part 2 deviations from protocol.md
+#
+# 1. Step 3 ("single-point moves started from the Ward split and from the table's result"): moves started from
+#    the table's result are already part of the table's search (`best_flat_cut_rho` ends with `swap`), so they
+#    add nothing. Instead, three stronger searches were run: (a) the table's search with 30,000 directions
+#    (`grid(k, 30000, stream=1)`, top 50, re-sorts and moves); (b) re-sorts and moves started from the Ward root
+#    split; (c) the same from 20 random half-splits. Step 3 used the first 600 (n = 200) and 300 (n = 800)
+#    datasets of step 1, so the searched value there is the step-1 value of the same dataset.
+# 2. Step 4, "the searched value through the whole function `best_flat_cut_reference`": while Part 1 was being
+#    changed the stored table could not be relied on, so the whole function was not called. The same quantity
+#    was computed directly: `d = invariant_directions(points)`, `rho = split_rho(points @ d.T, in_left)`, compared
+#    with the 20th largest of this study's own null cell at (n rounded down to 400 or 800, k = len(d)). The
+#    searched value in the chosen directions (`best_flat_cut_rho(points @ d.T)`) was run on the first 200
+#    datasets per cell only (about 1.5 s each at n = 2,000), not 1,000; its rate is secondary to the tree split.
+# 3. Step 4 data: one Gaussian population in 30 features, variance 25 on the first k coordinates and 1 on the
+#    other 30 - k. Datasets whose chosen k has no null cell in this study would be left untested and counted;
+#    see `not_tested_k_outside_cells` in part2_results.json. Outcome: none; k was the intended value in all
+#    6,000 datasets.
+# 4. The null cells were computed by importing `block_job` from `scripts/build_best_flat_cut_reference.py`
+#    while Part 1 was editing that file; the source of every imported function was hashed at start
+#    (`source_hashes` in part2_results.json) and workers were forked from that one import. After the run the
+#    nine null cells were compared, read-only, with the extended table Part 1 had written: the top 200 values
+#    agree in all nine cells (float32).
+# 5. Step 3 sizes were not reduced: 600 datasets at n = 200 and 300 at n = 800 (wall time 2,000 s in total).
+
+# ===== part1_checks.py =====
+"""Part 1 checks of the protocol: the reference table extended to 15 invariant directions.
+
+Run from the repository root:
+
+    OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python \\
+        results/analyses/best_flat_cut_reference_k15_20261111/part1_checks.py OLD_TABLE.npz
+"""
+
+from __future__ import annotations
+
+import math
+import sys
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
+
+import build_best_flat_cut_reference as builder  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence import (  # noqa: E402
+    best_flat_cut_reference as module,
+)
+
+old = dict(np.load(sys.argv[1]))
+new = module.load_table()
+n_grid, k_grid, upper = new["n_grid"], new["k_grid"], new["upper"]
+B = int(new["B"])
+
+print("1. k = 1 to 10 against the table before the change")
+print(f"   old k_grid {old['k_grid'].tolist()}, new k_grid {k_grid.tolist()}")
+same = {
+    "n_grid": np.array_equal(old["n_grid"], n_grid),
+    "B": int(old["B"]) == B,
+    "seed": int(old["seed"]) == int(new["seed"]),
+    "upper k<=10 bit for bit": old["upper"].dtype == upper.dtype
+    and old["upper"].tobytes() == np.ascontiguousarray(upper[:, :10]).tobytes(),
+}
+for name, ok in same.items():
+    print(f"   {name}: {'equal' if ok else 'DIFFERENT'}")
+
+print("2. old cells recomputed from their seeds with the builder's block_job")
+keep = math.ceil(builder.KEEP_FRACTION * B)
+for n, k in ((15, 10), (50, 5)):
+    values = []
+    for block in range(math.ceil(B / builder.BLOCK)):
+        size = min(builder.BLOCK, B - block * builder.BLOCK)
+        values += builder.block_job((n, k, block, size))[3]
+    recomputed = np.sort(np.asarray(values))[-keep:].astype(np.float32)
+    stored = upper[list(n_grid).index(n), k - 1]
+    print(
+        f"   (n = {n}, k = {k}): {len(values)} datasets, equal to stored: "
+        f"{np.array_equal(recomputed, stored)}; 99% point {stored[-20]:.4f}"
+    )
+
+print("3. new cells, k = 11 to 15")
+new_k = k_grid > 10
+built = n_grid >= module.MIN_CELLS_ABOVE_10_DIRECTIONS
+cells = upper[np.ix_(built, new_k)]
+print(
+    f"   n >= 50: finite {np.isfinite(cells).all()}, sorted {(np.diff(cells, axis=-1) >= 0).all()}"
+)
+print(f"   n < 50: all NaN {np.isnan(upper[np.ix_(~built, new_k)]).all()}")
+q99 = upper[:, :, -20].astype(np.float64)  # 20th largest of 200 stored = 99% point of 1,999
+print("   99% point (upper[..., -20]); k = 10 shown for reference")
+print("      n " + "".join(f"{k:>8}" for k in k_grid[9:]))
+for i, n in enumerate(n_grid):
+    if n >= 50:
+        print(f"   {n:>4} " + "".join(f"{q99[i, j]:8.3f}" for j in range(9, len(k_grid))))
+rows = [i for i, n in enumerate(n_grid) if n >= 50]
+rise = [
+    (int(n_grid[i]), int(k_grid[j]), int(k_grid[j + 1]))
+    for i in rows
+    for j in range(9, len(k_grid) - 1)
+    if not q99[i, j + 1] > q99[i, j]
+]
+fall = [
+    (int(n_grid[a]), int(n_grid[b]), int(k_grid[j]))
+    for a, b in zip(rows, rows[1:])
+    for j in range(10, len(k_grid))
+    if not q99[b, j] < q99[a, j]
+]
+print(f"   rises with k (k = 10 to 15) in every row: {not rise}; exceptions (n, k, k+1): {rise}")
+print(
+    f"   falls with n in every column k = 11 to 15: {not fall}; exceptions (n, next n, k): {fall}"
+)
+
+print("4. n = 800 against the run-time values (399 datasets)")
+run_time = (2.533, 2.562, 2.600, 2.659, 2.682)
+i800 = list(n_grid).index(800)
+for k, value in zip(range(11, 16), run_time, strict=True):
+    print(
+        f"   k = {k}: table {q99[i800, k - 1]:.3f}, run time {value:.3f}, "
+        f"difference {q99[i800, k - 1] - value:+.3f}"
+    )
+
+print("5. reference_p_value and fail-closed")
+i200 = list(n_grid).index(200)
+rho = float(upper[i200, 11, -20])
+p_value, used = module.reference_p_value(rho, 200, 12)
+print(
+    f"   (n = 200, k = 12) rho = 99% point {rho:.4f}: p = {p_value:.5f} (= {p_value * (B + 1):.0f}/"
+    f"{B + 1}), grid n {used}, within [1/{B + 1}, 1]: {1 / (B + 1) <= p_value <= 1}"
+)
+p_value, used = module.reference_p_value(rho, 260, 12)
+print(f"   (n = 260, k = 12) same rho: p = {p_value:.5f}, grid n {used}")
+for n, k in ((40, 12), (15, 15)):
+    try:
+        module.reference_p_value(1.0, n, k)
+        print(f"   reference_p_value(n = {n}, k = {k}): NO ERROR")
+    except ValueError as error:
+        print(f"   reference_p_value(n = {n}, k = {k}): ValueError {error}")
+rng = np.random.default_rng(0)
+for n, p, strong, want in (
+    (40, 30, 12, "too_few_cells"),
+    (600, 40, 18, "too_many_invariant_directions"),
+    (600, 30, 12, "tested"),
+):
+    points = rng.standard_normal((n, p))
+    points[:, :strong] *= 6.0
+    result = module.best_flat_cut_reference(points, points[:, 0] > 0)
+    print(
+        f"   n = {n}, {strong} strong of {p}: k = {result.invariant_directions}, reason "
+        f"{result.reason}, p = {result.p_value:.4f} (expected {want}: {result.reason == want})"
+    )
+
+# ===== part2_validity.py =====
+"""Part 2 of protocol.md: is the searched null of the best flat cut safe for a tree split at k = 11 to 15?
+
+Run (repository root):
+
+    OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python \\
+        results/analyses/best_flat_cut_reference_k15_20261111/part2_validity.py
+
+Phases (each is written to part2_results.json when done; a rerun skips finished phases):
+  null    step 0: the builder's own null cells (block_job, B = 1,999, seed [20261110, 81, n, k, block]).
+  fresh   steps 1 to 3 on fresh N(0, I_k) datasets, seed [20261111, 1, n, k, i]; step 3 on the first N3[n].
+  chosen  step 4: 30 features, k strong directions of variance 25, the rest 1; seed [20261111, 4, n, k, i].
+Rejection at 0.01 means p = (1 + #{null >= rho}) / 2000 <= 0.01, i.e. rho above the 20th largest null value.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import inspect
+import json
+import math
+import multiprocessing as mp
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage, to_tree
+from scipy.stats import binomtest
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "scripts"))
+import build_best_flat_cut_reference as builder  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence import (  # noqa: E402
+    best_flat_cut_reference as module,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+OUT = Path(__file__).with_name("part2_results.json")
+SEED = 20261111
+WORKERS = 5
+B = 1999
+RANK = 20  # the 99% point is the 20th largest of B = 1,999
+K_CELLS = (11, 13, 15)
+N_NULL = (200, 400, 800)
+N_FRESH = (200, 800)
+N1 = 1000  # steps 1 and 2
+N3 = {200: 600, 800: 300}  # step 3, first datasets of step 1
+N_CHOSEN = (400, 2000)
+N4 = 1000
+N4_SEARCH = 200  # searched value through the k chosen from the data, first datasets only
+STRONG_VAR, P = 25.0, 30
+DIRS_STRONG, STREAM_STRONG, RANDOM_STARTS = 30000, 1, 20
+
+
+def log(msg):
+    print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+def ward_root(x):
+    root = to_tree(linkage(x, "ward"))
+    mask = np.zeros(len(x), bool)
+    mask[root.get_left().pre_order()] = True
+    return mask
+
+
+def climb(y, mask):
+    """Re-sorts and single-point moves from a start mask (the builder's resort and swap)."""
+    s = mask.sum()
+    r2 = float((y[mask].sum(0) ** 2).sum() / (s * (len(y) - s)))
+    r2, mask = builder.resort(y, mask, r2)
+    r2, _ = builder.swap(y, mask, r2)
+    return r2
+
+
+def fresh_job(job):
+    n, k, i, strong = job
+    rng = np.random.default_rng([SEED, 1, n, k, i])
+    x = rng.standard_normal((n, k))
+    mask = ward_root(x)
+    out = {"searched": builder.best_flat_cut_rho(x), "tree": module.split_rho(x, mask)}
+    if strong:
+        y = module.whiten(x)
+        out["dirs30k"] = builder.search(
+            x, builder.grid(k, DIRS_STRONG, stream=STREAM_STRONG), top=50, local_swap=True
+        )
+        out["from_ward"] = module.to_rho(climb(y, mask), n)
+        starts = []
+        for _ in range(RANDOM_STARTS):
+            m = np.zeros(n, bool)
+            m[rng.permutation(n)[: n // 2]] = True
+            starts.append(climb(y, m))
+        out["random20"] = module.to_rho(max(starts), n)
+    return out
+
+
+def chosen_job(job):
+    n, k, i, with_search = job
+    rng = np.random.default_rng([SEED, 4, n, k, i])
+    sd = np.r_[np.full(k, math.sqrt(STRONG_VAR)), np.ones(P - k)]
+    x = rng.standard_normal((n, P)) * sd
+    d = invariant_directions(x)
+    mask = ward_root(x)  # the tree is built in all 30 features
+    out = {"k": len(d), "tree": float("nan"), "searched": float("nan")}
+    if len(d):
+        z = x @ d.T
+        out["tree"] = module.split_rho(z, mask)
+        if with_search:
+            out["searched"] = builder.best_flat_cut_rho(z)
+    return out
+
+
+def ci(count, total):
+    lo, hi = binomtest(count, total).proportion_ci(0.95, method="exact")
+    return {"count": int(count), "n": int(total), "rate": count / total, "ci95": [lo, hi]}
+
+
+def phase_null(pool):
+    blocks = [(b, min(100, B - b * 100)) for b in range(math.ceil(B / 100))]
+    jobs = [(n, k, b, size) for n in N_NULL for k in K_CELLS for b, size in blocks]
+    samples = {}
+    for done, (n, k, _b, rho) in enumerate(pool.imap(builder.block_job, jobs), 1):
+        samples.setdefault(f"{n},{k}", []).extend(rho)
+        if done % 20 == 0:
+            log(f"null {done}/{len(jobs)} blocks")
+    cells = {}
+    for key, values in samples.items():
+        v = np.sort(values)
+        assert len(v) == B
+        cells[key] = {"q99": float(v[-RANK]), "upper200": v[-200:].tolist()}
+        log(f"null cell n,k={key}: 99% point (20th largest of {B}) = {v[-RANK]:.4f}")
+    return cells
+
+
+def phase_fresh(pool, cells):
+    res = {}
+    for n in N_FRESH:
+        for k in K_CELLS:
+            q = cells[f"{n},{k}"]["q99"]
+            jobs = [(n, k, i, i < N3[n]) for i in range(N1)]
+            rows = list(pool.imap(fresh_job, jobs, chunksize=4))
+            searched = np.array([r["searched"] for r in rows])
+            tree = np.array([r["tree"] for r in rows])
+            ratio = tree / q
+            cell = {
+                "q99": q,
+                "step1_searched_reject": ci(int((searched > q).sum()), N1),
+                "step2_tree_reject": ci(int((tree > q).sum()), N1),
+                "step2_ratio_tree_over_q99": {
+                    "median": float(np.median(ratio)),
+                    "p99": float(np.quantile(ratio, 0.99)),
+                    "max": float(ratio.max()),
+                },
+                "step2_tree_over_searched_count": int((tree > searched * (1 + 1e-9)).sum()),
+            }
+            strong = rows[: N3[n]]
+            base = np.array([r["searched"] for r in strong])
+            best = base.copy()
+            step3 = {"datasets": N3[n]}
+            for name in ("dirs30k", "from_ward", "random20"):
+                v = np.array([r[name] for r in strong])
+                gain = v / base - 1
+                beats = gain > 1e-9
+                step3[name] = {
+                    "beats_table_search": ci(int(beats.sum()), len(v)),
+                    "gain_median_when_beats": float(np.median(gain[beats])) if beats.any() else 0.0,
+                    "gain_max": float(gain.max()),
+                    "reject": ci(int((v > q).sum()), len(v)),
+                }
+                best = np.maximum(best, v)
+            gain = best / base - 1
+            step3["best_of_all"] = {
+                "beats_table_search": ci(int((gain > 1e-9).sum()), len(best)),
+                "gain_median_when_beats": float(np.median(gain[gain > 1e-9])) if (gain > 1e-9).any() else 0.0,
+                "gain_max": float(gain.max()),
+                "reject": ci(int((best > q).sum()), len(best)),
+                "searched_reject_same_datasets": ci(int((base > q).sum()), len(base)),
+            }
+            cell["step3"] = step3
+            res[f"{n},{k}"] = cell
+            log(f"fresh n={n} k={k}: {json.dumps(cell)}")
+    return res
+
+
+def phase_chosen(pool, cells):
+    res = {}
+    for n in N_CHOSEN:
+        n_cell = 800 if n >= 800 else 400
+        for k in K_CELLS:
+            jobs = [(n, k, i, i < N4_SEARCH) for i in range(N4)]
+            rows = list(pool.imap(chosen_job, jobs, chunksize=8))
+            ks = [r["k"] for r in rows]
+            dist = {str(v): ks.count(v) for v in sorted(set(ks))}
+            tested = [(r, cells[f"{n_cell},{r['k']}"]["q99"]) for r in rows if f"{n_cell},{r['k']}" in cells]
+            tree_rej = sum(r["tree"] > q for r, q in tested)
+            searched = [(r, q) for r, q in tested if np.isfinite(r["searched"])]
+            cell = {
+                "reference_cell_n": n_cell,
+                "k_distribution": dist,
+                "tested": len(tested),
+                "not_tested_k_outside_cells": N4 - len(tested),
+                "tree_reject": ci(tree_rej, len(tested)),
+                "searched_reject": ci(sum(r["searched"] > q for r, q in searched), len(searched)),
+                "tree_ratio_max": float(max(r["tree"] / q for r, q in tested)),
+            }
+            res[f"{n},{k}"] = cell
+            log(f"chosen n={n} k={k}: {json.dumps(cell)}")
+    return res
+
+
+def main():
+    results = json.loads(OUT.read_text()) if OUT.exists() else {}
+    used = [builder.grid, builder.directions, builder._along_one, builder.resort, builder.swap,
+            builder.search, builder.best_flat_cut_rho, builder.block_job, module.whiten, module.to_rho,
+            module.split_rho, invariant_directions]
+    hashes = {f.__name__: hashlib.sha256(inspect.getsource(f).encode()).hexdigest()[:16] for f in used}
+    if "source_hashes" in results and results["source_hashes"] != hashes:
+        raise SystemExit(f"imported functions changed since the first phase: {hashes}")
+    results["source_hashes"] = hashes
+    results["builder_constants"] = {"SEED": builder.SEED, "BLOCK": builder.BLOCK}
+    log(f"source hashes {hashes}")
+    with mp.get_context("fork").Pool(WORKERS) as pool:
+        for name, run in (("null", phase_null), ("fresh", phase_fresh), ("chosen", phase_chosen)):
+            if name in results:
+                log(f"phase {name} already done")
+                continue
+            t = time.time()
+            results[name] = run(pool) if name == "null" else run(pool, results["null"])
+            results.setdefault("wall_seconds", {})[name] = time.time() - t
+            OUT.write_text(json.dumps(results, indent=1))
+            log(f"phase {name} done in {time.time() - t:.0f} s")
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== part1_checks.txt =====
+# 1. k = 1 to 10 against the table before the change
+#    old k_grid [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], new k_grid [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+#    n_grid: equal
+#    B: equal
+#    seed: equal
+#    upper k<=10 bit for bit: equal
+# 2. old cells recomputed from their seeds with the builder's block_job
+#    (n = 15, k = 10): 1999 datasets, equal to stored: True; 99% point 4327.5166
+#    (n = 50, k = 5): 1999 datasets, equal to stored: True; 99% point 5.4827
+# 3. new cells, k = 11 to 15
+#    n >= 50: finite True, sorted True
+#    n < 50: all NaN True
+#    99% point (upper[..., -20]); k = 10 shown for reference
+#       n       10      11      12      13      14      15
+#      50    9.678  11.089  12.449  13.955  15.000  17.339
+#      75    6.477   6.994   7.386   8.123   8.622   9.322
+#     100    5.317   5.648   5.893   6.235   6.591   6.824
+#     150    4.186   4.333   4.544   4.716   4.946   5.123
+#     200    3.688   3.797   3.942   4.095   4.171   4.343
+#     300    3.160   3.235   3.379   3.462   3.531   3.603
+#     400    2.901   2.978   3.041   3.120   3.179   3.256
+#     800    2.484   2.531   2.566   2.608   2.623   2.671
+#    rises with k (k = 10 to 15) in every row: True; exceptions (n, k, k+1): []
+#    falls with n in every column k = 11 to 15: True; exceptions (n, next n, k): []
+# 4. n = 800 against the run-time values (399 datasets)
+#    k = 11: table 2.531, run time 2.533, difference -0.002
+#    k = 12: table 2.566, run time 2.562, difference +0.004
+#    k = 13: table 2.608, run time 2.600, difference +0.008
+#    k = 14: table 2.623, run time 2.659, difference -0.036
+#    k = 15: table 2.671, run time 2.682, difference -0.011
+# 5. reference_p_value and fail-closed
+#    (n = 200, k = 12) rho = 99% point 3.9419: p = 0.01050 (= 21/2000), grid n 200, within [1/2000, 1]: True
+#    (n = 260, k = 12) same rho: p = 0.01050, grid n 200
+#    reference_p_value(n = 40, k = 12): ValueError No reference for n = 40, k = 12.
+#    reference_p_value(n = 15, k = 15): ValueError No reference for n = 15, k = 15.
+#    n = 40, 12 strong of 30: k = 12, reason too_few_cells, p = 1.0000 (expected too_few_cells: True)
+#    n = 600, 18 strong of 40: k = 18, reason too_many_invariant_directions, p = 1.0000 (expected too_many_invariant_directions: True)
+#    n = 600, 12 strong of 30: k = 12, reason tested, p = 1.0000 (expected tested: True)
+
+# ===== part2_summary.txt =====
+# Part 2: validity of the searched best-flat-cut null at k = 11 to 15 (one Gaussian population)
+# Script part2_validity.py, log part2_validity.log, numbers part2_results.json. Wall time 2,000 s (null 873,
+# fresh 959, chosen 168) with 5 workers. Rejection at 0.01 = rho above the 20th largest of B = 1,999 null values.
+# Intervals: exact binomial 95%.
+#
+# Step 0. 99% points of the builder's own null cells (block_job, seed [20261110, 81, n, k, block], B = 1,999):
+#   n=200: k11 3.7972  k13 4.0953  k15 4.3435
+#   n=400: k11 2.9779  k13 3.1198  k15 3.2558
+#   n=800: k11 2.5315  k13 2.6081  k15 2.6706
+#   Cross-check after the run: all nine cells' top 200 values equal the extended production table written by
+#   Part 1 (float32), so these are the values the table holds.
+#
+# Steps 1 and 2. Fresh N(0, I_k), seed [20261111, 1, n, k, i], 1,000 datasets per cell.
+#   cell     searched > q99           Ward root split > q99    rho_tree/q99 median, p99, max
+#   200,11   10/1000 [0.0048,0.0183]  0/1000 [0,0.0037]        0.299 0.418 0.498
+#   200,13    6/1000 [0.0022,0.0130]  0/1000 [0,0.0037]        0.283 0.398 0.457
+#   200,15    6/1000 [0.0022,0.0130]  0/1000 [0,0.0037]        0.271 0.374 0.416
+#   800,11   10/1000 [0.0048,0.0183]  0/1000 [0,0.0037]        0.262 0.347 0.386
+#   800,13    9/1000 [0.0041,0.0170]  0/1000 [0,0.0037]        0.240 0.317 0.346
+#   800,15    5/1000 [0.0016,0.0116]  0/1000 [0,0.0037]        0.227 0.294 0.313
+#   The tree split's rho never exceeded the searched value of its own dataset (0 of 6,000).
+#
+# Step 3. Stronger searches on the first 600 (n=200) / 300 (n=800) datasets of step 1.
+#   (a) 30,000 directions, top 50; (b) re-sorts + moves from the Ward root split; (c) from 20 random half-splits.
+#   "beats" = rho above the table search's rho; gains relative, median over the datasets it beats.
+#   cell    (a) beats  med/max gain   (b) beats  (c) beats  best-of-all > q99   searched > q99 (same sets)
+#   200,11  189/600  0.012/0.101      4/600      31/600     7/600 [0.0047,0.0239]   7/600
+#   200,13  290/600  0.016/0.114      5/600      58/600     3/600 [0.0010,0.0145]   3/600
+#   200,15  340/600  0.026/0.168     10/600      78/600     4/600 [0.0018,0.0170]   3/600
+#   800,11  172/300  0.006/0.040      3/300      37/300     2/300 [0.0008,0.0239]   1/300
+#   800,13  184/300  0.007/0.058      3/300      28/300     3/300 [0.0021,0.0289]   3/300
+#   800,15  201/300  0.012/0.086      4/300      38/300     6/300 [0.0074,0.0430]   3/300
+#   Best of all searches beats the table search in 191, 300, 350 of 600 (n=200) and 172, 187, 208 of 300 (n=800);
+#   pooled over cells the best of all exceeds q99 in 25/2700 (0.93%) against 20/2700 for the searched value.
+#
+# Step 4. 30 features, variance 25 on k coordinates and 1 on the rest; seed [20261111, 4, n, k, i]; 1,000 per cell.
+#   invariant_directions returned exactly the intended k in 1,000 of 1,000 datasets in every cell.
+#   Ward root split built in the 30 features, rho in the chosen k directions vs q99 at (400 or 800, k):
+#   n=400:  k11 0/1000, k13 0/1000, k15 0/1000 (each [0,0.0037]); max rho/q99 0.456, 0.406, 0.409
+#   n=2000: k11 0/1000, k13 0/1000, k15 0/1000 (each [0,0.0037]); max rho/q99 0.262, 0.250, 0.216 (800 cell)
+#   Searched value in the chosen directions (first 200 per cell): n=400 2/200, 1/200, 2/200; n=2000 0/200 each.
+#
+# Answer. The Ward root split's rho stays at about a quarter to a third of the 99% point (maximum 0.50), with
+# 0 rejections in 12,000 null datasets, so the tree-split use is conservative at k = 11 to 15 in these cells.
+# Stronger searches beat the table's search in 30 to 70% of datasets but by little (median gain 0.6 to 2.6%,
+# maximum 17%); the best of all searches exceeds the searched 99% point in 0.9% pooled, highest at (800, 15)
+# with 6/300 = 2.0% [0.7%, 4.3%], so the null of the true best flat cut sits only slightly above the stored one.
+
+# ===== part3_real.txt =====
+#                      k <= 10, unchanged tree  k <= 10, tree after sprs  k <= 15, unchanged tree  k <= 15, tree after sprs
+# found_clusters                      138.0000                  257.0000                 230.0000                  316.0000
+# ari_cell_line                         0.2975                    0.3425                   0.8219                    0.7376
+# nmi_cell_line                         0.8512                    0.8846                   0.9358                    0.9316
+# recovered                            76.0000                   82.0000                 116.0000                  107.0000
+# split_only                            9.0000                   47.0000                  21.0000                   58.0000
+# merged_only                          91.0000                   51.0000                  38.0000                   19.0000
+# both                                 14.0000                   10.0000                  15.0000                    6.0000
+# largest_cluster                    7678.0000                 6346.0000                1990.0000                 1451.0000
+# clusters_ge90_pure                   98.0000                  202.0000                 174.0000                  251.0000
+# clusters_lt20_cells                  10.0000                   30.0000                  25.0000                   39.0000
+# tested_splits                      1838.0000                 1970.0000                1838.0000                 1970.0000
+# kept_p_le_0.01                       57.0000                  184.0000                 149.0000                  275.0000
+# accepted_bh                          31.0000                  104.0000                 134.0000                  210.0000
+#
+# k <= 10, unchanged tree: splits with more than 10 invariant directions: 190; reasons {'too_many_invariant_directions': 190}; p <= 0.01: 0; at 0.0005: 0; accepted by BH: 0; k values [11, 12, 13, 14, 15]
+#     splits with 1 to 10: tested 1285, p <= 0.01: 57, accepted by BH: 31; at p 0.0005 and not accepted (all k): 17
+#
+# k <= 10, tree after sprs: splits with more than 10 invariant directions: 189; reasons {'too_many_invariant_directions': 189}; p <= 0.01: 0; at 0.0005: 0; accepted by BH: 0; k values [11, 12, 13, 14, 15]
+#     splits with 1 to 10: tested 1458, p <= 0.01: 184, accepted by BH: 104; at p 0.0005 and not accepted (all k): 23
+#
+# k <= 15, unchanged tree: splits with more than 10 invariant directions: 190; reasons {'tested': 190}; p <= 0.01: 92; at 0.0005: 92; accepted by BH: 88; k values [11, 12, 13, 14, 15]
+#     splits with 1 to 10: tested 1285, p <= 0.01: 57, accepted by BH: 46; at p 0.0005 and not accepted (all k): 7
+#     more than 10 directions, 32-159 leaves: 0 tested, 0 at p <= 0.01, 0 accepted
+#     more than 10 directions, 160-999 leaves: 87 tested, 40 at p <= 0.01, 38 accepted
+#     more than 10 directions, 1000-... leaves: 103 tested, 52 at p <= 0.01, 50 accepted
+#
+# k <= 15, tree after sprs: splits with more than 10 invariant directions: 189; reasons {'tested': 189}; p <= 0.01: 91; at 0.0005: 91; accepted by BH: 88; k values [11, 12, 13, 14, 15]
+#     splits with 1 to 10: tested 1458, p <= 0.01: 184, accepted by BH: 122; at p 0.0005 and not accepted (all k): 14
+#     more than 10 directions, 32-159 leaves: 0 tested, 0 at p <= 0.01, 0 accepted
+#     more than 10 directions, 160-999 leaves: 86 tested, 39 at p <= 0.01, 37 accepted
+#     more than 10 directions, 1000-... leaves: 103 tested, 52 at p <= 0.01, 51 accepted
+#
+# ARI between partitions: k<=10 vs k<=15 on the unchanged tree 0.3631 | k<=15 unchanged vs after sprs 0.8151
+# k15_base: lines that are the majority of no cluster 23; ARI after joining clusters with the same majority line 0.8372
+# k15_spr: lines that are the majority of no cluster 11; ARI after joining clusters with the same majority line 0.8914
+# ceiling 3 folder exists: True
+
+# ===== build_k11_15.log (last lines) =====
+# 750/800 blocks, 1204 s
+# 800/800 blocks, 1216 s
+# wrote /Users/berksakalli/Projects/kl-te-cluster/tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/best_flat_cut_reference_table.npz after 1216 s
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python     9001.58s user 43.19s system 743% cpu 20:16.68 total
+
+# ===== k15_base_metrics.json (harness of spr_refit_20261111) =====
+# {
+#  "tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 230,
+#  "ari_cell_line": 0.8219314101465327,
+#  "nmi_cell_line": 0.935848817436735,
+#  "recovered_lines_90_90": 116,
+#  "clusters_ge90_pure": 174,
+#  "clusters_lt20_cells": 25,
+#  "largest_cluster": 1990,
+#  "recovered": 116,
+#  "split_only": 21,
+#  "merged_only": 38,
+#  "both": 15,
+#  "tested_splits": 1838,
+#  "kept_p_le_0.01": 149,
+#  "accepted_bh": 134,
+#  "sec": 126.16800266700011,
+#  "peak_rss_gb": 1.4794158935546875
+# }
+# ===== k15_spr_metrics.json (harness of spr_refit_20261111) =====
+# {
+#  "tree": "results/analyses/spr_refit_20261111/tree_spr.npz",
+#  "renumbered_internal_ids": true,
+#  "found_clusters": 316,
+#  "ari_cell_line": 0.7376278971939845,
+#  "nmi_cell_line": 0.9315868675881919,
+#  "recovered_lines_90_90": 107,
+#  "clusters_ge90_pure": 251,
+#  "clusters_lt20_cells": 39,
+#  "largest_cluster": 1451,
+#  "recovered": 107,
+#  "split_only": 58,
+#  "merged_only": 19,
+#  "both": 6,
+#  "tested_splits": 1970,
+#  "kept_p_le_0.01": 275,
+#  "accepted_bh": 210,
+#  "sec": 143.38281079199805,
+#  "peak_rss_gb": 1.540283203125
+# }

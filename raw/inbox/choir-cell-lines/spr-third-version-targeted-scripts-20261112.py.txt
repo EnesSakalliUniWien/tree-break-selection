@@ -1,0 +1,166 @@
+# ===== protocol.md =====
+# # Protocol: sprs only at refused nodes where the third version sees a better split, CHOIR tree (frozen 2026-11-12, before the run)
+#
+# ## Why
+#
+# Under the third version of the draft definition of k, the best cut along a node's direction passes at 32 of
+# 1,302 refused nodes of the unchanged Markov/Ward tree; 22 of them have cells from several cell lines and 10 from
+# one line (`results/analyses/spr_third_version_20261112/t3_refused.json`). The sprs of 11 November, applied
+# wherever a best flat cut passed, lowered the ARI. Question: do sprs at these nodes only help?
+#
+# ## Procedure (`apply.py`)
+#
+# - Two sets of nodes: (a) the 22 nodes with several lines; (b) all 32. Set (a) is chosen with the cell-line
+#   labels and is therefore a diagnostic of what such sprs can gain, not a rule; set (b) uses no labels.
+# - Target split of a node: the direction of the third version computed from all cells of the node and the tree's
+#   split (pseudo-inverse of the pooled within covariance times the difference of the two means); the best cut of
+#   all cells along that direction; its smaller side.
+# - That side is made a child of the node by sprs, with `make_child` of
+#   `results/analyses/spr_refit_20261111/apply_all_sprs.py` (join the tree nodes that make up the side, regraft the
+#   joined node on the edge above the node). Nodes are processed from the largest to the smallest; a node whose
+#   cells were changed by an earlier spr is skipped and counted.
+# - Recorded per node: cells, lines, number of sprs, size of the side before and after, the share of cells whose
+#   line is cut by the split before and after, and the third version's p-value of the new split (direct call).
+# - Output trees `tree_a.npz` and `tree_b.npz`; each is checked to be a rooted binary tree on the same leaves.
+#
+# ## Refit (`run_fit.py`)
+#
+# The harness of `spr_refit_20261111` with the third version, data order, on both trees. Compared with the third
+# version on the unchanged tree (206 clusters, ARI 0.8359, 127 lines recovered, 16 split only, 30 merged only).
+#
+# ## Predictions, stated before the run
+#
+# - W1 set (a): the ARI is at least 0.8359 and fewer than 30 lines are merged only.
+# - W2 set (b): the ARI is at least 0.8259 (within 0.01 below the unchanged tree).
+# - W3 at more than half of the processed nodes the third version's p-value of the new split is at most 0.01.
+#
+# ## Limits known before the run
+#
+# Set (a) uses labels. The target split is chosen from all cells of the node and then tested on the same cells, as
+# the tree's own splits are. One tree, one dataset, one order of the rows.
+
+
+# ===== apply.py =====
+"""protocol.md: sprs at the refused nodes where the best cut along the third version's direction passes."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+
+import apply_all_sprs as sprs  # noqa: E402
+import draft_rule_v3 as rule  # noqa: E402
+
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+pcs = np.load(source / "pca.npy")
+lines = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)["Cell_line"].to_numpy()
+line_code = pd.factorize(lines)[0]
+refused = json.loads((HERE.parent / "spr_third_version_20261112" / "t3_refused.json").read_text())
+passing = [r for r in refused if r["p_best"] <= 0.01]
+sets = {"a": [r for r in passing if not r["one_line"]], "b": passing}
+out = []
+
+
+def say(text=""):
+    print(text, flush=True)
+    out.append(text)
+
+
+def best_cut_mask(values):
+    """Cells below the best cut of the values."""
+    order = np.argsort(values, kind="stable")
+    x = values[order]
+    size = len(x)
+    left = np.arange(1, size)
+    prefix = np.cumsum(x)[:-1]
+    between = (prefix / left - (x.sum() - prefix) / (size - left)) ** 2 * left * (size - left) / size
+    mask = np.zeros(size, dtype=bool)
+    mask[order[: int(np.argmax(between)) + 1]] = True
+    return mask
+
+
+for name, chosen in sets.items():
+    parent, leaf_row = sprs.load_tree()
+    children = sprs.children_of(parent)
+    n_leaves = len(leaf_row)
+    records, skipped = [], 0
+    for r in sorted(chosen, key=lambda r: (-r["cells"], r["node"])):
+        node = int(r["node"][1:])
+        leaves = sprs.leaves_of(children, node)
+        if len(leaves) != r["cells"]:
+            skipped += 1
+            continue
+        a, b = children[node]
+        in_left = np.isin(leaves, sprs.leaves_of(children, a))
+        cells = leaf_row[leaves]
+        points = pcs[cells]
+        w = rule._direction(points, in_left)
+        mask = best_cut_mask(points @ w)
+        side = sprs.choose_side(children, node, leaves, mask)
+        side_mask = np.isin(leaves, side)
+        holder, joined, moves = sprs.make_child(parent, children, node, set(side.tolist()))
+        after = sprs.leaves_of(children, holder)
+        assert sorted(after.tolist()) == sorted(leaves.tolist())
+        new_left = np.isin(after, sprs.leaves_of(children, children[holder][0]))
+        order = np.argsort(leaf_row[after])
+        p_after = rule.draft(pcs[leaf_row[after]][order], new_left[order]).p_value
+        codes = line_code[cells]
+        records.append(dict(node=r["node"], cells=len(leaves), lines=len(set(codes.tolist())), one_line=r["one_line"], sprs=len(moves),
+                            side_before=int(min(in_left.sum(), (~in_left).sum())), side_after=int(len(side)),
+                            line_cut_before=sprs.line_cut_share(codes, in_left), line_cut_after=sprs.line_cut_share(codes, side_mask),
+                            p_before=r["p_tree"], p_best_recorded=r["p_best"], p_after=p_after))
+    ok, why = sprs.is_rooted_binary(parent, n_leaves)
+    assert ok, why
+    np.savez(HERE / f"tree_{name}.npz", parent=parent, leaf_row=leaf_row)
+    (HERE / f"nodes_{name}.json").write_text(json.dumps(records, indent=1))
+    table = pd.DataFrame(records)
+    say(f"== set ({name}): {len(chosen)} nodes chosen, {len(table)} processed, {skipped} skipped because an earlier spr changed their cells ==")
+    say(f"sprs {int(table['sprs'].sum())} (per node median {table['sprs'].median():.0f}, max {table['sprs'].max()}); smaller side median "
+        f"{table['side_before'].median():.0f} -> {table['side_after'].median():.0f}")
+    say(f"share of cells whose line is cut by the split, median: {table['line_cut_before'].median():.3f} -> {table['line_cut_after'].median():.3f}; "
+        f"lower after at {int((table['line_cut_after'] < table['line_cut_before']).sum())} nodes, higher at {int((table['line_cut_after'] > table['line_cut_before']).sum())}")
+    say(f"third version, new split: p <= 0.01 at {int((table['p_after'] <= 0.01).sum())} of {len(table)}; by composition: "
+        f"{dict(Counter((bool(o), bool(p <= 0.01)) for o, p in zip(table['one_line'], table['p_after'])))} (one line, passes)")
+    say(f"tree: {why}")
+(HERE / "apply.txt").write_text("\n".join(out) + "\n")
+
+
+# ===== apply.txt =====
+# == set (a): 22 nodes chosen, 17 processed, 5 skipped because an earlier spr changed their cells ==
+# sprs 677 (per node median 11, max 348); smaller side median 49 -> 46
+# share of cells whose line is cut by the split, median: 0.065 -> 0.047; lower after at 9 nodes, higher at 3
+# third version, new split: p <= 0.01 at 10 of 17; by composition: {(False, True): 10, (False, False): 7} (one line, passes)
+# tree: one root, 2 children per internal node, leaves 0..n-1 have none, all nodes reachable
+# == set (b): 32 nodes chosen, 25 processed, 7 skipped because an earlier spr changed their cells ==
+# sprs 757 (per node median 11, max 348); smaller side median 45 -> 46
+# share of cells whose line is cut by the split, median: 0.069 -> 0.054; lower after at 12 nodes, higher at 6
+# third version, new split: p <= 0.01 at 14 of 25; by composition: {(False, True): 10, (True, True): 4, (True, False): 4, (False, False): 7} (one line, passes)
+# tree: one root, 2 children per internal node, leaves 0..n-1 have none, all nodes reachable
+
+
+# ===== run_fit.py =====
+"""protocol.md: the CHOIR harness with the third version on a tree after the targeted sprs. usage: run_fit.py a|b"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+
+import draft_rule_v3  # noqa: E402
+import harness  # noqa: E402
+
+name = sys.argv[1]
+draft_rule_v3.install(None)
+harness.HERE = HERE
+harness.main(f"results/analyses/spr_third_version_targeted_20261112/tree_{name}.npz", f"fit_{name}")
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)

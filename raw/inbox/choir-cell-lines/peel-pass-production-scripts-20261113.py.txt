@@ -1,0 +1,281 @@
+# ===== protocol.md =====
+# # Protocol: the peel pass under the opt-in in production code, against the run-time trial (frozen 2026-11-13, before the runs)
+#
+# ## What changed in production
+#
+# With `sibling_best_flat_cut_reference=True` the gate pipeline sets `small_peel_leaf_limit` to the reference's
+# `MIN_CELLS` (15): a binary node whose smaller child has fewer than 15 leaves and whose larger child has at least
+# 15 is a small peel (`tree_break_selection/tree/topology.py::peel_continuations`). It passes the edge gate like a
+# singleton peel in Tree-BH, the sibling calibration records, the sibling frontier and the gate evaluator. Without
+# the opt-in nothing changes.
+#
+# ## Runs (production code only; nothing is patched at run time)
+#
+# - R1 CHOIR cells, opt-in on (current rule: table, k up to 15), default tree and Markov/Ward tree, harness of
+#   `spr_refit_20261111` (`run_choir.py default|markov_ward`).
+# - R2 one Gaussian population: the 880 fits of `peel_pass_opt_in_20261113` (`run_opt_in.py GRID plain`, a copy of
+#   that folder's script; arm `plain` is unpatched code).
+# - R3 benchmark: 14 cases of the continuous and cancer_pc suites, both registered methods, opt-in on
+#   (`run_benchmark.py`).
+#
+# ## Predictions, stated before the runs
+#
+# - Q1 default tree: the cluster of every cell equals the trial fit `peel_pass_20261112/default_current_assignments.csv.gz`
+#   (432 clusters, ARI 0.6210).
+# - Q2 one Gaussian population: found clusters equal the trial's arm `peel` in 880 of 880 fits (1 fit split).
+# - Q3 benchmark: found clusters equal the opt-in without the peel pass in 28 of 28 rows
+#   (`best_flat_cut_reference_benchmark_k15_20261112/results_selected.csv`, cell `reference`, 26 rows; the null
+#   case `gauss_null_256n_30f_continuous` at 1 cluster under both methods).
+# - Q4 Markov/Ward tree: ARI above the 0.8219 of the opt-in without the peel pass (230 clusters). There is no
+#   trial fit of the current rule with the peel pass on this tree.
+#
+# ## Limits known before the runs
+#
+# One real dataset; the trees of the CHOIR fits are the saved ones; limit 15 only.
+
+
+# ===== deviations.md =====
+# # Deviations from protocol.md
+#
+# - R2: the copied `run_opt_in.py` imported the trial module `peel_pass_20261112/peel_pass.py`, which imports
+#   `singleton_peel_continuations`; that name no longer exists in production (`peel_continuations`), so all five
+#   processes stopped with ImportError before any fit. The import, the `peel` arm and the trial's counter were
+#   removed from the copy; the fits themselves are unchanged. R1 and R3 were not affected.
+
+
+# ===== run_choir.py =====
+"""protocol.md R1: the CHOIR harness with production code, opt-in on. usage: run_choir.py default|markov_ward"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+
+import harness  # noqa: E402
+
+tree = sys.argv[1]
+harness.HERE = HERE
+path = {"default": "results/analyses/default_tree_third_version_20261112/tree_default.npz",
+        "markov_ward": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz"}[tree]
+method = {"default": "tbs_family_diffusion", "markov_ward": "tbs_family_diffusion_markov_ward"}[tree]
+harness.main(path, f"{tree}_production", method=method)
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== run_opt_in.py =====
+"""protocol.md R2: the opt-in on one Gaussian population, production code. usage: run_opt_in.py GRID plain"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import ortho_group
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import benchmarks.shared.generators.gaussian_cases as gaussian_cases  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+grid, arm = sys.argv[1], sys.argv[2]
+assert arm == "plain"
+if grid == "e3":
+    covariance, settings = "identity", [(c, f, s) for c, f in ((200, 80), (200, 30), (256, 30), (496, 30)) for s in range(401, 406)]
+else:
+    cells, covariance = grid.split("_")
+    settings = [(int(cells), 30, s) for s in range(1, 51)]
+V = np.array([53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58,
+              6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12])
+Q = ortho_group.rvs(30, random_state=0)
+original_make_blobs = gaussian_cases.make_blobs
+
+
+def make_blobs(**kwargs):
+    x, y = original_make_blobs(**kwargs)[:2]
+    return (x * np.sqrt(V)) @ Q.T if covariance == "unequal" else x, y
+
+
+assert covariance in ("identity", "unequal")
+gaussian_cases.make_blobs = make_blobs
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+METHOD = "tbs_family_diffusion"
+fits = []
+for cells, features, seed in settings:
+    case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+    for operator in ("symmetric", "markov"):
+        for linkage in ("average", "ward"):
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage,
+                      "sibling_best_flat_cut_reference": True}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                              plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            assert str(res["status"].iloc[0]) == "ok", res["status"].iloc[0]
+            fits.append(dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"].iloc[0])))
+json.dump(fits, open(HERE / f"fits_{grid}_{arm}.json", "w"))
+print(f"{grid} {arm}: fits with more than 1 cluster {sum(f['found'] > 1 for f in fits)} of {len(fits)}", flush=True)
+
+
+# ===== run_benchmark.py =====
+"""protocol.md R3: continuous and cancer_pc suites, both registered methods, opt-in on, production code."""
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+apply_single_thread_runtime_defaults()
+params = {m: [{**METHOD_SPECS[m].param_grid[0], "sibling_best_flat_cut_reference": True}] for m in METHODS}
+cases = get_test_cases_by_suite("continuous") + get_test_cases_by_suite("cancer_pc")
+results = benchmark_cluster_algorithm(test_cases=cases, methods=METHODS, method_params=params, verbose=False, plot_umap=False,
+                                      include_cover_pages=False, include_validation_page=False, allow_method_errors=False)
+new = results[["case_id", "method", "true_clusters", "found_clusters", "ari", "status"]].copy()
+new.to_csv(HERE / "benchmark_production.csv", index=False)
+old = pd.read_csv(HERE.parent / "best_flat_cut_reference_benchmark_k15_20261112" / "results_selected.csv", float_precision="round_trip")
+old = old[old["cell"] == "reference"][["case_id", "method", "found_clusters", "ari"]]
+merged = new.merge(old, on=["case_id", "method"], how="left", suffixes=("", "_without"))
+merged.to_csv(HERE / "benchmark_compare.csv", index=False)
+known = merged["found_clusters_without"].notna()
+print("rows", len(merged), "with a recorded row without the peel pass", int(known.sum()))
+print("found clusters equal:", int((merged.loc[known, "found_clusters"] == merged.loc[known, "found_clusters_without"]).sum()), "of", int(known.sum()))
+print("ARI equal within 1e-9:", int(((merged.loc[known, "ari"] - merged.loc[known, "ari_without"]).abs() < 1e-9).sum()), "of", int(known.sum()))
+print(merged[~known | (merged["found_clusters"] != merged["found_clusters_without"])].to_string(index=False))
+print("mean ARI continuous, all rows:", round(float(new["ari"].mean()), 4))
+
+
+# ===== outputs (last line of every one-population log) =====
+# 256_identity plain: fits with more than 1 cluster 0 of 200
+# 256_unequal plain: fits with more than 1 cluster 0 of 200
+# 496_identity plain: fits with more than 1 cluster 0 of 200
+# 496_unequal plain: fits with more than 1 cluster 1 of 200
+# e3 plain: fits with more than 1 cluster 0 of 80
+
+
+# ===== outputs (CHOIR metrics) =====
+# --- default_production_metrics.json ---
+# {
+#  "tree": "results/analyses/default_tree_third_version_20261112/tree_default.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 432,
+#  "ari_cell_line": 0.6209531141288298,
+#  "nmi_cell_line": 0.8388199018739134,
+#  "recovered_lines_90_90": 42,
+#  "clusters_ge90_pure": 237,
+#  "clusters_lt20_cells": 95,
+#  "largest_cluster": 1990,
+#  "recovered": 42,
+#  "split_only": 46,
+#  "merged_only": 16,
+#  "both": 86,
+#  "tested_splits": 808,
+#  "kept_p_le_0.01": 197,
+#  "accepted_bh": 194,
+#  "sec": 106.66693941700214,
+#  "peak_rss_gb": 1.609710693359375
+# }
+# --- markov_ward_production_metrics.json ---
+# {
+#  "tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 223,
+#  "ari_cell_line": 0.8213568320216253,
+#  "nmi_cell_line": 0.933381920978265,
+#  "recovered_lines_90_90": 110,
+#  "clusters_ge90_pure": 164,
+#  "clusters_lt20_cells": 23,
+#  "largest_cluster": 1990,
+#  "recovered": 110,
+#  "split_only": 20,
+#  "merged_only": 43,
+#  "both": 17,
+#  "tested_splits": 2210,
+#  "kept_p_le_0.01": 155,
+#  "accepted_bh": 130,
+#  "sec": 127.98431054200046,
+#  "peak_rss_gb": 1.51409912109375
+# }
+
+
+# ===== benchmark_compare.csv =====
+# case_id,method,true_clusters,found_clusters,ari,status,found_clusters_without,ari_without
+# gauss_clear_medium_continuous,tbs_family_diffusion,4,3,0.7035175879396985,ok,3.0,0.7035175879396985
+# gauss_clear_medium_continuous,tbs_family_diffusion_markov_ward,4,3,0.7035175879396985,ok,3.0,0.7035175879396985
+# gauss_moderate_3c_continuous,tbs_family_diffusion,3,2,0.56,ok,2.0,0.56
+# gauss_moderate_3c_continuous,tbs_family_diffusion_markov_ward,3,2,0.56,ok,2.0,0.56
+# gauss_null_large_continuous,tbs_family_diffusion,1,1,1.0,ok,1.0,1.0
+# gauss_null_large_continuous,tbs_family_diffusion_markov_ward,1,1,1.0,ok,1.0,1.0
+# gauss_null_256n_30f_continuous,tbs_family_diffusion,1,1,1.0,ok,,
+# gauss_null_256n_30f_continuous,tbs_family_diffusion_markov_ward,1,1,1.0,ok,,
+# gauss_dense_signal_highd_continuous,tbs_family_diffusion,4,1,0.0,ok,1.0,0.0
+# gauss_dense_signal_highd_continuous,tbs_family_diffusion_markov_ward,4,1,0.0,ok,1.0,0.0
+# dim_consolidated_4c_24f_continuous,tbs_family_diffusion,4,4,1.0,ok,4.0,1.0
+# dim_consolidated_4c_24f_continuous,tbs_family_diffusion_markov_ward,4,4,1.0,ok,4.0,1.0
+# dim_consolidated_4c_72f_continuous,tbs_family_diffusion,4,4,1.0,ok,4.0,1.0
+# dim_consolidated_4c_72f_continuous,tbs_family_diffusion_markov_ward,4,4,1.0,ok,4.0,1.0
+# dim_diffuse_6c_136f_continuous,tbs_family_diffusion,6,1,0.0,ok,1.0,0.0
+# dim_diffuse_6c_136f_continuous,tbs_family_diffusion_markov_ward,6,1,0.0,ok,1.0,0.0
+# gauss_single_outlier_4c_continuous,tbs_family_diffusion,5,4,0.9915772953178132,ok,4.0,0.9915772953178132
+# gauss_single_outlier_4c_continuous,tbs_family_diffusion_markov_ward,5,4,0.9915772953178132,ok,4.0,0.9915772953178132
+# gauss_outlier_cluster_4c_continuous,tbs_family_diffusion,5,5,1.0,ok,5.0,1.0
+# gauss_outlier_cluster_4c_continuous,tbs_family_diffusion_markov_ward,5,5,1.0,ok,5.0,1.0
+# cancer_pc_hub_disconnected,tbs_family_diffusion,6,6,0.9982227041423309,ok,6.0,0.9982227041423309
+# cancer_pc_hub_disconnected,tbs_family_diffusion_markov_ward,6,6,0.9982227041423309,ok,6.0,0.9982227041423309
+# cancer_pc_hub_connected,tbs_family_diffusion,6,4,0.4459795806376289,ok,4.0,0.4459795806376289
+# cancer_pc_hub_connected,tbs_family_diffusion_markov_ward,6,4,0.4459795806376289,ok,4.0,0.4459795806376289
+# cancer_pc_nohub_disconnected,tbs_family_diffusion,6,6,0.9982227041423309,ok,6.0,0.9982227041423309
+# cancer_pc_nohub_disconnected,tbs_family_diffusion_markov_ward,6,6,0.9982227041423309,ok,6.0,0.9982227041423309
+# cancer_pc_nohub_connected,tbs_family_diffusion,6,4,0.4459795806376289,ok,4.0,0.4459795806376289
+# cancer_pc_nohub_connected,tbs_family_diffusion_markov_ward,6,4,0.4459795806376289,ok,4.0,0.4459795806376289
+
+
+# ===== markov_ward_calls.py (follow-up on the same day) =====
+"""Follow-up: the calls of the Markov/Ward fit with and without the peel pass, node by node (opt-in, current rule)."""
+import json
+from collections import Counter
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+a = {x["node"]: x for x in json.loads((HERE.parent / "spr_refit_20261111/k15_base_splits.json").read_text())["splits"]}
+b = {x["node"]: x for x in json.loads((HERE / "markov_ward_production_splits.json").read_text())["splits"]}
+both, new, gone = sorted(set(a) & set(b)), sorted(set(b) - set(a)), sorted(set(a) - set(b))
+print("calls without", len(a), "with", len(b), "in both", len(both), "only with", len(new), "only without", len(gone))
+print("same p and reason in both fits:", sum(a[n]["p"] == b[n]["p"] and a[n]["reason"] == b[n]["reason"] for n in both), "of", len(both))
+lost = [n for n in both if a[n]["bh_different"] and not b[n]["bh_different"]]
+gained = [n for n in both if b[n]["bh_different"] and not a[n]["bh_different"]]
+print("accepted without, refused with (cells, p, k):", len(lost), [(a[n]["n_leaves"], a[n]["p"], a[n]["k"]) for n in lost])
+print("refused without, accepted with:", len(gained))
+print("only without: accepted", sum(a[n]["bh_different"] for n in gone))
+print("only with: reasons", dict(Counter(b[n]["reason"] for n in new)), "; p == 1:", sum(b[n]["p"] == 1 for n in new),
+      "; at 0.0005:", sum(b[n]["p"] == 0.0005 for n in new), "; fewer than 30 cells:", sum(b[n]["n_leaves"] < 30 for n in new),
+      "; accepted (cells, p, k):", [(b[n]["n_leaves"], b[n]["p"], b[n]["k"]) for n in new if b[n]["bh_different"]])
+for label, d in (("without", a), ("with", b)):
+    print(label, "calls", len(d), "; at 0.0005:", sum(x["p"] == 0.0005 for x in d.values()), "; p == 1:", sum(x["p"] == 1 for x in d.values()),
+          "; accepted:", sum(x["bh_different"] for x in d.values()))
+
+
+# ===== markov_ward_calls.txt (follow-up on the same day) =====
+# calls without 1838 with 2210 in both 1819 only with 391 only without 19
+# same p and reason in both fits: 1819 of 1819
+# accepted without, refused with (cells, p, k): 7 [(84, 0.0005, 7), (517, 0.0005, 10), (454, 0.0005, 11), (246, 0.0005, 10), (1004, 0.0005, 12), (1022, 0.0005, 12), (540, 0.0005, 11)]
+# refused without, accepted with: 0
+# only without: accepted 0
+# only with: reasons {'no_invariant_directions': 170, 'tested': 221} ; p == 1: 380 ; at 0.0005: 4 ; fewer than 30 cells: 160 ; accepted (cells, p, k): [(75, 0.0005, 8), (75, 0.0005, 8), (1292, 0.0005, 13)]
+# without calls 1838 ; at 0.0005: 140 ; p == 1: 1681 ; accepted: 134
+# with calls 2210 ; at 0.0005: 144 ; p == 1: 2042 ; accepted: 130

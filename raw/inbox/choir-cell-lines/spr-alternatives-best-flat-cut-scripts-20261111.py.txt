@@ -1,0 +1,600 @@
+# ===== protocol.md =====
+# # Protocol: how the best flat cut reacts to alternative sprs on the tree (frozen 2026-11-11, before the run)
+#
+# Descriptive; no gate or default is changed. Data and setup of `split_vs_best_flat_cut_20261111`: 48,879 CHOIR
+# cells, 30 PCs, saved diffusion coordinates, registry parameters, `tbs_family_diffusion_markov_ward` with
+# `sibling_best_flat_cut_reference=True`. The fit is repeated only to save the complete tree; replay check: 138
+# clusters and 1,838 tested splits. The default tree is not run (cap).
+#
+# Identity: every node is its leaf set (`Partition` taken over from BranchArchitect). A node id (`N...`) is a label.
+#
+# ## Alternative sprs at one tested split
+#
+# Node P with children A and B. An spr prunes a clade C below one child and regrafts it on the other side. P keeps
+# its cells; its split becomes (A minus C | B plus C). Every regraft place on the other side gives the same split
+# of P, so the distinct spr alternatives of P's split are the clades below A and B (leaves included).
+#
+# Consequence fixed before the run: P's cells do not change, so its invariant directions, k, n, its best flat cut
+# and its reference null do not change. Every spr alternative is a split of the same cells, so its `rho` cannot
+# exceed the best flat cut's `rho`. A split whose best flat cut is refused cannot be made to pass by sprs inside P.
+#
+# ## Measured for every tested split with n >= 32 and 1 <= k <= 10 (reference available)
+#
+# In P's invariant directions (`invariant_directions` of P's own cells, whitened):
+#
+# 1. tree split: `rho`, reference p;
+# 2. best single spr: the clade whose move raises `rho` most; its size and `rho`;
+# 3. greedy sprs: repeat the best spr until no spr raises `rho` (cap 1,000 moves). Recorded: number of sprs,
+#    cells moved, `rho` and p at the end, and the first move at which the reference p is <= 0.01;
+# 4. best flat cut (the table's search): `rho`, p, ARI with the tree split and with the spr result;
+# 5. cell lines: line cut share (share of P's cells on the minority side of their own line) of the tree split, the
+#    split at the first passing move, the spr result and the best flat cut; for every moved clade its size and
+#    the share of its majority line;
+# 6. reaction below P, only where the tree split fails and the spr result passes: for the children before (A, B)
+#    and after (A', B'), n, k and, where n >= 15 and 1 <= k <= 10, the best flat cut's `rho` and p.
+#
+# Clade bookkeeping: after a clade is pruned, each of its former ancestors keeps the rest of its cells and stays
+# a clade, so it stays a candidate. Each move is one spr on the current tree.
+#
+# ## Self-check before the run (selfcheck.py)
+#
+# On simulated data with two groups and a tree built from noise coordinates only: (a) the greedy result's `rho`
+# does not exceed the best flat cut's `rho`; (b) replaying every move with `subtree_prune_regraft` on a
+# `PosetTree`, finding the pruned clade by its leaf set (`find_node_by_split`), gives the same two child leaf sets
+# of the root as the bookkeeping after every move; (c) ARI of the result with the two groups.
+#
+# ## Expected before running
+#
+# - From the earlier run: of 1,285 splits, both tree split and best flat cut pass in 57, only the best flat cut
+#   in 221, neither in 1,007. So at most 221 splits can change from fail to pass; the 1,007 stay refused.
+# - The tree split and the best flat cut had a median ARI of 0.02 to 0.08, so many splits should need many sprs.
+# - Leaves are clades, so the greedy sprs include single-cell moves and should end near a flat cut; whether they
+#   reach the best flat cut or stop at another flat cut is not predicted.
+# - Whether moved clades are cell-line pure and whether the spr result cuts fewer lines than the tree split is
+#   not predicted.
+#
+# ## Limits known before running
+#
+# One dataset, one tree, dependent splits; greedy order, so the number of sprs is an upper bound of the fewest
+# needed; the best flat cut is found by search, not proved; cell lines are the only truth; per-split p-values
+# without the BH step; the sprs are not applied to the fit, so edge gate, pass-through and the complete
+# partition are not measured.
+#
+# ## Amendment after the self-check, before the CHOIR run
+#
+# Self-check output (three simulated datasets of 120 cells, tree built from noise coordinates): the bound held and
+# the replay with `subtree_prune_regraft` was equal in all three. With two groups at offset 6 the greedy sprs
+# stopped after 15 and 16 moves at `rho` 1.78 while the best flat cut has `rho` 9.2 to 9.9 (ARI with the groups
+# 0.02): the greedy sprs end at a flat cut near the tree split, not at the best flat cut.
+#
+# Added measure 7, targeted sprs: the fewest clades of the fitted tree that must change sides so that P's split
+# equals the best flat cut. These are the maximal clades below A and B that lie completely on the wrong side
+# (both assignments of the two sides are tried; the one with fewer moves is kept). Recorded: number of clades,
+# cells moved, single-cell moves, largest clade, and for clades of 10 cells or more the share of their majority
+# line. Few large clades mean the tree holds the best flat cut's sides as subtrees; many single cells mean it
+# does not. Not predicted.
+
+# ===== spr_lib.py =====
+"""Greedy sprs across one split, with clade bookkeeping on arrays (protocol.md)."""
+import numpy as np
+
+
+def index_tree(parent):
+    """Return the preorder node list, each node's preorder position and its subtree node count."""
+    m = len(parent)
+    children = [[] for _ in range(m)]
+    root = -1
+    for node, up in enumerate(parent):
+        if up < 0:
+            root = node
+        else:
+            children[up].append(node)
+    order, stack = [], [root]
+    while stack:
+        node = stack.pop()
+        order.append(node)
+        stack.extend(reversed(children[node]))
+    order = np.array(order)
+    pre = np.empty(m, dtype=np.int64)
+    pre[order] = np.arange(m)
+    sub = np.ones(m, dtype=np.int64)
+    for node in order[::-1]:
+        if parent[node] >= 0:
+            sub[parent[node]] += sub[node]
+    return order, pre, sub
+
+
+def subtree(parent, order, pre, sub, node, n_leaves):
+    """Local arrays of the subtree at ``node`` in preorder (index 0 is the node itself)."""
+    nodes = order[pre[node] : pre[node] + sub[node]]
+    local_parent = pre[parent[nodes]] - pre[node]
+    local_parent[0] = -1
+    return nodes, local_parent, nodes < n_leaves, sub[nodes]
+
+
+def greedy_sprs(y, local_parent, is_leaf, sub, cap=1000):
+    """Yield (r2, moved cell positions, cells on the first child's side) for the tree split and after each spr.
+
+    ``y`` holds the whitened coordinates of the node's cells in preorder leaf order. Each move prunes the clade
+    whose move raises r2 most and regrafts it on the other side; it stops when no spr raises r2.
+    """
+    n = len(y)
+    m = len(sub)
+    lo = np.cumsum(is_leaf) - is_leaf  # cells before this node in preorder
+    sizes = (sub + 1) // 2  # binary tree: a subtree of s nodes has (s + 1) / 2 leaves
+    prefix = np.vstack([np.zeros(y.shape[1]), np.cumsum(y, axis=0)])
+    sums = prefix[lo + sizes] - prefix[lo]
+    first, second = 1, 1 + sub[1]
+    unit = np.full(m, -1, dtype=np.int64)  # root of the pruned unit a node belongs to
+    unit[first:second], unit[second:] = first, second
+    left = np.zeros(m, dtype=bool)
+    left[first:second] = True
+    total, s = sums[first].copy(), int(sizes[first])
+    r2 = float(total @ total / (s * (n - s)))
+    yield r2, np.empty(0, dtype=np.int64), left[is_leaf].copy()
+    for _ in range(cap):
+        sign = np.where(left, 1, -1)
+        new_size = s - sign * sizes
+        ok = (sizes > 0) & (new_size > 0) & (new_size < n)
+        ok[0] = False
+        new_total = total[None] - sign[:, None] * sums
+        r2_new = np.where(ok, (new_total**2).sum(1) / np.where(ok, new_size * (n - new_size), 1), -1.0)
+        node = int(r2_new.argmax())
+        if r2_new[node] <= r2 * (1 + 1e-12):
+            return
+        members = np.arange(node, node + sub[node])
+        members = members[unit[members] == unit[node]]
+        moved_sum, moved_size = sums[node].copy(), int(sizes[node])
+        if unit[node] != node:  # the rest of each former ancestor stays a clade
+            up = local_parent[node]
+            while True:
+                sums[up] -= moved_sum
+                sizes[up] -= moved_size
+                if up == unit[node]:
+                    break
+                up = local_parent[up]
+        total, s = total[None][0] - sign[node] * moved_sum, int(new_size[node])
+        left[members] ^= True
+        unit[members] = node
+        r2 = float(r2_new[node])
+        yield r2, lo[members[is_leaf[members]]], left[is_leaf].copy()
+
+# ===== selfcheck.py =====
+"""protocol.md self-check: bound by the best flat cut, replay of every move with subtree_prune_regraft, ARI."""
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "split_vs_best_flat_cut_20261111"))
+
+from measure_lib import best_flat_cut  # noqa: E402
+from spr_lib import greedy_sprs, index_tree, subtree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import to_rho, whiten  # noqa: E402
+from tree_break_selection.tree.construction import tree_from_linkage  # noqa: E402
+from tree_break_selection.tree.elements import Partition  # noqa: E402
+from tree_break_selection.tree.spr import subtree_prune_regraft  # noqa: E402
+
+for seed, offset in ((1, 6.0), (2, 6.0), (3, 0.0)):
+    rng = np.random.default_rng([20261111, 31, seed])
+    n = 120
+    group = np.arange(n) % 2
+    x = rng.standard_normal((n, 5))
+    x[:, 0] += offset * group
+    tree = tree_from_linkage(linkage(x[:, 1:], "average"), leaf_names=[f"c{i}" for i in range(n)])  # noise only
+    tree.initialize_split_indices()
+    encoding = tree.graph["taxa_encoding"]
+    parent = np.full(2 * n - 1, -1, dtype=np.int64)
+    for up, down in tree.edges():
+        parent[int(down[1:])] = int(up[1:])
+    order, pre, sub = index_tree(parent)
+    root = int(tree.root()[1:])
+    nodes, local_parent, is_leaf, local_sub = subtree(parent, order, pre, sub, root, n)
+    rows = nodes[is_leaf]  # leaf L<i> is row i here
+    y = whiten(x[rows][:, :2])
+    steps = list(greedy_sprs(y, local_parent, is_leaf, local_sub))
+    replay_ok = True
+    previous = steps[0][2]
+    for r2, moved, left in steps[1:]:
+        clade = tree.find_node_by_split(Partition(tuple(int(r) for r in rows[moved]), encoding))
+        other_side = rows[~previous] if previous[moved[0]] else rows[previous]
+        target = tree.find_node_by_split(Partition(tuple(int(r) for r in other_side), encoding))
+        replay_ok &= clade is not None and target is not None
+        subtree_prune_regraft(tree, clade, target)
+        sides = {tree.nodes[child]["split_indices"].bitmask for child in tree.successors(tree.root())}
+        expected = {sum(1 << int(r) for r in rows[left]), sum(1 << int(r) for r in rows[~left])}
+        replay_ok &= sides == expected
+        previous = left
+    rho_best, _ = best_flat_cut(x[rows][:, :2])
+    final = steps[-1][2]
+    print(f"seed {seed} offset {offset}: sprs {len(steps) - 1}, rho tree {to_rho(steps[0][0], n):.3f}, "
+          f"rho spr {to_rho(steps[-1][0], n):.3f}, rho best flat cut {rho_best:.3f}, "
+          f"bound holds {to_rho(steps[-1][0], n) <= rho_best + 1e-9}, replay equal {bool(replay_ok)}, "
+          f"ARI with groups {adjusted_rand_score(group[rows], final):.3f}")
+
+# ===== fit.py =====
+"""protocol.md: refit one method with the reference; save the tested splits and the complete tree. usage: fit.py METHOD"""
+import json
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import _leaf_rows  # noqa: E402
+
+ORIGINAL = pipeline.apply_best_flat_cut_reference
+SPLITS = []
+TREE = {}
+
+
+def recording(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions):
+    out = ORIGINAL(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions)
+    TREE["tree"], TREE["labels"] = tree, list(leaf_data.index)
+    row_of_label = {label: row for row, label in enumerate(leaf_data.index)}
+    by_parent = {record.parent: record for record in records}
+    for parent, summary, label, decision in zip(tested_parent_ids, out[0], out[1], out[2], strict=True):
+        if decision is None:
+            continue
+        record = by_parent[parent]
+        SPLITS.append({"node": str(parent), "reason": label.split(":")[-1], "k": int(summary[1]), "p": float(decision.p_value),
+                       "left": _leaf_rows(tree, record.left, row_of_label), "right": _leaf_rows(tree, record.right, row_of_label)})
+    return out
+
+
+pipeline.apply_best_flat_cut_reference = recording
+
+
+def main(method):
+    from scipy.spatial.distance import pdist
+    from threadpoolctl import threadpool_limits
+
+    from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+    from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+    from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(source / "pca.npy"), index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+    params = dict(METHOD_SPECS[method].param_grid[0])
+    distance_path = HERE / f"diffusion_distance_{method}.npy"
+    distances = np.lib.format.open_memmap(distance_path, mode="w+", dtype=np.float64, shape=(len(data) * (len(data) - 1) // 2,))
+    pdist(np.load(source / method / "coordinates.npy"), metric="euclidean", out=distances)
+    distances.flush()
+    try:
+        with threadpool_limits(limits=4):
+            result = run_tbs_on_distance(
+                data, distances, 0.01, edge_alpha=0.001, tree_linkage_method=params["tree_linkage_method"],
+                feature_space=continuous_feature_space_from_columns(tuple(data.columns)), branch_length_data_df=data,
+                edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+                adaptive_projection_dimension_energy_fraction=0.90, sibling_best_flat_cut_reference=True,
+                **_tbs_branch_length_optimization_kwargs(params),
+                extra={"feature_family_diffusion_fallback_reason": None})
+        bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+        rows = np.concatenate([np.r_[s["left"], s["right"]] for s in SPLITS]).astype(np.int32)
+        sizes = np.array([[len(s["left"]), len(s["right"])] for s in SPLITS], dtype=np.int64)
+        np.savez_compressed(HERE / f"splits_{method}.npz", rows=rows, sizes=sizes)
+        tree, row_of_label = TREE["tree"], {label: row for row, label in enumerate(TREE["labels"])}
+        parent = np.full(tree.number_of_nodes(), -1, dtype=np.int64)  # node index = the number in L<i> / N<j>
+        for up, down in tree.edges():
+            parent[int(down[1:])] = int(up[1:])
+        leaf_row = np.array([row_of_label[tree.nodes[f"L{i}"]["label"]] for i in range(len(data))], dtype=np.int64)
+        np.savez_compressed(HERE / f"tree_{method}.npz", parent=parent, leaf_row=leaf_row)
+        meta = [{"node": s["node"], "reason": s["reason"], "k": s["k"], "p": s["p"], "bh_different": bool(bh[s["node"]])} for s in SPLITS]
+        (HERE / f"splits_{method}.json").write_text(json.dumps({"found_clusters": int(result.found_clusters), "splits": meta}))
+        print(method, "clusters", result.found_clusters, "tested splits", len(SPLITS), flush=True)
+    finally:
+        distances._mmap.close()
+        distance_path.unlink()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1])
+    os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (run_lbfgsb.py)
+
+# ===== measure.py =====
+"""protocol.md: tree split, greedy sprs, targeted sprs and best flat cut of every tested split with 1 <= k <= 10."""
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "split_vs_best_flat_cut_20261111"))
+
+from measure_lib import best_flat_cut  # noqa: E402
+from spr_lib import greedy_sprs, index_tree, subtree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    MAX_DIRECTIONS,
+    MIN_CELLS,
+    reference_p_value,
+    to_rho,
+    whiten,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+STATE = {}
+
+
+def init():
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    STATE["x"] = np.load(source / "pca.npy")
+    STATE["line"] = pd.factorize(pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str).Cell_line)[0]
+    z = np.load(HERE / f"tree_{METHOD}.npz")
+    STATE["parent"], STATE["leaf_row"] = z["parent"], z["leaf_row"]
+    STATE["index"] = index_tree(z["parent"])
+
+
+def line_cut_share(lines, mask):
+    left = np.bincount(lines[mask], minlength=lines.max() + 1)
+    right = np.bincount(lines[~mask], minlength=lines.max() + 1)
+    return float(np.minimum(left, right).sum() / len(lines))
+
+
+def purity(lines):
+    return float(np.bincount(lines).max() / len(lines))
+
+
+def clade_summary(sizes, purities):
+    sizes, purities = np.asarray(sizes, dtype=np.int64), np.asarray(purities)
+    big = sizes >= 10
+    return {"moves": int(len(sizes)), "cells": int(sizes.sum()), "single": int((sizes == 1).sum()),
+            "largest": int(sizes.max()) if len(sizes) else 0, "big": int(big.sum()),
+            "big_pure": int((purities[big] >= 0.9).sum()), "cells_in_big": int(sizes[big].sum())}
+
+
+def targeted_sprs(target, is_leaf, sub, lines):
+    """Maximal clades below the two children that lie completely on the wrong side of ``target``."""
+    lo = np.cumsum(is_leaf) - is_leaf
+    sizes = (sub + 1) // 2
+    prefix = np.r_[0, np.cumsum(target)]
+    inside = prefix[lo + sizes] - prefix[lo]  # cells of each clade on the target's True side
+    second = 1 + sub[1]
+    under_first = np.zeros(len(sub), dtype=bool)
+    under_first[1:second] = True
+    parent_of = STATE["local_parent"]
+    best = None
+    for first_is_true in (True, False):
+        wrong = np.where(under_first == first_is_true, inside == 0, inside == sizes)
+        wrong[0] = False
+        maximal = np.flatnonzero(wrong & ~wrong[np.maximum(parent_of, 0)])
+        key = (len(maximal), int(sizes[maximal].sum()))
+        if best is None or key < best[0]:
+            best = (key, maximal)
+    maximal = best[1]
+    return clade_summary(sizes[maximal], [purity(lines[lo[i] : lo[i] + sizes[i]]) for i in maximal])
+
+
+def child_stats(points):
+    out = {"n": int(len(points)), "k": int(len(invariant_directions(points))) if len(points) > 2 else 0}
+    if out["n"] >= MIN_CELLS and 1 <= out["k"] <= MAX_DIRECTIONS:
+        rho, _ = best_flat_cut(points @ invariant_directions(points).T)
+        out.update(rho_best=rho, p_best=float(reference_p_value(rho, out["n"], out["k"])[0]))
+    return out
+
+
+def job(node):
+    order, pre, sub = STATE["index"]
+    n_leaves = len(STATE["leaf_row"])
+    nodes, local_parent, is_leaf, local_sub = subtree(STATE["parent"], order, pre, sub, node, n_leaves)
+    STATE["local_parent"] = local_parent
+    rows = STATE["leaf_row"][nodes[is_leaf]]
+    points = STATE["x"][rows]
+    n = len(rows)
+    directions = invariant_directions(points)
+    k = len(directions)
+    out = {"node": f"N{node}", "n": n, "k": k}
+    if not 1 <= k <= MAX_DIRECTIONS:
+        return out
+    coordinates = points @ directions.T
+    lines = STATE["line"][rows]
+
+    def p_of(r2):
+        return float(reference_p_value(to_rho(r2, n), n, k)[0])
+
+    sizes, purities, r2s = [], [], []
+    tree_mask = pass_mask = final = None
+    pass_step = None
+    for step, (r2, moved, left) in enumerate(greedy_sprs(whiten(coordinates), local_parent, is_leaf, local_sub)):
+        r2s.append(r2)
+        if step == 0:
+            tree_mask = left
+        else:
+            sizes.append(len(moved))
+            purities.append(purity(lines[moved]))
+        if pass_step is None and p_of(r2) <= 0.01:
+            pass_step, pass_mask = step, left
+        final = left
+    rho_best, best = best_flat_cut(coordinates)
+    out.update(
+        small_tree=int(min(tree_mask.sum(), n - tree_mask.sum())), small_spr=int(min(final.sum(), n - final.sum())),
+        small_best=int(min(best.sum(), n - best.sum())),
+        rho_tree=to_rho(r2s[0], n), rho_first=to_rho(r2s[min(1, len(r2s) - 1)], n), rho_spr=to_rho(r2s[-1], n), rho_best=rho_best,
+        p_tree=p_of(r2s[0]), p_spr=p_of(r2s[-1]), p_best=float(reference_p_value(rho_best, n, k)[0]),
+        first_size=int(sizes[0]) if sizes else 0, capped=len(sizes) >= 1000,
+        pass_step=pass_step, pass_cells=None if pass_step is None else int(sum(sizes[:pass_step])),
+        greedy=clade_summary(sizes, purities), targeted=targeted_sprs(best, is_leaf, local_sub, lines),
+        ari_tree_best=float(adjusted_rand_score(tree_mask, best)), ari_spr_best=float(adjusted_rand_score(final, best)),
+        ari_tree_spr=float(adjusted_rand_score(tree_mask, final)),
+        cut_tree=line_cut_share(lines, tree_mask), cut_spr=line_cut_share(lines, final), cut_best=line_cut_share(lines, best),
+        cut_pass=None if pass_mask is None else line_cut_share(lines, pass_mask),
+        lines_in_subtree=int(len(np.unique(lines))),
+    )
+    if out["p_tree"] > 0.01 and out["p_spr"] <= 0.01:
+        out["children"] = {name: child_stats(points[mask]) for name, mask in
+                           (("before_first", tree_mask), ("before_second", ~tree_mask), ("after_first", final), ("after_second", ~final))}
+    return out
+
+
+if __name__ == "__main__":
+    init()
+    order, pre, sub = STATE["index"]
+    meta = json.loads((HERE / f"splits_{METHOD}.json").read_text())["splits"]
+    wanted = {int(s["node"][1:]): s for s in meta if (sub[int(s["node"][1:])] + 1) // 2 >= 32}
+    limit = int(sys.argv[1]) if len(sys.argv) > 1 else None
+    jobs = sorted(wanted, key=lambda node: -sub[node])[:limit] if limit is None else sorted(wanted, key=lambda node: sub[node])[:limit]
+    with Pool(10, initializer=init) as pool, (HERE / ("measures.jsonl" if limit is None else "trial.jsonl")).open("w") as f:
+        for done, row in enumerate(pool.imap_unordered(job, jobs), 1):
+            row.update({key: wanted[int(row["node"][1:])][key] for key in ("reason", "p", "bh_different")})
+            f.write(json.dumps(row) + "\n")
+            if done % 200 == 0:
+                print(done, "of", len(jobs), flush=True)
+    print("DONE", len(jobs), flush=True)
+
+# ===== summarize.py =====
+"""protocol.md: summary tables from measures.jsonl."""
+import json
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+rows = [json.loads(line) for line in (HERE / "measures.jsonl").read_text().splitlines()]
+used = [r for r in rows if "rho_tree" in r]
+print(f"tested splits with 32 cells or more: {len(rows)}; with 1 <= k <= 10: {len(used)}; "
+      f"k = 0: {sum(r['k'] == 0 for r in rows)}; k > 10: {sum(r['k'] > 10 for r in rows)}")
+print("bound rho_spr <= rho_best violated:", sum(r["rho_spr"] > r["rho_best"] + 1e-9 for r in used),
+      "| capped at 1,000 moves:", sum(r["capped"] for r in used))
+
+
+def med(values):
+    values = [v for v in values if v is not None]
+    return float(np.median(values)) if values else float("nan")
+
+
+def table(title, groups):
+    print("\n" + title)
+    for name, g in groups:
+        if not g:
+            print(f"  {name}: 0 splits")
+            continue
+        print(f"  {name}: {len(g)} splits | median rho tree {med(r['rho_tree'] for r in g):.2f}, first spr {med(r['rho_first'] for r in g):.2f}, "
+              f"greedy sprs {med(r['rho_spr'] for r in g):.2f}, best flat cut {med(r['rho_best'] for r in g):.2f} | "
+              f"pass tree {sum(r['p_tree'] <= 0.01 for r in g)}, greedy {sum(r['p_spr'] <= 0.01 for r in g)}, best {sum(r['p_best'] <= 0.01 for r in g)}")
+        print(f"      greedy: median sprs {med(r['greedy']['moves'] for r in g):.0f}, cells moved {med(r['greedy']['cells'] / r['n'] for r in g):.3f} of n, "
+              f"ARI spr/best {med(r['ari_spr_best'] for r in g):.3f}, ARI tree/best {med(r['ari_tree_best'] for r in g):.3f}, ARI tree/spr {med(r['ari_tree_spr'] for r in g):.3f}")
+        print(f"      targeted to the best flat cut: median sprs {med(r['targeted']['moves'] for r in g):.0f}, cells moved {med(r['targeted']['cells'] / r['n'] for r in g):.3f} of n, "
+              f"single-cell share of moves {med(r['targeted']['single'] / max(r['targeted']['moves'], 1) for r in g):.2f}, "
+              f"largest clade {med(r['targeted']['largest'] / r['n'] for r in g):.3f} of n")
+        print(f"      line cut share: tree {med(r['cut_tree'] for r in g):.3f}, greedy {med(r['cut_spr'] for r in g):.3f}, best {med(r['cut_best'] for r in g):.3f}")
+
+
+sizes = [("32-159", 32, 160), ("160-999", 160, 1000), ("1,000+", 1000, 10**9)]
+table("By subtree size", [(name, [r for r in used if lo <= r["n"] < hi]) for name, lo, hi in sizes])
+classes = [("tree and best pass", lambda r: r["p_tree"] <= 0.01 and r["p_best"] <= 0.01),
+           ("only the best flat cut passes", lambda r: r["p_tree"] > 0.01 and r["p_best"] <= 0.01),
+           ("neither passes", lambda r: r["p_tree"] > 0.01 and r["p_best"] > 0.01),
+           ("only the tree split passes", lambda r: r["p_tree"] <= 0.01 and r["p_best"] > 0.01)]
+table("By verdict of the reference at 0.01", [(name, [r for r in used if f(r)]) for name, f in classes])
+
+only_best = [r for r in used if r["p_tree"] > 0.01 and r["p_best"] <= 0.01]
+rescued = [r for r in only_best if r["p_spr"] <= 0.01]
+print(f"\nSplits where only the best flat cut passes: {len(only_best)}; greedy sprs make the tree's split pass in {len(rescued)}")
+print(f"  neither-class splits passing after greedy sprs (must be 0): {sum(r['p_spr'] <= 0.01 for r in used if r['p_tree'] > 0.01 and r['p_best'] > 0.01)}")
+if rescued:
+    steps = np.array([r["pass_step"] for r in rescued])
+    print(f"  sprs until the first pass: median {np.median(steps):.0f}, quartiles {np.percentile(steps, 25):.0f} to {np.percentile(steps, 75):.0f}, max {steps.max()}; "
+          f"1 spr: {(steps == 1).sum()}, 2-5: {((steps >= 2) & (steps <= 5)).sum()}, 6-20: {((steps >= 6) & (steps <= 20)).sum()}, more: {(steps > 20).sum()}")
+    print(f"  cells moved until the first pass: median {med(r['pass_cells'] / r['n'] for r in rescued):.3f} of n")
+    print(f"  line cut share: tree {med(r['cut_tree'] for r in rescued):.3f}, at first pass {med(r['cut_pass'] for r in rescued):.3f}, "
+          f"greedy end {med(r['cut_spr'] for r in rescued):.3f}, best flat cut {med(r['cut_best'] for r in rescued):.3f}")
+    for name, f in (("several lines", lambda r: r["lines_in_subtree"] > 1), ("one line", lambda r: r["lines_in_subtree"] == 1)):
+        g, o = [r for r in rescued if f(r)], [r for r in only_best if f(r)]
+        print(f"  {name}: rescued {len(g)} of {len(o)}; cut at most 5% of cells from their line at first pass: {sum(r['cut_pass'] <= 0.05 for r in g)}, "
+              f"with the best flat cut: {sum(r['cut_best'] <= 0.05 for r in g)}")
+    print("  reaction below the split (children before and after the greedy sprs):")
+    for when in ("before", "after"):
+        kids = [r["children"][f"{when}_{side}"] for r in rescued for side in ("first", "second")]
+        tested = [c for c in kids if "p_best" in c]
+        print(f"    {when}: {len(kids)} children, median n {med(c['n'] for c in kids):.0f}, k = 0 in {sum(c['k'] == 0 for c in kids)}, k > 10 in {sum(c['k'] > 10 for c in kids)}, "
+              f"median k {med(c['k'] for c in kids):.0f}; best flat cut tested in {len(tested)}, passes in {sum(c['p_best'] <= 0.01 for c in tested)}, "
+              f"median rho {med(c['rho_best'] for c in tested):.2f}")
+    same_k = sum(r["children"][f"before_{s}"]["k"] == r["children"][f"after_{s}"]["k"] for r in rescued for s in ("first", "second"))
+    print(f"    children whose k is unchanged: {same_k} of {2 * len(rescued)}")
+
+print("\nMoved clades of 10 cells or more, share with a majority line of at least 90%:")
+for name, key in (("greedy", "greedy"), ("targeted", "targeted")):
+    for label, g in (("all splits", used), ("only the best flat cut passes", only_best)):
+        big, pure, cells, in_big = (sum(r[key][f] for r in g) for f in ("big", "big_pure", "cells", "cells_in_big"))
+        print(f"  {name}, {label}: {pure} of {big} clades; cells moved inside such clades {in_big} of {cells}")
+multi = [r for r in only_best if r["lines_in_subtree"] > 1]
+print(f"\nTargeted sprs, only-best splits with several lines ({len(multi)}): 5 sprs or fewer in {sum(r['targeted']['moves'] <= 5 for r in multi)}, "
+      f"20 or fewer in {sum(r['targeted']['moves'] <= 20 for r in multi)}, median {med(r['targeted']['moves'] for r in multi):.0f}")
+
+# ===== selfcheck output =====
+# seed 1 offset 6.0: sprs 16, rho tree 0.108, rho spr 1.777, rho best flat cut 9.881, bound holds True, replay equal True, ARI with groups 0.025
+# seed 2 offset 6.0: sprs 15, rho tree 0.015, rho spr 1.785, rho best flat cut 9.241, bound holds True, replay equal True, ARI with groups 0.020
+# seed 3 offset 0.0: sprs 18, rho tree 0.004, rho spr 1.807, rho best flat cut 1.840, bound holds True, replay equal True, ARI with groups 0.009
+
+# ===== fit.log =====
+# tbs_family_diffusion_markov_ward clusters 138 tested splits 1838
+
+# ===== summary.txt =====
+# tested splits with 32 cells or more: 1475; with 1 <= k <= 10: 1285; k = 0: 0; k > 10: 190
+# bound rho_spr <= rho_best violated: 4 | capped at 1,000 moves: 0
+#
+# By subtree size
+#   32-159: 867 splits | median rho tree 0.97, first spr 1.60, greedy sprs 3.19, best flat cut 4.19 | pass tree 15, greedy 77, best 116
+#       greedy: median sprs 8, cells moved 0.272 of n, ARI spr/best 0.110, ARI tree/best 0.036, ARI tree/spr 0.273
+#       targeted to the best flat cut: median sprs 15, cells moved 0.381 of n, single-cell share of moves 0.71, largest clade 0.059 of n
+#       line cut share: tree 0.297, greedy 0.354, best 0.403
+#   160-999: 418 splits | median rho tree 0.92, first spr 1.49, greedy sprs 2.61, best flat cut 3.22 | pass tree 42, greedy 102, best 162
+#       greedy: median sprs 24, cells moved 0.367 of n, ARI spr/best 0.111, ARI tree/best 0.016, ARI tree/spr 0.186
+#       targeted to the best flat cut: median sprs 44, cells moved 0.394 of n, single-cell share of moves 0.67, largest clade 0.030 of n
+#       line cut share: tree 0.155, greedy 0.362, best 0.357
+#   1,000+: 0 splits
+#
+# By verdict of the reference at 0.01
+#   tree and best pass: 57 splits | median rho tree 7.72, first spr 10.22, greedy sprs 11.35, best flat cut 11.77 | pass tree 57, greedy 57, best 57
+#       greedy: median sprs 2, cells moved 0.009 of n, ARI spr/best 1.000, ARI tree/best 0.959, ARI tree/spr 0.959
+#       targeted to the best flat cut: median sprs 2, cells moved 0.010 of n, single-cell share of moves 0.60, largest clade 0.005 of n
+#       line cut share: tree 0.008, greedy 0.000, best 0.000
+#   only the best flat cut passes: 221 splits | median rho tree 0.94, first spr 1.84, greedy sprs 4.10, best flat cut 5.01 | pass tree 0, greedy 122, best 221
+#       greedy: median sprs 11, cells moved 0.318 of n, ARI spr/best 0.743, ARI tree/best 0.050, ARI tree/spr 0.173
+#       targeted to the best flat cut: median sprs 16, cells moved 0.336 of n, single-cell share of moves 0.50, largest clade 0.057 of n
+#       line cut share: tree 0.201, greedy 0.204, best 0.096
+#   neither passes: 1007 splits | median rho tree 0.92, first spr 1.46, greedy sprs 2.87, best flat cut 3.63 | pass tree 0, greedy 0, best 0
+#       greedy: median sprs 11, cells moved 0.305 of n, ARI spr/best 0.071, ARI tree/best 0.020, ARI tree/spr 0.238
+#       targeted to the best flat cut: median sprs 20, cells moved 0.400 of n, single-cell share of moves 0.71, largest clade 0.053 of n
+#       line cut share: tree 0.289, greedy 0.378, best 0.415
+#   only the tree split passes: 0 splits
+#
+# Splits where only the best flat cut passes: 221; greedy sprs make the tree's split pass in 122
+#   neither-class splits passing after greedy sprs (must be 0): 0
+#   sprs until the first pass: median 3, quartiles 1 to 8, max 195; 1 spr: 38, 2-5: 46, 6-20: 29, more: 9
+#   cells moved until the first pass: median 0.267 of n
+#   line cut share: tree 0.144, at first pass 0.038, greedy end 0.021, best flat cut 0.021
+#   several lines: rescued 94 of 138; cut at most 5% of cells from their line at first pass: 66, with the best flat cut: 74
+#   one line: rescued 28 of 83; cut at most 5% of cells from their line at first pass: 2, with the best flat cut: 2
+#   reaction below the split (children before and after the greedy sprs):
+#     before: 244 children, median n 64, k = 0 in 73, k > 10 in 1, median k 6; best flat cut tested in 170, passes in 92, median rho 4.99
+#     after: 244 children, median n 72, k = 0 in 64, k > 10 in 0, median k 6; best flat cut tested in 180, passes in 25, median rho 3.80
+#     children whose k is unchanged: 94 of 244
+#
+# Moved clades of 10 cells or more, share with a majority line of at least 90%:
+#   greedy, all splits: 883 of 953 clades; cells moved inside such clades 39255 of 67992
+#   greedy, only the best flat cut passes: 175 of 229 clades; cells moved inside such clades 12178 of 18571
+#   targeted, all splits: 466 of 500 clades; cells moved inside such clades 11615 of 66589
+#   targeted, only the best flat cut passes: 180 of 206 clades; cells moved inside such clades 6034 of 16820
+#
+# Targeted sprs, only-best splits with several lines (138): 5 sprs or fewer in 54, 20 or fewer in 98, median 9

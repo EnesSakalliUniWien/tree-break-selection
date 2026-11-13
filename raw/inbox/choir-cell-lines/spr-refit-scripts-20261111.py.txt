@@ -1,0 +1,1036 @@
+# ===== protocol.md =====
+# # Protocol: sprs applied to every refused split whose best flat cut passes, then the fit rerun (frozen 2026-11-11, before the run)
+#
+# Trial; no gate, default or production file is changed. Data and setup of `spr_alternatives_best_flat_cut_20261111`:
+# 48,879 CHOIR cells, 30 PCs, `tbs_family_diffusion_markov_ward` with `sibling_best_flat_cut_reference=True`,
+# sibling alpha 0.01, edge alpha 0.001, registry parameters (fixed-topology NNLS branch lengths). The saved tree is
+# `spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz` (`parent`: parent index per
+# node, leaves 0 to n-1 are `L<i>`, internal nodes are `N<j>`; `leaf_row`: data row of each leaf).
+#
+# Baseline (fit of this tree): 138 clusters, ARI 0.2975, NMI 0.8512, 76 lines recovered at 90/90, 9 split only, 91
+# merged only, 14 both, largest cluster 7,678, 1,838 tested splits.
+#
+# ## Part 1: harness (harness.py)
+#
+# Rerun the fit on a tree given as a parent array, without recomputing distances or the linkage, by handing the
+# runner a `PosetTree` built from that topology. Proof before any changed tree is used: the unchanged saved tree
+# through the harness reproduces the baseline (138 clusters, 1,838 tested splits, the same assignment as
+# `best_flat_cut_reference_real_20261111/tbs_family_diffusion_markov_ward` for the reference arm). The merge heights
+# given to the builder are topology-only; if the replay is not exact, the cause is reported and nothing is tuned.
+#
+# ## Part 2: sprs (apply_all_sprs.py)
+#
+# Top-down over the current tree. A node is a candidate when it has 15 cells or more, 1 to 10 invariant directions
+# (`invariant_directions` of its own cells), its own split has a sibling reference p above 0.01
+# (`best_flat_cut_reference`), and its best flat cut (the table's search) has reference p at or below 0.01. For a
+# candidate, the smaller side of its best flat cut is made a node by sprs (join the tree nodes that make it up,
+# then regraft the joined node on the edge above the candidate), so the node's two children are (that side | the
+# rest). Then both children are evaluated in the same way on the cells they now hold. Nodes with no invariant
+# directions or more than 10 are left as they are and their children are evaluated. Each move is one
+# subtree-prune-regraft as in `tree_break_selection/tree/spr.py` (the pruned node's parent keeps its id).
+#
+# Self-check before the full run: on at least three nodes the array implementation gives the same leaf sets as
+# `subtree_prune_regraft` on a `PosetTree` with set based identity (`to_splits` equal); N96475, N96842 and N96808
+# reproduce the 2 sprs and the `rho` values 7.651, 10.305 and 13.693 of the earlier follow-up.
+#
+# Recorded per candidate: leaves, cell lines, k, `rho` and p of the tree split and of the best flat cut, number of
+# sprs, single-leaf moves, leaf sets changed, line cut share before and after, and whether the node was a tested
+# and refused split of the baseline fit.
+#
+# ## Part 3: refit and comparison
+#
+# The changed tree through the harness. Endpoints against the baseline: found clusters, ARI and NMI against the
+# 190 cell lines, lines recovered at 90/90, split only, merged only, both, largest cluster, clusters at least 90%
+# pure, clusters under 20 cells (definitions of `best_flat_cut_reference_real_20261111/summarize.py`); tested
+# splits, kept (p <= 0.01) and accepted by BH; of the candidate nodes, how many splits the refit accepts.
+#
+# ## Expected before running
+#
+# - The sprs reach only nodes with 1 to 10 invariant directions. In the baseline every split with 1,000 cells or
+#   more has 11 to 15 and is refused (190 splits). Those stay refused, so the largest cluster and the merged-only
+#   lines should change little and the ARI should rise only modestly.
+# - On the per-split reference, 221 of the 1,285 measured splits (32 cells or more) were refused with a passing
+#   best flat cut; the top-down pass also evaluates nodes the fit never tested and nodes created by the sprs, so
+#   the number of candidates is not predicted.
+# - In the baseline 17 of 48 splits at p 0.0005 were not accepted by BH; a part of the new splits will be refused
+#   by BH or by the edge gate. How many is not predicted.
+# - Splits inside single cell lines can pass the best flat cut (earlier: 38 of 570 and 48 of 195 subtrees), so
+#   the sprs can also split lines; the split-only count may rise.
+#
+# ## Limits known before running
+#
+# One dataset, one tree, one run; the candidates are chosen by the same data that is then tested, and the reference
+# does not cover the choice of k or of the node; branch lengths are refit by the runner on the changed topology;
+# splits with more than 10 invariant directions are not touched; no null calibration of the complete procedure.
+
+# ===== deviations.md =====
+# # Deviations and interpretations (Part 2, apply_all_sprs.py)
+#
+# No deviation from the candidate rule, the spr operation or the recursion. Choices the protocol leaves open:
+#
+# - Nodes with fewer than 32 cells are not searched (n <= p + 1 = 31 gives no invariant directions, so they can
+#   never be candidates); the summary counts them as one group instead of splitting "k = 0" and "< 15 cells".
+# - Order of the joining sprs: pieces largest first, ties by node id (the earlier `apply_sprs.py` sorted by size
+#   only). Equal-size sides of the best flat cut: fewer tree nodes, then the side holding the smallest leaf index.
+# - "Tested and refused in the baseline fit": the candidate's leaf set equals the leaf set of an input-tree node
+#   whose baseline record has `bh_different` false (all 90 such candidates had reason `tested`).
+# - "Several cell lines / one cell line": number of distinct `Cell_line` values among the candidate's cells.
+
+# ===== harness.py =====
+"""protocol.md Part 1: rerun the fit of spr_alternatives_best_flat_cut_20261111/fit.py on a tree given as a parent array.
+
+usage: harness.py TREE_NPZ OUT_PREFIX   (npz with `parent` and `leaf_row` as written by fit.py)
+
+No distances and no linkage are computed: the runner's build_tree is replaced by one that returns the PosetTree of
+the given topology. Merge heights are topology-only (row k of the linkage merges at height k + 1). Internal nodes are
+emitted in the smallest-id-first topological order, so a tree whose children all have smaller ids than their parents
+(the saved tree) keeps its ids; otherwise they are renumbered and reports name nodes by the id in the npz.
+"""
+import heapq
+import json
+import os
+import resource
+import sys
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(HERE.parent / "spr_alternatives_best_flat_cut_20261111"))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+import fit  # noqa: E402  # its import wraps pipeline.apply_best_flat_cut_reference and records every call in fit.SPLITS
+
+
+def linkage_from_parent(parent, n_leaves):
+    """Linkage rows in smallest-id-first topological order; returns (Z, npz id of the node made by each row)."""
+    children = [[] for _ in parent]
+    for node, up in enumerate(parent):
+        if up >= 0:
+            children[up].append(node)
+    internal = range(n_leaves, len(parent))
+    if (parent == -1).sum() != 1 or any(len(children[i]) != 2 for i in internal) or any(children[i] for i in range(n_leaves)):
+        raise ValueError("parent array is not a rooted binary tree with leaves 0..n-1")
+    waiting = {i: sum(c >= n_leaves for c in children[i]) for i in internal}
+    ready = [i for i, w in waiting.items() if w == 0]
+    heapq.heapify(ready)
+    new_of, order = {i: i for i in range(n_leaves)}, []
+    while ready:
+        node = heapq.heappop(ready)
+        new_of[node] = n_leaves + len(order)
+        order.append(node)
+        up = parent[node]
+        if up >= 0:
+            waiting[up] -= 1
+            if waiting[up] == 0:
+                heapq.heappush(ready, up)
+    if len(order) != n_leaves - 1:
+        raise ValueError("parent array has a cycle or disconnected nodes")
+    Z = np.empty((n_leaves - 1, 4))
+    for k, node in enumerate(order):
+        a, b = sorted(new_of[c] for c in children[node])  # scipy writes the smaller child index first
+        Z[k] = a, b, k + 1.0, 0.0
+    sizes = np.ones(len(parent), dtype=np.int64)
+    for node in order:
+        sizes[node] = sizes[children[node]].sum()
+    Z[:, 3] = sizes[order]
+    return Z, np.array(order, dtype=np.int64)
+
+
+# Definitions copied from best_flat_cut_reference_real_20261111/summarize.py (breakdown) and run.py (recovered_lines);
+# summarize.py runs at import, so it is copied instead of imported.
+def breakdown(a):
+    t = pd.crosstab(a.Cell_line, a.cluster)
+    main = t.idxmax(axis=1)
+    split = t.max(axis=1) / t.sum(axis=1) < 0.9
+    merged = (t.max(axis=0) / t.sum(axis=0))[main].to_numpy() < 0.9
+    purity = t.max(axis=0) / t.sum(axis=0)
+    return {"clusters_ge90_pure": int((purity >= 0.9).sum()), "clusters_lt20_cells": int((t.sum(axis=0) < 20).sum()),
+            "largest_cluster": int(t.sum(axis=0).max()), "recovered": int((~split & ~merged).sum()),
+            "split_only": int((split & ~merged).sum()), "merged_only": int((~split & merged).sum()),
+            "both": int((split & merged).sum())}
+
+
+def recovered_lines(truth, labels):
+    table = pd.crosstab(truth, labels)
+    recall = table.max(axis=1) / table.sum(axis=1)
+    purity = table.max(axis=0) / table.sum(axis=0)
+    return int(((recall >= 0.9) & (purity[table.idxmax(axis=1)].to_numpy() >= 0.9)).sum())
+
+
+def main(tree_path, prefix, method="tbs_family_diffusion_markov_ward"):
+    from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+    from threadpoolctl import threadpool_limits
+
+    import benchmarks.shared.runners.tbs_runner as tbs_runner
+    from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+    from tree_break_selection.tree.construction import tree_from_linkage
+    from tree_break_selection.tree.construction.build import TreeBuildResult
+    from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+    start = perf_counter()
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(source / "pca.npy"), index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+    truth = metadata.Cell_line.to_numpy()
+    saved = np.load(ROOT / tree_path if not Path(tree_path).is_absolute() else tree_path)
+    parent, leaf_row = saved["parent"].astype(np.int64), saved["leaf_row"].astype(np.int64)
+    if len(leaf_row) != len(data) or sorted(leaf_row) != list(range(len(data))):
+        raise ValueError("leaf_row must be a permutation of the data rows")
+    Z, npz_id_of_row = linkage_from_parent(parent, len(data))
+    renumbered = bool((npz_id_of_row != np.arange(len(data), 2 * len(data) - 1)).any())
+    npz_name = {f"N{len(data) + k}": f"N{j}" for k, j in enumerate(npz_id_of_row)}
+
+    def given_tree(data_df, distance_condensed, *, linkage_method):
+        assert distance_condensed is None and linkage_method == params["tree_linkage_method"]
+        return TreeBuildResult(tree=tree_from_linkage(Z, leaf_names=data_df.index[leaf_row].tolist()), linkage_matrix=Z)
+
+    tbs_runner.build_tree = given_tree  # run-time replacement inside this script only
+    params = dict(METHOD_SPECS[method].param_grid[0])
+    with threadpool_limits(limits=4):
+        result = tbs_runner.run_tbs_on_distance(
+            data, None, 0.01, edge_alpha=0.001, tree_linkage_method=params["tree_linkage_method"],
+            feature_space=continuous_feature_space_from_columns(tuple(data.columns)), branch_length_data_df=data,
+            edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+            adaptive_projection_dimension_energy_fraction=0.90, sibling_best_flat_cut_reference=True,
+            **_tbs_branch_length_optimization_kwargs(params),
+            extra={"feature_family_diffusion_fallback_reason": None})
+    labels = np.asarray(result.labels, dtype=int)
+    bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+    splits = [{"node": npz_name.get(s["node"], s["node"]), "n_leaves": len(s["left"]) + len(s["right"]),
+               "reason": s["reason"], "k": s["k"], "p": s["p"], "bh_different": bool(bh[s["node"]])} for s in fit.SPLITS]
+    assignments = pd.DataFrame({"cluster": labels}, index=pd.Index(data.index, name="cell"))
+    assignments.to_csv(HERE / f"{prefix}_assignments.csv.gz")
+    (HERE / f"{prefix}_splits.json").write_text(json.dumps({"found_clusters": int(result.found_clusters), "splits": splits}))
+    metrics = {"tree": str(tree_path), "renumbered_internal_ids": renumbered, "found_clusters": int(result.found_clusters),
+               "ari_cell_line": adjusted_rand_score(truth, labels), "nmi_cell_line": normalized_mutual_info_score(truth, labels),
+               "recovered_lines_90_90": recovered_lines(truth, labels),
+               **breakdown(pd.DataFrame({"Cell_line": truth, "cluster": labels})),
+               "tested_splits": len(splits), "kept_p_le_0.01": sum(s["p"] <= 0.01 for s in splits),
+               "accepted_bh": sum(s["bh_different"] for s in splits), "sec": perf_counter() - start,
+               "peak_rss_gb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30}  # macOS reports bytes
+    (HERE / f"{prefix}_metrics.json").write_text(json.dumps(metrics, indent=1, default=float))
+    print(json.dumps(metrics, default=float), flush=True)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])
+    os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (run_lbfgsb.py)
+
+# ===== apply_all_sprs.py =====
+"""protocol.md Part 2: top-down sprs that make every candidate's best-flat-cut side one of its two children.
+
+Arrays only (parent, children); a node's identity is its leaf set, the id is a label. Waves: every node of a
+wave is a disjoint subtree, the candidate tests of a wave run in a pool (ordered map, pure functions of the
+cells), the sprs are then applied in ascending node-id order, and the next wave is the children of every node.
+"""
+import json
+import sys
+import time
+from collections import Counter
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+SPR = HERE.parent / "spr_alternatives_best_flat_cut_20261111"
+SOURCE = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(SPR))
+sys.path.insert(0, str(HERE.parent / "split_vs_best_flat_cut_20261111"))
+
+from measure_lib import best_flat_cut  # noqa: E402
+from spr_lib import index_tree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    MAX_DIRECTIONS,
+    MIN_CELLS,
+    best_flat_cut_reference,
+    reference_p_value,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+ALPHA = 0.01
+SEARCH_MIN = 32  # n <= p + 1 = 31 gives no invariant directions
+WORKERS = 6
+X = {}
+
+
+def init():
+    X["x"] = np.load(SOURCE / "pca.npy")
+
+
+def load_tree(path=SPR / f"tree_{METHOD}.npz"):
+    z = np.load(path)
+    return z["parent"].astype(np.int64), z["leaf_row"].astype(np.int64)
+
+
+def children_of(parent):
+    children = np.full((len(parent), 2), -1, dtype=np.int64)
+    fill = np.zeros(len(parent), dtype=np.int64)
+    for node, up in enumerate(parent):
+        if up >= 0:
+            children[up, fill[up]] = node
+            fill[up] += 1
+    return children
+
+
+def leaves_of(children, node):
+    """Leaf indices under ``node``, first child's leaves first."""
+    out, stack = [], [node]
+    while stack:
+        v = stack.pop()
+        if children[v, 0] < 0:
+            out.append(v)
+        else:
+            stack.extend((children[v, 1], children[v, 0]))
+    return np.array(out, dtype=np.int64)
+
+
+def test_node(job):
+    """Candidate test of one node from its cells' rows and its current split (``in_left``)."""
+    rows, in_left = job
+    points = X["x"][rows]
+    n = len(rows)
+    directions = invariant_directions(points)
+    k = len(directions)
+    out = {"n": n, "k": k}
+    if n < MIN_CELLS or not 1 <= k <= MAX_DIRECTIONS:
+        return out
+    tree = best_flat_cut_reference(points, in_left)
+    out.update(rho_tree=tree.rho, p_tree=tree.p_value)
+    if tree.p_value > ALPHA:
+        rho_best, mask = best_flat_cut(points @ directions.T)
+        out.update(rho_best=rho_best, p_best=float(reference_p_value(rho_best, n, k)[0]), best_mask=mask)
+    return out
+
+
+def spr(parent, children, prune, regraft):
+    """``tree.spr.subtree_prune_regraft`` on arrays: the parent of ``prune`` keeps its id and moves above ``regraft``."""
+    p = parent[prune]
+    if p < 0 or parent[regraft] < 0:
+        raise ValueError("cannot prune the root or regraft above it")
+    sibling = children[p, 0] if children[p, 1] == prune else children[p, 1]
+    if regraft in (prune, p, sibling):
+        raise ValueError("degenerate spr")
+    g = parent[p]
+    children[g, children[g] == p] = sibling
+    parent[sibling] = g
+    t = parent[regraft]
+    children[t, children[t] == regraft] = p
+    parent[p] = t
+    children[p] = (prune, regraft)
+    parent[regraft] = p
+
+
+def pieces_inside(children, node, side):
+    """Maximal nodes under ``node`` whose leaves all lie in ``side`` (a set of leaf indices), with their sizes."""
+    post, stack = [], [node]
+    while stack:
+        v = stack.pop()
+        post.append(v)
+        if children[v, 0] >= 0:
+            stack.extend(children[v])
+    size, inside = {}, {}
+    for v in reversed(post):
+        if children[v, 0] < 0:
+            size[v], inside[v] = 1, int(v in side)
+        else:
+            a, b = children[v]
+            size[v], inside[v] = size[a] + size[b], inside[a] + inside[b]
+    out, stack = [], [node]
+    while stack:
+        v = stack.pop()
+        if inside[v] == size[v]:
+            out.append(v)
+        elif inside[v]:
+            stack.extend(children[v])
+    return sorted(((size[v], v) for v in out), key=lambda sv: (-sv[0], sv[1]))
+
+
+def make_child(parent, children, node, side):
+    """Sprs that give the node holding ``node``'s leaf set the children ``side`` and the rest.
+
+    Returns the new holder, the holder of ``side`` and the moves (pruned, regraft, pruned size).
+    """
+    pieces = pieces_inside(children, node, side)
+    holder, joined, moves = node, pieces[0][1], []
+    for size, piece in pieces[1:]:
+        p = parent[piece]
+        if p == holder:  # the sibling of the pruned piece then holds the node's leaf set
+            holder = children[p, 0] if children[p, 1] == piece else children[p, 1]
+        moves.append((int(piece), int(joined), int(size)))
+        spr(parent, children, piece, joined)
+        joined = p
+    if parent[joined] != holder:
+        p = parent[joined]
+        moves.append((int(joined), int(holder), len(side)))
+        spr(parent, children, joined, holder)
+        holder = p
+    return holder, joined, moves
+
+
+def clade_sets(children, node):
+    """Leaf sets of the internal nodes under ``node`` (inclusive)."""
+    post, stack = [], [node]
+    while stack:
+        v = stack.pop()
+        post.append(v)
+        if children[v, 0] >= 0:
+            stack.extend(children[v])
+    sets, out = {}, set()
+    for v in reversed(post):
+        if children[v, 0] < 0:
+            sets[v] = frozenset((v,))
+        else:
+            sets[v] = sets[children[v, 0]] | sets[children[v, 1]]
+            out.add(sets[v])
+    return out
+
+
+def line_cut_share(lines, mask):
+    left = np.bincount(lines[mask], minlength=lines.max() + 1)
+    right = np.bincount(lines[~mask], minlength=lines.max() + 1)
+    return float(np.minimum(left, right).sum() / len(lines))
+
+
+def original_node(parent0, pre0, sub0, leaves):
+    """Id of the input tree's node with exactly these leaves, or None."""
+    positions = pre0[leaves]
+    v, hi = int(leaves[np.argmin(positions)]), int(positions.max())
+    while not pre0[v] <= hi < pre0[v] + sub0[v]:
+        v = int(parent0[v])
+    return v if (sub0[v] + 1) // 2 == len(leaves) else None
+
+
+def choose_side(children, node, leaves, mask):
+    """Smaller side of the cut; equal sizes: fewer tree nodes, then the side holding the smallest leaf index."""
+    sides = [leaves[mask], leaves[~mask]]
+    if len(sides[0]) != len(sides[1]):
+        return min(sides, key=len)
+    return min(sides, key=lambda s: (len(pieces_inside(children, node, set(s.tolist()))), s.min()))
+
+
+def is_rooted_binary(parent, n_leaves):
+    m = len(parent)
+    roots = np.flatnonzero(parent < 0)
+    if len(roots) != 1 or m != 2 * n_leaves - 1:
+        return False, "root count or node count"
+    counts = np.bincount(parent[parent >= 0], minlength=m)
+    if (counts[:n_leaves] != 0).any() or (counts[n_leaves:] != 2).any():
+        return False, "child counts"
+    seen = leaves_of(children_of(parent), int(roots[0]))
+    if sorted(seen.tolist()) != list(range(n_leaves)):
+        return False, "leaf set"
+    if len(index_tree(parent)[0]) != m:
+        return False, "unreachable nodes"
+    return True, "one root, 2 children per internal node, leaves 0..n-1 have none, all nodes reachable"
+
+
+def main():
+    start = time.time()
+    init()
+    parent0, leaf_row = load_tree()
+    n_leaves = len(leaf_row)
+    order0, pre0, sub0 = index_tree(parent0)
+    parent = parent0.copy()
+    children = children_of(parent)
+    meta = pd.read_csv(SOURCE / "cell_metadata.csv", index_col=0, dtype=str)
+    line_codes, line_names = pd.factorize(meta.Cell_line)
+    line_of_leaf = line_codes[leaf_row]
+    baseline = {int(s["node"][1:]): s for s in json.loads((SPR / f"splits_{METHOD}.json").read_text())["splits"]}
+
+    counts = Counter()
+    records = []
+    frontier = [int(np.flatnonzero(parent < 0)[0])]
+    wave = 0
+    with Pool(WORKERS, initializer=init) as pool, (HERE / "sprs.jsonl").open("w") as out:
+        while frontier:
+            wave += 1
+            nodes, jobs, leaf_lists = [], [], []
+            for node in sorted(frontier):
+                leaves = leaves_of(children, node)
+                if len(leaves) < SEARCH_MIN:
+                    counts["skipped_below_32_cells"] += 1
+                    continue
+                left = len(leaves_of(children, children[node, 0]))
+                in_left = np.arange(len(leaves)) < left
+                nodes.append(node)
+                leaf_lists.append(leaves)
+                jobs.append((leaf_row[leaves], in_left))
+            results = pool.map(test_node, jobs, chunksize=1)
+            frontier = []
+            for node, leaves, (rows, in_left), res in zip(nodes, leaf_lists, jobs, results, strict=True):
+                counts["evaluated"] += 1
+                k = res["k"]
+                if k == 0:
+                    counts["skipped_k0"] += 1
+                elif k > MAX_DIRECTIONS:
+                    counts["skipped_k_above_10"] += 1
+                elif res["p_tree"] <= ALPHA:
+                    counts["tree_split_passes"] += 1
+                elif res["p_best"] > ALPHA:
+                    counts["best_cut_fails"] += 1
+                holder = node
+                if 1 <= k <= MAX_DIRECTIONS and res["p_tree"] > ALPHA and res["p_best"] <= ALPHA:
+                    mask = res["best_mask"]
+                    side = choose_side(children, node, leaves, mask)
+                    side_set = set(side.tolist())
+                    before = clade_sets(children, node)
+                    holder, side_node, moves = make_child(parent, children, node, side_set)
+                    after = clade_sets(children, holder)
+                    kids = [set(leaves_of(children, c).tolist()) for c in children[holder]]
+                    assert side_set in kids and set(leaves.tolist()) - side_set in kids, node
+                    s_mask = np.isin(leaves, side)
+                    lines = line_of_leaf[leaves]
+                    after_ref = best_flat_cut_reference(X["x"][rows], s_mask)
+                    origin = original_node(parent0, pre0, sub0, leaves)
+                    base = baseline.get(origin) if origin is not None else None
+                    top = Counter(line_names[lines].tolist()).most_common()
+                    rec = {
+                        "wave": wave, "node_id": node, "holder_id": int(holder), "side_id": int(side_node),
+                        "original_node": None if origin is None else f"N{origin}",
+                        "leaves": len(leaves), "side_leaves": len(side), "n_lines": len(top), "lines": top[:5],
+                        "lines_side": Counter(line_names[line_of_leaf[side]].tolist()).most_common(5),
+                        "k": k, "rho_tree": res["rho_tree"], "p_tree": res["p_tree"],
+                        "rho_best": res["rho_best"], "p_best": res["p_best"],
+                        "rho_after": after_ref.rho, "p_after": after_ref.p_value,
+                        "sprs": len(moves), "single_leaf_moves": sum(size == 1 for *_, size in moves),
+                        "moves": [{"prune": a, "regraft": b, "leaves": s} for a, b, s in moves],
+                        "leaf_sets_removed": len(before - after), "leaf_sets_added": len(after - before),
+                        "leaf_sets_unchanged": len(before & after),
+                        "line_cut_share_before": line_cut_share(lines, in_left), "line_cut_share_after": line_cut_share(lines, s_mask),
+                        "baseline_tested": base is not None,
+                        "baseline_refused": None if base is None else not base["bh_different"],
+                        "baseline_reason": None if base is None else base["reason"],
+                        "baseline_p": None if base is None else base["p"],
+                        "leaf_indices": sorted(leaves.tolist()), "side_leaf_indices": sorted(side.tolist()),
+                    }
+                    out.write(json.dumps(rec) + "\n")
+                    records.append(rec)
+                    print(f"wave {wave} N{node}: {len(leaves)} leaves, k {k}, rho {res['rho_tree']:.3f} -> {after_ref.rho:.3f} "
+                          f"(best {res['rho_best']:.3f}), {len(moves)} sprs", flush=True)
+                frontier.extend(int(c) for c in children[holder] if c >= n_leaves)
+            print(f"wave {wave}: {len(nodes)} evaluated, {len(records)} candidates so far, {time.time() - start:.0f} s", flush=True)
+
+    np.savez(HERE / "tree_spr.npz", parent=parent.astype(parent0.dtype), leaf_row=leaf_row)
+    ok, why = is_rooted_binary(parent, n_leaves)
+    same_ids = sorted(np.flatnonzero(parent >= 0).tolist() + np.flatnonzero(parent < 0).tolist()) == list(range(len(parent0)))
+    write_summary(counts, records, ok, why, same_ids, time.time() - start)
+
+
+def write_summary(counts, records, ok, why, same_ids, seconds):
+    sprs = [r["sprs"] for r in records]
+    refused = [r for r in records if r["baseline_refused"]]
+    lines = [
+        "Part 2 of protocol.md: sprs on every candidate, top-down over tbs_family_diffusion_markov_ward",
+        "",
+        f"nodes evaluated (32 cells or more): {counts['evaluated']}",
+        f"  k = 0: {counts['skipped_k0']}",
+        f"  k > 10: {counts['skipped_k_above_10']}",
+        f"  1 <= k <= 10, tree split already p <= 0.01: {counts['tree_split_passes']}",
+        f"  1 <= k <= 10, tree split p > 0.01 and best flat cut p > 0.01: {counts['best_cut_fails']}",
+        f"  candidates: {len(records)}",
+        f"internal nodes reached with fewer than 32 cells (not searched, no invariant directions by n <= p + 1): {counts['skipped_below_32_cells']}",
+        f"  (no node of 15 to 31 cells can be a candidate, so 'too few cells' (< 15) is not separately counted)",
+        "",
+        f"total sprs: {sum(sprs)}",
+        f"single-leaf moves: {sum(r['single_leaf_moves'] for r in records)}",
+        "sprs per candidate: " + ", ".join(f"{k}: {v}" for k, v in sorted(Counter(sprs).items())),
+        f"candidates already having the side as a node (0 or only the final regraft): {sum(r['sprs'] <= 1 for r in records)}",
+        f"candidates on several cell lines: {sum(r['n_lines'] > 1 for r in records)}; on one cell line: {sum(r['n_lines'] == 1 for r in records)}",
+        f"candidates whose side and rest share no line (line cut share after = 0): {sum(r['line_cut_share_after'] == 0 for r in records)}",
+        f"candidates that are a node of the input tree: {sum(r['original_node'] is not None for r in records)}",
+        f"candidates that were splits tested and refused (not BH-accepted) in the baseline fit: {len(refused)}",
+        "  by baseline reason: " + ", ".join(f"{k}: {v}" for k, v in sorted(Counter(r['baseline_reason'] for r in refused).items())),
+        f"candidates that were BH-accepted in the baseline fit: {sum(r['baseline_refused'] is False for r in records)}",
+        f"candidates whose rho after equals rho of the best flat cut (1e-9 rel.): "
+        f"{sum(abs(r['rho_after'] - r['rho_best']) <= 1e-9 * max(1, r['rho_best']) for r in records)} of {len(records)}",
+        "",
+        f"output is a rooted binary tree on the same leaves: {ok} ({why}); same node index set: {same_ids}",
+        "",
+        "Determinism: waves of disjoint subtrees; tests are pure functions of the cells (seeded search grid), mapped",
+        "with an ordered Pool.map over the wave's nodes in ascending id; sprs applied serially in that order; pieces",
+        "joined largest first, ties by node id; equal-size sides: fewer tree nodes, then the side with the smallest leaf index.",
+        f"wall time: {seconds:.0f} s with {WORKERS} workers",
+    ]
+    (HERE / "sprs_summary.txt").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines), flush=True)
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== selfcheck_sprs.py =====
+"""Self-check of apply_all_sprs.py (task checks 1-3 always; check 4 when tree_spr.npz exists)."""
+import json
+import sys
+from multiprocessing import Pool
+
+import numpy as np
+import pandas as pd
+
+from apply_all_sprs import (
+    HERE, SOURCE, SPR, WORKERS, X, best_flat_cut, best_flat_cut_reference, children_of, choose_side, index_tree,
+    init, invariant_directions, is_rooted_binary, leaves_of, load_tree, make_child, original_node, reference_p_value,
+)
+from tree_break_selection.tree.elements import Partition
+from tree_break_selection.tree.poset_tree import PosetTree
+from tree_break_selection.tree.spr import subtree_prune_regraft
+
+EXPECTED = {96475: 7.651, 96842: 10.305, 96808: 13.693}
+failures = []
+
+
+def check(ok, text):
+    print(("PASS " if ok else "FAIL ") + text, flush=True)
+    if not ok:
+        failures.append(text)
+
+
+def poset(children, top, n_leaves, cells_of_leaf):
+    """PosetTree of the subtree at ``top`` below an extra root with one 'outside' leaf (room to regraft above ``top``)."""
+    tree = PosetTree()
+    tree.add_node("ROOT", is_leaf=False, label="ROOT")
+    tree.add_node("OUT", is_leaf=True, label="outside")
+    name = lambda v: f"L{v}" if v < n_leaves else f"N{v}"  # noqa: E731
+    stack, edges = [top], []
+    while stack:
+        v = stack.pop()
+        tree.add_node(name(v), is_leaf=bool(v < n_leaves), label=cells_of_leaf[v] if v < n_leaves else name(v))
+        if v >= n_leaves:
+            edges += [(name(v), name(c)) for c in children[v]]
+            stack.extend(children[v])
+    for edge in edges:
+        tree.add_edge(*edge)
+    tree.add_edge("ROOT", name(top))
+    tree.add_edge("ROOT", "OUT")
+    tree.graph["root"] = "ROOT"
+    return tree
+
+
+def check_one(node, parent0, leaf_row, cells, x):
+    n_leaves = len(leaf_row)
+    parent, children = parent0.copy(), children_of(parent0)
+    leaves = leaves_of(children, node)
+    points = x[leaf_row[leaves]]
+    _, mask = best_flat_cut(points @ invariant_directions(points).T)
+    side = choose_side(children, node, leaves, mask)
+    side_set = set(side.tolist())
+    cells_of_leaf = {int(v): cells[leaf_row[v]] for v in leaves}
+
+    # PosetTree path with set based identity, the same piece order (largest first, ties by node id)
+    tree = poset(children, node, n_leaves, cells_of_leaf)
+    encoding = {cells_of_leaf[int(v)]: i for i, v in enumerate(leaves)} | {"outside": len(leaves)}
+    tree.initialize_split_indices(encoding)
+    position = {int(v): i for i, v in enumerate(leaves)}
+    part = lambda s: Partition(tuple(sorted(position[v] for v in s)), encoding)  # noqa: E731
+    target, node_set = part(side_set), part(set(leaves.tolist()))
+    pieces = sorted(tree.to_splits(with_leaves=True).maximals_under(target),
+                    key=lambda p: (-len(p), int(tree.find_node_by_split(p)[1:])))
+    joined, sprs_poset = pieces[0], 0
+    for piece in pieces[1:]:
+        subtree_prune_regraft(tree, tree.find_node_by_split(piece), tree.find_node_by_split(joined))
+        joined = Partition(tuple(sorted(set(joined.indices) | set(piece.indices))), encoding)
+        sprs_poset += 1
+    target_node, holder = tree.find_node_by_split(target), tree.find_node_by_split(node_set)
+    if next(iter(tree.predecessors(target_node))) != holder:
+        subtree_prune_regraft(tree, target_node, holder)
+        sprs_poset += 1
+
+    # array path
+    new_holder, side_node, moves = make_child(parent, children, node, side_set)
+    mine = poset(children, new_holder, n_leaves, cells_of_leaf)
+    mine.initialize_split_indices(encoding)
+    kids = [set(leaves_of(children, c).tolist()) for c in children[new_holder]]
+    s_mask = np.isin(leaves, side)
+    rho = best_flat_cut_reference(points, s_mask).rho
+    print(f"N{node}: {len(leaves)} leaves, side {len(side)}; array sprs {len(moves)} {moves}; PosetTree sprs {sprs_poset}; "
+          f"holder N{new_holder} (PosetTree {tree.find_node_by_split(node_set)}), rho after {rho:.3f}")
+    check(tree.to_splits() == mine.to_splits(), f"N{node}: to_splits of array result == PosetTree subtree_prune_regraft result")
+    check(sorted(map(len, kids)) == sorted([len(side), len(leaves) - len(side)]) and side_set in kids
+          and set(leaves.tolist()) - side_set in kids, f"N{node}: holder's children are exactly S and P minus S")
+    check(len(moves) == 2 == sprs_poset, f"N{node}: 2 sprs (array {len(moves)}, PosetTree {sprs_poset})")
+    check(round(rho, 3) == EXPECTED[node], f"N{node}: rho of the new split {rho:.3f} == {EXPECTED[node]}")
+
+
+def measure(job):
+    rows, in_left = job
+    points = X["x"][rows]
+    directions = invariant_directions(points)
+    k = len(directions)
+    tree = best_flat_cut_reference(points, in_left)
+    rho_best, _ = best_flat_cut(points @ directions.T)
+    return tree.rho, tree.p_value, rho_best, float(reference_p_value(rho_best, len(rows), k)[0])
+
+
+def main():
+    init()
+    x = X["x"]
+    parent0, leaf_row = load_tree()
+    cells = pd.read_csv(SOURCE / "cell_metadata.csv", index_col=0, dtype=str).index.to_numpy()
+    children0 = children_of(parent0)
+
+    print("== Check 1 and 2: array sprs vs PosetTree subtree_prune_regraft on N96475, N96842, N96808")
+    for node in EXPECTED:
+        check_one(node, parent0, leaf_row, cells, x)
+
+    print("\n== Check 3: rho/p of the tree split and of the best flat cut vs measures.jsonl (unchanged tree)")
+    rows_m = [r for r in map(json.loads, (SPR / "measures.jsonl").read_text().splitlines()) if "rho_tree" in r]
+    rng = np.random.default_rng(20261111)
+    sample = [rows_m[i] for i in sorted(rng.choice(len(rows_m), size=60, replace=False))]
+    jobs = []
+    for r in sample:
+        node = int(r["node"][1:])
+        leaves = leaves_of(children0, node)
+        left = len(leaves_of(children0, children0[node, 0]))
+        jobs.append((leaf_row[leaves], np.arange(len(leaves)) < left))
+    with Pool(WORKERS, initializer=init) as pool:
+        got = pool.map(measure, jobs, chunksize=1)
+    worst, bad = 0.0, 0
+    for r, (rho_t, p_t, rho_b, p_b) in zip(sample, got, strict=True):
+        diff = max(abs(rho_t - r["rho_tree"]) / max(1, r["rho_tree"]), abs(rho_b - r["rho_best"]) / max(1, r["rho_best"]))
+        worst = max(worst, diff)
+        if diff > 1e-9 or p_t != r["p_tree"] or p_b != r["p_best"]:
+            bad += 1
+            print(f"  mismatch {r['node']}: rho_tree {rho_t} vs {r['rho_tree']}, p {p_t} vs {r['p_tree']}, "
+                  f"rho_best {rho_b} vs {r['rho_best']}, p {p_b} vs {r['p_best']}")
+    check(bad == 0, f"{len(sample)} nodes (n {min(len(j[0]) for j in jobs)} to {max(len(j[0]) for j in jobs)}): "
+                    f"{len(sample) - bad} identical p values and rho within 1e-9 rel. (largest rel. diff {worst:.2e})")
+
+    out = HERE / "tree_spr.npz"
+    if out.exists():
+        print("\n== Check 4: output tree")
+        parent, leaf_row2 = load_tree(out)
+        ok, why = is_rooted_binary(parent, len(leaf_row))
+        check(ok and (leaf_row2 == leaf_row).all() and len(parent) == len(parent0), f"rooted binary tree on the same leaves, same node count, leaf_row unchanged ({why})")
+        children = children_of(parent)
+        _, pre, sub = index_tree(parent)
+        records = [json.loads(line) for line in (HERE / "sprs.jsonl").read_text().splitlines()]
+        found = rho_ok = p_ok = 0
+        for r in records:
+            leaves = np.array(r["leaf_indices"])
+            node = original_node(parent, pre, sub, leaves)
+            if node is None:
+                print(f"  no node holds the leaves of candidate N{r['node_id']} (wave {r['wave']})")
+                continue
+            side = set(r["side_leaf_indices"])
+            kid_sets = [set(leaves_of(children, c).tolist()) for c in children[node]]
+            if side not in kid_sets:
+                print(f"  candidate N{r['node_id']}: side is not a child of N{node}")
+                continue
+            found += 1
+            res = best_flat_cut_reference(x[leaf_row[leaves]], np.isin(leaves, list(side)))
+            rho_ok += abs(res.rho - r["rho_best"]) <= 1e-9 * max(1, r["rho_best"])
+            p_ok += res.p_value <= 0.01
+            if res.p_value > 0.01 or abs(res.rho - r["rho_best"]) > 1e-9 * max(1, r["rho_best"]):
+                print(f"  candidate N{r['node_id']}: rho {res.rho} vs best {r['rho_best']}, p {res.p_value}, k {res.invariant_directions} vs {r['k']}")
+        check(found == len(records), f"{found} of {len(records)} candidates: a node of the output tree holds its leaves and has the side as a child")
+        check(rho_ok == len(records), f"{rho_ok} of {len(records)} candidates: rho of the split in the output tree == rho of the best flat cut")
+        check(p_ok == len(records), f"{p_ok} of {len(records)} candidates: sibling reference p <= 0.01 in the output tree")
+    print("\nALL PASS" if not failures else f"\n{len(failures)} FAILED")
+    sys.exit(1 if failures else 0)
+
+
+if __name__ == "__main__":
+    main()
+
+# ===== verify_tree.py =====
+"""Independent check of tree_spr.npz: valid tree, changed leaf sets, and the candidates' splits re-tested."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import best_flat_cut_reference  # noqa: E402
+
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+x = np.load(source / "pca.npy")
+old = np.load(HERE.parent / "spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz")
+new = np.load(HERE / "tree_spr.npz")
+n = len(old["leaf_row"])
+print("leaf_row unchanged:", bool((old["leaf_row"] == new["leaf_row"]).all()), "| node count equal:", len(old["parent"]) == len(new["parent"]))
+rng = np.random.default_rng(20261111)
+keys = rng.integers(0, 2**63, size=(n, 2), dtype=np.int64)
+
+
+def describe(parent):
+    """Children, bottom-up leaf-set hashes (two xor words and the size) and leaf lists on request."""
+    m = len(parent)
+    children = [[] for _ in range(m)]
+    roots = []
+    for node, up in enumerate(parent):
+        (roots if up < 0 else children[up]).append(node)
+    assert len(roots) == 1, roots
+    assert all(len(children[i]) == 0 for i in range(n)) and all(len(children[i]) == 2 for i in range(n, m))
+    order, stack = [], [roots[0]]
+    while stack:
+        node = stack.pop()
+        order.append(node)
+        stack.extend(children[node])
+    assert len(order) == m, "not all nodes reachable"
+    word = np.zeros((m, 2), dtype=np.int64)
+    size = np.zeros(m, dtype=np.int64)
+    word[:n], size[:n] = keys, 1
+    for node in order[::-1]:
+        if node >= n:
+            a, b = children[node]
+            word[node], size[node] = word[a] ^ word[b], size[a] + size[b]
+    identity = {(int(size[i]), int(word[i, 0]), int(word[i, 1])): i for i in range(m)}
+    return children, identity, size
+
+
+def leaves(children, node):
+    out, stack = [], [node]
+    while stack:
+        u = stack.pop()
+        if u < n:
+            out.append(u)
+        else:
+            stack.extend(children[u])
+    return np.array(out)
+
+
+old_children, old_identity, old_size = describe(old["parent"])
+new_children, new_identity, new_size = describe(new["parent"])
+print("both are rooted binary trees on the same leaves: True")
+kept = set(old_identity) & set(new_identity)
+print(f"leaf sets: {len(old_identity)} before, {len(new_identity)} after, unchanged {len(kept)}, removed {len(old_identity) - len(kept)}, added {len(new_identity) - len(kept)}")
+big_old = {key for key in old_identity if key[0] >= 1000}
+print(f"leaf sets with 1,000 leaves or more: {len(big_old)} before, unchanged {len(big_old & set(new_identity))}")
+
+records = [json.loads(line) for line in (HERE / "sprs.jsonl").read_text().splitlines()]
+checked = passed = same_rho = side_ok = 0
+for record in records:
+    if record["original_node"] is None:
+        continue
+    node = int(record["original_node"][1:])
+    key = next(k for k, v in old_identity.items() if v == node)
+    holder = new_identity.get(key)
+    if holder is None:
+        print("candidate leaf set missing in the changed tree:", record["original_node"])
+        continue
+    cells = leaves(new_children, holder)
+    a, b = new_children[holder]
+    side = a if new_size[a] <= new_size[b] else b
+    in_left = np.isin(cells, leaves(new_children, side))
+    result = best_flat_cut_reference(x[old["leaf_row"][cells]], in_left)
+    checked += 1
+    passed += result.p_value <= 0.01
+    same_rho += abs(result.rho - record["rho_best"]) <= 1e-9 * abs(record["rho_best"])
+    side_ok += int(min(new_size[a], new_size[b])) == record["side_leaves"]
+print(f"candidates that are nodes of the input tree: {checked}; leaf set still a node with the recorded side size: {side_ok}; "
+      f"split has the best flat cut's rho: {same_rho}; sibling reference p <= 0.01: {passed}")
+print("records:", len(records), "| total sprs:", sum(r["sprs"] for r in records), "| single-leaf moves:", sum(r["single_leaf_moves"] for r in records))
+
+# ===== compare.py =====
+"""protocol.md part 3: the candidates in the refit, and the refit's partition against the baseline."""
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+records = [json.loads(line) for line in (HERE / "sprs.jsonl").read_text().splitlines()]
+fit = {s["node"]: s for s in json.loads((HERE / "spr_splits.json").read_text())["splits"]}
+base = json.loads((HERE / "baseline_metrics.json").read_text())
+spr = json.loads((HERE / "spr_metrics.json").read_text())
+print("metric: baseline -> after the sprs")
+for key in ("found_clusters", "ari_cell_line", "nmi_cell_line", "recovered", "split_only", "merged_only", "both", "largest_cluster",
+            "clusters_ge90_pure", "clusters_lt20_cells", "tested_splits", "kept_p_le_0.01", "accepted_bh"):
+    a, b = base[key], spr[key]
+    print(f"  {key}: {a:.4f} -> {b:.4f}" if isinstance(a, float) else f"  {key}: {a} -> {b}")
+
+rows = []
+for r in records:
+    s = fit.get(f"N{r['holder_id']}")
+    ok = s is not None and s["n_leaves"] == r["leaves"]
+    rows.append({"several_lines": r["n_lines"] > 1, "sprs": r["sprs"], "leaves": r["leaves"], "in_fit": ok,
+                 "reason": s["reason"] if ok else None, "p": s["p"] if ok else None, "bh": bool(s["bh_different"]) if ok else False,
+                 "size_mismatch": s is not None and not ok, "no_line_cut": r["lines_side"] is not None and set(a for a, _ in r["lines_side"]).isdisjoint(
+                     {a for a, c in r["lines"] if c > dict(map(tuple, r["lines_side"])).get(a, 0)})})
+t = pd.DataFrame(rows)
+print(f"\ncandidates: {len(t)}; their split was tested by the refit: {int(t.in_fit.sum())}; node id found with another size: {int(t.size_mismatch.sum())}; not tested: {int((~t.in_fit & ~t.size_mismatch).sum())}")
+tested = t[t.in_fit]
+print(f"  of the tested: sibling p <= 0.01: {int((tested.p <= 0.01).sum())}; at p 0.0005: {int((tested.p == 0.0005).sum())}; accepted by BH: {int(tested.bh.sum())}; reasons {tested.reason.value_counts().to_dict()}")
+for label, g in (("several lines", tested[tested.several_lines]), ("one line", tested[~tested.several_lines])):
+    print(f"  {label}: tested {len(g)}, accepted by BH {int(g.bh.sum())}, at p 0.0005 and not accepted {int(((g.p == 0.0005) & ~g.bh).sum())}")
+for label, lo, hi in (("1-2 sprs", 1, 2), ("3-10", 3, 10), ("11-40", 11, 40), ("more than 40", 41, 10**6)):
+    g = tested[(tested.sprs >= lo) & (tested.sprs <= hi)]
+    print(f"  {label}: tested {len(g)}, accepted by BH {int(g.bh.sum())}")
+
+a = pd.read_csv(HERE / "baseline_assignments.csv.gz", index_col=0)["cluster"]
+b = pd.read_csv(HERE / "spr_assignments.csv.gz", index_col=0)["cluster"]
+lines = pd.read_csv(HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106/cell_metadata.csv", index_col=0, dtype=str).Cell_line.loc[a.index]
+print(f"\nARI between the baseline partition and the partition after the sprs: {adjusted_rand_score(a, b):.4f}")
+cross = pd.crosstab(a, b)
+pieces = (cross > 0).sum(1)
+print(f"baseline clusters: {len(pieces)}; unchanged (one cluster after, same cells) {int(((pieces == 1) & (cross.max(1) == cross.sum(1)) & ((cross > 0).sum(0)[cross.idxmax(1)].to_numpy() == 1)).sum())}; "
+      f"divided into 2 or more {int((pieces >= 2).sum())}; largest number of parts {int(pieces.max())}")
+merged = ((cross > 0).sum(0) >= 2).sum()
+print(f"clusters after the sprs that hold cells of 2 or more baseline clusters: {int(merged)}")
+for name, labels in (("baseline", a), ("after the sprs", b)):
+    table = pd.crosstab(labels, lines)
+    top = table.sum(1).sort_values(ascending=False).head(3)
+    print(f"largest clusters, {name}: " + "; ".join(f"{int(size)} cells, {int((table.loc[c] > 0).sum())} lines, largest line share {table.loc[c].max() / size:.2f}" for c, size in top.items()))
+    majority = table.idxmax(1)
+    joined = majority.loc[labels].to_numpy()
+    print(f"  lines that are the majority of no cluster: {lines.nunique() - majority.nunique()}; ARI after joining clusters with the same majority line: {adjusted_rand_score(lines, joined):.4f}")
+
+# ===== selfcheck_sprs.txt =====
+# == Check 1 and 2: array sprs vs PosetTree subtree_prune_regraft on N96475, N96842, N96808
+# N96475: 114 leaves, side 10; array sprs 2 [(89472, 88659, 4), (92518, 96475, 10)]; PosetTree sprs 2; holder N94554 (PosetTree N94554), rho after 7.651
+# PASS N96475: to_splits of array result == PosetTree subtree_prune_regraft result
+# PASS N96475: holder's children are exactly S and P minus S
+# PASS N96475: 2 sprs (array 2, PosetTree 2)
+# PASS N96475: rho of the new split 7.651 == 7.651
+# N96842: 76 leaves, side 7; array sprs 2 [(88548, 90950, 2), (94825, 96842, 7)]; PosetTree sprs 2; holder N95632 (PosetTree N95632), rho after 10.305
+# PASS N96842: to_splits of array result == PosetTree subtree_prune_regraft result
+# PASS N96842: holder's children are exactly S and P minus S
+# PASS N96842: 2 sprs (array 2, PosetTree 2)
+# PASS N96842: rho of the new split 10.305 == 10.305
+# N96808: 43 leaves, side 7; array sprs 2 [(88548, 90950, 2), (94825, 96808, 7)]; PosetTree sprs 2; holder N95632 (PosetTree N95632), rho after 13.693
+# PASS N96808: to_splits of array result == PosetTree subtree_prune_regraft result
+# PASS N96808: holder's children are exactly S and P minus S
+# PASS N96808: 2 sprs (array 2, PosetTree 2)
+# PASS N96808: rho of the new split 13.693 == 13.693
+#
+# == Check 3: rho/p of the tree split and of the best flat cut vs measures.jsonl (unchanged tree)
+# PASS 60 nodes (n 32 to 594): 60 identical p values and rho within 1e-9 rel. (largest rel. diff 1.20e-15)
+#
+# == Check 4: output tree
+# PASS rooted binary tree on the same leaves, same node count, leaf_row unchanged (one root, 2 children per internal node, leaves 0..n-1 have none, all nodes reachable)
+# PASS 166 of 166 candidates: a node of the output tree holds its leaves and has the side as a child
+# PASS 166 of 166 candidates: rho of the split in the output tree == rho of the best flat cut
+# PASS 166 of 166 candidates: sibling reference p <= 0.01 in the output tree
+#
+# ALL PASS
+
+# ===== sprs_summary.txt =====
+# Part 2 of protocol.md: sprs on every candidate, top-down over tbs_family_diffusion_markov_ward
+#
+# nodes evaluated (32 cells or more): 5654
+#   k = 0: 0
+#   k > 10: 194
+#   1 <= k <= 10, tree split already p <= 0.01: 42
+#   1 <= k <= 10, tree split p > 0.01 and best flat cut p > 0.01: 5252
+#   candidates: 166
+# internal nodes reached with fewer than 32 cells (not searched, no invariant directions by n <= p + 1): 3227
+#   (no node of 15 to 31 cells can be a candidate, so 'too few cells' (< 15) is not separately counted)
+#
+# total sprs: 4371
+# single-leaf moves: 2831
+# sprs per candidate: 1: 14, 2: 13, 3: 8, 4: 3, 5: 9, 6: 8, 7: 3, 8: 8, 9: 5, 10: 3, 11: 3, 12: 3, 13: 3, 14: 1, 15: 1, 16: 1, 17: 3, 18: 3, 20: 1, 21: 3, 22: 1, 23: 2, 24: 2, 25: 2, 26: 3, 27: 2, 28: 1, 29: 3, 30: 1, 31: 3, 32: 1, 33: 3, 34: 1, 35: 3, 36: 2, 38: 2, 39: 5, 40: 2, 42: 2, 45: 1, 46: 1, 47: 2, 48: 2, 49: 1, 54: 3, 55: 1, 56: 1, 57: 1, 59: 1, 66: 1, 69: 1, 70: 1, 75: 1, 79: 1, 81: 1, 94: 1, 99: 1, 114: 1, 116: 1, 121: 1, 134: 1, 153: 1, 175: 1, 223: 1
+# candidates already having the side as a node (0 or only the final regraft): 14
+# candidates on several cell lines: 108; on one cell line: 58
+# candidates whose side and rest share no line (line cut share after = 0): 29
+# candidates that are a node of the input tree: 110
+# candidates that were splits tested and refused (not BH-accepted) in the baseline fit: 90
+#   by baseline reason: tested: 90
+# candidates that were BH-accepted in the baseline fit: 0
+# candidates whose rho after equals rho of the best flat cut (1e-9 rel.): 166 of 166
+#
+# output is a rooted binary tree on the same leaves: True (one root, 2 children per internal node, leaves 0..n-1 have none, all nodes reachable); same node index set: True
+#
+# Determinism: waves of disjoint subtrees; tests are pure functions of the cells (seeded search grid), mapped
+# with an ordered Pool.map over the wave's nodes in ascending id; sprs applied serially in that order; pieces
+# joined largest first, ties by node id; equal-size sides: fewer tree nodes, then the side with the smallest leaf index.
+# wall time: 36 s with 6 workers
+
+# ===== verify_tree.txt =====
+# leaf_row unchanged: True | node count equal: True
+# both are rooted binary trees on the same leaves: True
+# leaf sets: 97757 before, 97757 after, unchanged 88997, removed 8760, added 8760
+# leaf sets with 1,000 leaves or more: 106 before, unchanged 106
+# candidates that are nodes of the input tree: 110; leaf set still a node with the recorded side size: 110; split has the best flat cut's rho: 110; sibling reference p <= 0.01: 110
+# records: 166 | total sprs: 4371 | single-leaf moves: 2831
+
+# ===== baseline_metrics.json =====
+# {
+#  "tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 138,
+#  "ari_cell_line": 0.2974918731301925,
+#  "nmi_cell_line": 0.8512307015765599,
+#  "recovered_lines_90_90": 76,
+#  "clusters_ge90_pure": 98,
+#  "clusters_lt20_cells": 10,
+#  "largest_cluster": 7678,
+#  "recovered": 76,
+#  "split_only": 9,
+#  "merged_only": 91,
+#  "both": 14,
+#  "tested_splits": 1838,
+#  "kept_p_le_0.01": 57,
+#  "accepted_bh": 31,
+#  "sec": 108.39363520799816,
+#  "peak_rss_gb": 1.5417633056640625
+# }
+# ===== spr_metrics.json =====
+# {
+#  "tree": "results/analyses/spr_refit_20261111/tree_spr.npz",
+#  "renumbered_internal_ids": true,
+#  "found_clusters": 257,
+#  "ari_cell_line": 0.34245321183379296,
+#  "nmi_cell_line": 0.8845959569446797,
+#  "recovered_lines_90_90": 82,
+#  "clusters_ge90_pure": 202,
+#  "clusters_lt20_cells": 30,
+#  "largest_cluster": 6346,
+#  "recovered": 82,
+#  "split_only": 47,
+#  "merged_only": 51,
+#  "both": 10,
+#  "tested_splits": 1970,
+#  "kept_p_le_0.01": 184,
+#  "accepted_bh": 104,
+#  "sec": 116.53181595900242,
+#  "peak_rss_gb": 1.5746612548828125
+# }
+# ===== compare.txt =====
+# metric: baseline -> after the sprs
+#   found_clusters: 138 -> 257
+#   ari_cell_line: 0.2975 -> 0.3425
+#   nmi_cell_line: 0.8512 -> 0.8846
+#   recovered: 76 -> 82
+#   split_only: 9 -> 47
+#   merged_only: 91 -> 51
+#   both: 14 -> 10
+#   largest_cluster: 7678 -> 6346
+#   clusters_ge90_pure: 98 -> 202
+#   clusters_lt20_cells: 10 -> 30
+#   tested_splits: 1838 -> 1970
+#   kept_p_le_0.01: 57 -> 184
+#   accepted_bh: 31 -> 104
+#
+# candidates: 166; their split was tested by the refit: 145; node id found with another size: 0; not tested: 21
+#   of the tested: sibling p <= 0.01: 145; at p 0.0005: 84; accepted by BH: 76; reasons {'tested': 145}
+#   several lines: tested 97, accepted by BH 58, at p 0.0005 and not accepted 15
+#   one line: tested 48, accepted by BH 18, at p 0.0005 and not accepted 2
+#   1-2 sprs: tested 22, accepted by BH 14
+#   3-10: tested 38, accepted by BH 23
+#   11-40: tested 54, accepted by BH 22
+#   more than 40: tested 31, accepted by BH 17
+#
+# ARI between the baseline partition and the partition after the sprs: 0.7277
+# baseline clusters: 138; unchanged (one cluster after, same cells) 71; divided into 2 or more 58; largest number of parts 24
+# clusters after the sprs that hold cells of 2 or more baseline clusters: 19
+# largest clusters, baseline: 7678 cells, 40 lines, largest line share 0.07; 3682 cells, 21 lines, largest line share 0.17; 2347 cells, 15 lines, largest line share 0.25
+#   lines that are the majority of no cluster: 75; ARI after joining clusters with the same majority line: 0.3008
+# largest clusters, after the sprs: 6346 cells, 36 lines, largest line share 0.08; 1537 cells, 7 lines, largest line share 0.48; 1451 cells, 14 lines, largest line share 0.17
+#   lines that are the majority of no cluster: 41; ARI after joining clusters with the same majority line: 0.4397
+

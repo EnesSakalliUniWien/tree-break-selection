@@ -2,11 +2,14 @@
 title: Gaussian Reference Table for the Best Flat Cut
 type: source
 status: draft
-updated: 2026-11-11
+updated: 2026-11-13
 sources:
   - raw/inbox/choir-cell-lines/gaussian-best-flat-cut-reference-20261111.md
   - raw/inbox/choir-cell-lines/gaussian-best-flat-cut-reference-evidence-20261111.json
   - raw/inbox/choir-cell-lines/gaussian-best-flat-cut-reference-scripts-20261111.py.txt
+  - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/best_flat_cut_reference.py
+  - scripts/build_best_flat_cut_reference.py
+  - raw/inbox/choir-cell-lines/peel-pass-production-20261113.md
 tags:
   - calibration
   - sibling-gate
@@ -23,8 +26,9 @@ for the sibling test. Simulations map where that table holds: it is finite and
 ordered from n = 15, settled up to k = 10 with a strong enough search, and
 shows no excess rejections when k is chosen from the same data at n = 400. It
 is unusable at n = 10 for k of 3 and above, only a lower bound for k = 15 and
-20, and shows a small excess at n = 100 with 50 or 80 features. No production
-code was changed.
+20, and shows a small excess at n = 100 with 50 or 80 features. The recorded
+checks changed no production code; the opt-in implementation is described in the
+last Key Point.
 
 ## Key Points
 
@@ -62,6 +66,29 @@ code was changed.
   populations, complete tree fits and selected descendants were not tested.
   The first run of two parts was stopped; 13 of its 42 cells were reproduced
   from the same seeds and the rest rely on its printed summary.
+- Implementation (opt-in `sibling_best_flat_cut_reference`, 2026-11-11): the
+  module `best_flat_cut_reference.py` compares a split's `rho` with a stored
+  null of the best flat cut at (n, k) built by
+  `scripts/build_best_flat_cut_reference.py` (n from 15 to 800, k = 1 to 10);
+  it fails closed with p = 1 for k = 0, k above 10 and n below 15. See the
+  2026-11-11 entry in [[log]] for the table check and the calibration counts.
+- Table at k = 1 against the exact best cut of one direction (12 November,
+  20,000 Gaussian datasets per n, [[k-split-direction-draft]]): reference
+  p <= 0.01 in 1.65% at n = 15, 1.03% at 30, 1.12% at 75, 1.89% at 100, 0.66%
+  at 150, 1.40% at 400. The 99% points of a cell with 1,999 draws carry
+  this error. Exact 99% points from 99,999 draws: 5.343 at n = 15 (table
+  4.888), 2.531 at 100 (2.439), 2.356 at 150 (2.389), 2.091 at 400 (2.073).
+- The table's smallest p-value, 1/2,000, limits what Benjamini-Hochberg can
+  accept per depth level; with twice the median it cost 54 accepted splits
+  on the CHOIR cells.
+- Extension on the same day ([[best-flat-cut-reference-k15]]): the table and the
+  module cover k = 1 to 15 (above 10 directions n from 50); the cells for k up
+  to 10 are unchanged. For k above 10 the null is the searched value's; a Ward
+  tree's split exceeded the 99% point in 0 of 12,000 one-population datasets.
+- Since 13 November the opt-in also lets a small peel, a node whose smaller
+  child has fewer than `MIN_CELLS` = 15 leaves, pass the edge gate like a
+  singleton peel ([[k-split-direction-draft]],
+  `raw/inbox/choir-cell-lines/peel-pass-production-20261113.md`).
 
 ## Evidence
 
@@ -73,6 +100,9 @@ The scripts file archives the protocol, deviations and all eight scripts.
 
 ## Links
 
+- [[best-flat-cut-reference-benchmark]]
+- [[best-flat-cut-reference-real]]
+- [[best-flat-cut-reference-k15]]
 - [[flat-cut-sup-count]]
 - [[single-population-split-bound]]
 - [[three-tests-construction-audit]]

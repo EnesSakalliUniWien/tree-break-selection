@@ -1,0 +1,242 @@
+# ===== protocol.md =====
+# # Protocol: the sprs under the third version of the draft definition of k, CHOIR tree (frozen 2026-11-12, before the run)
+#
+# ## Why
+#
+# On 11 November sprs were applied at 166 refused splits whose best flat cut passed under the rule of that day
+# (`results/analyses/spr_refit_20261111`: `tree_spr.npz`, `sprs.jsonl`, 4,371 sprs). With the reference at 15
+# invariant directions the unchanged tree was better than the tree after the sprs (ARI 0.8219 against 0.7376). The
+# third version (`results/analyses/variant_a_fixed_20261112/draft_rule_v3.py`) takes its one direction from the
+# split itself, so an spr changes the direction too, and the earlier result is not established for it.
+#
+# ## Measurements
+#
+# - T1 fit (`run_fit.py`): the harness of `spr_refit_20261111` on `tree_spr.npz` with the third version, data
+#   order of the rows. Compared with the third version on the unchanged tree, data order
+#   (`variant_a_fixed_20261112/choir_v3_data_*`: 206 clusters, ARI 0.8359, 127 lines recovered, 16 split only, 30
+#   merged only, 150 accepted by BH).
+# - T2 the 166 nodes (`nodes.py`): for every candidate node of `sprs.jsonl`, the third version's p-value of the
+#   node's split in the unchanged tree and in the tree after the sprs, computed directly from the cells of the
+#   node's two children (each side in data order). Reported: nodes with p <= 0.01 before and after, by number of
+#   cell lines of the node (one line, several lines).
+# - T3 room for sprs under the third version (`nodes.py`): for every called node of the unchanged tree with at
+#   least 30 cells that the third version refuses (p > 0.01 in `choir_v3_data_splits.json`), the same 20
+#   divisions and directions, but with `rho` of the best cut of the test cells along the direction instead of
+#   `rho` of the tree's split; twice the median of the 20 p-values. A node with that p <= 0.01 has a split along
+#   its direction that the tree does not show. Reported: such nodes, by size and by composition (at least 90% of
+#   the cells from one line, or several lines).
+# - Self-checks (asserts): the direct p-value of T2 equals the recorded p-value of the fit for every candidate
+#   node that was called in the unchanged tree; the best cut's `rho` of T3 is at least the tree split's `rho` in
+#   every division.
+#
+# ## Predictions, stated before the run
+#
+# - U1 the fit on the tree after the sprs has a lower ARI than the unchanged tree (0.8359).
+# - U2 at the 166 nodes more splits have p <= 0.01 after the sprs than before.
+# - U3 fewer than 10% of the refused called nodes with at least 30 cells have a passing best cut along their
+#   direction.
+#
+# ## Limits known before the run
+#
+# The sprs are those derived under the rule of 11 November, not sprs derived under the third version. One tree,
+# one dataset, one order of the rows. T3 keeps the direction of the tree's split, so it finds only splits along
+# that direction.
+
+
+# ===== deviations.md =====
+# # Deviations (written 2026-11-12, during the run)
+#
+# - T2 "in the tree after the sprs" is read at the node that holds the candidate's cells after the sprs
+#   (`holder_id` in `sprs.jsonl`), whose two children are the side and the rest. The candidate's own id does not
+#   keep all of its cells after the regraft (first run stopped at N97560: 151 cells before, 89 after). The script
+#   asserts that the holder has the candidate's cells and that its smaller child has the recorded side.
+# - T2 "before" exists only for candidates whose cells are those of a node of the unchanged tree. The sprs were
+#   applied top-down, so later candidates are nodes of the already changed tree (second stop: N96643 has 107
+#   cells in the unchanged tree and 53 as a candidate). "After" is reported for all 166 candidates, "before and
+#   after" for the candidates with the same cells as the unchanged tree's node of that id.
+
+
+# ===== run_fit.py =====
+"""protocol.md T1: the CHOIR harness on the tree after the sprs, with the third version, data order."""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+
+import draft_rule_v3  # noqa: E402
+import harness  # noqa: E402
+
+draft_rule_v3.install(None)
+harness.HERE = HERE
+harness.main("results/analyses/spr_refit_20261111/tree_spr.npz", "tree_spr_v3")
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== nodes.py =====
+"""protocol.md T2 and T3: the third version at the 166 spr nodes before and after, and the best cut along the direction at refused nodes."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+
+import draft_rule_v3 as rule  # noqa: E402
+
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+pcs = np.load(source / "pca.npy")
+lines = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)["Cell_line"].to_numpy()
+n = len(pcs)
+trees = {}
+for name, path in (("unchanged", HERE.parent / "spr_alternatives_best_flat_cut_20261111" / "tree_tbs_family_diffusion_markov_ward.npz"),
+                   ("after sprs", HERE.parent / "spr_refit_20261111" / "tree_spr.npz")):
+    saved = np.load(path)
+    parent, leaf_row = saved["parent"].astype(np.int64), saved["leaf_row"].astype(np.int64)
+    children = [[] for _ in parent]
+    for node, up in enumerate(parent):
+        if up >= 0:
+            children[up].append(node)
+    trees[name] = (children, leaf_row)
+assert (trees["unchanged"][1] == trees["after sprs"][1]).all()
+
+
+def rows_under(tree, node):
+    children, leaf_row = trees[tree]
+    stack, leaves = [node], []
+    while stack:
+        current = stack.pop()
+        if current < n:
+            leaves.append(current)
+        else:
+            stack.extend(children[current])
+    return np.sort(leaf_row[leaves])
+
+
+def sides(tree, node):
+    """Cells of the node's two children, each in data order; the child with the smaller id first."""
+    a, b = sorted(trees[tree][0][node])
+    left, right = rows_under(tree, a), rows_under(tree, b)
+    return pcs[np.concatenate([left, right])], np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)], np.concatenate([left, right])
+
+
+def p_of(points, in_left):
+    return rule.draft(points, in_left).p_value
+
+
+def best_cut_rho(values):
+    x = np.sort(values)
+    size = len(x)
+    left = np.arange(1, size)
+    prefix = np.cumsum(x)[:-1]
+    between = (prefix / left - (x.sum() - prefix) / (size - left)) ** 2 * left * (size - left) / size
+    r2 = between.max() / ((x - x.mean()) ** 2).sum()
+    return float("inf") if r2 >= 1 else (size - 2) / size * r2 / (1 - r2)
+
+
+def best_cut_p(points, in_left):
+    """Twice the median over the 20 divisions of the third version, with the best cut of the test cells along the direction."""
+    left, right = np.flatnonzero(in_left), np.flatnonzero(~in_left)
+    p_values = []
+    for r in range(rule.DIVISIONS):
+        rng = np.random.default_rng((len(points), len(left), r))
+        a, b = rng.permutation(left), rng.permutation(right)
+        cut_a, cut_b = (len(a) + 1) // 2, (len(b) + 1) // 2
+        test, basis = np.concatenate([a[:cut_a], b[:cut_b]]), np.concatenate([a[cut_a:], b[cut_b:]])
+        w = rule._direction(points[basis], in_left[basis])
+        projected = points[test] @ w
+        if not np.isfinite(w).all() or not w.any() or np.ptp(projected) <= 1e-12 * max(1.0, float(np.abs(projected).max())):
+            p_values.append(1.0)
+            continue
+        best = best_cut_rho(projected)
+        tree_rho = rule.mod.split_rho(projected[:, None], in_left[test])
+        assert best >= tree_rho - 1e-9 * max(1.0, tree_rho), (best, tree_rho)
+        p_values.append(rule._p_value(best, len(test)))
+    return float(min(1.0, 2.0 * np.median(p_values)))
+
+
+out = []
+
+
+def say(text=""):
+    print(text, flush=True)
+    out.append(text)
+
+
+recorded = {s["node"]: s for s in json.loads((HERE.parent / "variant_a_fixed_20261112" / "choir_v3_data_splits.json").read_text())["splits"]}
+
+say("== T2: the 166 nodes where sprs were applied ==")
+candidates = [json.loads(line) for line in open(HERE.parent / "spr_refit_20261111" / "sprs.jsonl")]
+rows, checked = [], 0
+for c in candidates:
+    node = int(c["node_id"])
+    after_points, after_left, after_cells = sides("after sprs", int(c["holder_id"]))  # deviations.md: the node holding the cells after the sprs
+    assert len(after_points) == c["leaves"], (node, len(after_points), c["leaves"])
+    assert min(after_left.sum(), (~after_left).sum()) == min(c["side_leaves"], c["leaves"] - c["side_leaves"]), (node, c["side_leaves"])
+    p_after = p_of(after_points, after_left)
+    before_points, before_left, before_cells = sides("unchanged", node)
+    in_input = len(before_cells) == len(after_cells) and set(before_cells.tolist()) == set(after_cells.tolist())
+    p_before = side_before = None
+    if in_input:  # deviations.md: only these candidates have their split in the unchanged tree
+        p_before = p_of(before_points, before_left)
+        side_before = int(min(before_left.sum(), (~before_left).sum()))
+        name = f"N{node}"
+        if name in recorded and recorded[name]["reason"] == "tested":
+            other = p_of(before_points, ~before_left) if abs(p_before - recorded[name]["p"]) > 1e-12 else p_before
+            assert min(abs(p_before - recorded[name]["p"]), abs(other - recorded[name]["p"])) < 1e-12, (name, p_before, other, recorded[name]["p"])
+            checked += 1
+    rows.append(dict(node=node, cells=c["leaves"], one_line=c["n_lines"] == 1, in_input=in_input, p_before=p_before, p_after=p_after,
+                     side_before=side_before, side_after=int(min(after_left.sum(), (~after_left).sum()))))
+table = pd.DataFrame(rows)
+say(f"nodes {len(table)}; with the same cells as a node of the unchanged tree {int(table['in_input'].sum())}; direct p equals the recorded p of the fit at "
+    f"{checked} of them that were called and tested in the unchanged tree")
+for label, part in (("all", table), ("one cell line", table[table["one_line"]]), ("several cell lines", table[~table["one_line"]])):
+    paired = part[part["in_input"]]
+    say(f"{label}: nodes {len(part)}, p <= 0.01 after the sprs {int((part['p_after'] <= 0.01).sum())}; of the {len(paired)} that are nodes of the unchanged tree: "
+        f"p <= 0.01 before {int((paired['p_before'] <= 0.01).sum())}, after {int((paired['p_after'] <= 0.01).sum())}, both {int(((paired['p_before'] <= 0.01) & (paired['p_after'] <= 0.01)).sum())}; "
+        f"smaller side median {paired['side_before'].median():.0f} -> {paired['side_after'].median():.0f}")
+table.to_json(HERE / "t2_nodes.json", orient="records", indent=1)
+
+say("\n== T3: refused called nodes of the unchanged tree with at least 30 cells: best cut along the direction ==")
+counts = np.zeros((len(trees["unchanged"][0]), pd.factorize(lines)[1].size), dtype=np.int32)
+rows = []
+for name, s in recorded.items():
+    if s["reason"] != "tested" or s["p"] <= 0.01 or s["n_leaves"] < 30:
+        continue
+    points, in_left, cells = sides("unchanged", int(name[1:]))
+    share = Counter(lines[cells]).most_common(1)[0][1] / len(cells)
+    rows.append(dict(node=name, cells=len(cells), one_line=share >= 0.9, p_tree=s["p"], p_best=best_cut_p(points, in_left)))
+refused = pd.DataFrame(rows)
+say(f"refused called nodes with at least 30 cells: {len(refused)}; best cut along the direction has p <= 0.01 at {int((refused['p_best'] <= 0.01).sum())} "
+    f"({(refused['p_best'] <= 0.01).mean():.3f})")
+for label, part in (("at least 90% of the cells from one line", refused[refused["one_line"]]), ("several lines", refused[~refused["one_line"]])):
+    say(f"  {label}: {len(part)} nodes, best cut passes at {int((part['p_best'] <= 0.01).sum())}")
+for label, lo, hi in (("30 to 99 cells", 30, 99), ("100 to 999", 100, 999), ("1,000 and more", 1000, 10**9)):
+    part = refused[(refused["cells"] >= lo) & (refused["cells"] <= hi)]
+    say(f"  {label}: {len(part)} nodes, best cut passes at {int((part['p_best'] <= 0.01).sum())}")
+refused.to_json(HERE / "t3_refused.json", orient="records", indent=1)
+(HERE / "nodes.txt").write_text("\n".join(out) + "\n")
+
+
+# ===== nodes.txt =====
+# == T2: the 166 nodes where sprs were applied ==
+# nodes 166; with the same cells as a node of the unchanged tree 110; direct p equals the recorded p of the fit at 86 of them that were called and tested in the unchanged tree
+# all: nodes 166, p <= 0.01 after the sprs 77; of the 110 that are nodes of the unchanged tree: p <= 0.01 before 2, after 60, both 2; smaller side median 28 -> 61
+# one cell line: nodes 58, p <= 0.01 after the sprs 12; of the 38 that are nodes of the unchanged tree: p <= 0.01 before 0, after 10, both 0; smaller side median 15 -> 58
+# several cell lines: nodes 108, p <= 0.01 after the sprs 65; of the 72 that are nodes of the unchanged tree: p <= 0.01 before 2, after 50, both 2; smaller side median 37 -> 61
+#
+# == T3: refused called nodes of the unchanged tree with at least 30 cells: best cut along the direction ==
+# refused called nodes with at least 30 cells: 1302; best cut along the direction has p <= 0.01 at 32 (0.025)
+#   at least 90% of the cells from one line: 1099 nodes, best cut passes at 10
+#   several lines: 203 nodes, best cut passes at 22
+#   30 to 99 cells: 618 nodes, best cut passes at 8
+#   100 to 999: 652 nodes, best cut passes at 21
+#   1,000 and more: 32 nodes, best cut passes at 3

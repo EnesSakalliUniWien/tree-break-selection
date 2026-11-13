@@ -1,0 +1,176 @@
+# ===== protocol.md =====
+# # Protocol: the third version of the draft definition of k on the default tree of the CHOIR cells (frozen 2026-11-12, before the run)
+#
+# - Question: the third version (`results/analyses/variant_a_fixed_20261112/draft_rule_v3.py`) was run on the
+#   Markov/Ward tree only. What does it give on the default tree (`tbs_family_diffusion`: symmetric operator,
+#   average linkage)?
+# - Tree: rebuilt from the saved linkage of 6 November
+#   (`results/analyses/choir_cell_lines_tbs_lbfgsb_20261106/tbs_family_diffusion/linkage.npy`) as a parent array
+#   (`build_tree.py`). Check of the conversion, done before this protocol: the Markov/Ward tree rebuilt the same
+#   way from its saved linkage equals the saved Markov/Ward tree. The default tree's root splits 1 cell from
+#   48,878.
+# - Runs (`run_fit.py`): the harness of `spr_refit_20261111` with method `tbs_family_diffusion`, 48,879 cells, 30
+#   PCs, opt-in reference on: (i) the current rule (table, k up to 15); (ii) the third version in the data order
+#   of the rows and in two random orders (seeds 1 and 2).
+# - Known before the run (wiki page `choir-cell-lines-recovery-plan`, `best-flat-cut-reference-real`): the default
+#   tree holds 42 of the 190 lines as clean subtrees; today's test gives 75 clusters and ARI 0.0275 on it; the
+#   reference with k up to 10 gave 53 clusters, ARI 0.0179, largest cluster 32,890.
+# - Predictions, stated before the run:
+#   - X1 the third version recovers at least as many lines as the current rule on this tree.
+#   - X2 the ARI of both rules stays below 0.3.
+#   - X3 over the three orders the third version's found clusters differ by at most 10.
+# - Limits known before the run: one dataset; the tree is the one of 6 November, not rebuilt from the cells today.
+
+
+# ===== build_tree.py =====
+"""protocol.md: the default tree of the CHOIR cells as a parent array, from the saved linkage."""
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+Z = np.load(HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106" / "tbs_family_diffusion" / "linkage.npy")
+n = len(Z) + 1
+parent = np.full(2 * n - 1, -1, dtype=np.int64)
+for i, (a, b) in enumerate(Z[:, :2].astype(np.int64)):
+    parent[a] = parent[b] = n + i
+assert (parent < 0).sum() == 1 and n == 48879
+np.savez_compressed(HERE / "tree_default.npz", parent=parent, leaf_row=np.arange(n, dtype=np.int64))
+print("nodes", len(parent), "root", int(np.flatnonzero(parent < 0)[0]))
+
+
+# ===== run_fit.py =====
+"""protocol.md: the CHOIR harness on the default tree. usage: run_fit.py current | data | SEED"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+
+import harness  # noqa: E402
+
+arm = sys.argv[1]
+if arm != "current":
+    import draft_rule_v3
+
+    draft_rule_v3.install(None if arm == "data" else int(arm))
+harness.HERE = HERE
+harness.main("results/analyses/default_tree_third_version_20261112/tree_default.npz", f"default_{arm}", method="tbs_family_diffusion")
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== giant.txt =====
+# == current: calls at nodes with at least 5,000 cells ==
+#   N97755 cells 48878: sides 1 | 48877; reason tested, k 14, p 1.0, accepted False
+#   N97754 cells 48877: sides 151 | 48726; reason tested, k 14, p 1.0, accepted False
+#   N97753 cells 48726: sides 170 | 48556; reason tested, k 14, p 1.0, accepted False
+#   N97752 cells 48556: sides 185 | 48371; reason tested, k 14, p 1.0, accepted False
+#   N97751 cells 48371: sides 5 | 48366; reason tested, k 14, p 1.0, accepted False
+#   N97750 cells 48366: sides 196 | 48170; reason tested, k 14, p 1.0, accepted False
+#   N97749 cells 48170: sides 226 | 47944; reason tested, k 14, p 1.0, accepted False
+#   N97748 cells 47944: sides 208 | 47736; reason tested, k 14, p 1.0, accepted False
+#   N97747 cells 47736: sides 250 | 47486; reason tested, k 14, p 1.0, accepted False
+#   N97745 cells 47486: sides 249 | 47237; reason tested, k 13, p 1.0, accepted False
+#   N97744 cells 47237: sides 267 | 46970; reason tested, k 13, p 1.0, accepted False
+#   N97743 cells 46970: sides 278 | 46692; reason tested, k 14, p 1.0, accepted False
+#   N97742 cells 46692: sides 288 | 46404; reason tested, k 14, p 1.0, accepted False
+#   N97741 cells 46404: sides 293 | 46111; reason tested, k 14, p 1.0, accepted False
+# == data: calls at nodes with at least 5,000 cells ==
+#   N97755 cells 48878: sides 1 | 48877; reason too_few_cells, k 0, p 1.0, accepted False
+#   N97754 cells 48877: sides 151 | 48726; reason tested, k 1, p 1.0, accepted False
+#   N97753 cells 48726: sides 170 | 48556; reason tested, k 1, p 1.0, accepted False
+#   N97752 cells 48556: sides 185 | 48371; reason tested, k 1, p 1.0, accepted False
+#   N97751 cells 48371: sides 5 | 48366; reason tested, k 1, p 1.0, accepted False
+#   N97750 cells 48366: sides 196 | 48170; reason tested, k 1, p 1.0, accepted False
+#   N97749 cells 48170: sides 226 | 47944; reason tested, k 1, p 1.0, accepted False
+#   N97748 cells 47944: sides 208 | 47736; reason tested, k 1, p 1.0, accepted False
+#   N97747 cells 47736: sides 250 | 47486; reason tested, k 1, p 2e-05, accepted True
+#   N97745 cells 47486: sides 249 | 47237; reason tested, k 1, p 1.0, accepted False
+#   N97744 cells 47237: sides 267 | 46970; reason tested, k 1, p 2e-05, accepted True
+#   N97743 cells 46970: sides 278 | 46692; reason tested, k 1, p 1.0, accepted False
+#   N97742 cells 46692: sides 288 | 46404; reason tested, k 1, p 1.0, accepted False
+#   N97741 cells 46404: sides 293 | 46111; reason tested, k 1, p 1.0, accepted False
+# largest cluster: 28611 cells from 144 cell lines
+# node holding it: N97671 with 32679 cells, sides 4069 | 28610
+# sibling test called at that node: {'node': 'N97671', 'n_leaves': 32679, 'reason': 'tested', 'k': 1, 'p': 2e-05, 'bh_different': True}
+# smaller side at each step down the larger child, and whether the sibling test was called there: [(4069, True), (4, False), (2525, False), (129, False), (917, False), (173, False), (3, False), (279, False), (11579, False), (2, False), (7, False), (17, False), (6, False), (412, False), (770, False)]
+
+
+# ===== edge_values.py (follow-up on the same day) =====
+"""Follow-up: the default-tree fit with the third version again, saving the edge and sibling columns of every node."""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+
+import draft_rule_v3  # noqa: E402
+import harness  # noqa: E402
+
+import benchmarks.shared.runners.tbs_runner as tbs_runner  # noqa: E402
+
+COLUMNS = ["leaf_count", "Child_Parent_Divergence_Test_Statistic", "Child_Parent_Divergence_df", "Child_Parent_Divergence_P_Value",
+           "Child_Parent_Divergence_P_Value_BH", "Child_Parent_Divergence_Significant", "Child_Parent_Divergence_Tested",
+           "Child_Parent_Divergence_Ancestor_Blocked", "Sibling_Divergence_Skipped", "Sibling_Divergence_P_Value", "Sibling_BH_Different"]
+Original = tbs_runner.TreeDecomposition
+
+
+class Recording(Original):
+    def decompose_tree(self):
+        out = super().decompose_tree()
+        self.annotations_df[COLUMNS].to_csv(HERE / "default_data_annotations.csv.gz")
+        edges = [(str(a), str(b), self.tree.edges[a, b].get("branch_length")) for a, b in self.tree.edges]
+        import pandas as pd
+
+        pd.DataFrame(edges, columns=["parent", "child", "branch_length"]).to_csv(HERE / "default_data_edges.csv.gz", index=False)
+        return out
+
+
+tbs_runner.TreeDecomposition = Recording
+draft_rule_v3.install(None)
+harness.HERE = HERE
+harness.main("results/analyses/default_tree_third_version_20261112/tree_default.npz", "default_data_again", method="tbs_family_diffusion")
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+
+# ===== edge_values.txt (follow-up on the same day) =====
+# edge alpha 0.001; mean branch length 0.3836; edges tested by Tree-BH 382 of 97756, significant 171; edges with raw p <= 0.001: 6006
+#
+# == chain below N97671 (32679 cells), following the larger child ==
+# N97671: 4069 | 28610; sibling skipped False, sibling p 2e-05, accepted True
+#    edge to the 4069 cells: statistic 28558.3, k 5, raw p 0, tested True, blocked by an ancestor False, significant True, branch multiplier 1.26
+#    edge to the 28610 cells: statistic 36084.3, k 5, raw p 0, tested True, blocked by an ancestor False, significant True, branch multiplier 1.00
+# N97667: 4 | 28606; sibling skipped True, sibling p nan, accepted False
+#    edge to the 4 cells: statistic 44.4, k 30, raw p 0.044, tested True, blocked by an ancestor False, significant False, branch multiplier 1.00
+#    edge to the 28606 cells: statistic 44.4, k 30, raw p 0.044, tested True, blocked by an ancestor False, significant False, branch multiplier 1.00
+# N97649: 2525 | 26081; sibling skipped True, sibling p nan, accepted False
+#    edge to the 2525 cells: statistic 15116.8, k 6, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.51
+#    edge to the 26081 cells: statistic 22768.8, k 6, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+# N97644: 129 | 25952; sibling skipped True, sibling p nan, accepted False
+#    edge to the 129 cells: statistic 1044.3, k 19, raw p 1.8e-209, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+#    edge to the 25952 cells: statistic 1044.3, k 19, raw p 1.8e-209, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+# N97636: 917 | 25035; sibling skipped True, sibling p nan, accepted False
+#    edge to the 917 cells: statistic 11254.6, k 15, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.02
+#    edge to the 25035 cells: statistic 11194.2, k 15, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.03
+# N97634: 173 | 24862; sibling skipped True, sibling p nan, accepted False
+#    edge to the 173 cells: statistic 2349.6, k 18, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+#    edge to the 24862 cells: statistic 2349.6, k 18, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+# N97614: 3 | 24859; sibling skipped True, sibling p nan, accepted False
+#    edge to the 3 cells: statistic 23.8, k 27, raw p 0.64, tested False, blocked by an ancestor True, significant False, branch multiplier 1.83
+#    edge to the 24859 cells: statistic 43.5, k 27, raw p 0.023, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+# N97613: 279 | 24580; sibling skipped True, sibling p nan, accepted False
+#    edge to the 279 cells: statistic 2202.4, k 21, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+#    edge to the 24580 cells: statistic 2202.4, k 21, raw p 0, tested False, blocked by an ancestor True, significant False, branch multiplier 1.00
+#
+# == all nodes with at least 1,000 cells where no edge is significant (the sibling test is not asked) ==
+# nodes with at least 1,000 cells: 155; without a significant edge: 106, of these tested by Tree-BH: 5
+# tested and not significant (cells, smaller side, raw p of the two edges): [(48879, 1, '0.96', '0.12'), (37255, 1, '1', '0.0051'), (28610, 4, '0.044', '0.044'), (4033, 3, '0.011', '0.029'), (1990, 14, '0.99', '1')]
+# not tested because an ancestor is closed: 101; of these with raw p <= 0.001 on at least one edge: 94
+# largest of them (cells, smaller side, raw p of the two edges): [(28606, 2525, '0', '0'), (26081, 129, '1.8e-209', '1.8e-209'), (25952, 917, '0', '0'), (25035, 173, '0', '0'), (24862, 3, '0.64', '0.023'), (24859, 279, '0', '0'), (24580, 11579, '0', '0'), (13001, 2, '0.11', '1.4e-28'), (12999, 7, '1.3e-05', '1.2e-06'), (12992, 17, '1e-20', '2.9e-27')]

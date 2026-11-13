@@ -1,0 +1,1831 @@
+# ===== protocol.md =====
+# # Protocol: the spr measure per eigenvalue block of the invariant directions (frozen 2026-11-11, before the run)
+#
+# Descriptive; no gate or default is changed. Data, saved Markov/Ward tree and the 1,285 tested splits (32 cells
+# or more, 1 to 10 invariant directions) of `spr_alternatives_best_flat_cut_20261111`.
+#
+# ## Blocks
+#
+# The invariant directions of node P are eigenvectors of P's covariance. Blocks are the numerical eigenvalue
+# groups of `tied_eigenvalue_neighbors` (`tree_break_selection/eigenvalue_groups.py`, the rule
+# `spectral_subspaces` uses). No statistical test of equal eigenvalues exists in the code; near-equal neighbours
+# (ratio of adjacent eigenvalues below 1.1) are counted as a stated convention only, and directions inside such a
+# pair are not identified separately by the data.
+#
+# ## Trace (algebra, checked in the self-check)
+#
+# The invariant directions are uncorrelated in P, so whitening scales each direction by its own standard
+# deviation. Squared distances add over directions. Therefore, for any split and any clade:
+#
+# - the between/total ratio is the sum of the blocks' ratios: r2 = sum over blocks of r2_block;
+# - the transfer cost of an spr is the sum of the blocks' transfer costs: dW = sum over blocks of dW_block.
+#
+# So every split has a share per block, and every spr is helped by some blocks and opposed by others.
+#
+# ## Measured per split and block
+#
+# 1. Share of each block in r2 for the tree split, the greedy spr result and the best flat cut (all found in the
+#    k invariant directions jointly, as before); the block with the largest share for each.
+# 2. The block alone (one direction): the tree split's `rho`; the block's own best flat cut (exact: best
+#    threshold of the sorted coordinate) with `rho`, reference p at (n, 1), line cut share; greedy sprs from the
+#    tree split using this block only, with `rho` and p. Passing is reported at 0.01 and at 0.01 / k (Bonferroni
+#    over the k blocks of the node).
+# 3. Crossing: for every pair of blocks of one node whose own cuts both pass at 0.01 / k, the ARI between the two
+#    cuts. A low ARI means two separations that one split of the tree cannot hold together.
+# 4. Equidistance per block: share of cells tied (|m| < 0.1) and on the wrong side in the block's coordinate.
+# 5. Sprs per block: for the clades whose spr raises `rho` in all invariant directions (dW < 0), in how many
+#    blocks dW_block < 0, and whether the first block alone has the sign of the total.
+#
+# Summaries by block rank (first, second, third, later) and by the verdict classes of the joint reference (tree
+# and best pass 57, only best passes and greedy sprs pass 122, only best passes and greedy sprs fail 99, neither
+# 1,007).
+#
+# ## Self-check before the run (selfcheck.py)
+#
+# (a) sum of block r2 equals the joint r2 and sum of block dW equals the joint dW, to rounding error; (b) the
+# exact one-direction best flat cut equals the table's search on the same coordinate; (c) four groups on a 2 x 2
+# grid: two blocks, both own cuts pass, ARI between them near 0; (d) one Gaussian population: count of passing
+# blocks in 200 datasets at 0.01 / k.
+#
+# ## Expected before running
+#
+# - Real data have no numerical ties, so every invariant direction is its own block.
+# - The additivity holds to rounding error.
+# - The joint reference at (n, k) asks for more than the reference at (n, 1). So some splits whose joint best flat
+#   cut is refused may have one block whose own cut passes; how many remain at 0.01 / k is not predicted.
+# - Which block carries the tree split, and whether nodes hold crossing cuts, is not predicted.
+#
+# ## Limits known before running
+#
+# One dataset and one tree; dependent splits; blocks are chosen from the same cells that are then cut, and the
+# reference does not cover that choice; Bonferroni over blocks covers only the choice of block within one node;
+# near-equal eigenvalues make single directions arbitrary; one direction per block, so a separation along a
+# mixture of two blocks is not seen by a single block; nothing is applied to the fit.
+
+# ===== block_lib.py =====
+"""Eigenvalue blocks of a node's invariant directions and one-direction cuts (protocol.md)."""
+import numpy as np
+
+
+def standardized_blocks(points, directions):
+    """Return the node's cells in its invariant directions, each scaled to variance 1 (divisor n), and the eigenvalues."""
+    coordinates = points @ directions.T
+    centred = coordinates - coordinates.mean(0)
+    return centred / np.sqrt((centred**2).mean(0)), coordinates.var(0, ddof=1)
+
+
+def best_cut_one_direction(column):
+    """Exact best flat cut of one standardized coordinate: (r2, cells on the low side)."""
+    n = len(column)
+    order = np.argsort(column, kind="stable")
+    prefix = np.cumsum(column[order])[:-1]
+    s = np.arange(1, n)
+    r2 = prefix**2 / (s * (n - s))
+    best = int(r2.argmax())
+    mask = np.zeros(n, dtype=bool)
+    mask[order[: best + 1]] = True
+    return float(r2[best]), mask
+
+
+def r2_per_block(y, mask):
+    s = int(mask.sum())
+    return y[mask].sum(0) ** 2 / (s * (len(y) - s))
+
+# ===== selfcheck.py =====
+"""protocol.md self-check: additivity, exact one-direction cut, crossing cuts on a grid, one population."""
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+for other in ("spr_subspaces_equidistances_20261111", "spr_alternatives_best_flat_cut_20261111", "split_vs_best_flat_cut_20261111"):
+    sys.path.insert(0, str(HERE.parent / other))
+
+from block_lib import best_cut_one_direction, r2_per_block, standardized_blocks  # noqa: E402
+from margin_lib import clade_margins, layout  # noqa: E402
+from measure_lib import best_flat_cut, r2_of  # noqa: E402
+from spr_lib import index_tree, subtree  # noqa: E402
+
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import reference_p_value, to_rho, whiten  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+
+rng = np.random.default_rng([20261111, 51])
+n = 400
+grid = np.c_[np.arange(n) % 2, (np.arange(n) // 2) % 2]
+x = rng.standard_normal((n, 12))
+x[:, 0] += 9.0 * grid[:, 0]
+x[:, 1] += 6.0 * grid[:, 1]
+directions = invariant_directions(x)
+y, values = standardized_blocks(x, directions)
+print(f"(c) grid: k = {len(directions)}, numerical ties {int(tied_eigenvalue_neighbors(values).sum())}, "
+      f"largest |standardized - whiten| {np.abs(y - whiten(x @ directions.T)).max():.1e}")
+
+z = linkage(x, "ward")
+parent = np.full(2 * n - 1, -1, dtype=np.int64)
+for k, (a, b) in enumerate(z[:, :2].astype(int)):
+    parent[a] = parent[b] = n + k
+order, pre, sub_all = index_tree(parent)
+nodes, local_parent, is_leaf, sub = subtree(parent, order, pre, sub_all, 2 * n - 2, n)
+rows = nodes[is_leaf]
+lo, sizes, second, below_first = layout(is_leaf, sub)
+tree_mask = np.arange(n) < sizes[1]
+yr = y[rows]
+_, dw = clade_margins(yr, lo, sizes, second, below_first)
+dw_blocks = np.column_stack([clade_margins(yr[:, [i]], lo, sizes, second, below_first)[1] for i in range(yr.shape[1])])
+print(f"(a) |sum of block r2 - joint r2| {abs(r2_per_block(yr, tree_mask).sum() - r2_of(yr, tree_mask)):.1e}; "
+      f"largest |sum of block dW - joint dW| {np.nanmax(np.abs(dw_blocks.sum(1) - dw)):.1e}")
+
+cuts = []
+for i in range(y.shape[1]):
+    r2, mask = best_cut_one_direction(y[:, i])
+    searched, _ = best_flat_cut(x @ directions[[i]].T)
+    p = reference_p_value(to_rho(r2, n), n, 1)[0]
+    cuts.append(mask)
+    print(f"    block {i + 1}: exact rho {to_rho(r2, n):.4f}, table's search {searched:.4f}, p {p:.4f}, "
+          f"ARI with grid axis 1 {adjusted_rand_score(grid[:, 0], mask):.3f}, axis 2 {adjusted_rand_score(grid[:, 1], mask):.3f}")
+print(f"    ARI between the two block cuts {adjusted_rand_score(cuts[0], cuts[1]):.3f}")
+
+passing = tested = with_directions = 0
+for b in range(200):
+    g = np.random.default_rng([20261111, 52, b]).standard_normal((200, 12)) * np.sqrt(np.r_[9.0, 4.0, np.ones(10)])
+    d = invariant_directions(g)
+    if len(d) == 0:
+        continue
+    with_directions += 1
+    yb, _ = standardized_blocks(g, d)
+    for i in range(yb.shape[1]):
+        tested += 1
+        passing += reference_p_value(to_rho(best_cut_one_direction(yb[:, i])[0], 200), 200, 1)[0] <= 0.01 / yb.shape[1]
+print(f"(d) one Gaussian population, 200 datasets of 200 cells: {with_directions} with invariant directions, "
+      f"{tested} blocks, passing at 0.01 / k: {passing}")
+
+# ===== measure.py =====
+"""protocol.md: block shares, one-direction cuts, crossing, equidistance and sprs per eigenvalue block."""
+import json
+import sys
+from itertools import combinations
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+SPR = HERE.parent / "spr_alternatives_best_flat_cut_20261111"
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+for other in ("spr_subspaces_equidistances_20261111", "spr_alternatives_best_flat_cut_20261111", "split_vs_best_flat_cut_20261111"):
+    sys.path.insert(0, str(HERE.parent / other))
+
+from block_lib import best_cut_one_direction, r2_per_block, standardized_blocks  # noqa: E402
+from margin_lib import TIE, clade_margins, layout  # noqa: E402
+from measure_lib import best_flat_cut, r2_of  # noqa: E402
+from spr_lib import greedy_sprs, index_tree, subtree  # noqa: E402
+
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import reference_p_value, to_rho  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+STATE = {}
+
+
+def init():
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    STATE["x"] = np.load(source / "pca.npy")
+    STATE["line"] = pd.factorize(pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str).Cell_line)[0]
+    z = np.load(SPR / f"tree_{METHOD}.npz")
+    STATE["parent"], STATE["leaf_row"] = z["parent"], z["leaf_row"]
+    STATE["index"] = index_tree(z["parent"])
+
+
+def line_cut_share(lines, mask):
+    left = np.bincount(lines[mask], minlength=lines.max() + 1)
+    right = np.bincount(lines[~mask], minlength=lines.max() + 1)
+    return float(np.minimum(left, right).sum() / len(lines))
+
+
+def job(node):
+    order, pre, sub_all = STATE["index"]
+    nodes, local_parent, is_leaf, sub = subtree(STATE["parent"], order, pre, sub_all, node, len(STATE["leaf_row"]))
+    rows = STATE["leaf_row"][nodes[is_leaf]]
+    points = STATE["x"][rows]
+    n = len(rows)
+    directions = invariant_directions(points)
+    k = len(directions)
+    y, values = standardized_blocks(points, directions)
+    lines = STATE["line"][rows]
+    lo, sizes, second, below_first = layout(is_leaf, sub)
+    tree_mask = np.arange(n) < sizes[1]
+
+    def p_of(r2, directions_used):
+        return float(reference_p_value(to_rho(r2, n), n, directions_used)[0])
+
+    final = tree_mask
+    for _, _, left in greedy_sprs(y, local_parent, is_leaf, sub):
+        final = left
+    rho_best, best = best_flat_cut(points @ directions.T)
+    out = {"node": f"N{node}", "n": n, "k": k, "lines_in_subtree": int(len(np.unique(lines))),
+           "eigenvalues": [float(v) for v in values], "numerical_ties": int(tied_eigenvalue_neighbors(values).sum()),
+           "near_equal_pairs": int((values[:-1] / values[1:] < 1.1).sum()),
+           "p_tree": p_of(r2_of(y, tree_mask), k), "p_spr": p_of(r2_of(y, final), k), "p_best": float(reference_p_value(rho_best, n, k)[0]),
+           "rho_tree": to_rho(r2_of(y, tree_mask), n), "rho_best": rho_best,
+           "share": {name: [float(v) for v in r2_per_block(y, mask) / r2_per_block(y, mask).sum()] for name, mask in (("tree", tree_mask), ("spr", final), ("best", best))},
+           "cut_tree": line_cut_share(lines, tree_mask), "cut_best": line_cut_share(lines, best)}
+
+    _, dw = clade_margins(y, lo, sizes, second, below_first)
+    dw_blocks = np.empty((len(sub), k))
+    blocks, cuts = [], []
+    for i in range(k):
+        column = y[:, [i]]
+        m, dw_blocks[:, i] = clade_margins(column, lo, sizes, second, below_first)
+        cell = m[is_leaf]
+        r2_cut, cut = best_cut_one_direction(y[:, i])
+        steps = list(greedy_sprs(column, local_parent, is_leaf, sub))
+        r2_tree = float(r2_per_block(y, tree_mask)[i])
+        cuts.append(cut)
+        blocks.append({"rho_tree": to_rho(r2_tree, n), "p_tree": p_of(r2_tree, 1), "rho_cut": to_rho(r2_cut, n), "p_cut": p_of(r2_cut, 1),
+                       "small_cut": int(min(cut.sum(), n - cut.sum())), "line_cut": line_cut_share(lines, cut),
+                       "ari_cut_tree": float(adjusted_rand_score(tree_mask, cut)), "ari_cut_best": float(adjusted_rand_score(best, cut)),
+                       "rho_spr": to_rho(steps[-1][0], n), "p_spr": p_of(steps[-1][0], 1), "sprs": len(steps) - 1,
+                       "tied": int((np.abs(cell) < TIE).sum()), "wrong": int((cell < 0).sum())})
+    out["blocks"] = blocks
+    passing = [i for i in range(k) if blocks[i]["p_cut"] <= 0.01 / k]
+    out["crossing"] = [[i, j, float(adjusted_rand_score(cuts[i], cuts[j]))] for i, j in combinations(passing, 2)]
+
+    out["spr_blocks"] = {}
+    valid = ~np.isnan(dw)
+    for label, group in (("all", valid), ("big", valid & (sizes >= 10))):
+        raises = group & (dw < 0)
+        agree = (dw_blocks[raises] < 0).sum(1)
+        out["spr_blocks"][label] = {"raises": int(raises.sum()), "agreeing_blocks": int(agree.sum()), "all_agree": int((agree == k).sum()),
+                                    "first_agrees": int((dw_blocks[raises, 0] < 0).sum()), "only_one_agrees": int((agree == 1).sum())}
+    return out
+
+
+if __name__ == "__main__":
+    init()
+    earlier = [json.loads(line) for line in (SPR / "measures.jsonl").read_text().splitlines()]
+    jobs = [int(r["node"][1:]) for r in earlier if "rho_tree" in r]
+    limit = int(sys.argv[1]) if len(sys.argv) > 1 else None
+    jobs = sorted(jobs, key=lambda node: STATE["index"][2][node])[:limit] if limit else jobs
+    with Pool(10, initializer=init) as pool, (HERE / ("trial.jsonl" if limit else "measures.jsonl")).open("w") as f:
+        for done, row in enumerate(pool.imap_unordered(job, jobs), 1):
+            f.write(json.dumps(row) + "\n")
+            if done % 200 == 0:
+                print(done, "of", len(jobs), flush=True)
+    print("DONE", len(jobs), flush=True)
+
+# ===== summarize.py =====
+"""protocol.md: summary tables from measures.jsonl."""
+import json
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+rows = [json.loads(line) for line in (HERE / "measures.jsonl").read_text().splitlines()]
+CLASSES = [
+    ("all", lambda r: True),
+    ("tree and best pass", lambda r: r["p_tree"] <= 0.01 and r["p_best"] <= 0.01),
+    ("only best passes, greedy sprs pass", lambda r: r["p_tree"] > 0.01 and r["p_best"] <= 0.01 and r["p_spr"] <= 0.01),
+    ("only best passes, greedy sprs fail", lambda r: r["p_tree"] > 0.01 and r["p_best"] <= 0.01 and r["p_spr"] > 0.01),
+    ("neither passes", lambda r: r["p_tree"] > 0.01 and r["p_best"] > 0.01),
+]
+groups = [(name, [r for r in rows if f(r)]) for name, f in CLASSES]
+print("splits:", {name: len(g) for name, g in groups})
+ks = np.array([r["k"] for r in rows])
+print(f"blocks per split: median {np.median(ks):.0f}, 1 block in {(ks == 1).sum()}, 2-3 in {((ks >= 2) & (ks <= 3)).sum()}, 4-6 in {((ks >= 4) & (ks <= 6)).sum()}, 7-10 in {(ks >= 7).sum()}; "
+      f"blocks in all {ks.sum()}; numerical ties {sum(r['numerical_ties'] for r in rows)}; near-equal neighbour pairs (ratio < 1.1) {sum(r['near_equal_pairs'] for r in rows)} of {int((ks - 1).sum())}, "
+      f"splits with one or more {sum(r['near_equal_pairs'] > 0 for r in rows)}")
+
+
+def med(values):
+    values = list(values)
+    return float(np.median(values)) if values else float("nan")
+
+
+print("\n1. Share of r2 per block (splits with 2 or more blocks)")
+for name, g in groups:
+    g = [r for r in g if r["k"] >= 2]
+    if not g:
+        continue
+    parts = []
+    for kind in ("tree", "spr", "best"):
+        top = np.array([int(np.argmax(r["share"][kind])) for r in g])
+        parts.append(f"{kind}: median largest share {med(max(r['share'][kind]) for r in g):.2f}, first block's share {med(r['share'][kind][0] for r in g):.2f}, "
+                     f"largest is block 1 / 2 / 3 / later in {(top == 0).sum()} / {(top == 1).sum()} / {(top == 2).sum()} / {(top >= 3).sum()}")
+    same = sum(int(np.argmax(r["share"]["tree"])) == int(np.argmax(r["share"]["best"])) for r in g)
+    print(f"  {name} ({len(g)}): " + "; ".join(parts) + f"; tree split and best flat cut have the same largest block in {same}")
+
+print("\n2. The block alone, by block rank: tree split / own best cut / greedy sprs in the block")
+for name, g in groups:
+    print(f"  {name}:")
+    for label, pick in (("block 1", lambda b: b[:1]), ("block 2", lambda b: b[1:2]), ("block 3", lambda b: b[2:3]), ("later blocks", lambda b: b[3:])):
+        items = [(b, r) for r in g for b in pick(r["blocks"])]
+        if not items:
+            continue
+        n_cells = sum(r["n"] for _, r in items)
+        print(f"      {label} ({len(items)}): median rho tree {med(b['rho_tree'] for b, _ in items):.2f}, own cut {med(b['rho_cut'] for b, _ in items):.2f}, sprs {med(b['rho_spr'] for b, _ in items):.2f}; "
+              f"pass at 0.01: tree {sum(b['p_tree'] <= 0.01 for b, _ in items)}, own cut {sum(b['p_cut'] <= 0.01 for b, _ in items)}, sprs {sum(b['p_spr'] <= 0.01 for b, _ in items)}; "
+              f"pass at 0.01/k: tree {sum(b['p_tree'] <= 0.01 / r['k'] for b, r in items)}, own cut {sum(b['p_cut'] <= 0.01 / r['k'] for b, r in items)}, sprs {sum(b['p_spr'] <= 0.01 / r['k'] for b, r in items)}; "
+              f"cells tied {100 * sum(b['tied'] for b, _ in items) / n_cells:.1f}%, wrong side {100 * sum(b['wrong'] for b, _ in items) / n_cells:.1f}%")
+
+print("\n3. Splits by the number of blocks whose own cut passes at 0.01/k (and at 0.01)")
+for name, g in groups:
+    strict = np.array([sum(b["p_cut"] <= 0.01 / r["k"] for b in r["blocks"]) for r in g])
+    loose = np.array([sum(b["p_cut"] <= 0.01 for b in r["blocks"]) for r in g])
+    tree_block = sum(any(b["p_tree"] <= 0.01 / r["k"] for b in r["blocks"]) for r in g)
+    spr_block = sum(any(b["p_spr"] <= 0.01 / r["k"] for b in r["blocks"]) for r in g)
+    print(f"  {name} ({len(g)}): 0 / 1 / 2 / 3+ blocks at 0.01/k: {(strict == 0).sum()} / {(strict == 1).sum()} / {(strict == 2).sum()} / {(strict >= 3).sum()}; "
+          f"at 0.01: {(loose == 0).sum()} / {(loose == 1).sum()} / {(loose == 2).sum()} / {(loose >= 3).sum()}; "
+          f"tree split passes in some block at 0.01/k: {tree_block}; greedy sprs in some block: {spr_block}")
+passing = [(b, r) for r in rows for b in r["blocks"] if b["p_cut"] <= 0.01 / r["k"]]
+print(f"  passing own cuts at 0.01/k: {len(passing)}; median line cut share {med(b['line_cut'] for b, _ in passing):.3f}; cut at most 5% of cells from their line: {sum(b['line_cut'] <= 0.05 for b, _ in passing)}; "
+      f"smaller side under 5 cells: {sum(b['small_cut'] < 5 for b, _ in passing)}; median ARI with the joint best flat cut {med(b['ari_cut_best'] for b, _ in passing):.3f}, with the tree split {med(b['ari_cut_tree'] for b, _ in passing):.3f}")
+for label, f in (("several lines", lambda r: r["lines_in_subtree"] > 1), ("one line", lambda r: r["lines_in_subtree"] == 1)):
+    sel = [(b, r) for b, r in passing if f(r)]
+    nodes = {r["node"] for _, r in sel}
+    print(f"      {label}: {len(sel)} passing cuts in {len(nodes)} of {sum(f(r) for r in rows)} splits; cut at most 5%: {sum(b['line_cut'] <= 0.05 for b, _ in sel)}")
+
+print("\n4. Crossing: pairs of blocks of one node whose own cuts both pass at 0.01/k")
+for name, g in groups:
+    pairs = [c[2] for r in g for c in r["crossing"]]
+    nodes = sum(len(r["crossing"]) > 0 for r in g)
+    if pairs:
+        pairs = np.array(pairs)
+        print(f"  {name}: {len(pairs)} pairs in {nodes} splits; median ARI {np.median(pairs):.3f}; ARI below 0.1 in {(pairs < 0.1).sum()}, 0.1 to 0.5 in {((pairs >= 0.1) & (pairs < 0.5)).sum()}, 0.5 and more in {(pairs >= 0.5).sum()}")
+    else:
+        print(f"  {name}: 0 pairs")
+
+print("\n5. Clades whose spr raises rho in all invariant directions: blocks with dW_block < 0 (splits with 2 or more blocks)")
+for label in ("all", "big"):
+    for name, g in groups:
+        g = [r for r in g if r["k"] >= 2]
+        total = sum(r["spr_blocks"][label]["raises"] for r in g)
+        if not total:
+            continue
+        blocks = sum(r["spr_blocks"][label]["raises"] * r["k"] for r in g)
+        print(f"  {label} clades, {name}: {total} sprs; blocks agreeing {100 * sum(r['spr_blocks'][label]['agreeing_blocks'] for r in g) / blocks:.1f}%; "
+              f"all blocks agree {100 * sum(r['spr_blocks'][label]['all_agree'] for r in g) / total:.1f}%; only one block agrees {100 * sum(r['spr_blocks'][label]['only_one_agrees'] for r in g) / total:.1f}%; "
+              f"first block agrees {100 * sum(r['spr_blocks'][label]['first_agrees'] for r in g) / total:.1f}%")
+
+# ===== selfcheck output =====
+# (c) grid: k = 2, numerical ties 0, largest |standardized - whiten| 4.4e-16
+# (a) |sum of block r2 - joint r2| 0.0e+00; largest |sum of block dW - joint dW| 8.5e-14
+#     block 1: exact rho 20.7090, table's search 20.7090, p 0.0005, ARI with grid axis 1 1.000, axis 2 -0.003
+#     block 2: exact rho 9.3717, table's search 9.3717, p 0.0005, ARI with grid axis 1 -0.002, axis 2 0.990
+#     ARI between the two block cuts -0.002
+# (d) one Gaussian population, 200 datasets of 200 cells: 200 with invariant directions, 401 blocks, passing at 0.01 / k: 2
+
+# ===== summary.txt =====
+# splits: {'all': 1285, 'tree and best pass': 57, 'only best passes, greedy sprs pass': 122, 'only best passes, greedy sprs fail': 99, 'neither passes': 1007}
+# blocks per split: median 7, 1 block in 0, 2-3 in 8, 4-6 in 462, 7-10 in 815; blocks in all 9250; numerical ties 0; near-equal neighbour pairs (ratio < 1.1) 781 of 7965, splits with one or more 618
+#
+# 1. Share of r2 per block (splits with 2 or more blocks)
+#   all (1285): tree: median largest share 0.54, first block's share 0.27, largest is block 1 / 2 / 3 / later in 553 / 257 / 172 / 303; spr: median largest share 0.58, first block's share 0.43, largest is block 1 / 2 / 3 / later in 712 / 237 / 139 / 197; best: median largest share 0.55, first block's share 0.27, largest is block 1 / 2 / 3 / later in 568 / 269 / 164 / 284; tree split and best flat cut have the same largest block in 396
+#   tree and best pass (57): tree: median largest share 0.89, first block's share 0.89, largest is block 1 / 2 / 3 / later in 54 / 2 / 1 / 0; spr: median largest share 0.88, first block's share 0.88, largest is block 1 / 2 / 3 / later in 53 / 3 / 1 / 0; best: median largest share 0.88, first block's share 0.88, largest is block 1 / 2 / 3 / later in 51 / 5 / 1 / 0; tree split and best flat cut have the same largest block in 52
+#   only best passes, greedy sprs pass (122): tree: median largest share 0.56, first block's share 0.42, largest is block 1 / 2 / 3 / later in 63 / 22 / 9 / 28; spr: median largest share 0.76, first block's share 0.73, largest is block 1 / 2 / 3 / later in 106 / 11 / 3 / 2; best: median largest share 0.75, first block's share 0.73, largest is block 1 / 2 / 3 / later in 108 / 11 / 2 / 1; tree split and best flat cut have the same largest block in 65
+#   only best passes, greedy sprs fail (99): tree: median largest share 0.47, first block's share 0.23, largest is block 1 / 2 / 3 / later in 34 / 18 / 16 / 31; spr: median largest share 0.53, first block's share 0.31, largest is block 1 / 2 / 3 / later in 45 / 16 / 10 / 28; best: median largest share 0.57, first block's share 0.32, largest is block 1 / 2 / 3 / later in 45 / 36 / 12 / 6; tree split and best flat cut have the same largest block in 19
+#   neither passes (1007): tree: median largest share 0.53, first block's share 0.25, largest is block 1 / 2 / 3 / later in 402 / 215 / 146 / 244; spr: median largest share 0.56, first block's share 0.36, largest is block 1 / 2 / 3 / later in 508 / 207 / 125 / 167; best: median largest share 0.51, first block's share 0.20, largest is block 1 / 2 / 3 / later in 364 / 217 / 149 / 277; tree split and best flat cut have the same largest block in 260
+#
+# 2. The block alone, by block rank: tree split / own best cut / greedy sprs in the block
+#   all:
+#       block 1 (1285): median rho tree 0.12, own cut 1.95, sprs 1.95; pass at 0.01: tree 47, own cut 217, sprs 217; pass at 0.01/k: tree 39, own cut 139, sprs 139; cells tied 2.8%, wrong side 27.4%
+#       block 2 (1285): median rho tree 0.04, own cut 1.79, sprs 1.79; pass at 0.01: tree 1, own cut 60, sprs 60; pass at 0.01/k: tree 1, own cut 25, sprs 25; cells tied 2.3%, wrong side 36.6%
+#       block 3 (1285): median rho tree 0.02, own cut 1.71, sprs 1.71; pass at 0.01: tree 0, own cut 19, sprs 18; pass at 0.01/k: tree 0, own cut 6, sprs 6; cells tied 1.8%, wrong side 38.9%
+#       later blocks (5395): median rho tree 0.01, own cut 1.63, sprs 1.63; pass at 0.01: tree 0, own cut 28, sprs 28; pass at 0.01/k: tree 0, own cut 2, sprs 2; cells tied 1.4%, wrong side 41.7%
+#   tree and best pass:
+#       block 1 (57): median rho tree 3.52, own cut 4.34, sprs 4.34; pass at 0.01: tree 40, own cut 51, sprs 51; pass at 0.01/k: tree 36, own cut 47, sprs 47; cells tied 1.7%, wrong side 4.8%
+#       block 2 (57): median rho tree 0.03, own cut 1.79, sprs 1.79; pass at 0.01: tree 0, own cut 7, sprs 7; pass at 0.01/k: tree 0, own cut 5, sprs 5; cells tied 1.9%, wrong side 38.8%
+#       block 3 (57): median rho tree 0.01, own cut 1.57, sprs 1.57; pass at 0.01: tree 0, own cut 3, sprs 3; pass at 0.01/k: tree 0, own cut 1, sprs 1; cells tied 0.9%, wrong side 44.1%
+#       later blocks (327): median rho tree 0.00, own cut 1.57, sprs 1.57; pass at 0.01: tree 0, own cut 0, sprs 0; pass at 0.01/k: tree 0, own cut 0, sprs 0; cells tied 0.8%, wrong side 46.0%
+#   only best passes, greedy sprs pass:
+#       block 1 (122): median rho tree 0.16, own cut 2.84, sprs 2.84; pass at 0.01: tree 4, own cut 71, sprs 71; pass at 0.01/k: tree 0, own cut 61, sprs 61; cells tied 2.8%, wrong side 25.9%
+#       block 2 (122): median rho tree 0.05, own cut 1.80, sprs 1.80; pass at 0.01: tree 0, own cut 10, sprs 10; pass at 0.01/k: tree 0, own cut 5, sprs 5; cells tied 2.6%, wrong side 35.6%
+#       block 3 (122): median rho tree 0.01, own cut 1.74, sprs 1.73; pass at 0.01: tree 0, own cut 5, sprs 5; pass at 0.01/k: tree 0, own cut 2, sprs 2; cells tied 1.5%, wrong side 41.9%
+#       later blocks (618): median rho tree 0.01, own cut 1.58, sprs 1.58; pass at 0.01: tree 0, own cut 1, sprs 1; pass at 0.01/k: tree 0, own cut 0, sprs 0; cells tied 1.4%, wrong side 41.6%
+#   only best passes, greedy sprs fail:
+#       block 1 (99): median rho tree 0.08, own cut 1.95, sprs 1.95; pass at 0.01: tree 0, own cut 20, sprs 20; pass at 0.01/k: tree 0, own cut 12, sprs 12; cells tied 3.1%, wrong side 29.6%
+#       block 2 (99): median rho tree 0.03, own cut 1.88, sprs 1.88; pass at 0.01: tree 1, own cut 13, sprs 13; pass at 0.01/k: tree 1, own cut 10, sprs 10; cells tied 2.3%, wrong side 38.2%
+#       block 3 (99): median rho tree 0.03, own cut 1.68, sprs 1.68; pass at 0.01: tree 0, own cut 1, sprs 1; pass at 0.01/k: tree 0, own cut 0, sprs 0; cells tied 2.0%, wrong side 37.2%
+#       later blocks (524): median rho tree 0.01, own cut 1.61, sprs 1.61; pass at 0.01: tree 0, own cut 2, sprs 2; pass at 0.01/k: tree 0, own cut 1, sprs 1; cells tied 1.5%, wrong side 41.3%
+#   neither passes:
+#       block 1 (1007): median rho tree 0.11, own cut 1.89, sprs 1.88; pass at 0.01: tree 3, own cut 75, sprs 75; pass at 0.01/k: tree 3, own cut 19, sprs 19; cells tied 2.8%, wrong side 30.1%
+#       block 2 (1007): median rho tree 0.04, own cut 1.78, sprs 1.78; pass at 0.01: tree 0, own cut 30, sprs 30; pass at 0.01/k: tree 0, own cut 5, sprs 5; cells tied 2.3%, wrong side 36.2%
+#       block 3 (1007): median rho tree 0.03, own cut 1.72, sprs 1.71; pass at 0.01: tree 0, own cut 10, sprs 9; pass at 0.01/k: tree 0, own cut 3, sprs 3; cells tied 1.9%, wrong side 37.9%
+#       later blocks (3926): median rho tree 0.01, own cut 1.66, sprs 1.65; pass at 0.01: tree 0, own cut 25, sprs 25; pass at 0.01/k: tree 0, own cut 1, sprs 1; cells tied 1.5%, wrong side 41.1%
+#
+# 3. Splits by the number of blocks whose own cut passes at 0.01/k (and at 0.01)
+#   all (1285): 0 / 1 / 2 / 3+ blocks at 0.01/k: 1123 / 153 / 8 / 1; at 0.01: 984 / 280 / 19 / 2; tree split passes in some block at 0.01/k: 40; greedy sprs in some block: 162
+#   tree and best pass (57): 0 / 1 / 2 / 3+ blocks at 0.01/k: 10 / 42 / 4 / 1; at 0.01: 4 / 46 / 6 / 1; tree split passes in some block at 0.01/k: 36; greedy sprs in some block: 47
+#   only best passes, greedy sprs pass (122): 0 / 1 / 2 / 3+ blocks at 0.01/k: 56 / 64 / 2 / 0; at 0.01: 42 / 74 / 5 / 1; tree split passes in some block at 0.01/k: 0; greedy sprs in some block: 66
+#   only best passes, greedy sprs fail (99): 0 / 1 / 2 / 3+ blocks at 0.01/k: 78 / 19 / 2 / 0; at 0.01: 66 / 30 / 3 / 0; tree split passes in some block at 0.01/k: 1; greedy sprs in some block: 21
+#   neither passes (1007): 0 / 1 / 2 / 3+ blocks at 0.01/k: 979 / 28 / 0 / 0; at 0.01: 872 / 130 / 5 / 0; tree split passes in some block at 0.01/k: 3; greedy sprs in some block: 28
+#   passing own cuts at 0.01/k: 172; median line cut share 0.067; cut at most 5% of cells from their line: 72; smaller side under 5 cells: 9; median ARI with the joint best flat cut 0.854, with the tree split 0.242
+#       several lines: 131 passing cuts in 122 of 520 splits; cut at most 5%: 71
+#       one line: 41 passing cuts in 40 of 765 splits; cut at most 5%: 1
+#
+# 4. Crossing: pairs of blocks of one node whose own cuts both pass at 0.01/k
+#   all: 11 pairs in 9 splits; median ARI 0.004; ARI below 0.1 in 11, 0.1 to 0.5 in 0, 0.5 and more in 0
+#   tree and best pass: 7 pairs in 5 splits; median ARI 0.010; ARI below 0.1 in 7, 0.1 to 0.5 in 0, 0.5 and more in 0
+#   only best passes, greedy sprs pass: 2 pairs in 2 splits; median ARI -0.006; ARI below 0.1 in 2, 0.1 to 0.5 in 0, 0.5 and more in 0
+#   only best passes, greedy sprs fail: 2 pairs in 2 splits; median ARI -0.059; ARI below 0.1 in 2, 0.1 to 0.5 in 0, 0.5 and more in 0
+#   neither passes: 0 pairs
+#
+# 5. Clades whose spr raises rho in all invariant directions: blocks with dW_block < 0 (splits with 2 or more blocks)
+#   all clades, all: 47423 sprs; blocks agreeing 55.4%; all blocks agree 0.6%; only one block agrees 1.0%; first block agrees 61.3%
+#   all clades, tree and best pass: 347 sprs; blocks agreeing 54.2%; all blocks agree 0.3%; only one block agrees 0.0%; first block agrees 55.0%
+#   all clades, only best passes, greedy sprs pass: 5495 sprs; blocks agreeing 54.2%; all blocks agree 0.3%; only one block agrees 1.0%; first block agrees 67.2%
+#   all clades, only best passes, greedy sprs fail: 6268 sprs; blocks agreeing 55.8%; all blocks agree 0.2%; only one block agrees 0.3%; first block agrees 60.2%
+#   all clades, neither passes: 35313 sprs; blocks agreeing 55.6%; all blocks agree 0.8%; only one block agrees 1.2%; first block agrees 60.6%
+#   big clades, all: 4485 sprs; blocks agreeing 53.6%; all blocks agree 0.7%; only one block agrees 1.4%; first block agrees 75.3%
+#   big clades, tree and best pass: 7 sprs; blocks agreeing 55.4%; all blocks agree 0.0%; only one block agrees 0.0%; first block agrees 71.4%
+#   big clades, only best passes, greedy sprs pass: 600 sprs; blocks agreeing 51.6%; all blocks agree 0.3%; only one block agrees 2.3%; first block agrees 84.5%
+#   big clades, only best passes, greedy sprs fail: 588 sprs; blocks agreeing 53.9%; all blocks agree 0.9%; only one block agrees 0.0%; first block agrees 75.3%
+#   big clades, neither passes: 3290 sprs; blocks agreeing 54.0%; all blocks agree 0.7%; only one block agrees 1.5%; first block agrees 73.7%
+
+# ===== inspect_crossing.py (follow-up) =====
+"""Follow-up to protocol.md: cell lines against the two crossing block cuts in the nodes with two passing blocks."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+SPR = HERE.parent / "spr_alternatives_best_flat_cut_20261111"
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(SPR))
+
+from block_lib import best_cut_one_direction, standardized_blocks  # noqa: E402
+from spr_lib import index_tree, subtree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import reference_p_value, to_rho  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+x = np.load(source / "pca.npy")
+line = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str).Cell_line.to_numpy()
+z = np.load(SPR / f"tree_{METHOD}.npz")
+parent, leaf_row = z["parent"], z["leaf_row"]
+order, pre, sub_all = index_tree(parent)
+rows_all = [json.loads(text) for text in (HERE / "measures.jsonl").read_text().splitlines()]
+fit = {s["node"]: s for s in json.loads((SPR / f"splits_{METHOD}.json").read_text())["splits"]}
+totals = pd.Series(line).value_counts()
+
+
+def side_summary(lines, mask):
+    """Lines by where their cells in the node fall: low side, high side, or cut (each side at least 10%)."""
+    table = pd.crosstab(lines, mask).reindex(columns=[True, False], fill_value=0)
+    share_low = table[True] / table.sum(1)
+    low, high, cut = table[share_low >= 0.9], table[share_low <= 0.1], table[(share_low > 0.1) & (share_low < 0.9)]
+    return low, high, cut
+
+
+for record in sorted((r for r in rows_all if r["crossing"]), key=lambda r: -r["n"]):
+    node = int(record["node"][1:])
+    nodes, _, is_leaf, _ = subtree(parent, order, pre, sub_all, node, len(leaf_row))
+    rows = leaf_row[nodes[is_leaf]]
+    n, k = len(rows), record["k"]
+    y, values = standardized_blocks(x[rows], invariant_directions(x[rows]))
+    lines = line[rows]
+    counts = pd.Series(lines).value_counts()
+    whole = [(name, int(c), int(totals[name])) for name, c in counts.items()]
+    verdict = "tree and best pass" if record["p_tree"] <= 0.01 else ("only best passes" if record["p_best"] <= 0.01 else "neither passes")
+    print(f"\n=== {record['node']}: {n} cells, k = {k}, {len(counts)} lines, joint verdict: {verdict}, fit: sibling p {fit[record['node']]['p']}, BH different {fit[record['node']]['bh_different']}")
+    print("    lines in the node (cells here / cells of the line in the data): " + ", ".join(f"{a} {b}/{c}" for a, b, c in whole[:8]) + (f", and {len(whole) - 8} more" if len(whole) > 8 else ""))
+    blocks = sorted({i for pair in record["crossing"] for i in pair[:2]})
+    masks = {}
+    for i in blocks:
+        r2, mask = best_cut_one_direction(y[:, i])
+        masks[i] = mask
+        low, high, cut = side_summary(lines, mask)
+        p = reference_p_value(to_rho(r2, n), n, 1)[0]
+        print(f"    block {i + 1} (eigenvalue {values[i]:.2f}): rho {to_rho(r2, n):.2f}, p {p:.4f}, sides {int(mask.sum())} | {int((~mask).sum())}")
+        for label, t in (("low side", low), ("high side", high)):
+            print(f"        {label}: {len(t)} lines, {int(t.sum().sum())} cells: " + ", ".join(f"{name} {int(r[True] + r[False])}" for name, r in t.sort_values(True, ascending=False).head(6).iterrows() if r.sum() >= 3))
+        print(f"        cut lines: {len(cut)}, {int(cut.sum().sum())} cells: " + ", ".join(f"{name} {int(r[True])}|{int(r[False])}" for name, r in cut.iterrows() if r.sum() >= 3))
+    for i, j, ari in record["crossing"]:
+        a, b = masks[i], masks[j]
+        print(f"    blocks {i + 1} x {j + 1}: ARI {ari:.3f}; cells low/low {int((a & b).sum())}, low/high {int((a & ~b).sum())}, high/low {int((~a & b).sum())}, high/high {int((~a & ~b).sum())}")
+        quadrant = pd.Series(np.where(a, "L", "H")) + pd.Series(np.where(b, "L", "H"))
+        table = pd.crosstab(lines, quadrant.to_numpy())
+        major = table[table.sum(1) >= max(5, 0.02 * n)]
+        for name, r in major.iterrows():
+            top = r.idxmax()
+            print(f"        {name}: {int(r.sum())} cells, {100 * r.max() / r.sum():.0f}% in {top}  ({', '.join(f'{q} {int(v)}' for q, v in r.items() if v)})")
+
+# ===== crossing.txt =====
+#
+# === N97705: 523 cells, k = 10, 2 lines, joint verdict: tree and best pass, fit: sibling p 0.0005, BH different True
+#     lines in the node (cells here / cells of the line in the data): NCIH2077_LUNG 445/445, TOV112D_OVARY 78/78
+#     block 1 (eigenvalue 55.67): rho 2.43, p 0.0005, sides 424 | 99
+#         low side: 1 lines, 445 cells: NCIH2077_LUNG 445
+#         high side: 1 lines, 78 cells: TOV112D_OVARY 78
+#         cut lines: 0, 0 cells: 
+#     block 2 (eigenvalue 5.00): rho 2.27, p 0.0005, sides 329 | 194
+#         low side: 0 lines, 0 cells: 
+#         high side: 0 lines, 0 cells: 
+#         cut lines: 2, 523 cells: NCIH2077_LUNG 298|147, TOV112D_OVARY 31|47
+#     blocks 1 x 2: ARI 0.039; cells low/low 279, low/high 145, high/low 50, high/high 49
+#         NCIH2077_LUNG: 445 cells, 63% in LL  (HH 2, HL 19, LH 145, LL 279)
+#         TOV112D_OVARY: 78 cells, 60% in HH  (HH 47, HL 31)
+#
+# === N97405: 478 cells, k = 10, 4 lines, joint verdict: tree and best pass, fit: sibling p 0.0005, BH different True
+#     lines in the node (cells here / cells of the line in the data): HCC1419_BREAST 219/221, MDAMB361_BREAST 135/135, BT474_BREAST 122/125, EFM192A_BREAST 2/333
+#     block 1 (eigenvalue 46.65): rho 3.03, p 0.0005, sides 249 | 229
+#         low side: 1 lines, 122 cells: BT474_BREAST 122
+#         high side: 1 lines, 219 cells: HCC1419_BREAST 219
+#         cut lines: 2, 137 cells: MDAMB361_BREAST 115|20
+#     block 2 (eigenvalue 16.17): rho 2.52, p 0.0005, sides 143 | 335
+#         low side: 1 lines, 135 cells: MDAMB361_BREAST 135
+#         high side: 3 lines, 343 cells: HCC1419_BREAST 219, BT474_BREAST 122
+#         cut lines: 0, 0 cells: 
+#     block 3 (eigenvalue 5.77): rho 2.35, p 0.0005, sides 343 | 135
+#         low side: 2 lines, 124 cells: BT474_BREAST 122
+#         high side: 0 lines, 0 cells: 
+#         cut lines: 2, 354 cells: HCC1419_BREAST 140|79, MDAMB361_BREAST 89|46
+#     blocks 1 x 2: ARI 0.063; cells low/low 107, low/high 142, high/low 36, high/high 193
+#         BT474_BREAST: 122 cells, 99% in LH  (LH 121, LL 1)
+#         HCC1419_BREAST: 219 cells, 88% in HH  (HH 192, HL 16, LH 11)
+#         MDAMB361_BREAST: 135 cells, 79% in LL  (HL 20, LH 9, LL 106)
+#     blocks 1 x 3: ARI 0.004; cells low/low 186, low/high 63, high/low 157, high/high 72
+#         BT474_BREAST: 122 cells, 92% in LL  (LH 10, LL 112)
+#         HCC1419_BREAST: 219 cells, 62% in HL  (HH 72, HL 136, LH 7, LL 4)
+#         MDAMB361_BREAST: 135 cells, 51% in LL  (HL 20, LH 46, LL 69)
+#     blocks 2 x 3: ARI 0.010; cells low/low 99, low/high 44, high/low 244, high/high 91
+#         BT474_BREAST: 122 cells, 91% in HL  (HH 10, HL 111, LL 1)
+#         HCC1419_BREAST: 219 cells, 58% in HL  (HH 76, HL 127, LH 3, LL 13)
+#         MDAMB361_BREAST: 135 cells, 63% in LL  (HH 5, HL 4, LH 41, LL 85)
+#
+# === N97713: 368 cells, k = 7, 3 lines, joint verdict: tree and best pass, fit: sibling p 0.0005, BH different True
+#     lines in the node (cells here / cells of the line in the data): OVK18_OVARY 178/178, SBC5_LUNG 102/102, COV434_OVARY 88/88
+#     block 1 (eigenvalue 16.24): rho 7.59, p 0.0005, sides 190 | 178
+#         low side: 2 lines, 190 cells: SBC5_LUNG 102, COV434_OVARY 88
+#         high side: 1 lines, 178 cells: OVK18_OVARY 178
+#         cut lines: 0, 0 cells: 
+#     block 2 (eigenvalue 5.77): rho 2.38, p 0.0010, sides 216 | 152
+#         low side: 1 lines, 88 cells: COV434_OVARY 88
+#         high side: 1 lines, 102 cells: SBC5_LUNG 102
+#         cut lines: 1, 178 cells: OVK18_OVARY 125|53
+#     blocks 1 x 2: ARI 0.045; cells low/low 91, low/high 99, high/low 125, high/high 53
+#         COV434_OVARY: 88 cells, 93% in LL  (LH 6, LL 82)
+#         OVK18_OVARY: 178 cells, 70% in HL  (HH 53, HL 125)
+#         SBC5_LUNG: 102 cells, 91% in LH  (LH 93, LL 9)
+#
+# === N97237: 163 cells, k = 9, 9 lines, joint verdict: tree and best pass, fit: sibling p 0.0005, BH different True
+#     lines in the node (cells here / cells of the line in the data): COLO792_SKIN 57/271, SKMEL30_SKIN 34/353, COLO741_SKIN 26/329, SKMEL5_SKIN 23/297, A2058_SKIN 16/294, UACC257_SKIN 3/239, SKMEL3_SKIN 2/194, IGR37_SKIN 1/347, and 1 more
+#     block 1 (eigenvalue 24.63): rho 2.97, p 0.0005, sides 101 | 62
+#         low side: 4 lines, 62 cells: COLO792_SKIN 57, UACC257_SKIN 3
+#         high side: 3 lines, 44 cells: A2058_SKIN 16, COLO741_SKIN 26
+#         cut lines: 2, 57 cells: SKMEL30_SKIN 24|10, SKMEL5_SKIN 15|8
+#     block 2 (eigenvalue 13.24): rho 2.82, p 0.0005, sides 21 | 142
+#         low side: 1 lines, 23 cells: SKMEL5_SKIN 23
+#         high side: 8 lines, 140 cells: A2058_SKIN 16, COLO741_SKIN 26, COLO792_SKIN 57, SKMEL30_SKIN 34
+#         cut lines: 0, 0 cells: 
+#     blocks 1 x 2: ARI -0.003; cells low/low 13, low/high 88, high/low 8, high/high 54
+#         A2058_SKIN: 16 cells, 94% in HH  (HH 15, LH 1)
+#         COLO741_SKIN: 26 cells, 100% in HH  (HH 26)
+#         COLO792_SKIN: 57 cells, 98% in LH  (HH 1, LH 56)
+#         SKMEL30_SKIN: 34 cells, 71% in LH  (HH 10, LH 24)
+#         SKMEL5_SKIN: 23 cells, 57% in LL  (HL 8, LH 2, LL 13)
+#
+# === N93303: 127 cells, k = 9, 1 lines, joint verdict: only best passes, fit: sibling p 1.0, BH different False
+#     lines in the node (cells here / cells of the line in the data): SNU1196_BILIARY_TRACT 127/286
+#     block 1 (eigenvalue 8.84): rho 4.27, p 0.0005, sides 43 | 84
+#         low side: 0 lines, 0 cells: 
+#         high side: 0 lines, 0 cells: 
+#         cut lines: 1, 127 cells: SNU1196_BILIARY_TRACT 43|84
+#     block 6 (eigenvalue 1.57): rho 2.72, p 0.0010, sides 75 | 52
+#         low side: 0 lines, 0 cells: 
+#         high side: 0 lines, 0 cells: 
+#         cut lines: 1, 127 cells: SNU1196_BILIARY_TRACT 75|52
+#     blocks 1 x 6: ARI 0.000; cells low/low 24, low/high 19, high/low 51, high/high 33
+#         SNU1196_BILIARY_TRACT: 127 cells, 40% in HL  (HH 33, HL 51, LH 19, LL 24)
+#
+# === N96475: 114 cells, k = 9, 3 lines, joint verdict: only best passes, fit: sibling p 1.0, BH different False
+#     lines in the node (cells here / cells of the line in the data): SNU1214_UPPER_AERODIGESTIVE_TRACT 101/188, TE14_OESOPHAGUS 10/474, BICR16_UPPER_AERODIGESTIVE_TRACT 3/212
+#     block 1 (eigenvalue 24.58): rho 4.27, p 0.0005, sides 10 | 104
+#         low side: 1 lines, 10 cells: TE14_OESOPHAGUS 10
+#         high side: 2 lines, 104 cells: BICR16_UPPER_AERODIGESTIVE_TRACT 3, SNU1214_UPPER_AERODIGESTIVE_TRACT 101
+#         cut lines: 0, 0 cells: 
+#     block 3 (eigenvalue 7.91): rho 3.10, p 0.0005, sides 50 | 64
+#         low side: 0 lines, 0 cells: 
+#         high side: 0 lines, 0 cells: 
+#         cut lines: 3, 114 cells: BICR16_UPPER_AERODIGESTIVE_TRACT 1|2, SNU1214_UPPER_AERODIGESTIVE_TRACT 43|58, TE14_OESOPHAGUS 6|4
+#     blocks 1 x 3: ARI 0.012; cells low/low 6, low/high 4, high/low 44, high/high 60
+#         SNU1214_UPPER_AERODIGESTIVE_TRACT: 101 cells, 57% in HH  (HH 58, HL 43)
+#         TE14_OESOPHAGUS: 10 cells, 60% in LL  (LH 4, LL 6)
+#
+# === N94004: 84 cells, k = 7, 2 lines, joint verdict: tree and best pass, fit: sibling p 0.0005, BH different False
+#     lines in the node (cells here / cells of the line in the data): VMCUB1_URINARY_TRACT 73/478, BICR56_UPPER_AERODIGESTIVE_TRACT 11/81
+#     block 1 (eigenvalue 65.10): rho 17.64, p 0.0005, sides 11 | 73
+#         low side: 1 lines, 11 cells: BICR56_UPPER_AERODIGESTIVE_TRACT 11
+#         high side: 1 lines, 73 cells: VMCUB1_URINARY_TRACT 73
+#         cut lines: 0, 0 cells: 
+#     block 2 (eigenvalue 8.98): rho 3.58, p 0.0005, sides 45 | 39
+#         low side: 0 lines, 0 cells: 
+#         high side: 0 lines, 0 cells: 
+#         cut lines: 2, 84 cells: BICR56_UPPER_AERODIGESTIVE_TRACT 6|5, VMCUB1_URINARY_TRACT 39|34
+#     blocks 1 x 2: ARI -0.006; cells low/low 6, low/high 5, high/low 39, high/high 34
+#         BICR56_UPPER_AERODIGESTIVE_TRACT: 11 cells, 55% in LL  (LH 5, LL 6)
+#         VMCUB1_URINARY_TRACT: 73 cells, 53% in HL  (HH 34, HL 39)
+#
+# === N96842: 76 cells, k = 8, 9 lines, joint verdict: only best passes, fit: sibling p 0.0445, BH different False
+#     lines in the node (cells here / cells of the line in the data): TE10_OESOPHAGUS 32/219, SNU46_UPPER_AERODIGESTIVE_TRACT 30/236, KYSE520_OESOPHAGUS 6/323, BICR31_UPPER_AERODIGESTIVE_TRACT 2/248, YD38_UPPER_AERODIGESTIVE_TRACT 2/624, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1/163, BICR6_UPPER_AERODIGESTIVE_TRACT 1/286, VMCUB1_URINARY_TRACT 1/478, and 1 more
+#     block 1 (eigenvalue 53.34): rho 3.86, p 0.0005, sides 69 | 7
+#         low side: 7 lines, 69 cells: TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 30
+#         high side: 2 lines, 7 cells: KYSE520_OESOPHAGUS 6
+#         cut lines: 0, 0 cells: 
+#     block 3 (eigenvalue 9.83): rho 3.40, p 0.0005, sides 31 | 45
+#         low side: 1 lines, 30 cells: SNU46_UPPER_AERODIGESTIVE_TRACT 30
+#         high side: 5 lines, 36 cells: TE10_OESOPHAGUS 32
+#         cut lines: 3, 10 cells: KYSE520_OESOPHAGUS 1|5
+#     blocks 1 x 3: ARI -0.025; cells low/low 30, low/high 39, high/low 1, high/high 6
+#         KYSE520_OESOPHAGUS: 6 cells, 83% in HH  (HH 5, HL 1)
+#         SNU46_UPPER_AERODIGESTIVE_TRACT: 30 cells, 93% in LL  (LH 2, LL 28)
+#         TE10_OESOPHAGUS: 32 cells, 100% in LH  (LH 32)
+#
+# === N96808: 43 cells, k = 7, 8 lines, joint verdict: only best passes, fit: sibling p 0.021, BH different False
+#     lines in the node (cells here / cells of the line in the data): SNU46_UPPER_AERODIGESTIVE_TRACT 29/236, KYSE520_OESOPHAGUS 6/323, BICR31_UPPER_AERODIGESTIVE_TRACT 2/248, YD38_UPPER_AERODIGESTIVE_TRACT 2/624, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1/163, BICR6_UPPER_AERODIGESTIVE_TRACT 1/286, VMCUB1_URINARY_TRACT 1/478, BICR16_UPPER_AERODIGESTIVE_TRACT 1/212
+#     block 1 (eigenvalue 72.37): rho 5.93, p 0.0005, sides 7 | 36
+#         low side: 2 lines, 7 cells: KYSE520_OESOPHAGUS 6
+#         high side: 6 lines, 36 cells: SNU46_UPPER_AERODIGESTIVE_TRACT 29
+#         cut lines: 0, 0 cells: 
+#     block 2 (eigenvalue 23.67): rho 5.92, p 0.0005, sides 7 | 36
+#         low side: 5 lines, 7 cells: 
+#         high side: 3 lines, 36 cells: KYSE520_OESOPHAGUS 6, SNU46_UPPER_AERODIGESTIVE_TRACT 29
+#         cut lines: 0, 0 cells: 
+#     blocks 1 x 2: ARI -0.117; cells low/low 0, low/high 7, high/low 7, high/high 29
+#         KYSE520_OESOPHAGUS: 6 cells, 100% in LH  (LH 6)
+#         SNU46_UPPER_AERODIGESTIVE_TRACT: 29 cells, 100% in HH  (HH 29)
+
+# ===== node_splits.py (follow-up) =====
+"""Follow-up: one node's tree split and block cuts as leaf-set splits (Partition). usage: node_splits.py N97405"""
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+SPR = HERE.parent / "spr_alternatives_best_flat_cut_20261111"
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(SPR))
+
+from block_lib import best_cut_one_direction, standardized_blocks  # noqa: E402
+from spr_lib import index_tree, subtree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import reference_p_value, to_rho  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+from tree_break_selection.tree.elements import Partition  # noqa: E402
+from tree_break_selection.tree.poset_tree import PosetTree  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+name = sys.argv[1]
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+x = np.load(source / "pca.npy")
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+z = np.load(SPR / f"tree_{METHOD}.npz")
+parent, leaf_row = z["parent"], z["leaf_row"]
+n_leaves = len(leaf_row)
+order, pre, sub_all = index_tree(parent)
+nodes, local_parent, is_leaf, _ = subtree(parent, order, pre, sub_all, int(name[1:]), n_leaves)
+rows = leaf_row[nodes[is_leaf]]
+cells = metadata.index[rows].to_numpy()
+lines = metadata.Cell_line.to_numpy()[rows]
+n = len(rows)
+
+
+def node_id(index):
+    return f"L{index}" if index < n_leaves else f"N{index}"
+
+
+tree = PosetTree()
+for index in nodes:
+    tree.add_node(node_id(index), is_leaf=bool(index < n_leaves), label=metadata.index[leaf_row[index]] if index < n_leaves else node_id(index))
+for index, up in zip(nodes[1:], local_parent[1:], strict=True):
+    tree.add_edge(node_id(nodes[up]), node_id(index))
+tree.graph["root"] = name
+tree.initialize_split_indices({cell: position for position, cell in enumerate(cells)})
+encoding = tree.graph["taxa_encoding"]
+splits = tree.to_splits(with_leaves=True)
+everything = set(range(n))
+
+
+def partition(mask):
+    return Partition(tuple(int(i) for i in np.flatnonzero(mask)), encoding)
+
+
+def composition(mask):
+    counts = pd.Series(lines[mask]).value_counts()
+    return ", ".join(f"{line} {count}" for line, count in counts.items())
+
+
+def describe(label, side):
+    """Is this leaf set a node of the tree? If not, which nodes of the tree make it up?"""
+    mask = np.zeros(n, dtype=bool)
+    mask[list(side.indices)] = True
+    node = tree.find_node_by_split(side)
+    print(f"  {label}: {len(side)} leaves ({composition(mask)})")
+    if node is not None:
+        print(f"      is the tree node {node}")
+        return
+    pieces = sorted(splits.maximals_under(side), key=lambda p: -len(p))
+    singles = sum(len(p) == 1 for p in pieces)
+    print(f"      is not a node of the tree; it is the union of {len(pieces)} tree nodes ({singles} of them single leaves). Largest:")
+    for piece in pieces[:4]:
+        piece_mask = np.zeros(n, dtype=bool)
+        piece_mask[list(piece.indices)] = True
+        print(f"        {tree.find_node_by_split(piece)}: {len(piece)} leaves ({composition(piece_mask)})")
+
+
+print(f"=== {name}: {n} leaves; lines: {composition(np.ones(n, dtype=bool))}")
+children = list(tree.successors(name))
+tree_sides = [tree.nodes[child]["split_indices"] for child in children]
+print("\nTree split (the node's two children)")
+for child, side in zip(children, tree_sides, strict=True):
+    describe(f"child {child}", side)
+
+print("\nHow the tree holds each cell line of the node")
+for line in pd.Series(lines).value_counts().index:
+    describe(f"all leaves of {line}", partition(lines == line))
+
+y, values = standardized_blocks(x[rows], invariant_directions(x[rows]))
+table = pd.DataFrame({"cell": cells, "cell_line": lines, "tree_split": np.where(np.isin(np.arange(n), tree_sides[0].indices), children[0], children[1])})
+cuts = {}
+for block in range(y.shape[1]):
+    r2, mask = best_cut_one_direction(y[:, block])
+    p = float(reference_p_value(to_rho(r2, n), n, 1)[0])
+    if p > 0.01 / y.shape[1]:
+        continue
+    cuts[block + 1] = (partition(mask), partition(~mask))
+    table[f"block_{block + 1}_cut"] = np.where(mask, "low", "high")
+    print(f"\nBlock {block + 1} cut (eigenvalue {values[block]:.2f}, rho {to_rho(r2, n):.2f}, p {p:.4f})")
+    describe("low side", cuts[block + 1][0])
+    describe("high side", cuts[block + 1][1])
+
+print("\nCompatibility (two splits fit in one tree when one of the four intersections of their sides is empty)")
+named = {"tree split": tree_sides[0], **{f"block {b} cut": low for b, (low, _) in cuts.items()}}
+labels = list(named)
+for i, a in enumerate(labels):
+    for b in labels[i + 1 :]:
+        first, second = named[a], named[b]
+        rest_first, rest_second = partition(~np.isin(np.arange(n), first.indices)), partition(~np.isin(np.arange(n), second.indices))
+        sizes = [len(u & v) for u in (first, rest_first) for v in (second, rest_second)]
+        print(f"  {a} x {b}: compatible {first.is_compatible_with(second, everything)}; intersections {sizes}; smallest {min(sizes)} leaves")
+out = HERE / f"leaves_{name}.csv"
+table.to_csv(out, index=False)
+print(f"\nleaf table: {out.relative_to(HERE.parents[2])} ({len(table)} rows)")
+
+# ===== splits_N97405.txt =====
+# === N97405: 478 leaves; lines: HCC1419_BREAST 219, MDAMB361_BREAST 135, BT474_BREAST 122, EFM192A_BREAST 2
+#
+# Tree split (the node's two children)
+#   child N96707: 220 leaves (HCC1419_BREAST 219, EFM192A_BREAST 1)
+#       is the tree node N96707
+#   child N97129: 258 leaves (MDAMB361_BREAST 135, BT474_BREAST 122, EFM192A_BREAST 1)
+#       is the tree node N97129
+#
+# How the tree holds each cell line of the node
+#   all leaves of HCC1419_BREAST: 219 leaves (HCC1419_BREAST 219)
+#       is not a node of the tree; it is the union of 6 tree nodes (1 of them single leaves). Largest:
+#         N95969: 177 leaves (HCC1419_BREAST 177)
+#         N92976: 30 leaves (HCC1419_BREAST 30)
+#         N81503: 6 leaves (HCC1419_BREAST 6)
+#         N82342: 3 leaves (HCC1419_BREAST 3)
+#   all leaves of MDAMB361_BREAST: 135 leaves (MDAMB361_BREAST 135)
+#       is not a node of the tree; it is the union of 10 tree nodes (7 of them single leaves). Largest:
+#         N96138: 122 leaves (MDAMB361_BREAST 122)
+#         N70934: 4 leaves (MDAMB361_BREAST 4)
+#         N76702: 2 leaves (MDAMB361_BREAST 2)
+#         L20835: 1 leaves (MDAMB361_BREAST 1)
+#   all leaves of BT474_BREAST: 122 leaves (BT474_BREAST 122)
+#       is not a node of the tree; it is the union of 22 tree nodes (11 of them single leaves). Largest:
+#         N94337: 44 leaves (BT474_BREAST 44)
+#         N77275: 10 leaves (BT474_BREAST 10)
+#         N76177: 9 leaves (BT474_BREAST 9)
+#         N85100: 9 leaves (BT474_BREAST 9)
+#   all leaves of EFM192A_BREAST: 2 leaves (EFM192A_BREAST 2)
+#       is not a node of the tree; it is the union of 2 tree nodes (2 of them single leaves). Largest:
+#         L31896: 1 leaves (EFM192A_BREAST 1)
+#         L30521: 1 leaves (EFM192A_BREAST 1)
+#
+# Block 1 cut (eigenvalue 46.65, rho 3.03, p 0.0005)
+#   low side: 249 leaves (BT474_BREAST 122, MDAMB361_BREAST 115, HCC1419_BREAST 11, EFM192A_BREAST 1)
+#       is not a node of the tree; it is the union of 21 tree nodes (13 of them single leaves). Largest:
+#         N96510: 136 leaves (BT474_BREAST 122, MDAMB361_BREAST 13, EFM192A_BREAST 1)
+#         N94244: 48 leaves (MDAMB361_BREAST 48)
+#         N89989: 38 leaves (MDAMB361_BREAST 38)
+#         N63190: 4 leaves (MDAMB361_BREAST 4)
+#   high side: 229 leaves (HCC1419_BREAST 208, MDAMB361_BREAST 20, EFM192A_BREAST 1)
+#       is not a node of the tree; it is the union of 23 tree nodes (12 of them single leaves). Largest:
+#         N94243: 74 leaves (HCC1419_BREAST 74)
+#         N89739: 55 leaves (HCC1419_BREAST 55)
+#         N89024: 46 leaves (HCC1419_BREAST 46)
+#         N84590: 13 leaves (HCC1419_BREAST 13)
+#
+# Block 2 cut (eigenvalue 16.17, rho 2.52, p 0.0005)
+#   low side: 143 leaves (MDAMB361_BREAST 126, HCC1419_BREAST 16, BT474_BREAST 1)
+#       is not a node of the tree; it is the union of 25 tree nodes (19 of them single leaves). Largest:
+#         N93432: 74 leaves (MDAMB361_BREAST 74)
+#         N92464: 31 leaves (MDAMB361_BREAST 31)
+#         N87793: 13 leaves (MDAMB361_BREAST 13)
+#         N51852: 2 leaves (HCC1419_BREAST 2)
+#   high side: 335 leaves (HCC1419_BREAST 203, BT474_BREAST 121, MDAMB361_BREAST 9, EFM192A_BREAST 2)
+#       is not a node of the tree; it is the union of 54 tree nodes (27 of them single leaves). Largest:
+#         N94243: 74 leaves (HCC1419_BREAST 74)
+#         N94337: 44 leaves (BT474_BREAST 44)
+#         N95025: 43 leaves (HCC1419_BREAST 42, EFM192A_BREAST 1)
+#         N86991: 30 leaves (BT474_BREAST 29, MDAMB361_BREAST 1)
+#
+# Block 3 cut (eigenvalue 5.77, rho 2.35, p 0.0005)
+#   low side: 343 leaves (HCC1419_BREAST 140, BT474_BREAST 112, MDAMB361_BREAST 89, EFM192A_BREAST 2)
+#       is not a node of the tree; it is the union of 96 tree nodes (52 of them single leaves). Largest:
+#         N86616: 36 leaves (MDAMB361_BREAST 36)
+#         N91274: 36 leaves (BT474_BREAST 36)
+#         N86991: 30 leaves (BT474_BREAST 29, MDAMB361_BREAST 1)
+#         N77031: 20 leaves (HCC1419_BREAST 20)
+#   high side: 135 leaves (HCC1419_BREAST 79, MDAMB361_BREAST 46, BT474_BREAST 10)
+#       is not a node of the tree; it is the union of 66 tree nodes (36 of them single leaves). Largest:
+#         N86367: 9 leaves (MDAMB361_BREAST 7, BT474_BREAST 2)
+#         N80140: 6 leaves (HCC1419_BREAST 6)
+#         N75773: 6 leaves (MDAMB361_BREAST 6)
+#         N74876: 5 leaves (MDAMB361_BREAST 5)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible False; intersections [11, 209, 238, 20]; smallest 11 leaves
+#   tree split x block 2 cut: compatible False; intersections [16, 204, 127, 131]; smallest 16 leaves
+#   tree split x block 3 cut: compatible False; intersections [141, 79, 202, 56]; smallest 56 leaves
+#   block 1 cut x block 2 cut: compatible False; intersections [107, 142, 36, 193]; smallest 36 leaves
+#   block 1 cut x block 3 cut: compatible False; intersections [186, 63, 157, 72]; smallest 63 leaves
+#   block 2 cut x block 3 cut: compatible False; intersections [99, 44, 244, 91]; smallest 44 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N97405.csv (478 rows)
+
+# ===== node_splits.py (final version, with the tree view) =====
+"""Follow-up: one node's tree split and block cuts as leaf-set splits (Partition). usage: node_splits.py N97405"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+SPR = HERE.parent / "spr_alternatives_best_flat_cut_20261111"
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(SPR))
+
+from block_lib import best_cut_one_direction, standardized_blocks  # noqa: E402
+from spr_lib import index_tree, subtree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import reference_p_value, to_rho  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+from tree_break_selection.tree.elements import Partition  # noqa: E402
+from tree_break_selection.tree.poset_tree import PosetTree  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+name = sys.argv[1]
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+x = np.load(source / "pca.npy")
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+z = np.load(SPR / f"tree_{METHOD}.npz")
+parent, leaf_row = z["parent"], z["leaf_row"]
+n_leaves = len(leaf_row)
+order, pre, sub_all = index_tree(parent)
+nodes, local_parent, is_leaf, _ = subtree(parent, order, pre, sub_all, int(name[1:]), n_leaves)
+rows = leaf_row[nodes[is_leaf]]
+cells = metadata.index[rows].to_numpy()
+lines = metadata.Cell_line.to_numpy()[rows]
+n = len(rows)
+
+
+def node_id(index):
+    return f"L{index}" if index < n_leaves else f"N{index}"
+
+
+tree = PosetTree()
+for index in nodes:
+    tree.add_node(node_id(index), is_leaf=bool(index < n_leaves), label=metadata.index[leaf_row[index]] if index < n_leaves else node_id(index))
+for index, up in zip(nodes[1:], local_parent[1:], strict=True):
+    tree.add_edge(node_id(nodes[up]), node_id(index))
+tree.graph["root"] = name
+tree.initialize_split_indices({cell: position for position, cell in enumerate(cells)})
+encoding = tree.graph["taxa_encoding"]
+splits = tree.to_splits(with_leaves=True)
+everything = set(range(n))
+
+
+def partition(mask):
+    return Partition(tuple(int(i) for i in np.flatnonzero(mask)), encoding)
+
+
+def composition(mask):
+    counts = pd.Series(lines[mask]).value_counts()
+    return ", ".join(f"{line} {count}" for line, count in counts.items())
+
+
+def describe(label, side):
+    """Is this leaf set a node of the tree? If not, which nodes of the tree make it up?"""
+    mask = np.zeros(n, dtype=bool)
+    mask[list(side.indices)] = True
+    node = tree.find_node_by_split(side)
+    print(f"  {label}: {len(side)} leaves ({composition(mask)})")
+    if node is not None:
+        print(f"      is the tree node {node}")
+        return
+    pieces = sorted(splits.maximals_under(side), key=lambda p: -len(p))
+    singles = sum(len(p) == 1 for p in pieces)
+    print(f"      is not a node of the tree; it is the union of {len(pieces)} tree nodes ({singles} of them single leaves). Largest:")
+    for piece in pieces[:4]:
+        piece_mask = np.zeros(n, dtype=bool)
+        piece_mask[list(piece.indices)] = True
+        print(f"        {tree.find_node_by_split(piece)}: {len(piece)} leaves ({composition(piece_mask)})")
+
+
+print(f"=== {name}: {n} leaves; lines: {composition(np.ones(n, dtype=bool))}")
+children = list(tree.successors(name))
+tree_sides = [tree.nodes[child]["split_indices"] for child in children]
+print("\nTree split (the node's two children)")
+for child, side in zip(children, tree_sides, strict=True):
+    describe(f"child {child}", side)
+
+fit = {r["node"]: r for r in json.loads((SPR / f"splits_{METHOD}.json").read_text())["splits"]}
+
+
+def show(node, depth=0):
+    """The tree below the node, two levels, with the fit's verdict on each node's split."""
+    side = tree.nodes[node]["split_indices"]
+    mask = np.zeros(n, dtype=bool)
+    mask[list(side.indices)] = True
+    record = fit.get(node)
+    verdict = "not tested" if record is None else f"sibling p {record['p']}, BH different {record['bh_different']}"
+    print("  " + "    " * depth + f"{node}: {len(side)} leaves ({composition(mask)}) | {verdict}")
+    if depth < 2:
+        for child in sorted(tree.successors(node), key=lambda c: -len(tree.nodes[c]["split_indices"])):
+            show(child, depth + 1)
+
+
+print("\nThe tree below the node (two levels)")
+show(name)
+
+print("\nHow the tree holds each cell line of the node (lines with 5 leaves or more)")
+for line in pd.Series(lines).value_counts().loc[lambda c: c >= 5].index:
+    describe(f"all leaves of {line}", partition(lines == line))
+
+y, values = standardized_blocks(x[rows], invariant_directions(x[rows]))
+table = pd.DataFrame({"cell": cells, "cell_line": lines, "tree_split": np.where(np.isin(np.arange(n), tree_sides[0].indices), children[0], children[1])})
+cuts = {}
+for block in range(y.shape[1]):
+    r2, mask = best_cut_one_direction(y[:, block])
+    p = float(reference_p_value(to_rho(r2, n), n, 1)[0])
+    if p > 0.01 / y.shape[1]:
+        continue
+    cuts[block + 1] = (partition(mask), partition(~mask))
+    table[f"block_{block + 1}_cut"] = np.where(mask, "low", "high")
+    print(f"\nBlock {block + 1} cut (eigenvalue {values[block]:.2f}, rho {to_rho(r2, n):.2f}, p {p:.4f})")
+    describe("low side", cuts[block + 1][0])
+    describe("high side", cuts[block + 1][1])
+
+print("\nCompatibility (two splits fit in one tree when one of the four intersections of their sides is empty)")
+named = {"tree split": tree_sides[0], **{f"block {b} cut": low for b, (low, _) in cuts.items()}}
+labels = list(named)
+for i, a in enumerate(labels):
+    for b in labels[i + 1 :]:
+        first, second = named[a], named[b]
+        rest_first, rest_second = partition(~np.isin(np.arange(n), first.indices)), partition(~np.isin(np.arange(n), second.indices))
+        sizes = [len(u & v) for u in (first, rest_first) for v in (second, rest_second)]
+        print(f"  {a} x {b}: compatible {first.is_compatible_with(second, everything)}; intersections {sizes}; smallest {min(sizes)} leaves")
+out = HERE / f"leaves_{name}.csv"
+table.to_csv(out, index=False)
+print(f"\nleaf table: {out.relative_to(HERE.parents[2])} ({len(table)} rows)")
+
+# ===== splits_N97405.txt =====
+# === N97405: 478 leaves; lines: HCC1419_BREAST 219, MDAMB361_BREAST 135, BT474_BREAST 122, EFM192A_BREAST 2
+#
+# Tree split (the node's two children)
+#   child N96707: 220 leaves (HCC1419_BREAST 219, EFM192A_BREAST 1)
+#       is the tree node N96707
+#   child N97129: 258 leaves (MDAMB361_BREAST 135, BT474_BREAST 122, EFM192A_BREAST 1)
+#       is the tree node N97129
+#
+# The tree below the node (two levels)
+#   N97405: 478 leaves (HCC1419_BREAST 219, MDAMB361_BREAST 135, BT474_BREAST 122, EFM192A_BREAST 2) | sibling p 0.0005, BH different True
+#       N97129: 258 leaves (MDAMB361_BREAST 135, BT474_BREAST 122, EFM192A_BREAST 1) | sibling p 0.0005, BH different True
+#           N96510: 136 leaves (BT474_BREAST 122, MDAMB361_BREAST 13, EFM192A_BREAST 1) | sibling p 1.0, BH different False
+#           N96138: 122 leaves (MDAMB361_BREAST 122) | sibling p 1.0, BH different False
+#       N96707: 220 leaves (HCC1419_BREAST 219, EFM192A_BREAST 1) | sibling p 1.0, BH different False
+#           N95969: 177 leaves (HCC1419_BREAST 177) | sibling p 1.0, BH different False
+#           N95025: 43 leaves (HCC1419_BREAST 42, EFM192A_BREAST 1) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of HCC1419_BREAST: 219 leaves (HCC1419_BREAST 219)
+#       is not a node of the tree; it is the union of 6 tree nodes (1 of them single leaves). Largest:
+#         N95969: 177 leaves (HCC1419_BREAST 177)
+#         N92976: 30 leaves (HCC1419_BREAST 30)
+#         N81503: 6 leaves (HCC1419_BREAST 6)
+#         N82342: 3 leaves (HCC1419_BREAST 3)
+#   all leaves of MDAMB361_BREAST: 135 leaves (MDAMB361_BREAST 135)
+#       is not a node of the tree; it is the union of 10 tree nodes (7 of them single leaves). Largest:
+#         N96138: 122 leaves (MDAMB361_BREAST 122)
+#         N70934: 4 leaves (MDAMB361_BREAST 4)
+#         N76702: 2 leaves (MDAMB361_BREAST 2)
+#         L20835: 1 leaves (MDAMB361_BREAST 1)
+#   all leaves of BT474_BREAST: 122 leaves (BT474_BREAST 122)
+#       is not a node of the tree; it is the union of 22 tree nodes (11 of them single leaves). Largest:
+#         N94337: 44 leaves (BT474_BREAST 44)
+#         N77275: 10 leaves (BT474_BREAST 10)
+#         N76177: 9 leaves (BT474_BREAST 9)
+#         N85100: 9 leaves (BT474_BREAST 9)
+#
+# Block 1 cut (eigenvalue 46.65, rho 3.03, p 0.0005)
+#   low side: 249 leaves (BT474_BREAST 122, MDAMB361_BREAST 115, HCC1419_BREAST 11, EFM192A_BREAST 1)
+#       is not a node of the tree; it is the union of 21 tree nodes (13 of them single leaves). Largest:
+#         N96510: 136 leaves (BT474_BREAST 122, MDAMB361_BREAST 13, EFM192A_BREAST 1)
+#         N94244: 48 leaves (MDAMB361_BREAST 48)
+#         N89989: 38 leaves (MDAMB361_BREAST 38)
+#         N63190: 4 leaves (MDAMB361_BREAST 4)
+#   high side: 229 leaves (HCC1419_BREAST 208, MDAMB361_BREAST 20, EFM192A_BREAST 1)
+#       is not a node of the tree; it is the union of 23 tree nodes (12 of them single leaves). Largest:
+#         N94243: 74 leaves (HCC1419_BREAST 74)
+#         N89739: 55 leaves (HCC1419_BREAST 55)
+#         N89024: 46 leaves (HCC1419_BREAST 46)
+#         N84590: 13 leaves (HCC1419_BREAST 13)
+#
+# Block 2 cut (eigenvalue 16.17, rho 2.52, p 0.0005)
+#   low side: 143 leaves (MDAMB361_BREAST 126, HCC1419_BREAST 16, BT474_BREAST 1)
+#       is not a node of the tree; it is the union of 25 tree nodes (19 of them single leaves). Largest:
+#         N93432: 74 leaves (MDAMB361_BREAST 74)
+#         N92464: 31 leaves (MDAMB361_BREAST 31)
+#         N87793: 13 leaves (MDAMB361_BREAST 13)
+#         N51852: 2 leaves (HCC1419_BREAST 2)
+#   high side: 335 leaves (HCC1419_BREAST 203, BT474_BREAST 121, MDAMB361_BREAST 9, EFM192A_BREAST 2)
+#       is not a node of the tree; it is the union of 54 tree nodes (27 of them single leaves). Largest:
+#         N94243: 74 leaves (HCC1419_BREAST 74)
+#         N94337: 44 leaves (BT474_BREAST 44)
+#         N95025: 43 leaves (HCC1419_BREAST 42, EFM192A_BREAST 1)
+#         N86991: 30 leaves (BT474_BREAST 29, MDAMB361_BREAST 1)
+#
+# Block 3 cut (eigenvalue 5.77, rho 2.35, p 0.0005)
+#   low side: 343 leaves (HCC1419_BREAST 140, BT474_BREAST 112, MDAMB361_BREAST 89, EFM192A_BREAST 2)
+#       is not a node of the tree; it is the union of 96 tree nodes (52 of them single leaves). Largest:
+#         N86616: 36 leaves (MDAMB361_BREAST 36)
+#         N91274: 36 leaves (BT474_BREAST 36)
+#         N86991: 30 leaves (BT474_BREAST 29, MDAMB361_BREAST 1)
+#         N77031: 20 leaves (HCC1419_BREAST 20)
+#   high side: 135 leaves (HCC1419_BREAST 79, MDAMB361_BREAST 46, BT474_BREAST 10)
+#       is not a node of the tree; it is the union of 66 tree nodes (36 of them single leaves). Largest:
+#         N86367: 9 leaves (MDAMB361_BREAST 7, BT474_BREAST 2)
+#         N80140: 6 leaves (HCC1419_BREAST 6)
+#         N75773: 6 leaves (MDAMB361_BREAST 6)
+#         N74876: 5 leaves (MDAMB361_BREAST 5)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible False; intersections [11, 209, 238, 20]; smallest 11 leaves
+#   tree split x block 2 cut: compatible False; intersections [16, 204, 127, 131]; smallest 16 leaves
+#   tree split x block 3 cut: compatible False; intersections [141, 79, 202, 56]; smallest 56 leaves
+#   block 1 cut x block 2 cut: compatible False; intersections [107, 142, 36, 193]; smallest 36 leaves
+#   block 1 cut x block 3 cut: compatible False; intersections [186, 63, 157, 72]; smallest 63 leaves
+#   block 2 cut x block 3 cut: compatible False; intersections [99, 44, 244, 91]; smallest 44 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N97405.csv (478 rows)
+
+# ===== splits_N97705.txt =====
+# === N97705: 523 leaves; lines: NCIH2077_LUNG 445, TOV112D_OVARY 78
+#
+# Tree split (the node's two children)
+#   child N97553: 443 leaves (NCIH2077_LUNG 443)
+#       is the tree node N97553
+#   child N97587: 80 leaves (TOV112D_OVARY 78, NCIH2077_LUNG 2)
+#       is the tree node N97587
+#
+# The tree below the node (two levels)
+#   N97705: 523 leaves (NCIH2077_LUNG 445, TOV112D_OVARY 78) | sibling p 0.0005, BH different True
+#       N97553: 443 leaves (NCIH2077_LUNG 443) | sibling p 1.0, BH different False
+#           N97470: 413 leaves (NCIH2077_LUNG 413) | sibling p 1.0, BH different False
+#           N97165: 30 leaves (NCIH2077_LUNG 30) | not tested
+#       N97587: 80 leaves (TOV112D_OVARY 78, NCIH2077_LUNG 2) | sibling p 1.0, BH different False
+#           N97530: 77 leaves (TOV112D_OVARY 76, NCIH2077_LUNG 1) | not tested
+#           N97401: 3 leaves (TOV112D_OVARY 2, NCIH2077_LUNG 1) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of NCIH2077_LUNG: 445 leaves (NCIH2077_LUNG 445)
+#       is not a node of the tree; it is the union of 3 tree nodes (2 of them single leaves). Largest:
+#         N97553: 443 leaves (NCIH2077_LUNG 443)
+#         L31064: 1 leaves (NCIH2077_LUNG 1)
+#         L33676: 1 leaves (NCIH2077_LUNG 1)
+#   all leaves of TOV112D_OVARY: 78 leaves (TOV112D_OVARY 78)
+#       is not a node of the tree; it is the union of 8 tree nodes (3 of them single leaves). Largest:
+#         N97215: 42 leaves (TOV112D_OVARY 42)
+#         N95177: 16 leaves (TOV112D_OVARY 16)
+#         N95356: 7 leaves (TOV112D_OVARY 7)
+#         N92674: 7 leaves (TOV112D_OVARY 7)
+#
+# Block 1 cut (eigenvalue 55.67, rho 2.43, p 0.0005)
+#   low side: 424 leaves (NCIH2077_LUNG 424)
+#       is not a node of the tree; it is the union of 16 tree nodes (8 of them single leaves). Largest:
+#         N97175: 269 leaves (NCIH2077_LUNG 269)
+#         N96871: 108 leaves (NCIH2077_LUNG 108)
+#         N95610: 24 leaves (NCIH2077_LUNG 24)
+#         N92012: 7 leaves (NCIH2077_LUNG 7)
+#   high side: 99 leaves (TOV112D_OVARY 78, NCIH2077_LUNG 21)
+#       is not a node of the tree; it is the union of 11 tree nodes (6 of them single leaves). Largest:
+#         N97587: 80 leaves (TOV112D_OVARY 78, NCIH2077_LUNG 2)
+#         N96562: 7 leaves (NCIH2077_LUNG 7)
+#         N86882: 2 leaves (NCIH2077_LUNG 2)
+#         N53299: 2 leaves (NCIH2077_LUNG 2)
+#
+# Block 2 cut (eigenvalue 5.00, rho 2.27, p 0.0005)
+#   low side: 329 leaves (NCIH2077_LUNG 298, TOV112D_OVARY 31)
+#       is not a node of the tree; it is the union of 196 tree nodes (127 of them single leaves). Largest:
+#         N94139: 12 leaves (NCIH2077_LUNG 12)
+#         N91189: 9 leaves (NCIH2077_LUNG 9)
+#         N96562: 7 leaves (NCIH2077_LUNG 7)
+#         N74688: 6 leaves (NCIH2077_LUNG 6)
+#   high side: 194 leaves (NCIH2077_LUNG 147, TOV112D_OVARY 47)
+#       is not a node of the tree; it is the union of 150 tree nodes (118 of them single leaves). Largest:
+#         N64689: 4 leaves (NCIH2077_LUNG 4)
+#         N85315: 4 leaves (TOV112D_OVARY 4)
+#         N57026: 3 leaves (NCIH2077_LUNG 3)
+#         N55737: 3 leaves (NCIH2077_LUNG 3)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible True; intersections [424, 19, 0, 80]; smallest 0 leaves
+#   tree split x block 2 cut: compatible False; intersections [297, 146, 32, 48]; smallest 32 leaves
+#   block 1 cut x block 2 cut: compatible False; intersections [279, 145, 50, 49]; smallest 49 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N97705.csv (523 rows)
+
+# ===== splits_N97713.txt =====
+# === N97713: 368 leaves; lines: OVK18_OVARY 178, SBC5_LUNG 102, COV434_OVARY 88
+#
+# Tree split (the node's two children)
+#   child N97204: 178 leaves (OVK18_OVARY 178)
+#       is the tree node N97204
+#   child N97616: 190 leaves (SBC5_LUNG 102, COV434_OVARY 88)
+#       is the tree node N97616
+#
+# The tree below the node (two levels)
+#   N97713: 368 leaves (OVK18_OVARY 178, SBC5_LUNG 102, COV434_OVARY 88) | sibling p 0.0005, BH different True
+#       N97616: 190 leaves (SBC5_LUNG 102, COV434_OVARY 88) | sibling p 0.0005, BH different True
+#           N97466: 102 leaves (SBC5_LUNG 100, COV434_OVARY 2) | sibling p 1.0, BH different False
+#           N97479: 88 leaves (COV434_OVARY 86, SBC5_LUNG 2) | sibling p 1.0, BH different False
+#       N97204: 178 leaves (OVK18_OVARY 178) | not tested
+#           N97099: 173 leaves (OVK18_OVARY 173) | not tested
+#           N96838: 5 leaves (OVK18_OVARY 5) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of OVK18_OVARY: 178 leaves (OVK18_OVARY 178)
+#       is the tree node N97204
+#   all leaves of SBC5_LUNG: 102 leaves (SBC5_LUNG 102)
+#       is not a node of the tree; it is the union of 9 tree nodes (4 of them single leaves). Largest:
+#         N96709: 56 leaves (SBC5_LUNG 56)
+#         N96097: 21 leaves (SBC5_LUNG 21)
+#         N95249: 15 leaves (SBC5_LUNG 15)
+#         N97320: 4 leaves (SBC5_LUNG 4)
+#   all leaves of COV434_OVARY: 88 leaves (COV434_OVARY 88)
+#       is not a node of the tree; it is the union of 7 tree nodes (3 of them single leaves). Largest:
+#         N96428: 55 leaves (COV434_OVARY 55)
+#         N96215: 17 leaves (COV434_OVARY 17)
+#         N96291: 11 leaves (COV434_OVARY 11)
+#         N96865: 2 leaves (COV434_OVARY 2)
+#
+# Block 1 cut (eigenvalue 16.24, rho 7.59, p 0.0005)
+#   low side: 190 leaves (SBC5_LUNG 102, COV434_OVARY 88)
+#       is the tree node N97616
+#   high side: 178 leaves (OVK18_OVARY 178)
+#       is the tree node N97204
+#
+# Block 2 cut (eigenvalue 5.77, rho 2.38, p 0.0010)
+#   low side: 216 leaves (OVK18_OVARY 125, COV434_OVARY 82, SBC5_LUNG 9)
+#       is not a node of the tree; it is the union of 56 tree nodes (28 of them single leaves). Largest:
+#         N96428: 55 leaves (COV434_OVARY 55)
+#         N80115: 15 leaves (OVK18_OVARY 15)
+#         N79116: 15 leaves (OVK18_OVARY 15)
+#         N80163: 13 leaves (OVK18_OVARY 13)
+#   high side: 152 leaves (SBC5_LUNG 93, OVK18_OVARY 53, COV434_OVARY 6)
+#       is not a node of the tree; it is the union of 53 tree nodes (31 of them single leaves). Largest:
+#         N94916: 32 leaves (SBC5_LUNG 32)
+#         N95086: 18 leaves (SBC5_LUNG 18)
+#         N94633: 11 leaves (SBC5_LUNG 11)
+#         N93311: 7 leaves (SBC5_LUNG 7)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible True; intersections [0, 178, 190, 0]; smallest 0 leaves
+#   tree split x block 2 cut: compatible False; intersections [125, 53, 91, 99]; smallest 53 leaves
+#   block 1 cut x block 2 cut: compatible False; intersections [91, 99, 125, 53]; smallest 53 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N97713.csv (368 rows)
+
+# ===== splits_N97237.txt =====
+# === N97237: 163 leaves; lines: COLO792_SKIN 57, SKMEL30_SKIN 34, COLO741_SKIN 26, SKMEL5_SKIN 23, A2058_SKIN 16, UACC257_SKIN 3, SKMEL3_SKIN 2, IGR37_SKIN 1, RVH421_SKIN 1
+#
+# Tree split (the node's two children)
+#   child N96797: 98 leaves (COLO792_SKIN 57, SKMEL30_SKIN 33, UACC257_SKIN 3, SKMEL5_SKIN 2, IGR37_SKIN 1, A2058_SKIN 1, RVH421_SKIN 1)
+#       is the tree node N96797
+#   child N96890: 65 leaves (COLO741_SKIN 26, SKMEL5_SKIN 21, A2058_SKIN 15, SKMEL3_SKIN 2, SKMEL30_SKIN 1)
+#       is the tree node N96890
+#
+# The tree below the node (two levels)
+#   N97237: 163 leaves (COLO792_SKIN 57, SKMEL30_SKIN 34, COLO741_SKIN 26, SKMEL5_SKIN 23, A2058_SKIN 16, UACC257_SKIN 3, SKMEL3_SKIN 2, IGR37_SKIN 1, RVH421_SKIN 1) | sibling p 0.0005, BH different True
+#       N96797: 98 leaves (COLO792_SKIN 57, SKMEL30_SKIN 33, UACC257_SKIN 3, SKMEL5_SKIN 2, IGR37_SKIN 1, A2058_SKIN 1, RVH421_SKIN 1) | sibling p 1.0, BH different False
+#           N94464: 49 leaves (COLO792_SKIN 33, SKMEL30_SKIN 12, SKMEL5_SKIN 2, IGR37_SKIN 1, UACC257_SKIN 1) | sibling p 1.0, BH different False
+#           N95947: 49 leaves (COLO792_SKIN 24, SKMEL30_SKIN 21, UACC257_SKIN 2, A2058_SKIN 1, RVH421_SKIN 1) | not tested
+#       N96890: 65 leaves (COLO741_SKIN 26, SKMEL5_SKIN 21, A2058_SKIN 15, SKMEL3_SKIN 2, SKMEL30_SKIN 1) | sibling p 1.0, BH different False
+#           N95727: 35 leaves (SKMEL5_SKIN 17, COLO741_SKIN 12, A2058_SKIN 3, SKMEL3_SKIN 2, SKMEL30_SKIN 1) | sibling p 1.0, BH different False
+#           N95650: 30 leaves (COLO741_SKIN 14, A2058_SKIN 12, SKMEL5_SKIN 4) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of COLO792_SKIN: 57 leaves (COLO792_SKIN 57)
+#       is not a node of the tree; it is the union of 21 tree nodes (10 of them single leaves). Largest:
+#         N82531: 10 leaves (COLO792_SKIN 10)
+#         N88538: 9 leaves (COLO792_SKIN 9)
+#         N82767: 5 leaves (COLO792_SKIN 5)
+#         N79152: 4 leaves (COLO792_SKIN 4)
+#   all leaves of SKMEL30_SKIN: 34 leaves (SKMEL30_SKIN 34)
+#       is not a node of the tree; it is the union of 24 tree nodes (18 of them single leaves). Largest:
+#         N89277: 5 leaves (SKMEL30_SKIN 5)
+#         N85445: 3 leaves (SKMEL30_SKIN 3)
+#         N73261: 2 leaves (SKMEL30_SKIN 2)
+#         N83301: 2 leaves (SKMEL30_SKIN 2)
+#   all leaves of COLO741_SKIN: 26 leaves (COLO741_SKIN 26)
+#       is not a node of the tree; it is the union of 9 tree nodes (4 of them single leaves). Largest:
+#         N91558: 8 leaves (COLO741_SKIN 8)
+#         N88571: 5 leaves (COLO741_SKIN 5)
+#         N82167: 3 leaves (COLO741_SKIN 3)
+#         N88422: 3 leaves (COLO741_SKIN 3)
+#   all leaves of SKMEL5_SKIN: 23 leaves (SKMEL5_SKIN 23)
+#       is not a node of the tree; it is the union of 7 tree nodes (3 of them single leaves). Largest:
+#         N92113: 11 leaves (SKMEL5_SKIN 11)
+#         N86507: 4 leaves (SKMEL5_SKIN 4)
+#         N92348: 3 leaves (SKMEL5_SKIN 3)
+#         N84690: 2 leaves (SKMEL5_SKIN 2)
+#   all leaves of A2058_SKIN: 16 leaves (A2058_SKIN 16)
+#       is not a node of the tree; it is the union of 7 tree nodes (4 of them single leaves). Largest:
+#         N93435: 6 leaves (A2058_SKIN 6)
+#         N91085: 4 leaves (A2058_SKIN 4)
+#         N79675: 2 leaves (A2058_SKIN 2)
+#         L15568: 1 leaves (A2058_SKIN 1)
+#
+# Block 1 cut (eigenvalue 24.63, rho 2.97, p 0.0005)
+#   low side: 101 leaves (COLO792_SKIN 56, SKMEL30_SKIN 24, SKMEL5_SKIN 15, UACC257_SKIN 3, IGR37_SKIN 1, A2058_SKIN 1, RVH421_SKIN 1)
+#       is not a node of the tree; it is the union of 15 tree nodes (5 of them single leaves). Largest:
+#         N94277: 36 leaves (COLO792_SKIN 31, SKMEL30_SKIN 4, UACC257_SKIN 1)
+#         N93746: 23 leaves (COLO792_SKIN 13, SKMEL30_SKIN 8, RVH421_SKIN 1, UACC257_SKIN 1)
+#         N91479: 11 leaves (COLO792_SKIN 8, SKMEL30_SKIN 2, UACC257_SKIN 1)
+#         N89062: 9 leaves (SKMEL30_SKIN 5, SKMEL5_SKIN 2, IGR37_SKIN 1, COLO792_SKIN 1)
+#   high side: 62 leaves (COLO741_SKIN 26, A2058_SKIN 15, SKMEL30_SKIN 10, SKMEL5_SKIN 8, SKMEL3_SKIN 2, COLO792_SKIN 1)
+#       is not a node of the tree; it is the union of 14 tree nodes (9 of them single leaves). Largest:
+#         N95650: 30 leaves (COLO741_SKIN 14, A2058_SKIN 12, SKMEL5_SKIN 4)
+#         N94544: 17 leaves (COLO741_SKIN 12, A2058_SKIN 3, SKMEL3_SKIN 2)
+#         N83301: 2 leaves (SKMEL30_SKIN 2)
+#         N86955: 2 leaves (SKMEL30_SKIN 2)
+#
+# Block 2 cut (eigenvalue 13.24, rho 2.82, p 0.0005)
+#   low side: 21 leaves (SKMEL5_SKIN 21)
+#       is not a node of the tree; it is the union of 5 tree nodes (1 of them single leaves). Largest:
+#         N92113: 11 leaves (SKMEL5_SKIN 11)
+#         N86507: 4 leaves (SKMEL5_SKIN 4)
+#         N92348: 3 leaves (SKMEL5_SKIN 3)
+#         N84690: 2 leaves (SKMEL5_SKIN 2)
+#   high side: 142 leaves (COLO792_SKIN 57, SKMEL30_SKIN 34, COLO741_SKIN 26, A2058_SKIN 16, UACC257_SKIN 3, SKMEL5_SKIN 2, SKMEL3_SKIN 2, IGR37_SKIN 1, RVH421_SKIN 1)
+#       is not a node of the tree; it is the union of 9 tree nodes (2 of them single leaves). Largest:
+#         N96797: 98 leaves (COLO792_SKIN 57, SKMEL30_SKIN 33, UACC257_SKIN 3, SKMEL5_SKIN 2, IGR37_SKIN 1, A2058_SKIN 1, RVH421_SKIN 1)
+#         N94544: 17 leaves (COLO741_SKIN 12, A2058_SKIN 3, SKMEL3_SKIN 2)
+#         N91558: 8 leaves (COLO741_SKIN 8)
+#         N93435: 6 leaves (A2058_SKIN 6)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible False; intersections [88, 10, 13, 52]; smallest 10 leaves
+#   tree split x block 2 cut: compatible True; intersections [0, 98, 21, 44]; smallest 0 leaves
+#   block 1 cut x block 2 cut: compatible False; intersections [13, 88, 8, 54]; smallest 8 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N97237.csv (163 rows)
+
+# ===== splits_N93303.txt =====
+# === N93303: 127 leaves; lines: SNU1196_BILIARY_TRACT 127
+#
+# Tree split (the node's two children)
+#   child N88150: 60 leaves (SNU1196_BILIARY_TRACT 60)
+#       is the tree node N88150
+#   child N90669: 67 leaves (SNU1196_BILIARY_TRACT 67)
+#       is the tree node N90669
+#
+# The tree below the node (two levels)
+#   N93303: 127 leaves (SNU1196_BILIARY_TRACT 127) | sibling p 1.0, BH different False
+#       N90669: 67 leaves (SNU1196_BILIARY_TRACT 67) | sibling p 1.0, BH different False
+#           N86682: 39 leaves (SNU1196_BILIARY_TRACT 39) | sibling p 1.0, BH different False
+#           N82908: 28 leaves (SNU1196_BILIARY_TRACT 28) | sibling p 1.0, BH different False
+#       N88150: 60 leaves (SNU1196_BILIARY_TRACT 60) | sibling p 1.0, BH different False
+#           N87719: 47 leaves (SNU1196_BILIARY_TRACT 47) | sibling p 1.0, BH different False
+#           N78654: 13 leaves (SNU1196_BILIARY_TRACT 13) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of SNU1196_BILIARY_TRACT: 127 leaves (SNU1196_BILIARY_TRACT 127)
+#       is the tree node N93303
+#
+# Block 1 cut (eigenvalue 8.84, rho 4.27, p 0.0005)
+#   low side: 43 leaves (SNU1196_BILIARY_TRACT 43)
+#       is not a node of the tree; it is the union of 14 tree nodes (5 of them single leaves). Largest:
+#         N77207: 13 leaves (SNU1196_BILIARY_TRACT 13)
+#         N74407: 8 leaves (SNU1196_BILIARY_TRACT 8)
+#         N58436: 3 leaves (SNU1196_BILIARY_TRACT 3)
+#         N62971: 3 leaves (SNU1196_BILIARY_TRACT 3)
+#   high side: 84 leaves (SNU1196_BILIARY_TRACT 84)
+#       is not a node of the tree; it is the union of 25 tree nodes (7 of them single leaves). Largest:
+#         N80323: 13 leaves (SNU1196_BILIARY_TRACT 13)
+#         N73336: 11 leaves (SNU1196_BILIARY_TRACT 11)
+#         N76329: 9 leaves (SNU1196_BILIARY_TRACT 9)
+#         N70722: 7 leaves (SNU1196_BILIARY_TRACT 7)
+#
+# Block 6 cut (eigenvalue 1.57, rho 2.72, p 0.0010)
+#   low side: 75 leaves (SNU1196_BILIARY_TRACT 75)
+#       is not a node of the tree; it is the union of 44 tree nodes (28 of them single leaves). Largest:
+#         N70722: 7 leaves (SNU1196_BILIARY_TRACT 7)
+#         N61528: 4 leaves (SNU1196_BILIARY_TRACT 4)
+#         N69232: 4 leaves (SNU1196_BILIARY_TRACT 4)
+#         N65990: 4 leaves (SNU1196_BILIARY_TRACT 4)
+#   high side: 52 leaves (SNU1196_BILIARY_TRACT 52)
+#       is not a node of the tree; it is the union of 35 tree nodes (24 of them single leaves). Largest:
+#         N62240: 4 leaves (SNU1196_BILIARY_TRACT 4)
+#         N59410: 3 leaves (SNU1196_BILIARY_TRACT 3)
+#         N62971: 3 leaves (SNU1196_BILIARY_TRACT 3)
+#         N64040: 3 leaves (SNU1196_BILIARY_TRACT 3)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible False; intersections [8, 52, 35, 32]; smallest 8 leaves
+#   tree split x block 6 cut: compatible False; intersections [27, 33, 48, 19]; smallest 19 leaves
+#   block 1 cut x block 6 cut: compatible False; intersections [24, 19, 51, 33]; smallest 19 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N93303.csv (127 rows)
+
+# ===== splits_N96475.txt =====
+# === N96475: 114 leaves; lines: SNU1214_UPPER_AERODIGESTIVE_TRACT 101, TE14_OESOPHAGUS 10, BICR16_UPPER_AERODIGESTIVE_TRACT 3
+#
+# Tree split (the node's two children)
+#   child N94813: 19 leaves (TE14_OESOPHAGUS 10, SNU1214_UPPER_AERODIGESTIVE_TRACT 6, BICR16_UPPER_AERODIGESTIVE_TRACT 3)
+#       is the tree node N94813
+#   child N95374: 95 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 95)
+#       is the tree node N95374
+#
+# The tree below the node (two levels)
+#   N96475: 114 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 101, TE14_OESOPHAGUS 10, BICR16_UPPER_AERODIGESTIVE_TRACT 3) | sibling p 1.0, BH different False
+#       N95374: 95 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 95) | sibling p 1.0, BH different False
+#           N93796: 64 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 64) | sibling p 1.0, BH different False
+#           N92656: 31 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 31) | not tested
+#       N94813: 19 leaves (TE14_OESOPHAGUS 10, SNU1214_UPPER_AERODIGESTIVE_TRACT 6, BICR16_UPPER_AERODIGESTIVE_TRACT 3) | not tested
+#           N94554: 14 leaves (TE14_OESOPHAGUS 6, SNU1214_UPPER_AERODIGESTIVE_TRACT 5, BICR16_UPPER_AERODIGESTIVE_TRACT 3) | not tested
+#           N92518: 5 leaves (TE14_OESOPHAGUS 4, SNU1214_UPPER_AERODIGESTIVE_TRACT 1) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of SNU1214_UPPER_AERODIGESTIVE_TRACT: 101 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 101)
+#       is not a node of the tree; it is the union of 6 tree nodes (4 of them single leaves). Largest:
+#         N95374: 95 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 95)
+#         N73969: 2 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 2)
+#         L47173: 1 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 1)
+#         L48207: 1 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 1)
+#   all leaves of TE14_OESOPHAGUS: 10 leaves (TE14_OESOPHAGUS 10)
+#       is not a node of the tree; it is the union of 2 tree nodes (0 of them single leaves). Largest:
+#         N88659: 6 leaves (TE14_OESOPHAGUS 6)
+#         N89472: 4 leaves (TE14_OESOPHAGUS 4)
+#
+# Block 1 cut (eigenvalue 24.58, rho 4.27, p 0.0005)
+#   low side: 10 leaves (TE14_OESOPHAGUS 10)
+#       is not a node of the tree; it is the union of 2 tree nodes (0 of them single leaves). Largest:
+#         N88659: 6 leaves (TE14_OESOPHAGUS 6)
+#         N89472: 4 leaves (TE14_OESOPHAGUS 4)
+#   high side: 104 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 101, BICR16_UPPER_AERODIGESTIVE_TRACT 3)
+#       is not a node of the tree; it is the union of 3 tree nodes (1 of them single leaves). Largest:
+#         N95374: 95 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 95)
+#         N90027: 8 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 5, BICR16_UPPER_AERODIGESTIVE_TRACT 3)
+#         L48207: 1 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 1)
+#
+# Block 3 cut (eigenvalue 7.91, rho 3.10, p 0.0005)
+#   low side: 50 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 43, TE14_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#       is not a node of the tree; it is the union of 34 tree nodes (24 of them single leaves). Largest:
+#         N59326: 4 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 4)
+#         N60207: 4 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 4)
+#         N56596: 3 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 3)
+#         N78495: 3 leaves (TE14_OESOPHAGUS 3)
+#   high side: 64 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 58, TE14_OESOPHAGUS 4, BICR16_UPPER_AERODIGESTIVE_TRACT 2)
+#       is not a node of the tree; it is the union of 38 tree nodes (22 of them single leaves). Largest:
+#         N81677: 8 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 8)
+#         N54050: 3 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 3)
+#         N59434: 3 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 3)
+#         N66446: 3 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 3)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible True; intersections [10, 9, 0, 95]; smallest 0 leaves
+#   tree split x block 3 cut: compatible False; intersections [12, 7, 38, 57]; smallest 7 leaves
+#   block 1 cut x block 3 cut: compatible False; intersections [6, 4, 44, 60]; smallest 4 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N96475.csv (114 rows)
+
+# ===== splits_N94004.txt =====
+# === N94004: 84 leaves; lines: VMCUB1_URINARY_TRACT 73, BICR56_UPPER_AERODIGESTIVE_TRACT 11
+#
+# Tree split (the node's two children)
+#   child N90482: 11 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 11)
+#       is the tree node N90482
+#   child N92777: 73 leaves (VMCUB1_URINARY_TRACT 73)
+#       is the tree node N92777
+#
+# The tree below the node (two levels)
+#   N94004: 84 leaves (VMCUB1_URINARY_TRACT 73, BICR56_UPPER_AERODIGESTIVE_TRACT 11) | sibling p 0.0005, BH different False
+#       N92777: 73 leaves (VMCUB1_URINARY_TRACT 73) | not tested
+#           N91848: 44 leaves (VMCUB1_URINARY_TRACT 44) | not tested
+#           N92231: 29 leaves (VMCUB1_URINARY_TRACT 29) | not tested
+#       N90482: 11 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 11) | not tested
+#           N83800: 9 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 9) | not tested
+#           N80830: 2 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 2) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of VMCUB1_URINARY_TRACT: 73 leaves (VMCUB1_URINARY_TRACT 73)
+#       is the tree node N92777
+#   all leaves of BICR56_UPPER_AERODIGESTIVE_TRACT: 11 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 11)
+#       is the tree node N90482
+#
+# Block 1 cut (eigenvalue 65.10, rho 17.64, p 0.0005)
+#   low side: 11 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 11)
+#       is the tree node N90482
+#   high side: 73 leaves (VMCUB1_URINARY_TRACT 73)
+#       is the tree node N92777
+#
+# Block 2 cut (eigenvalue 8.98, rho 3.58, p 0.0005)
+#   low side: 45 leaves (VMCUB1_URINARY_TRACT 39, BICR56_UPPER_AERODIGESTIVE_TRACT 6)
+#       is not a node of the tree; it is the union of 12 tree nodes (9 of them single leaves). Largest:
+#         N87604: 23 leaves (VMCUB1_URINARY_TRACT 23)
+#         N84982: 9 leaves (VMCUB1_URINARY_TRACT 9)
+#         N68512: 4 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 4)
+#         L18989: 1 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 1)
+#   high side: 39 leaves (VMCUB1_URINARY_TRACT 34, BICR56_UPPER_AERODIGESTIVE_TRACT 5)
+#       is not a node of the tree; it is the union of 16 tree nodes (12 of them single leaves). Largest:
+#         N87074: 14 leaves (VMCUB1_URINARY_TRACT 14)
+#         N87018: 6 leaves (VMCUB1_URINARY_TRACT 6)
+#         N83437: 5 leaves (VMCUB1_URINARY_TRACT 5)
+#         N57309: 2 leaves (BICR56_UPPER_AERODIGESTIVE_TRACT 2)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible True; intersections [11, 0, 0, 73]; smallest 0 leaves
+#   tree split x block 2 cut: compatible False; intersections [6, 5, 39, 34]; smallest 5 leaves
+#   block 1 cut x block 2 cut: compatible False; intersections [6, 5, 39, 34]; smallest 5 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N94004.csv (84 rows)
+
+# ===== splits_N96842.txt =====
+# === N96842: 76 leaves; lines: TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 30, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1
+#
+# Tree split (the node's two children)
+#   child N96516: 33 leaves (TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 1)
+#       is the tree node N96516
+#   child N96808: 43 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#       is the tree node N96808
+#
+# The tree below the node (two levels)
+#   N96842: 76 leaves (TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 30, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 0.0445, BH different False
+#       N96808: 43 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 0.021, BH different False
+#           N96190: 36 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 1.0, BH different False
+#           N96070: 7 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1) | not tested
+#       N96516: 33 leaves (TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 1.0, BH different False
+#           N95643: 28 leaves (TE10_OESOPHAGUS 27, SNU46_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 1.0, BH different False
+#           N96093: 5 leaves (TE10_OESOPHAGUS 5) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of TE10_OESOPHAGUS: 32 leaves (TE10_OESOPHAGUS 32)
+#       is not a node of the tree; it is the union of 5 tree nodes (0 of them single leaves). Largest:
+#         N91584: 11 leaves (TE10_OESOPHAGUS 11)
+#         N92794: 8 leaves (TE10_OESOPHAGUS 8)
+#         N92826: 6 leaves (TE10_OESOPHAGUS 6)
+#         N96093: 5 leaves (TE10_OESOPHAGUS 5)
+#   all leaves of SNU46_UPPER_AERODIGESTIVE_TRACT: 30 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 30)
+#       is not a node of the tree; it is the union of 3 tree nodes (1 of them single leaves). Largest:
+#         N94251: 25 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 25)
+#         N92451: 4 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 4)
+#         L43420: 1 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 1)
+#   all leaves of KYSE520_OESOPHAGUS: 6 leaves (KYSE520_OESOPHAGUS 6)
+#       is not a node of the tree; it is the union of 5 tree nodes (4 of them single leaves). Largest:
+#         N88548: 2 leaves (KYSE520_OESOPHAGUS 2)
+#         L36882: 1 leaves (KYSE520_OESOPHAGUS 1)
+#         L32069: 1 leaves (KYSE520_OESOPHAGUS 1)
+#         L31794: 1 leaves (KYSE520_OESOPHAGUS 1)
+#
+# Block 1 cut (eigenvalue 53.34, rho 3.86, p 0.0005)
+#   low side: 69 leaves (TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 30, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1)
+#       is not a node of the tree; it is the union of 4 tree nodes (0 of them single leaves). Largest:
+#         N96516: 33 leaves (TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 1)
+#         N94251: 25 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 25)
+#         N96070: 7 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1)
+#         N92451: 4 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 4)
+#   high side: 7 leaves (KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#       is not a node of the tree; it is the union of 2 tree nodes (0 of them single leaves). Largest:
+#         N90950: 5 leaves (KYSE520_OESOPHAGUS 4, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#         N88548: 2 leaves (KYSE520_OESOPHAGUS 2)
+#
+# Block 3 cut (eigenvalue 9.83, rho 3.40, p 0.0005)
+#   low side: 31 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 28, YD38_UPPER_AERODIGESTIVE_TRACT 1, BICR31_UPPER_AERODIGESTIVE_TRACT 1, KYSE520_OESOPHAGUS 1)
+#       is not a node of the tree; it is the union of 9 tree nodes (4 of them single leaves). Largest:
+#         N93370: 13 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 13)
+#         N83497: 6 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 6)
+#         N92451: 4 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 4)
+#         N85147: 2 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 2)
+#   high side: 45 leaves (TE10_OESOPHAGUS 32, KYSE520_OESOPHAGUS 5, SNU46_UPPER_AERODIGESTIVE_TRACT 2, BICR31_UPPER_AERODIGESTIVE_TRACT 1, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, YD38_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#       is not a node of the tree; it is the union of 8 tree nodes (3 of them single leaves). Largest:
+#         N96516: 33 leaves (TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 1)
+#         N80087: 3 leaves (KYSE520_OESOPHAGUS 2, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#         N94638: 2 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 1, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1)
+#         N88548: 2 leaves (KYSE520_OESOPHAGUS 2)
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible True; intersections [33, 0, 36, 7]; smallest 0 leaves
+#   tree split x block 3 cut: compatible True; intersections [0, 33, 31, 12]; smallest 0 leaves
+#   block 1 cut x block 3 cut: compatible False; intersections [30, 39, 1, 6]; smallest 1 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N96842.csv (76 rows)
+
+# ===== splits_N96808.txt =====
+# === N96808: 43 leaves; lines: SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1
+#
+# Tree split (the node's two children)
+#   child N96070: 7 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1)
+#       is the tree node N96070
+#   child N96190: 36 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#       is the tree node N96190
+#
+# The tree below the node (two levels)
+#   N96808: 43 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 0.021, BH different False
+#       N96190: 36 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 1.0, BH different False
+#           N94251: 25 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 25) | sibling p 1.0, BH different False
+#           N95632: 11 leaves (KYSE520_OESOPHAGUS 6, SNU46_UPPER_AERODIGESTIVE_TRACT 4, BICR16_UPPER_AERODIGESTIVE_TRACT 1) | sibling p 1.0, BH different False
+#       N96070: 7 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1) | not tested
+#           N95232: 5 leaves (YD38_UPPER_AERODIGESTIVE_TRACT 2, BICR31_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1) | not tested
+#           N94638: 2 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 1, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1) | not tested
+#
+# How the tree holds each cell line of the node (lines with 5 leaves or more)
+#   all leaves of SNU46_UPPER_AERODIGESTIVE_TRACT: 29 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29)
+#       is not a node of the tree; it is the union of 2 tree nodes (0 of them single leaves). Largest:
+#         N94251: 25 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 25)
+#         N92451: 4 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 4)
+#   all leaves of KYSE520_OESOPHAGUS: 6 leaves (KYSE520_OESOPHAGUS 6)
+#       is not a node of the tree; it is the union of 5 tree nodes (4 of them single leaves). Largest:
+#         N88548: 2 leaves (KYSE520_OESOPHAGUS 2)
+#         L31747: 1 leaves (KYSE520_OESOPHAGUS 1)
+#         L31794: 1 leaves (KYSE520_OESOPHAGUS 1)
+#         L36882: 1 leaves (KYSE520_OESOPHAGUS 1)
+#
+# Block 1 cut (eigenvalue 72.37, rho 5.93, p 0.0005)
+#   low side: 7 leaves (KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#       is not a node of the tree; it is the union of 2 tree nodes (0 of them single leaves). Largest:
+#         N90950: 5 leaves (KYSE520_OESOPHAGUS 4, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#         N88548: 2 leaves (KYSE520_OESOPHAGUS 2)
+#   high side: 36 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1)
+#       is not a node of the tree; it is the union of 3 tree nodes (0 of them single leaves). Largest:
+#         N94251: 25 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 25)
+#         N96070: 7 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1)
+#         N92451: 4 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 4)
+#
+# Block 2 cut (eigenvalue 23.67, rho 5.92, p 0.0005)
+#   low side: 7 leaves (BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1)
+#       is the tree node N96070
+#   high side: 36 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+#       is the tree node N96190
+#
+# Compatibility (two splits fit in one tree when one of the four intersections of their sides is empty)
+#   tree split x block 1 cut: compatible True; intersections [0, 7, 7, 29]; smallest 0 leaves
+#   tree split x block 2 cut: compatible True; intersections [7, 0, 0, 36]; smallest 0 leaves
+#   block 1 cut x block 2 cut: compatible True; intersections [0, 7, 7, 29]; smallest 0 leaves
+#
+# leaf table: results/analyses/spr_eigenvalue_blocks_20261111/leaves_N96808.csv (43 rows)
+
+# ===== follow-up protocol (appended to protocol.md before the spr run) =====
+# ## Follow-up protocol: apply the sprs in N96475, N96842 and N96808 and re-test (written before the run)
+#
+# In each of the three nodes the fit refuses the tree split, and the smaller side of block 1's cut is a cell-line
+# boundary that is a union of 2 tree nodes (TE14 10 leaves in N96475; KYSE520 6 plus BICR16 1 in N96842 and in
+# N96808). `apply_sprs.py` builds the node's subtree as a `PosetTree` with set based identity, joins the pieces of
+# that side with `subtree_prune_regraft` and then regrafts the joined node on the edge above the node, so that
+# the node's two children are (that side | the rest). Each node is treated on the original tree.
+#
+# Recorded: the sprs applied, the leaf sets changed (`to_splits` before against after), and the sibling reference
+# (`best_flat_cut_reference`: k, `rho`, p) of the node's split before and after; the same for the split of the
+# new "rest" child where it has 15 cells or more. The node keeps its cells, so its k and its best flat cut do not
+# change; the joint best flat cut passes in all three nodes, so the new split can pass but need not.
+#
+# Expected: block 1's own cut has `rho` 4.27, 3.86 and 5.93 in one direction. In all k directions the same split
+# has at least that between/total ratio, but the reference at (n, k) asks for more than at (n, 1); whether the new
+# split passes at 0.01 is not predicted. Limits: three nodes; the side was chosen from the same cells that are
+# tested; the per-split p-value only, without the edge gate, the BH step and pass-through; the fit is not rerun.
+
+# ===== apply_sprs.py =====
+"""Follow-up protocol in protocol.md: apply the sprs in one node and re-test its split. usage: apply_sprs.py N96475"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+SPR = HERE.parent / "spr_alternatives_best_flat_cut_20261111"
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(SPR))
+
+from block_lib import best_cut_one_direction, standardized_blocks  # noqa: E402
+from spr_lib import index_tree, subtree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import best_flat_cut_reference  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+from tree_break_selection.tree.elements import Partition  # noqa: E402
+from tree_break_selection.tree.poset_tree import PosetTree  # noqa: E402
+from tree_break_selection.tree.spr import subtree_prune_regraft  # noqa: E402
+
+METHOD = "tbs_family_diffusion_markov_ward"
+name = sys.argv[1]
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+x = np.load(source / "pca.npy")
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+z = np.load(SPR / f"tree_{METHOD}.npz")
+parent, leaf_row = z["parent"], z["leaf_row"]
+n_leaves = len(leaf_row)
+order, pre, sub_all = index_tree(parent)
+nodes, local_parent, is_leaf, _ = subtree(parent, order, pre, sub_all, int(name[1:]), n_leaves)
+rows = leaf_row[nodes[is_leaf]]
+cells = metadata.index[rows].to_numpy()
+lines = metadata.Cell_line.to_numpy()[rows]
+points = x[rows]
+n = len(rows)
+earlier = {r["node"]: r for r in map(json.loads, (SPR / "measures.jsonl").read_text().splitlines())}[name]
+
+
+def node_id(index):
+    return f"L{index}" if index < n_leaves else f"N{index}"
+
+
+# The node's subtree below an extra root with one leaf for everything outside, so an spr can regraft above the node.
+tree = PosetTree()
+tree.add_node("ROOT", is_leaf=False, label="ROOT")
+tree.add_node("OUT", is_leaf=True, label="outside")
+for index in nodes:
+    tree.add_node(node_id(index), is_leaf=bool(index < n_leaves), label=metadata.index[leaf_row[index]] if index < n_leaves else node_id(index))
+for index, up in zip(nodes[1:], local_parent[1:], strict=True):
+    tree.add_edge(node_id(nodes[up]), node_id(index))
+tree.add_edge("ROOT", name)
+tree.add_edge("ROOT", "OUT")
+tree.graph["root"] = "ROOT"
+encoding = {cell: position for position, cell in enumerate(cells)} | {"outside": n}
+tree.initialize_split_indices(encoding)
+
+
+def partition(mask):
+    return Partition(tuple(int(i) for i in np.flatnonzero(mask)), encoding)
+
+
+def mask_of(split):
+    mask = np.zeros(n, dtype=bool)
+    mask[[i for i in split.indices if i < n]] = True
+    return mask
+
+
+def composition(mask):
+    return ", ".join(f"{line} {count}" for line, count in pd.Series(lines[mask]).value_counts().items())
+
+
+def line_cut_share(mask):
+    codes = pd.factorize(lines)[0]
+    left, right = np.bincount(codes[mask], minlength=codes.max() + 1), np.bincount(codes[~mask], minlength=codes.max() + 1)
+    return float(np.minimum(left, right).sum() / n)
+
+
+def test(label, cell_mask, in_left):
+    """Sibling reference of the split of the cells in ``cell_mask`` into ``in_left`` and the rest."""
+    if cell_mask.sum() < 3 or in_left.sum() in (0, cell_mask.sum()):
+        print(f"  {label}: not testable")
+        return
+    result = best_flat_cut_reference(points[cell_mask], in_left[cell_mask])
+    print(f"  {label}: {int(in_left[cell_mask].sum())} | {int((~in_left)[cell_mask].sum())} leaves; {result.reason}, k {result.invariant_directions}, "
+          f"rho {result.rho:.3f}, p {result.p_value:.4f}")
+
+
+everyone = np.ones(n, dtype=bool)
+node_set = partition(everyone)
+before = tree.to_splits()
+first_child = sorted(tree.successors(name), key=lambda c: -len(tree.nodes[c]["split_indices"]))[0]
+tree_mask = mask_of(tree.nodes[first_child]["split_indices"])
+y, _ = standardized_blocks(points, invariant_directions(points))
+_, cut = best_cut_one_direction(y[:, 0])
+target_mask = cut if cut.sum() <= n / 2 else ~cut
+target = partition(target_mask)
+
+print(f"=== {name}: {n} leaves ({composition(everyone)})")
+print(f"joint best flat cut (earlier run): rho {earlier['rho_best']:.3f}, p {earlier['p_best']:.4f}")
+print("\nBefore")
+print(f"  tree split: [{composition(tree_mask)}] | [{composition(~tree_mask)}]; line cut share {line_cut_share(tree_mask):.3f}")
+test("sibling reference of the tree split", everyone, tree_mask)
+print(f"\nSide to make a node: {int(target_mask.sum())} leaves ({composition(target_mask)}); a tree node already: {tree.find_node_by_split(target) is not None}")
+
+pieces = sorted(tree.to_splits(with_leaves=True).maximals_under(target), key=lambda p: -len(p))
+print("  it is the union of the tree nodes: " + "; ".join(f"{tree.find_node_by_split(p)} ({composition(mask_of(p))})" for p in pieces))
+sprs = 0
+joined = pieces[0]
+for piece in pieces[1:]:
+    prune, regraft = tree.find_node_by_split(piece), tree.find_node_by_split(joined)
+    subtree_prune_regraft(tree, prune, regraft)
+    joined = Partition(tuple(sorted(set(joined.indices) | set(piece.indices))), encoding)
+    sprs += 1
+    print(f"  spr {sprs}: pruned {prune} ({len(piece)} leaves), regrafted on the edge above {regraft}")
+target_node = tree.find_node_by_split(target)
+holder = tree.find_node_by_split(node_set)
+if next(iter(tree.predecessors(target_node))) != holder:
+    subtree_prune_regraft(tree, target_node, holder)
+    sprs += 1
+    print(f"  spr {sprs}: pruned {target_node} ({len(target)} leaves), regrafted on the edge above {holder}")
+
+after = tree.to_splits()
+holder = tree.find_node_by_split(node_set)
+children = sorted(tree.successors(holder), key=lambda c: len(tree.nodes[c]["split_indices"]))
+child_masks = [mask_of(tree.nodes[c]["split_indices"]) for c in children]
+assert (child_masks[0] == target_mask).all() and (child_masks[1] == ~target_mask).all()
+print(f"\nAfter {sprs} sprs")
+print(f"  the node's leaf set is now held by {holder}; children {children[0]} [{composition(child_masks[0])}] | {children[1]} [{composition(child_masks[1])}]")
+print(f"  leaf sets removed {len(before - after)}, added {len(after - before)}, unchanged {len(before & after)} of {len(before)}; line cut share {line_cut_share(target_mask):.3f}")
+test("sibling reference of the new split", everyone, target_mask)
+rest = children[1]
+grand = sorted(tree.successors(rest), key=lambda c: -len(tree.nodes[c]["split_indices"]))
+if len(grand) == 2:
+    rest_mask, grand_mask = child_masks[1], mask_of(tree.nodes[grand[0]]["split_indices"])
+    print(f"  split of the rest ({rest}): [{composition(grand_mask)}] | [{composition(rest_mask & ~grand_mask)}]")
+    test("sibling reference of the rest's split", rest_mask, grand_mask)
+
+# ===== sprs_N96475.txt =====
+# === N96475: 114 leaves (SNU1214_UPPER_AERODIGESTIVE_TRACT 101, TE14_OESOPHAGUS 10, BICR16_UPPER_AERODIGESTIVE_TRACT 3)
+# joint best flat cut (earlier run): rho 7.651, p 0.0005
+#
+# Before
+#   tree split: [SNU1214_UPPER_AERODIGESTIVE_TRACT 95] | [TE14_OESOPHAGUS 10, SNU1214_UPPER_AERODIGESTIVE_TRACT 6, BICR16_UPPER_AERODIGESTIVE_TRACT 3]; line cut share 0.053
+#   sibling reference of the tree split: 95 | 19 leaves; tested, k 9, rho 2.221, p 1.0000
+#
+# Side to make a node: 10 leaves (TE14_OESOPHAGUS 10); a tree node already: False
+#   it is the union of the tree nodes: N88659 (TE14_OESOPHAGUS 6); N89472 (TE14_OESOPHAGUS 4)
+#   spr 1: pruned N89472 (4 leaves), regrafted on the edge above N88659
+#   spr 2: pruned N92518 (10 leaves), regrafted on the edge above N96475
+#
+# After 2 sprs
+#   the node's leaf set is now held by N94554; children N92518 [TE14_OESOPHAGUS 10] | N96475 [SNU1214_UPPER_AERODIGESTIVE_TRACT 101, BICR16_UPPER_AERODIGESTIVE_TRACT 3]
+#   leaf sets removed 3, added 3, unchanged 111 of 114; line cut share 0.000
+#   sibling reference of the new split: 10 | 104 leaves; tested, k 9, rho 7.651, p 0.0005
+#   split of the rest (N96475): [SNU1214_UPPER_AERODIGESTIVE_TRACT 95] | [SNU1214_UPPER_AERODIGESTIVE_TRACT 6, BICR16_UPPER_AERODIGESTIVE_TRACT 3]
+#   sibling reference of the rest's split: 95 | 9 leaves; tested, k 9, rho 0.957, p 1.0000
+
+# ===== sprs_N96842.txt =====
+# === N96842: 76 leaves (TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 30, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+# joint best flat cut (earlier run): rho 10.305, p 0.0005
+#
+# Before
+#   tree split: [SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1] | [TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 1]; line cut share 0.013
+#   sibling reference of the tree split: 43 | 33 leaves; tested, k 8, rho 5.174, p 0.0445
+#
+# Side to make a node: 7 leaves (KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1); a tree node already: False
+#   it is the union of the tree nodes: N90950 (KYSE520_OESOPHAGUS 4, BICR16_UPPER_AERODIGESTIVE_TRACT 1); N88548 (KYSE520_OESOPHAGUS 2)
+#   spr 1: pruned N88548 (2 leaves), regrafted on the edge above N90950
+#   spr 2: pruned N94825 (7 leaves), regrafted on the edge above N96842
+#
+# After 2 sprs
+#   the node's leaf set is now held by N95632; children N94825 [KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1] | N96842 [TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 30, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1]
+#   leaf sets removed 4, added 4, unchanged 72 of 76; line cut share 0.000
+#   sibling reference of the new split: 7 | 69 leaves; tested, k 8, rho 10.305, p 0.0005
+#   split of the rest (N96842): [SNU46_UPPER_AERODIGESTIVE_TRACT 29, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1] | [TE10_OESOPHAGUS 32, SNU46_UPPER_AERODIGESTIVE_TRACT 1]
+#   sibling reference of the rest's split: 36 | 33 leaves; tested, k 7, rho 4.664, p 1.0000
+
+# ===== sprs_N96808.txt =====
+# === N96808: 43 leaves (SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1, BICR16_UPPER_AERODIGESTIVE_TRACT 1)
+# joint best flat cut (earlier run): rho 13.693, p 0.0005
+#
+# Before
+#   tree split: [SNU46_UPPER_AERODIGESTIVE_TRACT 29, KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1] | [BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1]; line cut share 0.000
+#   sibling reference of the tree split: 36 | 7 leaves; tested, k 7, rho 8.352, p 0.0210
+#
+# Side to make a node: 7 leaves (KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1); a tree node already: False
+#   it is the union of the tree nodes: N90950 (KYSE520_OESOPHAGUS 4, BICR16_UPPER_AERODIGESTIVE_TRACT 1); N88548 (KYSE520_OESOPHAGUS 2)
+#   spr 1: pruned N88548 (2 leaves), regrafted on the edge above N90950
+#   spr 2: pruned N94825 (7 leaves), regrafted on the edge above N96808
+#
+# After 2 sprs
+#   the node's leaf set is now held by N95632; children N94825 [KYSE520_OESOPHAGUS 6, BICR16_UPPER_AERODIGESTIVE_TRACT 1] | N96808 [SNU46_UPPER_AERODIGESTIVE_TRACT 29, BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1]
+#   leaf sets removed 3, added 3, unchanged 40 of 43; line cut share 0.000
+#   sibling reference of the new split: 7 | 36 leaves; tested, k 7, rho 13.693, p 0.0005
+#   split of the rest (N96808): [SNU46_UPPER_AERODIGESTIVE_TRACT 29] | [BICR31_UPPER_AERODIGESTIVE_TRACT 2, YD38_UPPER_AERODIGESTIVE_TRACT 2, DETROIT562_UPPER_AERODIGESTIVE_TRACT 1, BICR6_UPPER_AERODIGESTIVE_TRACT 1, VMCUB1_URINARY_TRACT 1]
+#   sibling reference of the rest's split: 29 | 7 leaves; tested, k 6, rho 10.726, p 0.0135

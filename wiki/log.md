@@ -10007,3 +10007,840 @@ version comparison report and wiki source summary. Production code unchanged.
   [[flat-cut-sup-count]] and [[single-population-split-bound]]; index updated.
   Raw capture, evidence JSON and scripts are under
   `raw/inbox/choir-cell-lines/gaussian-best-flat-cut-reference-*-20261111.*`.
+
+## 2026-11-11 — Opt-in `sibling_best_flat_cut_reference` implemented
+
+- New sibling p-value next to the split-count rule-out: the Monte Carlo p-value
+  of a split's `rho` (pooled within covariance, divisor n - 2, inside the
+  subtree's `invariant_directions`) against a stored Gaussian null of the best
+  flat cut at (n, k), (1 + #{null >= rho}) / (B + 1). Module
+  `sibling_divergence/best_flat_cut_reference.py`; flag
+  `sibling_best_flat_cut_reference` threaded like `sibling_split_count_rule_out`
+  (gate config, orchestrator, runner `extra`, dispatch, calibration label
+  `gaussian_best_flat_cut_reference`) and mutually exclusive with it. Both flags
+  off: behaviour unchanged. The summary stores `rho` and k; where `rho` is not
+  finite the projected-Wald statistic is kept, because downstream needs a finite
+  statistic.
+- Limits (fail closed with p = 1): k = 0, k above 10, n below 15. n between grid
+  values uses the largest grid n at or below it; n above 800 uses 800.
+- Table: `scripts/build_best_flat_cut_reference.py`, B = 1,999 datasets per cell,
+  n in 15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 400, 800, k = 1 to 10, upper
+  200 values per cell, 83 kB, built in 1,009 s with 10 workers. Against the
+  recorded S1 99% points the differences are -0.054 to 0.028 at n = 100, -0.022
+  to 0.006 at n = 400 (k = 1 to 8) and 0.52, 0.57, -0.006, 0.011 at n = 15, 20,
+  30, 40 (k = 3). The 90%, 95% and 99% points fall along the n grid in every k
+  (no violation). The stored 90% point is the smallest stored value (the 90.0%
+  rank), not interpolated.
+- Calibration through the real function (stream 82, 2,000 Gaussian datasets per
+  cell, best flat cut): rejections at 0.01 / 0.05 were 23 / 107 at (100, 3), 24
+  / 120 at (400, 3), 25 / 96 at (100, 6), 22 / 123 at (50, 2); every exact
+  binomial 95% interval covers its nominal level except 123/2,000 at 0.05
+  (0.0514 to 0.0729); 120/2,000 at 0.05 covers it only just (lower end 0.04999). A random hyperplane split through the median: 0/2,000
+  rejections at both levels in all four cells (upper bound 0.0018).
+- Integration (30 coordinates, as in the rule-out test): two groups of 150 give
+  2 clusters with `best_flat_cut_reference:tested` at the root (p = 0.0005);
+  one population of 300 gives 1 cluster.
+- Not validated: no full benchmark panel, no real-data run, no non-Gaussian
+  populations; k from the same data keeps the small excess measured at n = 100
+  with 50 or 80 features. The p-value cannot go below 1 / (B + 1) = 0.0005.
+- Second calibration run with the archived search and fresh seeds (stream 91,
+  2,000 Gaussian datasets per cell), best flat cut at 0.01 / 0.05: on grid n,
+  12 / 96 at (30, 3), 11 / 97 at (150, 8), 15 / 84 at (200, 4); with n rounded
+  down, 1 / 13 at (60, 5), 1 / 22 at (250, 3), 6 / 31 at (1000, 2). Rounding n
+  down is strict, at a cost in power. A random hyperplane split rejected in at
+  most 4 of 2,000 datasets per cell at 0.05.
+- Verification: ordered suite 1,253 passed (15 new), `make lint`, `make audit`
+  and `make wiki-lint` pass.
+
+## 2026-11-11 — Gaussian best-flat-cut reference on the continuous and cancer_pc suites
+
+- Ran the 9 continuous and 4 `cancer_pc` benchmark cases with both family-diffusion
+  methods, today vs `sibling_best_flat_cut_reference=True`, benchmark defaults
+  unchanged; protocol written before the run. 52 of 52 runs ok; a replay that
+  recorded every call of `best_flat_cut_reference` matched in 26 of 26.
+- Continuous: mean ARI 0.880 / 0.852 today, 0.695 with the reference, equal to the
+  split-count rule-out and the ceiling-3 rule in every case. `cancer_pc`:
+  Markov/Ward 0.303 to 0.722 (10 to 16 clusters down to 6, 4, 6, 4), default tree
+  0.822 to 0.722.
+- 58 of 151 calls were `no_invariant_directions`; these carry the losses in the
+  small, wide cases. In the connected `cancer_pc` cases the refused splits were
+  tested with k = 1 and `rho` of 0.15 to 1.03. Of 93 tested p-values, 56 were
+  0.0005, 36 were 1.0 and one was 0.056.
+- True-group check on `cancer_pc` (replay matched in 8 of 8): the refused splits
+  in the connected cases are impure, and the exact true-group split would be
+  refused too (`rho` 0.81 to 0.98 against a 99% point of 2.151). A group of 64
+  next to 256 at offset 3 has population `rho` = 1.44, below the 1.752 of one
+  Gaussian population's median cut. A group whose complement holds another
+  distant group is refused at offset 20 (`rho` = 1.51) and recovered by the
+  pass-through traversal.
+- Density calculation for the connected layout (256 at 0, 64 at -3 and 3): the
+  valleys are 0.999 of the neighbouring mode, skewness 0, kurtosis 3.000, so a
+  measure of the gap between the two sides has almost nothing to detect there.
+- Captured the run in `raw/inbox/choir-cell-lines/`; added
+  [[best-flat-cut-reference-benchmark]] and one index line. No production change;
+  nothing was committed.
+
+## 2026-11-11 — Power of four gap options on the refused layouts
+
+- Simulated four additions to `rho` in one direction (two-Gaussian mixture, dip,
+  valley depth, shape of the sides; 1,000 samples per layout, reference of 2,000
+  one-Gaussian samples, protocol written before the run).
+- Connected `cancer_pc` layout: at most 9 of 1,000 accepted at 0.01 by any option.
+  64 cells at offset 3 next to 256: only the mixture (1,000), which also rejects
+  2,000 of 2,000 gamma samples. Mirrored group at offset 20: dip, valley and
+  mixture 1,000; `rho` 0. Dip and valley keep the level on gamma and Student t.
+- No option would change the benchmark result. Captured in
+  `raw/inbox/choir-cell-lines/`; added [[gap-options-power]] and one index line.
+  No production change; nothing was committed.
+
+## 2026-11-11 — Gaussian best-flat-cut reference on the CHOIR cell lines
+
+- Ran both registered methods on all 48,879 cells with the 9 November setup, arms
+  `rule_out` (replay: 69 and 664 clusters, exact) and
+  `sibling_best_flat_cut_reference=True`; protocol written before the run.
+- Markov/Ward with the reference: 138 clusters, ARI 0.297, 76 lines recovered, 91
+  lines merged only (ceiling 3: 217, 0.833, 119, 33). Default tree: 53 clusters,
+  ARI 0.018.
+- Cause: all 190 splits with 11 to 15 invariant directions are refused (every
+  split with 1,000 cells or more; ceiling 3 accepted 77 of them), and 17 of the 48
+  splits at the lowest possible p-value 0.0005 are not accepted by the BH step.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[best-flat-cut-reference-real]]
+  and one index line. No production change; nothing was committed.
+
+## 2026-11-11 — Review of two days and trace of the subtree descriptions to the tests
+
+- Reviewed 10 and 11 November against the 10 November plan: only part A (the
+  statistic) was worked on; A2, B, C and D were not started; the plan's text is
+  not in the wiki. Overseen before the real-data run: 11 to 15 invariant
+  directions on every large split, and the p-value floor against the BH step.
+- Traced the four structural cases, alternative partitions, distance fit and
+  inherited versus rebuilt geometry to the sibling tests. The reference depends
+  only on a node's cells and split, so it covers alternative child partitions of
+  a surviving node; the tree's splits use inherited geometry while the reference
+  uses rebuilt geometry, which was never measured per split.
+- Added [[subtree-descriptions-and-statistical-tests]] and one index line. No
+  run, no production change; nothing was committed.
+
+## 2026-11-11 — Tree splits against the best flat cut in the rebuilt directions
+
+- On the CHOIR cells, compared every tested split with the nearest and the best
+  flat cut in the invariant directions of its own subtree (1,475 Markov/Ward and
+  82 default-tree splits; replay 138 and 53 clusters; protocol before the run).
+- Markov/Ward: median ARI between tree split and best flat cut 0.036, 0.020 and
+  0.077 by size; the 37 accepted splits have 0.968. With two or more lines in the
+  subtree the best flat cut passes the reference in 192 of 520 and the tree split
+  in 54; 148 of the 192 cut at most 5% of the cells from their line.
+- Inside single cell lines the best flat cut passes in 38 of 570 and 48 of 195
+  subtrees (about 1% expected for one Gaussian population).
+- Captured in `raw/inbox/choir-cell-lines/`; added [[split-vs-best-flat-cut]], one
+  index line and links on [[subtree-descriptions-and-statistical-tests]]. No
+  production change; nothing was committed.
+
+## 2026-11-11 — Trial: divisive fit at the best flat cut on the CHOIR cells
+
+- Trial outside Tree-Break Selection: start with all 48,879 cells, split each set
+  at its best flat cut in its own invariant directions while the Gaussian
+  reference rejects at 0.01 (table for k <= 10, run-time nulls of 399 datasets
+  with the same search for k = 11 to 15). Protocol before the run; self-check on
+  simulated data passes; 282 s.
+- 323 clusters, ARI 0.874, NMI 0.941, ARI against CHOIR_1 0.617 (ceiling 3 on
+  Markov/Ward: 217, 0.833, 0.940, 0.538). Lines merged only 8 and both 8 against
+  33 and 22; lines split only 81 against 16; 93 lines at 90/90 against 119.
+  Joining clusters with the same majority line gives ARI 0.957 against 0.841.
+- Per-test level without a family step; splits inside lines are not explained.
+  Captured in `raw/inbox/choir-cell-lines/`; added [[best-flat-cut-divisive]], one
+  index line and links. No production change; nothing was committed.
+
+## 2026-11-11 — Implementation: set based node identity and spr taken over from BranchArchitect
+
+- Checked BranchArchitect (commit a9c8829): a node is its leaf set (`Partition`, a
+  bitmask under a shared encoding); `name` is a label. Tree-Break Selection named
+  nodes `L<i>` / `N<j>` by merge order and had leaf sets only as derived views.
+- Copied `brancharchitect/elements` (`Partition`, `PartitionSet`,
+  `split_semantics`, `partition_algorithms`; not `FrozenPartitionSet`) into
+  `tree_break_selection/tree/elements`; only import paths and the `Self` import
+  differ. Added `initialize_split_indices`, `to_splits` and `find_node_by_split`
+  to `PosetTree` (computed on request, node ids kept as labels) and
+  `subtree_prune_regraft` in `tree_break_selection/tree/spr.py`.
+- Tests: `tests/tree/test_split_elements.py` (11 tests, 5 of them from
+  BranchArchitect); `tests/core` and `tests/tree` pass (156 before the spr tests);
+  ruff, deptry and vulture pass. No gate, default or pipeline call was changed.
+  Updated [[poset-tree]] and the tree README. Nothing was committed.
+
+## 2026-11-11 — Analysis: alternative sprs on the tree against the best flat cut
+
+- Markov/Ward tree of the 48,879 CHOIR cells, 1,285 tested splits with 1 to 10
+  invariant directions (protocol before the run, amended once after the
+  self-check; replay 138 clusters). An spr inside a node keeps the node's cells,
+  so its best flat cut and reference do not change and bound every spr
+  alternative.
+- 0 of 1,007 splits with a refused best flat cut pass after greedy sprs; 122 of
+  the 221 only-best splits pass, after a median of 3 sprs (0.267 of the cells),
+  and their median line cut share falls from 0.144 to 0.038. Greedy sprs end at
+  the best flat cut in 260 of 1,285 splits.
+- Below the split a child's best flat cut passes in 92 of 170 children before and
+  25 of 180 after the sprs. In 4 splits the greedy sprs beat the table's search.
+- Captured in `raw/inbox/choir-cell-lines/`; added
+  [[spr-alternatives-best-flat-cut]], one index line and links. The sprs were not
+  applied to the fit; nothing was committed.
+
+## 2026-11-11 — Analysis: sprs against the subspaces and the equidistances
+
+- Traced the relation: an spr's change of `rho` is the moved clade's transfer cost
+  in the node's invariant directions (exact; checked to 5.2e-17), equidistance is
+  the spr that changes nothing, and a Ward near-tie is a grandchild spr the tree
+  almost made. Measured on the 1,285 splits of the Markov/Ward CHOIR tree in the
+  tree's space, the PCs, the invariant directions and the fuzzy space (protocol
+  before the run; `rho` values equal the spr run in 1,285 of 1,285).
+- Cells whose spr raises `rho` are tied in the tree's space at 10.5% against 2.1%
+  for other cells; at least 81% are neither tied nor on the wrong side there. The
+  tree's space and the invariant directions disagree on the side of 10.7% of the
+  cells (1.5% where tree split and best flat cut both pass). Moved cells are tied
+  / wrong in the PCs at 23.0% / 30.8% against 7.7% / 5.1%.
+- Near-tied merges give `rho`-raising grandchild sprs in 43.4% against 12.8% at a
+  tie ratio of 3 and more. Sprs derived from equidistance in the tree's space
+  alone give 61 passing splits against 57 (greedy sprs 179, best flat cut 278).
+- Captured in `raw/inbox/choir-cell-lines/`; added [[spr-subspaces-equidistances]],
+  one index line and links. Nothing was applied to the fit or committed.
+
+## 2026-11-11 — Analysis: the spr measure per eigenvalue block
+
+- Separated each node's invariant directions into the numerical eigenvalue blocks
+  of `tied_eigenvalue_neighbors` (9,250 blocks in the 1,285 splits, no numerical
+  tie, 781 near-equal neighbouring pairs). r2 and the spr transfer cost are sums
+  over blocks (exact; self-check with a crossing 2 x 2 grid passes; protocol before
+  the run).
+- First block's share of r2: 0.89 where tree split and best flat cut pass; in the
+  rescued class 0.42 for the tree split and 0.73 after the greedy sprs. A block's
+  own cut passes at 0.01 / k in 172 blocks of 162 nodes (139 in block 1), also in
+  28 of the 1,007 nodes whose joint best flat cut is refused.
+- Two passing blocks occur in 9 nodes; all 11 pairs of cuts have ARI below 0.1.
+  An spr that raises `rho` is helped by 55.4% of the blocks.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[spr-eigenvalue-blocks]], one
+  index line and links. Nothing was applied to the fit or committed.
+
+## 2026-11-11 — Analysis: the 9 nodes with two passing blocks against the cell lines
+
+- Cross-tabulated the cell lines against the two block cuts. In 4 nodes each cut
+  isolates a different line (for example BT474 against HCC1419 and MDAMB361
+  against both); a tree holds both as two successive splits. In 4 nodes the first
+  cut is the line boundary and the second divides every line in similar
+  proportions (for example NCIH2077 298 to 147 and TOV112D 31 to 47). One node is
+  mixed; one has two cuts inside one line.
+- Correction: the earlier sentence that two passing blocks "always cross" and
+  cannot be held by a tree was too strong; a low ARI does not show that two cuts
+  exclude each other. Corrected in the capture, [[spr-eigenvalue-blocks]] and the
+  index line. Nothing was applied to the fit or committed.
+
+## 2026-11-11 — Analysis: N97405 as leaf-set splits
+
+- Built the subtree of N97405 (478 leaves) as a `PosetTree` with set based
+  identity and looked up the tree split and the three block cuts with
+  `find_node_by_split` and `PartitionSet.maximals_under`.
+- The tree holds the three breast lines as nodes: N96707 (HCC1419 219 of 220),
+  N96510 (BT474 122 of 136) and N96138 (MDAMB361 122 of 122); both splits above
+  them are accepted by the fit and 15 of 478 leaves are not with their line.
+- Block 1's cut is the tree split with 31 leaves on the other side; block 2's cut
+  is the child's tree split seen from the parent; block 3's cut is a union of 96
+  and 66 nodes. No pair of these splits is exactly compatible (11 to 63 leaves).
+- Added to the capture and [[spr-eigenvalue-blocks]]; nothing was committed.
+
+## 2026-11-11 — Analysis: all 9 nodes with two passing blocks as leaf-set splits
+
+- Ran the leaf-set lookup (`find_node_by_split`, `PartitionSet.maximals_under`,
+  `Partition.is_compatible_with`) for the other 8 nodes. Of the 19 block cuts, 3
+  are exactly the node's tree split, 6 are compatible with it and 10 are not.
+- Cuts that follow a cell-line boundary are a tree node or a union of a few tree
+  nodes; the 7 cuts through the lines are unions of 12 to 196 tree nodes per side.
+  Refused splits with a line boundary (TE14 in N96475, KYSE520 in N96842 and
+  N96808) have that boundary as a union of 2 tree nodes.
+- Added to the capture and [[spr-eigenvalue-blocks]]; nothing was committed.
+
+## 2026-11-11 — Analysis: sprs applied in three refused nodes and the splits re-tested
+
+- Follow-up protocol before the run. In N96475, N96842 and N96808 the smaller side
+  of block 1's cut (TE14 10 leaves; KYSE520 6 plus BICR16 1) is a union of 2 tree
+  nodes. Applied 2 sprs per node with `subtree_prune_regraft` on a `PosetTree` with
+  set based identity so that the node's children are (that side | the rest).
+- The sibling reference of the node's split goes from p 1.0, 0.0445 and 0.021 to
+  0.0005 in all three; `rho` equals the joint best flat cut's (7.651, 10.305,
+  13.693); line cut share 0; 3 or 4 leaf sets change per node.
+- The fit was not rerun: edge gate, BH step and pass-through are not measured.
+  Added to the capture and [[spr-eigenvalue-blocks]]; nothing was committed.
+
+## 2026-11-11 — Trial: sprs at the refused splits with a passing best flat cut, fit rerun
+
+- Protocol frozen before the run. A harness reruns the fit on a tree given as a
+  parent array; the unchanged Markov/Ward CHOIR tree reproduces the baseline
+  exactly (138 clusters, 1,838 tested splits, assignment ARI 1.0).
+- Top-down spr pass: 5,654 nodes evaluated, 166 candidates, 4,371 sprs (2,831
+  single leaves); 8,760 of 97,757 leaf sets change, none with 1,000 leaves or
+  more. Self-check against `subtree_prune_regraft` and a separate check of the
+  output tree pass.
+- Refit: accepted splits 31 to 104, clusters 138 to 257, ARI 0.2975 to 0.3425,
+  NMI 0.8512 to 0.8846, lines merged only 91 to 51, split only 9 to 47, largest
+  cluster 7,678 to 6,346. BH accepted 76 of the 145 changed splits it tested.
+- The 194 nodes with more than 10 invariant directions stay refused and keep the
+  ARI low. Captured in `raw/inbox/choir-cell-lines/`; added [[spr-refit]], one
+  index line and links. No production change; nothing was committed.
+
+## 2026-11-11 — Implementation: best-flat-cut reference extended to 11 to 15 invariant directions
+
+- Protocol frozen before any run. Builder: `K_GRID` 1 to 15 and `--k-min`; table
+  rebuilt for k = 11 to 15 (n from 50, B = 1,999, 1,216 s); module:
+  `MAX_DIRECTIONS` = 15 and `MIN_CELLS_ABOVE_10_DIRECTIONS` = 50; tests and the
+  statistics README follow. The cells for k up to 10 are bit-identical; 13
+  reference tests and 534 tests in `tests/statistics` pass; ruff passes.
+- Validity under one Gaussian population at k = 11, 13, 15: a Ward tree's root
+  split exceeded the 99% point in 0 of 12,000 datasets (ratio to the 99% point at
+  most 0.50); the best of stronger searches exceeded it in 25 of 2,700 (0.93%),
+  6 of 300 at n = 800, k = 15.
+- CHOIR, Markov/Ward, unchanged tree: the 190 large splits are now tested, 88 are
+  accepted; 230 clusters, ARI 0.8219, 116 lines recovered, largest cluster 1,990
+  (before 138, 0.2975, 76, 7,678). Tree after the sprs: ARI 0.7376.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[best-flat-cut-reference-k15]],
+  one index line, a Key Point on [[gaussian-best-flat-cut-reference]] and links.
+  The opt-in stays opt-in; nothing was committed.
+
+## 2026-11-12 — Verification: the 13 benchmark cases with the reference extended to 15 invariant directions
+
+- Protocol frozen before the run and predicting no change. `run.py` and
+  `reasons.py` are byte copies of the 11 November scripts: 9 continuous and 4
+  `cancer_pc` cases, default and Markov/Ward tree, "today" and
+  `sibling_best_flat_cut_reference=True`, 52 runs.
+- Result: no change. Found clusters, ARI and NMI equal the 11 November run in 52
+  of 52 rows; the 151 recorded calls have k = 0 (58) or 1 to 5 (93), so the cells
+  for k = 11 to 15 are never read; reason, k and p-value are equal in 151 of 151
+  calls; `rho` differs in 80 calls by at most 1.0e-12 relative.
+- Deviation: `compare.py` was changed after its first output (round-off in `rho`
+  and a CSV parser that does not round-trip floats were counted as differences).
+- Captured in `raw/inbox/choir-cell-lines/`; updated
+  [[best-flat-cut-reference-benchmark]], [[best-flat-cut-reference-k15]] and one
+  index line. No production change; nothing was committed.
+
+## 2026-11-12 — Analysis: the accepted extra splits of today's test on the cancer_pc cases
+
+- Protocol frozen before the run; 4 cases x default and Markov/Ward tree,
+  registered cells, one record per internal node (3,960) with true-group counts,
+  sibling and edge columns and the reference for the same split. Found clusters
+  and ARI equal the 11 November run in 8 of 8.
+- Markov/Ward: 33 of 50 split nodes are inside one true group (default: 3 of
+  22). Inside one true group the Markov/Ward splits are more balanced (median
+  smaller side 0.382 against 0.124) with higher `rho` in 30 features (3.872
+  against 1.214).
+- The difference is made at the edge gate: on nodes of at least 40 cells from
+  one true group the edge is significant in 0 of 48 (default) and 17 of 24
+  (Markov/Ward); the sibling test has no p-value at any of the 48 and rejects 12
+  of the 17. The reference refuses all 24.
+- Deviations: classification rule changed and edge columns added to the summary
+  after the first output. Not separated: diffusion operator against linkage.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[cancer-pc-over-splits]],
+  one index line and a link. No production change; nothing was committed.
+
+## 2026-11-12 — Analysis: diffusion operator against linkage on the cancer_pc cases
+
+- Protocol frozen before the run with the hypothesis "the linkage decides";
+  `tbs_family_diffusion` with operator symmetric or markov x linkage average or
+  ward, 16 runs, today's test. The two registered methods are reproduced in 8 of
+  8.
+- Found clusters: symmetric/average 6, 5, 6, 6 (mean ARI 0.8218); symmetric/ward
+  6, 12, 6, 9 (0.6754); markov/average 6, 8, 6, 15 (0.7334); markov/ward 10, 13,
+  16, 15 (0.3033).
+- Hypothesis not supported: accepted inside splits with all cells from one true
+  group 0, 0, 0, 13; with cells from several true groups (connected cases) 3,
+  13, 14, 20. Edge significant for both children at nodes of one true group: 0,
+  0, 0, 17.
+- Deviation: one self-check was not a general identity and was weakened; all 16
+  fits were rerun.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[cancer-pc-over-splits]]
+  and its index line. No production change; nothing was committed.
+
+## 2026-11-12 — Analysis: why the edge test is significant inside one Gaussian group
+
+- Protocol frozen before the run with three hypotheses. 292 edges at 146 nodes of
+  one true group in the 4 operator and linkage cells; per edge the tree's split
+  and 200 random splits of the same sizes, each with and without branch time.
+  The recorded test is reproduced at 292 of 292 edges.
+- Selection (supported): tree's split without branch time rejects at raw
+  p <= 0.001 in 27.1%, 37.9%, 42.2% and 79.2% of the edges; random splits in
+  0.05% to 0.5%.
+- Branch time (not supported as the cause): multiplier median 1.00 to 1.03.
+- Tree-BH and the first split inside a group separate the cells: smaller side
+  0.09, 0.18, 0.08 against 0.44; both edges raw p <= 0.001 at 0, 0, 0 and 6 of 7
+  largest nodes; 20% to 50% of the untested edges below have raw p <= 0.001.
+- Fixed split with the full covariance in the ward cells: 4.2% and 7.0% at 0.01.
+- Deviations: recomputed covariance reduced to variances where the pipeline
+  pools variances only; one summary block added after the first output.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[cancer-pc-edge-test]], one
+  index line and links. No production change; nothing was committed.
+
+## 2026-11-12 — Analysis: what decides the edge test's projection dimension k
+
+- Protocol frozen before the run with three predictions derived from the code
+  (the k of the 146 nodes was already known). 16 fits, 3,241 nodes recorded with
+  all eigenvalues of the edge test's basis; k reproduced at 146 of 146 nodes and
+  recomputed from the eigenvalues at 3,241 of 3,241.
+- The signal count is 0 or 1 at all 146 nodes of one true group. k = 30 (28, 29)
+  where the basis rows are whitened by their own pooled within-child covariance
+  (29 tied eigenvalues, 51 nodes); k = max(2, 30 minus test rows) on the total
+  covariance with fewer than 30 test rows (46 nodes); k = 2 otherwise (49).
+- markov/ward: 13 of 24 nodes at k 28 to 30 (other cells 14 of 48, 12 of 29, 12
+  of 45), hence median 28.
+- Tree's split, raw p <= 0.001: 84 of 102 edges at k 28 to 30, 2 of 80 at
+  k = 30 minus test rows, 38 of 110 at k = 2. At k 28 to 30 Tree-BH reaches 0, 4,
+  0 and 26 edges per cell; 26 of 26 are significant with markov/ward.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[cancer-pc-edge-test]] and
+  its index line. No production change; nothing was committed.
+
+## 2026-11-12 — Analysis: systematic debugging of the accepted extra splits
+
+- Protocol frozen before the runs, one hypothesis per experiment, one variable
+  changed; amendment for E4 written before its run. No production change, no fix.
+- Working reference: the null tests of the edge test build the tree from
+  independent noise. E1 changes only that: raw edge p < 0.05 goes from 1.2% to
+  2.8% (independent tree) to 15.2% to 26.1% (tree from the data) in four settings.
+- E2: without `extend_rank_through_ties` k is 2 and the rejections stay.
+- E3: today's complete method on one Gaussian population finds more than 1
+  cluster in 3 of 20 runs at 200 cells in 80 features and in 46 of 60 at 30
+  features, in all four operator and linkage cells including the default cell.
+- E4: with `sibling_best_flat_cut_reference=True` 1 cluster in 80 of 80 runs.
+- Root cause: the edge test and the sibling test hold for a split independent of
+  the tested cells; the method builds the tree from them.
+- Captured in `raw/inbox/choir-cell-lines/`; added
+  [[selected-tree-null-over-splitting]], one index line and links.
+
+## 2026-11-12 — Implementation: benchmark null case with more cells than features
+
+- Added `gauss_null_256n_30f_continuous` (`blobs_continuous`, 256 cells, 30
+  features, 1 cluster, seed 401, no discretized baseline) to
+  `benchmarks/shared/cases/gaussian.py`; the continuous suite has 10 cases. The
+  case contract test, `benchmarks/README.md` and `CHANGELOG.md` follow. 158 tests
+  in `tests/core` and the other files that read the case lists pass; ruff passes.
+- Run by name: today's test finds 10 clusters (`tbs_family_diffusion`) and 4
+  (`tbs_family_diffusion_markov_ward`); with
+  `sibling_best_flat_cut_reference=True` both find 1.
+- The case fails for today's default test by design; no default was changed.
+  Recorded on [[selected-tree-null-over-splitting]]. Nothing was committed.
+
+## 2026-11-12 — Query: the plan of 10 November against the current evidence
+
+- Saved the plan text verbatim as
+  `raw/inbox/choir-cell-lines/plan-non-heuristical-statistic-20261110.md`; it was
+  not in the repository before.
+- Added [[non-heuristical-statistic-plan]] with the state of its 13 steps: A1
+  and A3 done in a changed form (simulated Gaussian null of the best flat cut
+  instead of a proved bound with a count), B2 and B3 measured in analyses only,
+  D1 and D4 partly, A2, B1, B4, C1, C2, D2 and D3 not started.
+- Recorded three changes of direction (statistic, topology alternatives,
+  neighborhood) and what the evidence implies for the open steps. No run, no
+  production change; one index line added. Nothing was committed.
+
+## 2026-11-12 — Ingest: Marchenko-Pastur and eigenvalue multiplicity literature for k
+
+- Looked up eleven sources (DOI or link recorded per source): Marcenko and
+  Pastur 1967 and Anderson 1963 as records only; Johnstone 2001, Baik, Ben Arous
+  and Peche 2005, Gavish and Donoho 2014, Okamoto 1973, Passemier and Yao 2014,
+  Kritchman and Nadler 2009 by abstract; Baik and Silverstein 2006 and Bai and
+  Yao 2008 by reading the arXiv text.
+- Four checks with a protocol written before the run: one independent Gaussian
+  sample has k >= 1 in 16.0% to 23.2% of draws; k >= 1 follows the population
+  `rho` against sqrt(p/n); with 30 cells in 40 features the current rule returns
+  no direction where a prototype on the nonzero eigenvalues finds one in 75.4%
+  to 100%; four balanced groups give 0 numerical ties in 1,000 draws.
+- Geometrical and algebraic multiplicity agree for every covariance matrix; the
+  exact ties of 12 November come from whitening rows with their own covariance.
+- Captured in `raw/inbox/choir-cell-lines/`; added
+  [[marchenko-pastur-multiplicity-literature]], one index line and a link on
+  [[non-heuristical-statistic-plan]]. No production change; nothing was
+  committed.
+
+## 2026-11-12 — Trial: prototype of k with a margin at the edge
+
+- Protocol frozen before any run: rule, two parts against one interface, four
+  predictions. The rule compares eigenvalue j over the median of the remaining
+  eigenvalues with the simulated 99% point for one spherical Gaussian population
+  of the same cells and features; it lives in the analysis folder only.
+- Synthetic checks: k >= 1 for one Gaussian population in 10 to 20 of 2,000
+  draws at seven sizes (current rule 291 to 472, and 0 with more features than
+  cells); two groups of 15 cells in 40 features at `rho` 5 found in 972 of 1,000.
+  An independent spot check agrees (21 to 35 of 2,000).
+- Opt-in reference with the prototype rule on 14 cases: three cases gain
+  clusters, none exceeds its true groups; continuous mean ARI 0.6950 to 0.8880
+  (default tree) and 0.8544 (Markov/Ward); `no_invariant_directions` 58 to 44 of
+  151 calls; null cases and the one-population grid stay at 1 cluster (80 of 80),
+  smallest reference p-value 0.0185.
+- Selected subtrees of one Gaussian population still show a direction in 40.2%
+  to 75.0% of nodes (current rule 67.4% to 94.8%): selection is open.
+- All four predictions held. Deviation: the harness ran once with the rule
+  before the rule was checked; rerun afterwards with equal results.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[k-margin-prototype]], one
+  index line, and the state of A2 on [[non-heuristical-statistic-plan]]. No
+  production change; nothing was committed.
+
+## 2026-11-12 — Trial: the prototype rule for k on the CHOIR cells
+
+- Protocol frozen before the run with three predictions; one variable against
+  the recorded baseline: the rule for k inside the opt-in reference, unchanged
+  Markov/Ward tree, 48,879 cells, the same 1,838 calls.
+- Result: 230 clusters to 64, ARI 0.8219 to 0.1285, lines recovered 116 to 36,
+  accepted by BH 134 to 9. k is higher at 1,815 nodes; 417 calls have k above 15
+  and are refused, among them all 103 nodes with at least 1,000 cells. Calls
+  with 15 to 31 cells are tested now (267 of 285) but none is accepted.
+- Predictions: P1 held; P2 (at least 230 clusters) and P3 (ARI within 0.05)
+  not held.
+- Cause, measured after the result: within one cell line the largest eigenvalue
+  is 7.0 to 94.1 times the median eigenvalue against a spherical 99% point of
+  1.30 to 2.93; k of one line's cells is 5 to 12 with the current rule and 6 to
+  27 with the prototype rule.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[k-margin-prototype]], its
+  index line and the state of A2 on [[non-heuristical-statistic-plan]]. No
+  production change; nothing was committed.
+
+## 2026-11-12 — Analysis: what makes the cells of one cell line non-spherical
+
+- Protocol frozen before any run with six predictions; two parts built
+  separately and recomputed with separate code before use.
+- With labels (175 lines of at least 100 cells): the largest eigenvalue over the
+  median eigenvalue is 25.6; whitened by the pooled within-line covariance of the
+  other lines 13.8, still above the spherical 99% point in 175 of 175 lines;
+  sequencing depth explains 3.0% of the within-line variance, `source_library`
+  means 0.8%; 65.8% of a line's covariance energy is off the diagonal.
+- Without labels: the pooled covariance of maximal subtrees of at most 50 cells
+  has a ratio of 0.260 to 1.027 (median 0.808) against the label-based one;
+  lines whitened by it have ratio 14.5; k above 15 remains at 290 of 1,838 called
+  nodes and at all 103 nodes with at least 1,000 cells.
+- Nodes inside one line and nodes with several lines all have a direction;
+  median k prototype 9 against 17 after whitening.
+- Predictions: 2 of 6 held. The non-sphericity is specific to each line.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[line-non-sphericity]], one
+  index line, links and the state of A2 on [[non-heuristical-statistic-plan]].
+  No production change; nothing was committed.
+
+## 2026-11-12 — Analysis: which gene programs carry the directions inside a cell line
+
+- Looked up: Kinker et al. 2020 (https://doi.org/10.1038/s41588-020-00726-6,
+  PubMed) and Tirosh et al. 2016 (https://doi.org/10.1126/science.aad0501,
+  PubMed); the cell-cycle gene symbols are a secondary copy (93 of the documented
+  97 symbols, 91 in the data).
+- Protocol frozen before the run with three predictions; all three held.
+- Cell-cycle genes are among the 50 genes of a leading direction in up to 159 of
+  175 lines against 1.04 expected. The S and G2M scores explain 13.6% of the
+  within-line variance (random gene sets 3.5%, depth 3.0%); one of directions 1
+  to 3 follows them at 0.5 or more in 155 lines, direction 1 in 34.
+- Direction 1 is carried mostly by RPL and RPS genes and HLA-A, HLA-B, HLA-C, B2M.
+  Added after the result: an RPL/RPS score explains 6.5%; cell cycle, RPL/RPS and
+  depth together 23.6%, and the eigenvalue ratio is still 19.4 (25.6 before).
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[line-non-sphericity]] and
+  its index line. No production change; nothing was committed.
+
+## 2026-11-12 — Analysis: draft definition of k without a variance count
+
+- Draft written into a protocol before its check: k = 1; the node's cells are
+  divided into a basis half and a test half; one direction from the basis half
+  (variant A from the tree's split, variant B from 2-means); `rho` of the tree's
+  split of the test half along it against the reference at (test cells, 1).
+- Check on simulations, Ward linkage on the data, 1,000 datasets per setting:
+  one population gives p <= 0.01 in 0 of 11,000 (variant B) and at most 13 of
+  1,000 (variant A); two groups at `rho` 5 give 914 and 882 against 996 for the
+  current rule; two groups of 15 cells in 40 features give 1,000 against 0.
+- Predictions: 2 of 4 held. No advantage with unequal within-group variances.
+- Captured in `raw/inbox/choir-cell-lines/`; added [[k-split-direction-draft]],
+  one index line and the state of A2 on [[non-heuristical-statistic-plan]]. Not
+  run on real data or benchmark cases; no production change; nothing committed.
+
+## 2026-11-12 — Trial: the draft definition of k on the benchmark cases and the CHOIR cells
+
+- Protocol frozen before the runs with five predictions; the draft replaces the
+  reference call at run time and the halves alternate in data order.
+- Benchmark, 14 cases, opt-in on: variant A (direction from the tree's split)
+  finds 4, 3 and 2 clusters in gauss_clear_medium, gauss_moderate_3c and
+  gauss_dense_signal_highd (current rule 3, 2, 1); continuous mean ARI 0.8302
+  against 0.6950; variant B (direction from 2-means) 0.7768; no case above its
+  true groups; null cases and the one-population grid at 1 cluster (80 of 80,
+  smallest p-value 0.062 and 0.0735).
+- CHOIR cells, Markov/Ward tree: variant A 218 clusters, ARI 0.8311, 120 lines
+  recovered, 151 accepted by BH (current rule 230, 0.8219, 116, 134); variant B
+  153 clusters, ARI 0.5830.
+- Predictions: 4 of 5 held for variant A; "more than 230 clusters" did not.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[k-split-direction-draft]],
+  its index line and the state of A2 on [[non-heuristical-statistic-plan]]. No
+  production change; nothing was committed.
+
+## 2026-11-12 — Verification: level of variant A of the draft definition of k
+
+- Protocol frozen before any run with four predictions; 1,960 fits of one
+  Gaussian population with the method's own trees (8 identity settings, 3 with
+  the CHOIR root's variances and a rotation; 4 operator and linkage cells). The
+  measurement was built separately and checked: a rerun of one setting
+  reproduces 40 of 40 fits, and called nodes equal the direct calls in 12,043 of
+  12,043 cases.
+- Variant A has p <= 0.01 at 109 of 31,482 tested nodes with at least 30 cells
+  (0.35%) and at 34 of 12,302 tested calls; the current rule at 25 of 24,135
+  nodes. By test cells: 0.86% at 15 to 19, none at 100 and more. Identity 0.34%,
+  unequal variances 0.36%.
+- Complete method: more than 1 cluster in 12 of 1,960 fits, each with 3 to 9
+  clusters from one accepted node of 29 to 65 cells and pass-through above it.
+- All four predictions held. Deviations: one self-check of the protocol does not
+  apply to 60 cells in 200 features; one fit did not converge in the
+  branch-length solver and is counted as not split.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[k-split-direction-draft]],
+  its index line and the state of A2 on [[non-heuristical-statistic-plan]]. No
+  production change; nothing was committed.
+
+## 2026-11-12 — Review: independent check of variant A of the draft definition of k
+
+- Brief with six questions written before the check; the check was done
+  separately, and its findings were recomputed or rerun with separate code
+  before recording, except the non-Gaussian populations.
+- Defect: a feature constant in the basis half raises an uncaught `LinAlgError`
+  that stops the fit (confirmed on a constructed input; not met in any run).
+- Limitation: the halves depend on the order of the rows. CHOIR, five orders:
+  196 to 225 clusters, ARI 0.8043 to 0.8397 against 230 and 0.8219 for the
+  current rule; the earlier 0.8311 was one draw. Benchmark results are unchanged
+  under 5 orders.
+- One population that is not Gaussian: a closed curve is split by both rules
+  (143 and 158 of 160 fits); skewed features 3 against 1.
+- No problem found: code against the definition; composition of the accepted
+  CHOIR nodes (3 of 151 inside one line against 8 of 134); level shares.
+- Production table at k = 1: the exact best cut has reference p <= 0.01 in 0.66%
+  to 1.89% of Gaussian datasets depending on n; recorded on
+  [[gaussian-best-flat-cut-reference]].
+- One checker finding corrected: the benchmark mean 0.8302 against 0.6950 covers
+  the 9 continuous cases of 11 November; all 10 give 0.8472 against 0.7255.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[k-split-direction-draft]],
+  its index line and the state of A2 on [[non-heuristical-statistic-plan]]. No
+  production change; nothing was committed.
+
+## 2026-11-12 — Trial: variant A with the findings of the check fixed
+
+- Looked up the rule for several splits: twice the median of the p-values
+  (Meinshausen, Meier and Buehlmann 2009, https://doi.org/10.1198/jasa.2009.tm08647,
+  text read) and twice the mean (Vovk and Wang, https://arxiv.org/abs/1212.4966).
+- Second version: pseudo-inverse for the direction (no error on the constructed
+  inputs), 20 random divisions per node, twice the median p-value. Benchmark as
+  variant A (28 of 28 rows); 0 of 800 one-population fits split; CHOIR over five
+  row orders 133 to 135 clusters, ARI 0.5371 to 0.5374.
+- Cause of the loss: 151 calls at the table's smallest value 0.001 = 2 x 0.0005,
+  of which Benjamini-Hochberg accepts 97.
+- Third version (amendment before its runs): the same with an exact null of the
+  best cut of one direction, 99,999 draws per grid n. Benchmark as variant A;
+  0 of 800 one-population fits split; CHOIR over five orders 206 to 215
+  clusters, ARI 0.8349 to 0.8411, 126 to 127 lines recovered (current rule 230,
+  0.8219, 116).
+- Predictions: 8 of 9 held; "ARI at least 0.80" failed for the second version.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[k-split-direction-draft]],
+  [[gaussian-best-flat-cut-reference]], the index line and the state of A2 on
+  [[non-heuristical-statistic-plan]]. No production change; nothing committed.
+
+## 2026-11-12 — Trial: the sprs under the third version of the draft definition of k
+
+- Protocol frozen before the run with three predictions; all three held.
+- Fit of the tree after the sprs of 11 November with the third version: 258
+  clusters, ARI 0.7691, 127 lines recovered, 42 split only, 13 merged only;
+  unchanged tree 206, 0.8359, 127, 16, 30.
+- At the 110 spr nodes that are nodes of the unchanged tree the third version
+  has p <= 0.01 at 2 before and 60 after the sprs; inside one cell line 0 of 38
+  before and 10 after.
+- Room for sprs under the third version itself: the best cut along the node's
+  direction passes at 32 of 1,302 refused nodes with at least 30 cells, 22 of
+  them at nodes with several lines.
+- Deviations: "after" read at the node holding the candidate's cells; "before"
+  only for the 110 candidates that are nodes of the unchanged tree.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[spr-refit]],
+  [[k-split-direction-draft]] and one index line. No production change; nothing
+  was committed.
+
+## 2026-11-12 — Trial: sprs only at refused nodes where the third version sees a better split
+
+- Protocol frozen before the run with three predictions; one held.
+- Set (a), 22 refused nodes with several lines (chosen with the labels): 17
+  processed, 677 sprs, the new split passes at 10; refit 213 clusters, ARI
+  0.8266, merged only 28, split only 17.
+- Set (b), all 32 such nodes without labels: 25 processed, 757 sprs, the new
+  split passes at 14; refit 218 clusters, ARI 0.8257, merged only 27, split
+  only 18.
+- Unchanged tree with the third version: 206 clusters, ARI 0.8359 (0.8349 to
+  0.8411 over five row orders), merged only 30, split only 16.
+- Reading: on this tree the sprs do not improve the result under either rule.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[spr-refit]], its index
+  line and the state of B3 on [[non-heuristical-statistic-plan]]. No production
+  change; nothing was committed.
+
+## 2026-11-12 — Trial: the third version of the draft definition of k on the default tree
+
+- Protocol frozen before the run with three predictions; all three held. The
+  default tree was rebuilt from the linkage of 6 November; the conversion was
+  checked on the Markov/Ward tree.
+- Current rule 64 clusters, third version 63 in three row orders; ARI 0.0275,
+  29 lines recovered, 145 merged only and a largest cluster of 28,611 cells for
+  both. The sibling test is called at 90 nodes (1,838 on the Markov/Ward tree).
+- The tree is a chain: the first 14 calls peel 1 to 293 cells from a remainder
+  of more than 46,000; under the current rule all have p = 1.0, under the third
+  version 2 pass. Below a peel of 4 cells above 28,606 the sibling test is not
+  called.
+- Reading: on this tree the topology and the gate before the sibling test are
+  the limit, not the statistic.
+- Captured in `raw/inbox/choir-cell-lines/`; updated [[k-split-direction-draft]],
+  its index line and [[non-heuristical-statistic-plan]]. No production change;
+  nothing was committed.
+
+## 2026-11-12 — Analysis: the edge values at the peel that stops the default tree
+
+- Reran the default-tree fit with the third version and saved the edge and
+  sibling columns of every node (63 clusters, ARI 0.0275 as before).
+- At the node below the largest accepted split (4 against 28,606 cells) both
+  edges have statistic 44.4 with k = 30, raw p 0.044 against edge alpha 0.001;
+  the gate closes. Below it the edges have statistics of 1,044 to 22,769 and
+  are not tested because the ancestor is closed.
+- Of 155 nodes with at least 1,000 cells, 106 have no significant edge: 5 were
+  tested and failed (smaller side 1, 1, 4, 3, 14 cells), 101 were never tested,
+  94 of them with raw p <= 0.001. Tree-BH tests 382 of 97,756 edges; 6,006 have
+  raw p <= 0.001.
+- Added to the capture of the default-tree run; updated
+  [[k-split-direction-draft]] and [[non-heuristical-statistic-plan]]. No
+  production change; nothing was committed.
+
+## 2026-11-12 — Trial: peels of fewer than 15 cells pass the edge gate
+
+- At run time only, the mapping of `singleton_peel_continuations` was extended
+  to nodes whose smaller child has fewer than 15 cells and whose larger child
+  has at least 15; the edge gate, edge alpha and the sibling rules are
+  unchanged. Protocol with five predictions written before the runs.
+- CHOIR cells, default tree: 402 clusters with the third version of the draft
+  k and 432 with the current rule, ARI 0.6172 and 0.6210 against 0.0275,
+  largest cluster 1,990 cells against 28,611, 42 lines recovered against 29,
+  sibling test called at 808 nodes against 90.
+- CHOIR cells, Markov/Ward tree, third version: 210 clusters, ARI 0.8652
+  against 206 and 0.8359 (one fit, data order).
+- Third version with the peel pass: benchmark equal in 28 of 28 rows; one
+  Gaussian population at 1 cluster in 880 of 880 fits, 0 of 8,723 tested calls
+  with p <= 0.01.
+- Predictions: 4 of 5 held; the Markov/Ward ARI rose by 0.0293, more than the
+  0.01 predicted.
+- Not checked: other row orders, limits other than 15 cells, today's default
+  sibling test with the peel pass.
+- Capture `raw/inbox/choir-cell-lines/peel-pass-20261112.md` with scripts
+  archive; updated [[k-split-direction-draft]], [[non-heuristical-statistic-plan]]
+  and the index. No production change; nothing was committed.
+
+## 2026-11-13 — Trial: the peel pass on the Markov/Ward tree over five row orders
+
+- Question: is the ARI 0.8652 of the peel pass (one fit, data order) inside the
+  spread of the row order? Protocol with four predictions written before the
+  runs; four more fits with the row orders 1, 2, 3 and 777.
+- With the peel pass: ARI 0.8642 to 0.8706, 210 to 217 clusters, 126 or 127
+  lines recovered. Without it, same orders: 0.8349 to 0.8411, 206 to 215, 126
+  or 127. The gain within one order is 0.0283 to 0.0305; the ranges do not
+  overlap. All four predictions held.
+- Not checked: which accepted splits carry the gain, limits other than 15
+  cells, the default tree in other row orders, today's default sibling test
+  with the peel pass.
+- Capture `raw/inbox/choir-cell-lines/peel-pass-row-orders-20261113.md` with
+  scripts archive; updated [[k-split-direction-draft]],
+  [[non-heuristical-statistic-plan]] and the index. No production change;
+  nothing was committed.
+
+## 2026-11-13 — Trial: today's default sibling test with the peel pass on one Gaussian population
+
+- Question: the peel pass was measured with the third version of the draft k
+  only; what does it do with today's default sibling test? Protocol with four
+  predictions written before the runs; 880 fits per arm on the same data and
+  trees, unchanged code against the peel pass at run time.
+- 30 features: more than 1 cluster in 825 of 860 fits under the peel pass
+  against 703; mean found clusters 9.68 against 7.61; 358 fits gain clusters,
+  68 lose clusters. The increase is in the cells with average linkage; the
+  default cell at 496 cells with identity covariance goes from 0 of 50 to 28
+  of 50.
+- Predictions: W1 and W2 held; W3 not held (it contradicted the recorded 3 of
+  20 at 200 cells in 80 features, an error in the protocol; 7 of 20 under the
+  peel pass); W4 held in total, not for 496 cells with identity covariance.
+- Reading: the peel pass is safe only with a sibling rule that holds its level
+  on the method's own trees (third version: 0 of 880).
+- Capture `raw/inbox/choir-cell-lines/peel-pass-default-test-20261113.md` with
+  scripts archive; updated [[k-split-direction-draft]],
+  [[selected-tree-null-over-splitting]], [[non-heuristical-statistic-plan]] and
+  the index. No production change; nothing was committed.
+
+## 2026-11-13 — Trial: the opt-in's current rule with the peel pass on one Gaussian population
+
+- Question: is the over-splitting under the peel pass a property of the peel
+  pass or of today's default sibling test? The 880 fits of the previous entry
+  were repeated with `sibling_best_flat_cut_reference=True` (current rule:
+  table, k up to 15), unchanged code against the peel pass at run time.
+  Protocol with three predictions written before the runs.
+- Found clusters are equal in the two arms in 880 of 880 fits. 1 fit is split
+  in both arms (496 cells, unequal variances, seed 24, markov/ward, 4
+  clusters); 0 of 480 fits with identity covariance. All three predictions
+  held.
+- Reading: the over-splitting belongs to today's default test; with the
+  opt-in's current rule or the third version of the draft k the peel pass does
+  not split one Gaussian population.
+- Not checked: the reference calls under the peel pass, limits other than 15
+  cells, why seed 24 is split.
+- Capture `raw/inbox/choir-cell-lines/peel-pass-opt-in-20261113.md` with
+  scripts archive; updated [[k-split-direction-draft]],
+  [[selected-tree-null-over-splitting]], [[non-heuristical-statistic-plan]] and
+  the index. No production change; nothing was committed.
+
+## 2026-11-13 — Implementation: the peel pass under the opt-in `sibling_best_flat_cut_reference`
+
+- `peel_continuations(tree, small_peel_leaf_limit=None)` in
+  `tree_break_selection/tree/topology.py` replaces
+  `singleton_peel_continuations`; the limit is passed to Tree-BH, the sibling
+  calibration records, the sibling frontier and `GateEvaluator`. The gate
+  pipeline sets it to the reference's `MIN_CELLS` (15) with the opt-in and to
+  none otherwise; it is recorded as `small_peel_leaf_limit` in the gate config.
+- Tests written first (10 new or extended), then the change; READMEs, module
+  text and `CHANGELOG.md` updated.
+- Verification with production code: default tree of the CHOIR cells equal to
+  the trial in 48,879 of 48,879 cells (432 clusters, ARI 0.6210); 880 of 880
+  one-population fits equal; 26 of 26 benchmark rows equal.
+- Not predicted: on the Markov/Ward tree the opt-in's current rule goes from
+  230 clusters, ARI 0.8219 and 116 recovered lines to 223, 0.8214 and 110; of
+  the calls at the table's smallest p-value 129 of 144 are accepted against
+  133 of 140.
+- Capture `raw/inbox/choir-cell-lines/peel-pass-production-20261113.md` with
+  scripts archive; updated [[k-split-direction-draft]],
+  [[gaussian-best-flat-cut-reference]], [[non-heuristical-statistic-plan]] and
+  the index. Nothing was committed.
+
+## 2026-11-13 — Verification: the canonical full benchmark after the peel pass change
+
+- Ran `python -m benchmarks.full.run` with the default settings: 127 cases, 11
+  default methods, 1,397 rows (1,353 ok, 44 skipped as unsupported), exit code
+  0; output in `benchmarks/results/run_20261113_peel_pass_full/`.
+- Against the full run of 10 November: all 1,386 paired rows have the same
+  status, found clusters and ARI for every method. The one new case,
+  `gauss_null_256n_30f_continuous`, gives 10 clusters with
+  `tbs_family_diffusion`, as recorded on 12 November.
+- The default method set does not use the opt-in
+  `sibling_best_flat_cut_reference`; its 28 rows were checked earlier the same
+  day. Added to the capture
+  `raw/inbox/choir-cell-lines/peel-pass-production-20261113.md`; nothing was
+  committed.
+
+## 2026-11-13 — Decision: the peel pass stays in the opt-in
+
+- Decision by the project owner after the verification and the full benchmark:
+  the peel pass stays in production under `sibling_best_flat_cut_reference`,
+  with the known result on the Markov/Ward tree of the CHOIR cells (110 lines
+  recovered against 116, ARI 0.8214 against 0.8219) and the gain on the default
+  tree (ARI 0.6210 against 0.0275).
+- Open: the loss on the Markov/Ward tree goes with the table's smallest p-value
+  (0.0005); a table with more draws or the third version of the draft k in
+  production was not started ([[k-split-direction-draft]]).
+
+## 2026-11-13 — Analysis: where the loss on the Markov/Ward tree under the peel pass comes from
+
+- Compared the two Markov/Ward fits of the opt-in's current rule call by call.
+  The 1,819 calls in both fits have identical p-values. 7 nodes accepted
+  without the peel pass are refused with it, all at p = 0.0005 (84 to 1,022
+  cells); none goes the other way. The peel pass adds 391 calls, 380 with
+  p = 1, and 3 accepted splits: 134 - 7 + 3 = 130.
+- Reading: the loss is in the Benjamini-Hochberg step. A p-value of 0.0005 is
+  rejected at 0.01 only where at least 5% of the family is at that value; the
+  added calls with p = 1 enlarge the families. The families were not
+  reconstructed.
+- Added to the capture
+  `raw/inbox/choir-cell-lines/peel-pass-production-20261113.md` and to
+  [[k-split-direction-draft]]. Nothing was committed.

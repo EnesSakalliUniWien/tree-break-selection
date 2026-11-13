@@ -1,0 +1,431 @@
+# ===== protocol.md =====
+# # Protocol: the accepted extra splits of today's test on the cancer_pc cases (frozen 2026-11-12, before the run)
+#
+# - Question: on the 4 `cancer_pc` cases today's test finds 10 to 16 clusters on the Markov/Ward tree
+#   (`tbs_family_diffusion_markov_ward`) and 5 to 6 on the default tree (`tbs_family_diffusion`), with 6 true
+#   groups. Which splits does it accept on the Markov/Ward tree, and what differs from the default tree?
+# - Runs: 4 cases x 2 methods, registered parameter cell only ("today", no opt-in), through
+#   `benchmark_cluster_algorithm` as in `best_flat_cut_reference_benchmark_20261111/run.py`. The tree, the
+#   annotation table and the cluster labels are read by wrapping `tbs_runner.TreeDecomposition` and
+#   `tbs_runner.labels_and_report_from_decomposition` at run time; no production code is changed.
+# - Recorded for every internal node (`measure.py`, `nodes.jsonl`): cells, cells per side, true-group counts per
+#   side, the sibling columns of the annotation table (statistic, raw statistic, reference scale, inflation
+#   factor, degrees of freedom, p-value, corrected p-value, `Sibling_BH_Different`, method), the edge columns of
+#   both children, whether the node is split in the final clusters (its cells carry more than one cluster
+#   label), and for the same split the reference (`best_flat_cut_reference`: reason, k, `rho`, p) and `rho` in
+#   all 30 features when the node has at least 40 cells.
+# - Part 1, accepted splits: a true group is "divided" by a split when both sides hold at least 10% and at
+#   least 5 of its cells in the subtree (convention). A split is "between groups" when it divides no group,
+#   otherwise "inside a group". Every split of every run is listed.
+# - Part 2, nodes inside one true group: all nodes with at least 40 cells (convention; `rho` in 30 features
+#   needs more than 32) whose cells all come from one true group. Per tree: number of nodes, share of the
+#   smaller side, statistic per degree of freedom, inflation factor, `rho` in 30 features, raw p <= 0.01,
+#   `Sibling_BH_Different`, reference p <= 0.01.
+# - Hypothesis, stated before running: inside one true group the Markov/Ward tree's splits are more balanced
+#   and have a higher `rho` than the default tree's, and today's test, which treats the split as fixed, rejects
+#   them more often. If the Part 2 numbers do not show this, the hypothesis is reported as not supported.
+# - Self-check (`measure.py` asserts): found clusters and ARI of each run equal the 11 November `results.csv`;
+#   the number of split nodes equals found clusters minus 1 plus pass-through nodes.
+# - Limits known before running: the two methods differ in the diffusion operator and in the linkage, so the
+#   inspection cannot say which of the two causes a difference; one seed per case; 4 synthetic cases.
+
+
+# ===== deviations.md =====
+# # Deviations (written 2026-11-12, after the first output of summarize.py)
+#
+# - Classification of a split. The protocol's rule ("divided": both sides hold at least 10% and at least 5 cells
+#   of a group) counted a split with all cells from one group and a small side (22|234 of group 0) as "between
+#   groups". Changed: a split not accepted by the sibling test (`Sibling_BH_Different` false, reached by
+#   pass-through) is listed as "pass-through"; an accepted split is "inside" when it divides a group by the
+#   protocol's rule or when both sides have the same majority true group; otherwise "between".
+# - Part 2 gained the edge columns (edge tested, edge significant) and `Sibling_Divergence_Skipped`, because the
+#   first output showed that no node inside one true group has a sibling p-value on the default tree. The
+#   columns were already recorded in `nodes.jsonl`; `measure.py` was not rerun or changed.
+# - Part 2b (the largest node of each true group with all cells from that group) was added for the same reason.
+# - The per-run inflation table was reduced to the nodes with a sibling p-value.
+
+
+# ===== measure.py =====
+"""protocol.md: every internal node of today's fit on the 4 cancer_pc cases, both trees, with truth counts."""
+import json
+import sys
+from pathlib import Path
+
+import networkx as nx
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import benchmarks.shared.runners.tbs_runner as tbs_runner  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.generators import generate_case_data  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    best_flat_cut_reference,
+    split_rho,
+)
+
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+SIBLING = ["Sibling_Test_Statistic", "Sibling_Raw_Test_Statistic", "Sibling_Reference_Scale", "Sibling_Inflation_Factor",
+           "Sibling_Local_Inflation_Factor", "Sibling_Family_Baseline_Inflation_Factor", "Sibling_Degrees_of_Freedom",
+           "Sibling_Divergence_P_Value", "Sibling_Divergence_P_Value_Corrected", "Sibling_BH_Different",
+           "Sibling_Divergence_Skipped", "Sibling_Test_Method", "Sibling_Projection_Dimension"]
+EDGE = ["Child_Parent_Divergence_P_Value_BH", "Child_Parent_Divergence_Significant", "Child_Parent_Divergence_Tested"]
+seen = {}
+Original = tbs_runner.TreeDecomposition
+original_labels = tbs_runner.labels_and_report_from_decomposition
+
+
+class Recording(Original):
+    def decompose_tree(self):
+        out = super().decompose_tree()
+        seen.update(tree=self.tree, annotations=self.annotations_df, counters=out["traversal_counters"])
+        return out
+
+
+def recording_labels(decomposition, index):
+    labels, report = original_labels(decomposition, index)
+    seen.update(labels=dict(zip(index, np.asarray(labels).tolist())))
+    return labels, report
+
+
+def plain(value):
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if isinstance(value, (int, np.integer)):
+        return int(value)
+    if isinstance(value, (float, np.floating)):
+        return None if not np.isfinite(value) else float(value)
+    return None if value is None else str(value)
+
+
+tbs_runner.TreeDecomposition = Recording
+tbs_runner.labels_and_report_from_decomposition = recording_labels
+apply_single_thread_runtime_defaults()
+earlier = pd.read_csv(HERE.parent / "best_flat_cut_reference_benchmark_20261111" / "results.csv", float_precision="round_trip")
+earlier = earlier[~earlier["params"].str.contains("sibling_best_flat_cut_reference")].set_index(["case_id", "method"])
+with open(HERE / "nodes.jsonl", "w") as out:
+    for case in get_test_cases_by_suite("cancer_pc"):
+        data, truth, _, _ = generate_case_data(case)
+        matrix = data.to_numpy(dtype=np.float64)
+        row_of = {name: row for row, name in enumerate(data.index)}
+        for method in METHODS:
+            seen.clear()
+            res = benchmark_cluster_algorithm(
+                test_cases=[case], methods=[method], method_params={method: [dict(METHOD_SPECS[method].param_grid[0])]},
+                verbose=False, plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                allow_method_errors=False)
+            found, ari = int(res["found_clusters"].iloc[0]), float(res["ari"].iloc[0])
+            before = earlier.loc[(res["case_id"].iloc[0], method)]
+            assert found == int(before["found_clusters"]) and abs(ari - float(before["ari"])) < 1e-12, (case["name"], method)
+            tree, table = seen["tree"], seen["annotations"]
+            cluster = np.array([seen["labels"][name] for name in data.index])
+            rows_under = {}
+            for node in reversed(list(nx.topological_sort(tree))):
+                children = list(tree.successors(node))
+                rows_under[node] = [row_of[tree.nodes[node]["label"]]] if not children else sum((rows_under[c] for c in children), [])
+            splits = 0
+            for node in tree.nodes:
+                children = list(tree.successors(node))
+                if not children:
+                    continue
+                left, right = (np.array(rows_under[c]) for c in children)
+                rows = np.r_[left, right]
+                in_left = np.r_[np.ones(len(left), bool), np.zeros(len(right), bool)]
+                record = dict(case=case["name"], method=method, found=found, ari=ari, node=str(node), children=[str(c) for c in children],
+                              n=len(rows), n_left=len(left), n_right=len(right),
+                              truth_left={int(g): int((truth[left] == g).sum()) for g in np.unique(truth[left])},
+                              truth_right={int(g): int((truth[right] == g).sum()) for g in np.unique(truth[right])},
+                              split=bool(len(np.unique(cluster[rows])) > 1), is_root=node == tree.root(),
+                              **{name: plain(table.loc[node, name]) for name in SIBLING},
+                              **{f"{side}_{name}": plain(table.loc[c, name]) for side, c in zip(("left", "right"), children) for name in EDGE})
+                splits += record["split"]
+                reference = best_flat_cut_reference(matrix[rows], in_left)
+                record.update(reference_reason=reference.reason, reference_k=reference.invariant_directions,
+                              reference_rho=plain(reference.rho), reference_p=reference.p_value,
+                              rho_30_features=plain(split_rho(matrix[rows], in_left)) if len(rows) >= 40 else None)
+                out.write(json.dumps(record) + "\n")
+            counters = seen["counters"]
+            assert splits == found - 1 + counters["live_pass_through_count"], (splits, found, counters)
+            print(case["name"], method, found, round(ari, 4), "split nodes", splits, counters, flush=True)
+
+
+# ===== summarize.py =====
+"""protocol.md Parts 1 and 2 from nodes.jsonl."""
+import json
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+nodes = [json.loads(line) for line in open(HERE / "nodes.jsonl")]
+TREE = {"tbs_family_diffusion": "default", "tbs_family_diffusion_markov_ward": "Markov/Ward"}
+
+
+def divided(node):
+    groups = []
+    for g in set(node["truth_left"]) | set(node["truth_right"]):
+        a, b = node["truth_left"].get(g, 0), node["truth_right"].get(g, 0)
+        if min(a, b) >= 5 and min(a, b) >= 0.1 * (a + b):
+            groups.append(int(g))
+    return sorted(groups)
+
+
+def majority(counts):
+    return max(counts, key=counts.get)
+
+
+def kind_of(node):
+    """deviations.md: pass-through, or inside (a divided group, or the same majority group on both sides), or between."""
+    if not node["Sibling_BH_Different"]:
+        return "pass-through"
+    if divided(node) or majority(node["truth_left"]) == majority(node["truth_right"]):
+        return "inside"
+    return "between"
+
+
+def med(values, digits=3):
+    values = [v for v in values if v is not None]
+    return "-" if not values else f"{np.median(values):.{digits}f} (min {min(values):.{digits}f}, max {max(values):.{digits}f}, {len(values)} nodes)"
+
+
+def num(value):
+    return "-" if value is None else f"{value:.3g}"
+
+
+print("== Part 1: accepted splits ==")
+totals = {}
+for case in dict.fromkeys(n["case"] for n in nodes):
+    for method, tree in TREE.items():
+        run = [n for n in nodes if n["case"] == case and n["method"] == method]
+        splits = sorted((n for n in run if n["split"]), key=lambda n: -n["n"])
+        counts = {k: sum(kind_of(n) == k for n in splits) for k in ("between", "inside", "pass-through")}
+        print(f"\n{case} | {tree}: found {run[0]['found']}, ARI {run[0]['ari']:.4f}, split nodes {len(splits)}, {counts}")
+        key = totals.setdefault(tree, {})
+        for n in splits:
+            kind = kind_of(n)
+            key[kind] = key.get(kind, 0) + 1
+            key[kind + ", reference p > 0.01"] = key.get(kind + ", reference p > 0.01", 0) + (n["reference_p"] > 0.01)
+            print(f"  {n['node']:>5} n={n['n']:>3} {n['n_left']:>3}|{n['n_right']:<3} {str(n['truth_left']):<28} | {str(n['truth_right']):<28} "
+                  f"{kind:<12} stat={num(n['Sibling_Test_Statistic'])} df={num(n['Sibling_Degrees_of_Freedom'])} "
+                  f"c={num(n['Sibling_Inflation_Factor'])} p={num(n['Sibling_Divergence_P_Value'])} "
+                  f"p_bh={num(n['Sibling_Divergence_P_Value_Corrected'])} bh={n['Sibling_BH_Different']} | "
+                  f"ref {n['reference_reason']} k={n['reference_k']} rho={num(n['reference_rho'])} p={n['reference_p']:.4f} "
+                  f"rho30={num(n['rho_30_features'])}")
+print("\ntotals over the 4 cases:", json.dumps(totals))
+
+print("\n== Part 2: nodes with >= 40 cells, all from one true group ==")
+for method, tree in TREE.items():
+    pure = [n for n in nodes if n["method"] == method and n["n"] >= 40 and len(set(n["truth_left"]) | set(n["truth_right"])) == 1]
+    tested = [n for n in pure if n["Sibling_Divergence_P_Value"] is not None]
+    share = [min(n["n_left"], n["n_right"]) / n["n"] for n in pure]
+    print(f"\n{tree}: nodes {len(pure)}")
+    print(f"  smaller side share: median {np.median(share):.3f}, quartiles {np.quantile(share, 0.25):.3f} to {np.quantile(share, 0.75):.3f}; "
+          f"smaller side under 10 cells: {sum(min(n['n_left'], n['n_right']) < 10 for n in pure)}")
+    print(f"  rho in 30 features: {med([n['rho_30_features'] for n in pure])}")
+    print(f"  edge gate: an edge of the node was tested in {sum(bool(n['left_Child_Parent_Divergence_Tested']) or bool(n['right_Child_Parent_Divergence_Tested']) for n in pure)}, "
+          f"significant for at least one child in {sum(bool(n['left_Child_Parent_Divergence_Significant']) or bool(n['right_Child_Parent_Divergence_Significant']) for n in pure)}, "
+          f"for both children in {sum(bool(n['left_Child_Parent_Divergence_Significant']) and bool(n['right_Child_Parent_Divergence_Significant']) for n in pure)}")
+    print(f"  sibling test: p-value present in {len(tested)}, Sibling_Divergence_Skipped in {sum(bool(n['Sibling_Divergence_Skipped']) for n in pure)}, "
+          f"raw p <= 0.01 in {sum(n['Sibling_Divergence_P_Value'] <= 0.01 for n in tested)}, Sibling_BH_Different in {sum(bool(n['Sibling_BH_Different']) for n in pure)}, "
+          f"split in the final clusters {sum(n['split'] for n in pure)}")
+    print(f"  tested nodes: statistic per degree of freedom {med([n['Sibling_Test_Statistic'] / n['Sibling_Degrees_of_Freedom'] for n in tested])}; "
+          f"inflation factor {med([n['Sibling_Inflation_Factor'] for n in tested])}; degrees of freedom {med([n['Sibling_Degrees_of_Freedom'] for n in tested], 0)}")
+    print(f"  reference p <= 0.01: {sum(n['reference_p'] <= 0.01 for n in pure)} of {len(pure)} "
+          f"(reasons {json.dumps({r: sum(n['reference_reason'] == r for n in pure) for r in sorted({n['reference_reason'] for n in pure})})})")
+    for lo, hi in ((0, 0.1), (0.1, 0.3), (0.3, 0.5001)):
+        part = [n for n in pure if lo <= min(n["n_left"], n["n_right"]) / n["n"] < hi]
+        print(f"  smaller side share {lo:.1f} to {min(hi, 0.5):.1f}: {len(part)} nodes, edge significant for at least one child in "
+              f"{sum(bool(n['left_Child_Parent_Divergence_Significant']) or bool(n['right_Child_Parent_Divergence_Significant']) for n in part)}, "
+              f"sibling p present in {sum(n['Sibling_Divergence_P_Value'] is not None for n in part)}, BH different in {sum(bool(n['Sibling_BH_Different']) for n in part)}, "
+              f"rho30 {med([n['rho_30_features'] for n in part])}")
+
+print("\n== Part 2b (added after the first output, deviations.md): the largest node of each true group with all cells from that group ==")
+for case in dict.fromkeys(n["case"] for n in nodes):
+    for method, tree in TREE.items():
+        run = [n for n in nodes if n["case"] == case and n["method"] == method]
+        for g in range(6):
+            pure = [n for n in run if set(n["truth_left"]) | set(n["truth_right"]) == {str(g)}]
+            if not pure:
+                continue
+            n = max(pure, key=lambda n: n["n"])
+            if n["n"] < 40:
+                continue
+            print(f"  {case} | {tree} | group {g}: {n['node']} n={n['n']} {n['n_left']}|{n['n_right']} rho30={num(n['rho_30_features'])} "
+                  f"edges tested {bool(n['left_Child_Parent_Divergence_Tested'])},{bool(n['right_Child_Parent_Divergence_Tested'])} "
+                  f"significant {bool(n['left_Child_Parent_Divergence_Significant'])},{bool(n['right_Child_Parent_Divergence_Significant'])} "
+                  f"edge p_bh {num(n['left_Child_Parent_Divergence_P_Value_BH'])},{num(n['right_Child_Parent_Divergence_P_Value_BH'])} "
+                  f"sibling p={num(n['Sibling_Divergence_P_Value'])} skipped={n['Sibling_Divergence_Skipped']} bh={n['Sibling_BH_Different']} split={n['split']}")
+
+print("\n== inflation factor per run (all tested nodes) ==")
+for case in dict.fromkeys(n["case"] for n in nodes):
+    for method, tree in TREE.items():
+        run = [n for n in nodes if n["case"] == case and n["method"] == method]
+        tested = [n for n in run if n["Sibling_Divergence_P_Value"] is not None]
+        edge_open = sum(bool(n["left_Child_Parent_Divergence_Significant"]) or bool(n["right_Child_Parent_Divergence_Significant"]) for n in run)
+        print(f"{case} | {tree}: sibling p present in {len(tested)} of {len(run)} nodes, edge significant for at least one child in {edge_open}, "
+              f"inflation factor {med([n['Sibling_Inflation_Factor'] for n in tested])}, BH different {sum(bool(n['Sibling_BH_Different']) for n in run)}")
+
+
+# ===== measure.log =====
+# cancer_pc_hub_disconnected tbs_family_diffusion 6 0.9982 split nodes 6 {'live_nodes_visited': 13, 'live_internal_tuples': 12, 'live_split_count': 5, 'live_pass_through_count': 1, 'live_boundary_count': 6, 'live_passthrough_candidate_count': 1, 'live_passthrough_support_blocked_count': 0}
+# cancer_pc_hub_disconnected tbs_family_diffusion_markov_ward 10 0.4459 split nodes 9 {'live_nodes_visited': 19, 'live_internal_tuples': 19, 'live_split_count': 9, 'live_pass_through_count': 0, 'live_boundary_count': 10, 'live_passthrough_candidate_count': 0, 'live_passthrough_support_blocked_count': 0}
+# cancer_pc_hub_connected tbs_family_diffusion 5 0.5934 split nodes 6 {'live_nodes_visited': 13, 'live_internal_tuples': 11, 'live_split_count': 4, 'live_pass_through_count': 2, 'live_boundary_count': 5, 'live_passthrough_candidate_count': 2, 'live_passthrough_support_blocked_count': 0}
+# cancer_pc_hub_connected tbs_family_diffusion_markov_ward 13 0.2651 split nodes 12 {'live_nodes_visited': 25, 'live_internal_tuples': 25, 'live_split_count': 12, 'live_pass_through_count': 0, 'live_boundary_count': 13, 'live_passthrough_candidate_count': 0, 'live_passthrough_support_blocked_count': 0}
+# cancer_pc_nohub_disconnected tbs_family_diffusion 6 0.9982 split nodes 5 {'live_nodes_visited': 11, 'live_internal_tuples': 11, 'live_split_count': 5, 'live_pass_through_count': 0, 'live_boundary_count': 6, 'live_passthrough_candidate_count': 0, 'live_passthrough_support_blocked_count': 0}
+# cancer_pc_nohub_disconnected tbs_family_diffusion_markov_ward 16 0.2677 split nodes 15 {'live_nodes_visited': 31, 'live_internal_tuples': 31, 'live_split_count': 15, 'live_pass_through_count': 0, 'live_boundary_count': 16, 'live_passthrough_candidate_count': 0, 'live_passthrough_support_blocked_count': 0}
+# cancer_pc_nohub_connected tbs_family_diffusion 6 0.6974 split nodes 5 {'live_nodes_visited': 11, 'live_internal_tuples': 11, 'live_split_count': 5, 'live_pass_through_count': 0, 'live_boundary_count': 6, 'live_passthrough_candidate_count': 0, 'live_passthrough_support_blocked_count': 0}
+# cancer_pc_nohub_connected tbs_family_diffusion_markov_ward 15 0.2344 split nodes 14 {'live_nodes_visited': 29, 'live_internal_tuples': 29, 'live_split_count': 14, 'live_pass_through_count': 0, 'live_boundary_count': 15, 'live_passthrough_candidate_count': 0, 'live_passthrough_support_blocked_count': 0}
+
+
+# ===== summary.txt =====
+# == Part 1: accepted splits ==
+#
+# cancer_pc_hub_disconnected | default: found 6, ARI 0.9982, split nodes 6, {'between': 5, 'inside': 0, 'pass-through': 1}
+#    N990 n=496   1|495 {'0': 1}                     | {'0': 255, '1': 64, '2': 32, '3': 16, '4': 64, '5': 64} pass-through stat=- df=30 c=- p=- p_bh=- bh=False | ref tested k=2 rho=0.000461 p=1.0000 rho30=0.000629
+#    N989 n=495 448|47  {'0': 255, '1': 64, '2': 1, '4': 64, '5': 64} | {'2': 31, '3': 16}           between      stat=483 df=30 c=2.31 p=4.11e-83 p_bh=4.11e-83 bh=True | ref tested k=2 rho=2.64 p=0.0005 rho30=2.93
+#    N987 n=448  64|384 {'5': 64}                    | {'0': 255, '1': 64, '2': 1, '4': 64} between      stat=267 df=30 c=2.3 p=7.5e-40 p_bh=1.5e-39 bh=True | ref tested k=2 rho=1.54 p=1.0000 rho30=1.64
+#    N986 n=384  64|320 {'4': 64}                    | {'0': 255, '1': 64, '2': 1}  between      stat=8.56e+03 df=30 c=2.29 p=0 p_bh=0 bh=True | ref tested k=2 rho=55.8 p=0.0005 rho30=60.1
+#    N985 n=320  65|255 {'1': 64, '2': 1}            | {'0': 255}                   between      stat=1.11e+03 df=30 c=2.26 p=4.06e-215 p_bh=4.06e-215 bh=True | ref tested k=1 rho=7.17 p=0.0005 rho30=8.12
+#    N988 n= 47  16|31  {'3': 16}                    | {'2': 31}                    between      stat=149 df=30 c=2 p=1.03e-17 p_bh=1.03e-17 bh=True | ref tested k=1 rho=6.18 p=0.0005 rho30=14
+#
+# cancer_pc_hub_disconnected | Markov/Ward: found 10, ARI 0.4459, split nodes 9, {'between': 5, 'inside': 4, 'pass-through': 0}
+#    N990 n=496  64|432 {'4': 64}                    | {'0': 256, '1': 64, '2': 32, '3': 16, '5': 64} between      stat=283 df=30 c=2.41 p=5.5e-43 p_bh=5.5e-43 bh=True | ref tested k=2 rho=1.51 p=1.0000 rho30=1.6
+#    N989 n=432  64|368 {'5': 64}                    | {'0': 256, '1': 64, '2': 32, '3': 16} between      stat=8.2e+03 df=30 c=2.41 p=0 p_bh=0 bh=True | ref tested k=2 rho=49.7 p=0.0005 rho30=53.5
+#    N988 n=368  47|321 {'2': 31, '3': 16}           | {'0': 256, '1': 64, '2': 1}  between      stat=362 df=30 c=2.4 p=1.33e-58 p_bh=2.67e-58 bh=True | ref tested k=1 rho=2.66 p=0.0005 rho30=3.09
+#    N987 n=321  65|256 {'1': 64, '2': 1}            | {'0': 256}                   between      stat=1.09e+03 df=30 c=2.4 p=1.85e-209 p_bh=3.7e-209 bh=True | ref tested k=1 rho=7.18 p=0.0005 rho30=8.13
+#    N983 n=256  22|234 {'0': 22}                    | {'0': 234}                   inside       stat=51.8 df=30 c=2.4 p=0.00794 p_bh=0.00794 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=0.73
+#    N982 n=234  62|172 {'0': 62}                    | {'0': 172}                   inside       stat=105 df=30 c=2.4 p=2.69e-10 p_bh=2.69e-10 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=1.11
+#    N981 n=172  94|78  {'0': 94}                    | {'0': 78}                    inside       stat=148 df=30 c=2.4 p=1.82e-17 p_bh=1.82e-17 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=2.09
+#    N978 n= 78  32|46  {'0': 32}                    | {'0': 46}                    inside       stat=101 df=30 c=2.45 p=1.51e-09 p_bh=3.03e-09 bh=True | ref tested k=1 rho=1.09 p=1.0000 rho30=3.42
+#    N986 n= 47  16|31  {'3': 16}                    | {'2': 31}                    between      stat=114 df=30 c=2.53 p=1.18e-11 p_bh=1.18e-11 bh=True | ref tested k=1 rho=6.18 p=0.0005 rho30=14
+#
+# cancer_pc_hub_connected | default: found 5, ARI 0.5934, split nodes 6, {'between': 3, 'inside': 1, 'pass-through': 2}
+#    N990 n=496  16|480 {'3': 16}                    | {'0': 256, '1': 64, '2': 32, '4': 64, '5': 64} between      stat=94.5 df=30 c=3.21 p=1.32e-08 p_bh=1.32e-08 bh=True | ref tested k=2 rho=0.66 p=1.0000 rho30=0.754
+#    N989 n=480  31|449 {'2': 31}                    | {'0': 256, '1': 64, '2': 1, '4': 64, '5': 64} between      stat=211 df=30 c=3.19 p=5.07e-29 p_bh=5.07e-29 bh=True | ref tested k=2 rho=1.5 p=1.0000 rho30=1.7
+#    N988 n=449  65|384 {'1': 64, '2': 1}            | {'0': 256, '4': 64, '5': 64} between      stat=763 df=30 c=3.16 p=3.05e-141 p_bh=3.05e-141 bh=True | ref tested k=2 rho=5.36 p=0.0005 rho30=5.97
+#    N985 n=384   1|383 {'0': 1}                     | {'0': 255, '4': 64, '5': 64} pass-through stat=- df=30 c=- p=- p_bh=- bh=False | ref tested k=1 rho=7.21e-06 p=1.0000 rho30=0.000259
+#    N984 n=383   1|382 {'4': 1}                     | {'0': 255, '4': 63, '5': 64} pass-through stat=- df=30 c=- p=- p_bh=- bh=False | ref tested k=1 rho=0.00516 p=1.0000 rho30=0.0434
+#    N982 n=382  53|329 {'0': 7, '5': 46}            | {'0': 248, '4': 63, '5': 18} inside       stat=102 df=30 c=3.09 p=7.75e-10 p_bh=7.75e-10 bh=True | ref tested k=1 rho=0.756 p=1.0000 rho30=0.969
+#
+# cancer_pc_hub_connected | Markov/Ward: found 13, ARI 0.2651, split nodes 12, {'between': 3, 'inside': 9, 'pass-through': 0}
+#    N990 n=496  47|449 {'2': 31, '3': 16}           | {'0': 256, '1': 64, '2': 1, '4': 64, '5': 64} between      stat=434 df=30 c=2.73 p=4.04e-73 p_bh=4.04e-73 bh=True | ref tested k=2 rho=2.64 p=0.0005 rho30=2.93
+#    N989 n=449  65|384 {'1': 64, '2': 1}            | {'0': 256, '4': 64, '5': 64} between      stat=887 df=30 c=2.72 p=2.92e-167 p_bh=5.83e-167 bh=True | ref tested k=2 rho=5.36 p=0.0005 rho30=5.97
+#    N987 n=384  47|337 {'0': 4, '5': 43}            | {'0': 252, '4': 64, '5': 21} inside       stat=108 df=30 c=2.7 p=8.47e-11 p_bh=8.47e-11 bh=True | ref tested k=1 rho=0.702 p=1.0000 rho30=0.903
+#    N986 n=337  47|290 {'0': 2, '4': 45}            | {'0': 250, '4': 19, '5': 21} inside       stat=150 df=30 c=2.69 p=7.15e-18 p_bh=7.15e-18 bh=True | ref tested k=1 rho=1.03 p=1.0000 rho30=1.37
+#    N984 n=290  34|256 {'0': 20, '5': 14}           | {'0': 230, '4': 19, '5': 7}  inside       stat=89.6 df=30 c=2.67 p=7.63e-08 p_bh=7.63e-08 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=0.826
+#    N982 n=256 116|140 {'0': 97, '4': 16, '5': 3}   | {'0': 133, '4': 3, '5': 4}   inside       stat=71.9 df=30 c=2.65 p=2.72e-05 p_bh=2.72e-05 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=0.744
+#    N981 n=140  51|89  {'0': 50, '5': 1}            | {'0': 83, '4': 3, '5': 3}    inside       stat=125 df=30 c=2.57 p=1.71e-13 p_bh=3.42e-13 bh=True | ref tested k=1 rho=0.877 p=1.0000 rho30=2.42
+#    N979 n=116  20|96  {'0': 15, '4': 3, '5': 2}    | {'0': 82, '4': 13, '5': 1}   inside       stat=51.1 df=30 c=2.55 p=0.00947 p_bh=0.00947 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=1.94
+#    N977 n= 96  34|62  {'0': 26, '4': 8}            | {'0': 56, '4': 5, '5': 1}    inside       stat=72.4 df=30 c=2.53 p=2.31e-05 p_bh=2.31e-05 bh=True | ref tested k=1 rho=0.137 p=1.0000 rho30=1.91
+#    N978 n= 89  48|41  {'0': 44, '4': 3, '5': 1}    | {'0': 39, '5': 2}            inside       stat=74.2 df=30 c=2.53 p=1.32e-05 p_bh=2.31e-05 bh=True | ref tested k=2 rho=0.715 p=1.0000 rho30=2.27
+#    N975 n= 62  20|42  {'0': 17, '4': 3}            | {'0': 39, '4': 2, '5': 1}    inside       stat=52 df=30 c=2.52 p=0.00762 p_bh=0.00762 bh=True | ref tested k=2 rho=1.39 p=1.0000 rho30=4.8
+#    N988 n= 47  16|31  {'3': 16}                    | {'2': 31}                    between      stat=113 df=30 c=2.53 p=1.41e-11 p_bh=1.41e-11 bh=True | ref tested k=1 rho=6.18 p=0.0005 rho30=14
+#
+# cancer_pc_nohub_disconnected | default: found 6, ARI 0.9982, split nodes 5, {'between': 5, 'inside': 0, 'pass-through': 0}
+#    N990 n=496 449|47  {'0': 256, '1': 64, '2': 1, '4': 64, '5': 64} | {'2': 31, '3': 16}           between      stat=571 df=30 c=1.96 p=2.9e-101 p_bh=2.9e-101 bh=True | ref tested k=2 rho=2.64 p=0.0005 rho30=2.93
+#    N988 n=449  64|385 {'5': 64}                    | {'0': 256, '1': 64, '2': 1, '4': 64} between      stat=313 df=30 c=1.96 p=6.43e-49 p_bh=1.29e-48 bh=True | ref tested k=2 rho=1.54 p=1.0000 rho30=1.64
+#    N987 n=385  64|321 {'4': 64}                    | {'0': 256, '1': 64, '2': 1}  between      stat=9.93e+03 df=30 c=1.97 p=0 p_bh=0 bh=True | ref tested k=2 rho=55.5 p=0.0005 rho30=59.8
+#    N986 n=321  65|256 {'1': 64, '2': 1}            | {'0': 256}                   between      stat=1.28e+03 df=30 c=1.97 p=6.12e-250 p_bh=6.12e-250 bh=True | ref tested k=1 rho=7.15 p=0.0005 rho30=8.09
+#    N989 n= 47  16|31  {'3': 16}                    | {'2': 31}                    between      stat=155 df=30 c=1.93 p=8.23e-19 p_bh=8.23e-19 bh=True | ref tested k=1 rho=6.18 p=0.0005 rho30=14
+#
+# cancer_pc_nohub_disconnected | Markov/Ward: found 16, ARI 0.2677, split nodes 15, {'between': 5, 'inside': 10, 'pass-through': 0}
+#    N990 n=496  64|432 {'4': 64}                    | {'0': 256, '1': 64, '2': 32, '3': 16, '5': 64} between      stat=398 df=30 c=1.71 p=8.33e-66 p_bh=8.33e-66 bh=True | ref tested k=2 rho=1.51 p=1.0000 rho30=1.6
+#    N989 n=432  64|368 {'5': 64}                    | {'0': 256, '1': 64, '2': 32, '3': 16} between      stat=1.14e+04 df=30 c=1.72 p=0 p_bh=0 bh=True | ref tested k=2 rho=49.4 p=0.0005 rho30=53.2
+#    N988 n=368  47|321 {'2': 31, '3': 16}           | {'0': 256, '1': 64, '2': 1}  between      stat=500 df=30 c=1.73 p=1.24e-86 p_bh=2.49e-86 bh=True | ref tested k=1 rho=2.66 p=0.0005 rho30=3.09
+#    N987 n=321  65|256 {'1': 64, '2': 1}            | {'0': 256}                   between      stat=1.49e+03 df=30 c=1.74 p=1.03e-295 p_bh=2.05e-295 bh=True | ref tested k=1 rho=7.15 p=0.0005 rho30=8.09
+#    N983 n=256  43|213 {'0': 43}                    | {'0': 213}                   inside       stat=140 df=30 c=1.76 p=4.04e-16 p_bh=8.08e-16 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=1.05
+#    N982 n=213  56|157 {'0': 56}                    | {'0': 157}                   inside       stat=143 df=30 c=1.77 p=9.98e-17 p_bh=9.98e-17 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=1.25
+#    N981 n=157  30|127 {'0': 30}                    | {'0': 127}                   inside       stat=74.7 df=30 c=1.81 p=1.11e-05 p_bh=2.21e-05 bh=True | ref tested k=2 rho=0.454 p=1.0000 rho30=0.925
+#    N980 n=127  30|97  {'0': 30}                    | {'0': 97}                    inside       stat=81.9 df=30 c=1.84 p=1.07e-06 p_bh=2.13e-06 bh=True | ref tested k=1 rho=0.286 p=1.0000 rho30=1.84
+#    N977 n= 97  58|39  {'0': 58}                    | {'0': 39}                    inside       stat=132 df=30 c=1.88 p=8.66e-15 p_bh=1.73e-14 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=2.76
+#    N973 n= 65  27|38  {'1': 27}                    | {'1': 37, '2': 1}            inside       stat=57.4 df=30 c=1.96 p=0.00188 p_bh=0.00188 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=6.99
+#    N976 n= 64  28|36  {'5': 28}                    | {'5': 36}                    inside       stat=55.9 df=30 c=1.96 p=0.0028 p_bh=0.0028 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=4.05
+#    N979 n= 64  29|35  {'4': 29}                    | {'4': 35}                    inside       stat=59.1 df=30 c=1.96 p=0.00119 p_bh=0.00119 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=4.51
+#    N974 n= 56  22|34  {'0': 22}                    | {'0': 34}                    inside       stat=67.2 df=30 c=2 p=0.000114 p_bh=0.000114 bh=True | ref tested k=2 rho=1.3 p=1.0000 rho30=8.09
+#    N986 n= 47  16|31  {'3': 16}                    | {'2': 31}                    between      stat=139 df=30 c=2.05 p=5.03e-16 p_bh=5.03e-16 bh=True | ref tested k=1 rho=6.18 p=0.0005 rho30=14
+#    N975 n= 30  13|17  {'0': 13}                    | {'0': 17}                    inside       stat=15.3 df=4 c=6.83 p=0.00414 p_bh=0.00414 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=-
+#
+# cancer_pc_nohub_connected | default: found 6, ARI 0.6974, split nodes 5, {'between': 3, 'inside': 2, 'pass-through': 0}
+#    N990 n=496  16|480 {'3': 16}                    | {'0': 256, '1': 64, '2': 32, '4': 64, '5': 64} between      stat=127 df=30 c=2.38 p=7.59e-14 p_bh=7.59e-14 bh=True | ref tested k=2 rho=0.66 p=1.0000 rho30=0.754
+#    N989 n=480  31|449 {'2': 31}                    | {'0': 256, '1': 64, '2': 1, '4': 64, '5': 64} between      stat=281 df=30 c=2.38 p=1.69e-42 p_bh=1.69e-42 bh=True | ref tested k=2 rho=1.5 p=1.0000 rho30=1.7
+#    N988 n=449  65|384 {'1': 64, '2': 1}            | {'0': 256, '4': 64, '5': 64} between      stat=1.01e+03 df=30 c=2.38 p=2.85e-192 p_bh=2.85e-192 bh=True | ref tested k=2 rho=5.35 p=0.0005 rho30=5.94
+#    N985 n=384 336|48  {'0': 250, '4': 64, '5': 22} | {'0': 6, '5': 42}            inside       stat=118 df=30 c=2.38 p=2.16e-12 p_bh=2.16e-12 bh=True | ref tested k=1 rho=0.64 p=1.0000 rho30=0.787
+#    N981 n=336 273|63  {'0': 236, '4': 15, '5': 22} | {'0': 14, '4': 49}           inside       stat=171 df=30 c=2.38 p=1.02e-21 p_bh=1.02e-21 bh=True | ref tested k=1 rho=0.95 p=1.0000 rho30=1.31
+#
+# cancer_pc_nohub_connected | Markov/Ward: found 15, ARI 0.2344, split nodes 14, {'between': 4, 'inside': 10, 'pass-through': 0}
+#    N990 n=496  47|449 {'2': 31, '3': 16}           | {'0': 256, '1': 64, '2': 1, '4': 64, '5': 64} between      stat=545 df=30 c=2.18 p=6.39e-96 p_bh=6.39e-96 bh=True | ref tested k=2 rho=2.64 p=0.0005 rho30=2.93
+#    N989 n=449  65|384 {'1': 64, '2': 1}            | {'0': 256, '4': 64, '5': 64} between      stat=1.11e+03 df=30 c=2.18 p=1.56e-213 p_bh=3.12e-213 bh=True | ref tested k=2 rho=5.35 p=0.0005 rho30=5.94
+#    N987 n=384  61|323 {'0': 9, '5': 52}            | {'0': 247, '4': 64, '5': 12} inside       stat=168 df=30 c=2.17 p=4.53e-21 p_bh=9.07e-21 bh=True | ref tested k=1 rho=0.932 p=1.0000 rho30=1.1
+#    N986 n=323  39|284 {'0': 1, '4': 38}            | {'0': 246, '4': 26, '5': 12} inside       stat=183 df=30 c=2.16 p=8.02e-24 p_bh=1.6e-23 bh=True | ref tested k=1 rho=0.947 p=1.0000 rho30=1.4
+#    N985 n=284  84|200 {'0': 61, '4': 22, '5': 1}   | {'0': 185, '4': 4, '5': 11}  inside       stat=144 df=30 c=2.15 p=7.17e-17 p_bh=7.17e-17 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=1.09
+#    N981 n=200  79|121 {'0': 75, '4': 3, '5': 1}    | {'0': 110, '4': 1, '5': 10}  inside       stat=167 df=30 c=2.13 p=4.89e-21 p_bh=9.77e-21 bh=True | ref tested k=1 rho=0.316 p=1.0000 rho30=1.81
+#    N980 n=121  41|80  {'0': 35, '5': 6}            | {'0': 75, '4': 1, '5': 4}    inside       stat=103 df=30 c=2.12 p=6.81e-10 p_bh=1.02e-09 bh=True | ref tested k=1 rho=0.154 p=1.0000 rho30=1.8
+#    N979 n= 84  23|61  {'0': 11, '4': 12}           | {'0': 50, '4': 10, '5': 1}   inside       stat=52.2 df=30 c=2.13 p=0.00732 p_bh=0.00732 bh=True | ref tested k=1 rho=0.494 p=1.0000 rho30=2.32
+#    N978 n= 80  40|40  {'0': 39, '5': 1}            | {'0': 36, '4': 1, '5': 3}    inside       stat=143 df=30 c=2.13 p=1.3e-16 p_bh=2.6e-16 bh=True | ref tested k=1 rho=0.844 p=1.0000 rho30=4.04
+#    N976 n= 79  40|39  {'0': 38, '4': 1, '5': 1}    | {'0': 37, '4': 2}            inside       stat=129 df=30 c=2.13 p=3.09e-14 p_bh=9.27e-14 bh=True | ref tested k=2 rho=0.99 p=1.0000 rho30=3.78
+#    N974 n= 65  27|38  {'1': 27}                    | {'1': 37, '2': 1}            inside       stat=51.8 df=30 c=2.15 p=0.00803 p_bh=0.00803 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=5.25
+#    N988 n= 47  16|31  {'3': 16}                    | {'2': 31}                    between      stat=130 df=30 c=2.2 p=1.78e-14 p_bh=1.78e-14 bh=True | ref tested k=1 rho=6.18 p=0.0005 rho30=14
+#    N977 n= 41  16|25  {'0': 12, '5': 4}            | {'0': 23, '5': 2}            inside       stat=59.4 df=30 c=2.23 p=0.00108 p_bh=0.00108 bh=True | ref tested k=2 rho=3.42 p=0.0560 rho30=19.6
+#    N967 n= 23  12|11  {'0': 1, '4': 11}            | {'0': 10, '4': 1}            between      stat=9.28 df=2 c=9.04 p=0.00966 p_bh=0.00966 bh=True | ref no_invariant_directions k=0 rho=- p=1.0000 rho30=-
+#
+# totals over the 4 cases: {"default": {"pass-through": 3, "pass-through, reference p > 0.01": 3, "between": 16, "between, reference p > 0.01": 6, "inside": 3, "inside, reference p > 0.01": 3}, "Markov/Ward": {"between": 17, "between, reference p > 0.01": 3, "inside": 33, "inside, reference p > 0.01": 33}}
+#
+# == Part 2: nodes with >= 40 cells, all from one true group ==
+#
+# default: nodes 48
+#   smaller side share: median 0.124, quartiles 0.069 to 0.180; smaller side under 10 cells: 21
+#   rho in 30 features: 1.214 (min 0.088, max 7.901, 48 nodes)
+#   edge gate: an edge of the node was tested in 6, significant for at least one child in 0, for both children in 0
+#   sibling test: p-value present in 0, Sibling_Divergence_Skipped in 48, raw p <= 0.01 in 0, Sibling_BH_Different in 0, split in the final clusters 0
+#   tested nodes: statistic per degree of freedom -; inflation factor -; degrees of freedom -
+#   reference p <= 0.01: 0 of 48 (reasons {"no_invariant_directions": 48})
+#   smaller side share 0.0 to 0.1: 18 nodes, edge significant for at least one child in 0, sibling p present in 0, BH different in 0, rho30 0.344 (min 0.088, max 5.784, 18 nodes)
+#   smaller side share 0.1 to 0.3: 27 nodes, edge significant for at least one child in 0, sibling p present in 0, BH different in 0, rho30 1.650 (min 0.166, max 7.901, 27 nodes)
+#   smaller side share 0.3 to 0.5: 3 nodes, edge significant for at least one child in 0, sibling p present in 0, BH different in 0, rho30 2.233 (min 2.233, max 2.502, 3 nodes)
+#
+# Markov/Ward: nodes 24
+#   smaller side share: median 0.382, quartiles 0.262 to 0.441; smaller side under 10 cells: 1
+#   rho in 30 features: 3.872 (min 0.730, max 17.368, 24 nodes)
+#   edge gate: an edge of the node was tested in 21, significant for at least one child in 17, for both children in 17
+#   sibling test: p-value present in 17, Sibling_Divergence_Skipped in 7, raw p <= 0.01 in 12, Sibling_BH_Different in 12, split in the final clusters 12
+#   tested nodes: statistic per degree of freedom 2.240 (min 1.370, max 4.918, 17 nodes); inflation factor 1.996 (min 1.757, max 2.474, 17 nodes); degrees of freedom 30 (min 30, max 30, 17 nodes)
+#   reference p <= 0.01: 0 of 24 (reasons {"no_invariant_directions": 13, "tested": 11})
+#   smaller side share 0.0 to 0.1: 1 nodes, edge significant for at least one child in 1, sibling p present in 1, BH different in 1, rho30 0.730 (min 0.730, max 0.730, 1 nodes)
+#   smaller side share 0.1 to 0.3: 8 nodes, edge significant for at least one child in 6, sibling p present in 6, BH different in 5, rho30 1.541 (min 0.925, max 17.368, 8 nodes)
+#   smaller side share 0.3 to 0.5: 15 nodes, edge significant for at least one child in 10, sibling p present in 10, BH different in 6, rho30 4.513 (min 2.093, max 12.457, 15 nodes)
+#
+# == Part 2b (added after the first output, deviations.md): the largest node of each true group with all cells from that group ==
+#   cancer_pc_hub_disconnected | default | group 0: N982 n=255 244|11 rho30=0.0997 edges tested True,True significant False,False edge p_bh 0.789,0.789 sibling p=- skipped=True bh=False split=False
+#   cancer_pc_hub_disconnected | default | group 1: N925 n=41 5|36 rho30=7.88 edges tested False,False significant False,False edge p_bh -,- sibling p=- skipped=True bh=False split=False
+#   cancer_pc_hub_disconnected | default | group 4: N980 n=64 10|54 rho30=0.334 edges tested True,True significant False,False edge p_bh 0.992,0.992 sibling p=- skipped=True bh=False split=False
+#   cancer_pc_hub_disconnected | default | group 5: N981 n=64 6|58 rho30=0.355 edges tested True,True significant False,False edge p_bh 0.904,0.904 sibling p=- skipped=True bh=False split=False
+#   cancer_pc_hub_disconnected | Markov/Ward | group 0: N983 n=256 22|234 rho30=0.73 edges tested True,True significant True,True edge p_bh 8.53e-05,4.9e-07 sibling p=0.00794 skipped=False bh=True split=True
+#   cancer_pc_hub_disconnected | Markov/Ward | group 4: N980 n=64 29|35 rho30=4.51 edges tested True,True significant True,True edge p_bh 0.00021,0.00021 sibling p=0.0257 skipped=False bh=False split=False
+#   cancer_pc_hub_disconnected | Markov/Ward | group 5: N979 n=64 28|36 rho30=4.05 edges tested True,True significant True,True edge p_bh 6.71e-05,1.45e-05 sibling p=0.0437 skipped=False bh=False split=False
+#   cancer_pc_hub_connected | default | group 1: N974 n=42 1|41 rho30=1.8 edges tested False,False significant False,False edge p_bh -,- sibling p=- skipped=True bh=False split=False
+#   cancer_pc_hub_connected | Markov/Ward | group 1: N972 n=59 18|41 rho30=5.35 edges tested False,False significant False,False edge p_bh -,- sibling p=- skipped=True bh=False split=False
+#   cancer_pc_nohub_disconnected | default | group 0: N983 n=256 6|250 rho30=0.0882 edges tested True,True significant False,False edge p_bh 0.996,0.996 sibling p=- skipped=True bh=False split=False
+#   cancer_pc_nohub_disconnected | default | group 1: N920 n=42 5|37 rho30=7.04 edges tested False,False significant False,False edge p_bh -,- sibling p=- skipped=True bh=False split=False
+#   cancer_pc_nohub_disconnected | default | group 4: N981 n=64 10|54 rho30=0.334 edges tested True,True significant False,False edge p_bh 0.991,0.991 sibling p=- skipped=True bh=False split=False
+#   cancer_pc_nohub_disconnected | default | group 5: N982 n=64 6|58 rho30=0.355 edges tested True,True significant False,False edge p_bh 0.904,0.904 sibling p=- skipped=True bh=False split=False
+#   cancer_pc_nohub_disconnected | Markov/Ward | group 0: N983 n=256 43|213 rho30=1.05 edges tested True,True significant True,True edge p_bh 9.84e-16,4.1e-20 sibling p=4.04e-16 skipped=False bh=True split=True
+#   cancer_pc_nohub_disconnected | Markov/Ward | group 4: N979 n=64 29|35 rho30=4.51 edges tested True,True significant True,True edge p_bh 0.00021,0.00021 sibling p=0.00119 skipped=False bh=True split=True
+#   cancer_pc_nohub_disconnected | Markov/Ward | group 5: N976 n=64 28|36 rho30=4.05 edges tested True,True significant True,True edge p_bh 7.16e-05,1.45e-05 sibling p=0.0028 skipped=False bh=True split=True
+#   cancer_pc_nohub_connected | default | group 1: N953 n=44 40|4 rho30=5.78 edges tested False,False significant False,False edge p_bh -,- sibling p=- skipped=True bh=False split=False
+#
+# == inflation factor per run (all tested nodes) ==
+# cancer_pc_hub_disconnected | default: sibling p present in 5 of 495 nodes, edge significant for at least one child in 5, inflation factor 2.287 (min 2.005, max 2.309, 5 nodes), BH different 5
+# cancer_pc_hub_disconnected | Markov/Ward: sibling p present in 14 of 495 nodes, edge significant for at least one child in 14, inflation factor 2.421 (min 2.400, max 6.105, 14 nodes), BH different 9
+# cancer_pc_hub_connected | default: sibling p present in 4 of 495 nodes, edge significant for at least one child in 4, inflation factor 3.176 (min 3.085, max 3.205, 4 nodes), BH different 4
+# cancer_pc_hub_connected | Markov/Ward: sibling p present in 12 of 495 nodes, edge significant for at least one child in 12, inflation factor 2.610 (min 2.516, max 2.735, 12 nodes), BH different 12
+# cancer_pc_nohub_disconnected | default: sibling p present in 5 of 495 nodes, edge significant for at least one child in 5, inflation factor 1.961 (min 1.925, max 1.970, 5 nodes), BH different 5
+# cancer_pc_nohub_disconnected | Markov/Ward: sibling p present in 17 of 495 nodes, edge significant for at least one child in 17, inflation factor 1.877 (min 1.709, max 6.828, 17 nodes), BH different 15
+# cancer_pc_nohub_connected | default: sibling p present in 5 of 495 nodes, edge significant for at least one child in 5, inflation factor 2.383 (min 2.381, max 2.383, 5 nodes), BH different 5
+# cancer_pc_nohub_connected | Markov/Ward: sibling p present in 15 of 495 nodes, edge significant for at least one child in 15, inflation factor 2.156 (min 2.119, max 9.043, 15 nodes), BH different 14

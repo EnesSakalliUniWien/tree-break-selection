@@ -1,0 +1,552 @@
+# ===== protocol.md =====
+# # Protocol: the level of variant A of the draft definition of k on one-population data with the method's own trees (frozen 2026-11-12, before any run)
+#
+# ## Why
+#
+# Variant A of the draft (wiki page `k-split-direction-draft`): k = 1; the node's cells are divided into a basis
+# half and a test half; the direction comes from the tree's split on the basis half; `rho` of the tree's split of
+# the test half along it is compared with the reference at (test cells, 1). Its level is measured, not derived,
+# because the tree's split, which was chosen from all cells, enters the direction. Measured so far: at most 13 of
+# 1,000 simulated datasets with Ward linkage on raw features, and 80 of 80 runs of a one-population grid at 1
+# cluster. This protocol measures it on more one-population data with the trees the method builds itself.
+#
+# ## Code to reuse (read before writing anything)
+#
+# - `results/analyses/k_split_direction_runs_20261112/draft_rule.py`: `install("A")` replaces the reference call
+#   inside the opt-in's module at run time and passes each side's cells in data order; `CALLS` records every call
+#   (cells, left size, reason, `rho`, p, test cells); `_draft("A")` returns the function for one node.
+# - `results/analyses/k_split_direction_runs_20261112/run_benchmark.py`: how a one-population case is run through
+#   `benchmark_cluster_algorithm` with the operator and linkage overrides and the opt-in on.
+# - `results/analyses/k_margin_prototype_20261112/b_subtrees.py`: how the fitted tree is captured at run time and
+#   how the cells under every node are collected.
+#
+# ## Data (frozen)
+#
+# One Gaussian population, generated through the registered case `gauss_null_large_continuous` with other sizes
+# and seeds (`blobs_continuous`, 1 cluster, `cluster_std` 1.0).
+#
+# - Identity covariance: (cells, features) = (60, 30), (100, 30), (200, 30), (256, 30), (496, 30), (1000, 30),
+#   (200, 80), (60, 200).
+# - Unequal variances with correlated features: (256, 30), (496, 30), (1000, 30). The generated matrix X is
+#   replaced by X diag(sqrt(v)) Q', with v the 30 eigenvalues of the CHOIR root (53.09, 35.75, 24.75, 20.4,
+#   18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58, 6.91, 6.66, 6.47,
+#   6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12) and Q one fixed random orthogonal matrix
+#   (`scipy.stats.ortho_group.rvs(30, random_state=0)`). Hook: at run time `make_blobs` inside
+#   `benchmarks.shared.generators.gaussian_cases` is wrapped so that it returns the transformed matrix while the
+#   flag for this covariance is on. No production file is changed.
+# - Seeds 1 to 50 for settings with at most 496 cells, 1 to 20 for the two settings with 1,000 cells.
+# - Method `tbs_family_diffusion` with `diffusion_coordinate_operator` symmetric or markov and
+#   `tree_linkage_method` average or ward (4 cells), `sibling_best_flat_cut_reference=True`, variant A installed.
+#   1,960 fits in total.
+#
+# ## Measurements (`measure.py`, one output file per setting; `summarize.py`, output `summary.txt`)
+#
+# - M1 complete method: found clusters of every fit. Reported per setting and cell: fits with more than 1
+#   cluster, of the number of fits.
+# - M2 called nodes: the calls recorded in `CALLS` during every fit. Reported per setting and cell and in total:
+#   tested calls, tested calls with p <= 0.01, smallest p, and the same by node size (fewer than 60 cells, 60 to
+#   199, 200 and more).
+# - M3 every node: for every internal node with at least 30 cells of every fitted tree, variant A applied
+#   directly to the node's cells and the tree's split of that node (each side's cells in data order), and the
+#   current rule on the same node (the unreplaced `best_flat_cut_reference`, kept in a variable before
+#   `install`). Reported per setting and cell and in total: nodes, nodes tested, nodes with p <= 0.01, for both
+#   rules; and for variant A by node size as in M2.
+# - Self-checks (asserts): every fit has status ok; the cells under the captured root are all cells of the case;
+#   for the unequal-variance settings the largest eigenvalue of the data's covariance is above 20 and for the
+#   identity settings below 5; the halves of variant A at a node are what `draft_rule` computes (the direct call
+#   uses `draft_rule._draft("A")`, no reimplementation).
+#
+# ## Predictions, stated before any run
+#
+# - V1 more than 1 cluster in at most 19 of the 1,960 fits (1%).
+# - V2 called nodes: p <= 0.01 in at most 2% of the tested calls in total.
+# - V3 every node with at least 30 cells: variant A has p <= 0.01 in at most 2% of the tested nodes in total.
+# - V4 among the 4 cells, markov/ward has the largest share of nodes with p <= 0.01 under variant A.
+# Each is reported as held or not held, with the counts.
+#
+# ## Rules
+#
+# - Only files in `results/analyses/k_split_direction_level_20261112/` are written. No production file, test,
+#   wiki page or raw capture is changed; nothing is committed, installed or downloaded.
+# - Run pattern: `cd /Users/berksakalli/Projects/kl-te-cluster && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run
+#   --no-sync --offline python <script>`; `apply_single_thread_runtime_defaults()` as in the reused scripts.
+#   `measure.py` takes the index of one setting, so settings can run as separate processes, at most 6 at a time.
+#   Scripts pass `uv run --no-sync --offline ruff check`.
+# - This protocol is frozen. Anything done differently goes into `deviations.md` with the reason; a failed assert
+#   or prediction is reported, not removed.
+# - Results are counts with their totals. The report ends with what was not checked. No explanation is given
+#   without a measurement that supports it.
+
+
+# ===== deviations.md =====
+# # Deviations and open choices (protocol frozen 2026-11-12)
+#
+# ## Failed self-checks (kept, not removed)
+# - Setting 7, (60, 200) identity: the assert "largest eigenvalue of the data covariance below 5" failed for all 50 seeds (values 7.28 to 8.48, see
+#   `setting_07.json`, key `failures`). `measure.py 7` therefore ends with an AssertionError after writing the file. The data are the registered
+#   case with other sizes; with 60 cells and 200 features the sample covariance has a largest eigenvalue above 5. The assert was not changed; M1 to M3
+#   of this setting are in `summary.txt` and count in the totals.
+# - Setting 10, (1000, 30) unequal variances, seed 1, symmetric/ward: the fit raised ValueError (fixed-topology NNLS branch-length optimization,
+#   status 'solver_not_converged'; `allow_method_errors=False`). It is recorded as a fit with status "error: ..." (assert "every fit has status ok"
+#   failed once, see `setting_10.json`), has no calls and no nodes, counts in the 1,960 fits and in M1 as not more than 1 cluster. `measure.py 10`
+#   ends with an AssertionError after writing the file. All other 1,959 fits have status ok.
+#
+# ## Choices the protocol left open
+# - A fit that raises ValueError is caught in `measure.py` (added after the first run of setting 10 stopped at seed 1 without a file); the other
+#   settings were started with the version without the catch and had no error. Setting 10 was rerun with the catch.
+# - Left side of a node = its first child in `tree.successors` order; right side = all rows below the other children (binary tree: the second
+#   child). The pipeline's own left/right order was not read from its code.
+# - M3 matrix = `generate_case_data(case)` data (with the unequal-variance hook on for settings 8 to 10), rows indexed by the labels of the tree leaves.
+# - M3 nodes: internal nodes (with children) with at least 30 cells; variant A tested = reason "tested"; "p <= 0.01" is counted over tested nodes
+#   only. Node size bins use the node's cells (M2: the call's n).
+# - V2, V3: "at most 2%" is checked as count <= 0.02 x tested; V4 compares counts/tested nodes per cell over all settings.
+# - Extra self-checks added (recorded in `failures` if violated, none violated): every recorded M2 call (n, left size) is a node of the captured
+#   tree; the direct call's record has the node's n and left size and `n_test` = ceil(left/2) + ceil(right/2); the direct return equals the record.
+# - Largest-eigenvalue check uses `np.cov` of the generated matrix per seed (once per seed, not per cell).
+# - `make_blobs` hook is `gaussian_cases.make_blobs` replaced at run time; Q = `ortho_group.rvs(30, random_state=0)`, X replaced by X diag(sqrt(v)) Q'
+#   (written `x @ (diag(sqrt(v)) @ Q.T)`).
+
+
+# ===== measure.py =====
+"""protocol.md M1 to M3 for one setting. usage: measure.py SETTING_INDEX (0 to 10)"""
+import json
+import sys
+import time
+from pathlib import Path
+
+import networkx as nx
+import numpy as np
+from scipy.stats import ortho_group
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "k_split_direction_runs_20261112"))
+
+import draft_rule  # noqa: E402
+
+import benchmarks.shared.generators.gaussian_cases as gaussian_cases  # noqa: E402
+import benchmarks.shared.runners.tbs_runner as tbs_runner  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.generators import generate_case_data  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+METHOD = "tbs_family_diffusion"
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+SETTINGS = [(c, f, False) for c, f in ((60, 30), (100, 30), (200, 30), (256, 30), (496, 30), (1000, 30), (200, 80), (60, 200))] + [
+    (c, 30, True) for c in (256, 496, 1000)
+]
+EIGENVALUES = np.array([53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17,
+                        7.91, 7.58, 6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12])
+MIN_NODE_CELLS = 30
+UNEQUAL = False  # flag read by the make_blobs hook
+TRANSFORM = np.diag(np.sqrt(EIGENVALUES)) @ ortho_group.rvs(30, random_state=0).T
+original = draft_rule.mod.best_flat_cut_reference  # the current rule, kept before install
+original_make_blobs = gaussian_cases.make_blobs
+seen = {}
+Original = tbs_runner.TreeDecomposition
+
+
+class Recording(Original):
+    def decompose_tree(self):
+        out = super().decompose_tree()
+        seen.update(tree=self.tree)
+        return out
+
+
+def make_blobs_hook(*args, **kwargs):
+    x, y = original_make_blobs(*args, **kwargs)
+    return (x @ TRANSFORM if UNEQUAL else x), y
+
+
+def main():
+    global UNEQUAL
+    index = int(sys.argv[1])
+    cells, features, UNEQUAL = SETTINGS[index]
+    gaussian_cases.make_blobs = make_blobs_hook
+    tbs_runner.TreeDecomposition = Recording
+    draft_rule.install("A")
+    draft = draft_rule._draft("A")
+    apply_single_thread_runtime_defaults()
+    start = time.perf_counter()
+    (registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+    fits, failures = [], []  # a failed self-check is kept in the file and fails the run at the end
+    for seed in range(1, 21 if cells == 1000 else 51):
+        case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+        data, _, _, _ = generate_case_data(case)
+        matrix = data.to_numpy(dtype=np.float64)
+        row_of = {name: row for row, name in enumerate(data.index)}
+        top = float(np.linalg.eigvalsh(np.cov(matrix.T)).max())
+        if not (top > 20 if UNEQUAL else top < 5):
+            failures.append(dict(check="largest eigenvalue of the data covariance", seed=seed, value=top, unequal=UNEQUAL))
+        for operator, linkage in CELLS:
+            seen.clear()
+            draft_rule.CALLS.clear()
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage,
+                      "sibling_best_flat_cut_reference": True}
+            try:
+                res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                                  plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                                  allow_method_errors=False).iloc[0]
+            except ValueError as error:  # kept as a failed fit (status assert), the setting goes on
+                fits.append(dict(cells=cells, features=features, unequal=UNEQUAL, seed=seed, cell=f"{operator}/{linkage}", found=None,
+                                 status=f"error: {error}", calls=[], nodes=[]))
+                failures.append(dict(check="status ok", status=fits[-1]["status"], seed=seed, cell=fits[-1]["cell"]))
+                continue
+            m2 = [dict(c) for c in draft_rule.CALLS]  # the calls of the fit, before the direct M3 calls
+            draft_rule.CALLS.clear()
+            fit = dict(cells=cells, features=features, unequal=UNEQUAL, seed=seed, cell=f"{operator}/{linkage}",
+                       found=int(res["found_clusters"]), status=str(res["status"]), calls=m2, nodes=[])
+            where = dict(seed=seed, cell=fit["cell"])
+            if fit["status"] != "ok":
+                failures.append(dict(check="status ok", status=fit["status"], **where))
+            tree = seen["tree"]
+            rows_under = {}
+            for node in reversed(list(nx.topological_sort(tree))):
+                children = list(tree.successors(node))
+                rows_under[node] = [row_of[tree.nodes[node]["label"]]] if not children else sum((rows_under[c] for c in children), [])
+            if sorted(rows_under[tree.root()]) != list(range(cells)):
+                failures.append(dict(check="cells under the root are all cells", **where))
+            pairs = set()
+            for node, rows in rows_under.items():
+                children = list(tree.successors(node))
+                if not children:
+                    continue
+                left = sorted(rows_under[children[0]])
+                right = sorted(r for c in children[1:] for r in rows_under[c])
+                pairs.add((len(rows), len(left)))
+                if len(rows) < MIN_NODE_CELLS:
+                    continue
+                order = left + right
+                in_left = np.r_[np.ones(len(left), dtype=bool), np.zeros(len(right), dtype=bool)]
+                points = matrix[order]
+                a = draft(points, in_left)
+                (record,) = draft_rule.CALLS
+                draft_rule.CALLS.clear()
+                if (record["n"], record["left"]) != (len(rows), len(left)) or (
+                    record["reason"] == "tested" and record["n_test"] != (len(left) + 1) // 2 + (len(right) + 1) // 2
+                ):
+                    failures.append(dict(check="halves of variant A are those of draft_rule", node=str(node), **where))
+                assert a.reason == record["reason"] and a.p_value == record["p"]
+                b = original(points, in_left)
+                fit["nodes"].append(dict(
+                    cells=len(rows), left=len(left), a_reason=record["reason"], a_rho=record["rho"], a_p=record["p"],
+                    a_test_cells=record.get("n_test"), cur_reason=b.reason, cur_k=int(b.invariant_directions),
+                    cur_rho=float(b.rho) if np.isfinite(b.rho) else None, cur_p=float(b.p_value)))
+            if not {(c["n"], c["left"]) for c in m2} <= pairs:
+                failures.append(dict(check="every recorded call is a node of the captured tree", **where))
+            fits.append(fit)
+        print(index, seed, f"{time.perf_counter() - start:.0f} s", flush=True)
+    json.dump(dict(setting=index, cells=cells, features=features, unequal=UNEQUAL, seconds=time.perf_counter() - start,
+                   failures=failures, fits=fits), open(HERE / f"setting_{index:02d}.json", "w"))
+    assert not failures, f"{len(failures)} failed self-checks, see setting_{index:02d}.json"
+
+
+if __name__ == "__main__":
+    main()
+
+
+# ===== summarize.py =====
+"""protocol.md: tables of M1 to M3 and predictions V1 to V4 from setting_*.json into summary.txt"""
+import json
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+CELLS = ["symmetric/average", "symmetric/ward", "markov/average", "markov/ward"]
+BINS = [("<60", lambda n: n < 60), ("60-199", lambda n: 60 <= n < 200), (">=200", lambda n: n >= 200)]
+files = sorted(HERE.glob("setting_*.json"))
+settings = [json.load(open(f)) for f in files]
+assert len(settings) == 11, f"{len(settings)} of 11 setting files"
+fits = [f for s in settings for f in s["fits"]]
+label = lambda f: f"{f['cells']}x{f['features']}{' unequal' if f['unequal'] else ''}"  # noqa: E731
+groups = [(f"{s['cells']}x{s['features']}{' unequal' if s['unequal'] else ''} {c}", [f for f in s["fits"] if f["cell"] == c])
+          for s in settings for c in CELLS] + [(f"TOTAL {c}", [f for f in fits if f["cell"] == c]) for c in CELLS] + [("TOTAL all", fits)]
+lines = [f"one Gaussian population; {len(fits)} fits; failed self-checks: {sum(len(s['failures']) for s in settings)}"]
+
+
+def tally(ps):
+    return f"{sum(p <= 0.01 for p in ps)}/{len(ps)}", (f"{min(ps):.4g}" if ps else "-")
+
+
+def by_size(items, size, p):
+    return " | ".join(f"{name} {sum(q <= 0.01 for q in qs)}/{len(qs)}" for name, test in BINS
+                      for qs in [[p(i) for i in items if i["reason"] == "tested" and test(size(i))]])
+
+
+lines += ["", "M1 found clusters: fits with more than 1 cluster / fits", "group | >1 cluster"]
+lines += [f"{g} | {sum((f['found'] or 0) > 1 for f in fs)}/{len(fs)}" for g, fs in groups]
+lines += ["", "M2 called nodes: tested calls with p <= 0.01 / tested calls | smallest p | by node size (<60, 60-199, >=200)"]
+for g, fs in groups:
+    calls = [c for f in fs for c in f["calls"] if c["reason"] == "tested"]
+    count, smallest = tally([c["p"] for c in calls])
+    lines.append(f"{g} | {count} | {smallest} | {by_size(calls, lambda c: c['n'], lambda c: c['p'])}")
+lines += ["", "M3 every node with >= 30 cells: nodes | variant A tested | variant A p <= 0.01 | current rule tested | current rule p <= 0.01 | "
+          "smallest p variant A | variant A p <= 0.01 by node size (<60, 60-199, >=200)"]
+for g, fs in groups:
+    nodes = [n for f in fs for n in f["nodes"]]
+    a = [n for n in nodes if n["a_reason"] == "tested"]
+    c = [n for n in nodes if n["cur_reason"] == "tested"]
+    lines.append(f"{g} | {len(nodes)} | {len(a)} | {sum(n['a_p'] <= 0.01 for n in a)} | {len(c)} | {sum(n['cur_p'] <= 0.01 for n in c)} | "
+                 f"{min([n['a_p'] for n in a], default='-')} | {by_size([dict(n, reason=n['a_reason']) for n in nodes], lambda n: n['cells'], lambda n: n['a_p'])}")
+v1 = sum((f["found"] or 0) > 1 for f in fits)
+m2 = [c for f in fits for c in f["calls"] if c["reason"] == "tested"]
+v2 = sum(c["p"] <= 0.01 for c in m2)
+m3 = [n for f in fits for n in f["nodes"] if n["a_reason"] == "tested"]
+v3 = sum(n["a_p"] <= 0.01 for n in m3)
+share = {c: [sum(n["a_p"] <= 0.01 for f in fits if f["cell"] == c for n in f["nodes"] if n["a_reason"] == "tested"),
+             sum(f["cell"] == c for f in fits for n in f["nodes"] if n["a_reason"] == "tested")] for c in CELLS}
+v4 = max(share, key=lambda c: share[c][0] / share[c][1])
+held = lambda ok: "held" if ok else "not held"  # noqa: E731
+lines += ["", "Predictions",
+          f"V1 more than 1 cluster in at most 19 of {len(fits)} fits: {v1} of {len(fits)}: {held(v1 <= 19)}",
+          f"V2 called nodes p <= 0.01 in at most 2% of tested calls: {v2} of {len(m2)} ({v2 / max(len(m2), 1):.4f}): {held(v2 <= 0.02 * len(m2))}",
+          f"V3 nodes with >= 30 cells, variant A p <= 0.01 in at most 2% of tested nodes: {v3} of {len(m3)} ({v3 / max(len(m3), 1):.4f}): "
+          f"{held(v3 <= 0.02 * len(m3))}",
+          "V4 markov/ward has the largest share of nodes with p <= 0.01 under variant A: "
+          + ", ".join(f"{c} {a}/{b} = {a / b:.4f}" for c, (a, b) in share.items()) + f"; largest {v4}: {held(v4 == 'markov/ward')}"]
+(HERE / "summary.txt").write_text("\n".join(lines) + "\n")
+print("\n".join(lines))
+
+
+# ===== summary.txt =====
+# one Gaussian population; 1960 fits; failed self-checks: 51
+#
+# M1 found clusters: fits with more than 1 cluster / fits
+# group | >1 cluster
+# 60x30 symmetric/average | 0/50
+# 60x30 symmetric/ward | 0/50
+# 60x30 markov/average | 0/50
+# 60x30 markov/ward | 0/50
+# 100x30 symmetric/average | 0/50
+# 100x30 symmetric/ward | 1/50
+# 100x30 markov/average | 0/50
+# 100x30 markov/ward | 0/50
+# 200x30 symmetric/average | 0/50
+# 200x30 symmetric/ward | 0/50
+# 200x30 markov/average | 0/50
+# 200x30 markov/ward | 0/50
+# 256x30 symmetric/average | 0/50
+# 256x30 symmetric/ward | 0/50
+# 256x30 markov/average | 1/50
+# 256x30 markov/ward | 0/50
+# 496x30 symmetric/average | 0/50
+# 496x30 symmetric/ward | 1/50
+# 496x30 markov/average | 0/50
+# 496x30 markov/ward | 1/50
+# 1000x30 symmetric/average | 0/20
+# 1000x30 symmetric/ward | 1/20
+# 1000x30 markov/average | 0/20
+# 1000x30 markov/ward | 0/20
+# 200x80 symmetric/average | 0/50
+# 200x80 symmetric/ward | 0/50
+# 200x80 markov/average | 0/50
+# 200x80 markov/ward | 0/50
+# 60x200 symmetric/average | 0/50
+# 60x200 symmetric/ward | 0/50
+# 60x200 markov/average | 0/50
+# 60x200 markov/ward | 0/50
+# 256x30 unequal symmetric/average | 1/50
+# 256x30 unequal symmetric/ward | 0/50
+# 256x30 unequal markov/average | 1/50
+# 256x30 unequal markov/ward | 0/50
+# 496x30 unequal symmetric/average | 1/50
+# 496x30 unequal symmetric/ward | 2/50
+# 496x30 unequal markov/average | 0/50
+# 496x30 unequal markov/ward | 0/50
+# 1000x30 unequal symmetric/average | 0/20
+# 1000x30 unequal symmetric/ward | 1/20
+# 1000x30 unequal markov/average | 0/20
+# 1000x30 unequal markov/ward | 1/20
+# TOTAL symmetric/average | 2/490
+# TOTAL symmetric/ward | 6/490
+# TOTAL markov/average | 2/490
+# TOTAL markov/ward | 2/490
+# TOTAL all | 12/1960
+#
+# M2 called nodes: tested calls with p <= 0.01 / tested calls | smallest p | by node size (<60, 60-199, >=200)
+# 60x30 symmetric/average | 0/28 | 0.064 | <60 0/1 | 60-199 0/27 | >=200 0/0
+# 60x30 symmetric/ward | 0/34 | 0.064 | <60 0/0 | 60-199 0/34 | >=200 0/0
+# 60x30 markov/average | 0/31 | 1 | <60 0/1 | 60-199 0/30 | >=200 0/0
+# 60x30 markov/ward | 0/32 | 1 | <60 0/0 | 60-199 0/32 | >=200 0/0
+# 100x30 symmetric/average | 0/80 | 1 | <60 0/8 | 60-199 0/72 | >=200 0/0
+# 100x30 symmetric/ward | 1/92 | 0.008 | <60 0/19 | 60-199 1/73 | >=200 0/0
+# 100x30 markov/average | 0/69 | 1 | <60 0/6 | 60-199 0/63 | >=200 0/0
+# 100x30 markov/ward | 0/95 | 0.0675 | <60 0/15 | 60-199 0/80 | >=200 0/0
+# 200x30 symmetric/average | 0/195 | 0.0135 | <60 0/21 | 60-199 0/131 | >=200 0/43
+# 200x30 symmetric/ward | 0/241 | 1 | <60 0/38 | 60-199 0/153 | >=200 0/50
+# 200x30 markov/average | 0/130 | 1 | <60 0/10 | 60-199 0/88 | >=200 0/32
+# 200x30 markov/ward | 0/252 | 0.068 | <60 0/47 | 60-199 0/155 | >=200 0/50
+# 256x30 symmetric/average | 0/203 | 1 | <60 0/16 | 60-199 0/112 | >=200 0/75
+# 256x30 symmetric/ward | 0/333 | 0.0125 | <60 0/60 | 60-199 0/211 | >=200 0/62
+# 256x30 markov/average | 1/174 | 0.002 | <60 0/14 | 60-199 1/76 | >=200 0/84
+# 256x30 markov/ward | 1/341 | 0.0055 | <60 1/46 | 60-199 0/233 | >=200 0/62
+# 496x30 symmetric/average | 0/5 | 1 | <60 0/0 | 60-199 0/0 | >=200 0/5
+# 496x30 symmetric/ward | 3/745 | 0.002 | <60 3/149 | 60-199 0/441 | >=200 0/155
+# 496x30 markov/average | 1/296 | 0.0095 | <60 1/27 | 60-199 0/121 | >=200 0/148
+# 496x30 markov/ward | 5/752 | 0.001 | <60 5/149 | 60-199 0/449 | >=200 0/154
+# 1000x30 symmetric/average | 0/0 | - | <60 0/0 | 60-199 0/0 | >=200 0/0
+# 1000x30 symmetric/ward | 3/635 | 0.002 | <60 3/139 | 60-199 0/356 | >=200 0/140
+# 1000x30 markov/average | 0/212 | 0.013 | <60 0/32 | 60-199 0/71 | >=200 0/109
+# 1000x30 markov/ward | 0/658 | 0.0165 | <60 0/156 | 60-199 0/360 | >=200 0/142
+# 200x80 symmetric/average | 0/59 | 0.095 | <60 0/11 | 60-199 0/32 | >=200 0/16
+# 200x80 symmetric/ward | 0/119 | 0.035 | <60 0/31 | 60-199 0/39 | >=200 0/49
+# 200x80 markov/average | 0/32 | 1 | <60 0/0 | 60-199 0/17 | >=200 0/15
+# 200x80 markov/ward | 0/117 | 1 | <60 0/30 | 60-199 0/37 | >=200 0/50
+# 60x200 symmetric/average | 0/25 | 1 | <60 0/4 | 60-199 0/21 | >=200 0/0
+# 60x200 symmetric/ward | 0/24 | 1 | <60 0/6 | 60-199 0/18 | >=200 0/0
+# 60x200 markov/average | 0/12 | 1 | <60 0/3 | 60-199 0/9 | >=200 0/0
+# 60x200 markov/ward | 0/17 | 1 | <60 0/3 | 60-199 0/14 | >=200 0/0
+# 256x30 unequal symmetric/average | 1/374 | 0.0025 | <60 1/75 | 60-199 0/236 | >=200 0/63
+# 256x30 unequal symmetric/ward | 1/372 | 0.009 | <60 0/85 | 60-199 1/233 | >=200 0/54
+# 256x30 unequal markov/average | 1/369 | 0.0055 | <60 1/83 | 60-199 0/218 | >=200 0/68
+# 256x30 unequal markov/ward | 0/389 | 0.015 | <60 0/103 | 60-199 0/231 | >=200 0/55
+# 496x30 unequal symmetric/average | 2/622 | 0.0045 | <60 1/117 | 60-199 1/335 | >=200 0/170
+# 496x30 unequal symmetric/ward | 3/779 | 0.002 | <60 3/192 | 60-199 0/444 | >=200 0/143
+# 496x30 unequal markov/average | 0/711 | 0.014 | <60 0/126 | 60-199 0/399 | >=200 0/186
+# 496x30 unequal markov/ward | 1/784 | 0.0075 | <60 1/184 | 60-199 0/453 | >=200 0/147
+# 1000x30 unequal symmetric/average | 0/36 | 1 | <60 0/3 | 60-199 0/15 | >=200 0/18
+# 1000x30 unequal symmetric/ward | 1/609 | 0.005 | <60 0/133 | 60-199 1/337 | >=200 0/139
+# 1000x30 unequal markov/average | 1/541 | 0.0065 | <60 1/80 | 60-199 0/280 | >=200 0/181
+# 1000x30 unequal markov/ward | 8/678 | 0.0035 | <60 7/182 | 60-199 1/358 | >=200 0/138
+# TOTAL symmetric/average | 3/1627 | 0.0025 | <60 2/256 | 60-199 1/981 | >=200 0/390
+# TOTAL symmetric/ward | 12/3983 | 0.002 | <60 9/852 | 60-199 3/2339 | >=200 0/792
+# TOTAL markov/average | 4/2577 | 0.002 | <60 3/382 | 60-199 1/1372 | >=200 0/823
+# TOTAL markov/ward | 15/4115 | 0.001 | <60 14/915 | 60-199 1/2402 | >=200 0/798
+# TOTAL all | 34/12302 | 0.001 | <60 28/2405 | 60-199 6/7094 | >=200 0/2803
+#
+# M3 every node with >= 30 cells: nodes | variant A tested | variant A p <= 0.01 | current rule tested | current rule p <= 0.01 | smallest p variant A | variant A p <= 0.01 by node size (<60, 60-199, >=200)
+# 60x30 symmetric/average | 115 | 115 | 0 | 34 | 0 | 0.064 | <60 0/65 | 60-199 0/50 | >=200 0/0
+# 60x30 symmetric/ward | 111 | 111 | 0 | 30 | 0 | 0.064 | <60 0/61 | 60-199 0/50 | >=200 0/0
+# 60x30 markov/average | 134 | 131 | 0 | 41 | 0 | 1.0 | <60 0/81 | 60-199 0/50 | >=200 0/0
+# 60x30 markov/ward | 112 | 112 | 0 | 34 | 0 | 0.014 | <60 0/62 | 60-199 0/50 | >=200 0/0
+# 100x30 symmetric/average | 229 | 229 | 1 | 99 | 0 | 0.0025 | <60 1/126 | 60-199 0/103 | >=200 0/0
+# 100x30 symmetric/ward | 214 | 214 | 1 | 104 | 0 | 0.008 | <60 0/138 | 60-199 1/76 | >=200 0/0
+# 100x30 markov/average | 263 | 261 | 0 | 101 | 0 | 1.0 | <60 0/132 | 60-199 0/129 | >=200 0/0
+# 100x30 markov/ward | 215 | 215 | 1 | 101 | 1 | 0.0035 | <60 1/129 | 60-199 0/86 | >=200 0/0
+# 200x30 symmetric/average | 555 | 541 | 2 | 357 | 0 | 0.003 | <60 2/268 | 60-199 0/223 | >=200 0/50
+# 200x30 symmetric/ward | 486 | 486 | 0 | 353 | 1 | 0.0125 | <60 0/269 | 60-199 0/167 | >=200 0/50
+# 200x30 markov/average | 594 | 594 | 2 | 333 | 0 | 0.008 | <60 2/277 | 60-199 0/267 | >=200 0/50
+# 200x30 markov/ward | 488 | 488 | 1 | 362 | 1 | 0.0065 | <60 1/273 | 60-199 0/165 | >=200 0/50
+# 256x30 symmetric/average | 731 | 704 | 2 | 478 | 0 | 0.0015 | <60 2/321 | 60-199 0/256 | >=200 0/127
+# 256x30 symmetric/ward | 630 | 630 | 3 | 498 | 0 | 0.002 | <60 3/337 | 60-199 0/231 | >=200 0/62
+# 256x30 markov/average | 761 | 758 | 1 | 498 | 0 | 0.002 | <60 0/340 | 60-199 1/255 | >=200 0/163
+# 256x30 markov/ward | 646 | 646 | 1 | 518 | 1 | 0.01 | <60 1/341 | 60-199 0/243 | >=200 0/62
+# 496x30 symmetric/average | 1630 | 1510 | 7 | 957 | 1 | 0.0005 | <60 7/565 | 60-199 0/338 | >=200 0/607
+# 496x30 symmetric/ward | 1280 | 1280 | 8 | 1120 | 1 | 0.0005 | <60 8/652 | 60-199 0/473 | >=200 0/155
+# 496x30 markov/average | 1443 | 1443 | 10 | 1106 | 0 | 0.0035 | <60 10/637 | 60-199 0/379 | >=200 0/427
+# 496x30 markov/ward | 1270 | 1270 | 11 | 1132 | 4 | 0.001 | <60 11/649 | 60-199 0/467 | >=200 0/154
+# 1000x30 symmetric/average | 1469 | 1350 | 2 | 867 | 2 | 0.001 | <60 2/474 | 60-199 0/193 | >=200 0/683
+# 1000x30 symmetric/ward | 1044 | 1044 | 3 | 955 | 2 | 0.002 | <60 3/531 | 60-199 0/373 | >=200 0/140
+# 1000x30 markov/average | 1150 | 1149 | 3 | 968 | 1 | 0.0015 | <60 3/543 | 60-199 0/301 | >=200 0/305
+# 1000x30 markov/ward | 1029 | 1029 | 4 | 947 | 5 | 0.0025 | <60 4/523 | 60-199 0/364 | >=200 0/142
+# 200x80 symmetric/average | 619 | 594 | 2 | 118 | 0 | 0.002 | <60 2/246 | 60-199 0/308 | >=200 0/40
+# 200x80 symmetric/ward | 486 | 486 | 0 | 78 | 0 | 0.031 | <60 0/259 | 60-199 0/177 | >=200 0/50
+# 200x80 markov/average | 686 | 680 | 0 | 123 | 0 | 0.0265 | <60 0/252 | 60-199 0/381 | >=200 0/47
+# 200x80 markov/ward | 489 | 489 | 0 | 86 | 0 | 1.0 | <60 0/260 | 60-199 0/179 | >=200 0/50
+# 60x200 symmetric/average | 135 | 134 | 0 | 0 | 0 | 1.0 | <60 0/84 | 60-199 0/50 | >=200 0/0
+# 60x200 symmetric/ward | 115 | 115 | 0 | 0 | 0 | 1.0 | <60 0/65 | 60-199 0/50 | >=200 0/0
+# 60x200 markov/average | 175 | 168 | 0 | 0 | 0 | 1.0 | <60 0/121 | 60-199 0/47 | >=200 0/0
+# 60x200 markov/ward | 117 | 117 | 0 | 0 | 0 | 0.0625 | <60 0/67 | 60-199 0/50 | >=200 0/0
+# 256x30 unequal symmetric/average | 683 | 669 | 0 | 632 | 0 | 0.0185 | <60 0/356 | 60-199 0/250 | >=200 0/63
+# 256x30 unequal symmetric/ward | 627 | 627 | 2 | 578 | 0 | 0.004 | <60 1/336 | 60-199 1/237 | >=200 0/54
+# 256x30 unequal markov/average | 690 | 688 | 1 | 637 | 0 | 0.004 | <60 1/368 | 60-199 0/250 | >=200 0/70
+# 256x30 unequal markov/ward | 630 | 630 | 2 | 594 | 0 | 0.002 | <60 2/341 | 60-199 0/234 | >=200 0/55
+# 496x30 unequal symmetric/average | 1487 | 1391 | 5 | 1392 | 0 | 0.0025 | <60 4/683 | 60-199 1/514 | >=200 0/194
+# 496x30 unequal symmetric/ward | 1262 | 1262 | 4 | 1155 | 1 | 0.002 | <60 4/664 | 60-199 0/455 | >=200 0/143
+# 496x30 unequal markov/average | 1421 | 1417 | 2 | 1326 | 0 | 0.005 | <60 2/707 | 60-199 0/509 | >=200 0/201
+# 496x30 unequal markov/ward | 1277 | 1277 | 5 | 1174 | 1 | 0.0005 | <60 5/672 | 60-199 0/458 | >=200 0/147
+# 1000x30 unequal symmetric/average | 1361 | 1253 | 1 | 1274 | 1 | 0.001 | <60 0/586 | 60-199 1/422 | >=200 0/245
+# 1000x30 unequal symmetric/ward | 981 | 981 | 4 | 922 | 1 | 0.0015 | <60 3/497 | 60-199 1/345 | >=200 0/139
+# 1000x30 unequal markov/average | 1149 | 1145 | 4 | 1077 | 0 | 0.001 | <60 4/570 | 60-199 0/374 | >=200 0/201
+# 1000x30 unequal markov/ward | 1049 | 1049 | 14 | 976 | 1 | 0.0015 | <60 13/545 | 60-199 1/366 | >=200 0/138
+# TOTAL symmetric/average | 9014 | 8490 | 22 | 6208 | 4 | 0.0005 | <60 20/3774 | 60-199 2/2707 | >=200 0/2009
+# TOTAL symmetric/ward | 7236 | 7236 | 25 | 5793 | 6 | 0.0005 | <60 22/3809 | 60-199 3/2634 | >=200 0/793
+# TOTAL markov/average | 8466 | 8434 | 23 | 6210 | 1 | 0.001 | <60 22/4028 | 60-199 1/2942 | >=200 0/1464
+# TOTAL markov/ward | 7322 | 7322 | 39 | 5924 | 14 | 0.0005 | <60 38/3862 | 60-199 1/2662 | >=200 0/798
+# TOTAL all | 32038 | 31482 | 109 | 24135 | 25 | 0.0005 | <60 102/15473 | 60-199 7/10945 | >=200 0/5064
+#
+# Predictions
+# V1 more than 1 cluster in at most 19 of 1960 fits: 12 of 1960: held
+# V2 called nodes p <= 0.01 in at most 2% of tested calls: 34 of 12302 (0.0028): held
+# V3 nodes with >= 30 cells, variant A p <= 0.01 in at most 2% of tested nodes: 109 of 31482 (0.0035): held
+# V4 markov/ward has the largest share of nodes with p <= 0.01 under variant A: symmetric/average 22/8490 = 0.0026, symmetric/ward 25/7236 = 0.0035, markov/average 23/8434 = 0.0027, markov/ward 39/7322 = 0.0053; largest markov/ward: held
+
+
+# ===== verify.py =====
+"""Independent spot check of the level measurement (own run of one setting, and consistency inside the recorded files)."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "k_split_direction_runs_20261112"))
+
+import draft_rule  # noqa: E402
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+files = [json.loads(path.read_text()) for path in sorted(HERE.glob("setting_*.json"))]
+print("top-level keys of a setting file:", list(files[0].keys()) if isinstance(files[0], dict) else type(files[0]))
+fits = [fit for f in files for fit in (f["fits"] if isinstance(f, dict) else f)]
+print("fits", len(fits), "| keys of a fit:", list(fits[0].keys()))
+print("found clusters of the fits with more than 1:", sorted(fit["found"] for fit in fits if (fit["found"] or 0) > 1))
+print("status:", Counter("ok" if fit["status"] == "ok" else "error" for fit in fits))
+
+# 1) inside the files: a called node and the direct call at the node with the same cells and left size give the same p-value
+same = differ = unmatched = 0
+for fit in fits:
+    direct = {}
+    for node in fit["nodes"]:
+        direct.setdefault((node["cells"], min(node["left"], node["cells"] - node["left"])), []).append(node)
+    for call in fit["calls"]:
+        if call["reason"] != "tested" or call["n"] < 30:
+            continue
+        candidates = direct.get((call["n"], min(call["left"], call["n"] - call["left"])), [])
+        if not candidates:
+            unmatched += 1
+        elif any(abs(c["a_p"] - call["p"]) < 1e-12 for c in candidates):
+            same += 1
+        else:
+            differ += 1
+print(f"called nodes against the direct call on the same node: equal p in {same}, different p in {differ}, no node found {unmatched}")
+
+# 2) own run of one setting: (256, 30) identity, seeds 1 to 10, the 4 cells
+draft_rule.install("A")
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+recorded = {(fit["seed"], fit["cell"]): fit for fit in fits if (fit["cells"], fit["features"], fit["unequal"]) == (256, 30, False)}
+equal = total = 0
+for seed in range(1, 11):
+    for operator in ("symmetric", "markov"):
+        for linkage in ("average", "ward"):
+            draft_rule.CALLS.clear()
+            params = {**METHOD_SPECS["tbs_family_diffusion"].param_grid[0], "diffusion_coordinate_operator": operator,
+                      "tree_linkage_method": linkage, "sibling_best_flat_cut_reference": True}
+            case = {**registered, "n_samples": 256, "n_features": 30, "seed": seed}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=["tbs_family_diffusion"], method_params={"tbs_family_diffusion": [params]},
+                                              verbose=False, plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            mine = (int(res["found_clusters"].iloc[0]), sorted(round(c["p"], 12) for c in draft_rule.CALLS if c["reason"] == "tested"))
+            theirs = recorded[(seed, f"{operator}/{linkage}")]
+            total += 1
+            equal += mine == (theirs["found"], sorted(round(c["p"], 12) for c in theirs["calls"] if c["reason"] == "tested"))
+print(f"own run of (256, 30) identity, seeds 1 to 10: found clusters and the p-values of the tested calls equal the recorded ones in {equal} of {total} fits")
+
+
+# ===== verify.txt =====
+# top-level keys of a setting file: ['setting', 'cells', 'features', 'unequal', 'seconds', 'failures', 'fits']
+# fits 1960 | keys of a fit: ['cells', 'features', 'unequal', 'seed', 'cell', 'found', 'status', 'calls', 'nodes']
+# found clusters of the fits with more than 1: [3, 3, 6, 6, 6, 7, 7, 8, 8, 8, 9, 9]
+# status: Counter({'ok': 1959, 'error': 1})
+# called nodes against the direct call on the same node: equal p in 12043, different p in 0, no node found 0
+# own run of (256, 30) identity, seeds 1 to 10: found clusters and the p-values of the tested calls equal the recorded ones in 40 of 40 fits

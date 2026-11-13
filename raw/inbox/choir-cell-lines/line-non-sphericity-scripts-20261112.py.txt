@@ -1,0 +1,805 @@
+# ===== protocol.md =====
+# # Protocol: what makes the cells of one cell line non-spherical (frozen 2026-11-12, before any run)
+#
+# ## Why
+#
+# On the CHOIR cells (48,879 cells, 30 PCs, 190 cell lines) the cells of a single cell line are far from
+# spherical: within one line the largest eigenvalue is 7.0 to 94.1 times the median eigenvalue (175 lines with at
+# least 100 cells), against a 99% point of 1.30 to 2.93 for one spherical Gaussian population. A count of
+# eigenvalues above a spherical edge is therefore large inside one line (5 to 12 with `invariant_directions`, 6 to
+# 27 with the prototype rule), and the prototype rule for k failed on these cells (wiki page `k-margin-prototype`).
+#
+# Question: where does the non-sphericity inside one cell line come from, and can it be removed without the
+# cell-line labels?
+#
+# ## Data and definitions (frozen)
+#
+# - Cells: `results/analyses/choir_cell_lines_tbs_lbfgsb_20261106/pca.npy` (48,879 x 30; PCA of
+#   log1p(CPM / 100) on 2,000 scaled highly variable genes, see `preparation.json`) and `cell_metadata.csv`
+#   (`Cell_line`, `pool_id`, `source_library`).
+# - Lines: the 175 cell lines with at least 100 cells. For a line with cells X (n x 30): S its covariance
+#   (divisor n - 1); T1 = largest eigenvalue / median eigenvalue; k current = number of rows of
+#   `invariant_directions(X)`; k prototype = number of rows of `directions_with_margin(X)` from
+#   `results/analyses/k_margin_prototype_20261112/k_rule.py`; q = `null_quantile(n, 30)`.
+# - Pooled within-line covariance W: sum over lines of (n_M - 1) S_M divided by the sum of (n_M - 1), over all
+#   190 lines. W without line L leaves L out of both sums.
+# - "Whitened by C": centred cells times the symmetric inverse square root of C.
+# - Tree: `results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz`
+#   (`parent`, `leaf_row`; node index below 48,879 is a leaf; helper `index_tree` / `subtree` in that folder's
+#   `spr_lib.py`). Called nodes and their recorded k: `results/analyses/spr_refit_20261111/k15_base_splits.json`
+#   (current rule) and `results/analyses/k_margin_choir_20261112/kmargin_splits.json` (prototype rule).
+#
+# ## Part A: the lines, with labels (`a_lines.py`, outputs `a_lines.txt`, `a_lines.json`)
+#
+# - A0 self-checks (asserts): the k of the 175 lines reproduces `results/analyses/k_margin_choir_20261112/cause.txt`
+#   (current rule {5: 1, 6: 1, 7: 18, 8: 48, 9: 46, 10: 45, 11: 13, 12: 3}; prototype rule as printed there);
+#   2,000 draws of one Gaussian population with covariance W and 238 cells, whitened by W, give k prototype >= 1
+#   in 8 to 36 draws.
+# - A1 the profile in PC coordinates: per PC the median over lines of the within-line variance and of its share
+#   in the total variance of that PC; per line the share of off-diagonal energy in S (1 minus the sum of squared
+#   diagonal entries over the squared Frobenius norm).
+# - A2 common covariance: every line whitened by W without that line: T1, k current, k prototype.
+# - A3 sequencing depth: depth per cell recovered from the CPM matrix as in
+#   `results/analyses/depth_confound_20261107/`; per line the share of the within-line variance (trace of S)
+#   explained by a linear fit of every PC on log depth; the correlation of the first principal score of the line
+#   with log depth; T1 and both k after removing that fit within the line; and the same after removing the fit
+#   and then whitening by the pooled within-line covariance of the depth-removed cells without that line.
+# - A4 pools: lines whose cells come from more than one `pool_id` or `source_library`; for those the share of
+#   the within-line variance explained by the pool means.
+# - A5 what remains after A2: number of lines with k prototype 0, 1, 2 and more; T1 against q.
+#
+# Predictions, stated before any run:
+# - PA1 the common covariance carries most of it: after A2 the median T1 over lines is below 5 (25.6 before).
+# - PA2 after A2 most lines still exceed the spherical 99% point: k prototype >= 1 in more than half of the lines.
+# - PA3 depth alone carries little of it: after removing the depth fit the median T1 stays above 10.
+#
+# ## Part B: without labels, from the tree (`b_tree.py`, outputs `b_tree.txt`, `b_tree.json`)
+#
+# - B1 a label-free common covariance: for m in (30, 50, 100), the maximal subtrees of the Markov/Ward tree with
+#   at most m cells and at least 5; each centred at its own mean; W_tree(m) = pooled covariance over those
+#   subtrees. Reported: number of subtrees, cells covered, share of subtrees with at least 90% of their cells
+#   from one line, and the eigenvalues of W^-1/2 W_tree(m) W^-1/2 (smallest, median, largest), W being the
+#   label-based pooled within-line covariance.
+# - B2 the 175 lines whitened by W_tree(m): T1, k current, k prototype, for each m.
+# - B3 the 1,838 called nodes, whitened by W_tree(50): k prototype and k current of each node's cells, beside
+#   the recorded k in PC coordinates, by size class (fewer than 15, 15 to 31, 32 to 99, 100 to 999, 1,000 and
+#   more): k = 0, k above 15, median k. And for called nodes with at least 40 cells: nodes with at least 90% of
+#   their cells from one line against all other nodes: share with k prototype >= 1 and median k, in PC
+#   coordinates and whitened.
+# - B0 self-checks (asserts): the cells under the root are all 48,879; the recorded k of 20 randomly chosen
+#   called nodes is reproduced in PC coordinates under both rules; W recomputed equals Part A's definition (the
+#   script computes it itself and prints its trace and largest eigenvalue for comparison).
+#
+# Predictions, stated before any run:
+# - PB1 W_tree(50) agrees with W within a factor 2 in every direction (all eigenvalues of W^-1/2 W_tree W^-1/2
+#   between 0.5 and 2).
+# - PB2 whitened by W_tree(50), k prototype is at most 15 at all 103 called nodes with at least 1,000 cells.
+# - PB3 whitened by W_tree(50), nodes inside one line have k prototype >= 1 less often than the other nodes.
+#
+# ## Rules for every part
+#
+# - Only files in `results/analyses/line_non_sphericity_20261112/` are written. No production file, test, wiki
+#   page or raw capture is changed; nothing is committed, installed or downloaded.
+# - Run pattern: `cd /Users/berksakalli/Projects/kl-te-cluster && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run
+#   --no-sync --offline python <script>`; scripts pass `uv run --no-sync --offline ruff check`.
+# - This protocol is frozen. Anything done differently goes into `deviations_a.md` or `deviations_b.md` with the
+#   reason; a failed assert or prediction is reported, not removed.
+# - Results are counts with totals, or medians with minimum and maximum. Each part ends with what it did not
+#   check. No explanation is given without a measurement that supports it.
+
+
+# ===== deviations_a.md =====
+# # Deviations and open choices, Part A (`a_lines.py`)
+#
+# No assert failed; no assert or prediction was changed. PA1 was not held (median T1 after A2 13.774, not below 5).
+#
+# ## Choices the protocol left open
+#
+# 1. A0 null draws: seed `np.random.default_rng(20261112)`; cells drawn as N(0, W) through the Cholesky factor
+#    of W, centred, then whitened by the symmetric inverse square root of the same W. Result: 33 of 2000 draws
+#    with k prototype >= 1 (inside 8 to 36, near the top).
+# 2. A0 also asserts the median T1 in PC coordinates (25.64, as in `k_margin_choir_20261112/cause.txt`).
+# 3. W and every pooled covariance use all 190 lines (protocol); the 175 lines with at least 100 cells are the
+#    lines reported.
+# 4. A1 "total variance of that PC": variance (divisor n - 1) over all 48,879 cells.
+# 5. A3 depth: no per-cell depth file was saved in `depth_confound_20261107/` (only `pcs.npy`, assignments and
+#    summaries), so depth is recomputed exactly as in `depth_confound_20261107/real.py::recovered_counts`:
+#    library = 1e6 / smallest non-zero CPM of the cell, counts = CPM x library / 1e6, integrality asserted
+#    (< 1e-6), rounded; depth = row sum of the rounded counts. Cell order of the h5ad was asserted equal to
+#    `cell_metadata.csv` (the canonical reordering in `real.py` is not applied, it is not needed here).
+# 6. A3 depth fit: ordinary least squares of all 30 PCs on [1, log depth], fitted separately within each line
+#    (all 190 lines, so the pooled depth-removed covariance covers the same lines as W). Share explained =
+#    1 - trace(S of residuals) / trace(S).
+# 7. A3 correlation: Pearson correlation of the score on the leading eigenvector of S with log depth; the
+#    eigenvector sign is arbitrary, so the summary is over the absolute value (signed value in `a_lines.json`).
+# 8. A4: every line comes from exactly one `pool_id` and from more than one `source_library` (all 190), so "the
+#    pool means" are the `source_library` means within the line; share = between-library sum of squares over
+#    the within-line sum of squares (traces). By `pool_id` the share is 0 for every line.
+# 9. A5 "T1 against q": count of lines with T1 > q and the distribution of T1 / q, with q = `null_quantile(n, 30)`.
+
+
+# ===== deviations_b.md =====
+# # Deviations and open choices, Part B (`b_tree.py`)
+#
+# All B0 asserts passed. All three predictions failed (`b_tree.txt`):
+#
+# - PB1 not held: eigenvalues of W^-1/2 W_tree(50) W^-1/2 run from 0.260 to 1.027, so the smallest is below 0.5.
+# - PB2 not held: 0 of the 103 called nodes with at least 1,000 cells have whitened k prototype <= 15 (all have 18 to 28).
+# - PB3 not held: whitened k prototype >= 1 at 1017 of 1017 one-line nodes and 342 of 342 other nodes (1.000 against
+#   1.000), so one-line nodes do not have k prototype >= 1 less often.
+#
+# ## Choices the protocol leaves open
+#
+# - The 20 random called nodes in B0 are drawn with `numpy.random.default_rng(0)`, without replacement.
+# - B0 check of W: the protocol asks the script to compute W itself; the assert compares the pooled formula with the
+#   stacked within-line formula (all cells centred at their line mean, cross-product over 48,879 - 190). Part A's
+#   value is not read, because Part A runs in parallel; trace 47.2403 and largest eigenvalue 6.2744 are printed for
+#   comparison.
+# - Added checks (not in the protocol): both split files list the same 1,838 nodes in the same order, and the cells
+#   under each node match its `n_leaves`. Both passed.
+# - Cells per subtree are (subtree node count + 1) / 2 (binary tree); the root is never a subtree for m <= 100.
+# - "One line" for a subtree or node: at least 90% of its cells from its most frequent `Cell_line`.
+# - B2 also prints the lines in PC coordinates (no whitening) as the reference row; it reproduces `cause.txt`.
+# - B3 "in PC coordinates" uses the recorded k of the two split files (B0 checks 20 of them), not a recomputation.
+# - B3 whitening: each node's cells are centred at the node mean, then multiplied by W_tree(50)^-1/2. Median k for the
+#   nodes with at least 40 cells is reported under both rules.
+# - PB2 is scored as "not held" if the number of nodes with at least 1,000 cells is not 103; it is 103.
+# - PB3 is scored with a strict "less than" on the share with whitened k prototype >= 1.
+#
+# ## Not checked
+#
+# - Part A's W values (compare by hand: trace 47.2403, largest eigenvalue 6.2744).
+# - The recorded k of the other 1,818 called nodes in PC coordinates.
+# - Whitening by W_tree(30) or W_tree(100) at the called nodes (the protocol asks only for W_tree(50)).
+
+
+# ===== a_lines.py =====
+"""Part A of protocol.md: where the non-sphericity inside one cell line comes from (with labels)."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+from time import perf_counter
+
+import anndata as ad
+import numpy as np
+import pandas as pd
+from scipy import sparse
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(HERE.parent / "k_margin_prototype_20261112"))
+
+from k_rule import directions_with_margin, null_quantile  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+START = perf_counter()
+SOURCE = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+metadata = pd.read_csv(SOURCE / "cell_metadata.csv", index_col=0, dtype=str,
+                       usecols=["cell_id", "Cell_line", "pool_id", "source_library"])
+pcs = np.load(SOURCE / "pca.npy")
+N, P = pcs.shape
+groups = {line: index for line, index in metadata.groupby("Cell_line").indices.items()}
+LINES = sorted(line for line, index in groups.items() if len(index) >= 100)
+out_lines = {line: {"n": int(len(groups[line]))} for line in LINES}
+report = []
+
+
+def say(text=""):
+    print(text)
+    report.append(text)
+
+
+def spread(values):
+    values = np.asarray(values, dtype=float)
+    return f"median {np.median(values):.3f} (min {values.min():.3f}, max {values.max():.3f})"
+
+
+def k_table(values):
+    return dict(sorted(Counter(int(v) for v in values).items()))
+
+
+def scatter(x):
+    centred = x - x.mean(axis=0)
+    return centred.T @ centred
+
+
+def inverse_root(c):
+    values, vectors = np.linalg.eigh(c)
+    return vectors @ np.diag(values ** -0.5) @ vectors.T
+
+
+def describe(x):
+    """T1, k current, k prototype of cells x."""
+    values = np.linalg.eigvalsh(np.cov(x.T))[::-1]
+    return float(values[0] / np.median(values)), len(invariant_directions(x)), len(directions_with_margin(x))
+
+
+def run_step(name, cells_of):
+    """Apply describe to every line (cells_of(line) gives its cells), store per line, print summary."""
+    rows = {line: describe(cells_of(line)) for line in LINES}
+    for line, (t1, current, prototype) in rows.items():
+        out_lines[line][name] = {"T1": t1, "k_current": current, "k_prototype": prototype}
+    t1, current, prototype = (np.array(column) for column in zip(*rows.values()))
+    say(f"{name}: T1 {spread(t1)}")
+    say(f"{name}: k current {k_table(current)}")
+    say(f"{name}: k prototype {k_table(prototype)}")
+    return t1, current, prototype
+
+
+def pooled(points, all_groups):
+    """Sum of within-group scatter and sum of (n - 1) over every group (all 190 lines)."""
+    parts = {line: scatter(points[index]) for line, index in all_groups.items()}
+    return parts, sum(parts.values()), sum(len(index) - 1 for index in all_groups.values())
+
+
+def without(parts, total, dof, line):
+    return (total - parts[line]) / (dof - (len(groups[line]) - 1))
+
+
+# A0 self-checks
+say("== A0 self-checks ==")
+t1_before, k_current_before, k_prototype_before = run_step("A0 PC coordinates", lambda line: pcs[groups[line]])
+assert len(LINES) == 175
+assert k_table(k_current_before) == {5: 1, 6: 1, 7: 18, 8: 48, 9: 46, 10: 45, 11: 13, 12: 3}
+assert k_table(k_prototype_before) == {6: 1, 8: 2, 9: 3, 10: 3, 11: 11, 12: 15, 13: 18, 14: 26, 15: 25, 16: 21, 17: 18,
+                                       18: 12, 19: 6, 20: 6, 21: 4, 22: 1, 23: 1, 25: 1, 27: 1}
+assert round(float(np.median(t1_before)), 2) == 25.64
+say("assert passed: k current and k prototype of the 175 lines reproduce cause.txt; median T1 25.64")
+parts, total, dof = pooled(pcs, groups)
+W = total / dof
+rng = np.random.default_rng(20261112)
+root_w = np.linalg.cholesky(W)
+w_inverse_root = inverse_root(W)
+null_hits = 0
+for _ in range(2000):
+    draw = rng.normal(size=(238, P)) @ root_w.T
+    null_hits += len(directions_with_margin((draw - draw.mean(axis=0)) @ w_inverse_root)) >= 1
+say(f"Gaussian population with covariance W, 238 cells, whitened by W: k prototype >= 1 in {null_hits} of 2000 draws")
+assert 8 <= null_hits <= 36
+say("assert passed: 8 <= draws <= 36")
+say(f"W: trace {np.trace(W):.3f}, largest eigenvalue {np.linalg.eigvalsh(W)[-1]:.3f}, from {len(groups)} lines")
+
+# A1 profile in PC coordinates
+say("\n== A1 profile in PC coordinates ==")
+total_variance = pcs.var(axis=0, ddof=1)
+diagonals = np.array([np.diag(np.cov(pcs[groups[line]].T)) for line in LINES])
+median_within, median_share = np.median(diagonals, axis=0), np.median(diagonals / total_variance, axis=0)
+say("PC | median within-line variance | median share of the PC's total variance | total variance")
+for j in range(P):
+    say(f"PC{j + 1} | {median_within[j]:.3f} | {median_share[j]:.3f} | {total_variance[j]:.3f}")
+off = []
+for line in LINES:
+    s = np.cov(pcs[groups[line]].T)
+    off.append(float(1 - np.sum(np.diag(s) ** 2) / np.sum(s ** 2)))
+    out_lines[line]["A1"] = {"within_variance": np.diag(s).tolist(), "offdiagonal_share": off[-1]}
+say(f"share of off-diagonal energy in S: {spread(off)}")
+
+# A2 every line whitened by W without that line
+say("\n== A2 whitened by W without the line ==")
+
+
+def whitened(line, points=pcs, p=parts, t=total, d=dof):
+    x = points[groups[line]]
+    return (x - x.mean(axis=0)) @ inverse_root(without(p, t, d, line))
+
+
+t1_a2, _, k_prototype_a2 = run_step("A2", whitened)
+
+# A3 sequencing depth, recovered from CPM as in depth_confound_20261107/real.py
+say("\n== A3 sequencing depth ==")
+cpm = ad.read_h5ad(ROOT / "local_data/choir/kinker_2020/kinker_2020_choir_cells_cpm.h5ad")
+assert (cpm.obs.index == metadata.index).all()
+x = sparse.csr_matrix(cpm.X, dtype=np.float64)
+lib = 1e6 / np.minimum.reduceat(x.data, x.indptr[:-1])
+counts = sparse.diags(lib / 1e6) @ x
+assert np.abs(counts.data - np.rint(counts.data)).max() < 1e-6
+counts.data = np.rint(counts.data)
+log_depth = np.log(np.asarray(counts.sum(axis=1)).ravel())  # depth = total recovered counts per cell
+del cpm, x, counts
+say(f"log depth: median {np.median(log_depth):.3f}, sd {log_depth.std():.3f}, cells {len(log_depth)}")
+residual = np.empty_like(pcs)
+for line, index in groups.items():
+    design = np.column_stack([np.ones(len(index)), log_depth[index]])
+    beta, *_ = np.linalg.lstsq(design, pcs[index], rcond=None)
+    residual[index] = pcs[index] - design @ beta
+explained, correlation = [], []
+for line in LINES:
+    index = groups[line]
+    explained.append(float(1 - np.trace(np.cov(residual[index].T)) / np.trace(np.cov(pcs[index].T))))
+    first = np.linalg.eigh(np.cov(pcs[index].T))[1][:, -1]
+    correlation.append(float(np.corrcoef(pcs[index] @ first, log_depth[index])[0, 1]))
+    out_lines[line]["A3"] = {"depth_share_of_trace": explained[-1], "first_score_corr_log_depth": correlation[-1]}
+say(f"share of the within-line variance (trace of S) explained by log depth: {spread(explained)}")
+say(f"|correlation| of the first principal score with log depth: {spread(np.abs(correlation))}")
+t1_a3, _, _ = run_step("A3 depth removed", lambda line: residual[groups[line]])
+r_parts, r_total, r_dof = pooled(residual, groups)
+run_step("A3 depth removed, whitened", lambda line: whitened(line, residual, r_parts, r_total, r_dof))
+
+# A4 pools
+say("\n== A4 pools ==")
+pools = metadata.groupby("Cell_line").agg(pool_id=("pool_id", "nunique"), source_library=("source_library", "nunique"))
+say(f"lines (all {len(pools)}) with more than one pool_id: {int((pools.pool_id > 1).sum())}; "
+    f"with more than one source_library: {int((pools.source_library > 1).sum())}")
+say(f"of the 175 lines: more than one pool_id {int((pools.loc[LINES].pool_id > 1).sum())}; "
+    f"more than one source_library {int((pools.loc[LINES].source_library > 1).sum())}")
+pool_share = []
+for line in LINES:
+    index = groups[line]
+    if pools.loc[line, "pool_id"] == 1 and pools.loc[line, "source_library"] == 1:
+        continue
+    x = pcs[index]
+    means = pd.DataFrame(x).groupby(metadata["source_library"].to_numpy()[index]).transform("mean").to_numpy()
+    pool_share.append(float(np.sum((means - x.mean(axis=0)) ** 2) / np.sum((x - x.mean(axis=0)) ** 2)))
+    out_lines[line]["A4"] = {"source_libraries": int(pools.loc[line, "source_library"]), "pool_share": pool_share[-1]}
+say(f"share of the within-line variance explained by the source_library means ({len(pool_share)} lines): {spread(pool_share)}")
+
+# A5 what remains after A2
+say("\n== A5 after A2 ==")
+q = np.array([null_quantile(len(groups[line]), P) for line in LINES])
+say(f"k prototype 0: {int((k_prototype_a2 == 0).sum())}, 1: {int((k_prototype_a2 == 1).sum())}, "
+    f"2 and more: {int((k_prototype_a2 >= 2).sum())} (total {len(LINES)})")
+say(f"T1 above q: {int((t1_a2 > q).sum())} of {len(LINES)}; T1 / q {spread(t1_a2 / q)}; q {spread(q)}")
+for line, value in zip(LINES, q):
+    out_lines[line]["q"] = float(value)
+
+say("\n== predictions ==")
+say(f"PA1 median T1 after A2 below 5: {np.median(t1_a2):.3f} -> {'held' if np.median(t1_a2) < 5 else 'not held'}")
+hits = int((k_prototype_a2 >= 1).sum())
+say(f"PA2 k prototype >= 1 after A2 in more than half the lines: {hits} of {len(LINES)} -> "
+    f"{'held' if hits > len(LINES) / 2 else 'not held'}")
+say(f"PA3 median T1 after removing the depth fit above 10: {np.median(t1_a3):.3f} -> "
+    f"{'held' if np.median(t1_a3) > 10 else 'not held'}")
+say(f"\nrun time {perf_counter() - START:.1f} s")
+(HERE / "a_lines.txt").write_text("\n".join(report) + "\n")
+(HERE / "a_lines.json").write_text(json.dumps({"null_draws_with_k_prototype": int(null_hits), "lines": out_lines}, indent=1))
+
+
+# ===== a_lines.txt =====
+# == A0 self-checks ==
+# A0 PC coordinates: T1 median 25.642 (min 7.030, max 94.127)
+# A0 PC coordinates: k current {5: 1, 6: 1, 7: 18, 8: 48, 9: 46, 10: 45, 11: 13, 12: 3}
+# A0 PC coordinates: k prototype {6: 1, 8: 2, 9: 3, 10: 3, 11: 11, 12: 15, 13: 18, 14: 26, 15: 25, 16: 21, 17: 18, 18: 12, 19: 6, 20: 6, 21: 4, 22: 1, 23: 1, 25: 1, 27: 1}
+# assert passed: k current and k prototype of the 175 lines reproduce cause.txt; median T1 25.64
+# Gaussian population with covariance W, 238 cells, whitened by W: k prototype >= 1 in 33 of 2000 draws
+# assert passed: 8 <= draws <= 36
+# W: trace 47.240, largest eigenvalue 6.274, from 190 lines
+#
+# == A1 profile in PC coordinates ==
+# PC | median within-line variance | median share of the PC's total variance | total variance
+# PC1 | 1.617 | 0.030 | 53.093
+# PC2 | 1.750 | 0.049 | 35.746
+# PC3 | 1.722 | 0.070 | 24.753
+# PC4 | 2.417 | 0.118 | 20.404
+# PC5 | 1.437 | 0.079 | 18.238
+# PC6 | 1.200 | 0.074 | 16.163
+# PC7 | 0.723 | 0.046 | 15.652
+# PC8 | 1.772 | 0.131 | 13.507
+# PC9 | 1.568 | 0.131 | 12.009
+# PC10 | 0.918 | 0.078 | 11.787
+# PC11 | 1.109 | 0.096 | 11.598
+# PC12 | 0.824 | 0.081 | 10.131
+# PC13 | 1.101 | 0.110 | 10.013
+# PC14 | 0.754 | 0.082 | 9.209
+# PC15 | 1.378 | 0.163 | 8.460
+# PC16 | 0.971 | 0.119 | 8.174
+# PC17 | 0.738 | 0.093 | 7.908
+# PC18 | 3.425 | 0.452 | 7.581
+# PC19 | 1.137 | 0.165 | 6.905
+# PC20 | 1.712 | 0.257 | 6.664
+# PC21 | 2.256 | 0.348 | 6.474
+# PC22 | 1.292 | 0.205 | 6.311
+# PC23 | 1.150 | 0.191 | 6.023
+# PC24 | 1.210 | 0.204 | 5.930
+# PC25 | 0.954 | 0.165 | 5.775
+# PC26 | 1.833 | 0.323 | 5.676
+# PC27 | 0.963 | 0.171 | 5.615
+# PC28 | 0.869 | 0.159 | 5.462
+# PC29 | 0.932 | 0.175 | 5.340
+# PC30 | 1.300 | 0.254 | 5.120
+# share of off-diagonal energy in S: median 0.658 (min 0.435, max 0.846)
+#
+# == A2 whitened by W without the line ==
+# A2: T1 median 13.774 (min 3.716, max 117.054)
+# A2: k current {4: 1, 5: 15, 6: 30, 7: 49, 8: 50, 9: 24, 10: 6}
+# A2: k prototype {6: 1, 7: 2, 8: 2, 9: 9, 10: 9, 11: 21, 12: 7, 13: 24, 14: 8, 15: 15, 16: 11, 17: 11, 18: 12, 19: 15, 20: 3, 21: 5, 22: 2, 23: 3, 24: 5, 25: 2, 26: 1, 27: 4, 28: 3}
+#
+# == A3 sequencing depth ==
+# log depth: median 9.694, sd 0.549, cells 48879
+# share of the within-line variance (trace of S) explained by log depth: median 0.030 (min 0.007, max 0.086)
+# |correlation| of the first principal score with log depth: median 0.154 (min 0.002, max 0.580)
+# A3 depth removed: T1 median 25.412 (min 7.028, max 85.444)
+# A3 depth removed: k current {5: 1, 6: 3, 7: 19, 8: 42, 9: 53, 10: 40, 11: 15, 12: 2}
+# A3 depth removed: k prototype {7: 1, 8: 3, 9: 3, 10: 5, 11: 10, 12: 15, 13: 22, 14: 20, 15: 27, 16: 22, 17: 18, 18: 8, 19: 6, 20: 7, 21: 4, 22: 1, 23: 1, 25: 1, 27: 1}
+# A3 depth removed, whitened: T1 median 13.686 (min 3.651, max 108.584)
+# A3 depth removed, whitened: k current {4: 3, 5: 12, 6: 34, 7: 55, 8: 43, 9: 22, 10: 5, 11: 1}
+# A3 depth removed, whitened: k prototype {6: 1, 7: 2, 8: 2, 9: 8, 10: 7, 11: 22, 12: 7, 13: 22, 14: 16, 15: 10, 16: 12, 17: 14, 18: 10, 19: 14, 20: 4, 21: 2, 22: 2, 23: 4, 24: 4, 25: 5, 26: 1, 27: 4, 28: 2}
+#
+# == A4 pools ==
+# lines (all 190) with more than one pool_id: 0; with more than one source_library: 190
+# of the 175 lines: more than one pool_id 0; more than one source_library 175
+# share of the within-line variance explained by the source_library means (175 lines): median 0.008 (min 0.001, max 0.114)
+#
+# == A5 after A2 ==
+# k prototype 0: 0, 1: 0, 2 and more: 175 (total 175)
+# T1 above q: 175 of 175; T1 / q median 6.721 (min 1.655, max 63.921); q median 2.040 (min 1.298, max 2.927)
+#
+# == predictions ==
+# PA1 median T1 after A2 below 5: 13.774 -> not held
+# PA2 k prototype >= 1 after A2 in more than half the lines: 175 of 175 -> held
+# PA3 median T1 after removing the depth fit above 10: 25.412 -> held
+#
+# run time 63.6 s
+
+
+# ===== verify_a.py =====
+"""Independent spot check of Part A (own code): A2 for all 175 lines, A3 depth share for all lines."""
+from pathlib import Path
+
+import h5py
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+pcs = np.load(source / "pca.npy")
+groups = metadata.groupby("Cell_line").indices
+scatter = {line: (len(i) - 1) * np.cov(pcs[i].T) for line, i in groups.items()}
+total_scatter, total_df = sum(scatter.values()), sum(len(i) - 1 for i in groups.values())
+
+
+def inverse_root(matrix):
+    values, vectors = np.linalg.eigh(matrix)
+    return vectors @ np.diag(values ** -0.5) @ vectors.T
+
+
+def t1(cells):
+    values = np.linalg.eigvalsh(np.cov(cells.T))
+    return values[-1] / np.median(values)
+
+
+before, after = [], []
+for line, index in groups.items():
+    if len(index) < 100:
+        continue
+    w = (total_scatter - scatter[line]) / (total_df - (len(index) - 1))
+    cells = pcs[index] - pcs[index].mean(axis=0)
+    before.append(t1(cells))
+    after.append(t1(cells @ inverse_root(w)))
+print(f"lines {len(before)}; T1 in PC coordinates median {np.median(before):.3f}; whitened by W without the line: median {np.median(after):.3f} "
+      f"(min {min(after):.3f}, max {max(after):.3f})")
+
+# depth: library = 1e6 / smallest non-zero CPM of the cell; depth = sum of CPM x library / 1e6
+with h5py.File(HERE.parents[2] / "local_data/choir/kinker_2020/kinker_2020_choir_cells_cpm.h5ad", "r") as f:
+    x = f["X"]
+    print("X layout:", x.attrs.get("encoding-type"), "| obs keys:", list(f["obs"].keys())[:5])
+    data, indptr = x["data"][:], x["indptr"][:]
+    names = f["obs"]["_index"][:].astype(str) if "_index" in f["obs"] else None
+assert x is not None and len(indptr) - 1 == len(metadata), (len(indptr), len(metadata))
+if names is not None:
+    assert (names == metadata.index.to_numpy()).all(), "cell order differs"
+depth = np.empty(len(metadata))
+for cell in range(len(metadata)):
+    row = data[indptr[cell]:indptr[cell + 1]]
+    depth[cell] = row.sum() / row.min()  # sum of counts when the smallest non-zero CPM is one count
+log_depth = np.log(depth)
+print(f"log depth median {np.median(log_depth):.3f}, sd {log_depth.std(ddof=1):.3f}")
+shares = []
+for line, index in groups.items():
+    if len(index) < 100:
+        continue
+    cells = pcs[index] - pcs[index].mean(axis=0)
+    d = log_depth[index] - log_depth[index].mean()
+    slope = cells.T @ d / (d @ d)
+    residual = cells - np.outer(d, slope)
+    shares.append(1 - residual.var(axis=0, ddof=1).sum() / cells.var(axis=0, ddof=1).sum())
+print(f"share of the within-line variance explained by log depth: median {np.median(shares):.3f} (min {min(shares):.3f}, max {max(shares):.3f})")
+
+
+# ===== verify_a.txt =====
+# lines 175; T1 in PC coordinates median 25.642; whitened by W without the line: median 13.774 (min 3.716, max 117.054)
+# X layout: csr_matrix | obs keys: ['CHOIR_1', 'CHOIR_2', 'CHOIR_3', 'CHOIR_4', 'CHOIR_5']
+# log depth median 9.694, sd 0.549
+# share of the within-line variance explained by log depth: median 0.030 (min 0.007, max 0.086)
+
+
+# ===== b_tree.py =====
+"""protocol.md Part B: a label-free common covariance from the Markov/Ward tree (B0 to B3)."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+ANALYSES = HERE.parent
+sys.path.insert(0, str(ANALYSES.parent.parent))
+sys.path.insert(0, str(ANALYSES / "k_margin_prototype_20261112"))
+sys.path.insert(0, str(ANALYSES / "spr_alternatives_best_flat_cut_20261111"))
+
+from k_rule import directions_with_margin  # noqa: E402
+from spr_lib import index_tree  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+start = perf_counter()
+source = ANALYSES / "choir_cell_lines_tbs_lbfgsb_20261106"
+pcs = np.load(source / "pca.npy")
+line_of_row = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)["Cell_line"].to_numpy()
+n_cells, p = pcs.shape
+tree = np.load(ANALYSES / "spr_alternatives_best_flat_cut_20261111" / "tree_tbs_family_diffusion_markov_ward.npz")
+parent, leaf_row = tree["parent"], tree["leaf_row"]
+order, pre, sub = index_tree(parent)
+cells_of = (sub + 1) // 2  # binary tree: a subtree of s nodes has (s + 1) / 2 leaves
+splits = {name: json.loads((ANALYSES / path).read_text())["splits"] for name, path in
+          (("current", "spr_refit_20261111/k15_base_splits.json"), ("prototype", "k_margin_choir_20261112/kmargin_splits.json"))}
+out, lines = [], []
+
+
+def say(text=""):
+    print(text, flush=True)
+    lines.append(text)
+
+
+def rows_under(node):
+    nodes = order[pre[node] : pre[node] + sub[node]]
+    return leaf_row[nodes[nodes < n_cells]]
+
+
+def pooled(groups):
+    """Pooled covariance: sum of (n - 1) S over the groups divided by the sum of (n - 1)."""
+    total = sum((len(g) - 1) * np.cov(pcs[g].T) for g in groups if len(g) > 1)
+    return total / sum(len(g) - 1 for g in groups)
+
+
+def inverse_root(c):
+    values, vectors = np.linalg.eigh(c)
+    return vectors @ np.diag(values**-0.5) @ vectors.T
+
+
+def ks(points):
+    values = np.linalg.eigvalsh(np.cov(points.T))[::-1]
+    return float(values[0] / np.median(values)), len(invariant_directions(points)), len(directions_with_margin(points))
+
+
+def med(x):
+    x = np.asarray(x, dtype=float)
+    return f"median {np.median(x):.3g} (min {x.min():.3g}, max {x.max():.3g})" if len(x) else "none"
+
+
+def dist(x):
+    return dict(sorted(Counter(int(v) for v in x).items()))
+
+
+# ---- B0 self-checks
+say("== B0 self-checks ==")
+root = int(np.flatnonzero(parent < 0)[0])
+assert len(rows_under(root)) == n_cells and len(np.unique(rows_under(root))) == n_cells, "root does not hold all 48,879 cells"
+say(f"B0.1 cells under the root: {len(rows_under(root))} (all {n_cells}): passed")
+assert [s["node"] for s in splits["current"]] == [s["node"] for s in splits["prototype"]] and len(splits["current"]) == 1838
+nodes = [int(s["node"][1:]) for s in splits["current"]]
+node_rows = [rows_under(v) for v in nodes]
+assert all(len(r) == s["n_leaves"] for r, s in zip(node_rows, splits["current"], strict=True)), "n_leaves differs from the tree"
+say("B0.2 the 1838 called nodes are the same in both files and their cell counts match n_leaves: passed")
+rng = np.random.default_rng(0)
+for i in rng.choice(len(nodes), size=20, replace=False):
+    cells = pcs[node_rows[i]]
+    got = (len(invariant_directions(cells)), len(directions_with_margin(cells)))
+    want = (splits["current"][i]["k"], splits["prototype"][i]["k"])
+    assert got == want, f"N{nodes[i]}: k recomputed {got}, recorded {want}"
+say("B0.3 recorded k of 20 random called nodes (seed 0) reproduced in PC coordinates under both rules: passed")
+groups = {line: np.flatnonzero(line_of_row == line) for line in np.unique(line_of_row)}
+W = pooled(groups.values())
+centred = pcs.copy()
+for g in groups.values():
+    centred[g] -= pcs[g].mean(0)
+assert np.allclose(W, centred.T @ centred / (n_cells - len(groups))), "W differs from the stacked within-line formula"
+w_values = np.linalg.eigvalsh(W)
+say(f"B0.4 W over {len(groups)} lines equals the stacked within-line formula: passed; trace {np.trace(W):.4f}, "
+    f"largest eigenvalue {w_values[-1]:.4f}, smallest {w_values[0]:.4f}")
+
+# ---- B1
+say("\n== B1 W_tree(m): maximal subtrees with at most m cells and at least 5 ==")
+W_tree, b1 = {}, {}
+for m in (30, 50, 100):
+    chosen = [v for v in range(len(parent)) if cells_of[v] <= m and parent[v] >= 0 and cells_of[parent[v]] > m and cells_of[v] >= 5]
+    parts = [rows_under(v) for v in chosen]
+    covered = np.concatenate(parts)
+    assert len(np.unique(covered)) == len(covered), f"subtrees for m = {m} overlap"
+    purity = np.array([Counter(line_of_row[r]).most_common(1)[0][1] / len(r) for r in parts])
+    W_tree[m] = pooled(parts)
+    rel = np.linalg.eigvalsh(inverse_root(W) @ W_tree[m] @ inverse_root(W))
+    b1[m] = dict(subtrees=len(parts), cells=len(covered), pure90=int((purity >= 0.9).sum()),
+                 relative_eigenvalues=rel.tolist())
+    say(f"m = {m}: subtrees {len(parts)}; cells covered {len(covered)} of {n_cells}; subtrees with >= 90% from one line "
+        f"{int((purity >= 0.9).sum())} of {len(parts)} ({(purity >= 0.9).mean():.3f}); eigenvalues of W^-1/2 W_tree W^-1/2: "
+        f"smallest {rel[0]:.3f}, median {np.median(rel):.3f}, largest {rel[-1]:.3f}")
+out.append(("B1", {str(m): v for m, v in b1.items()}))
+
+# ---- B2
+say("\n== B2 the 175 lines with at least 100 cells, whitened by W_tree(m) ==")
+big = {line: g for line, g in groups.items() if len(g) >= 100}
+assert len(big) == 175
+b2 = {line: {"n": len(g)} for line, g in big.items()}
+for label, c in [("PC coordinates", None)] + [(f"W_tree({m})", W_tree[m]) for m in (30, 50, 100)]:
+    for line, g in big.items():
+        x = pcs[g] - pcs[g].mean(0)
+        b2[line][label] = dict(zip(("T1", "k_current", "k_prototype"), ks(x if c is None else x @ inverse_root(c)), strict=True))
+    vals = [b2[line][label] for line in big]
+    say(f"{label}: T1 {med([v['T1'] for v in vals])}; k current {dist(v['k_current'] for v in vals)}; "
+        f"k prototype {dist(v['k_prototype'] for v in vals)}")
+out.append(("B2", b2))
+
+# ---- B3
+say("\n== B3 the 1838 called nodes, whitened by W_tree(50) ==")
+root50 = inverse_root(W_tree[50])
+b3 = []
+for v, r, cur, pro in zip(nodes, node_rows, splits["current"], splits["prototype"], strict=True):
+    x = (pcs[r] - pcs[r].mean(0)) @ root50
+    top = Counter(line_of_row[r]).most_common(1)[0][1] / len(r)
+    b3.append(dict(node=f"N{v}", n=len(r), top_line_share=top, k_current_pc=cur["k"], k_prototype_pc=pro["k"],
+                   k_current_white=len(invariant_directions(x)), k_prototype_white=len(directions_with_margin(x))))
+table = pd.DataFrame(b3)
+table["size"] = pd.cut(table["n"], [0, 14, 31, 99, 999, np.inf], labels=["<15", "15-31", "32-99", "100-999", ">=1000"])
+columns = ["k_current_pc", "k_prototype_pc", "k_current_white", "k_prototype_white"]
+say("per size class: nodes; then per k column: k = 0 / k above 15 / median k")
+for size, part in table.groupby("size", observed=True):
+    say(f"{size:>8} ({len(part)} nodes): " + "; ".join(
+        f"{c} {int((part[c] == 0).sum())}/{int((part[c] > 15).sum())}/{part[c].median():g}" for c in columns))
+say(f"   total ({len(table)} nodes): " + "; ".join(
+    f"{c} {int((table[c] == 0).sum())}/{int((table[c] > 15).sum())}/{table[c].median():g}" for c in columns))
+for c in columns:
+    say(f"k distribution {c} at nodes with >= 1000 cells: {dist(table.loc[table['n'] >= 1000, c])}")
+say("\ncalled nodes with at least 40 cells: share with k prototype >= 1, median k prototype, median k current")
+forty = table[table["n"] >= 40]
+pure = forty["top_line_share"] >= 0.9
+for name, part in (("one line (>= 90%)", forty[pure]), ("all other", forty[~pure])):
+    say(f"{name:>18} ({len(part)} nodes): PC coordinates {int((part['k_prototype_pc'] >= 1).sum())}/{len(part)} "
+        f"({(part['k_prototype_pc'] >= 1).mean():.3f}), median k prototype {part['k_prototype_pc'].median():g}, "
+        f"median k current {part['k_current_pc'].median():g}; whitened {int((part['k_prototype_white'] >= 1).sum())}/{len(part)} "
+        f"({(part['k_prototype_white'] >= 1).mean():.3f}), median k prototype {part['k_prototype_white'].median():g}, "
+        f"median k current {part['k_current_white'].median():g}")
+out.append(("B3", b3))
+
+# ---- predictions
+rel50 = np.array(b1[50]["relative_eigenvalues"])
+large = table[table["n"] >= 1000]
+share_pure, share_other = (forty[pure]["k_prototype_white"] >= 1).mean(), (forty[~pure]["k_prototype_white"] >= 1).mean()
+predictions = {
+    "PB1": (bool(rel50.min() >= 0.5 and rel50.max() <= 2),
+            f"eigenvalues of W^-1/2 W_tree(50) W^-1/2 from {rel50.min():.3f} to {rel50.max():.3f}"),
+    "PB2": (bool(len(large) == 103 and (large["k_prototype_white"] <= 15).all()),
+            f"{int((large['k_prototype_white'] <= 15).sum())} of {len(large)} nodes with >= 1000 cells have whitened k prototype <= 15"),
+    "PB3": (bool(share_pure < share_other),
+            f"whitened k prototype >= 1: one line {share_pure:.3f}, other {share_other:.3f}"),
+}
+say("\n== predictions ==")
+for key, (held, text) in predictions.items():
+    say(f"{key}: {'held' if held else 'not held'} ({text})")
+say(f"\nrun time {perf_counter() - start:.0f} s")
+(HERE / "b_tree.txt").write_text("\n".join(lines) + "\n")
+(HERE / "b_tree.json").write_text(json.dumps(dict(out) | {"predictions": {k: {"held": h, "numbers": t} for k, (h, t) in predictions.items()},
+                                                          "W_trace": float(np.trace(W)), "W_largest": float(w_values[-1])}))
+
+
+# ===== b_tree.txt =====
+# == B0 self-checks ==
+# B0.1 cells under the root: 48879 (all 48879): passed
+# B0.2 the 1838 called nodes are the same in both files and their cell counts match n_leaves: passed
+# B0.3 recorded k of 20 random called nodes (seed 0) reproduced in PC coordinates under both rules: passed
+# B0.4 W over 190 lines equals the stacked within-line formula: passed; trace 47.2403, largest eigenvalue 6.2744, smallest 0.5308
+#
+# == B1 W_tree(m): maximal subtrees with at most m cells and at least 5 ==
+# m = 30: subtrees 2610; cells covered 48270 of 48879; subtrees with >= 90% from one line 2274 of 2610 (0.871); eigenvalues of W^-1/2 W_tree W^-1/2: smallest 0.243, median 0.781, largest 0.985
+# m = 50: subtrees 1663; cells covered 48499 of 48879; subtrees with >= 90% from one line 1402 of 1663 (0.843); eigenvalues of W^-1/2 W_tree W^-1/2: smallest 0.260, median 0.808, largest 1.027
+# m = 100: subtrees 928; cells covered 48675 of 48879; subtrees with >= 90% from one line 747 of 928 (0.805); eigenvalues of W^-1/2 W_tree W^-1/2: smallest 0.284, median 0.851, largest 1.082
+#
+# == B2 the 175 lines with at least 100 cells, whitened by W_tree(m) ==
+# PC coordinates: T1 median 25.6 (min 7.03, max 94.1); k current {5: 1, 6: 1, 7: 18, 8: 48, 9: 46, 10: 45, 11: 13, 12: 3}; k prototype {6: 1, 8: 2, 9: 3, 10: 3, 11: 11, 12: 15, 13: 18, 14: 26, 15: 25, 16: 21, 17: 18, 18: 12, 19: 6, 20: 6, 21: 4, 22: 1, 23: 1, 25: 1, 27: 1}
+# W_tree(30): T1 median 14.6 (min 3.98, max 116); k current {4: 2, 5: 12, 6: 32, 7: 51, 8: 53, 9: 19, 10: 6}; k prototype {5: 2, 7: 6, 8: 8, 9: 15, 10: 8, 11: 25, 12: 19, 13: 19, 14: 10, 15: 11, 16: 10, 17: 11, 18: 15, 19: 6, 20: 5, 21: 3, 25: 1, 28: 1}
+# W_tree(50): T1 median 14.5 (min 3.89, max 112); k current {4: 2, 5: 11, 6: 34, 7: 51, 8: 50, 9: 21, 10: 6}; k prototype {5: 2, 7: 6, 8: 9, 9: 13, 10: 10, 11: 21, 12: 19, 13: 24, 14: 8, 15: 11, 16: 7, 17: 15, 18: 12, 19: 8, 20: 6, 21: 1, 22: 1, 25: 1, 28: 1}
+# W_tree(100): T1 median 14.3 (min 3.83, max 109); k current {4: 2, 5: 12, 6: 32, 7: 51, 8: 48, 9: 25, 10: 5}; k prototype {5: 1, 6: 1, 7: 5, 8: 4, 9: 13, 10: 11, 11: 20, 12: 13, 13: 26, 14: 11, 15: 13, 16: 11, 17: 11, 18: 13, 19: 8, 20: 6, 21: 3, 22: 1, 23: 1, 24: 1, 25: 1, 27: 1}
+#
+# == B3 the 1838 called nodes, whitened by W_tree(50) ==
+# per size class: nodes; then per k column: k = 0 / k above 15 / median k
+#      <15 (78 nodes): k_current_pc 78/0/0; k_prototype_pc 2/0/2; k_current_white 78/0/0; k_prototype_white 5/0/2
+#    15-31 (285 nodes): k_current_pc 285/0/0; k_prototype_pc 0/7/4; k_current_white 285/0/0; k_prototype_white 7/2/2
+#    32-99 (606 nodes): k_current_pc 0/0/6; k_prototype_pc 0/25/10; k_current_white 0/0/4; k_prototype_white 0/9/7
+#  100-999 (766 nodes): k_current_pc 0/0/9; k_prototype_pc 0/282/14; k_current_white 0/0/7; k_prototype_white 0/176/12
+#   >=1000 (103 nodes): k_current_pc 0/0/14; k_prototype_pc 0/103/27; k_current_white 0/0/13; k_prototype_white 0/103/28
+#    total (1838 nodes): k_current_pc 363/0/7; k_prototype_pc 2/417/11; k_current_white 363/0/5; k_prototype_white 12/290/8.5
+# k distribution k_current_pc at nodes with >= 1000 cells: {11: 4, 12: 18, 13: 19, 14: 54, 15: 8}
+# k distribution k_prototype_pc at nodes with >= 1000 cells: {18: 1, 20: 2, 21: 6, 22: 2, 23: 10, 24: 1, 25: 10, 26: 5, 27: 17, 28: 49}
+# k distribution k_current_white at nodes with >= 1000 cells: {9: 3, 10: 12, 11: 12, 12: 17, 13: 20, 14: 33, 15: 6}
+# k distribution k_prototype_white at nodes with >= 1000 cells: {18: 1, 19: 3, 20: 3, 21: 3, 22: 3, 23: 5, 24: 5, 25: 13, 26: 2, 27: 10, 28: 55}
+#
+# called nodes with at least 40 cells: share with k prototype >= 1, median k prototype, median k current
+#  one line (>= 90%) (1017 nodes): PC coordinates 1017/1017 (1.000), median k prototype 12, median k current 7; whitened 1017/1017 (1.000), median k prototype 9, median k current 6
+#          all other (342 nodes): PC coordinates 342/342 (1.000), median k prototype 18, median k current 10; whitened 342/342 (1.000), median k prototype 17, median k current 8
+#
+# == predictions ==
+# PB1: not held (eigenvalues of W^-1/2 W_tree(50) W^-1/2 from 0.260 to 1.027)
+# PB2: not held (0 of 103 nodes with >= 1000 cells have whitened k prototype <= 15)
+# PB3: not held (whitened k prototype >= 1: one line 1.000, other 1.000)
+#
+# run time 228 s
+
+
+# ===== verify_b.py =====
+"""Independent spot check of Part B (own code): W_tree(50) against W, and the lines whitened by W_tree(50)."""
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+pcs = np.load(source / "pca.npy")
+saved = np.load(HERE.parent / "spr_alternatives_best_flat_cut_20261111" / "tree_tbs_family_diffusion_markov_ward.npz")
+parent, leaf_row = saved["parent"].astype(np.int64), saved["leaf_row"].astype(np.int64)
+n = len(pcs)
+
+# cells under every node, by walking each leaf up to the root once (sizes), then labelling leaves with their subtree
+size = np.zeros(len(parent), dtype=np.int64)
+size[:n] = 1
+for node in range(len(parent)):  # children have smaller ids than parents in this tree (asserted)
+    if parent[node] >= 0:
+        assert parent[node] > node
+        size[parent[node]] += size[node]
+assert size.max() == n
+M = 50
+top = np.full(len(parent), -1, dtype=np.int64)  # maximal subtree with at most M cells that holds the node
+for node in range(len(parent) - 1, -1, -1):
+    up = parent[node]
+    if up >= 0 and top[up] >= 0:
+        top[node] = top[up]
+    elif size[node] <= M and (up < 0 or size[up] > M):
+        top[node] = node
+members = pd.Series(leaf_row, index=top[:n]).groupby(level=0).apply(list)
+members = members[(members.index >= 0) & (members.map(len) >= 5)]
+scatter_tree, df_tree = np.zeros((30, 30)), 0
+for rows in members:
+    cells = pcs[rows] - pcs[rows].mean(axis=0)
+    scatter_tree += cells.T @ cells
+    df_tree += len(rows) - 1
+w_tree = scatter_tree / df_tree
+groups = metadata.groupby("Cell_line").indices
+w = sum((len(i) - 1) * np.cov(pcs[i].T) for i in groups.values()) / sum(len(i) - 1 for i in groups.values())
+
+
+def inverse_root(matrix):
+    values, vectors = np.linalg.eigh(matrix)
+    return vectors @ np.diag(values ** -0.5) @ vectors.T
+
+
+ratio = np.linalg.eigvalsh(inverse_root(w) @ w_tree @ inverse_root(w))
+print(f"subtrees {len(members)}; cells covered {int(members.map(len).sum())}; eigenvalues of W^-1/2 W_tree(50) W^-1/2: "
+      f"smallest {ratio.min():.3f}, median {np.median(ratio):.3f}, largest {ratio.max():.3f}")
+t1 = []
+for index in groups.values():
+    if len(index) >= 100:
+        values = np.linalg.eigvalsh(np.cov(((pcs[index] - pcs[index].mean(axis=0)) @ inverse_root(w_tree)).T))
+        t1.append(values[-1] / np.median(values))
+print(f"175 lines whitened by W_tree(50): T1 median {np.median(t1):.1f} (min {min(t1):.2f}, max {max(t1):.0f})")
+# which direction is the one where the small subtrees hold least of the within-line variance?
+values, vectors = np.linalg.eigh(inverse_root(w) @ w_tree @ inverse_root(w))
+direction = inverse_root(w) @ vectors[:, 0]
+print("direction with the smallest ratio, largest PC loadings (PC, weight):",
+      [(int(j) + 1, round(float(direction[j] / np.abs(direction).max()), 2)) for j in np.argsort(-np.abs(direction))[:5]])
+
+
+# ===== verify_b.txt =====
+# subtrees 1663; cells covered 48499; eigenvalues of W^-1/2 W_tree(50) W^-1/2: smallest 0.260, median 0.808, largest 1.027
+# 175 lines whitened by W_tree(50): T1 median 14.5 (min 3.89, max 112)
+# direction with the smallest ratio, largest PC loadings (PC, weight): [(2, 1.0), (10, -0.72), (9, -0.64), (3, 0.58), (1, 0.42)]

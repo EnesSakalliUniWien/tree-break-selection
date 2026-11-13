@@ -1,0 +1,281 @@
+# ===== protocol.md =====
+# # Protocol: Gaussian best-flat-cut reference on the CHOIR cell lines (frozen 2026-11-11, before the run)
+#
+# Descriptive run; no production change. The opt-in `sibling_best_flat_cut_reference` is working-tree code on
+# top of `bc044e07`.
+#
+# ## How it runs
+#
+# Setup of `ceiling_rule_real_20261109/run.py`: 48,879 cells, 30 PCs, the saved diffusion coordinates of
+# `choir_cell_lines_tbs_lbfgsb_20261106`, registry parameters, edge alpha 1e-3, sibling alpha 1e-2, both
+# registered methods. Two arms per method through the production opt-in paths:
+#
+# - `rule_out`: `sibling_split_count_rule_out=True`, as a replay check. It should give the earlier result, 69
+#   clusters (default tree) and 664 clusters (Markov/Ward).
+# - `reference`: `sibling_best_flat_cut_reference=True`, as implemented (n from 15, k up to 10, n rounded down
+#   to the table grid, largest grid value 800).
+#
+# ## Endpoints
+#
+# Per method and arm: found clusters, ARI and NMI against the 190 cell lines, lines recovered at 90/90, ARI
+# against published CHOIR_1, clusters at least 90% pure, clusters under 20 cells, largest cluster, lines split
+# only / merged only / both. Per tested split of the `reference` arm: subtree size, reason, k, `rho`, p-value,
+# BH acceptance, by size bin. Comparison rows: today, rule_out and ceiling3 from the runs of 8 and 9 November.
+#
+# ## Expected before running
+#
+# - In the ceiling3 run every tested split with 1,000 cells or more had more than 10 invariant directions (49 of
+#   49 on the default tree, 103 of 103 on Markov/Ward, largest k 15), and so did 11 of 21 and 87 of 505 splits
+#   with 160 to 999 cells. The reference refuses all of these (`too_many_invariant_directions`, p = 1). Ceiling 3
+#   accepted 8 and 77 of them. Splits can then be accepted only below them, through the pass-through traversal.
+# - Splits with 15 to 31 cells have no invariant directions in 30 PCs and are refused, as before.
+# - For splits with 32 to 999 cells and k of 1 to 10 the reference's 99% point (about 2 to 6) is of the same
+#   order as ceiling 3, so a similar share should be kept.
+# - Net: fewer accepted splits at the top; whether the partition gets closer to the cell lines is not predicted.
+# - These data have no known no-group parts, so false splits can only be read from lines split into several
+#   clusters.
+
+
+# ===== run.py =====
+"""protocol.md: split-count rule-out (replay) and the Gaussian best-flat-cut reference on the CHOIR cell lines.
+
+usage: run.py METHOD
+"""
+
+import json
+import os
+import sys
+from pathlib import Path
+from time import perf_counter
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.pipeline as pipeline  # noqa: E402,E501
+
+ORIGINAL = pipeline.apply_best_flat_cut_reference
+SPLITS = []
+
+
+def recording(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions):
+    out = ORIGINAL(tree, leaf_data, records, tested_parent_ids, summaries, method_labels, decisions)
+    by_parent = {record.parent: record for record in records}
+    for parent, summary, label, decision in zip(tested_parent_ids, out[0], out[1], out[2], strict=True):
+        if decision is None:
+            continue
+        reason = label.split(":")[-1]
+        SPLITS.append({"node": str(parent), "n_parent": int(by_parent[parent].n_parent), "reason": reason,
+                       "k": int(summary[1]), "rho": float(summary[0]) if reason == "tested" else None,
+                       "p": float(decision.p_value)})
+    return out
+
+
+pipeline.apply_best_flat_cut_reference = recording
+
+
+def recovered_lines(truth, labels):
+    table = pd.crosstab(truth, labels)
+    recall = table.max(axis=1) / table.sum(axis=1)
+    purity = table.max(axis=0) / table.sum(axis=0)
+    return int(((recall >= 0.9) & (purity[table.idxmax(axis=1)].to_numpy() >= 0.9)).sum())
+
+
+def main(method):
+    from scipy.spatial.distance import pdist
+    from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+    from threadpoolctl import threadpool_limits
+
+    from benchmarks.shared.runners.dispatch import _tbs_branch_length_optimization_kwargs
+    from benchmarks.shared.runners.method_registry import METHOD_SPECS
+    from benchmarks.shared.runners.tbs_runner import run_tbs_on_distance
+    from tree_break_selection.tree.feature_space import continuous_feature_space_from_columns
+
+    source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+    metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+    data = pd.DataFrame(np.load(source / "pca.npy"), index=metadata.index, columns=[f"PC{i + 1}" for i in range(30)])
+    truth = metadata.Cell_line.to_numpy()
+    params = dict(METHOD_SPECS[method].param_grid[0])
+    out = HERE / method
+    out.mkdir(exist_ok=True)
+    distance_path = out / "diffusion_distance.npy"
+    distances = np.lib.format.open_memmap(distance_path, mode="w+", dtype=np.float64,
+                                          shape=(len(data) * (len(data) - 1) // 2,))
+    pdist(np.load(source / method / "coordinates.npy"), metric="euclidean", out=distances)
+    distances.flush()
+    try:
+        with threadpool_limits(limits=4), (out / "results.jsonl").open("w") as f:
+            for arm, flag in (("rule_out", "sibling_split_count_rule_out"), ("reference", "sibling_best_flat_cut_reference")):
+                SPLITS.clear()
+                start = perf_counter()
+                result = run_tbs_on_distance(
+                    data, distances, 0.01, edge_alpha=0.001, tree_linkage_method=params["tree_linkage_method"],
+                    feature_space=continuous_feature_space_from_columns(tuple(data.columns)), branch_length_data_df=data,
+                    edge_branch_length_variance_policy=params["edge_branch_length_variance_policy"],
+                    adaptive_projection_dimension_energy_fraction=0.90, **{flag: True},
+                    **_tbs_branch_length_optimization_kwargs(params),
+                    extra={"feature_family_diffusion_fallback_reason": None})
+                labels = np.asarray(result.labels, dtype=int)
+                bh = result.extra["annotations"]["Sibling_BH_Different"].astype(bool)
+                splits = [{**s, "bh_different": bool(bh[s["node"]])} for s in SPLITS]
+                row = {"method": method, "arm": arm, "status": result.status.value, "found_clusters": result.found_clusters,
+                       "ari_cell_line": adjusted_rand_score(truth, labels),
+                       "nmi_cell_line": normalized_mutual_info_score(truth, labels),
+                       "recovered_lines_90_90": recovered_lines(truth, labels),
+                       "ari_published_CHOIR_1": adjusted_rand_score(metadata.CHOIR_1, labels),
+                       "sec": perf_counter() - start, "splits": splits}
+                f.write(json.dumps(row, default=float) + "\n")
+                f.flush()
+                pd.DataFrame({"cell": metadata.index, "Cell_line": truth, "cluster": labels}).to_csv(
+                    out / f"assignments_{arm}.csv.gz", index=False)
+                print(json.dumps({k: v for k, v in row.items() if k != "splits"}, default=float), flush=True)
+    finally:
+        distances._mmap.close()
+        distance_path.unlink()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1])
+    os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (run_lbfgsb.py)
+
+
+# ===== summarize.py =====
+"""Summaries for protocol.md: replay check, metrics against the earlier arms, line breakdown, split facts."""
+import json
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+METHODS = {"tbs_family_diffusion": "default", "tbs_family_diffusion_markov_ward": "markov_ward"}
+pd.set_option("display.width", 220)
+BINS, NAMES = [1, 14, 31, 159, 999, 50000], ["<=14", "15-31", "32-159", "160-999", "1000+"]
+
+
+def breakdown(a):
+    t = pd.crosstab(a.Cell_line, a.cluster)
+    main = t.idxmax(axis=1)
+    split = t.max(axis=1) / t.sum(axis=1) < 0.9
+    merged = (t.max(axis=0) / t.sum(axis=0))[main].to_numpy() < 0.9
+    purity = t.max(axis=0) / t.sum(axis=0)
+    return {"clusters_ge90_pure": int((purity >= 0.9).sum()), "clusters_lt20_cells": int((t.sum(axis=0) < 20).sum()),
+            "largest_cluster": int(t.sum(axis=0).max()), "recovered": int((~split & ~merged).sum()),
+            "split_only": int((split & ~merged).sum()), "merged_only": int((~split & merged).sum()),
+            "both": int((split & merged).sum())}
+
+
+rows, splits = [], []
+for method, short in METHODS.items():
+    path = HERE / method / "results.jsonl"
+    if not path.exists():
+        continue
+    for r in map(json.loads, path.read_text().splitlines()):
+        a = pd.read_csv(HERE / method / f"assignments_{r['arm']}.csv.gz")
+        rows.append({"method": short, "arm": r["arm"], "status": r["status"], "clusters": r["found_clusters"],
+                     "ari": r["ari_cell_line"], "nmi": r["nmi_cell_line"], "lines_90_90": r["recovered_lines_90_90"],
+                     "ari_choir1": r["ari_published_CHOIR_1"], **breakdown(a), "sec": round(r["sec"])})
+        splits += [{"method": short, "arm": r["arm"], **s} for s in r["splits"]]
+m = pd.DataFrame(rows)
+print("EARLIER (8 November harness)\n", pd.read_csv(HERE.parent / "split_count_exclusion_real_20261108" / "metrics.csv").round(4).to_string(index=False))
+print("\nEARLIER (9 November)\n", pd.read_csv(HERE.parent / "ceiling_rule_real_20261109" / "real_metrics.csv").round(4).to_string(index=False))
+print("\nTHIS RUN\n", m.round(4).to_string(index=False))
+m.round(4).to_csv(HERE / "real_metrics.csv", index=False)
+s = pd.DataFrame(splits)
+s["bin"] = pd.cut(s.n_parent, BINS, labels=NAMES)
+s["kept"] = s.p <= 0.01
+print("\nREFERENCE: tested splits by size and reason (kept = p <= 0.01 before BH; accepted = BH)")
+print(s.groupby(["method", "bin", "reason"], observed=True).agg(
+    splits=("p", "size"), kept=("kept", "sum"), accepted=("bh_different", "sum"), k_median=("k", "median"), k_max=("k", "max"),
+    rho_median=("rho", "median")).round(2).to_string())
+print("\nREFERENCE: totals per method")
+print(s.groupby("method").agg(splits=("p", "size"), kept=("kept", "sum"), accepted=("bh_different", "sum")).to_string())
+print("\nREFERENCE: p-values of tested splits")
+tested = s[s.reason == "tested"]
+print(tested.assign(p_class=pd.cut(tested.p, [0, 0.0005, 0.01, 0.05, 0.999, 1.0], labels=["0.0005", "<=0.01", "<=0.05", "<1", "1.0"]))
+      .groupby(["method", "p_class"], observed=True).size().to_string())
+for method, short in METHODS.items():
+    old = HERE.parent / "ceiling_rule_real_20261109" / method / "results.jsonl"
+    if not old.exists() or short not in set(s.method):
+        continue
+    c = pd.DataFrame([x for x in map(json.loads, old.read_text().splitlines()) if x["arm"] == "ceiling3"][0]["splits"])
+    j = s[s.method == short].merge(c[["node", "p", "bh_different", "k", "rho"]], on="node", suffixes=("", "_ceiling3"))
+    print(f"\n{short}: same node tested in both runs: {len(j)} of {int((s.method == short).sum())} and {len(c)}")
+    print("accepted by BH, reference x ceiling3:", pd.crosstab(j.bh_different, j.bh_different_ceiling3).to_dict())
+    print("k equal:", int((j.k == j.k_ceiling3).sum()), "rho equal (tested):", int(((j.rho - j.rho_ceiling3).abs() < 1e-6).sum()), "of", int(j.rho.notna().sum()))
+
+
+# ===== real_summary.txt =====
+# EARLIER (8 November harness)
+#       method       arm  clusters    ari    nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  lines_main_cluster_ge90  median_clusters_per_line
+#     default     today        75 0.0275 0.5479           27      0.0138                  48                   20            28611                      177                       1.0
+#     default count_all        82 0.0273 0.5492           29      0.0138                  54                   23            28611                      174                       1.0
+#     default  rule_out        69 0.0182 0.4966           29      0.0091                  49                   12            32680                      174                       1.0
+# markov_ward     today       954 0.5488 0.8627           41      0.4446                 761                  374             1451                       56                       3.0
+# markov_ward count_all      1605 0.4021 0.8333           24      0.3341                1330                  940             1451                       28                       5.0
+# markov_ward  rule_out       664 0.7652 0.9006           80      0.5139                 494                  253             1990                       91                       2.0
+#
+# EARLIER (9 November)
+#       method      arm  clusters    ari    nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  median_clusters_per_line  sec
+#     default rule_out        69 0.0182 0.4966           29      0.0091                  49                   12            32680                       1.0  109
+#     default ceiling3        64 0.0275 0.5495           29      0.0139                  46                    9            28611                       1.0  106
+# markov_ward rule_out       664 0.7652 0.9006           80      0.5139                 494                  253             1990                       2.0  140
+# markov_ward ceiling3       217 0.8329 0.9397          119      0.5376                 164                   25             1990                       1.0  135
+#
+# THIS RUN
+#       method       arm status  clusters    ari    nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  recovered  split_only  merged_only  both  sec
+#     default  rule_out     ok        69 0.0182 0.4966           29      0.0091                  49                   12            32680         29           4          145    12  110
+#     default reference     ok        53 0.0179 0.4880           25      0.0090                  37                    7            32890         25           3          150    12  111
+# markov_ward  rule_out     ok       664 0.7652 0.9006           80      0.5139                 494                  253             1990         80          72           11    27  183
+# markov_ward reference     ok       138 0.2975 0.8512           76      0.1635                  98                   10             7678         76           9           91    14  144
+#
+# REFERENCE: tested splits by size and reason (kept = p <= 0.01 before BH; accepted = BH)
+#                                                    splits  kept  accepted  k_median  k_max  rho_median
+# method      bin     reason                                                                            
+# default     15-31   no_invariant_directions             8     0         0       0.0      0         NaN
+#             32-159  tested                             12     3         3       6.0      8        2.49
+#             160-999 tested                             10     3         3      10.0     10        0.49
+#                     too_many_invariant_directions      11     0         0      12.0     13         NaN
+#             1000+   too_many_invariant_directions      49     0         0      14.0     15         NaN
+# markov_ward <=14    no_invariant_directions            78     0         0       0.0      0         NaN
+#             15-31   no_invariant_directions           285     0         0       0.0      0         NaN
+#             32-159  tested                            867    15         5       6.0     10        0.97
+#             160-999 tested                            418    42        26       9.0     10        0.92
+#                     too_many_invariant_directions      87     0         0      11.0     13         NaN
+#             1000+   too_many_invariant_directions     103     0         0      14.0     15         NaN
+#
+# REFERENCE: totals per method
+#              splits  kept  accepted
+# method                             
+# default          90     6         6
+# markov_ward    1838    57        31
+#
+# REFERENCE: p-values of tested splits
+# method       p_class
+# default      0.0005        6
+#              1.0          16
+# markov_ward  0.0005       48
+#              <=0.01        9
+#              <=0.05        5
+#              1.0        1223
+#
+# default: same node tested in both runs: 90 of 90 and 90
+# accepted by BH, reference x ceiling3: {False: {False: 76, True: 0}, True: {False: 8, True: 6}}
+# k equal: 90 rho equal (tested): 22 of 22
+#
+# markov_ward: same node tested in both runs: 1838 of 1838 and 1838
+# accepted by BH, reference x ceiling3: {False: {False: 1712, True: 6}, True: {False: 95, True: 25}}
+# k equal: 1838 rho equal (tested): 1285 of 1285
+#
+# ADDED AFTER THE ENDPOINTS (Markov/Ward)
+# splits at the lowest p-value 0.0005: 48 accepted by BH: 31
+# accepted by BH by p-value: {0.0005: 31}
+# 120 splits accepted under ceiling3, by reference reason and acceptance:
+#                                             splits  rho_median  n_median
+# reason                        bh_different                              
+# tested                        False             18       12.79      89.5
+#                               True              25        9.01     295.0
+# too_many_invariant_directions False             77        7.75    1022.0
+# tested, accepted under ceiling3, refused by the reference: p-values {0.0005: 13, 0.019: 1, 0.0025: 1, 0.004: 1, 0.021: 1, 0.001: 1} rho [55.62, 8.43, 7.75, 15.16, 12.24, 14.13, 41.16, 8.35, 6.9, 35.26, 7.64, 7.41, 13.33, 6.85, 16.86, 31.91, 20.84, 9.99] k [7, 7, 7, 6, 6, 5, 9, 7, 9, 7, 6, 9, 10, 10, 10, 10, 10, 10] n [84, 48, 62, 32, 35, 35, 207, 43, 95, 43, 52, 434, 321, 419, 373, 534, 775, 694]
+# too_many_invariant_directions: 190 accepted under ceiling3: 77 rho of those (ceiling3 run) median 7.75 min 3.7

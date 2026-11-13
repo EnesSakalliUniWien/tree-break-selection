@@ -1,0 +1,535 @@
+# ===== protocol.md =====
+# # Protocol: variant A with both findings of the check fixed (frozen 2026-11-12, before the runs)
+#
+# ## The two findings (wiki page `k-split-direction-draft`, capture `variant-a-check-20261112.md`)
+#
+# 1. A feature that is constant in the basis half makes the within covariance singular; the draft raised
+#    `LinAlgError`, which stopped the fit.
+# 2. The halves alternated in the order of the rows, so the result depended on that order: on the CHOIR cells 196
+#    to 225 clusters and ARI 0.8043 to 0.8397 over five orders.
+#
+# ## Looked up before this protocol
+#
+# - N. Meinshausen, L. Meier, P. Buehlmann, "p-Values for High-Dimensional Regression", Journal of the American
+#   Statistical Association 104(488), 1671-1681, 2009, https://doi.org/10.1198/jasa.2009.tm08647 (record), text
+#   read at https://arxiv.org/abs/0811.2177 page 5: a single random split gives a "p-value lottery"; over B
+#   splits the paper defines Q(gamma) = min{1, the gamma-quantile of the p-values divided by gamma}, a p-value for
+#   any fixed gamma; for gamma = 0.5 it is twice the median of the p-values.
+# - V. Vovk, R. Wang, "Combining p-values via averaging", https://arxiv.org/abs/1212.4966 (abstract): twice the
+#   arithmetic mean of p-values is valid without any assumption on their dependence.
+#
+# ## The fixed draft (`draft_rule_v2.py`, analysis folder only)
+#
+# For a node and the tree's split into left and right, with R = 20:
+#
+# 1. For r = 1 to R: divide each side at random into a test part (half of the side, rounded up) and a basis part,
+#    with a random number generator seeded by (cells of the node, cells of the left side, r).
+# 2. Direction from the basis part as in variant A, but with the pseudo-inverse of the pooled within covariance,
+#    so a feature that is constant in the basis part gets no weight instead of an error.
+# 3. p_r from `rho` of the tree's split of the test part along the direction against the reference at (test
+#    cells, 1). If the direction is zero or not finite, or the test cells do not vary along it, p_r = 1.
+# 4. The node's p-value is min(1, 2 x median of p_1 ... p_R). The reported `rho` is the median of the R values.
+# 5. p = 1 with fewer than 15 test cells or a side with fewer than 2 cells, as before.
+#
+# The division of the cells no longer uses the order of the rows; with the same cells in another order the random
+# parts differ, but the node's p-value is a median over 20 divisions instead of one division.
+#
+# ## Runs
+#
+# - E0 constructed inputs of the check: a constant feature; equal basis means. Expected: no error.
+# - E1 benchmark (`run_benchmark.py`): the 14 cases, both registered methods, and the one-population grid of 80
+#   runs, as for variant A.
+# - E2 level (`run_level.py`): one Gaussian population, (256, 30) and (496, 30), identity and the unequal
+#   variances of the CHOIR root with the fixed rotation, 50 seeds, the 4 cells of operator and linkage (800 fits):
+#   fits with more than 1 cluster and tested calls with p <= 0.01. Variant A on the same 800 fits (recorded in
+#   `results/analyses/k_split_direction_level_20261112`): 6 fits with more than 1 cluster.
+# - E3 CHOIR cells (`run_choir.py`): the data order and 4 random orders of the rows (seeds 1, 2, 3, 777).
+#
+# ## Predictions, stated before the runs
+#
+# - G0 no error on the constructed inputs.
+# - G1 the benchmark gives the found clusters of variant A in all 28 rows; both null cases and all 80 runs of the
+#   one-population grid give 1 cluster.
+# - G2 level: at most 6 of the 800 fits have more than 1 cluster.
+# - G3 CHOIR: over the five orders the found clusters differ by at most 10 (variant A: 196 to 225) and the ARI by
+#   at most 0.01 (variant A: 0.8043 to 0.8397).
+# - G4 CHOIR: the ARI is at least 0.80 in every order.
+# Each is reported as held or not held.
+#
+# ## Limits known before the runs
+#
+# Twice the median needs p_r <= 0.005 in more than half of the divisions, so splits of moderate strength are
+# refused more often than with one division. The remaining dependence on the order is measured, not removed
+# exactly. One real dataset and tree; one seed per benchmark case.
+#
+# ## Amendment (2026-11-12, after E1 and E3 of the fixed draft, before any run of the third version)
+#
+# Result that prompts it: with 20 divisions and twice the median, the CHOIR fit no longer depends on the order of
+# the rows (133 to 135 clusters, ARI 0.5371 to 0.5374 over five orders), but the ARI falls from about 0.82 to 0.54.
+# Measured cause: 151 calls sit at the smallest possible p-value, 0.001 = 2 x 0.0005, and Benjamini-Hochberg does
+# not accept 54 of them; of the 54 splits that variant A accepted and the fixed draft does not, 46 have p = 0.001.
+# The table has 1,999 draws per cell, so no p-value can be below 0.0005, and doubling it is too much for the BH
+# step. The independent check also found the table's 99% points at k = 1 off by this Monte Carlo error.
+#
+# Third version (`draft_rule_v3.py`): the fixed draft unchanged except for the null. For k = 1 the best flat cut
+# is the best cut of the sorted values, so its null can be simulated exactly and cheaply: 99,999 Gaussian
+# datasets per n of the table's grid (15 to 800), stored in the analysis folder (`null_k1.npz`,
+# `build_null_k1.py`, seed 20261112). p_r = (1 + number of null values >= `rho`) / 100,000 at the largest grid n
+# not above the number of test cells. The smallest possible node p-value is then 0.00002.
+#
+# Runs: E1 (benchmark and one-population grid), E2 (level, 800 fits) and E3 (CHOIR, five orders) again with the
+# third version; outputs carry the suffix `_v3`.
+#
+# Predictions for the third version, stated before its runs:
+# - H1 benchmark: found clusters of variant A in all 28 rows; null cases and the one-population grid at 1 cluster.
+# - H2 level: at most 6 of the 800 fits have more than 1 cluster.
+# - H3 CHOIR: over the five orders the found clusters differ by at most 10 and the ARI by at most 0.01.
+# - H4 CHOIR: the ARI is at least 0.80 in every order.
+
+
+# ===== draft_rule_v2.py =====
+"""protocol.md: variant A with 20 random divisions per node, twice the median p-value, and no error for a singular covariance."""
+import numpy as np
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence import (
+    best_flat_cut_reference as mod,
+)
+
+DIVISIONS = 20
+CALLS = []
+_original_leaf_rows = mod._leaf_rows
+
+
+def _direction(points, in_first):
+    """Pseudo-inverse of the pooled within covariance times the difference of the two means."""
+    a, b = points[in_first], points[~in_first]
+    difference = a.mean(axis=0) - b.mean(axis=0)
+    if len(points) <= points.shape[1] + 2:
+        return difference
+    if min(len(a), len(b)) >= 2:
+        within = (np.cov(a.T) * (len(a) - 1) + np.cov(b.T) * (len(b) - 1)) / (len(points) - 2)
+    else:
+        within = np.cov(points.T)
+    return np.linalg.pinv(np.atleast_2d(within), hermitian=True) @ difference
+
+
+def _one_division(points, in_left, left, right, rng):
+    """(rho, p) of one random division of each side into a test part and a basis part."""
+    left, right = rng.permutation(left), rng.permutation(right)
+    cut_left, cut_right = (len(left) + 1) // 2, (len(right) + 1) // 2
+    test = np.concatenate([left[:cut_left], right[:cut_right]])
+    basis = np.concatenate([left[cut_left:], right[cut_right:]])
+    w = _direction(points[basis], in_left[basis])
+    projected = points[test] @ w
+    if not np.isfinite(w).all() or not w.any() or np.ptp(projected) <= 1e-12 * max(1.0, float(np.abs(projected).max())):
+        return float("nan"), 1.0
+    try:
+        rho = mod.split_rho(projected[:, None], in_left[test])
+    except np.linalg.LinAlgError:
+        return float("nan"), 1.0
+    return rho, mod.reference_p_value(rho, len(test), 1)[0]
+
+
+def draft(points, in_left):
+    points = np.asarray(points, dtype=np.float64)
+    in_left = np.asarray(in_left, dtype=bool)
+    left, right = np.flatnonzero(in_left), np.flatnonzero(~in_left)
+    n_test = (len(left) + 1) // 2 + (len(right) + 1) // 2
+    record = dict(n=len(points), left=len(left), reason="too_few_cells", k=0, rho=None, p=1.0)
+    if n_test < 15 or len(left) < 2 or len(right) < 2:
+        CALLS.append(record)
+        return mod.BestFlatCutReference(1.0, "too_few_cells", 0, float("nan"), 0)
+    results = [_one_division(points, in_left, left, right, np.random.default_rng((len(points), len(left), r))) for r in range(DIVISIONS)]
+    p_values = np.array([p for _, p in results])
+    rhos = np.array([rho for rho, _ in results])
+    p_value = float(min(1.0, 2.0 * np.median(p_values)))
+    rho = float(np.nanmedian(rhos)) if np.isfinite(rhos).any() else float("nan")
+    record.update(reason="tested", k=1, rho=rho if np.isfinite(rho) else None, p=p_value, n_test=n_test,
+                  p_min=float(p_values.min()), p_max=float(p_values.max()))
+    CALLS.append(record)
+    return mod.BestFlatCutReference(p_value, "tested", 1, rho, int(mod.reference_p_value(0.0, n_test, 1)[1]))
+
+
+def install(order_seed=None):
+    """Replace the reference by the fixed draft; cells of a side arrive in data order, or in a seeded random order of the rows."""
+    if order_seed is None:
+        mod._leaf_rows = lambda tree, node, row_of_label: sorted(_original_leaf_rows(tree, node, row_of_label))
+    else:
+        key = np.random.default_rng(order_seed).permutation(1_000_000)
+        mod._leaf_rows = lambda tree, node, row_of_label: sorted(_original_leaf_rows(tree, node, row_of_label), key=lambda row: key[row])
+    mod.best_flat_cut_reference = draft
+
+
+# ===== build_null_k1.py =====
+"""protocol.md amendment: exact null of the best cut of one direction for one Gaussian population, per grid n."""
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+N_GRID = np.array([15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 400, 800])
+DRAWS = 99_999
+rng = np.random.default_rng(20261112)
+null = np.empty((len(N_GRID), DRAWS))
+for i, n in enumerate(N_GRID):
+    left = np.arange(1, n)
+    for start in range(0, DRAWS, 5000):
+        x = np.sort(rng.normal(size=(min(5000, DRAWS - start), n)), axis=1)
+        prefix = np.cumsum(x, axis=1)[:, :-1]
+        total = x.sum(axis=1, keepdims=True)
+        between = (prefix / left - (total - prefix) / (n - left)) ** 2 * left * (n - left) / n
+        r2 = between.max(axis=1) / ((x - x.mean(axis=1, keepdims=True)) ** 2).sum(axis=1)
+        null[i, start:start + len(x)] = (n - 2) / n * r2 / (1 - r2)
+    null[i].sort()
+    print(f"n = {n}: 99% point {np.quantile(null[i], 0.99):.3f}, 99.9% point {np.quantile(null[i], 0.999):.3f}", flush=True)
+np.savez_compressed(HERE / "null_k1.npz", n_grid=N_GRID, null=null)
+
+
+# ===== build_null_k1.txt =====
+# n = 15: 99% point 5.343, 99.9% point 7.997
+# n = 20: 99% point 4.410, 99.9% point 6.071
+# n = 30: 99% point 3.617, 99.9% point 4.622
+# n = 40: 99% point 3.215, 99.9% point 3.909
+# n = 50: 99% point 2.994, 99.9% point 3.523
+# n = 75: 99% point 2.687, 99.9% point 3.100
+# n = 100: 99% point 2.531, 99.9% point 2.829
+# n = 150: 99% point 2.356, 99.9% point 2.578
+# n = 200: 99% point 2.261, 99.9% point 2.432
+# n = 300: 99% point 2.153, 99.9% point 2.305
+# n = 400: 99% point 2.091, 99.9% point 2.217
+# n = 800: 99% point 1.983, 99.9% point 2.065
+
+
+# ===== draft_rule_v3.py =====
+"""protocol.md amendment: the fixed draft with an exact null of 99,999 draws for one direction instead of the table."""
+from pathlib import Path
+
+import numpy as np
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence import (
+    best_flat_cut_reference as mod,
+)
+
+DIVISIONS = 20
+CALLS = []
+_original_leaf_rows = mod._leaf_rows
+_NULL = np.load(Path(__file__).with_name("null_k1.npz"))
+_N_GRID, _NULL_VALUES = _NULL["n_grid"], _NULL["null"]
+
+
+def _p_value(rho, n_test):
+    """Monte Carlo p-value of rho against the exact null of the best cut of one direction; grid n rounded down."""
+    values = _NULL_VALUES[int(np.searchsorted(_N_GRID, n_test, side="right")) - 1]
+    count = len(values) - int(np.searchsorted(values, rho, side="left"))
+    return (1 + count) / (len(values) + 1)
+
+
+def _direction(points, in_first):
+    """Pseudo-inverse of the pooled within covariance times the difference of the two means."""
+    a, b = points[in_first], points[~in_first]
+    difference = a.mean(axis=0) - b.mean(axis=0)
+    if len(points) <= points.shape[1] + 2:
+        return difference
+    if min(len(a), len(b)) >= 2:
+        within = (np.cov(a.T) * (len(a) - 1) + np.cov(b.T) * (len(b) - 1)) / (len(points) - 2)
+    else:
+        within = np.cov(points.T)
+    return np.linalg.pinv(np.atleast_2d(within), hermitian=True) @ difference
+
+
+def _one_division(points, in_left, left, right, rng):
+    """(rho, p) of one random division of each side into a test part and a basis part."""
+    left, right = rng.permutation(left), rng.permutation(right)
+    cut_left, cut_right = (len(left) + 1) // 2, (len(right) + 1) // 2
+    test = np.concatenate([left[:cut_left], right[:cut_right]])
+    basis = np.concatenate([left[cut_left:], right[cut_right:]])
+    w = _direction(points[basis], in_left[basis])
+    projected = points[test] @ w
+    if not np.isfinite(w).all() or not w.any() or np.ptp(projected) <= 1e-12 * max(1.0, float(np.abs(projected).max())):
+        return float("nan"), 1.0
+    try:
+        rho = mod.split_rho(projected[:, None], in_left[test])
+    except np.linalg.LinAlgError:
+        return float("nan"), 1.0
+    return rho, _p_value(rho, len(test))
+
+
+def draft(points, in_left):
+    points = np.asarray(points, dtype=np.float64)
+    in_left = np.asarray(in_left, dtype=bool)
+    left, right = np.flatnonzero(in_left), np.flatnonzero(~in_left)
+    n_test = (len(left) + 1) // 2 + (len(right) + 1) // 2
+    record = dict(n=len(points), left=len(left), reason="too_few_cells", k=0, rho=None, p=1.0)
+    if n_test < 15 or len(left) < 2 or len(right) < 2:
+        CALLS.append(record)
+        return mod.BestFlatCutReference(1.0, "too_few_cells", 0, float("nan"), 0)
+    results = [_one_division(points, in_left, left, right, np.random.default_rng((len(points), len(left), r))) for r in range(DIVISIONS)]
+    p_values = np.array([p for _, p in results])
+    rhos = np.array([rho for rho, _ in results])
+    p_value = float(min(1.0, 2.0 * np.median(p_values)))
+    rho = float(np.nanmedian(rhos)) if np.isfinite(rhos).any() else float("nan")
+    record.update(reason="tested", k=1, rho=rho if np.isfinite(rho) else None, p=p_value, n_test=n_test,
+                  p_min=float(p_values.min()), p_max=float(p_values.max()))
+    CALLS.append(record)
+    return mod.BestFlatCutReference(p_value, "tested", 1, rho, int(mod.reference_p_value(0.0, n_test, 1)[1]))
+
+
+def install(order_seed=None):
+    """Replace the reference by the fixed draft; cells of a side arrive in data order, or in a seeded random order of the rows."""
+    if order_seed is None:
+        mod._leaf_rows = lambda tree, node, row_of_label: sorted(_original_leaf_rows(tree, node, row_of_label))
+    else:
+        key = np.random.default_rng(order_seed).permutation(1_000_000)
+        mod._leaf_rows = lambda tree, node, row_of_label: sorted(_original_leaf_rows(tree, node, row_of_label), key=lambda row: key[row])
+    mod.best_flat_cut_reference = draft
+
+
+# ===== e0.py =====
+"""protocol.md E0: the constructed inputs of the check, and agreement with variant A on an ordinary input."""
+import sys
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+
+import draft_rule_v2  # noqa: E402
+
+rng = np.random.default_rng(31415)
+in_left = np.r_[np.ones(60, bool), np.zeros(60, bool)]
+constant = rng.normal(size=(120, 5))
+constant[:, 2] = 1.0
+equal = np.tile(rng.normal(size=(1, 5)), (120, 1))
+separated = rng.normal(size=(120, 5))
+separated[:60, 0] += 6.0
+one_population = rng.normal(size=(120, 5))
+for label, data in (("constant feature", constant), ("all cells equal", equal), ("two separated groups", separated), ("one population", one_population)):
+    result = draft_rule_v2.draft(data, in_left)
+    call = draft_rule_v2.CALLS[-1]
+    print(f"{label}: p = {result.p_value}, reason {result.reason}, rho {result.rho:.3f}, p of the divisions from {call.get('p_min')} to {call.get('p_max')}")
+
+
+# ===== e0.txt =====
+# constant feature: p = 1.0, reason tested, rho 0.005, p of the divisions from 1.0 to 1.0
+# all cells equal: p = 1.0, reason tested, rho nan, p of the divisions from 1.0 to 1.0
+# two separated groups: p = 0.001, reason tested, rho 7.874, p of the divisions from 0.0005 to 0.0005
+# one population: p = 1.0, reason tested, rho 0.024, p of the divisions from 1.0 to 1.0
+
+
+# ===== run_benchmark_v3.py =====
+"""protocol.md amendment, E1: the fixed draft on the 14 benchmark cases and the one-population grid."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+
+import draft_rule_v3  # noqa: E402
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+draft_rule_v3.install()
+apply_single_thread_runtime_defaults()
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+
+
+def run(case, method, **overrides):
+    draft_rule_v3.CALLS.clear()
+    params = {**METHOD_SPECS[method].param_grid[0], **overrides, "sibling_best_flat_cut_reference": True}
+    res = benchmark_cluster_algorithm(test_cases=[case], methods=[method], method_params={method: [params]}, verbose=False,
+                                      plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                      allow_method_errors=False)
+    return res.iloc[0], [dict(c) for c in draft_rule_v3.CALLS]
+
+
+rows, calls = [], []
+for case in get_test_cases_by_suite("continuous") + get_test_cases_by_suite("cancer_pc"):
+    for method in METHODS:
+        res, case_calls = run(case, method)
+        rows.append(dict(case=res["case_id"], method=method, true_clusters=int(res["true_clusters"]), found_clusters=int(res["found_clusters"]),
+                         ari=float(res["ari"]), status=str(res["status"])))
+        calls.append(dict(case=res["case_id"], method=method, calls=case_calls))
+results = pd.DataFrame(rows)
+results.to_csv(HERE / "benchmark_results_v3.csv", index=False)
+json.dump(calls, open(HERE / "benchmark_calls_v3.json", "w"), indent=1)
+before = pd.read_csv(HERE.parent / "k_split_direction_runs_20261112" / "benchmark_results_A.csv")
+merged = results.merge(before, on=["case", "method"], suffixes=("", "_variant_a"))
+print(f"found clusters equal to variant A in {int((merged['found_clusters'] == merged['found_clusters_variant_a']).sum())} of {len(merged)} rows; "
+      f"ARI equal in {int(((merged['ari'] - merged['ari_variant_a']).abs() < 1e-12).sum())}")
+print(merged.loc[merged["found_clusters"] != merged["found_clusters_variant_a"], ["case", "method", "true_clusters", "found_clusters", "found_clusters_variant_a"]].to_string(index=False))
+print("null cases:", results[results["case"].str.contains("null")][["case", "method", "found_clusters"]].to_dict("records"))
+print("call reasons:", dict(Counter(c["reason"] for r in calls for c in r["calls"])))
+
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+null = []
+for cells, features in ((200, 80), (200, 30), (256, 30), (496, 30)):
+    for seed in range(401, 406):
+        case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+        for operator, linkage in CELLS:
+            res, case_calls = run(case, "tbs_family_diffusion", diffusion_coordinate_operator=operator, tree_linkage_method=linkage)
+            null.append(dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"]), calls=case_calls))
+json.dump(null, open(HERE / "null_grid_v3.json", "w"), indent=1)
+tested = [c["p"] for r in null for c in r["calls"] if c["reason"] == "tested"]
+print(f"one-population grid: 1 cluster in {sum(r['found'] == 1 for r in null)} of {len(null)} runs; smallest p {min(tested)}; "
+      f"p <= 0.01 in {sum(p <= 0.01 for p in tested)} of {len(tested)} tested calls")
+
+
+# ===== run_benchmark.log =====
+# found clusters equal to variant A in 28 of 28 rows; ARI equal in 28
+# Empty DataFrame
+# Columns: [case, method, true_clusters, found_clusters, found_clusters_variant_a]
+# Index: []
+# null cases: [{'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion', 'found_clusters': 1}, {'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'found_clusters': 1}, {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion', 'found_clusters': 1}, {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'found_clusters': 1}]
+# call reasons: {'tested': 155, 'too_few_cells': 10}
+# one-population grid: 1 cluster in 80 of 80 runs; smallest p 1.0; p <= 0.01 in 0 of 397 tested calls
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python   53.25s user 0.76s system 99% cpu 54.445 total
+
+
+# ===== run_benchmark_v3.log =====
+# found clusters equal to variant A in 28 of 28 rows; ARI equal in 28
+# Empty DataFrame
+# Columns: [case, method, true_clusters, found_clusters, found_clusters_variant_a]
+# Index: []
+# null cases: [{'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion', 'found_clusters': 1}, {'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'found_clusters': 1}, {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion', 'found_clusters': 1}, {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'found_clusters': 1}]
+# call reasons: {'tested': 155, 'too_few_cells': 10}
+# one-population grid: 1 cluster in 80 of 80 runs; smallest p 0.18827; p <= 0.01 in 0 of 397 tested calls
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python   57.57s user 0.68s system 99% cpu 58.482 total
+
+
+# ===== run_level_v3.py =====
+"""protocol.md amendment, E2: the fixed draft on one Gaussian population. usage: run_level.py CELLS identity|unequal"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import ortho_group
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+
+import draft_rule_v3  # noqa: E402
+
+import benchmarks.shared.generators.gaussian_cases as gaussian_cases  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+cells, covariance = int(sys.argv[1]), sys.argv[2]
+V = np.array([53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58,
+              6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12])
+Q = ortho_group.rvs(30, random_state=0)
+original_make_blobs = gaussian_cases.make_blobs
+
+
+def make_blobs(**kwargs):
+    x, y = original_make_blobs(**kwargs)[:2]
+    return (x * np.sqrt(V)) @ Q.T if covariance == "unequal" else x, y
+
+
+gaussian_cases.make_blobs = make_blobs
+draft_rule_v3.install()
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+fits = []
+for seed in range(1, 51):
+    case = {**registered, "n_samples": cells, "n_features": 30, "seed": seed}
+    for operator in ("symmetric", "markov"):
+        for linkage in ("average", "ward"):
+            draft_rule_v3.CALLS.clear()
+            params = {**METHOD_SPECS["tbs_family_diffusion"].param_grid[0], "diffusion_coordinate_operator": operator,
+                      "tree_linkage_method": linkage, "sibling_best_flat_cut_reference": True}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=["tbs_family_diffusion"], method_params={"tbs_family_diffusion": [params]},
+                                              verbose=False, plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            fits.append(dict(cells=cells, covariance=covariance, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"].iloc[0]),
+                             calls=[dict(c) for c in draft_rule_v3.CALLS]))
+json.dump(fits, open(HERE / f"level_v3_{cells}_{covariance}.json", "w"))
+tested = [c["p"] for f in fits for c in f["calls"] if c["reason"] == "tested"]
+print(f"({cells}, 30) {covariance}: fits with more than 1 cluster {sum(f['found'] > 1 for f in fits)} of {len(fits)}; tested calls with p <= 0.01: "
+      f"{sum(p <= 0.01 for p in tested)} of {len(tested)}; smallest p {min(tested)}", flush=True)
+
+
+# ===== run_choir_v3.py =====
+"""protocol.md amendment, E3: the CHOIR harness with the fixed draft. usage: run_choir.py data|SEED"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE))
+
+import draft_rule_v3  # noqa: E402
+import harness  # noqa: E402
+
+order = sys.argv[1]
+draft_rule_v3.install(None if order == "data" else int(order))
+harness.HERE = HERE
+harness.main("results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", f"choir_v3_{order}")
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== compare.txt =====
+# == CHOIR cells, fixed draft, five orders of the rows ==
+# order data: found clusters 135; ARI 0.5373; NMI 0.8997; recovered 91; split only 6; merged only 79; both 14; largest 3222; accepted by BH 97; p <= 0.01 159; 133 s
+# order 1: found clusters 135; ARI 0.5374; NMI 0.8998; recovered 89; split only 6; merged only 82; both 13; largest 3222; accepted by BH 96; p <= 0.01 162; 134 s
+# order 2: found clusters 134; ARI 0.5373; NMI 0.8997; recovered 90; split only 6; merged only 81; both 13; largest 3222; accepted by BH 97; p <= 0.01 160; 134 s
+# order 3: found clusters 134; ARI 0.5373; NMI 0.8997; recovered 90; split only 6; merged only 81; both 13; largest 3222; accepted by BH 97; p <= 0.01 166; 134 s
+# order 777: found clusters 133; ARI 0.5371; NMI 0.8995; recovered 90; split only 5; merged only 81; both 14; largest 3222; accepted by BH 96; p <= 0.01 162; 134 s
+# found clusters 133 to 135 (range 2); ARI 0.5371 to 0.5374 (range 0.0002)
+# ARI between the partitions of two orders: 0.9988 to 1.0000
+# nodes accepted in every order 94; in some but not all 5; in at least one 99
+# called nodes 1838; p differs between orders at 34; p <= 0.01 in some orders and above in others at 9
+# call reasons, data order: {'too_few_cells': 352, 'tested': 1486}
+# accepted, data order: fixed draft 97; also accepted by the current rule 78 of 134; also by variant A 97 of 151
+#   accepted at nodes with fewer than 100 cells: fixed draft 1; current rule 8
+#   accepted at nodes with 100 to 999: fixed draft 46; current rule 76
+#   accepted at nodes with 1,000 and more: fixed draft 50; current rule 50
+#
+# == level: one Gaussian population, 800 fits ==
+# Traceback (most recent call last):
+#   File "<stdin>", line 46, in <module>
+#   File "/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+#     with self.open(mode='r', encoding=encoding, errors=errors) as f:
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#   File "/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+#     return io.open(self, mode, buffering, encoding, errors, newline)
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# FileNotFoundError: [Errno 2] No such file or directory: 'results/analyses/variant_a_fixed_20261112/level_256_identity.json'
+
+
+# ===== compare_v3.txt =====
+# == second version (table, 1,999 draws) ==
+# found clusters [135, 135, 134, 134, 133] (range 2); ARI [0.5373, 0.5374, 0.5373, 0.5373, 0.5371] (range 0.0002)
+# recovered [91, 89, 90, 90, 90]; merged only [79, 82, 81, 81, 81]; split only [6, 6, 6, 6, 5]; accepted by BH [97, 96, 97, 97, 96]; largest cluster [3222, 3222, 3222, 3222, 3222]
+# ARI between the partitions of two orders 0.9988 to 1.0000; nodes accepted in every order 94, in some but not all 5
+# accepted splits at nodes with at least 90% of the cells from one line, per order: [np.int64(1), np.int64(1), np.int64(1), np.int64(1), np.int64(1)]
+# data order: smallest p 0.001; calls at the smallest p 151, of these accepted 97; calls with p <= 0.01: 159, accepted 97; run time 133 s
+# == third version (exact null, 99,999 draws) ==
+# found clusters [206, 211, 215, 213, 210] (range 9); ARI [0.8359, 0.8401, 0.8411, 0.8404, 0.8349] (range 0.0062)
+# recovered [127, 126, 126, 126, 126]; merged only [30, 31, 29, 29, 30]; split only [16, 16, 18, 18, 17]; accepted by BH [150, 153, 155, 153, 151]; largest cluster [1990, 1990, 1990, 1990, 1990]
+# ARI between the partitions of two orders 0.9859 to 0.9989; nodes accepted in every order 149, in some but not all 9
+# accepted splits at nodes with at least 90% of the cells from one line, per order: [np.int64(3), np.int64(3), np.int64(3), np.int64(3), np.int64(4)]
+# data order: smallest p 2e-05; calls at the smallest p 138, of these accepted 138; calls with p <= 0.01: 161, accepted 150; run time 143 s
+# == level, 800 fits of one Gaussian population ==
+# second version: fits with more than 1 cluster 0 of 800; tested calls with p <= 0.01: 0 of 7249; with p <= 0.05: 1; smallest p 0.0215
+# third version: fits with more than 1 cluster 0 of 800; tested calls with p <= 0.01: 0 of 7249; with p <= 0.05: 1; smallest p 0.033229999999999996

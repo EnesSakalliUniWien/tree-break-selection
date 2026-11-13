@@ -1,0 +1,604 @@
+# ===== protocol.md =====
+# # Protocol: power of four gap options on the failing layouts (frozen 2026-11-11, before the run)
+#
+# Question: which of four additions to `rho` accepts the true-group splits that the Gaussian best-flat-cut
+# reference refuses, and at what cost on one non-Gaussian population?
+#
+# Setting: one direction (k = 1, as in the refused cancer_pc subtree), unit within-group noise, seed 20261111.
+#
+# Statistics (all unchanged by shift and scale of the axis):
+# - rho: `pi(1-pi) D^2` of a split, pooled within variance, divisor n - 2 (the current statistic).
+# - mixture: 2 x (log-likelihood of a two-Gaussian mixture with common variance, EM from 5 starts, minus the
+#   log-likelihood of one Gaussian). A statistic of the sample, not of a split.
+# - dip: distance of the empirical distribution from the closest unimodal one, own implementation from the
+#   definition (min over mode positions of the larger one-sided deviation from the convex minorant / concave
+#   majorant, halved). Not checked against a published implementation. A statistic of the sample.
+# - valley: log((min(c_left, c_right) + 0.5) / (c_mid + 0.5)), cell counts in three bands of width one third of
+#   the distance between the side means, centred at the two side means and half-way between them.
+# - shape: minus the size-weighted mean of the two sides' skewness toward the other side (0.995 for the two
+#   halves of a Gaussian, 0 for a Gaussian group).
+#
+# Reference: 2,000 one-Gaussian samples per n (320 and 384). For rho, valley and shape the reference is the
+# largest value over all threshold cuts with at least 5 cells per side; for mixture and dip it is the sample's
+# value. p = (1 + #{reference >= value}) / 2,001.
+#
+# Layouts (1,000 samples each), with the split that is tested:
+# - A: 256 at 0, 64 at 3 (n = 320); split = the two groups.
+# - B: 256 at 0, 64 at -3, 64 at 3 (n = 384, connected cancer_pc); split = group at 3 against the rest.
+# - C: 256 at 0, 64 at -20, 64 at 20 (n = 384, disconnected cancer_pc); split = group at 20 against the rest.
+# - D: 160 at 0, 160 at 3 (n = 320); split = the two groups.
+# - E: 256 at 0, 64 at 4 (n = 320); split = the two groups.
+# One population (2,000 samples each, n = 320): Gaussian (level check, fresh samples), gamma with shape 4, and
+# Student t with 5 degrees of freedom; tested: the best threshold cut and the median cut.
+#
+# Endpoints: share of samples with p <= 0.01 and p <= 0.05, (a) for the true-group split and (b) for the best
+# threshold cut of the same sample (the most any tree that offers threshold cuts could reach).
+#
+# Expectation, stated before running: the density calculation gives a valley of 0.998 (A) and 0.999 (B) of the
+# neighbouring mode, so dip and valley should have power near the level on A and B and near 1 on C and D; rho
+# should reach about the level on A and B and fail on C; mixture is the only option expected to exceed the
+# level on A; nothing is expected to work on B. Gamma: mixture is expected to reject often.
+#
+# Limits: one direction only; for valley and shape the largest value over threshold cuts is not proved to bound
+# every split; one seed.
+
+
+# ===== run.py =====
+"""protocol.md: power of rho, mixture, dip, valley and shape on the failing layouts, one direction."""
+import json
+import sys
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+SEED = 20261111
+MIN_SIDE = 5
+NAMES = ["rho", "mixture", "dip", "valley", "shape"]
+
+
+def rho(z, right):
+    n, a, b = len(z), z[~right], z[right]
+    within = (((a - a.mean()) ** 2).sum() + ((b - b.mean()) ** 2).sum()) / (n - 2)
+    return len(a) * len(b) / n**2 * (b.mean() - a.mean()) ** 2 / within
+
+
+def skewness(v):
+    c = v - v.mean()
+    return (c**3).mean() / (c**2).mean() ** 1.5
+
+
+def shape(z, right):
+    a, b = (z[~right], z[right]) if z[~right].mean() < z[right].mean() else (z[right], z[~right])
+    return -(len(a) * -skewness(a) + len(b) * skewness(b)) / len(z)
+
+
+def valley(z, right):
+    lo, hi = sorted((z[~right].mean(), z[right].mean()))
+    half = (hi - lo) / 6
+    count = lambda centre: int(((z >= centre - half) & (z <= centre + half)).sum())
+    return float(np.log((min(count(lo), count(hi)) + 0.5) / (count((lo + hi) / 2) + 0.5)))
+
+
+def best_cuts(z):
+    """Largest rho, valley and shape over all threshold cuts with at least MIN_SIDE cells per side."""
+    s = np.sort(z)
+    n = len(s)
+    i = np.arange(MIN_SIDE, n - MIN_SIDE + 1)  # left side = s[:i]
+    c1, c2, c3 = np.cumsum(s), np.cumsum(s**2), np.cumsum(s**3)
+    nl, nr = i, n - i
+    ml, mr = c1[i - 1] / nl, (c1[-1] - c1[i - 1]) / nr
+    vl, vr = c2[i - 1] / nl - ml**2, (c2[-1] - c2[i - 1]) / nr - mr**2
+    best_rho = (nl * nr / n**2 * (mr - ml) ** 2 / ((nl * vl + nr * vr) / (n - 2))).max()
+    tl = c3[i - 1] / nl - 3 * ml * c2[i - 1] / nl + 2 * ml**3
+    tr = (c3[-1] - c3[i - 1]) / nr - 3 * mr * (c2[-1] - c2[i - 1]) / nr + 2 * mr**3
+    best_shape = (-(nl * -(tl / vl**1.5) + nr * (tr / vr**1.5)) / n).max()
+    half = (mr - ml) / 6
+    count = lambda centre: np.searchsorted(s, centre + half, side="right") - np.searchsorted(s, centre - half, side="left")
+    best_valley = np.log((np.minimum(count(ml), count(mr)) + 0.5) / (count((ml + mr) / 2) + 0.5)).max()
+    return float(best_rho), float(best_valley), float(best_shape)
+
+
+def mixture(z):
+    n = len(z)
+    one = -0.5 * n * (np.log(2 * np.pi * z.var()) + 1)
+    starts = np.quantile(z, [0.15, 0.3, 0.5, 0.7, 0.85])
+    resp = (z[None, :] > starts[:, None]).astype(float)  # responsibility of the upper component
+    for _ in range(300):
+        w = np.clip(resp.mean(axis=1), 1e-6, 1 - 1e-6)
+        m1 = (resp * z).sum(axis=1) / (n * w)
+        m0 = ((1 - resp) * z).sum(axis=1) / (n * (1 - w))
+        var = (resp * (z - m1[:, None]) ** 2 + (1 - resp) * (z - m0[:, None]) ** 2).mean(axis=1)
+        l1 = np.log(w)[:, None] - 0.5 * (z - m1[:, None]) ** 2 / var[:, None]
+        l0 = np.log(1 - w)[:, None] - 0.5 * (z - m0[:, None]) ** 2 / var[:, None]
+        top = np.maximum(l0, l1)
+        total = top + np.log(np.exp(l0 - top) + np.exp(l1 - top))
+        resp = np.exp(l1 - total)
+    two = (total - 0.5 * np.log(2 * np.pi * var)[:, None]).sum(axis=1).max()
+    return float(max(2 * (two - one), 0.0))
+
+
+def _one_sided(x, lower, upper):
+    """dev[j] = largest gap between the upper values and the convex minorant of the lower values on x[:j+1]."""
+    hull, dev = [], np.empty(len(x))
+    for j in range(len(x)):
+        while len(hull) >= 2:
+            a, b = hull[-2], hull[-1]
+            if (lower[b] - lower[a]) * (x[j] - x[b]) >= (lower[j] - lower[b]) * (x[b] - x[a]):
+                hull.pop()
+            else:
+                break
+        hull.append(j)
+        dev[j] = (upper[: j + 1] - np.interp(x[: j + 1], x[hull], lower[hull])).max()
+    return dev
+
+
+def dip(z):
+    x = np.sort(z)
+    n = len(x)
+    lower, upper = np.arange(n) / n, np.arange(1, n + 1) / n
+    left = _one_sided(x, lower, upper)
+    right = _one_sided(-x[::-1], 1 - upper[::-1], 1 - lower[::-1])[::-1]
+    return float(np.maximum(left, right).min() / 2)
+
+
+def sample_stats(z):
+    r, v, s = best_cuts(z)
+    return dict(rho=r, mixture=mixture(z), dip=dip(z), valley=v, shape=s)
+
+
+def split_stats(z, right):
+    return dict(rho=float(rho(z, right)), valley=valley(z, right), shape=float(shape(z, right)))
+
+
+LAYOUTS = {
+    "A": ([256, 64], [0, 3], 1),
+    "B": ([256, 64, 64], [0, -3, 3], 2),
+    "C": ([256, 64, 64], [0, -20, 20], 2),
+    "D": ([160, 160], [0, 3], 1),
+    "E": ([256, 64], [0, 4], 1),
+}
+
+
+def job(args):
+    kind, name, block, reps = args
+    rng = np.random.default_rng([SEED, {"reference": 1, "layout": 2, "single": 3}[kind], sum(map(ord, str(name))), block])
+    rows = []
+    for _ in range(reps):
+        if kind == "layout":
+            sizes, centres, target = LAYOUTS[name]
+            labels = np.repeat(np.arange(len(sizes)), sizes)
+            z = np.asarray(centres, dtype=float)[labels] + rng.standard_normal(len(labels))
+            rows.append(dict(sample=sample_stats(z), split=split_stats(z, labels == target)))
+        else:
+            n = int(name) if kind == "reference" else 320
+            z = {"gamma4": lambda: rng.gamma(4.0, size=n), "t5": lambda: rng.standard_t(5, size=n)}.get(name, lambda: rng.standard_normal(n))()
+            row = dict(sample=sample_stats(z))
+            if kind == "single":
+                row["split"] = split_stats(z, z > np.median(z))
+            rows.append(row)
+    return kind, name, rows
+
+
+def self_check():
+    rng = np.random.default_rng([SEED, 0])
+    z = rng.standard_normal(60)
+    s = np.sort(z)
+    brute = [split_stats(z, z >= s[i]) for i in range(MIN_SIDE, 60 - MIN_SIDE + 1)]
+    fast = best_cuts(z)
+    for key, value in zip(("rho", "valley", "shape"), fast):
+        assert abs(max(b[key] for b in brute) - value) < 1e-9, key
+    assert abs(dip(np.arange(50.0)) - 1 / 100) < 1e-12
+    assert abs(dip(np.r_[rng.normal(0, 1e-3, 200), rng.normal(10, 1e-3, 200)]) - 0.25) < 0.01
+    halves = rng.standard_normal(200000)
+    assert abs(shape(halves, halves > 0) + 0.9953) < 0.02
+    assert mixture(np.r_[rng.normal(0, 1, 300), rng.normal(8, 1, 300)]) > 500
+    print("self-check passed", flush=True)
+
+
+if __name__ == "__main__":
+    self_check()
+    jobs = [("reference", n, b, 200) for n in (320, 384) for b in range(10)]
+    jobs += [("layout", name, b, 100) for name in LAYOUTS for b in range(10)]
+    jobs += [("single", name, b, 200) for name in ("gaussian", "gamma4", "t5") for b in range(10)]
+    data = {}
+    with Pool(10) as pool:
+        for kind, name, rows in pool.imap_unordered(job, jobs):
+            data.setdefault(f"{kind}:{name}", []).extend(rows)
+            print(kind, name, len(data[f"{kind}:{name}"]), flush=True)
+    reference = {n: {k: np.sort([r["sample"][k] for r in data[f"reference:{n}"]]) for k in NAMES} for n in (320, 384)}
+
+    def p_value(n, key, value):
+        ref = reference[n][key]
+        return (1 + len(ref) - np.searchsorted(ref, value, side="left")) / (len(ref) + 1)
+
+    summary = {"reference_q99": {n: {k: float(np.quantile(reference[n][k], 0.99)) for k in NAMES} for n in (320, 384)}}
+    for key, rows in sorted(data.items()):
+        kind, name = key.split(":")
+        if kind == "reference":
+            continue
+        n = sum(LAYOUTS[name][0]) if kind == "layout" else 320
+        out = dict(n=n, samples=len(rows))
+        for part, keys in (("split", ("rho", "valley", "shape")), ("sample", NAMES)):
+            for k in keys:
+                p = np.array([p_value(n, k, r[part][k]) for r in rows])
+                out[f"{part}:{k}"] = dict(at_01=int((p <= 0.01).sum()), at_05=int((p <= 0.05).sum()),
+                                           median=float(np.median([r[part][k] for r in rows])))
+        summary[key] = out
+        print(key, json.dumps(out), flush=True)
+    json.dump(summary, open(HERE / "summary.json", "w"), indent=1)
+    print("DONE", flush=True)
+
+
+# ===== summary.json =====
+# {
+#  "reference_q99": {
+#   "320": {
+#    "rho": 2.1713130526880984,
+#    "mixture": 10.217557112154116,
+#    "dip": 0.02015056901952683,
+#    "valley": 0.11024521224405551,
+#    "shape": 0.13033955778822548
+#   },
+#   "384": {
+#    "rho": 2.0886703993369107,
+#    "mixture": 10.009117347975636,
+#    "dip": 0.01794200806802054,
+#    "valley": 0.07086440733061646,
+#    "shape": 0.12791725700956183
+#   }
+#  },
+#  "layout:A": {
+#   "n": 320,
+#   "samples": 1000,
+#   "split:rho": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": 1.4346599836225553
+#   },
+#   "split:valley": {
+#    "at_01": 4,
+#    "at_05": 8,
+#    "median": -0.49135740726238075
+#   },
+#   "split:shape": {
+#    "at_01": 158,
+#    "at_05": 350,
+#    "median": 0.006317469524050223
+#   },
+#   "sample:rho": {
+#    "at_01": 278,
+#    "at_05": 603,
+#    "median": 2.0748874234619006
+#   },
+#   "sample:mixture": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 47.42262251672469
+#   },
+#   "sample:dip": {
+#    "at_01": 3,
+#    "at_05": 39,
+#    "median": 0.013159597090801181
+#   },
+#   "sample:valley": {
+#    "at_01": 27,
+#    "at_05": 68,
+#    "median": -0.26887004727494396
+#   },
+#   "sample:shape": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 0.5500441304628467
+#   }
+#  },
+#  "layout:B": {
+#   "n": 384,
+#   "samples": 1000,
+#   "split:rho": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": 0.8128358916137284
+#   },
+#   "split:valley": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": -0.7632317555373684
+#   },
+#   "split:shape": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": -0.5637385202080997
+#   },
+#   "sample:rho": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": 1.433257280444518
+#   },
+#   "sample:mixture": {
+#    "at_01": 3,
+#    "at_05": 29,
+#    "median": 0.8728702996246511
+#   },
+#   "sample:dip": {
+#    "at_01": 5,
+#    "at_05": 20,
+#    "median": 0.011247417424261857
+#   },
+#   "sample:valley": {
+#    "at_01": 0,
+#    "at_05": 5,
+#    "median": -0.4550620492475365
+#   },
+#   "sample:shape": {
+#    "at_01": 9,
+#    "at_05": 59,
+#    "median": -0.050820144610797646
+#   }
+#  },
+#  "layout:C": {
+#   "n": 384,
+#   "samples": 1000,
+#   "split:rho": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": 1.463191315502173
+#   },
+#   "split:valley": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 4.859812404361672
+#   },
+#   "split:shape": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": -1.2198769389966415
+#   },
+#   "sample:rho": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": 1.4828303666691198
+#   },
+#   "sample:mixture": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 12.897964466120584
+#   },
+#   "sample:dip": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 0.06599750305414914
+#   },
+#   "sample:valley": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 4.859812404361672
+#   },
+#   "sample:shape": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": -0.007736119514202116
+#   }
+#  },
+#  "layout:D": {
+#   "n": 320,
+#   "samples": 1000,
+#   "split:rho": {
+#    "at_01": 643,
+#    "at_05": 839,
+#    "median": 2.257540003468751
+#   },
+#   "split:valley": {
+#    "at_01": 855,
+#    "at_05": 947,
+#    "median": 0.30090559677666817
+#   },
+#   "split:shape": {
+#    "at_01": 183,
+#    "at_05": 358,
+#    "median": 0.011098329316100254
+#   },
+#   "sample:rho": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 2.973199004699577
+#   },
+#   "sample:mixture": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 41.96290497809548
+#   },
+#   "sample:dip": {
+#    "at_01": 664,
+#    "at_05": 860,
+#    "median": 0.022235808079620722
+#   },
+#   "sample:valley": {
+#    "at_01": 979,
+#    "at_05": 999,
+#    "median": 0.41773520069997877
+#   },
+#   "sample:shape": {
+#    "at_01": 1,
+#    "at_05": 44,
+#    "median": -0.019123258215155432
+#   }
+#  },
+#  "layout:E": {
+#   "n": 320,
+#   "samples": 1000,
+#   "split:rho": {
+#    "at_01": 932,
+#    "at_05": 986,
+#    "median": 2.5385501798103567
+#   },
+#   "split:valley": {
+#    "at_01": 546,
+#    "at_05": 698,
+#    "median": 0.1418413971309313
+#   },
+#   "split:shape": {
+#    "at_01": 154,
+#    "at_05": 316,
+#    "median": -0.009354344137989976
+#   },
+#   "sample:rho": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 2.8317532295019525
+#   },
+#   "sample:mixture": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 116.4051856459223
+#   },
+#   "sample:dip": {
+#    "at_01": 247,
+#    "at_05": 455,
+#    "median": 0.017207727512155276
+#   },
+#   "sample:valley": {
+#    "at_01": 888,
+#    "at_05": 953,
+#    "median": 0.3980301296206463
+#   },
+#   "sample:shape": {
+#    "at_01": 1000,
+#    "at_05": 1000,
+#    "median": 0.8401260295471207
+#   }
+#  },
+#  "single:gamma4": {
+#   "n": 320,
+#   "samples": 2000,
+#   "split:rho": {
+#    "at_01": 0,
+#    "at_05": 2,
+#    "median": 1.4659568494510553
+#   },
+#   "split:valley": {
+#    "at_01": 0,
+#    "at_05": 2,
+#    "median": -0.535142931416697
+#   },
+#   "split:shape": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": -0.8853609428747152
+#   },
+#   "sample:rho": {
+#    "at_01": 65,
+#    "at_05": 249,
+#    "median": 1.8211951617666804
+#   },
+#   "sample:mixture": {
+#    "at_01": 2000,
+#    "at_05": 2000,
+#    "median": 37.317429183687636
+#   },
+#   "sample:dip": {
+#    "at_01": 15,
+#    "at_05": 107,
+#    "median": 0.013596360004735152
+#   },
+#   "sample:valley": {
+#    "at_01": 15,
+#    "at_05": 83,
+#    "median": -0.2290665696173318
+#   },
+#   "sample:shape": {
+#    "at_01": 2000,
+#    "at_05": 2000,
+#    "median": 0.5940778142117504
+#   }
+#  },
+#  "single:gaussian": {
+#   "n": 320,
+#   "samples": 2000,
+#   "split:rho": {
+#    "at_01": 3,
+#    "at_05": 49,
+#    "median": 1.7411627616232375
+#   },
+#   "split:valley": {
+#    "at_01": 1,
+#    "at_05": 14,
+#    "median": -0.37827896780400755
+#   },
+#   "split:shape": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": -0.9453358705058361
+#   },
+#   "sample:rho": {
+#    "at_01": 6,
+#    "at_05": 71,
+#    "median": 1.7629048107185705
+#   },
+#   "sample:mixture": {
+#    "at_01": 10,
+#    "at_05": 72,
+#    "median": 1.4337229819769277
+#   },
+#   "sample:dip": {
+#    "at_01": 15,
+#    "at_05": 102,
+#    "median": 0.013506384184335321
+#   },
+#   "sample:valley": {
+#    "at_01": 13,
+#    "at_05": 84,
+#    "median": -0.229876009808045
+#   },
+#   "sample:shape": {
+#    "at_01": 22,
+#    "at_05": 124,
+#    "median": -0.08713168831152665
+#   }
+#  },
+#  "single:t5": {
+#   "n": 320,
+#   "samples": 2000,
+#   "split:rho": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": 1.2055436743370591
+#   },
+#   "split:valley": {
+#    "at_01": 0,
+#    "at_05": 1,
+#    "median": -0.5418015516602955
+#   },
+#   "split:shape": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": -1.8575458466579362
+#   },
+#   "sample:rho": {
+#    "at_01": 0,
+#    "at_05": 0,
+#    "median": 1.2276422067100623
+#   },
+#   "sample:mixture": {
+#    "at_01": 1403,
+#    "at_05": 1700,
+#    "median": 16.178855446091404
+#   },
+#   "sample:dip": {
+#    "at_01": 4,
+#    "at_05": 47,
+#    "median": 0.012951517621885886
+#   },
+#   "sample:valley": {
+#    "at_01": 0,
+#    "at_05": 3,
+#    "median": -0.4086961286896108
+#   },
+#   "sample:shape": {
+#    "at_01": 30,
+#    "at_05": 63,
+#    "median": -0.2932970662408619
+#   }
+#  }
+# }

@@ -1,0 +1,141 @@
+# ===== protocol.md =====
+# # Protocol: four numerical checks of what the looked-up literature implies for k (frozen 2026-11-12, before the run)
+#
+# k is the number of eigenvalues of a node's covariance above
+# edge = median eigenvalue / MP median(p/n) x (1 + sqrt(p/n))^2 (`invariant_directions`), and 0 when n <= p + 1.
+#
+# Looked up before this protocol (links in the raw capture): Marchenko and Pastur 1967; Johnstone 2001; Baik, Ben
+# Arous and Peche 2005; Baik and Silverstein 2006 (Theorems 1.1 and 1.2 read in the arXiv text); Bai and Yao 2008
+# (introduction read in the arXiv text); Gavish and Donoho 2014; Okamoto 1973; Passemier and Yao 2014; Kritchman
+# and Nadler 2009.
+#
+# Checks (`checks.py`, one Gaussian population or Gaussian groups with identity noise, seed 20261112):
+#
+# C1. The edge is a limit, not a quantile (Baik and Silverstein eq. 1.3; Johnstone: the largest eigenvalue
+#     fluctuates). One Gaussian population, 2,000 draws each at (n, p) = (64, 30), (128, 30), (256, 30),
+#     (800, 30), (200, 80): share of draws with k >= 1.
+#     Prediction: above 0 and below one half at every size.
+# C2. Detection threshold. Baik and Silverstein: a population eigenvalue is visible only above 1 + sqrt(c). Two
+#     groups with shares pi and 1 - pi at distance d add the eigenvalue 1 + pi(1 - pi) d^2, so the threshold
+#     reads population `rho` = pi(1 - pi) d^2 > sqrt(p/n) (own derivation, checked here). n = 320 (64 and 256
+#     cells), p = 30, sqrt(p/n) = 0.306; d chosen so that `rho` is 0.15, 0.306, 0.6, 1.44; 1,000 draws each: share
+#     with k >= 1.
+#     Prediction: near the C1 rate at 0.15, rising through 0.306, near 1 at 1.44.
+# C3. More features than cells. Baik and Silverstein Theorem 1.2 has the same threshold for c > 1, but
+#     `invariant_directions` returns no direction when n <= p + 1. Prototype rule for this check only: the
+#     nonzero eigenvalues of the covariance, with the median and the edge of the Marchenko-Pastur law at ratio
+#     (n - 1)/p applied to the dual spectrum. 30 cells in 40 features: one population; two groups of 15 with
+#     `rho` 2.3 (twice sqrt(p/n) = 1.15), 5 and 50; 1,000 draws each: share with k >= 1 under the prototype rule.
+#     Prediction: near the C1 rate for one population and near 1 at `rho` 50.
+# C4. Multiplicity. Okamoto: sample eigenvalues are distinct with probability one. Bai and Yao: a population
+#     eigenvalue of multiplicity m gives m sample eigenvalues with one common limit that fluctuate jointly. Four
+#     balanced Gaussian groups at equal pairwise distance (population eigenvalue of multiplicity 3), p = 30,
+#     n = 400 and 4,000, 500 draws each: numerical ties among the three top eigenvalues by
+#     `tied_eigenvalue_neighbors`, and the relative spread (largest minus third) / mean of the three.
+#     Prediction: 0 numerical ties; the relative spread is smaller at 4,000 cells than at 400.
+#
+# No production code is changed. The prototype rule of C3 is not a proposal for production.
+
+
+# ===== checks.py =====
+"""protocol.md C1 to C4: what the looked-up literature implies for k = len(invariant_directions(points))."""
+import sys
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from tree_break_selection.eigenvalue_groups import tied_eigenvalue_neighbors  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    _marchenko_pastur_median,
+    invariant_directions,
+)
+
+rng = np.random.default_rng(20261112)
+
+
+def two_groups(sizes, p, rho):
+    """Gaussian groups with identity noise; the first feature separates them so that pi(1-pi)d^2 = rho."""
+    n = sum(sizes)
+    share = sizes[0] / n
+    d = np.sqrt(rho / (share * (1 - share)))
+    points = rng.normal(size=(n, p))
+    points[: sizes[0], 0] += d
+    return points
+
+
+def prototype_k(points):
+    """C3 only: nonzero eigenvalues, median and edge of the Marchenko-Pastur law of the dual spectrum."""
+    n, p = points.shape
+    values = np.linalg.eigvalsh(np.cov(points.T))[::-1][: n - 1]
+    dual = values * (n - 1) / p  # eigenvalues of the centred Gram matrix divided by p
+    ratio = (n - 1) / p
+    edge = np.median(dual) / _marchenko_pastur_median(ratio) * (1 + np.sqrt(ratio)) ** 2
+    return int((dual > edge).sum())
+
+
+print("== C1: one Gaussian population, share of draws with k >= 1 ==")
+for n, p in ((64, 30), (128, 30), (256, 30), (800, 30), (200, 80)):
+    ks = np.array([len(invariant_directions(rng.normal(size=(n, p)))) for _ in range(2000)])
+    print(f"n={n} p={p}: k >= 1 in {int((ks >= 1).sum())} of 2000 ({(ks >= 1).mean():.4f}); k >= 2 in {int((ks >= 2).sum())}; largest k {ks.max()}")
+
+print("\n== C2: 64 and 256 cells, p = 30, sqrt(p/n) = %.3f; share with k >= 1 by population rho ==" % np.sqrt(30 / 320))
+for rho in (0.15, 0.306, 0.6, 1.44):
+    ks = np.array([len(invariant_directions(two_groups((64, 256), 30, rho))) for _ in range(1000)])
+    print(f"rho={rho}: k >= 1 in {int((ks >= 1).sum())} of 1000 ({(ks >= 1).mean():.3f}); k >= 2 in {int((ks >= 2).sum())}")
+
+print("\n== C3: 30 cells in 40 features, sqrt(p/n) = %.3f; current rule and prototype rule ==" % np.sqrt(40 / 30))
+for label, make in (("one population", lambda: rng.normal(size=(30, 40))),
+                    ("two groups of 15, rho 2.3", lambda: two_groups((15, 15), 40, 2.3)),
+                    ("two groups of 15, rho 5", lambda: two_groups((15, 15), 40, 5.0)),
+                    ("two groups of 15, rho 50", lambda: two_groups((15, 15), 40, 50.0))):
+    current, prototype = [], []
+    for _ in range(1000):
+        points = make()
+        current.append(len(invariant_directions(points)))
+        prototype.append(prototype_k(points))
+    prototype = np.array(prototype)
+    print(f"{label}: current rule k >= 1 in {sum(k >= 1 for k in current)} of 1000; prototype rule k >= 1 in "
+          f"{int((prototype >= 1).sum())} ({(prototype >= 1).mean():.3f}), k >= 2 in {int((prototype >= 2).sum())}")
+
+print("\n== C4: four balanced groups at equal pairwise distance (population eigenvalue of multiplicity 3), p = 30 ==")
+for n in (400, 4000):
+    ties, spreads, ks = 0, [], []
+    for _ in range(500):
+        points = rng.normal(size=(n, 30))
+        for g in range(4):  # centroids at the vertices of a regular simplex with pairwise distance 6
+            points[g * n // 4:(g + 1) * n // 4, g] += 6 / np.sqrt(2)
+        values = np.linalg.eigvalsh(np.cov(points.T))[::-1]
+        ties += int(tied_eigenvalue_neighbors(values[:3]).any())
+        spreads.append((values[0] - values[2]) / values[:3].mean())
+        ks.append(len(invariant_directions(points)))
+    print(f"n={n}: numerical ties among the top three in {ties} of 500; relative spread median {np.median(spreads):.4f} "
+          f"(min {min(spreads):.4f}); k = 3 in {sum(k == 3 for k in ks)} of 500")
+
+
+# ===== checks.txt =====
+# == C1: one Gaussian population, share of draws with k >= 1 ==
+# n=64 p=30: k >= 1 in 463 of 2000 (0.2315); k >= 2 in 17; largest k 2
+# n=128 p=30: k >= 1 in 364 of 2000 (0.1820); k >= 2 in 11; largest k 2
+# n=256 p=30: k >= 1 in 353 of 2000 (0.1765); k >= 2 in 6; largest k 2
+# n=800 p=30: k >= 1 in 319 of 2000 (0.1595); k >= 2 in 4; largest k 2
+# n=200 p=80: k >= 1 in 431 of 2000 (0.2155); k >= 2 in 13; largest k 2
+#
+# == C2: 64 and 256 cells, p = 30, sqrt(p/n) = 0.306; share with k >= 1 by population rho ==
+# rho=0.15: k >= 1 in 197 of 1000 (0.197); k >= 2 in 4
+# rho=0.306: k >= 1 in 315 of 1000 (0.315); k >= 2 in 9
+# rho=0.6: k >= 1 in 899 of 1000 (0.899); k >= 2 in 37
+# rho=1.44: k >= 1 in 1000 of 1000 (1.000); k >= 2 in 65
+#
+# == C3: 30 cells in 40 features, sqrt(p/n) = 1.155; current rule and prototype rule ==
+# one population: current rule k >= 1 in 0 of 1000; prototype rule k >= 1 in 215 (0.215), k >= 2 in 14
+# two groups of 15, rho 2.3: current rule k >= 1 in 0 of 1000; prototype rule k >= 1 in 754 (0.754), k >= 2 in 69
+# two groups of 15, rho 5: current rule k >= 1 in 0 of 1000; prototype rule k >= 1 in 1000 (1.000), k >= 2 in 83
+# two groups of 15, rho 50: current rule k >= 1 in 0 of 1000; prototype rule k >= 1 in 1000 (1.000), k >= 2 in 82
+#
+# == C4: four balanced groups at equal pairwise distance (population eigenvalue of multiplicity 3), p = 30 ==
+# n=400: numerical ties among the top three in 0 of 500; relative spread median 0.1154 (min 0.0226); k = 3 in 499 of 500
+# n=4000: numerical ties among the top three in 0 of 500; relative spread median 0.0375 (min 0.0072); k = 3 in 498 of 500
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python   4.95s user 0.18s system 87% cpu 5.847 total

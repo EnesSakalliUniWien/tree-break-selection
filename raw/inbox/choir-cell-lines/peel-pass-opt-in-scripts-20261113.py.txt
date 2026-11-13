@@ -1,0 +1,208 @@
+# ===== protocol.md =====
+# # Protocol: the opt-in's current rule with the peel pass on one Gaussian population (frozen 2026-11-13, before the runs)
+#
+# ## Why
+#
+# The peel pass (`results/analyses/peel_pass_20261112/peel_pass.py`: a node whose smaller child has fewer than 15
+# cells passes the edge gate like a peel of one cell) is safe with the third version of the draft definition of k
+# (0 of 880 one-population fits split) and not with today's default sibling test (825 of 860 fits in 30 features
+# against 703). The opt-in `sibling_best_flat_cut_reference` in production uses the current rule: k from
+# `invariant_directions`, `rho` against the table with k up to 15. Without the peel pass it gives 1 cluster in 80
+# of 80 runs of grid `e3`. What does it give with the peel pass?
+#
+# ## Runs (`run_opt_in.py GRID plain|peel`)
+#
+# `run_opt_in.py` is `peel_pass_default_test_20261113/run_default.py` with one change: the method parameters
+# carry `sibling_best_flat_cut_reference=True`. `summarize.py` is the summary of that folder with the self-check
+# against `e4.json`. Same data, grids, operator and linkage cells, arms and seeds: grid `e3` ((200, 80), (200,
+# 30), (256, 30), (496, 30), seeds 401 to 405) and the four grids with 30 features and seeds 1 to 50 (256 or 496
+# cells, identity covariance or the unequal variances of the CHOIR root). 880 fits per arm.
+#
+# ## Self-checks (asserts)
+#
+# - Arm `plain`, grid `e3`: found clusters of every fit equal
+#   `cancer_pc_systematic_debugging_20261112/e4.json` (1 cluster in 80 of 80).
+# - Every fit has status ok. Arm `peel`: the peel mapping was built at least once per fit.
+#
+# ## Predictions, stated before the runs
+#
+# - U1 identity covariance (480 fits): more than 1 cluster in at most 5 fits of the unchanged arm and in at most
+#   10 fits under the peel pass.
+# - U2 unequal variances (400 fits): more than 1 cluster in at most 20 fits under the peel pass.
+# - U3 paired over all 880 fits: at least as many fits gain clusters under the peel pass as lose clusters.
+#
+# ## Limits known before the runs
+#
+# One Gaussian population only; limit 15 only; found clusters only, the calls of the reference are not recorded;
+# the peel pass at run time, not as production code.
+
+
+# ===== run_opt_in.py =====
+"""protocol.md: the opt-in's current rule on one Gaussian population. usage: run_opt_in.py GRID plain|peel"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import ortho_group
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "peel_pass_20261112"))
+
+import peel_pass  # noqa: E402
+
+import benchmarks.shared.generators.gaussian_cases as gaussian_cases  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+grid, arm = sys.argv[1], sys.argv[2]
+assert arm in ("plain", "peel")
+if grid == "e3":
+    covariance, settings = "identity", [(c, f, s) for c, f in ((200, 80), (200, 30), (256, 30), (496, 30)) for s in range(401, 406)]
+else:
+    cells, covariance = grid.split("_")
+    settings = [(int(cells), 30, s) for s in range(1, 51)]
+V = np.array([53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58,
+              6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12])
+Q = ortho_group.rvs(30, random_state=0)
+original_make_blobs = gaussian_cases.make_blobs
+
+
+def make_blobs(**kwargs):
+    x, y = original_make_blobs(**kwargs)[:2]
+    return (x * np.sqrt(V)) @ Q.T if covariance == "unequal" else x, y
+
+
+assert covariance in ("identity", "unequal")
+gaussian_cases.make_blobs = make_blobs
+if arm == "peel":
+    peel_pass.install()
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+METHOD = "tbs_family_diffusion"
+fits = []
+for cells, features, seed in settings:
+    case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+    for operator in ("symmetric", "markov"):
+        for linkage in ("average", "ward"):
+            trees_before = peel_pass.COUNT["trees"]
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage,
+                      "sibling_best_flat_cut_reference": True}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                              plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            assert str(res["status"].iloc[0]) == "ok", res["status"].iloc[0]
+            assert (peel_pass.COUNT["trees"] > trees_before) == (arm == "peel"), peel_pass.COUNT
+            fits.append(dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"].iloc[0]),
+                             small_peels=peel_pass.COUNT["small"] if arm == "peel" else None))
+json.dump(fits, open(HERE / f"fits_{grid}_{arm}.json", "w"))
+print(f"{grid} {arm}: fits with more than 1 cluster {sum(f['found'] > 1 for f in fits)} of {len(fits)}", flush=True)
+
+
+# ===== summarize.py =====
+"""protocol.md: summary of the opt-in's current rule with and without the peel pass."""
+import json
+from collections import defaultdict
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+GRIDS = ("e3", "256_identity", "496_identity", "256_unequal", "496_unequal")
+
+
+def load(grid, arm):
+    return {(f["cells"], f["features"], f["seed"], f["cell"]): f["found"] for f in json.load(open(HERE / f"fits_{grid}_{arm}.json"))}
+
+
+e4 = {(r["cells"], r["features"], r["seed"], r["cell"]): r["found"] for r in json.load(open(HERE.parent / "cancer_pc_systematic_debugging_20261112" / "e4.json"))}
+assert load("e3", "plain") == e4, "arm plain does not reproduce e4.json"
+print("self-check: arm plain on grid e3 equals e4.json in", len(e4), "fits")
+total = defaultdict(int)
+for grid in GRIDS:
+    plain, peel = load(grid, "plain"), load(grid, "peel")
+    assert plain.keys() == peel.keys()
+    groups = defaultdict(list)
+    for key in plain:
+        groups[(key[0], key[1], key[3])].append(key)
+        groups[(key[0], key[1], "all cells")].append(key)
+    print(f"== grid {grid} ==")
+    for (cells, features, cell), keys in sorted(groups.items()):
+        a, b = [plain[k] for k in keys], [peel[k] for k in keys]
+        more, equal, fewer = sum(y > x for x, y in zip(a, b)), sum(y == x for x, y in zip(a, b)), sum(y < x for x, y in zip(a, b))
+        print(f"({cells}, {features}) {cell}: more than 1 cluster plain {sum(x > 1 for x in a)} peel {sum(y > 1 for y in b)} of {len(keys)}; "
+              f"mean found {sum(a) / len(a):.2f} and {sum(b) / len(b):.2f}; largest {max(a)} and {max(b)}; "
+              f"paired more/equal/fewer under peel {more}/{equal}/{fewer}")
+        if cell == "all cells" and features == 30:
+            for name, value in (("fits", len(keys)), ("plain_split", sum(x > 1 for x in a)), ("peel_split", sum(y > 1 for y in b)), ("plain_sum", sum(a)),
+                                ("peel_sum", sum(b)), ("more", more), ("equal", equal), ("fewer", fewer)):
+                total[name] += value
+print("== all 30-feature fits ==")
+print(dict(total), "mean found plain", round(total["plain_sum"] / total["fits"], 3), "peel", round(total["peel_sum"] / total["fits"], 3))
+
+
+# ===== outputs (last line of every run log) =====
+# 256_identity peel: fits with more than 1 cluster 0 of 200
+# 256_identity plain: fits with more than 1 cluster 0 of 200
+# 256_unequal peel: fits with more than 1 cluster 0 of 200
+# 256_unequal plain: fits with more than 1 cluster 0 of 200
+# 496_identity peel: fits with more than 1 cluster 0 of 200
+# 496_identity plain: fits with more than 1 cluster 0 of 200
+# 496_unequal peel: fits with more than 1 cluster 1 of 200
+# 496_unequal plain: fits with more than 1 cluster 1 of 200
+# e3 peel: fits with more than 1 cluster 0 of 80
+# e3 plain: fits with more than 1 cluster 0 of 80
+
+
+# ===== summary.txt =====
+# self-check: arm plain on grid e3 equals e4.json in 80 fits
+# == grid e3 ==
+# (200, 30) all cells: more than 1 cluster plain 0 peel 0 of 20; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/20/0
+# (200, 30) markov/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (200, 30) markov/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (200, 30) symmetric/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (200, 30) symmetric/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (200, 80) all cells: more than 1 cluster plain 0 peel 0 of 20; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/20/0
+# (200, 80) markov/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (200, 80) markov/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (200, 80) symmetric/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (200, 80) symmetric/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (256, 30) all cells: more than 1 cluster plain 0 peel 0 of 20; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/20/0
+# (256, 30) markov/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (256, 30) markov/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (256, 30) symmetric/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (256, 30) symmetric/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (496, 30) all cells: more than 1 cluster plain 0 peel 0 of 20; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/20/0
+# (496, 30) markov/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (496, 30) markov/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (496, 30) symmetric/average: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# (496, 30) symmetric/ward: more than 1 cluster plain 0 peel 0 of 5; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/5/0
+# == grid 256_identity ==
+# (256, 30) all cells: more than 1 cluster plain 0 peel 0 of 200; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/200/0
+# (256, 30) markov/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (256, 30) markov/ward: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (256, 30) symmetric/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (256, 30) symmetric/ward: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# == grid 496_identity ==
+# (496, 30) all cells: more than 1 cluster plain 0 peel 0 of 200; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/200/0
+# (496, 30) markov/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (496, 30) markov/ward: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (496, 30) symmetric/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (496, 30) symmetric/ward: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# == grid 256_unequal ==
+# (256, 30) all cells: more than 1 cluster plain 0 peel 0 of 200; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/200/0
+# (256, 30) markov/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (256, 30) markov/ward: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (256, 30) symmetric/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (256, 30) symmetric/ward: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# == grid 496_unequal ==
+# (496, 30) all cells: more than 1 cluster plain 1 peel 1 of 200; mean found 1.01 and 1.01; largest 4 and 4; paired more/equal/fewer under peel 0/200/0
+# (496, 30) markov/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (496, 30) markov/ward: more than 1 cluster plain 1 peel 1 of 50; mean found 1.06 and 1.06; largest 4 and 4; paired more/equal/fewer under peel 0/50/0
+# (496, 30) symmetric/average: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# (496, 30) symmetric/ward: more than 1 cluster plain 0 peel 0 of 50; mean found 1.00 and 1.00; largest 1 and 1; paired more/equal/fewer under peel 0/50/0
+# == all 30-feature fits ==
+# {'fits': 860, 'plain_split': 1, 'peel_split': 1, 'plain_sum': 863, 'peel_sum': 863, 'more': 0, 'equal': 860, 'fewer': 0} mean found plain 1.003 peel 1.003

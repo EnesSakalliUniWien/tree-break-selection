@@ -1,0 +1,172 @@
+# ===== protocol.md =====
+# # Protocol: the peel pass on the Markov/Ward tree over five row orders (frozen 2026-11-13, before the runs)
+#
+# ## Why
+#
+# With peels of fewer than 15 cells passing the edge gate (`results/analyses/peel_pass_20261112`, wiki page
+# `k-split-direction-draft`) the third version of the draft definition of k gave 210 clusters and ARI 0.8652 on
+# the Markov/Ward tree of the CHOIR cells, against 206 and 0.8359 without the peel pass. That is one fit in the
+# data order of the rows. The third version divides a node's cells at random, seeded by the row order, and
+# without the peel pass its ARI is 0.8349 to 0.8411 over five orders. Is 0.8652 inside the spread of the order?
+#
+# ## Runs (`run_orders.py`)
+#
+# CHOIR cells (48,879 cells, 30 PCs), Markov/Ward tree
+# (`results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz`), harness
+# of `spr_refit_20261111`, opt-in reference on, third version (`variant_a_fixed_20261112/draft_rule_v3.py`),
+# peel pass of `peel_pass_20261112/peel_pass.py` (limit 15), row orders with seeds 1, 2, 3 and 777. The data
+# order is the fit of 12 November (`peel_pass_20261112/markov_ward_v3_*`); it is not run again.
+#
+# Without the peel pass, same orders (`variant_a_fixed_20261112/choir_v3_<order>_metrics.json`):
+#
+# | Order | Found clusters | ARI | Lines recovered |
+# | --- | ---: | ---: | ---: |
+# | data | 206 | 0.8359 | 127 |
+# | 1 | 211 | 0.8401 | 126 |
+# | 2 | 215 | 0.8411 | 126 |
+# | 3 | 213 | 0.8404 | 126 |
+# | 777 | 210 | 0.8349 | 126 |
+#
+# ## Predictions, stated before the runs
+#
+# - Z1 with the peel pass the ARI is above 0.8411 in all five orders.
+# - Z2 in every order the ARI with the peel pass is higher than without it in the same order.
+# - Z3 over the five orders the found clusters with the peel pass differ by at most 10.
+# - Z4 lines recovered with the peel pass: 125 to 129 in every order.
+#
+# ## Self-check
+#
+# Every fit prints the size of the peel mapping; it must be 13,641 peels of one cell and 1,867 small peels, as on
+# 12 November (the tree is the same).
+#
+# ## Limits known before the runs
+#
+# One tree and one dataset; limit 15 only; the default tree is not rerun; the edge gate itself is unchanged.
+
+
+# ===== run_orders.py =====
+"""protocol.md: the Markov/Ward tree with the third version and the peel pass in one row order. usage: run_orders.py SEED"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+for folder in ("spr_refit_20261111", "variant_a_fixed_20261112", "peel_pass_20261112"):
+    sys.path.insert(0, str(HERE.parent / folder))
+
+import draft_rule_v3  # noqa: E402
+import harness  # noqa: E402
+import peel_pass  # noqa: E402
+
+seed = int(sys.argv[1])
+draft_rule_v3.install(seed)
+peel_pass.install()
+harness.HERE = HERE
+harness.main("results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+             f"markov_ward_v3_{seed}", method="tbs_family_diffusion_markov_ward")
+assert (peel_pass.COUNT["singleton"], peel_pass.COUNT["small"]) == (13641, 1867), peel_pass.COUNT
+print("peel mapping:", peel_pass.COUNT, flush=True)
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== outputs (logs) =====
+# --- run_orders_1.log (last lines) ---
+# {"tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "renumbered_internal_ids": false, "found_clusters": 217, "ari_cell_line": 0.8706030818659767, "nmi_cell_line": 0.9439543460369003, "recovered_lines_90_90": 126, "clusters_ge90_pure": 166, "clusters_lt20_cells": 16, "largest_cluster": 1990, "recovered": 126, "split_only": 17, "merged_only"
+# peel mapping: {'trees': 1, 'singleton': 13641, 'small': 1867}
+# --- run_orders_2.log (last lines) ---
+# {"tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "renumbered_internal_ids": false, "found_clusters": 217, "ari_cell_line": 0.8693719587775682, "nmi_cell_line": 0.9438092436592433, "recovered_lines_90_90": 126, "clusters_ge90_pure": 169, "clusters_lt20_cells": 16, "largest_cluster": 1990, "recovered": 126, "split_only": 19, "merged_only"
+# peel mapping: {'trees': 1, 'singleton': 13641, 'small': 1867}
+# --- run_orders_3.log (last lines) ---
+# {"tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "renumbered_internal_ids": false, "found_clusters": 215, "ari_cell_line": 0.868660395574423, "nmi_cell_line": 0.944442829641848, "recovered_lines_90_90": 126, "clusters_ge90_pure": 168, "clusters_lt20_cells": 16, "largest_cluster": 1990, "recovered": 126, "split_only": 19, "merged_only":
+# peel mapping: {'trees': 1, 'singleton': 13641, 'small': 1867}
+# --- run_orders_777.log (last lines) ---
+# {"tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "renumbered_internal_ids": false, "found_clusters": 214, "ari_cell_line": 0.86423275778963, "nmi_cell_line": 0.9436621384417914, "recovered_lines_90_90": 126, "clusters_ge90_pure": 169, "clusters_lt20_cells": 17, "largest_cluster": 1990, "recovered": 126, "split_only": 18, "merged_only":
+# peel mapping: {'trees': 1, 'singleton': 13641, 'small': 1867}
+
+
+# ===== outputs (metrics) =====
+# --- markov_ward_v3_1_metrics.json ---
+# {
+#  "tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 217,
+#  "ari_cell_line": 0.8706030818659767,
+#  "nmi_cell_line": 0.9439543460369003,
+#  "recovered_lines_90_90": 126,
+#  "clusters_ge90_pure": 166,
+#  "clusters_lt20_cells": 16,
+#  "largest_cluster": 1990,
+#  "recovered": 126,
+#  "split_only": 17,
+#  "merged_only": 30,
+#  "both": 17,
+#  "tested_splits": 2210,
+#  "kept_p_le_0.01": 167,
+#  "accepted_bh": 157,
+#  "sec": 143.06650641599845,
+#  "peak_rss_gb": 1.440673828125
+# }
+# --- markov_ward_v3_2_metrics.json ---
+# {
+#  "tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 217,
+#  "ari_cell_line": 0.8693719587775682,
+#  "nmi_cell_line": 0.9438092436592433,
+#  "recovered_lines_90_90": 126,
+#  "clusters_ge90_pure": 169,
+#  "clusters_lt20_cells": 16,
+#  "largest_cluster": 1990,
+#  "recovered": 126,
+#  "split_only": 19,
+#  "merged_only": 28,
+#  "both": 17,
+#  "tested_splits": 2210,
+#  "kept_p_le_0.01": 167,
+#  "accepted_bh": 157,
+#  "sec": 142.72150541699375,
+#  "peak_rss_gb": 1.44964599609375
+# }
+# --- markov_ward_v3_3_metrics.json ---
+# {
+#  "tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 215,
+#  "ari_cell_line": 0.868660395574423,
+#  "nmi_cell_line": 0.944442829641848,
+#  "recovered_lines_90_90": 126,
+#  "clusters_ge90_pure": 168,
+#  "clusters_lt20_cells": 16,
+#  "largest_cluster": 1990,
+#  "recovered": 126,
+#  "split_only": 19,
+#  "merged_only": 29,
+#  "both": 16,
+#  "tested_splits": 2210,
+#  "kept_p_le_0.01": 171,
+#  "accepted_bh": 155,
+#  "sec": 142.98103899999842,
+#  "peak_rss_gb": 1.4732666015625
+# }
+# --- markov_ward_v3_777_metrics.json ---
+# {
+#  "tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz",
+#  "renumbered_internal_ids": false,
+#  "found_clusters": 214,
+#  "ari_cell_line": 0.86423275778963,
+#  "nmi_cell_line": 0.9436621384417914,
+#  "recovered_lines_90_90": 126,
+#  "clusters_ge90_pure": 169,
+#  "clusters_lt20_cells": 17,
+#  "largest_cluster": 1990,
+#  "recovered": 126,
+#  "split_only": 18,
+#  "merged_only": 29,
+#  "both": 17,
+#  "tested_splits": 2210,
+#  "kept_p_le_0.01": 167,
+#  "accepted_bh": 154,
+#  "sec": 142.7628380840033,
+#  "peak_rss_gb": 1.4739837646484375
+# }

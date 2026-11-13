@@ -45,3 +45,4 @@ sanity check and tables; protocol, code and output are in
 - [[subtree-spectrum-topology]]
 - [[alternative-separations-prototype]]
 - [[topology-correction-chain-comparison]]
+- [[spr-subspaces-equidistances]]

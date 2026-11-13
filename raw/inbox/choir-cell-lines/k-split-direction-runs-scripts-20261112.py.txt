@@ -1,0 +1,341 @@
+# ===== protocol.md =====
+# # Protocol: the draft definition of k on the benchmark cases and the CHOIR cells (frozen 2026-11-12, before the runs)
+#
+# - Draft (wiki page `k-split-direction-draft`): k = 1; the node's cells are divided into a basis half and a
+#   test half; one direction from the basis half (variant A from the tree's split, variant B from a 2-means
+#   clustering of the basis half); `rho` of the tree's split of the test half along it against the reference at
+#   (test cells, 1); p = 1 with fewer than 15 test cells or a side without basis cells.
+# - Plug-in (`draft_rule.py`): at run time `best_flat_cut_reference` inside the module of the opt-in is replaced
+#   by the draft, and the cells of each side are passed in the order of their rows in the data (`_leaf_rows`
+#   sorted), so the halves alternate in data order and not in the tree's order. No production file is changed.
+# - Benchmark (`run_benchmark.py`): the 10 continuous and 4 `cancer_pc` cases, methods `tbs_family_diffusion` and
+#   `tbs_family_diffusion_markov_ward`, opt-in on; and the one-population grid ((200, 80), (200, 30), (256, 30),
+#   (496, 30); seeds 401 to 405; operator symmetric or markov x linkage average or ward). Both variants. Compared
+#   with the current rule and the prototype rule recorded in `results/analyses/k_margin_prototype_20261112`
+#   (`b_results_current.csv`, `b_results_prototype.csv`).
+# - CHOIR (`run_choir.py`): the harness of `results/analyses/spr_refit_20261111` on the unchanged Markov/Ward
+#   tree, 48,879 cells, both variants; compared with the current rule (`k15_base`: 230 clusters, ARI 0.8219, 116
+#   lines recovered, 21 split only, 38 merged only, 15 both, largest cluster 1,990, 134 accepted by BH).
+# - Predictions, stated before the runs:
+#   - R1 both null cases and all 80 runs of the one-population grid give 1 cluster, for both variants.
+#   - R2 gauss_clear_medium finds 4 clusters and gauss_moderate_3c finds 3 (their last split has 30 cells, so 16
+#     test cells); gauss_dense_signal_highd finds 2 and not 4 (its last splits have 20 cells, so 10 test cells
+#     and p = 1).
+#   - R3 no benchmark case finds more clusters than it has true groups.
+#   - R4 on the CHOIR cells variant A reaches an ARI of at least 0.75.
+#   - R5 on the CHOIR cells variant A finds more than 230 clusters.
+#   Each is reported as held or not held.
+# - Limits known before the runs: one seed per benchmark case; one real dataset and one tree; the draft tests
+#   half of the cells; the reference's population class is unchanged.
+
+
+# ===== draft_rule.py =====
+"""protocol.md: the draft definition of k as a run-time replacement inside the opt-in reference."""
+import numpy as np
+from sklearn.cluster import KMeans
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence import (
+    best_flat_cut_reference as mod,
+)
+
+CALLS = []
+_original_leaf_rows = mod._leaf_rows
+
+
+def _direction(points, in_first):
+    """S^-1 (difference of the two means); the difference alone when the basis half is too small for S."""
+    a, b = points[in_first], points[~in_first]
+    difference = a.mean(axis=0) - b.mean(axis=0)
+    if len(points) <= points.shape[1] + 2:
+        return difference
+    if min(len(a), len(b)) >= 2:
+        within = (np.cov(a.T) * (len(a) - 1) + np.cov(b.T) * (len(b) - 1)) / (len(points) - 2)
+    else:
+        within = np.cov(points.T)
+    return np.linalg.solve(within, difference)
+
+
+def _draft(variant):
+    def draft(points, in_left):
+        points = np.asarray(points, dtype=np.float64)
+        in_left = np.asarray(in_left, dtype=bool)
+        left, right = np.flatnonzero(in_left), np.flatnonzero(~in_left)  # each side arrives in data order
+        test = np.concatenate([left[0::2], right[0::2]])
+        basis = np.concatenate([left[1::2], right[1::2]])
+        n_test, record = len(test), dict(n=len(points), left=int(in_left.sum()), reason="too_few_cells", k=0, rho=None, p=1.0)
+        if n_test >= 15 and len(left) >= 2 and len(right) >= 2:
+            in_first = in_left[basis]
+            if variant == "B":
+                in_first = KMeans(n_clusters=2, n_init=5, random_state=0).fit_predict(points[basis]) == 0
+            if in_first.any() and not in_first.all():
+                w = _direction(points[basis], in_first)
+                rho = mod.split_rho(points[test] @ w[:, None], in_left[test])
+                p_value, reference_n = mod.reference_p_value(rho, n_test, 1)
+                record.update(reason="tested", k=1, rho=float(rho) if np.isfinite(rho) else None, p=float(p_value), n_test=n_test)
+                CALLS.append(record)
+                return mod.BestFlatCutReference(p_value, "tested", 1, rho, reference_n)
+        CALLS.append(record)
+        return mod.BestFlatCutReference(1.0, "too_few_cells", 0, float("nan"), 0)
+
+    return draft
+
+
+def install(variant):
+    """Replace the reference by the draft and pass each side's cells in the order of their rows in the data."""
+    assert variant in ("A", "B")
+    mod._leaf_rows = lambda tree, node, row_of_label: sorted(_original_leaf_rows(tree, node, row_of_label))
+    mod.best_flat_cut_reference = _draft(variant)
+
+
+# ===== run_benchmark.py =====
+"""protocol.md: the draft on the 14 benchmark cases and the one-population grid. usage: run_benchmark.py A|B"""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE))
+
+import draft_rule  # noqa: E402
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+variant = sys.argv[1]
+draft_rule.install(variant)
+apply_single_thread_runtime_defaults()
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+
+
+def run(case, method, **overrides):
+    draft_rule.CALLS.clear()
+    params = {**METHOD_SPECS[method].param_grid[0], **overrides, "sibling_best_flat_cut_reference": True}
+    res = benchmark_cluster_algorithm(test_cases=[case], methods=[method], method_params={method: [params]}, verbose=False,
+                                      plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                      allow_method_errors=False)
+    return res.iloc[0], sorted(draft_rule.CALLS, key=lambda c: -c["n"])
+
+
+rows, calls = [], []
+for case in get_test_cases_by_suite("continuous") + get_test_cases_by_suite("cancer_pc"):
+    for method in METHODS:
+        res, case_calls = run(case, method)
+        rows.append(dict(case=res["case_id"], method=method, true_clusters=int(res["true_clusters"]), found_clusters=int(res["found_clusters"]),
+                         ari=float(res["ari"]), nmi=float(res["nmi"]), status=str(res["status"])))
+        calls.append(dict(case=res["case_id"], method=method, calls=[dict(c) for c in case_calls]))
+        print(rows[-1], len(case_calls), "calls", flush=True)
+pd.DataFrame(rows).to_csv(HERE / f"benchmark_results_{variant}.csv", index=False)
+json.dump(calls, open(HERE / f"benchmark_calls_{variant}.json", "w"), indent=1)
+
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+null = []
+for cells, features in ((200, 80), (200, 30), (256, 30), (496, 30)):
+    for seed in range(401, 406):
+        case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+        for operator, linkage in CELLS:
+            res, case_calls = run(case, "tbs_family_diffusion", diffusion_coordinate_operator=operator, tree_linkage_method=linkage)
+            null.append(dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"]),
+                             calls=[dict(c) for c in case_calls]))
+json.dump(null, open(HERE / f"null_grid_{variant}.json", "w"), indent=1)
+tested = [c["p"] for r in null for c in r["calls"] if c["reason"] == "tested"]
+print(f"variant {variant}: one-population grid, 1 cluster in {sum(r['found'] == 1 for r in null)} of {len(null)} runs; call reasons "
+      f"{dict(Counter(c['reason'] for r in null for c in r['calls']))}; smallest p {min(tested) if tested else None}; p <= 0.01 in "
+      f"{sum(p <= 0.01 for p in tested)} of {len(tested)} tested calls", flush=True)
+
+
+# ===== run_benchmark_A.log =====
+# {'case': 'gauss_clear_medium_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'gauss_clear_medium_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'gauss_moderate_3c_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 3, 'found_clusters': 3, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 2 calls
+# {'case': 'gauss_moderate_3c_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 3, 'found_clusters': 3, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 2 calls
+# {'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 10 calls
+# {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'gauss_dense_signal_highd_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 2, 'ari': 0.48, 'nmi': 0.6666666666666672, 'status': 'ok'} 3 calls
+# {'case': 'gauss_dense_signal_highd_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 2, 'ari': 0.48, 'nmi': 0.6666666666666672, 'status': 'ok'} 3 calls
+# {'case': 'dim_consolidated_4c_24f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'dim_consolidated_4c_24f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'dim_consolidated_4c_72f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'dim_consolidated_4c_72f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 7 calls
+# {'case': 'dim_diffuse_6c_136f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 1, 'ari': 0.0, 'nmi': 0.0, 'status': 'ok'} 7 calls
+# {'case': 'dim_diffuse_6c_136f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 1, 'ari': 0.0, 'nmi': 0.0, 'status': 'ok'} 6 calls
+# {'case': 'gauss_single_outlier_4c_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 5, 'found_clusters': 4, 'ari': 0.9915772953178132, 'nmi': 0.9895774896498216, 'status': 'ok'} 3 calls
+# {'case': 'gauss_single_outlier_4c_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 5, 'found_clusters': 4, 'ari': 0.9915772953178132, 'nmi': 0.9895774896498216, 'status': 'ok'} 6 calls
+# {'case': 'gauss_outlier_cluster_4c_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 5, 'found_clusters': 5, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'gauss_outlier_cluster_4c_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 5, 'found_clusters': 5, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 7 calls
+# {'case': 'cancer_pc_hub_disconnected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 5 calls
+# {'case': 'cancer_pc_hub_disconnected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 14 calls
+# {'case': 'cancer_pc_hub_connected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 4 calls
+# {'case': 'cancer_pc_hub_connected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 12 calls
+# {'case': 'cancer_pc_nohub_disconnected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 5 calls
+# {'case': 'cancer_pc_nohub_disconnected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 17 calls
+# {'case': 'cancer_pc_nohub_connected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 5 calls
+# {'case': 'cancer_pc_nohub_connected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 15 calls
+# variant A: one-population grid, 1 cluster in 80 of 80 runs; call reasons {'tested': 397, 'too_few_cells': 44}; smallest p 0.062; p <= 0.01 in 0 of 397 tested calls
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python  $  48.58s user 0.74s system 98% cpu 49.814 total
+
+
+# ===== run_benchmark_B.log =====
+# {'case': 'gauss_clear_medium_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'gauss_clear_medium_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'gauss_moderate_3c_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 3, 'found_clusters': 3, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 2 calls
+# {'case': 'gauss_moderate_3c_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 3, 'found_clusters': 3, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 2 calls
+# {'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 10 calls
+# {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 1, 'found_clusters': 1, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'gauss_dense_signal_highd_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 1, 'ari': 0.0, 'nmi': 0.0, 'status': 'ok'} 3 calls
+# {'case': 'gauss_dense_signal_highd_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 1, 'ari': 0.0, 'nmi': 0.0, 'status': 'ok'} 3 calls
+# {'case': 'dim_consolidated_4c_24f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 3 calls
+# {'case': 'dim_consolidated_4c_24f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'dim_consolidated_4c_72f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'dim_consolidated_4c_72f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 4, 'found_clusters': 4, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 7 calls
+# {'case': 'dim_diffuse_6c_136f_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 1, 'ari': 0.0, 'nmi': 0.0, 'status': 'ok'} 7 calls
+# {'case': 'dim_diffuse_6c_136f_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 1, 'ari': 0.0, 'nmi': 0.0, 'status': 'ok'} 6 calls
+# {'case': 'gauss_single_outlier_4c_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 5, 'found_clusters': 4, 'ari': 0.9915772953178132, 'nmi': 0.9895774896498216, 'status': 'ok'} 3 calls
+# {'case': 'gauss_single_outlier_4c_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 5, 'found_clusters': 4, 'ari': 0.9915772953178132, 'nmi': 0.9895774896498216, 'status': 'ok'} 6 calls
+# {'case': 'gauss_outlier_cluster_4c_continuous', 'method': 'tbs_family_diffusion', 'true_clusters': 5, 'found_clusters': 5, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 4 calls
+# {'case': 'gauss_outlier_cluster_4c_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 5, 'found_clusters': 5, 'ari': 1.0, 'nmi': 1.0, 'status': 'ok'} 7 calls
+# {'case': 'cancer_pc_hub_disconnected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 5 calls
+# {'case': 'cancer_pc_hub_disconnected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 14 calls
+# {'case': 'cancer_pc_hub_connected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 4 calls
+# {'case': 'cancer_pc_hub_connected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 12 calls
+# {'case': 'cancer_pc_nohub_disconnected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 5 calls
+# {'case': 'cancer_pc_nohub_disconnected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 6, 'ari': 0.9982227041423309, 'nmi': 0.9931774644203191, 'status': 'ok'} 17 calls
+# {'case': 'cancer_pc_nohub_connected', 'method': 'tbs_family_diffusion', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 5 calls
+# {'case': 'cancer_pc_nohub_connected', 'method': 'tbs_family_diffusion_markov_ward', 'true_clusters': 6, 'found_clusters': 4, 'ari': 0.4459795806376289, 'nmi': 0.6815645433360054, 'status': 'ok'} 15 calls
+# variant B: one-population grid, 1 cluster in 80 of 80 runs; call reasons {'tested': 397, 'too_few_cells': 44}; smallest p 0.0735; p <= 0.01 in 0 of 397 tested calls
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python  $  49.69s user 0.71s system 99% cpu 50.588 total
+
+
+# ===== run_choir.py =====
+"""protocol.md: the CHOIR harness of spr_refit_20261111 with the draft plugged in. usage: run_choir.py A|B"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE))
+
+import draft_rule  # noqa: E402
+import harness  # noqa: E402
+
+variant = sys.argv[1]
+draft_rule.install(variant)
+harness.HERE = HERE  # outputs go to this folder; the data folder is found through HERE.parent as before
+harness.main("results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", f"draft_{variant}")
+assert len(draft_rule.CALLS) > 0, "the draft was never called"
+print("draft calls:", len(draft_rule.CALLS), flush=True)
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== compare_choir.py =====
+"""protocol.md: the CHOIR fit with the draft (draft_A, draft_B) against the current rule (k15_base)."""
+import json
+from collections import Counter
+from pathlib import Path
+
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score
+
+HERE = Path(__file__).resolve().parent
+BASE = HERE.parent / "spr_refit_20261111"
+runs = {"current rule": (BASE, "k15_base"), "draft A": (HERE, "draft_A"), "draft B": (HERE, "draft_B")}
+runs = {name: value for name, value in runs.items() if (value[0] / f"{value[1]}_metrics.json").exists()}
+metrics = {name: json.loads((folder / f"{prefix}_metrics.json").read_text()) for name, (folder, prefix) in runs.items()}
+splits = {name: json.loads((folder / f"{prefix}_splits.json").read_text())["splits"] for name, (folder, prefix) in runs.items()}
+labels = {name: pd.read_csv(folder / f"{prefix}_assignments.csv.gz", index_col=0)["cluster"] for name, (folder, prefix) in runs.items()}
+
+print("== metrics ==")
+for key in ("found_clusters", "ari_cell_line", "nmi_cell_line", "recovered", "split_only", "merged_only", "both", "largest_cluster",
+            "clusters_ge90_pure", "clusters_lt20_cells", "tested_splits", "kept_p_le_0.01", "accepted_bh", "sec"):
+    print(f"{key}: " + "; ".join(f"{name} {metrics[name][key]:.4f}" if isinstance(metrics[name][key], float) else f"{name} {metrics[name][key]}"
+                                for name in runs))
+names = list(runs)
+for i, a in enumerate(names):
+    for b in names[i + 1:]:
+        print(f"ARI between {a} and {b}: {adjusted_rand_score(labels[a], labels[b]):.4f}")
+
+print("\n== calls ==")
+for name in runs:
+    s = splits[name]
+    print(f"{name}: calls {len(s)}; reasons {dict(sorted(Counter(x['reason'] for x in s).items()))}")
+    for label, keep in (("fewer than 30 cells", lambda x: x["n_leaves"] < 30), ("30 to 99 cells", lambda x: 30 <= x["n_leaves"] <= 99),
+                        ("100 to 999 cells", lambda x: 100 <= x["n_leaves"] <= 999), ("1,000 cells and more", lambda x: x["n_leaves"] >= 1000)):
+        part = [x for x in s if keep(x)]
+        tested = [x for x in part if x["reason"] == "tested"]
+        print(f"  {label}: calls {len(part)}, tested {len(tested)}, p <= 0.01 in {sum(x['p'] <= 0.01 for x in tested)}, "
+              f"accepted by BH {sum(x['bh_different'] for x in part)}")
+
+print("\n== the same node under the current rule and the draft ==")
+by_node = {name: {x["node"]: x for x in splits[name]} for name in runs}
+for name in names[1:]:
+    shared = sorted(set(by_node["current rule"]) & set(by_node[name]))
+    change = Counter(f"accepted {by_node['current rule'][n]['bh_different']} -> {by_node[name][n]['bh_different']}" for n in shared)
+    print(f"{name}: nodes called under both {len(shared)}; only current {len(set(by_node['current rule']) - set(shared))}; "
+          f"only {name} {len(set(by_node[name]) - set(shared))}; {dict(sorted(change.items()))}")
+
+print("\n== cluster sizes ==")
+for name in runs:
+    sizes = labels[name].value_counts()
+    print(f"{name}: clusters {len(sizes)}; below 20 cells {int((sizes < 20).sum())}; 20 to 99 {int(((sizes >= 20) & (sizes < 100)).sum())}; "
+          f"100 to 999 {int(((sizes >= 100) & (sizes < 1000)).sum())}; 1,000 and more {int((sizes >= 1000).sum())}")
+
+
+# ===== compare_choir.txt =====
+# == metrics ==
+# found_clusters: current rule 230; draft A 218; draft B 153
+# ari_cell_line: current rule 0.8219; draft A 0.8311; draft B 0.5830
+# nmi_cell_line: current rule 0.9358; draft A 0.9390; draft B 0.9051
+# recovered: current rule 116; draft A 120; draft B 98
+# split_only: current rule 21; draft A 19; draft B 9
+# merged_only: current rule 38; draft A 35; draft B 67
+# both: current rule 15; draft A 16; draft B 16
+# largest_cluster: current rule 1990; draft A 1990; draft B 3124
+# clusters_ge90_pure: current rule 174; draft A 162; draft B 116
+# clusters_lt20_cells: current rule 25; draft A 17; draft B 8
+# tested_splits: current rule 1838; draft A 1838; draft B 1838
+# kept_p_le_0.01: current rule 149; draft A 170; draft B 81
+# accepted_bh: current rule 134; draft A 151; draft B 55
+# sec: current rule 126.1680; draft A 103.1155; draft B 105.4981
+# ARI between current rule and draft A: 0.9817
+# ARI between current rule and draft B: 0.6910
+# ARI between draft A and draft B: 0.7019
+#
+# == calls ==
+# current rule: calls 1838; reasons {'no_invariant_directions': 363, 'tested': 1475}
+#   fewer than 30 cells: calls 329, tested 0, p <= 0.01 in 0, accepted by BH 0
+#   30 to 99 cells: calls 640, tested 606, p <= 0.01 in 10, accepted by BH 8
+#   100 to 999 cells: calls 766, tested 766, p <= 0.01 in 87, accepted by BH 76
+#   1,000 cells and more: calls 103, tested 103, p <= 0.01 in 52, accepted by BH 50
+# draft A: calls 1838; reasons {'tested': 1486, 'too_few_cells': 352}
+#   fewer than 30 cells: calls 329, tested 23, p <= 0.01 in 1, accepted by BH 0
+#   30 to 99 cells: calls 640, tested 622, p <= 0.01 in 8, accepted by BH 5
+#   100 to 999 cells: calls 766, tested 739, p <= 0.01 in 89, accepted by BH 78
+#   1,000 cells and more: calls 103, tested 102, p <= 0.01 in 72, accepted by BH 68
+# draft B: calls 1838; reasons {'tested': 1486, 'too_few_cells': 352}
+#   fewer than 30 cells: calls 329, tested 23, p <= 0.01 in 0, accepted by BH 0
+#   30 to 99 cells: calls 640, tested 622, p <= 0.01 in 7, accepted by BH 2
+#   100 to 999 cells: calls 766, tested 739, p <= 0.01 in 64, accepted by BH 45
+#   1,000 cells and more: calls 103, tested 102, p <= 0.01 in 10, accepted by BH 8
+#
+# == the same node under the current rule and the draft ==
+# draft A: nodes called under both 1838; only current 0; only draft A 0; {'accepted False -> False': 1677, 'accepted False -> True': 27, 'accepted True -> False': 10, 'accepted True -> True': 124}
+# draft B: nodes called under both 1838; only current 0; only draft B 0; {'accepted False -> False': 1702, 'accepted False -> True': 2, 'accepted True -> False': 81, 'accepted True -> True': 53}
+#
+# == cluster sizes ==
+# current rule: clusters 230; below 20 cells 25; 20 to 99 47; 100 to 999 155; 1,000 and more 3
+# draft A: clusters 218; below 20 cells 17; 20 to 99 43; 100 to 999 155; 1,000 and more 3
+# draft B: clusters 153; below 20 cells 8; 20 to 99 18; 100 to 999 119; 1,000 and more 8

@@ -1,0 +1,496 @@
+# ===== protocol.md =====
+# # Protocol: systematic debugging of the accepted extra splits on the cancer_pc cases (frozen 2026-11-12, before the runs)
+#
+# Symptom: today's test splits one true group (one Gaussian population) on the `cancer_pc` cases with operator
+# "markov" and linkage "ward" (13 accepted splits with all cells from one true group; 0 in the other three cells).
+#
+# ## Phase 1 and 2, established before these runs (no new run)
+#
+# - Reproduction: deterministic; the four earlier folders of 2026-11-12 reproduce found clusters and ARI.
+# - Backward trace: accepted split <- `Sibling_BH_Different` <- sibling p-value present <- edge significant for
+#   a child <- edge reached by Tree-BH <- edge raw p <= 0.001 <- statistic in k directions <- k = 30 from the
+#   within-child whitening of the basis rows plus `extend_rank_through_ties` <- split chosen by the tree.
+# - Recent changes: `extend_rank_through_ties` entered with `bb96e2b5` (2026-10-14); the basis half, the test
+#   half and the within-child whitening of the basis rows entered with `9c5cd805` (2026-10-18).
+# - Working reference: `tests/statistics/58_test_edge_null_calibration.py`. Its two null tests build the tree
+#   from independent noise (`pdist(rng.normal(size=(n_samples, 5)))`), and the docstring says this is so that
+#   excess rejection does not come "from selecting the tree on the tested data". No test builds the tree from
+#   the tested data. The registered null case `gauss_null_large_continuous` has 200 cells in 80 features.
+# - Difference between working and broken: where the tree comes from.
+#
+# ## Phase 3: one hypothesis per experiment, one variable changed
+#
+# E1. Hypothesis H1: the edge test over-rejects on one Gaussian population because the tree is built from the
+#     tested data; with a tree from independent noise it holds its level.
+#     Setup: exactly `test_edge_test_does_not_over_reject_on_iid_gaussian_null` (240 cells, 5 features, ward,
+#     alpha 0.05, 40 datasets, seed 2, data and noise drawn in the test's order). One variable: the distance
+#     the tree is built from, independent noise or the data itself. Then, each as one further variable:
+#     linkage average; 30 features.
+#     Prediction if H1 holds: independent tree rejected/tested <= 0.10 (the test's bound); same-data tree
+#     above 0.10. Also reported at 0.001 and for edges whose parent has at least 40 cells.
+# E2. Hypothesis H2: the tie extension is necessary for that over-rejection.
+#     Setup: same-data tree, ward, 5 and 30 features. One variable: `extend_rank_through_ties` replaced by no
+#     extension while the edge test's basis is computed (the dimension estimator and the projection builder).
+#     Prediction if H2 holds: without the extension rejected/tested falls to <= 0.10. Stated expectation
+#     against H2: with k = 2 the basis keeps the between-child direction of the basis half, which is the
+#     tree's own split, so the rejections stay.
+# E3. Hypothesis H3: the symptom needs none of the cancer_pc structure: one Gaussian population with more cells
+#     than features is split by today's complete method with markov/ward.
+#     Setup: the registered `gauss_null_large_continuous` case (blobs_continuous, 1 cluster) with
+#     (cells, features) = (200, 80) as registered, then (200, 30), (256, 30), (496, 30); seeds 401 to 405; the
+#     4 cells of operator and linkage; `benchmark_cluster_algorithm`, default alphas.
+#     Prediction if H3 holds: markov/ward finds more than 1 cluster at 30 features in most seeds and 1 cluster
+#     at (200, 80).
+# - Self-checks: the E1 arm "independent, ward, 5 features" must satisfy the existing test's bound, and the
+#   test file must pass under pytest; E3 at (200, 80), seed 401 must give 1 cluster for symmetric/average and
+#   markov/ward as in the 11 November benchmark.
+# - No production code is changed. No fix is attempted in this protocol.
+#
+# ## Amendment (2026-11-12, after E1 to E3, before the run of E4)
+#
+# E4. Phase 4, verification of an existing candidate, no new code: the E3 grid with the opt-in
+#     `sibling_best_flat_cut_reference=True` (the sibling split is compared with the Gaussian null of the best
+#     flat cut; the edge gate stays as today). Prediction: 1 cluster in all 80 runs. `e4.py` is `e3.py` with
+#     this one parameter added and without the (200, 80) self-check.
+
+
+# ===== e1_e2.py =====
+"""protocol.md E1 and E2: the edge test on one Gaussian population, tree from independent noise or from the data."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import pdist
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import tree_break_selection.hierarchy_analysis.decomposition.backends.eigen.projection as projection_module  # noqa: E402
+import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.child_parent_divergence_annotation as edge_module  # noqa: E402
+import tree_break_selection.hierarchy_analysis.statistics.projection.projection_dimension_estimation.projection_dimension_estimators as estimator_module  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence import (
+    annotate_child_parent_divergence,  # noqa: E402
+)
+from tree_break_selection.tree.construction.build import build_tree  # noqa: E402
+from tree_break_selection.tree.feature_space import (
+    continuous_feature_space_from_columns,  # noqa: E402
+)
+
+ALPHA, N, DATASETS = 0.05, 240, 40
+state = dict(off=False, basis=False)
+original_extend, original_context = estimator_module.extend_rank_through_ties, edge_module.compute_child_parent_spectral_context
+
+
+def no_extension(eigenvalues, target_rank):
+    if state["off"] and state["basis"]:
+        return max(0, min(int(target_rank), len(eigenvalues)))
+    return original_extend(eigenvalues, target_rank)
+
+
+def context(tree, leaf_data, **kwargs):
+    state["basis"] = kwargs.get("basis_row_indices_by_node") is not None
+    try:
+        return original_context(tree, leaf_data, **kwargs)
+    finally:
+        state["basis"] = False
+
+
+estimator_module.extend_rank_through_ties = no_extension
+projection_module.extend_rank_through_ties = no_extension
+edge_module.compute_child_parent_spectral_context = context
+
+
+def run(features, linkage, source, extension):
+    """One arm; data and noise are drawn in the order of the existing test, so the arms share their data."""
+    rng = np.random.default_rng(2)
+    state["off"] = not extension
+    counts = Counter()
+    dfs = Counter()
+    for _ in range(DATASETS):
+        data = pd.DataFrame(rng.normal(size=(N, features)), index=[f"S{i}" for i in range(N)], columns=[f"F{j}" for j in range(features)])
+        noise = rng.normal(size=(N, 5))
+        space = continuous_feature_space_from_columns(tuple(data.columns))
+        tree = build_tree(data, pdist(noise if source == "independent" else data.to_numpy()), linkage_method=linkage).tree
+        tree.populate_node_distributions(data, feature_space=space)
+        annotated, _ = annotate_child_parent_divergence(tree, tree.annotations_df, leaf_data=data, feature_space=space,
+                                                        significance_level_alpha=ALPHA)
+        for parent, child in tree.edges:
+            df = annotated.loc[child, "Child_Parent_Divergence_df"]
+            if not df > 0:
+                continue
+            p = annotated.loc[child, "Child_Parent_Divergence_P_Value"]
+            big = tree.nodes[parent]["leaf_count"] >= 40
+            counts["tested"] += 1
+            counts["p<0.05"] += p < ALPHA
+            counts["p<=0.001"] += p <= 0.001
+            if big:
+                counts["tested, parent >= 40"] += 1
+                counts["p<0.05, parent >= 40"] += p < ALPHA
+                counts["p<=0.001, parent >= 40"] += p <= 0.001
+                dfs[int(df)] += 1
+    state["off"] = False
+    row = dict(features=features, linkage=linkage, tree=source, tie_extension=extension, **{k: int(v) for k, v in counts.items()},
+               share=counts["p<0.05"] / counts["tested"], share_big=counts["p<0.05, parent >= 40"] / counts["tested, parent >= 40"],
+               share_big_001=counts["p<=0.001, parent >= 40"] / counts["tested, parent >= 40"], k_parent_ge_40=dict(sorted(dfs.items())))
+    print(json.dumps(row), flush=True)
+    return row
+
+
+rows = []
+print("== E1: tree from independent noise against tree from the data ==")
+for features, linkage in ((5, "ward"), (5, "average"), (30, "ward"), (30, "average")):
+    for source in ("independent", "same data"):
+        rows.append(run(features, linkage, source, True))
+first = rows[0]
+assert first["share"] <= 2 * ALPHA, first  # the existing test's bound on its own setup
+print("== E2: tree from the data, ward, tie extension on against off ==")
+for features in (5, 30):
+    for extension in (True, False):
+        rows.append(run(features, "ward", "same data", extension))
+json.dump(rows, open(HERE / "e1_e2.json", "w"), indent=1)
+
+
+# ===== e1_e2.log =====
+# == E1: tree from independent noise against tree from the data ==
+# {"features": 5, "linkage": "ward", "tree": "independent", "tie_extension": true, "tested": 7672, "p<0.05": 106, "p<=0.001": 4, "tested, parent >= 40": 682, "p<0.05, parent >= 40": 56, "p<=0.001, parent >= 40": 4, "share": 0.013816475495307613, "share_big": 0.08211143695014662, "share_big_001": 0.005865102639296188, "k_parent_ge_40": {"2": 82, "5": 600}}
+# {"features": 5, "linkage": "ward", "tree": "same data", "tie_extension": true, "tested": 7684, "p<0.05": 1326, "p<=0.001": 996, "tested, parent >= 40": 698, "p<0.05, parent >= 40": 678, "p<=0.001, parent >= 40": 658, "share": 0.17256637168141592, "share_big": 0.9713467048710601, "share_big_001": 0.9426934097421203, "k_parent_ge_40": {"2": 94, "5": 604}}
+# {"features": 5, "linkage": "average", "tree": "independent", "tie_extension": true, "tested": 7990, "p<0.05": 96, "p<=0.001": 4, "tested, parent >= 40": 1138, "p<0.05, parent >= 40": 54, "p<=0.001, parent >= 40": 0, "share": 0.012015018773466833, "share_big": 0.04745166959578207, "share_big_001": 0.0, "k_parent_ge_40": {"2": 646, "5": 492}}
+# {"features": 5, "linkage": "average", "tree": "same data", "tie_extension": true, "tested": 7936, "p<0.05": 1340, "p<=0.001": 872, "tested, parent >= 40": 1164, "p<0.05, parent >= 40": 810, "p<=0.001, parent >= 40": 600, "share": 0.1688508064516129, "share_big": 0.6958762886597938, "share_big_001": 0.5154639175257731, "k_parent_ge_40": {"2": 698, "5": 466}}
+# {"features": 30, "linkage": "ward", "tree": "independent", "tie_extension": true, "tested": 7710, "p<0.05": 218, "p<=0.001": 8, "tested, parent >= 40": 684, "p<0.05, parent >= 40": 76, "p<=0.001, parent >= 40": 6, "share": 0.02827496757457847, "share_big": 0.1111111111111111, "share_big_001": 0.008771929824561403, "k_parent_ge_40": {"2": 90, "3": 12, "4": 26, "5": 32, "6": 20, "7": 32, "8": 26, "9": 42, "10": 24, "29": 30, "30": 350}}
+# {"features": 30, "linkage": "ward", "tree": "same data", "tie_extension": true, "tested": 7782, "p<0.05": 2032, "p<=0.001": 662, "tested, parent >= 40": 664, "p<0.05, parent >= 40": 394, "p<=0.001, parent >= 40": 368, "share": 0.2611153945001285, "share_big": 0.5933734939759037, "share_big_001": 0.5542168674698795, "k_parent_ge_40": {"2": 94, "3": 18, "4": 14, "5": 28, "6": 26, "7": 32, "8": 28, "9": 46, "10": 10, "28": 2, "29": 20, "30": 346}}
+# {"features": 30, "linkage": "average", "tree": "independent", "tie_extension": true, "tested": 7994, "p<0.05": 208, "p<=0.001": 8, "tested, parent >= 40": 1144, "p<0.05, parent >= 40": 50, "p<=0.001, parent >= 40": 4, "share": 0.026019514635976983, "share_big": 0.043706293706293704, "share_big_001": 0.0034965034965034965, "k_parent_ge_40": {"2": 596, "3": 22, "4": 22, "5": 18, "6": 16, "7": 36, "8": 28, "9": 30, "10": 8, "28": 6, "29": 10, "30": 352}}
+# {"features": 30, "linkage": "average", "tree": "same data", "tie_extension": true, "tested": 7930, "p<0.05": 1202, "p<=0.001": 318, "tested, parent >= 40": 2292, "p<0.05, parent >= 40": 186, "p<=0.001, parent >= 40": 172, "share": 0.15157629255989913, "share_big": 0.08115183246073299, "share_big_001": 0.07504363001745201, "k_parent_ge_40": {"2": 2012, "3": 6, "4": 12, "5": 12, "6": 18, "7": 20, "8": 26, "9": 14, "29": 4, "30": 168}}
+# == E2: tree from the data, ward, tie extension on against off ==
+# {"features": 5, "linkage": "ward", "tree": "same data", "tie_extension": true, "tested": 7684, "p<0.05": 1326, "p<=0.001": 996, "tested, parent >= 40": 698, "p<0.05, parent >= 40": 678, "p<=0.001, parent >= 40": 658, "share": 0.17256637168141592, "share_big": 0.9713467048710601, "share_big_001": 0.9426934097421203, "k_parent_ge_40": {"2": 94, "5": 604}}
+# {"features": 5, "linkage": "ward", "tree": "same data", "tie_extension": false, "tested": 7684, "p<0.05": 1326, "p<=0.001": 996, "tested, parent >= 40": 698, "p<0.05, parent >= 40": 678, "p<=0.001, parent >= 40": 658, "share": 0.17256637168141592, "share_big": 0.9713467048710601, "share_big_001": 0.9426934097421203, "k_parent_ge_40": {"2": 698}}
+# {"features": 30, "linkage": "ward", "tree": "same data", "tie_extension": true, "tested": 7782, "p<0.05": 2032, "p<=0.001": 662, "tested, parent >= 40": 664, "p<0.05, parent >= 40": 394, "p<=0.001, parent >= 40": 368, "share": 0.2611153945001285, "share_big": 0.5933734939759037, "share_big_001": 0.5542168674698795, "k_parent_ge_40": {"2": 94, "3": 18, "4": 14, "5": 28, "6": 26, "7": 32, "8": 28, "9": 46, "10": 10, "28": 2, "29": 20, "30": 346}}
+# {"features": 30, "linkage": "ward", "tree": "same data", "tie_extension": false, "tested": 7782, "p<0.05": 1978, "p<=0.001": 642, "tested, parent >= 40": 664, "p<0.05, parent >= 40": 376, "p<=0.001, parent >= 40": 350, "share": 0.2541763042919558, "share_big": 0.5662650602409639, "share_big_001": 0.5271084337349398, "k_parent_ge_40": {"2": 664}}
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python   35.30s user 5.95s system 98% cpu 41.941 total
+
+
+# ===== e3.py =====
+"""protocol.md E3: today's complete method on one Gaussian population, 4 cells of operator and linkage."""
+import json
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+METHOD = "tbs_family_diffusion"
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+rows = []
+for cells, features in ((200, 80), (200, 30), (256, 30), (496, 30)):
+    for seed in range(401, 406):
+        case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+        for operator, linkage in CELLS:
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                              plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            row = dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"].iloc[0]),
+                       status=str(res["status"].iloc[0]))
+            rows.append(row)
+            print(json.dumps(row), flush=True)
+for cell in ("symmetric/average", "markov/ward"):
+    (check,) = [r for r in rows if (r["cells"], r["features"], r["seed"], r["cell"]) == (200, 80, 401, cell)]
+    assert check["found"] == 1, check
+json.dump(rows, open(HERE / "e3.json", "w"), indent=1)
+print("== found clusters per size and cell, seeds 401 to 405 ==")
+for cells, features in ((200, 80), (200, 30), (256, 30), (496, 30)):
+    for operator, linkage in CELLS:
+        cell = f"{operator}/{linkage}"
+        found = [r["found"] for r in rows if (r["cells"], r["features"], r["cell"]) == (cells, features, cell)]
+        print(f"({cells}, {features}) {cell}: {found}, more than 1 cluster in {sum(f > 1 for f in found)} of {len(found)}")
+
+
+# ===== e3.log =====
+# {"cells": 200, "features": 80, "seed": 401, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 401, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 401, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 401, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "symmetric/average", "found": 3, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "symmetric/ward", "found": 2, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "markov/ward", "found": 2, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "symmetric/average", "found": 7, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "symmetric/ward", "found": 5, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "markov/average", "found": 4, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "markov/ward", "found": 4, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "symmetric/average", "found": 2, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "symmetric/ward", "found": 5, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "markov/ward", "found": 3, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "symmetric/average", "found": 6, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "symmetric/ward", "found": 5, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "markov/ward", "found": 6, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "symmetric/average", "found": 6, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "symmetric/ward", "found": 4, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "markov/average", "found": 5, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "markov/ward", "found": 4, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "symmetric/ward", "found": 6, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "markov/ward", "found": 3, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "symmetric/average", "found": 10, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "symmetric/ward", "found": 3, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "markov/ward", "found": 4, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "symmetric/average", "found": 5, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "symmetric/ward", "found": 6, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "markov/average", "found": 5, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "markov/ward", "found": 7, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "symmetric/average", "found": 8, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "symmetric/ward", "found": 3, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "markov/average", "found": 8, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "markov/ward", "found": 4, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "symmetric/average", "found": 2, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "symmetric/ward", "found": 6, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "markov/ward", "found": 4, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "symmetric/average", "found": 9, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "symmetric/ward", "found": 11, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "markov/ward", "found": 7, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "symmetric/ward", "found": 12, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "markov/average", "found": 9, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "markov/ward", "found": 14, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "symmetric/ward", "found": 8, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "markov/ward", "found": 12, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "symmetric/ward", "found": 15, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "markov/average", "found": 11, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "markov/ward", "found": 10, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "symmetric/ward", "found": 11, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "markov/ward", "found": 12, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "symmetric/ward", "found": 10, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "markov/average", "found": 7, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "markov/ward", "found": 12, "status": "ok"}
+# == found clusters per size and cell, seeds 401 to 405 ==
+# (200, 80) symmetric/average: [1, 3, 1, 1, 1], more than 1 cluster in 1 of 5
+# (200, 80) symmetric/ward: [1, 2, 1, 1, 1], more than 1 cluster in 1 of 5
+# (200, 80) markov/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 80) markov/ward: [1, 1, 1, 1, 2], more than 1 cluster in 1 of 5
+# (200, 30) symmetric/average: [7, 2, 6, 6, 1], more than 1 cluster in 4 of 5
+# (200, 30) symmetric/ward: [5, 5, 5, 4, 6], more than 1 cluster in 5 of 5
+# (200, 30) markov/average: [4, 1, 1, 5, 1], more than 1 cluster in 2 of 5
+# (200, 30) markov/ward: [4, 3, 6, 4, 3], more than 1 cluster in 5 of 5
+# (256, 30) symmetric/average: [10, 5, 8, 2, 9], more than 1 cluster in 5 of 5
+# (256, 30) symmetric/ward: [3, 6, 3, 6, 11], more than 1 cluster in 5 of 5
+# (256, 30) markov/average: [1, 5, 8, 1, 1], more than 1 cluster in 2 of 5
+# (256, 30) markov/ward: [4, 7, 4, 4, 7], more than 1 cluster in 5 of 5
+# (496, 30) symmetric/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (496, 30) symmetric/ward: [12, 8, 15, 11, 10], more than 1 cluster in 5 of 5
+# (496, 30) markov/average: [9, 1, 11, 1, 7], more than 1 cluster in 3 of 5
+# (496, 30) markov/ward: [14, 12, 10, 12, 12], more than 1 cluster in 5 of 5
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python   37.41s user 0.77s system 98% cpu 38.802 total
+
+
+# ===== e4.py =====
+"""protocol.md E4: the E3 grid with the opt-in sibling_best_flat_cut_reference=True."""
+import json
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+METHOD = "tbs_family_diffusion"
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+rows = []
+for cells, features in ((200, 80), (200, 30), (256, 30), (496, 30)):
+    for seed in range(401, 406):
+        case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+        for operator, linkage in CELLS:
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage,
+                      "sibling_best_flat_cut_reference": True}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                              plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            row = dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"].iloc[0]),
+                       status=str(res["status"].iloc[0]))
+            rows.append(row)
+            print(json.dumps(row), flush=True)
+json.dump(rows, open(HERE / "e4.json", "w"), indent=1)
+print("== found clusters per size and cell, seeds 401 to 405 ==")
+for cells, features in ((200, 80), (200, 30), (256, 30), (496, 30)):
+    for operator, linkage in CELLS:
+        cell = f"{operator}/{linkage}"
+        found = [r["found"] for r in rows if (r["cells"], r["features"], r["cell"]) == (cells, features, cell)]
+        print(f"({cells}, {features}) {cell}: {found}, more than 1 cluster in {sum(f > 1 for f in found)} of {len(found)}")
+
+
+# ===== e4.log =====
+# {"cells": 200, "features": 80, "seed": 401, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 401, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 401, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 401, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 402, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 403, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 404, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 80, "seed": 405, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 401, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 402, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 403, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 404, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 200, "features": 30, "seed": 405, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 401, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 402, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 403, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 404, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 256, "features": 30, "seed": 405, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 401, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 402, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 403, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 404, "cell": "markov/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "symmetric/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "symmetric/ward", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "markov/average", "found": 1, "status": "ok"}
+# {"cells": 496, "features": 30, "seed": 405, "cell": "markov/ward", "found": 1, "status": "ok"}
+# == found clusters per size and cell, seeds 401 to 405 ==
+# (200, 80) symmetric/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 80) symmetric/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 80) markov/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 80) markov/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 30) symmetric/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 30) symmetric/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 30) markov/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (200, 30) markov/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (256, 30) symmetric/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (256, 30) symmetric/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (256, 30) markov/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (256, 30) markov/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (496, 30) symmetric/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (496, 30) symmetric/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (496, 30) markov/average: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+# (496, 30) markov/ward: [1, 1, 1, 1, 1], more than 1 cluster in 0 of 5
+
+
+# ===== new_case.py (follow-up on the same day) =====
+"""The registered case gauss_null_256n_30f_continuous: both registered methods, today and with the opt-in reference."""
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+apply_single_thread_runtime_defaults()
+(case,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_256n_30f_continuous"]
+print(case, "| continuous cases:", len(get_test_cases_by_suite("continuous")))
+for method in ("tbs_family_diffusion", "tbs_family_diffusion_markov_ward"):
+    for reference in (False, True):
+        params = {**METHOD_SPECS[method].param_grid[0], **({"sibling_best_flat_cut_reference": True} if reference else {})}
+        res = benchmark_cluster_algorithm(test_cases=[case], methods=[method], method_params={method: [params]}, verbose=False,
+                                          plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                          allow_method_errors=False)
+        print(method, "reference" if reference else "today", "found", int(res["found_clusters"].iloc[0]), "ARI", float(res["ari"].iloc[0]),
+              str(res["status"].iloc[0]), flush=True)
+
+
+# ===== new_case.log (follow-up on the same day) =====
+# {'name': 'gauss_null_256n_30f_continuous', 'generator': 'blobs_continuous', 'n_samples': 256, 'n_features': 30, 'n_clusters': 1, 'cluster_std': 1.0, 'seed': 401, 'representation_role': 'continuous_null_example', 'category': 'continuous_gaussian_examples'} | continuous cases: 10
+# tbs_family_diffusion today found 10 ARI 0.0 ok
+# tbs_family_diffusion reference found 1 ARI 1.0 ok
+# tbs_family_diffusion_markov_ward today found 4 ARI 0.0 ok
+# tbs_family_diffusion_markov_ward reference found 1 ARI 1.0 ok

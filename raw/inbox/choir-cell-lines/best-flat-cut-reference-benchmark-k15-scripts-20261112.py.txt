@@ -1,0 +1,218 @@
+# ===== protocol.md =====
+# # Protocol: the 13 benchmark cases with the best-flat-cut reference extended to 15 invariant directions (frozen 2026-11-12, before the run)
+#
+# - Question: does the extension of the reference to k = 11 to 15 (`MAX_DIRECTIONS` = 15,
+#   `MIN_CELLS_ABOVE_10_DIRECTIONS` = 50, table rebuilt for k = 11 to 15) change any result on the 9 continuous
+#   and 4 cancer_pc cases?
+# - Setup: `run.py` and `reasons.py` are byte copies of the 11 November scripts in
+#   `results/analyses/best_flat_cut_reference_benchmark_20261111`: `tbs_family_diffusion` and
+#   `tbs_family_diffusion_markov_ward`, registered cell ("today") and the same cell with
+#   `sibling_best_flat_cut_reference=True` ("reference"), 52 runs, then a replay of the 26 reference runs that
+#   records every call of `best_flat_cut_reference`.
+# - Comparison (`compare.py`): per case, method and cell found clusters, ARI and NMI against the 11 November
+#   `results.csv`; per recorded call n, left size, reason, k, `rho` and p-value against the 11 November
+#   `reasons.json`.
+# - Expected, stated before running: no change. On 11 November the 151 recorded calls had k = 0 (58 calls) or
+#   k = 1 to 5 (93 calls); `too_many_invariant_directions` and `too_few_cells` did not occur, and the table
+#   cells for k up to 10 are bit-identical to the table used then. Any difference is a defect to explain, not
+#   a result.
+# - One run, no change to the module after seeing results.
+
+
+# ===== deviations.md =====
+# # Deviations (written 2026-11-12, after the run)
+#
+# - `compare.py` was changed after its first output. First output: 80 of 151 calls "differing" and "replay equals
+#   run: 22 of 26". Cause of both: floating point, not results. `rho` differs between the two runs in 80 calls
+#   by at most 1.0e-12 relative (n, left size, reason, k and p-value are equal in 151 of 151), and pandas'
+#   default CSV parser does not round-trip floats. Change: `rho` is counted apart with its largest relative
+#   difference, and `results.csv` is read with `float_precision="round_trip"`.
+# - No change to `run.py`, `reasons.py` or the module.
+
+
+# ===== run.py =====
+"""protocol.md: continuous and cancer_pc suites, family-diffusion methods, today vs Gaussian best-flat-cut reference."""
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from benchmarks.shared.benchmark_runs.runtime import apply_single_thread_runtime_defaults  # noqa: E402
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+
+apply_single_thread_runtime_defaults()
+params = {m: [dict(METHOD_SPECS[m].param_grid[0]), {**METHOD_SPECS[m].param_grid[0], "sibling_best_flat_cut_reference": True}]
+          for m in METHODS}
+cases = get_test_cases_by_suite("continuous") + get_test_cases_by_suite("cancer_pc")
+results = benchmark_cluster_algorithm(test_cases=cases, methods=METHODS, method_params=params, verbose=False,
+                                      plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                      allow_method_errors=True)
+results.to_csv(HERE / "results.csv", index=False)
+print(results.columns.tolist())
+
+
+# ===== reasons.py =====
+"""Replay of the reference cell, one case and method per call, recording every call of best_flat_cut_reference."""
+import json
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from benchmarks.shared.benchmark_runs.runtime import apply_single_thread_runtime_defaults  # noqa: E402
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence import best_flat_cut_reference as mod  # noqa: E402
+
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+calls = []
+original = mod.best_flat_cut_reference
+
+
+def recording(points, in_left):
+    r = original(points, in_left)
+    calls.append(dict(n=int(len(points)), left=int(in_left.sum()), reason=r.reason, k=int(r.invariant_directions),
+                      rho=None if r.rho is None else float(r.rho), p=float(r.p_value)))
+    return r
+
+
+mod.best_flat_cut_reference = recording
+apply_single_thread_runtime_defaults()
+out = []
+for case in get_test_cases_by_suite("continuous") + get_test_cases_by_suite("cancer_pc"):
+    for m in METHODS:
+        calls.clear()
+        res = benchmark_cluster_algorithm(test_cases=[case], methods=[m],
+                                          method_params={m: [{**METHOD_SPECS[m].param_grid[0], "sibling_best_flat_cut_reference": True}]},
+                                          verbose=False, plot_umap=False, include_cover_pages=False,
+                                          include_validation_page=False, allow_method_errors=True)
+        row = dict(case=case["name"], method=m, found=int(res["found_clusters"].iloc[0]), ari=float(res["ari"].iloc[0]),
+                   calls=sorted(calls, key=lambda c: -c["n"]))
+        out.append(row)
+        print(row["case"], m, row["found"], round(row["ari"], 3), len(calls), flush=True)
+json.dump(out, open(HERE / "reasons.json", "w"), indent=1)
+
+
+# ===== compare.py =====
+"""protocol.md: this run against the 11 November run, row by row and call by call."""
+import json
+import math
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+OLD = HERE.parent / "best_flat_cut_reference_benchmark_20261111"
+KEY = ["case_id", "method", "params"]
+COLS = ["found_clusters", "ari", "nmi", "status"]
+
+new, old = (pd.read_csv(folder / "results.csv", float_precision="round_trip").set_index(KEY)[COLS] for folder in (HERE, OLD))
+assert len(new) == len(old) == 52 and new.index.is_unique and set(new.index) == set(old.index)
+old = old.loc[new.index]
+print("rows", len(new), "status ok", int((new["status"] == "ok").sum()))
+for col in COLS:
+    print(col, "rows differing:", int((new[col] != old[col]).sum()))
+print("max |ARI difference|", float((new["ari"] - old["ari"]).abs().max()))
+
+
+def same(a, b):
+    return a == b or (isinstance(a, float) and isinstance(b, float) and math.isnan(a) and math.isnan(b))
+
+
+new_calls, old_calls = (json.load(open(folder / "reasons.json")) for folder in (HERE, OLD))
+assert [(r["case"], r["method"]) for r in new_calls] == [(r["case"], r["method"]) for r in old_calls]
+total = differing = rho_round_off = 0
+worst = 0.0
+reasons, ks = {}, {}
+for a, b in zip(new_calls, old_calls):
+    assert len(a["calls"]) == len(b["calls"]), (a["case"], a["method"])
+    for x, y in zip(a["calls"], b["calls"]):
+        total += 1
+        differing += not all(same(x[f], y[f]) for f in ("n", "left", "reason", "k", "p"))
+        if not same(x["rho"], y["rho"]):  # deviation: rho differs by round-off between runs, so it is reported apart
+            rho_round_off += 1
+            worst = max(worst, abs(x["rho"] - y["rho"]) / abs(y["rho"]))
+        reasons[x["reason"]] = reasons.get(x["reason"], 0) + 1
+        ks[x["k"]] = ks.get(x["k"], 0) + 1
+print("rho differing", rho_round_off, "largest relative difference", worst)
+print("calls", total, "differing in n, left, reason, k or p", differing, "reasons", reasons, "k", dict(sorted(ks.items())))
+replay = {(r["case"], r["method"]): (r["found"], r["ari"]) for r in new_calls}
+ref = new.reset_index()
+ref = ref[ref["params"].str.contains("sibling_best_flat_cut_reference")]
+print("replay equals run:", sum(replay[(c, m)] == (f, a) for c, m, f, a in
+                                zip(ref["case_id"], ref["method"], ref["found_clusters"], ref["ari"])), "of", len(ref))
+
+
+# ===== compare.txt =====
+# rows 52 status ok 52
+# found_clusters rows differing: 0
+# ari rows differing: 0
+# nmi rows differing: 0
+# status rows differing: 0
+# max |ARI difference| 0.0
+# rho differing 80 largest relative difference 1.010258283269683e-12
+# calls 151 differing in n, left, reason, k or p 0 reasons {'tested': 93, 'no_invariant_directions': 58} k {0: 58, 1: 35, 2: 38, 3: 10, 4: 8, 5: 2}
+# replay equals run: 26 of 26
+
+
+# ===== results_selected.csv =====
+# case_id,method,cell,true_clusters,found_clusters,samples,features,ari,nmi,status
+# gauss_clear_medium_continuous,tbs_family_diffusion,today,4,4,60,40,1.0,1.0,ok
+# gauss_clear_medium_continuous,tbs_family_diffusion,reference,4,3,60,40,0.7035175879396985,0.8571428571428571,ok
+# gauss_clear_medium_continuous,tbs_family_diffusion_markov_ward,today,4,4,60,40,1.0,1.0,ok
+# gauss_clear_medium_continuous,tbs_family_diffusion_markov_ward,reference,4,3,60,40,0.7035175879396985,0.8571428571428571,ok
+# gauss_moderate_3c_continuous,tbs_family_diffusion,today,3,3,45,30,1.0,1.0,ok
+# gauss_moderate_3c_continuous,tbs_family_diffusion,reference,3,2,45,30,0.56,0.7336804366512109,ok
+# gauss_moderate_3c_continuous,tbs_family_diffusion_markov_ward,today,3,3,45,30,1.0,1.0,ok
+# gauss_moderate_3c_continuous,tbs_family_diffusion_markov_ward,reference,3,2,45,30,0.56,0.7336804366512109,ok
+# gauss_null_large_continuous,tbs_family_diffusion,today,1,1,200,80,1.0,1.0,ok
+# gauss_null_large_continuous,tbs_family_diffusion,reference,1,1,200,80,1.0,1.0,ok
+# gauss_null_large_continuous,tbs_family_diffusion_markov_ward,today,1,1,200,80,1.0,1.0,ok
+# gauss_null_large_continuous,tbs_family_diffusion_markov_ward,reference,1,1,200,80,1.0,1.0,ok
+# gauss_dense_signal_highd_continuous,tbs_family_diffusion,today,4,4,40,20000,1.0,1.0,ok
+# gauss_dense_signal_highd_continuous,tbs_family_diffusion,reference,4,1,40,20000,0.0,0.0,ok
+# gauss_dense_signal_highd_continuous,tbs_family_diffusion_markov_ward,today,4,4,40,20000,0.9315220404768506,0.9404185439808235,ok
+# gauss_dense_signal_highd_continuous,tbs_family_diffusion_markov_ward,reference,4,1,40,20000,0.0,0.0,ok
+# dim_consolidated_4c_24f_continuous,tbs_family_diffusion,today,4,4,160,24,1.0,1.0,ok
+# dim_consolidated_4c_24f_continuous,tbs_family_diffusion,reference,4,4,160,24,1.0,1.0,ok
+# dim_consolidated_4c_24f_continuous,tbs_family_diffusion_markov_ward,today,4,5,160,24,0.9195402298850575,0.9448408939706024,ok
+# dim_consolidated_4c_24f_continuous,tbs_family_diffusion_markov_ward,reference,4,4,160,24,1.0,1.0,ok
+# dim_consolidated_4c_72f_continuous,tbs_family_diffusion,today,4,5,160,72,0.913308484247604,0.9420793005030547,ok
+# dim_consolidated_4c_72f_continuous,tbs_family_diffusion,reference,4,4,160,72,1.0,1.0,ok
+# dim_consolidated_4c_72f_continuous,tbs_family_diffusion_markov_ward,today,4,6,160,72,0.8241662301379431,0.892516347574488,ok
+# dim_consolidated_4c_72f_continuous,tbs_family_diffusion_markov_ward,reference,4,4,160,72,1.0,1.0,ok
+# dim_diffuse_6c_136f_continuous,tbs_family_diffusion,today,6,5,180,136,0.016892322528084595,0.07754055037227715,ok
+# dim_diffuse_6c_136f_continuous,tbs_family_diffusion,reference,6,1,180,136,0.0,0.0,ok
+# dim_diffuse_6c_136f_continuous,tbs_family_diffusion_markov_ward,today,6,4,180,136,0.005544869383939222,0.05206951574846832,ok
+# dim_diffuse_6c_136f_continuous,tbs_family_diffusion_markov_ward,reference,6,1,180,136,0.0,0.0,ok
+# gauss_single_outlier_4c_continuous,tbs_family_diffusion,today,5,4,161,40,0.9915772953178132,0.9895774896498216,ok
+# gauss_single_outlier_4c_continuous,tbs_family_diffusion,reference,5,4,161,40,0.9915772953178132,0.9895774896498216,ok
+# gauss_single_outlier_4c_continuous,tbs_family_diffusion_markov_ward,today,5,4,161,40,0.9915772953178132,0.9895774896498216,ok
+# gauss_single_outlier_4c_continuous,tbs_family_diffusion_markov_ward,reference,5,4,161,40,0.9915772953178132,0.9895774896498216,ok
+# gauss_outlier_cluster_4c_continuous,tbs_family_diffusion,today,5,5,166,40,1.0,1.0,ok
+# gauss_outlier_cluster_4c_continuous,tbs_family_diffusion,reference,5,5,166,40,1.0,1.0,ok
+# gauss_outlier_cluster_4c_continuous,tbs_family_diffusion_markov_ward,today,5,5,166,40,1.0,1.0,ok
+# gauss_outlier_cluster_4c_continuous,tbs_family_diffusion_markov_ward,reference,5,5,166,40,1.0,1.0,ok
+# cancer_pc_hub_disconnected,tbs_family_diffusion,today,6,6,496,30,0.9982227041423309,0.9931774644203191,ok
+# cancer_pc_hub_disconnected,tbs_family_diffusion,reference,6,6,496,30,0.9982227041423309,0.9931774644203191,ok
+# cancer_pc_hub_disconnected,tbs_family_diffusion_markov_ward,today,6,10,496,30,0.4459239569118926,0.7815863262184728,ok
+# cancer_pc_hub_disconnected,tbs_family_diffusion_markov_ward,reference,6,6,496,30,0.9982227041423309,0.9931774644203191,ok
+# cancer_pc_hub_connected,tbs_family_diffusion,today,6,5,496,30,0.5934173437584759,0.7327239405757735,ok
+# cancer_pc_hub_connected,tbs_family_diffusion,reference,6,4,496,30,0.4459795806376289,0.6815645433360054,ok
+# cancer_pc_hub_connected,tbs_family_diffusion_markov_ward,today,6,13,496,30,0.26514230756596946,0.5880810382752343,ok
+# cancer_pc_hub_connected,tbs_family_diffusion_markov_ward,reference,6,4,496,30,0.4459795806376289,0.6815645433360054,ok
+# cancer_pc_nohub_disconnected,tbs_family_diffusion,today,6,6,496,30,0.9982227041423309,0.9931774644203191,ok
+# cancer_pc_nohub_disconnected,tbs_family_diffusion,reference,6,6,496,30,0.9982227041423309,0.9931774644203191,ok
+# cancer_pc_nohub_disconnected,tbs_family_diffusion_markov_ward,today,6,16,496,30,0.2676769038548427,0.6835497024214295,ok
+# cancer_pc_nohub_disconnected,tbs_family_diffusion_markov_ward,reference,6,6,496,30,0.9982227041423309,0.9931774644203191,ok
+# cancer_pc_nohub_connected,tbs_family_diffusion,today,6,6,496,30,0.697427703363461,0.7449374543915451,ok
+# cancer_pc_nohub_connected,tbs_family_diffusion,reference,6,4,496,30,0.4459795806376289,0.6815645433360054,ok
+# cancer_pc_nohub_connected,tbs_family_diffusion_markov_ward,today,6,15,496,30,0.2343915256269861,0.5798588934300126,ok
+# cancer_pc_nohub_connected,tbs_family_diffusion_markov_ward,reference,6,4,496,30,0.4459795806376289,0.6815645433360054,ok

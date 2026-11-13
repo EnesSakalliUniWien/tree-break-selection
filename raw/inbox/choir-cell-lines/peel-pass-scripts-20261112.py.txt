@@ -1,0 +1,279 @@
+# ===== protocol.md =====
+# # Protocol: letting peels of fewer than 15 cells pass the edge gate (frozen 2026-11-12, before the runs)
+#
+# ## Why
+#
+# On the default tree of the CHOIR cells the descent stops at a split that peels 4 cells from 28,606: both edges
+# have raw p 0.044 against edge alpha 0.001, the gate closes, and Tree-BH leaves 101 nodes of at least 1,000 cells
+# untested, 94 of them with raw p <= 0.001 on an edge (wiki page `k-split-direction-draft`). The code already lets
+# a peel of one cell pass this gate (`singleton_peel_continuations` in `tree_break_selection/tree/topology.py`):
+# Tree-BH tests the family below it, the sibling frontier continues, the traversal continues, and a peeled cell
+# without evidence joins the nearest cluster below.
+#
+# ## The change, at run time only (`peel_pass.py`)
+#
+# The mapping "peel node -> the child the descent continues in" is extended: besides a node with one leaf child
+# and one internal child, a node whose smaller child has fewer than 15 cells and whose larger child has at least
+# 15 cells maps to its larger child. The four modules that use the mapping (Tree-BH correction, sibling frontier,
+# calibration records, gate evaluator) receive the extended mapping; nothing else is changed and no production
+# file is edited. 15 is the smallest number of cells the reference tests.
+#
+# ## Runs
+#
+# - R1 CHOIR cells, default tree (`results/analyses/default_tree_third_version_20261112/tree_default.npz`), with
+#   the peel pass: the third version of the draft definition of k, data order; and the current rule.
+#   Without the peel pass: 63 and 64 clusters, ARI 0.0275, 29 lines recovered, largest cluster 28,611.
+# - R2 CHOIR cells, Markov/Ward tree, third version, data order, with the peel pass.
+#   Without: 206 clusters, ARI 0.8359, 127 lines recovered.
+# - R3 benchmark, 14 cases, both registered methods, third version, with the peel pass; and the one-population
+#   grid of 80 runs. Without: found clusters as recorded in
+#   `results/analyses/variant_a_fixed_20261112/benchmark_results_v3.csv`; 80 of 80 runs at 1 cluster.
+# - R4 level: one Gaussian population, (256, 30) and (496, 30), identity and the unequal variances of the CHOIR
+#   root, 50 seeds, 4 operator and linkage cells (800 fits), third version, with the peel pass. Without: 0 of 800
+#   fits with more than 1 cluster.
+#
+# ## Predictions, stated before the runs
+#
+# - Y1 default tree: more than 63 clusters and a largest cluster below 28,611 cells.
+# - Y2 default tree: the ARI rises above 0.0275 and stays below 0.8.
+# - Y3 benchmark: found clusters unchanged in 28 of 28 rows; one-population grid 80 of 80 runs at 1 cluster.
+# - Y4 level: at most 8 of the 800 fits have more than 1 cluster (1%).
+# - Y5 Markov/Ward tree: found clusters within 10 of 206 and ARI within 0.01 of 0.8359.
+#
+# ## Limits known before the runs
+#
+# The edge gate itself is unchanged and is not valid for a tree built from the tested cells; the peel pass opens
+# more nodes to it. The limit of 15 cells is a choice. One real dataset; the default tree is the one of 6 November.
+
+
+# ===== peel_pass.py =====
+"""protocol.md: at run time, peels of fewer than 15 cells pass the edge gate like a peel of one cell."""
+import tree_break_selection.hierarchy_analysis.decomposition.gates.gate_evaluator as gate_evaluator
+import tree_break_selection.hierarchy_analysis.statistics.multiple_testing.tree_bh.correction as tree_bh
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.inflated_projected_wald_annotation.fdr_annotation as fdr_annotation
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.pair_testing.collection.record_collection as record_collection
+from tree_break_selection.tree.topology import bottom_up_nodes, singleton_peel_continuations
+
+LIMIT = 15
+COUNT = {"trees": 0, "singleton": 0, "small": 0}
+_cache = {}
+
+
+def peel_continuations(tree):
+    """The singleton peels, plus every node whose smaller child has fewer than LIMIT cells and whose larger child has at least LIMIT."""
+    key = (id(tree), tree.number_of_edges())
+    if key in _cache:
+        return _cache[key]
+    cells = {}
+    for node in bottom_up_nodes(tree):
+        children = list(tree.successors(node))
+        cells[node] = 1 if not children else sum(cells[child] for child in children)
+    out = dict(singleton_peel_continuations(tree))
+    singletons = len(out)
+    for node in tree.nodes:
+        children = list(tree.successors(node))
+        if len(children) == 2 and node not in out:
+            small, large = sorted(children, key=lambda child: cells[child])
+            if cells[small] < LIMIT <= cells[large]:
+                out[node] = large
+    COUNT["trees"] += 1
+    COUNT["singleton"], COUNT["small"] = singletons, len(out) - singletons
+    _cache.clear()
+    _cache[key] = out
+    return out
+
+
+def install():
+    for module in (gate_evaluator, tree_bh, fdr_annotation, record_collection):
+        assert hasattr(module, "singleton_peel_continuations"), module.__name__
+        module.singleton_peel_continuations = peel_continuations
+
+
+# ===== run_choir.py =====
+"""protocol.md R1, R2: the CHOIR harness with the peel pass. usage: run_choir.py default|markov_ward v3|current"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+sys.path.insert(0, str(HERE))
+
+import harness  # noqa: E402
+import peel_pass  # noqa: E402
+
+tree, rule = sys.argv[1], sys.argv[2]
+if rule == "v3":
+    import draft_rule_v3
+
+    draft_rule_v3.install(None)
+peel_pass.install()
+harness.HERE = HERE
+path = {"default": "results/analyses/default_tree_third_version_20261112/tree_default.npz",
+        "markov_ward": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz"}[tree]
+method = {"default": "tbs_family_diffusion", "markov_ward": "tbs_family_diffusion_markov_ward"}[tree]
+harness.main(path, f"{tree}_{rule}", method=method)
+print("peel mapping:", peel_pass.COUNT, flush=True)
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== run_benchmark.py =====
+"""protocol.md R3: the fixed draft on the 14 benchmark cases and the one-population grid."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+sys.path.insert(0, str(HERE))
+
+import draft_rule_v3  # noqa: E402
+import peel_pass  # noqa: E402
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+draft_rule_v3.install()
+peel_pass.install()
+apply_single_thread_runtime_defaults()
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+
+
+def run(case, method, **overrides):
+    draft_rule_v3.CALLS.clear()
+    params = {**METHOD_SPECS[method].param_grid[0], **overrides, "sibling_best_flat_cut_reference": True}
+    res = benchmark_cluster_algorithm(test_cases=[case], methods=[method], method_params={method: [params]}, verbose=False,
+                                      plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                      allow_method_errors=False)
+    return res.iloc[0], [dict(c) for c in draft_rule_v3.CALLS]
+
+
+rows, calls = [], []
+for case in get_test_cases_by_suite("continuous") + get_test_cases_by_suite("cancer_pc"):
+    for method in METHODS:
+        res, case_calls = run(case, method)
+        rows.append(dict(case=res["case_id"], method=method, true_clusters=int(res["true_clusters"]), found_clusters=int(res["found_clusters"]),
+                         ari=float(res["ari"]), status=str(res["status"])))
+        calls.append(dict(case=res["case_id"], method=method, calls=case_calls))
+results = pd.DataFrame(rows)
+results.to_csv(HERE / "benchmark_results_peel.csv", index=False)
+json.dump(calls, open(HERE / "benchmark_calls_peel.json", "w"), indent=1)
+before = pd.read_csv(HERE.parent / "variant_a_fixed_20261112" / "benchmark_results_v3.csv")
+merged = results.merge(before, on=["case", "method"], suffixes=("", "_before"))
+print(f"found clusters equal to the third version without the peel pass in {int((merged['found_clusters'] == merged['found_clusters_before']).sum())} of {len(merged)} rows; "
+      f"ARI equal in {int(((merged['ari'] - merged['ari_before']).abs() < 1e-12).sum())}")
+print(merged.loc[merged["found_clusters"] != merged["found_clusters_before"], ["case", "method", "true_clusters", "found_clusters", "found_clusters_before"]].to_string(index=False))
+print("null cases:", results[results["case"].str.contains("null")][["case", "method", "found_clusters"]].to_dict("records"))
+print("call reasons:", dict(Counter(c["reason"] for r in calls for c in r["calls"])))
+
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+null = []
+for cells, features in ((200, 80), (200, 30), (256, 30), (496, 30)):
+    for seed in range(401, 406):
+        case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+        for operator, linkage in CELLS:
+            res, case_calls = run(case, "tbs_family_diffusion", diffusion_coordinate_operator=operator, tree_linkage_method=linkage)
+            null.append(dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"]), calls=case_calls))
+json.dump(null, open(HERE / "null_grid_peel.json", "w"), indent=1)
+tested = [c["p"] for r in null for c in r["calls"] if c["reason"] == "tested"]
+print(f"one-population grid: 1 cluster in {sum(r['found'] == 1 for r in null)} of {len(null)} runs; smallest p {min(tested)}; "
+      f"p <= 0.01 in {sum(p <= 0.01 for p in tested)} of {len(tested)} tested calls")
+
+
+# ===== run_level.py =====
+"""protocol.md R4: the fixed draft on one Gaussian population. usage: run_level.py CELLS identity|unequal"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import ortho_group
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "variant_a_fixed_20261112"))
+sys.path.insert(0, str(HERE))
+
+import draft_rule_v3  # noqa: E402
+import peel_pass  # noqa: E402
+
+import benchmarks.shared.generators.gaussian_cases as gaussian_cases  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+cells, covariance = int(sys.argv[1]), sys.argv[2]
+V = np.array([53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58,
+              6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12])
+Q = ortho_group.rvs(30, random_state=0)
+original_make_blobs = gaussian_cases.make_blobs
+
+
+def make_blobs(**kwargs):
+    x, y = original_make_blobs(**kwargs)[:2]
+    return (x * np.sqrt(V)) @ Q.T if covariance == "unequal" else x, y
+
+
+gaussian_cases.make_blobs = make_blobs
+draft_rule_v3.install()
+peel_pass.install()
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+fits = []
+for seed in range(1, 51):
+    case = {**registered, "n_samples": cells, "n_features": 30, "seed": seed}
+    for operator in ("symmetric", "markov"):
+        for linkage in ("average", "ward"):
+            draft_rule_v3.CALLS.clear()
+            params = {**METHOD_SPECS["tbs_family_diffusion"].param_grid[0], "diffusion_coordinate_operator": operator,
+                      "tree_linkage_method": linkage, "sibling_best_flat_cut_reference": True}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=["tbs_family_diffusion"], method_params={"tbs_family_diffusion": [params]},
+                                              verbose=False, plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            fits.append(dict(cells=cells, covariance=covariance, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"].iloc[0]),
+                             calls=[dict(c) for c in draft_rule_v3.CALLS]))
+json.dump(fits, open(HERE / f"level_peel_{cells}_{covariance}.json", "w"))
+tested = [c["p"] for f in fits for c in f["calls"] if c["reason"] == "tested"]
+print(f"({cells}, 30) {covariance}: fits with more than 1 cluster {sum(f['found'] > 1 for f in fits)} of {len(fits)}; tested calls with p <= 0.01: "
+      f"{sum(p <= 0.01 for p in tested)} of {len(tested)}; smallest p {min(tested)}", flush=True)
+
+
+# ===== outputs (logs) =====
+# --- run_choir_default_v3.log (last lines) ---
+# {"tree": "results/analyses/default_tree_third_version_20261112/tree_default.npz", "renumbered_internal_ids": false, "found_clusters": 402, "ari_cell_line": 0.61716301122692, "nmi_cell_line": 0.8375069832090759, "recovered_lines_90_90": 42, "clusters_ge90_pure": 217, "clusters_lt20_cells": 82, "largest_cluster": 1990, "recovered": 42, "split_only": 45, "merged_only": 16, "both": 87, "tested_splits"
+# peel mapping: {'trees': 1, 'singleton': 15847, 'small': 2112}
+# --- run_choir_default_current.log (last lines) ---
+# {"tree": "results/analyses/default_tree_third_version_20261112/tree_default.npz", "renumbered_internal_ids": false, "found_clusters": 432, "ari_cell_line": 0.6209531141288298, "nmi_cell_line": 0.8388199018739134, "recovered_lines_90_90": 42, "clusters_ge90_pure": 237, "clusters_lt20_cells": 95, "largest_cluster": 1990, "recovered": 42, "split_only": 46, "merged_only": 16, "both": 86, "tested_split
+# peel mapping: {'trees': 1, 'singleton': 15847, 'small': 2112}
+# --- run_choir_markov_ward_v3.log (last lines) ---
+# {"tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "renumbered_internal_ids": false, "found_clusters": 210, "ari_cell_line": 0.8651596612407532, "nmi_cell_line": 0.9442244100651088, "recovered_lines_90_90": 127, "clusters_ge90_pure": 166, "clusters_lt20_cells": 16, "largest_cluster": 1990, "recovered": 127, "split_only": 17, "merged_only"
+# peel mapping: {'trees': 1, 'singleton': 13641, 'small': 1867}
+# --- run_benchmark.log (last lines) ---
+# Empty DataFrame
+# Columns: [case, method, true_clusters, found_clusters, found_clusters_before]
+# Index: []
+# null cases: [{'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion', 'found_clusters': 1}, {'case': 'gauss_null_large_continuous', 'method': 'tbs_family_diffusion_markov_ward', 'found_clusters': 1}, {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion', 'found_clusters': 1}, {'case': 'gauss_null_256n_30f_continuous', 'method': 'tbs_family_diffusion_markov_wa
+# call reasons: {'tested': 164, 'too_few_cells': 12}
+# one-population grid: 1 cluster in 80 of 80 runs; smallest p 0.18827; p <= 0.01 in 0 of 538 tested calls
+# --- run_level_256_identity.log (last lines) ---
+# (256, 30) identity: fits with more than 1 cluster 0 of 200; tested calls with p <= 0.01: 0 of 1368; smallest p 0.08292
+# --- run_level_256_unequal.log (last lines) ---
+# (256, 30) unequal: fits with more than 1 cluster 0 of 200; tested calls with p <= 0.01: 0 of 1550; smallest p 0.07339999999999999
+# --- run_level_496_identity.log (last lines) ---
+# (496, 30) identity: fits with more than 1 cluster 0 of 200; tested calls with p <= 0.01: 0 of 2624; smallest p 0.04939
+# --- run_level_496_unequal.log (last lines) ---
+# (496, 30) unequal: fits with more than 1 cluster 0 of 200; tested calls with p <= 0.01: 0 of 3181; smallest p 0.033229999999999996

@@ -1,0 +1,372 @@
+# ===== protocol.md =====
+# # Protocol: why the edge test is significant inside one Gaussian group (frozen 2026-11-12, before the run)
+#
+# - Question: on the `cancer_pc` cases the edge gate opens for both children at 17 of 24 nodes of one true group
+#   with operator "markov" and linkage "ward", and at 0 of 48, 0 of 29 and 0 of 45 (one child at 2) in the
+#   other three cells (`results/analyses/cancer_pc_operator_linkage_20261112`). Why?
+# - The edge test as read from the code: the contrast is the mean of the child's test rows minus the mean of
+#   the parent's test rows (each child's rows alternate between a test half and a basis half), whitened with
+#   the parent's guarded within-child covariance, divided by the square root of
+#   (1/n_child - 1/n_parent) x (1 + L / mean L) with L the edge's branch length, projected on k directions of
+#   the parent's PCA basis fitted on the basis half; the p-value is chi-square(k). Tree-BH at edge alpha 0.001.
+# - Three candidate causes: (1) the tree chooses the split from the same data, so the contrast is larger than
+#   for a fixed split; (2) the branch-time multiplier 1 + L / mean L is small; (3) the projection dimension k.
+# - Edges: both child edges of every node with at least 40 cells, all from one true group, in the 4 cells
+#   (operator symmetric or markov x linkage average or ward) x 4 cases, today's registered cell.
+# - Per edge (`measure.py`, `edges.jsonl`): cells, test rows, statistic, k, raw p, L, mean L, multiplier,
+#   Tree-BH tested and significant, and four variants of the same test:
+#   (a) the tree's split with branch time (the recorded test);
+#   (b) the tree's split without branch time (`branch_length=None`);
+#   (c) 200 random splits with branch time: the parent's test rows and basis rows are each divided at random
+#       into the same sizes as the tree's split, the within-child covariance is recomputed for the random
+#       split (`pooled_within_child_covariance_by_block`), the parent's basis and k stay;
+#   (d) the same 200 random splits without branch time.
+#   Reported per cell: multiplier, k, statistic per k, and the share of raw p <= 0.001 and <= 0.01 in (a) to (d).
+# - Self-checks (asserts): variant (a) recomputed equals the recorded statistic, k and p; the recomputed
+#   within-child covariance of the tree's split equals the covariance the pipeline resolves; the 16 fits give
+#   the found clusters and ARI of `cancer_pc_operator_linkage_20261112`.
+# - Hypotheses, stated before running: H1 random splits without branch time (d) reject near the nominal level
+#   (the chi-square law holds for a fixed split). H2 the tree's split without branch time (b) rejects far above
+#   the nominal level in all four cells. H3 the multiplier is smaller with markov/ward than in the other three
+#   cells, and it is what keeps the gate closed there. Each is reported as supported or not.
+# - Limits known before running: one seed per case, 4 synthetic cases, nodes of at least 40 cells, 200 draws
+#   per edge; raw p-values, not the Tree-BH decision, in the variants.
+
+
+# ===== deviations.md =====
+# # Deviations (written 2026-11-12, during the run)
+#
+# - The self-check "the recomputed within-child covariance of the tree's split equals the covariance the
+#   pipeline resolves" stopped the first run at the first node. Cause: where a child has fewer cells than
+#   features the pipeline pools variances only (a vector of 30 variances), while
+#   `pooled_within_child_covariance_by_block` returns the full matrix; the vector equals that matrix's diagonal
+#   (largest relative difference 7e-16). This is the case at 93 of the 146 nodes; at the other 53 the two are
+#   equal. Change: the recomputed covariance is reduced to its diagonal at the nodes where the pipeline holds
+#   variances only, for the tree's split and for the random splits. The edge record gained the field
+#   `covariance_variances_only`. Nothing else changed.
+# - After the first output of `summarize.py` a block was added: edges not tested by Tree-BH against tested edges,
+#   and the largest node of each true group per case. Reason: the first output showed raw p <= 0.001 at 18% to
+#   39% of the edges in the three cells where the gate stays closed, so the raw p-values alone do not explain
+#   the difference between the cells.
+
+
+# ===== measure.py =====
+"""protocol.md: the edge test at nodes of one true group, tree split against random splits, with and without branch time."""
+import json
+import sys
+from pathlib import Path
+
+import networkx as nx
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import benchmarks.shared.runners.tbs_runner as tbs_runner  # noqa: E402
+import tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_divergence_annotation.child_parent_divergence_annotation as edge_module  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.generators import generate_case_data  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+from tree_break_selection.hierarchy_analysis.statistics.branch_length_utils import (  # noqa: E402
+    compute_mean_branch_length,
+    extract_branch_length_observation,
+)
+from tree_break_selection.hierarchy_analysis.statistics.child_parent_divergence.child_parent_projected_wald.child_parent_projected_wald_test import (  # noqa: E402
+    run_child_parent_projected_wald_test,
+)
+from tree_break_selection.tree.distributions import (  # noqa: E402
+    pooled_within_child_covariance_by_block,
+    resolve_node_continuous_covariance_by_block,
+)
+
+METHOD = "tbs_family_diffusion"
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+DRAWS = 200
+seen = {}
+original_tests, original_rows, Original = edge_module.run_child_parent_tests_across_tree, edge_module.split_edge_test_rows, tbs_runner.TreeDecomposition
+
+
+def recording_tests(**kwargs):
+    out = original_tests(**kwargs)
+    seen.update(kwargs=kwargs, results=out)
+    return out
+
+
+def recording_rows(tree, leaf_data):
+    out = original_rows(tree, leaf_data)
+    seen.update(test_rows=out[0], basis_rows=out[1])
+    return out
+
+
+class Recording(Original):
+    def decompose_tree(self):
+        out = super().decompose_tree()
+        seen.update(annotations=self.annotations_df)
+        return out
+
+
+edge_module.run_child_parent_tests_across_tree = recording_tests
+edge_module.split_edge_test_rows = recording_rows
+tbs_runner.TreeDecomposition = Recording
+apply_single_thread_runtime_defaults()
+earlier = {}
+for line in open(HERE.parent / "cancer_pc_operator_linkage_20261112" / "nodes.jsonl"):
+    node = json.loads(line)
+    earlier[node["case"], node["method"]] = (node["found"], node["ari"])
+rng = np.random.default_rng(20261112)
+with open(HERE / "edges.jsonl", "w") as out:
+    for case in get_test_cases_by_suite("cancer_pc"):
+        data, truth, _, _ = generate_case_data(case)
+        matrix = data.to_numpy(dtype=np.float64)
+        row_of = {name: row for row, name in enumerate(data.index)}
+        for operator, linkage in CELLS:
+            cell = f"{operator}/{linkage}"
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage}
+            seen.clear()
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                              plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            found, ari = int(res["found_clusters"].iloc[0]), float(res["ari"].iloc[0])
+            assert (found, ari) == earlier[case["name"], cell], (case["name"], cell)
+            kw, table = seen["kwargs"], seen["annotations"]
+            tree, space = kw["tree"], kw["feature_space"]
+            statistics, dfs, p_values = seen["results"]
+            edge_index = {child: i for i, child in enumerate(kw["child_ids"])}
+            mean_length = compute_mean_branch_length(tree)
+            rows_under = {}
+            for node in reversed(list(nx.topological_sort(tree))):
+                children = list(tree.successors(node))
+                rows_under[node] = [row_of[tree.nodes[node]["label"]]] if not children else sum((rows_under[c] for c in children), [])
+            edges = 0
+            for parent in tree.nodes:
+                children = list(tree.successors(parent))
+                if not children or len(rows_under[parent]) < 40 or len(np.unique(truth[rows_under[parent]])) != 1:
+                    continue
+                k, projection, eigenvalues = (kw[name][parent] for name in ("spectral_dims", "pca_projections", "pca_eigenvalues"))
+                covariance = resolve_node_continuous_covariance_by_block(
+                    tree, parent, space, continuous_covariance_policy=kw["continuous_covariance_policy"],
+                    continuous_covariance_min_child_leaf_count=kw["continuous_covariance_min_child_leaf_count"])
+
+                def within(groups):
+                    """deviations.md: variances only where the pipeline's covariance of this node holds variances only."""
+                    full = pooled_within_child_covariance_by_block(
+                        tree, parent, space, matrix, groups, min_child_leaf_count=kw["continuous_covariance_min_child_leaf_count"])
+                    return {name: np.diag(value) if np.ndim(covariance[name]) == 1 and np.ndim(value) == 2 else value
+                            for name, value in full.items()}
+
+                again = within([rows_under[c] for c in children])
+                assert all(np.shape(covariance[name]) == np.shape(again[name])
+                           and np.allclose(covariance[name], again[name], rtol=1e-9, atol=1e-12) for name in covariance), (parent, "covariance")
+                test_rows = {c: list(seen["test_rows"][c]) for c in children}
+                basis_rows = {c: sorted(set(rows_under[c]) - set(test_rows[c])) for c in children}
+                parent_test = np.array(sum(test_rows.values(), []))
+                parent_basis = np.array(sum(basis_rows.values(), []))
+
+                def test(child_test, cov, length):
+                    return run_child_parent_projected_wald_test(
+                        matrix[child_test].mean(axis=0), matrix[parent_test].mean(axis=0), len(child_test), len(parent_test),
+                        spectral_k=k, pca_projection=projection, pca_eigenvalues=eigenvalues, feature_space=space,
+                        continuous_covariance_by_block=cov, branch_length=length, mean_branch_length=mean_length,
+                        adaptive_projection_dimension_energy_fraction=kw["adaptive_projection_dimension_energy_fraction"])
+
+                for child, other in (children, children[::-1]):
+                    i = edge_index[child]
+                    length = extract_branch_length_observation(tree, parent, child)
+                    if k == 0:
+                        continue
+                    a = test(test_rows[child], covariance, length)
+                    assert np.allclose(a, (statistics[i], dfs[i], p_values[i]), rtol=1e-9, atol=1e-300), (parent, child, a)
+                    b = test(test_rows[child], covariance, None)
+                    random_with, random_without, random_ratio = [], [], []
+                    for _ in range(DRAWS):
+                        child_test = rng.permutation(parent_test)[: len(test_rows[child])]
+                        child_basis = rng.permutation(parent_basis)[: len(basis_rows[child])]
+                        group = sorted(set(child_test) | set(child_basis))
+                        cov = within([group, sorted(set(rows_under[parent]) - set(group))])
+                        with_time, without_time = test(child_test, cov, length), test(child_test, cov, None)
+                        random_with.append(with_time[2])
+                        random_without.append(without_time[2])
+                        random_ratio.append(without_time[0] / without_time[1])
+                    out.write(json.dumps(dict(
+                        case=case["name"], cell=cell, parent=str(parent), child=str(child), group=int(truth[rows_under[parent][0]]),
+                        n_parent=len(rows_under[parent]), n_child=len(rows_under[child]), n_parent_test=len(parent_test),
+                        n_child_test=len(test_rows[child]), k=int(k), statistic=float(a[0]), df=float(a[1]), p=float(a[2]),
+                        length=None if length is None else float(length), mean_length=float(mean_length),
+                        multiplier=1.0 if not length else 1.0 + float(length) / float(mean_length),
+                        covariance_variances_only=bool(all(np.ndim(v) == 1 for v in covariance.values())),
+                        tested=bool(table.loc[child, "Child_Parent_Divergence_Tested"]),
+                        significant=bool(table.loc[child, "Child_Parent_Divergence_Significant"]),
+                        statistic_without_time=float(b[0]), df_without_time=float(b[1]), p_without_time=float(b[2]),
+                        random_p_with_time=random_with, random_p_without_time=random_without,
+                        random_statistic_per_k_without_time=float(np.median(random_ratio)))) + "\n")
+                    edges += 1
+            print(case["name"], cell, found, round(ari, 4), "edges", edges, flush=True)
+
+
+# ===== summarize.py =====
+"""protocol.md: the four variants of the edge test per cell, from edges.jsonl."""
+import json
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+edges = [json.loads(line) for line in open(HERE / "edges.jsonl")]
+CELLS = [f"{operator}/{linkage}" for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+
+
+def quartiles(values, digits=2):
+    q = np.quantile(values, [0.25, 0.5, 0.75])
+    return f"{q[1]:.{digits}f} ({q[0]:.{digits}f} to {q[2]:.{digits}f})"
+
+
+def share(values, level):
+    values = np.asarray(values)
+    return f"{int((values <= level).sum())}/{values.size} ({(values <= level).mean():.3f})"
+
+
+for cell in CELLS:
+    part = [e for e in edges if e["cell"] == cell]
+    print(f"\n== {cell}: {len(part)} edges at {len(part) // 2} nodes ==")
+    print(f"  k: {quartiles([e['k'] for e in part], 0)}; test rows of the child: {quartiles([e['n_child_test'] for e in part], 0)}; "
+          f"covariance variances only at {sum(e['covariance_variances_only'] for e in part)} edges")
+    print(f"  branch length / mean branch length: {quartiles([e['multiplier'] - 1 for e in part])}; multiplier: {quartiles([e['multiplier'] for e in part])}, "
+          f"min {min(e['multiplier'] for e in part):.2f}, max {max(e['multiplier'] for e in part):.2f}; mean branch length per run: "
+          f"{sorted({round(e['mean_length'], 4) for e in part})}")
+    print(f"  statistic per k: (a) tree split with branch time {quartiles([e['statistic'] / e['df'] for e in part])}; "
+          f"(b) tree split without {quartiles([e['statistic_without_time'] / e['df_without_time'] for e in part])}; "
+          f"(d) random split without, median of the edges' medians {np.median([e['random_statistic_per_k_without_time'] for e in part]):.2f}")
+    for level in (0.001, 0.01):
+        print(f"  raw p <= {level}: (a) {share([e['p'] for e in part], level)}; (b) {share([e['p_without_time'] for e in part], level)}; "
+              f"(c) {share(sum((e['random_p_with_time'] for e in part), []), level)}; "
+              f"(d) {share(sum((e['random_p_without_time'] for e in part), []), level)}")
+    print(f"  Tree-BH: edge tested {sum(e['tested'] for e in part)}, significant {sum(e['significant'] for e in part)}")
+    for name, select in (("covariance full", lambda e: not e["covariance_variances_only"]), ("covariance variances only", lambda e: e["covariance_variances_only"])):
+        sub = [e for e in part if select(e)]
+        if sub:
+            print(f"  {name} ({len(sub)} edges): (b) p <= 0.01 {share([e['p_without_time'] for e in sub], 0.01)}; "
+                  f"(d) p <= 0.01 {share(sum((e['random_p_without_time'] for e in sub), []), 0.01)}; "
+                  f"(d) p <= 0.001 {share(sum((e['random_p_without_time'] for e in sub), []), 0.001)}")
+
+print("\n== what the multiplier would need to be ==")
+for cell in CELLS:
+    part = [e for e in edges if e["cell"] == cell]
+    # the statistic is the statistic without branch time divided by the multiplier (checked below)
+    worst = max(abs(e["statistic"] * e["multiplier"] / e["statistic_without_time"] - 1) for e in part if e["df"] == e["df_without_time"])
+    same_k = sum(e["df"] == e["df_without_time"] for e in part)
+    print(f"{cell}: statistic x multiplier equals the statistic without branch time to {worst:.1e} at {same_k} of {len(part)} edges (same k)")
+
+print("\n== (a) by multiplier, all cells ==")
+for lo, hi in ((1, 1.25), (1.25, 2), (2, 4), (4, 1e9)):
+    part = [e for e in edges if lo <= e["multiplier"] < hi]
+    if part:
+        print(f"multiplier {lo} to {hi if hi < 1e9 else 'above'}: {len(part)} edges, by cell { {c: sum(e['cell'] == c for e in part) for c in CELLS} }, "
+              f"(a) p <= 0.001 {share([e['p'] for e in part], 0.001)}, (b) p <= 0.001 {share([e['p_without_time'] for e in part], 0.001)}")
+
+print("\n== added after the first output (deviations.md): Tree-BH blocking and the largest node of each group ==")
+for cell in CELLS:
+    part = [e for e in edges if e["cell"] == cell]
+    blocked = [e for e in part if not e["tested"]]
+    tested = [e for e in part if e["tested"]]
+    print(f"{cell}: not tested by Tree-BH {len(blocked)} of {len(part)} edges, of these raw p <= 0.001 {share([e['p'] for e in blocked], 0.001) if blocked else '-'}; "
+          f"tested {len(tested)}, of these raw p <= 0.001 {share([e['p'] for e in tested], 0.001) if tested else '-'}, significant {sum(e['significant'] for e in tested)}")
+    top = {}
+    for e in part:
+        key = (e["case"], e["group"])
+        if key not in top or e["n_parent"] > top[key][0]["n_parent"]:
+            top[key] = [e]
+        elif e["n_parent"] == top[key][0]["n_parent"] and e["parent"] == top[key][0]["parent"]:
+            top[key].append(e)
+    tops = [pair for pair in top.values() if len(pair) == 2]
+    print(f"  largest node per case and group: {len(tops)} nodes; both edges raw p <= 0.001 at {sum(all(e['p'] <= 0.001 for e in pair) for pair in tops)}, "
+          f"at least one at {sum(any(e['p'] <= 0.001 for e in pair) for pair in tops)}; both significant at {sum(all(e['significant'] for e in pair) for pair in tops)}; "
+          f"smaller side share {quartiles([min(e['n_child'] for e in pair) / pair[0]['n_parent'] for pair in tops])}; "
+          f"smallest raw p per node {sorted(float(f'{min(e['p'] for e in pair):.2g}') for pair in tops)}")
+
+
+# ===== measure.log =====
+# cancer_pc_hub_disconnected symmetric/average 6 0.9982 edges 42
+# cancer_pc_hub_disconnected symmetric/ward 6 0.9982 edges 30
+# cancer_pc_hub_disconnected markov/average 6 0.9982 edges 38
+# cancer_pc_hub_disconnected markov/ward 10 0.4459 edges 24
+# cancer_pc_hub_connected symmetric/average 5 0.5934 edges 4
+# cancer_pc_hub_connected symmetric/ward 12 0.2761 edges 0
+# cancer_pc_hub_connected markov/average 8 0.6718 edges 4
+# cancer_pc_hub_connected markov/ward 13 0.2651 edges 4
+# cancer_pc_nohub_disconnected symmetric/average 6 0.9982 edges 46
+# cancer_pc_nohub_disconnected symmetric/ward 6 0.9982 edges 28
+# cancer_pc_nohub_disconnected markov/average 6 0.9982 edges 44
+# cancer_pc_nohub_disconnected markov/ward 16 0.2677 edges 20
+# cancer_pc_nohub_connected symmetric/average 6 0.6974 edges 4
+# cancer_pc_nohub_connected symmetric/ward 9 0.429 edges 0
+# cancer_pc_nohub_connected markov/average 15 0.2656 edges 4
+# cancer_pc_nohub_connected markov/ward 15 0.2344 edges 0
+# OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python   29.11s user 0.43s system 98% cpu 29.992 total
+
+
+# ===== summary.txt =====
+#
+# == symmetric/average: 96 edges at 48 nodes ==
+#   k: 6 (2 to 30); test rows of the child: 16 (6 to 34); covariance variances only at 60 edges
+#   branch length / mean branch length: 0.00 (0.00 to 0.14); multiplier: 1.00 (1.00 to 1.14), min 1.00, max 3.30; mean branch length per run: [0.3952, 0.4053, 0.4108, 0.4115]
+#   statistic per k: (a) tree split with branch time 1.08 (0.68 to 1.73); (b) tree split without 1.16 (0.76 to 2.05); (d) random split without, median of the edges' medians 0.99
+#   raw p <= 0.001: (a) 17/96 (0.177); (b) 26/96 (0.271); (c) 6/19200 (0.000); (d) 9/19200 (0.000)
+#   raw p <= 0.01: (a) 27/96 (0.281); (b) 32/96 (0.333); (c) 90/19200 (0.005); (d) 150/19200 (0.008)
+#   Tree-BH: edge tested 12, significant 0
+#   covariance full (36 edges): (b) p <= 0.01 2/36 (0.056); (d) p <= 0.01 31/7200 (0.004); (d) p <= 0.001 2/7200 (0.000)
+#   covariance variances only (60 edges): (b) p <= 0.01 30/60 (0.500); (d) p <= 0.01 119/12000 (0.010); (d) p <= 0.001 7/12000 (0.001)
+#
+# == symmetric/ward: 58 edges at 29 nodes ==
+#   k: 9 (2 to 30); test rows of the child: 18 (10 to 25); covariance variances only at 38 edges
+#   branch length / mean branch length: 0.00 (0.00 to 0.11); multiplier: 1.00 (1.00 to 1.11), min 1.00, max 1.50; mean branch length per run: [0.3981, 0.403]
+#   statistic per k: (a) tree split with branch time 1.63 (0.93 to 2.25); (b) tree split without 1.82 (1.13 to 2.48); (d) random split without, median of the edges' medians 0.99
+#   raw p <= 0.001: (a) 18/58 (0.310); (b) 22/58 (0.379); (c) 42/11600 (0.004); (d) 59/11600 (0.005)
+#   raw p <= 0.01: (a) 23/58 (0.397); (b) 26/58 (0.448); (c) 172/11600 (0.015); (d) 224/11600 (0.019)
+#   Tree-BH: edge tested 12, significant 0
+#   covariance full (20 edges): (b) p <= 0.01 10/20 (0.500); (d) p <= 0.01 169/4000 (0.042); (d) p <= 0.001 53/4000 (0.013)
+#   covariance variances only (38 edges): (b) p <= 0.01 16/38 (0.421); (d) p <= 0.01 55/7600 (0.007); (d) p <= 0.001 6/7600 (0.001)
+#
+# == markov/average: 90 edges at 45 nodes ==
+#   k: 3 (2 to 30); test rows of the child: 14 (8 to 28); covariance variances only at 52 edges
+#   branch length / mean branch length: 0.02 (0.00 to 0.18); multiplier: 1.02 (1.00 to 1.18), min 1.00, max 3.47; mean branch length per run: [0.3947, 0.3982, 0.4033, 0.4065]
+#   statistic per k: (a) tree split with branch time 1.79 (1.33 to 2.56); (b) tree split without 2.02 (1.38 to 2.70); (d) random split without, median of the edges' medians 0.99
+#   raw p <= 0.001: (a) 35/90 (0.389); (b) 38/90 (0.422); (c) 16/18000 (0.001); (d) 32/18000 (0.002)
+#   raw p <= 0.01: (a) 42/90 (0.467); (b) 48/90 (0.533); (c) 108/18000 (0.006); (d) 173/18000 (0.010)
+#   Tree-BH: edge tested 24, significant 2
+#   covariance full (38 edges): (b) p <= 0.01 10/38 (0.263); (d) p <= 0.01 88/7600 (0.012); (d) p <= 0.001 18/7600 (0.002)
+#   covariance variances only (52 edges): (b) p <= 0.01 38/52 (0.731); (d) p <= 0.01 85/10400 (0.008); (d) p <= 0.001 14/10400 (0.001)
+#
+# == markov/ward: 48 edges at 24 nodes ==
+#   k: 28 (6 to 30); test rows of the child: 16 (13 to 24); covariance variances only at 36 edges
+#   branch length / mean branch length: 0.03 (0.00 to 0.11); multiplier: 1.03 (1.00 to 1.11), min 1.00, max 1.44; mean branch length per run: [0.3871, 0.393, 0.3982]
+#   statistic per k: (a) tree split with branch time 2.34 (2.05 to 3.18); (b) tree split without 2.60 (2.14 to 3.24); (d) random split without, median of the edges' medians 1.01
+#   raw p <= 0.001: (a) 36/48 (0.750); (b) 38/48 (0.792); (c) 35/9600 (0.004); (d) 52/9600 (0.005)
+#   raw p <= 0.01: (a) 37/48 (0.771); (b) 38/48 (0.792); (c) 143/9600 (0.015); (d) 221/9600 (0.023)
+#   Tree-BH: edge tested 42, significant 34
+#   covariance full (12 edges): (b) p <= 0.01 12/12 (1.000); (d) p <= 0.01 169/2400 (0.070); (d) p <= 0.001 49/2400 (0.020)
+#   covariance variances only (36 edges): (b) p <= 0.01 26/36 (0.722); (d) p <= 0.01 52/7200 (0.007); (d) p <= 0.001 3/7200 (0.000)
+#
+# == what the multiplier would need to be ==
+# symmetric/average: statistic x multiplier equals the statistic without branch time to 3.8e-12 at 96 of 96 edges (same k)
+# symmetric/ward: statistic x multiplier equals the statistic without branch time to 5.7e-12 at 58 of 58 edges (same k)
+# markov/average: statistic x multiplier equals the statistic without branch time to 1.1e-11 at 90 of 90 edges (same k)
+# markov/ward: statistic x multiplier equals the statistic without branch time to 1.2e-11 at 48 of 48 edges (same k)
+#
+# == (a) by multiplier, all cells ==
+# multiplier 1 to 1.25: 257 edges, by cell {'symmetric/average': 83, 'symmetric/ward': 53, 'markov/average': 75, 'markov/ward': 46}, (a) p <= 0.001 100/257 (0.389), (b) p <= 0.001 109/257 (0.424)
+# multiplier 1.25 to 2: 33 edges, by cell {'symmetric/average': 12, 'symmetric/ward': 5, 'markov/average': 14, 'markov/ward': 2}, (a) p <= 0.001 6/33 (0.182), (b) p <= 0.001 15/33 (0.455)
+# multiplier 2 to 4: 2 edges, by cell {'symmetric/average': 1, 'symmetric/ward': 0, 'markov/average': 1, 'markov/ward': 0}, (a) p <= 0.001 0/2 (0.000), (b) p <= 0.001 0/2 (0.000)
+#
+# == added after the first output (deviations.md): Tree-BH blocking and the largest node of each group ==
+# symmetric/average: not tested by Tree-BH 84 of 96 edges, of these raw p <= 0.001 17/84 (0.202); tested 12, of these raw p <= 0.001 0/12 (0.000), significant 0
+#   largest node per case and group: 10 nodes; both edges raw p <= 0.001 at 0, at least one at 0; both significant at 0; smaller side share 0.09 (0.06 to 0.12); smallest raw p per node [0.72, 0.79, 0.83, 0.86, 0.86, 0.98, 0.98, 0.99, 1.0, 1.0]
+# symmetric/ward: not tested by Tree-BH 46 of 58 edges, of these raw p <= 0.001 18/46 (0.391); tested 12, of these raw p <= 0.001 0/12 (0.000), significant 0
+#   largest node per case and group: 6 nodes; both edges raw p <= 0.001 at 0, at least one at 0; both significant at 0; smaller side share 0.18 (0.16 to 0.22); smallest raw p per node [0.052, 0.052, 0.79, 0.82, 0.98, 0.98]
+# markov/average: not tested by Tree-BH 66 of 90 edges, of these raw p <= 0.001 33/66 (0.500); tested 24, of these raw p <= 0.001 2/24 (0.083), significant 2
+#   largest node per case and group: 10 nodes; both edges raw p <= 0.001 at 0, at least one at 2; both significant at 0; smaller side share 0.08 (0.08 to 0.09); smallest raw p per node [3.7e-05, 3.7e-05, 0.016, 0.018, 0.083, 0.083, 0.11, 0.11, 0.21, 0.21]
+# markov/ward: not tested by Tree-BH 6 of 48 edges, of these raw p <= 0.001 1/6 (0.167); tested 42, of these raw p <= 0.001 35/42 (0.833), significant 34
+#   largest node per case and group: 7 nodes; both edges raw p <= 0.001 at 6, at least one at 7; both significant at 6; smaller side share 0.44 (0.24 to 0.45); smallest raw p per node [2e-20, 2.4e-07, 7.3e-06, 7.3e-06, 0.00021, 0.00021, 0.00095]

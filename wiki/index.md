@@ -40,6 +40,8 @@ renamed, or promoted.
   changed intermediate hypotheses, half-row contexts and root reachability.
 - [[subtree-context-statistics-evidence]] - four structural cases, 160 native
   replays, eigenvalue magnitudes, actual edge/sibling contexts and corrected spans.
+- [[subtree-descriptions-and-statistical-tests]] - four cases, alternatives, distance fit and inherited
+  versus rebuilt geometry traced to the sibling tests and the best-flat-cut reference.
 - [[subtree-context-and-eigenvalue-statistics]] - preserved hypotheses, branch
   factors, three eigenvalue roles and their connection to calibration.
 - [[subtree-spectral-alignment-evidence]] - eigenvector/reflection checks,
@@ -100,6 +102,55 @@ renamed, or promoted.
   regularity gaps, full-cell diagnostic fits and a high-dimensional power failure.
 - [[gaussian-best-flat-cut-reference]] - Gaussian 99% point table of the best flat cut's rho:
   settled for n from 15 and k up to 10, search misses for k of 4 and above, small excess at n = 100.
+- [[best-flat-cut-reference-benchmark]] - the opt-in reference on 9 continuous and 4 cancer_pc cases:
+  removes over-splitting, loses groups where a subtree has no invariant directions; unchanged with the
+  reference extended to 15 invariant directions.
+- [[gap-options-power]] - mixture, dip, valley and shape as additions to rho: none accepts the
+  connected cancer_pc layout; dip and valley accept a mirrored distant group and keep the level.
+- [[best-flat-cut-reference-real]] - the opt-in reference on 48,879 CHOIR cells: Markov/Ward ARI 0.297
+  against 0.833 for ceiling 3; the limit k up to 10 and the p-value floor 0.0005 are the cause.
+- [[split-vs-best-flat-cut]] - tree splits against the best flat cut in the subtree's own invariant
+  directions: median ARI 0.02 to 0.08; with several lines the best flat cut passes in 192 of 520, the tree split in 54.
+- [[best-flat-cut-divisive]] - trial fit splitting each set at its best flat cut: 323 clusters, ARI 0.874,
+  16 lines in a merge against 55 for ceiling 3, 88 lines split internally; not Tree-Break Selection.
+- [[spr-alternatives-best-flat-cut]] - sprs inside a node leave its best flat cut unchanged and bounded by it:
+  0 of 1,007 refused splits pass after sprs, 122 of 221 only-best splits pass after a median of 3 sprs.
+- [[spr-subspaces-equidistances]] - an spr's change of `rho` is the clade's transfer cost; rho-raising sprs are
+  tied in the tree's space five times as often, but 10.7% of cells change side between tree space and invariant directions.
+- [[spr-eigenvalue-blocks]] - r2 and spr transfer cost add over eigenvalue blocks; passing splits live in the first
+  block (share 0.89), rescuing sprs move the split there; two passing blocks in one node are rare (9 nodes).
+- [[spr-refit]] - sprs at 166 refused splits with a passing best flat cut, fit rerun: accepted splits 31 to 104,
+  clusters 138 to 257, ARI 0.2975 to 0.3425; nodes with more than 10 invariant directions stay refused; under the third
+  version of the draft k the tree after sprs gives ARI 0.7691 against 0.8359 unchanged; sprs only at selected refused
+  nodes give 0.8266 and 0.8257.
+- [[cancer-pc-over-splits]] - today's test on cancer_pc: Markov/Ward accepts 33 splits inside one true group;
+  on the default tree the edge gate stops them and the sibling test is never run there; inside one pure
+  group only operator markov with linkage ward together.
+- [[k-split-direction-draft]] - draft: k = 1, direction from a basis half, `rho` of the tree's split on the test half;
+  one population rejected in 0 of 11,000 simulated datasets; variant A: continuous benchmark mean ARI 0.8302 (0.6950),
+  measured level 0.35% of 31,482 one-population nodes; checked: depends on the row order (CHOIR ARI 0.8043 to 0.8397
+  against 0.8219) and raises an uncaught error for a constant feature; third version fixes both: CHOIR ARI 0.8349 to
+  0.8411 over five orders, 0 of 800 one-population fits split; on the default tree it changes nothing (ARI 0.0275);
+  a run-time trial that lets peels of fewer than 15 cells pass the edge gate gives ARI 0.6172 there and 0.8642 to 0.8706 on Markov/Ward
+  over five row orders; in production under the opt-in since 13 November (current rule: default tree 0.6210, Markov/Ward 0.8214).
+- [[line-non-sphericity]] - one cell line is non-spherical for line-specific reasons: common covariance brings the
+  eigenvalue ratio from 25.6 to 13.8, depth explains 3.0%, pools 0.8%; a label-free covariance from subtrees acts the same;
+  the directions are carried by genes: cell cycle 13.6% of the within-line variance, with RPL/RPS genes and depth 23.6%.
+- [[k-margin-prototype]] - prototype k with a simulated margin, also for more features than cells: level about 1%,
+  opt-in continuous suite mean ARI 0.6950 to 0.8880, nulls stay at 1 cluster; tree-chosen subtrees still 40% to 75%;
+  fails on the CHOIR cells (ARI 0.8219 to 0.1285): one cell line is far from spherical.
+- [[marchenko-pastur-multiplicity-literature]] - looked-up literature and four checks on k: the edge is a limit
+  (16% to 23% spurious directions), a direction needs population rho above sqrt(p/n), n <= p + 1 is not a
+  theoretical limit, sample eigenvalues do not tie.
+- [[selected-tree-null-over-splitting]] - root cause of the extra splits: edge and sibling tests hold for a tree
+  independent of the cells; one Gaussian population in 30 features is split in 46 of 60 runs, 0 of 80 with the opt-in;
+  null case `gauss_null_256n_30f_continuous` added; with peels of fewer than 15 cells passing the edge gate today's
+  default test splits it in 825 of 860 fits against 703; the opt-in splits 1 of 880 with and without the peel pass.
+- [[cancer-pc-edge-test]] - edge test inside one Gaussian group: tree's split rejects in 27% to 79% of edges,
+  random splits in 0.05% to 0.5%; branch time multiplier 1.00 to 1.03; Tree-BH and the first split decide;
+  k is 30, 30 minus test rows or 2 by whitening covariance and eigenvalue ties, not by signal.
+- [[best-flat-cut-reference-k15]] - the opt-in reference extended to 11 to 15 invariant directions: 0 of 12,000
+  null rejections of a Ward split; Markov/Ward on CHOIR from ARI 0.2975 to 0.8219.
 - [[sequencing-depth-normalization-literature]] - checked depth-normalization
   papers; log-of-normalized-counts artefact matches the measured depth effect.
 - [[root-conditional-sampler]] - maintained root-split chain diagnostic,
@@ -1084,6 +1135,8 @@ renamed, or promoted.
 
 ### Questions
 
+- [[non-heuristical-statistic-plan]] - the plan of 10 November (statistic, separated spaces, topology
+  alternatives, neighborhood) with its state: 2 of 13 steps done in changed form, A2 as a prototype, 6 not started.
 - [[choir-cell-lines-recovery-plan]] - executed coordinate/linkage comparison:
   root-child composition, spectral trace, NNLS diagnosis and statistical gate trace;
   topology limit (42 vs 134 clean lines) and the opt-in Markov/Ward method.

@@ -1,0 +1,607 @@
+# ===== brief.md =====
+# # Brief: independent check of variant A of the draft definition of k (written 2026-11-12, before the check)
+#
+# ## What is checked
+#
+# Variant A, a draft outside production (`results/analyses/k_split_direction_runs_20261112/draft_rule.py`):
+#
+# 1. For a node and the tree's split into left and right, the node's cells are divided into a basis half and a
+#    test half, alternating within each side in the order of the cells' rows in the data.
+# 2. From the basis half only, one direction w = S^-1 (mean of the left basis cells - mean of the right basis
+#    cells), S the pooled within covariance of the basis half; the difference of the means alone when the basis
+#    half has no more than p + 2 cells. k = 1.
+# 3. On the test half only: `rho` of the tree's split of the test cells along w against the Gaussian reference of
+#    the best flat cut at (number of test cells, 1) (`reference_p_value` in
+#    `tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/best_flat_cut_reference.py`).
+# 4. p = 1 with fewer than 15 test cells or a side with fewer than 2 cells.
+#
+# It replaces the reference call inside the opt-in `sibling_best_flat_cut_reference` at run time.
+#
+# ## What has been claimed so far (to be tested, not assumed)
+#
+# - Level: with one Gaussian population and the method's own trees, p <= 0.01 at 109 of 31,482 tested nodes, and
+#   more than 1 cluster in 12 of 1,960 fits (`results/analyses/k_split_direction_level_20261112`).
+# - Benchmark: continuous suite mean ARI 0.8302 against 0.6950 for the current rule; null cases at 1 cluster
+#   (`results/analyses/k_split_direction_runs_20261112`).
+# - CHOIR cells, Markov/Ward tree: 218 clusters, ARI 0.8311 against 230 and 0.8219 for the current rule
+#   (`draft_A_*` against `results/analyses/spr_refit_20261111/k15_base_*`).
+# - The level is measured, not derived: the tree's split, chosen from all cells, enters the direction.
+#
+# ## Questions the check must answer (each with a measurement)
+#
+# - Q1 code against definition: does `draft_rule.py` do exactly what the four points above say? List every
+#   difference, including edge cases (sides of 2 or 3 cells, `rho` infinite, the order in which cells arrive).
+# - Q2 dependence on the order of the rows: the halves depend on the row order of the data. With the same cells
+#   in another order (a seeded random order instead of the data order), how much do p-values, accepted splits,
+#   found clusters and ARI change? On the 14 benchmark cases (5 orders) and on the CHOIR cells (3 orders).
+# - Q3 one population that is not Gaussian, with the method's own trees: at least skewed features, heavy tails,
+#   a uniform population, and a population spread along a closed curve plus noise (variation like a cell cycle).
+#   How often does variant A split it, and how often does the current rule? 256 and 496 cells in 30 features,
+#   at least 20 seeds, the 4 cells of operator and linkage.
+# - Q4 real data: of the splits variant A accepts on the CHOIR cells, how many are at nodes with at least 90% of
+#   their cells from one cell line, and how many at nodes with several lines? The same for the current rule, for
+#   the 27 splits only variant A accepts and the 10 only the current rule accepts.
+# - Q5 the p-values under one Gaussian population: from the recorded level data, the share of tested nodes with
+#   p <= 0.1, 0.05 and 0.01 by number of test cells, against the nominal shares.
+# - Q6 anything else that could be wrong with variant A or with the evidence for it. Look for it actively.
+#
+# ## Rules
+#
+# - Only files in `results/analyses/variant_a_check_20261112/` are written. No production file, test, wiki page,
+#   raw capture or file of another analysis folder is changed; nothing is committed, installed or downloaded.
+# - Run pattern: `cd /Users/berksakalli/Projects/kl-te-cluster && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run
+#   --no-sync --offline python <script>`; scripts pass `uv run --no-sync --offline ruff check`. Long runs go to
+#   the background, at most 6 processes at a time.
+# - Every finding is one of: defect (variant A or its evidence is wrong), limitation (correct but restricted),
+#   or no problem found; each with the numbers that support it and the script that produced them. A finding
+#   without a measurement is marked as not measured.
+# - The report (`report.md`) ends with what was not checked.
+
+
+# ===== q1_edge_cases.txt =====
+# table: B = 1999 | n_grid = [15, 20, 30, 40, 50, 75, 100, 150, 200, 300, 400, 800] | k_grid = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+# smallest attainable p = 1/(B+1) = 0.0005
+# 1 halves for sides of 5 and 4: test [0, 2, 4, 5, 7] basis [1, 3, 6, 8]
+# 2 sides 13/15: reason tested, n_test 15, p 1.0
+# 2 sides 14/14: reason too_few_cells, n_test None, p 1.0
+# 2 sides 14/15: reason tested, n_test 15, p 1.0
+# 2 sides 1/40: reason too_few_cells, n_test None, p 1.0
+# 2 sides 2/40: reason tested, n_test 21, p 1.0
+# 2 sides 3/40: reason tested, n_test 22, p 1.0
+# 3 side of 2: basis cells on that side 1; cosine(code direction, within direction) 1.000000000000; rho code 2.266933014, rho within 2.266933014
+# 3 side of 3: basis cells on that side 1; cosine(code direction, within direction) 1.000000000000; rho code 1.06445394, rho within 1.06445394
+# 4 basis 20 cells, p 25: direction equals difference of means: True
+# 5 rho infinite: result (0.0005, 2702159776422296.5, 'tested') record rho 2702159776422296.5
+# 6 equal basis means (w = 0): LinAlgError: Matrix is not positive definite
+# 7 constant feature: variant A -> LinAlgError: Singular matrix | current rule -> ('tested', 1, 1.0)
+# 7 feature 2 = feature 0 + feature 1: variant A -> ('tested', 1.0) | current rule -> ('tested', 1, 1.0)
+# 8 one node (60/60 cells, mean shift 1.4 in one of 5 features), 20 orders of the cells: p = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   p <= 0.01 in 0 of 20 orders; min 1.0 max 1.0
+# 8 one node (60/60 cells, mean shift 2.5 in one of 5 features), 20 orders of the cells: p = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   p <= 0.01 in 0 of 20 orders; min 1.0 max 1.0
+# 8 one node (60/60 cells, mean shift 3.0 in one of 5 features), 20 orders of the cells: p = [0.0045, 0.015, 0.015, 0.0375, 0.046, 0.07, 0.073, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   p <= 0.01 in 1 of 20 orders; min 0.0045 max 1.0
+# 8 one node (60/60 cells, mean shift 3.5 in one of 5 features), 20 orders of the cells: p = [0.0005, 0.001, 0.001, 0.0015, 0.002, 0.003, 0.0035, 0.0045, 0.005, 0.0055, 0.0055, 0.0055, 0.007, 0.0075, 0.0085, 0.015, 0.015, 0.015, 0.026, 0.0715]
+#   p <= 0.01 in 15 of 20 orders; min 0.0005 max 0.0715
+# 9 n_test 15: reference n 15
+# 9 n_test 16: reference n 15
+# 9 n_test 29: reference n 20
+# 9 n_test 31: reference n 30
+# 9 n_test 101: reference n 100
+# 9 n_test 4000: reference n 800
+# 9 n_test 30000: reference n 800
+
+
+# ===== q2_plugin.py =====
+"""Q2: the plug-in of draft_rule.install("A") with each side's cells ordered by a seeded random key of the row index."""
+import sys
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "k_split_direction_runs_20261112"))
+
+import draft_rule  # noqa: E402
+
+mod = draft_rule.mod
+
+
+def install(order_seed):
+    """order_seed None: data order (the plug-in as it is); an int: rows sorted by a key drawn with that seed."""
+    draft_rule.install("A")
+    if order_seed is None:
+        return
+    key = np.random.default_rng(order_seed).random(1_000_000)  # shortcut: at most 1,000,000 rows, enough for 48,879
+    original = draft_rule._original_leaf_rows
+    mod._leaf_rows = lambda tree, node, row_of_label: sorted(original(tree, node, row_of_label), key=key.__getitem__)
+
+
+if __name__ == "__main__":  # self-check: the key order is a permutation of the rows and differs from data order
+    install(1)
+    rows = list(range(50))
+    ordered = sorted(rows, key=np.random.default_rng(1).random(1_000_000).__getitem__)
+    assert sorted(ordered) == rows and ordered != rows
+    print("ok")
+
+
+# ===== q2_summary.txt =====
+# == benchmark: 14 cases x 2 methods x 6 orders, 168 fits, 86 s; status ok 168 ==
+# data order reproduces benchmark_results_A.csv (found clusters and ARI): 28 of 28
+# order data: continuous mean ARI 0.8472; cancer_pc mean ARI 0.7221; vs data order: found clusters changed 0 of 28, ARI changed 0 of 28, accepted set changed 0 of 28; accepted splits 54
+# order 1: continuous mean ARI 0.8472; cancer_pc mean ARI 0.7221; vs data order: found clusters changed 0 of 28, ARI changed 0 of 28, accepted set changed 0 of 28; accepted splits 54
+# order 2: continuous mean ARI 0.8472; cancer_pc mean ARI 0.7221; vs data order: found clusters changed 0 of 28, ARI changed 0 of 28, accepted set changed 4 of 28; accepted splits 58
+# order 3: continuous mean ARI 0.8472; cancer_pc mean ARI 0.7221; vs data order: found clusters changed 0 of 28, ARI changed 0 of 28, accepted set changed 4 of 28; accepted splits 58
+# order 4: continuous mean ARI 0.8472; cancer_pc mean ARI 0.7221; vs data order: found clusters changed 0 of 28, ARI changed 0 of 28, accepted set changed 2 of 28; accepted splits 56
+# order 5: continuous mean ARI 0.8472; cancer_pc mean ARI 0.7221; vs data order: found clusters changed 0 of 28, ARI changed 0 of 28, accepted set changed 3 of 28; accepted splits 57
+# benchmark per-node p over 6 orders: nodes called in every order 165; with p <= 0.01 in at least one order 58, of which p <= 0.01 in every order 54, p = 1 in at least one order 4
+#   max p - min p over orders at those nodes: median 0.0, max 0.9995; nodes with any p < 1 63, of which p equal in every order 46
+#
+# == CHOIR cells, Markov/Ward tree ==
+# rerun 'data' against recorded variant A (draft_A): found clusters 218 vs 218; ARI 0.8311 vs 0.8311; ARI between the two partitions 1.0000; nodes with identical p and acceptance 1838 of 1838
+# rerun 'current' against recorded current rule (k15_base): found clusters 230 vs 230; ARI 0.8219 vs 0.8219; ARI between the two partitions 1.0000; nodes with identical p and acceptance 1838 of 1838
+# order data: found clusters 218; ARI 0.8311; recovered 120; accepted 151; p <= 0.01 170; accepted vs data order: lost 0, gained 0; ARI with data-order partition 1.0000; 129 s
+# order 1: found clusters 225; ARI 0.8397; recovered 125; accepted 156; p <= 0.01 164; accepted vs data order: lost 7, gained 12; ARI with data-order partition 0.9698; 128 s
+# order 2: found clusters 216; ARI 0.8321; recovered 123; accepted 149; p <= 0.01 172; accepted vs data order: lost 17, gained 15; ARI with data-order partition 0.9634; 128 s
+# order 3: found clusters 205; ARI 0.8236; recovered 118; accepted 144; p <= 0.01 171; accepted vs data order: lost 11, gained 4; ARI with data-order partition 0.9844; 128 s
+#   ARI between partitions of orders data and 1: 0.9698
+#   ARI between partitions of orders data and 2: 0.9634
+#   ARI between partitions of orders data and 3: 0.9844
+#   ARI between partitions of orders 1 and 2: 0.9847
+#   ARI between partitions of orders 1 and 3: 0.9585
+#   ARI between partitions of orders 2 and 3: 0.9594
+# CHOIR per-node p over 4 orders (data, 1, 2, 3): nodes called in every order 1838; with p <= 0.01 in at least one order 191, of which p <= 0.01 in every order 154, p = 1 in at least one order 25
+#   max p - min p over orders at those nodes: median 0.0, max 0.9995; nodes with any p < 1 221, of which p equal in every order 143
+#   nodes accepted in every order 131; in some but not all orders 39; in at least one 170
+# current rule rerun: accepted 134; variant A orders accepted [151, 156, 149, 144]; found clusters [218, 225, 216, 205] vs 230; ARI [0.8311, 0.8397, 0.8321, 0.8236] vs 0.8219
+
+
+# ===== q3_nongaussian.py =====
+"""Q3: one non-Gaussian population through the method's own pipeline, variant A and the current rule.
+
+usage: q3_nongaussian.py SHAPE CELLS   SHAPE in skewed, heavy, uniform, circle; CELLS in 256, 496 (30 features, seeds 1 to 20)
+Shapes (z = the generated one-population matrix minus its column means, about standard normal):
+  skewed  exponential(1) features, expon.ppf(norm.cdf(z)) (skewness 2)
+  heavy   t features with 3 degrees of freedom, t.ppf(norm.cdf(z), 3)
+  uniform uniform features, norm.cdf(z)
+  circle  angle 2 pi norm.cdf(z[:, 0]); features 1, 2 = RADIUS (cos, sin); features 3 to 30 = z[:, 2:]
+Each fit is run twice on the same data: variant A installed, then the current rule (plug-in removed).
+Per-fit recording as in k_split_direction_level_20261112/measure.py. Output: q3_<SHAPE>_<CELLS>.json
+"""
+import json
+import sys
+import time
+from pathlib import Path
+
+import networkx as nx
+import numpy as np
+from scipy import stats
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "k_split_direction_runs_20261112"))
+
+import draft_rule  # noqa: E402
+
+import benchmarks.shared.generators.gaussian_cases as gaussian_cases  # noqa: E402
+import benchmarks.shared.runners.tbs_runner as tbs_runner  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.generators import generate_case_data  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+METHOD = "tbs_family_diffusion"
+CELLS = [(operator, linkage) for operator in ("symmetric", "markov") for linkage in ("average", "ward")]
+RADIUS = 3.0
+MIN_NODE_CELLS = 30
+mod = draft_rule.mod
+original = mod.best_flat_cut_reference  # the current rule, kept before install
+original_make_blobs = gaussian_cases.make_blobs
+seen = {"hook": 0}
+Original = tbs_runner.TreeDecomposition
+
+
+class Recording(Original):
+    def decompose_tree(self):
+        out = super().decompose_tree()
+        seen.update(tree=self.tree)
+        return out
+
+
+def transform(x, shape):
+    z = x - x.mean(0)
+    if shape == "skewed":
+        return stats.expon.ppf(stats.norm.cdf(z))
+    if shape == "heavy":
+        return stats.t.ppf(stats.norm.cdf(z), 3)
+    if shape == "uniform":
+        return stats.norm.cdf(z)
+    angle = 2 * np.pi * stats.norm.cdf(z[:, 0])
+    return np.column_stack([RADIUS * np.cos(angle), RADIUS * np.sin(angle), z[:, 2:]])
+
+
+def use_rule(rule):
+    if rule == "A":
+        draft_rule.install("A")
+    else:
+        mod.best_flat_cut_reference, mod._leaf_rows = original, draft_rule._original_leaf_rows
+
+
+def fit(case, operator, linkage):
+    seen.pop("tree", None)
+    draft_rule.CALLS.clear()
+    params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage,
+              "sibling_best_flat_cut_reference": True}
+    try:
+        res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                          plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                          allow_method_errors=False).iloc[0]
+    except ValueError as error:
+        return None, f"error: {error}"
+    return int(res["found_clusters"]), str(res["status"])
+
+
+def main():
+    shape, cells = sys.argv[1], int(sys.argv[2])
+
+    def hook(*args, **kwargs):
+        x, y = original_make_blobs(*args, **kwargs)
+        seen["hook"] += 1
+        return transform(x, shape), y
+
+    gaussian_cases.make_blobs = hook
+    tbs_runner.TreeDecomposition = Recording
+    draft = draft_rule._draft("A")
+    apply_single_thread_runtime_defaults()
+    start = time.perf_counter()
+    (registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+    fits, failures = [], []
+    for seed in range(1, 21):
+        case = {**registered, "n_samples": cells, "n_features": 30, "seed": seed}
+        before = seen["hook"]
+        data, _, _, _ = generate_case_data(case)
+        matrix = data.to_numpy(dtype=np.float64)
+        if seen["hook"] == before:
+            failures.append(dict(check="make_blobs hook used", seed=seed))
+        if shape == "circle" and not np.allclose(np.hypot(matrix[:, 0], matrix[:, 1]), RADIUS):
+            failures.append(dict(check="first two features on the circle", seed=seed))
+        row_of = {name: row for row, name in enumerate(data.index)}
+        for operator, linkage in CELLS:
+            use_rule("current")
+            cur_found, cur_status = fit(case, operator, linkage)
+            use_rule("A")
+            a_found, a_status = fit(case, operator, linkage)
+            record = dict(seed=seed, cell=f"{operator}/{linkage}", a_found=a_found, a_status=a_status, cur_found=cur_found,
+                          cur_status=cur_status, calls=[dict(c) for c in draft_rule.CALLS], nodes=[])
+            draft_rule.CALLS.clear()
+            if "tree" not in seen:
+                fits.append(record)
+                failures.append(dict(check="tree captured", seed=seed, cell=record["cell"]))
+                continue
+            tree = seen["tree"]
+            rows_under = {}
+            for node in reversed(list(nx.topological_sort(tree))):
+                children = list(tree.successors(node))
+                rows_under[node] = [row_of[tree.nodes[node]["label"]]] if not children else sum((rows_under[c] for c in children), [])
+            if sorted(rows_under[tree.root()]) != list(range(cells)):
+                failures.append(dict(check="cells under the root are all cells", seed=seed, cell=record["cell"]))
+            for node, rows in rows_under.items():
+                children = list(tree.successors(node))
+                if not children or len(rows) < MIN_NODE_CELLS:
+                    continue
+                left = sorted(rows_under[children[0]])
+                right = sorted(r for c in children[1:] for r in rows_under[c])
+                in_left = np.r_[np.ones(len(left), dtype=bool), np.zeros(len(right), dtype=bool)]
+                points = matrix[left + right]
+                try:
+                    a = draft(points, in_left)
+                    (call,) = draft_rule.CALLS
+                except Exception as error:  # noqa: BLE001  # an error of variant A is a finding, recorded
+                    call = dict(reason=f"error: {type(error).__name__}", p=None, rho=None)
+                    a = None
+                draft_rule.CALLS.clear()
+                b = original(points, in_left)
+                record["nodes"].append(dict(
+                    cells=len(rows), left=len(left), a_reason=call["reason"], a_p=call["p"], a_test_cells=call.get("n_test"),
+                    a_rho=call["rho"], cur_reason=b.reason, cur_k=int(b.invariant_directions), cur_p=float(b.p_value)))
+                assert a is None or a.p_value == call["p"]
+            fits.append(record)
+        print(shape, cells, seed, f"{time.perf_counter() - start:.0f} s", flush=True)
+    json.dump(dict(shape=shape, cells=cells, radius=RADIUS if shape == "circle" else None, seconds=time.perf_counter() - start,
+                   failures=failures, fits=fits), open(HERE / f"q3_{shape}_{cells}.json", "w"))
+    assert not failures, f"{len(failures)} failed self-checks"
+
+
+if __name__ == "__main__":
+    main()
+
+
+# ===== q3_summary.txt =====
+# files 8; fits per rule 640; failed self-checks 0; circle radius 3.0; seconds [74, 168, 75, 171, 70, 164, 70, 160]
+# status counts variant A {'ok': 640} | current rule {'ok': 640}
+# variant A reasons at nodes >= 30 cells {'tested': 13640, 'too_few_cells': 173}
+#
+# shape cells cell | fits | >1 cluster variant A | >1 cluster current rule | found clusters variant A (max) | current rule (max) | nodes >= 30 cells | variant A tested, p <= 0.01 | current rule tested, p <= 0.01
+# skewed 256 symmetric/average | 20 | 0 | 0 | 1 | 1 | 275 | 274, 1 | 228, 0
+# skewed 256 symmetric/ward | 20 | 0 | 0 | 1 | 1 | 268 | 268, 3 | 237, 0
+# skewed 256 markov/average | 20 | 0 | 0 | 1 | 1 | 345 | 344, 0 | 293, 0
+# skewed 256 markov/ward | 20 | 0 | 0 | 1 | 1 | 277 | 277, 1 | 247, 1
+# skewed 256 all | 80 | 0 | 0 | 1 | 1 | 1165 | 1163, 5 | 1005, 1
+# skewed 496 symmetric/average | 20 | 1 | 0 | 9 | 1 | 532 | 525, 5 | 467, 1
+# skewed 496 symmetric/ward | 20 | 1 | 0 | 8 | 1 | 529 | 529, 7 | 478, 3
+# skewed 496 markov/average | 20 | 0 | 0 | 1 | 1 | 604 | 602, 2 | 538, 0
+# skewed 496 markov/ward | 20 | 1 | 1 | 8 | 5 | 544 | 544, 10 | 496, 2
+# skewed 496 all | 80 | 3 | 1 | 9 | 5 | 2209 | 2200, 24 | 1979, 6
+# heavy 256 symmetric/average | 20 | 0 | 0 | 1 | 1 | 303 | 299, 0 | 284, 0
+# heavy 256 symmetric/ward | 20 | 0 | 0 | 1 | 1 | 262 | 262, 0 | 248, 0
+# heavy 256 markov/average | 20 | 0 | 0 | 1 | 1 | 384 | 383, 1 | 364, 1
+# heavy 256 markov/ward | 20 | 0 | 0 | 1 | 1 | 289 | 289, 3 | 265, 1
+# heavy 256 all | 80 | 0 | 0 | 1 | 1 | 1238 | 1233, 4 | 1161, 2
+# heavy 496 symmetric/average | 20 | 0 | 0 | 1 | 1 | 608 | 589, 1 | 582, 0
+# heavy 496 symmetric/ward | 20 | 0 | 0 | 1 | 1 | 557 | 557, 0 | 527, 0
+# heavy 496 markov/average | 20 | 0 | 0 | 1 | 1 | 701 | 700, 0 | 679, 0
+# heavy 496 markov/ward | 20 | 0 | 0 | 1 | 1 | 578 | 578, 2 | 532, 0
+# heavy 496 all | 80 | 0 | 0 | 1 | 1 | 2444 | 2424, 3 | 2320, 0
+# uniform 256 symmetric/average | 20 | 0 | 0 | 1 | 1 | 274 | 269, 1 | 176, 0
+# uniform 256 symmetric/ward | 20 | 0 | 0 | 1 | 1 | 250 | 250, 0 | 183, 0
+# uniform 256 markov/average | 20 | 0 | 0 | 1 | 1 | 295 | 295, 1 | 183, 0
+# uniform 256 markov/ward | 20 | 0 | 1 | 1 | 6 | 254 | 254, 0 | 181, 3
+# uniform 256 all | 80 | 0 | 1 | 1 | 6 | 1073 | 1068, 2 | 723, 3
+# uniform 496 symmetric/average | 20 | 0 | 0 | 1 | 1 | 583 | 551, 2 | 427, 1
+# uniform 496 symmetric/ward | 20 | 0 | 0 | 1 | 1 | 512 | 512, 4 | 446, 1
+# uniform 496 markov/average | 20 | 0 | 0 | 1 | 1 | 548 | 548, 4 | 422, 4
+# uniform 496 markov/ward | 20 | 1 | 1 | 7 | 9 | 501 | 501, 3 | 433, 5
+# uniform 496 all | 80 | 1 | 1 | 7 | 9 | 2144 | 2112, 13 | 1728, 11
+# circle 256 symmetric/average | 20 | 18 | 20 | 3 | 4 | 313 | 287, 25 | 201, 44
+# circle 256 symmetric/ward | 20 | 17 | 20 | 3 | 5 | 247 | 247, 23 | 179, 50
+# circle 256 markov/average | 20 | 15 | 20 | 3 | 4 | 264 | 255, 24 | 185, 45
+# circle 256 markov/ward | 20 | 15 | 20 | 3 | 4 | 237 | 237, 18 | 183, 36
+# circle 256 all | 80 | 65 | 80 | 3 | 5 | 1061 | 1026, 90 | 748, 175
+# circle 496 symmetric/average | 20 | 18 | 18 | 4 | 4 | 804 | 752, 48 | 524, 46
+# circle 496 symmetric/ward | 20 | 20 | 20 | 4 | 6 | 537 | 537, 45 | 382, 56
+# circle 496 markov/average | 20 | 20 | 20 | 4 | 5 | 637 | 624, 43 | 471, 57
+# circle 496 markov/ward | 20 | 20 | 20 | 4 | 5 | 501 | 501, 54 | 395, 56
+# circle 496 all | 80 | 78 | 78 | 4 | 6 | 2479 | 2414, 190 | 1772, 215
+# TOTAL skewed | 160 | 3 | 1 | 9 | 5 | 3374 | 3363, 29 | 2984, 7
+# TOTAL heavy | 160 | 0 | 0 | 1 | 1 | 3682 | 3657, 7 | 3481, 2
+# TOTAL uniform | 160 | 1 | 2 | 7 | 9 | 3217 | 3180, 15 | 2451, 14
+# TOTAL circle | 160 | 143 | 158 | 4 | 6 | 3540 | 3440, 280 | 2520, 390
+
+
+# ===== q4_composition.txt =====
+# variant A: k_split_direction_runs_20261112/draft_A_splits.json; tested splits 1838; accepted 151
+# current rule: spr_refit_20261111/k15_base_splits.json; tested splits 1838; accepted 134
+#
+# == accepted by variant A (used = split in the found clusters of variant A) ==
+# nodes 151; one line (>= 90%) 3; several lines 148
+# used: one line 3 of 3; several lines 148 of 148
+# one-line nodes: distinct cell lines 3; node cells median 194 (min 54, max 275)
+#   smaller side cells: median 5, min 2, max 23; smaller side < 20 cells 2, < 50 cells 3 of 3
+#   smaller side / node cells: median 0.084; smaller side >= 90% of the node's line 1 of 3
+#   per line (line: nodes): HUPT3_PANCREAS: 1, CAKI2_KIDNEY: 1, MFE319_ENDOMETRIUM: 1
+#
+# == accepted by current rule (used = split in the found clusters of current rule) ==
+# nodes 134; one line (>= 90%) 8; several lines 126
+# used: one line 8 of 8; several lines 126 of 126
+# one-line nodes: distinct cell lines 8; node cells median 87 (min 32, max 275)
+#   smaller side cells: median 4, min 1, max 47; smaller side < 20 cells 6, < 50 cells 8 of 8
+#   smaller side / node cells: median 0.058; smaller side >= 90% of the node's line 3 of 8
+#   per line (line: nodes): ABC1_LUNG: 1, UMUC1_URINARY_TRACT: 1, TE10_OESOPHAGUS: 1, MFE280_ENDOMETRIUM: 1, HUH28_BILIARY_TRACT: 1, HT1197_URINARY_TRACT: 1, CAKI2_KIDNEY: 1, MFE319_ENDOMETRIUM: 1
+#
+# == accepted by both (used = split in the found clusters of variant A) ==
+# nodes 124; one line (>= 90%) 2; several lines 122
+# used: one line 2 of 2; several lines 122 of 122
+# one-line nodes: distinct cell lines 2; node cells median 234 (min 194, max 275)
+#   smaller side cells: median 12, min 2, max 23; smaller side < 20 cells 1, < 50 cells 2 of 2
+#   smaller side / node cells: median 0.047; smaller side >= 90% of the node's line 1 of 2
+#   per line (line: nodes): CAKI2_KIDNEY: 1, MFE319_ENDOMETRIUM: 1
+#
+# == accepted only by variant A (used = split in the found clusters of variant A) ==
+# nodes 27; one line (>= 90%) 1; several lines 26
+# used: one line 1 of 1; several lines 26 of 26
+# one-line nodes: distinct cell lines 1; node cells median 54 (min 54, max 54)
+#   smaller side cells: median 5, min 5, max 5; smaller side < 20 cells 1, < 50 cells 1 of 1
+#   smaller side / node cells: median 0.093; smaller side >= 90% of the node's line 0 of 1
+#   per line (line: nodes): HUPT3_PANCREAS: 1
+#
+# == accepted only by current rule (used = split in the found clusters of current rule) ==
+# nodes 10; one line (>= 90%) 6; several lines 4
+# used: one line 6 of 6; several lines 4 of 4
+# one-line nodes: distinct cell lines 6; node cells median 73 (min 32, max 119)
+#   smaller side cells: median 4, min 1, max 47; smaller side < 20 cells 5, < 50 cells 6 of 6
+#   smaller side / node cells: median 0.058; smaller side >= 90% of the node's line 2 of 6
+#   per line (line: nodes): ABC1_LUNG: 1, UMUC1_URINARY_TRACT: 1, TE10_OESOPHAGUS: 1, MFE280_ENDOMETRIUM: 1, HUH28_BILIARY_TRACT: 1, HT1197_URINARY_TRACT: 1
+
+
+# ===== q5_level_shares.txt =====
+# fits 1960; fits with more than 1 found cluster 12
+# setting files 11; nodes 32038; variant A tested 31482; current rule tested 24135
+# nominal shares: 0.1, 0.05, 0.01 (a Monte Carlo p with B = 1999 has P(p <= alpha) <= alpha under the reference)
+# distinct p values of variant A above 0.1: [1.0]
+#
+# variant A by test cells | tested nodes | p <= 0.1 | p <= 0.05 | p <= 0.01
+# 15-19 | 6983 | 274 (0.0392) | 145 (0.0208) | 60 (0.0086)
+# 20-29 | 8125 | 253 (0.0311) | 147 (0.0181) | 40 (0.0049)
+# 30-39 | 4189 | 52 (0.0124) | 29 (0.0069) | 8 (0.0019)
+# 40-49 | 2217 | 1 (0.0005) | 1 (0.0005) | 0 (0.0000)
+# 50-74 | 3153 | 3 (0.0010) | 2 (0.0006) | 1 (0.0003)
+# 75-99 | 1703 | 3 (0.0018) | 3 (0.0018) | 0 (0.0000)
+# 100-149 | 2047 | 2 (0.0010) | 1 (0.0005) | 0 (0.0000)
+# 150-199 | 704 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# 200-299 | 1299 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# 300-399 | 267 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# 400-799 | 795 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# all | 31482 | 588 (0.0187) | 328 (0.0104) | 109 (0.0035)
+#
+# current rule by node cells | tested nodes | p <= 0.1 | p <= 0.05 | p <= 0.01
+# 30-39 | 5222 | 78 (0.0149) | 45 (0.0086) | 14 (0.0027)
+# 40-49 | 4008 | 29 (0.0072) | 13 (0.0032) | 2 (0.0005)
+# 50-74 | 5291 | 30 (0.0057) | 19 (0.0036) | 6 (0.0011)
+# 75-99 | 2597 | 6 (0.0023) | 3 (0.0012) | 1 (0.0004)
+# 100-149 | 2636 | 2 (0.0008) | 2 (0.0008) | 2 (0.0008)
+# 150-199 | 1252 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# 200-299 | 1316 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# 300-399 | 519 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# 400-799 | 931 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# >=800 | 363 | 0 (0.0000) | 0 (0.0000) | 0 (0.0000)
+# all | 24135 | 145 (0.0060) | 82 (0.0034) | 25 (0.0010)
+
+
+# ===== q6_checks.txt =====
+# (a) continuous cases 10 (20 rows); variant A / current rule mean ARI: first 18 rows 0.8302 / 0.6950; all 20 continuous rows 0.8472 / 0.7255; all 28 rows 0.8114 / 0.7245
+#     rows 19-20 left out of the first 18: ['gauss_outlier_cluster_4c_continuous'], ARI A [1.0, 1.0] current [1.0, 1.0]
+#     variant A: cases where both methods give the same found clusters and ARI 14 of 14
+#     current rule: cases where both methods give the same found clusters and ARI 14 of 14
+# (b) one Gaussian direction, 100,000 datasets per n: share of the exact best flat cut (best threshold of the sorted values) above the k = 1 table's thresholds for p <= 0.05 (100th largest stored value) and p <= 0.01 (20th largest); under a correct table the share has mean alpha and, from the 1,999 null values, sd 0.0049 (0.05) and 0.0022 (0.01); a fixed half split (not chosen) for comparison
+#     n 15: best flat cut above p<=0.05 threshold 0.0464, above p<=0.01 threshold 0.0162; fixed half split 0.00001 / 0.00001; median rho of the best flat cut 2.051, of the fixed split 0.0324
+#     n 20: best flat cut above p<=0.05 threshold 0.0521, above p<=0.01 threshold 0.0105; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.975, of the fixed split 0.0236
+#     n 30: best flat cut above p<=0.05 threshold 0.0525, above p<=0.01 threshold 0.0120; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.895, of the fixed split 0.0156
+#     n 40: best flat cut above p<=0.05 threshold 0.0493, above p<=0.01 threshold 0.0104; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.862, of the fixed split 0.0117
+#     n 50: best flat cut above p<=0.05 threshold 0.0446, above p<=0.01 threshold 0.0086; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.840, of the fixed split 0.0091
+#     n 75: best flat cut above p<=0.05 threshold 0.0526, above p<=0.01 threshold 0.0102; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.808, of the fixed split 0.0062
+#     n 100: best flat cut above p<=0.05 threshold 0.0479, above p<=0.01 threshold 0.0184; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.794, of the fixed split 0.0046
+#     n 150: best flat cut above p<=0.05 threshold 0.0478, above p<=0.01 threshold 0.0074; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.781, of the fixed split 0.0030
+#     n 200: best flat cut above p<=0.05 threshold 0.0415, above p<=0.01 threshold 0.0066; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.774, of the fixed split 0.0023
+#     n 300: best flat cut above p<=0.05 threshold 0.0440, above p<=0.01 threshold 0.0101; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.767, of the fixed split 0.0015
+#     n 400: best flat cut above p<=0.05 threshold 0.0614, above p<=0.01 threshold 0.0141; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.763, of the fixed split 0.0011
+#     n 800: best flat cut above p<=0.05 threshold 0.0542, above p<=0.01 threshold 0.0096; fixed half split 0.00000 / 0.00000; median rho of the best flat cut 1.757, of the fixed split 0.0006
+# (c) variant A: found clusters 218; nodes that split the found clusters 217; of them tested by the reference 217, accepted by BH 151; not among the reference's calls 0
+#     their Sibling_Test_Method: {}; Sibling_BH_Different true 0 of 0
+#     BH family members (corrected p present) 1838; by method {'best_flat_cut_reference': np.int64(1838)}; depth levels 51; BH rejections 151
+# (c) current rule: found clusters 230; nodes that split the found clusters 229; of them tested by the reference 229, accepted by BH 134; not among the reference's calls 0
+#     their Sibling_Test_Method: {}; Sibling_BH_Different true 0 of 0
+#     BH family members (corrected p present) 1838; by method {'best_flat_cut_reference': np.int64(1838)}; depth levels 51; BH rejections 134
+# (c) nodes with >= 1,000 cells: 103; p = 1 under variant A 31, under the current rule 50; accepted variant A 68, current rule 50
+#     the 10 largest (cells: p variant A / current rule): 48879: 0.0005 / 1.0, 48612: 1.0 / 1.0, 48461: 1.0 / 1.0, 48145: 0.0005 / 1.0, 47895: 1.0 / 1.0, 47579: 1.0 / 1.0, 47409: 1.0 / 1.0, 46995: 1.0 / 1.0, 46518: 1.0 / 1.0, 45965: 0.0005 / 1.0
+# (c) BH family nodes: variant A 1838, current rule 1838, common 1838
+#     common members with p = 1: variant A 1649, current rule 1681; p <= 0.01: variant A 170, current rule 149
+
+
+# ===== verify_findings.py =====
+"""Own checks of four findings of the independent check (not the checker's code)."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "k_split_direction_runs_20261112"))
+
+import draft_rule  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (
+    reference_p_value,  # noqa: E402
+)
+
+rng = np.random.default_rng(31415)
+draft = draft_rule._draft("A")
+
+print("== 1. inputs that raise an error ==")
+points = rng.normal(size=(120, 5))
+points[:, 2] = 1.0  # a feature that is constant in the node
+in_left = np.r_[np.ones(60, bool), np.zeros(60, bool)]
+for label, data in (("constant feature", points), ("equal basis means", np.tile(rng.normal(size=(1, 5)), (120, 1)) + 0.0)):
+    try:
+        print(label, "->", draft(data, in_left))
+    except Exception as error:  # noqa: BLE001
+        print(label, "-> raises", type(error).__name__, str(error)[:60])
+
+print("\n== 2. accepted splits on the CHOIR cells by composition of the node ==")
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+lines = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)["Cell_line"].to_numpy()
+saved = np.load(HERE.parent / "spr_alternatives_best_flat_cut_20261111" / "tree_tbs_family_diffusion_markov_ward.npz")
+parent, leaf_row = saved["parent"].astype(np.int64), saved["leaf_row"].astype(np.int64)
+n = len(lines)
+codes = pd.factorize(lines)[0]
+counts = np.zeros((len(parent), codes.max() + 1), dtype=np.int32)
+counts[np.arange(n), codes[leaf_row]] = 1
+for node in range(len(parent)):
+    if parent[node] >= 0:
+        counts[parent[node]] += counts[node]
+purity = counts.max(axis=1) / counts.sum(axis=1)
+accepted = {}
+for name, path in (("variant A", HERE.parent / "k_split_direction_runs_20261112" / "draft_A_splits.json"),
+                   ("current rule", HERE.parent / "spr_refit_20261111" / "k15_base_splits.json")):
+    accepted[name] = {int(s["node"][1:]) for s in json.loads(path.read_text())["splits"] if s["bh_different"]}
+    one = sum(purity[i] >= 0.9 for i in accepted[name])
+    print(f"{name}: accepted {len(accepted[name])}; node with at least 90% of its cells from one line: {one}; several lines: {len(accepted[name]) - one}")
+for name, nodes in (("only variant A", accepted["variant A"] - accepted["current rule"]), ("only current rule", accepted["current rule"] - accepted["variant A"])):
+    one = sum(purity[i] >= 0.9 for i in nodes)
+    print(f"{name}: {len(nodes)}; one line {one}; several lines {len(nodes) - one}")
+
+print("\n== 3. the table at k = 1 against the exact best cut of one direction, 20,000 Gaussian datasets per n ==")
+for size in (15, 30, 75, 100, 150, 400):
+    hits = 0
+    for _ in range(20000):
+        x = np.sort(rng.normal(size=size))
+        prefix = np.cumsum(x)[:-1]
+        left = np.arange(1, size)
+        between = (prefix / left - (x.sum() - prefix) / (size - left)) ** 2 * left * (size - left) / size
+        r2 = between.max() / ((x - x.mean()) ** 2).sum()
+        hits += reference_p_value((size - 2) / size * r2 / (1 - r2), size, 1)[0] <= 0.01
+    print(f"n = {size}: best cut has p <= 0.01 in {hits} of 20000 ({hits / 20000:.4f})")
+
+print("\n== 4. the benchmark mean ARI of variant A and of the current rule, by set of cases ==")
+a = pd.read_csv(HERE.parent / "k_split_direction_runs_20261112" / "benchmark_results_A.csv")
+c = pd.read_csv(HERE.parent / "k_margin_prototype_20261112" / "b_results_current.csv")
+for name, table in (("variant A", a), ("current rule", c)):
+    t = table[table["method"] == "tbs_family_diffusion"]
+    continuous = t[~t["case"].str.startswith("cancer_pc")]
+    nine = continuous[continuous["case"] != "gauss_null_256n_30f_continuous"]
+    print(f"{name}: 9 continuous cases of 11 November {nine['ari'].mean():.4f} (cases: {len(nine)}); all 10 continuous cases {continuous['ari'].mean():.4f}; "
+          f"all 14 cases {t['ari'].mean():.4f}; left out of the 9: {sorted(set(continuous['case']) - set(nine['case']))}")
+
+
+# ===== verify_findings.txt =====
+# == 1. inputs that raise an error ==
+# constant feature -> raises LinAlgError Singular matrix
+# equal basis means -> raises LinAlgError Singular matrix
+#
+# == 2. accepted splits on the CHOIR cells by composition of the node ==
+# variant A: accepted 151; node with at least 90% of its cells from one line: 3; several lines: 148
+# current rule: accepted 134; node with at least 90% of its cells from one line: 8; several lines: 126
+# only variant A: 27; one line 1; several lines 26
+# only current rule: 10; one line 6; several lines 4
+#
+# == 3. the table at k = 1 against the exact best cut of one direction, 20,000 Gaussian datasets per n ==
+# n = 15: best cut has p <= 0.01 in 330 of 20000 (0.0165)
+# n = 30: best cut has p <= 0.01 in 205 of 20000 (0.0103)
+# n = 75: best cut has p <= 0.01 in 223 of 20000 (0.0112)
+# n = 100: best cut has p <= 0.01 in 378 of 20000 (0.0189)
+# n = 150: best cut has p <= 0.01 in 131 of 20000 (0.0066)
+# n = 400: best cut has p <= 0.01 in 279 of 20000 (0.0140)
+#
+# == 4. the benchmark mean ARI of variant A and of the current rule, by set of cases ==
+# variant A: 9 continuous cases of 11 November 0.8302 (cases: 9); all 10 continuous cases 0.8472; all 14 cases 0.8114; left out of the 9: ['gauss_null_256n_30f_continuous']
+# current rule: 9 continuous cases of 11 November 0.6950 (cases: 9); all 10 continuous cases 0.7255; all 14 cases 0.7245; left out of the 9: ['gauss_null_256n_30f_continuous']
+
+
+# ===== verify_order.py =====
+"""Own check of the row-order finding: the CHOIR fit with variant A and the cells of each side in one other order."""
+import os
+import sys
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+sys.path.insert(0, str(HERE.parent / "k_split_direction_runs_20261112"))
+
+import draft_rule  # noqa: E402
+import harness  # noqa: E402
+
+draft_rule.install("A")
+key = np.random.default_rng(777).permutation(48879)  # another order of the same cells
+original = draft_rule._original_leaf_rows
+draft_rule.mod._leaf_rows = lambda tree, node, row_of_label: sorted(original(tree, node, row_of_label), key=lambda row: key[row])
+harness.HERE = HERE
+harness.main("results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "own_order")
+os._exit(0)

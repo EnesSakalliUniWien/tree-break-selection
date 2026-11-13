@@ -1,0 +1,354 @@
+# ===== protocol.md =====
+# # Protocol: a fit that splits each subtree at its best flat cut (frozen 2026-11-11, before the run)
+#
+# Trial, descriptive; no production change. It replaces the tree (inherited geometry) by the rebuilt geometry at
+# every node, so it is a different procedure from Tree-Break Selection: no diffusion distances, no linkage tree,
+# no edge gate, no pass-through, no BH step.
+#
+# ## Procedure
+#
+# Data: 48,879 CHOIR cells, 30 PCs (`choir_cell_lines_tbs_lbfgsb_20261106/pca.npy`). Start with all cells. For a
+# set of cells:
+#
+# 1. k = number of `invariant_directions` of these cells. Stop if k = 0 or fewer than 15 cells.
+# 2. Find the best flat cut in those directions with the table's search (grid, top 50 re-sorts, single-cell
+#    moves); its `rho` is the statistic.
+# 3. p-value under one Gaussian population at (n, k), n rounded down to the table grid (largest value 800):
+#    k <= 10 from the stored table (1,999 null datasets); k > 10 from 399 null datasets drawn at run time and
+#    searched with the same search (seed [20261111, 7, n, k, b]). Because the whitened Gaussian sample has the
+#    same distribution for every covariance, the searched value has the same null distribution whether or not
+#    the search finds the true best cut; so the run-time null is a valid reference for the searched value at
+#    fixed (n, k), also above k = 10.
+# 4. If p <= 0.01, split at the cut and repeat on both sides; otherwise the set is one cluster.
+#
+# No further rule: no smallest side, no cap on depth. A guard stops the run after 6,000 tested sets and reports
+# it.
+#
+# ## Endpoints
+#
+# Found clusters, ARI and NMI against the 190 cell lines, lines recovered at 90/90, ARI against published
+# CHOIR_1, clusters at least 90% pure, clusters under 20 cells, largest cluster, lines split only / merged only /
+# both; per tested set: n, k, `rho`, p, smaller side, accepted. Comparison rows from the earlier runs: today,
+# rule-out, ceiling 3, reference (Markov/Ward and default tree).
+#
+# ## Expected before running
+#
+# - `split-vs-best-flat-cut-20261111.md`: with two or more lines in a subtree the best flat cut passed in 192 of
+#   520 subtrees and mostly respected the lines, so fewer lines should stay merged than under the reference fit
+#   (91 merged only on Markov/Ward).
+# - Inside single lines the best flat cut passed in 6.7% and 24.6% of subtrees, so lines will also be split:
+#   more than 190 clusters and a number of lines split only.
+# - Some best flat cuts isolate fewer than 5 cells; clusters under 20 cells are expected.
+# - Whether ARI exceeds ceiling 3 on Markov/Ward (0.833) is not predicted.
+#
+# ## Limits known before running
+#
+# - Per-test level 0.01 without a family-wise or FDR step, so the number of false splits over the whole fit is
+#   not controlled. The lowest possible p-values are 0.0005 (k <= 10) and 0.0025 (k > 10).
+# - k is chosen from the same cells; the sides of an accepted cut are not Gaussian samples even when the groups
+#   are (they are cut along a flat boundary), which the reference does not cover.
+# - One dataset; cell lines are the only truth.
+
+
+# ===== measure_lib.py (from split_vs_best_flat_cut_20261111) =====
+"""Best flat cut of a subtree with its partition, and the flat cut nearest to a given split."""
+import sys
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
+from build_best_flat_cut_reference import _along_one, directions, resort, swap  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    to_rho,
+    whiten,
+)
+
+
+def r2_of(y, mask):
+    s = int(mask.sum())
+    return float((y[mask].sum(0) ** 2).sum() / (s * (len(y) - s)))
+
+
+def best_flat_cut(coordinates, top=50):
+    """The table's search (grid, top re-sorts, single-point moves), returning rho and the partition."""
+    y = whiten(coordinates)
+    n, k = y.shape
+    dirs = directions(k)
+    s = np.arange(1, n)[:, None]
+    chunk = max(1, min(2000, int(2e7 // (n * k))))
+    best = np.empty(len(dirs))
+    for a in range(0, len(dirs), chunk):
+        g = dirs[a : a + chunk]
+        order = np.argsort(y @ g.T, axis=0)
+        prefix = np.cumsum(y[order], axis=0)[:-1]
+        best[a : a + chunk] = ((prefix**2).sum(-1) / (s * (n - s))).max(0)
+    out_r2, out_mask = -1.0, None
+    for j in np.argsort(-best, kind="stable")[:top]:
+        r2, mask = _along_one(y, dirs[j])
+        r2, mask = resort(y, mask, r2)
+        r2, mask = swap(y, mask, r2)
+        if r2 > out_r2:
+            out_r2, out_mask = float(r2), mask
+    return float(to_rho(out_r2, n)), out_mask
+
+
+def nearest_flat_cut(coordinates, in_left):
+    """Start at the given split, re-sort along its mean difference and move single cells until stable."""
+    y = whiten(coordinates)
+    start = r2_of(y, in_left)
+    r2, mask = resort(y, in_left, start)
+    r2, mask = swap(y, mask, r2)
+    return float(to_rho(start, len(y))), float(to_rho(r2, len(y))), mask
+
+
+# ===== divisive.py =====
+"""protocol.md: split each set of cells at its best flat cut while the Gaussian reference rejects one population."""
+import json
+import sys
+import time
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "split_vs_best_flat_cut_20261111"))
+
+from measure_lib import best_flat_cut  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference import (  # noqa: E402
+    MAX_DIRECTIONS,
+    MIN_CELLS,
+    load_table,
+    reference_p_value,
+)
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import invariant_directions  # noqa: E402
+
+ALPHA, NULL_DATASETS, MAX_SETS, SEED = 0.01, 399, 6000, 20261111
+SOURCE = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+STATE = {}
+
+
+def init(path=None):
+    STATE["x"] = np.load(path or SOURCE / "pca.npy")
+
+
+def node_job(args):
+    node, idx = args
+    start = time.perf_counter()
+    points = STATE["x"][idx]
+    d = invariant_directions(points) if len(idx) >= MIN_CELLS else np.zeros((0, points.shape[1]))
+    if len(d) == 0:
+        return node, 0, None, None, time.perf_counter() - start
+    rho, mask = best_flat_cut(points @ d.T)
+    return node, len(d), rho, mask, time.perf_counter() - start
+
+
+def null_job(args):
+    n, k, b = args
+    return best_flat_cut(np.random.default_rng([SEED, 7, n, k, b]).standard_normal((n, k)))[0]
+
+
+def grid_n(n):
+    grid = load_table()["n_grid"]
+    return int(grid[np.searchsorted(grid, n, side="right") - 1])
+
+
+def run(x_path, out_prefix, pool):
+    n_cells = len(np.load(x_path, mmap_mode="r"))
+    nulls, nodes, labels = {}, [], np.full(n_cells, -1)
+    frontier, next_id, tested = [(0, np.arange(n_cells, dtype=np.int32))], 1, 0
+    parent_of = {0: None}
+    while frontier:
+        frontier.sort(key=lambda a: -len(a[1]))
+        cells = dict(frontier)
+        results = list(pool.imap_unordered(node_job, frontier))
+        need = sorted({(grid_n(len(cells[node])), k) for node, k, rho, _, _ in results if k > MAX_DIRECTIONS} - set(nulls))
+        for n, k in need:
+            nulls[(n, k)] = np.sort(pool.map(null_job, [(n, k, b) for b in range(NULL_DATASETS)]))
+            print("null", n, k, "99% point", round(float(np.quantile(nulls[(n, k)], 0.99)), 3), flush=True)
+        frontier = []
+        for node, k, rho, mask, sec in sorted(results, key=lambda r: r[0]):
+            idx = cells[node]
+            row = {"node": node, "parent": parent_of[node], "n": len(idx), "k": k, "rho": rho, "sec": round(sec, 2)}
+            split = False
+            if k > 0:
+                tested += 1
+                if k <= MAX_DIRECTIONS:
+                    p = reference_p_value(rho, len(idx), k)[0]
+                else:
+                    ref = nulls[(grid_n(len(idx)), k)]
+                    p = (1 + len(ref) - np.searchsorted(ref, rho, side="left")) / (len(ref) + 1)
+                row.update(p=float(p), small=int(min(mask.sum(), (~mask).sum())))
+                split = p <= ALPHA and tested <= MAX_SETS
+            row["split"] = bool(split)
+            nodes.append(row)
+            if split:
+                for side in (idx[mask], idx[~mask]):
+                    parent_of[next_id] = node
+                    frontier.append((next_id, side))
+                    next_id += 1
+            else:
+                labels[idx] = node
+        print("round done: sets so far", len(nodes), "tested", tested, "open", len(frontier), flush=True)
+    assert (labels >= 0).all()
+    pd.DataFrame(nodes).to_json(f"{out_prefix}_nodes.jsonl", orient="records", lines=True)
+    return pd.factorize(labels)[0], nodes, tested
+
+
+if __name__ == "__main__":
+    with Pool(10, initializer=init) as pool:
+        start = time.perf_counter()
+        labels, nodes, tested = run(SOURCE / "pca.npy", str(HERE / "choir"), pool)
+    metadata = pd.read_csv(SOURCE / "cell_metadata.csv", index_col=0, dtype=str)
+    pd.DataFrame({"cell": metadata.index, "Cell_line": metadata.Cell_line.to_numpy(), "cluster": labels}).to_csv(
+        HERE / "assignments.csv.gz", index=False)
+    print(json.dumps({"clusters": int(labels.max() + 1), "sets": len(nodes), "tested": tested,
+                      "guard_hit": tested > MAX_SETS, "sec": round(time.perf_counter() - start)}), flush=True)
+    print("DONE", flush=True)
+
+
+# ===== selfcheck.py =====
+"""Self-check of divisive.py on simulated data: three separated Gaussian groups, and one Gaussian population."""
+import sys
+import tempfile
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+from sklearn.metrics import adjusted_rand_score
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import divisive  # noqa: E402
+
+if __name__ == "__main__":
+    rng = np.random.default_rng(5)
+    truth = np.repeat([0, 1, 2], [300, 150, 150])
+    centres = np.zeros((3, 30))
+    centres[1, 0], centres[2, 1] = 8, 8
+    cases = {"three groups": (centres[truth] + rng.standard_normal((600, 30)), truth),
+             "one population": (rng.standard_normal((600, 30)), np.zeros(600, int))}
+    for name, (x, y) in cases.items():
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.npy"
+            np.save(path, x)
+            with Pool(4, initializer=divisive.init, initargs=(path,)) as pool:
+                labels, nodes, tested = divisive.run(path, str(Path(tmp) / "check"), pool)
+        print(name, "clusters", int(labels.max() + 1), "ARI", round(adjusted_rand_score(y, labels), 3) if name == "three groups" else "-",
+              "tested", tested, [(r["n"], r["k"], None if r["rho"] is None else round(r["rho"], 2), r.get("p")) for r in nodes][:6], flush=True)
+
+
+# ===== summarize.py =====
+"""Summaries for protocol.md: metrics against the earlier fits, line breakdown, tested sets."""
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+
+HERE = Path(__file__).resolve().parent
+pd.set_option("display.width", 250)
+a = pd.read_csv(HERE / "assignments.csv.gz")
+meta = pd.read_csv(HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106" / "cell_metadata.csv", index_col=0, dtype=str)
+t = pd.crosstab(a.Cell_line, a.cluster)
+main = t.idxmax(axis=1)
+recall = t.max(axis=1) / t.sum(axis=1)
+purity = t.max(axis=0) / t.sum(axis=0)
+split = recall < 0.9
+merged = purity[main].to_numpy() < 0.9
+row = {"clusters": int(a.cluster.nunique()), "ari": adjusted_rand_score(a.Cell_line, a.cluster), "nmi": normalized_mutual_info_score(a.Cell_line, a.cluster),
+       "lines_90_90": int((~split & ~merged).sum()), "ari_choir1": adjusted_rand_score(meta.CHOIR_1.to_numpy(), a.cluster),
+       "clusters_ge90_pure": int((purity >= 0.9).sum()), "clusters_lt20_cells": int((t.sum(axis=0) < 20).sum()),
+       "largest_cluster": int(t.sum(axis=0).max()), "split_only": int((split & ~merged).sum()), "merged_only": int((~split & merged).sum()),
+       "both": int((split & merged).sum()), "median_clusters_per_line": float((t >= 0.05 * t.sum(axis=1).to_numpy()[:, None]).sum(axis=1).median())}
+print("DIVISIVE FIT\n", pd.Series(row).round(4).to_string())
+print("\nEARLIER (9 November)\n", pd.read_csv(HERE.parent / "ceiling_rule_real_20261109" / "real_metrics.csv").round(4).to_string(index=False))
+print("\nEARLIER (reference on the trees)\n", pd.read_csv(HERE.parent / "best_flat_cut_reference_real_20261111" / "real_metrics.csv").round(4).to_string(index=False))
+n = pd.read_json(HERE / "choir_nodes.jsonl", lines=True)
+n["bin"] = pd.cut(n.n, [0, 14, 31, 159, 999, 50000], labels=["<=14", "15-31", "32-159", "160-999", "1000+"])
+n["tested"] = n.k > 0
+print("\nSETS BY SIZE")
+print(n.groupby("bin", observed=True).agg(sets=("n", "size"), no_directions=("tested", lambda x: int((~x).sum())), tested=("tested", "sum"), split=("split", "sum"),
+      k_median=("k", "median"), k_max=("k", "max"), rho_median=("rho", "median"), small_lt5=("small", lambda x: int((x < 5).sum()))).round(2).to_string())
+s = n[n.split]
+print("\naccepted cuts:", len(s), "| smaller side under 5 cells:", int((s.small < 5).sum()), "| under 20:", int((s.small < 20).sum()),
+      "| p at the lowest possible value:", int(((s.p <= 0.0005) | ((s.k > 10) & (s.p <= 0.0025))).sum()), "| k above 10:", int((s.k > 10).sum()))
+print("tested sets not split:", int((n.tested & ~n.split).sum()), "| p between 0.01 and 0.05:", int((n.tested & (n.p > 0.01) & (n.p <= 0.05)).sum()))
+sizes = t.sum(axis=0)
+print("cluster sizes: median", float(sizes.median()), "| quartiles", sizes.quantile([0.25, 0.75]).tolist(), "| clusters with one cell line at >= 90%:", int((purity >= 0.9).sum()))
+per_line = (t >= 0.05 * t.sum(axis=1).to_numpy()[:, None]).sum(axis=1)
+print("clusters per line (at least 5% of the line): 1:", int((per_line == 1).sum()), "2:", int((per_line == 2).sum()), "3 or more:", int((per_line >= 3).sum()))
+pd.Series(row).to_json(HERE / "metrics.json")
+
+
+# ===== run.log (null lines and final line) =====
+# null 800 14 99% point 2.659
+# null 800 13 99% point 2.6
+# null 800 12 99% point 2.562
+# null 300 11 99% point 3.246
+# null 400 11 99% point 2.954
+# null 800 11 99% point 2.533
+# null 800 15 99% point 2.682
+# null 200 11 99% point 3.777
+# null 400 12 99% point 3.059
+# null 300 12 99% point 3.292
+# null 400 13 99% point 3.081
+# {"clusters": 323, "sets": 645, "tested": 575, "guard_hit": false, "sec": 282}
+
+
+# ===== summary.txt =====
+# DIVISIVE FIT
+#  clusters                     323.0000
+# ari                            0.8736
+# nmi                            0.9406
+# lines_90_90                   93.0000
+# ari_choir1                     0.6166
+# clusters_ge90_pure           264.0000
+# clusters_lt20_cells           44.0000
+# largest_cluster             1990.0000
+# split_only                    81.0000
+# merged_only                    8.0000
+# both                           8.0000
+# median_clusters_per_line       1.0000
+#
+# EARLIER (9 November)
+#       method      arm  clusters    ari    nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  median_clusters_per_line  sec
+#     default rule_out        69 0.0182 0.4966           29      0.0091                  49                   12            32680                       1.0  109
+#     default ceiling3        64 0.0275 0.5495           29      0.0139                  46                    9            28611                       1.0  106
+# markov_ward rule_out       664 0.7652 0.9006           80      0.5139                 494                  253             1990                       2.0  140
+# markov_ward ceiling3       217 0.8329 0.9397          119      0.5376                 164                   25             1990                       1.0  135
+#
+# EARLIER (reference on the trees)
+#       method       arm status  clusters    ari    nmi  lines_90_90  ari_choir1  clusters_ge90_pure  clusters_lt20_cells  largest_cluster  recovered  split_only  merged_only  both  sec
+#     default  rule_out     ok        69 0.0182 0.4966           29      0.0091                  49                   12            32680         29           4          145    12  110
+#     default reference     ok        53 0.0179 0.4880           25      0.0090                  37                    7            32890         25           3          150    12  111
+# markov_ward  rule_out     ok       664 0.7652 0.9006           80      0.5139                 494                  253             1990         80          72           11    27  183
+# markov_ward reference     ok       138 0.2975 0.8512           76      0.1635                  98                   10             7678         76           9           91    14  144
+#
+# SETS BY SIZE
+#          sets  no_directions  tested  split  k_median  k_max  rho_median  small_lt5
+# bin                                                                                
+# <=14       33             33       0      0       0.0      0         NaN          0
+# 15-31      37             37       0      0       0.0      0         NaN          0
+# 32-159    176              0     176     43       7.0     10        4.13         21
+# 160-999   320              0     320    201      10.0     13        4.25          4
+# 1000+      79              0      79     78      13.0     15        7.00          0
+#
+# accepted cuts: 322 | smaller side under 5 cells: 9 | under 20: 44 | p at the lowest possible value: 290 | k above 10: 169
+# tested sets not split: 253 | p between 0.01 and 0.05: 36
+# cluster sizes: median 121.0 | quartiles [46.5, 222.0] | clusters with one cell line at >= 90%: 264
+# clusters per line (at least 5% of the line): 1: 102 2: 65 3 or more: 23
+#
+# ADDED AFTER THE ENDPOINTS
+# lines in 1 cluster: 102, median line size 230, range 74 to 1990
+# lines in 2 clusters: 65, median line size 221, range 64 to 593
+# lines in 3 or more: 23, median line size 213, range 56 to 829
+# ARI after joining clusters with the same majority line: 0.9566 | groups: 190
+# same for ceiling 3 on Markov/Ward: 0.8412 | groups: 168
+# lines that are the majority of no cluster: divisive 0 | ceiling 3 22
+# ARI between the divisive fit and ceiling 3 on Markov/Ward: 0.7548
+# first cuts (sets of 10,000 cells or more): [{'n': 48879, 'k': 14, 'rho': 8.15, 'p': 0.002, 'small': 4715.0, 'split': True}, {'n': 44164, 'k': 14, 'rho': 6.334, 'p': 0.002, 'small': 5174.0, 'split': True}, {'n': 38990, 'k': 14, 'rho': 7.969, 'p': 0.002, 'small': 250.0, 'split': True}, {'n': 38740, 'k': 14, 'rho': 5.975, 'p': 0.002, 'small': 2242.0, 'split': True}, {'n': 36498, 'k': 13, 'rho': 5.387, 'p': 0.002, 'small': 12291.0, 'split': True}, {'n': 24207, 'k': 15, 'rho': 8.647, 'p': 0.002, 'small': 337.0, 'split': True}, {'n': 12291, 'k': 14, 'rho': 5.219, 'p': 0.002, 'small': 5142.0, 'split': True}, {'n': 23870, 'k': 14, 'rho': 4.365, 'p': 0.002, 'small': 457.0, 'split': True}, {'n': 23413, 'k': 14, 'rho': 5.845, 'p': 0.002, 'small': 4491.0, 'split': True}, {'n': 18922, 'k': 15, 'rho': 4.947, 'p': 0.002, 'small': 315.0, 'split': True}, {'n': 18607, 'k': 14, 'rho': 3.883, 'p': 0.002, 'small': 2946.0, 'split': True}, {'n': 15661, 'k': 14, 'rho': 4.538, 'p': 0.002, 'small': 1277.0, 'split': True}, {'n': 14384, 'k': 14, 'rho': 4.062, 'p': 0.002, 'small': 5306.0, 'split': True}]

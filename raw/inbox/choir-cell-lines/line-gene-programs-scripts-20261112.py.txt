@@ -1,0 +1,382 @@
+# ===== protocol.md =====
+# # Protocol: which gene programs carry the directions inside a cell line (frozen 2026-11-12, before the run)
+#
+# ## Why
+#
+# Inside one CHOIR cell line the cells are far from spherical for reasons specific to the line; a common
+# covariance, sequencing depth and pools do not explain it (wiki page `line-non-sphericity`). Open question: which
+# genes carry the leading directions inside a line?
+#
+# ## Looked up before this protocol
+#
+# - Kinker et al. 2020, Nature Genetics 52(11), 1208-1218, https://doi.org/10.1038/s41588-020-00726-6 (PubMed
+#   record, abstract): the paper of this dataset reports 12 expression programs that are recurrently
+#   heterogeneous within multiple cell lines, among them cell cycle, senescence, stress and interferon responses,
+#   epithelial-mesenchymal transition and protein metabolism.
+# - Tirosh et al. 2016, Science 352(6282), 189-196, https://doi.org/10.1126/science.aad0501 (PubMed record): the
+#   publication the scanpy documentation cites for the cell-cycle gene list of 97 genes, 43 for S phase and 54
+#   for G2M (https://scanpy.readthedocs.io/en/1.11.x/how-to/cell-cycle.html).
+# - The gene symbols themselves could not be retrieved from the original file (the documented GitHub paths return
+#   "not found"). They are taken from a secondary page that prints lists it attributes to the Seurat package,
+#   https://natian-and-ryabhatta.web.app/cell-cyle-scores.html : 42 S phase symbols and 51 G2M symbols as returned
+#   by the lookup (`cell_cycle_genes.json`). This is 4 symbols fewer than the documented 97; the list is marked as
+#   a secondary copy, and symbols absent from the data are reported.
+#
+# ## Data and definitions
+#
+# - Expression: `local_data/choir/kinker_2020/kinker_2020_choir_cells_cpm.h5ad`, transformed as for the PCs:
+#   log1p(CPM / 100), no scaling. PCs and labels as in `line_non_sphericity_20261112`. Lines: the 175 cell lines
+#   with at least 100 cells.
+# - Per line: the three leading eigenvectors of the line's covariance in the 30 PCs and the cells' scores on them
+#   (direction 1, 2, 3).
+# - Cell-cycle scores per cell and line: for the S list and for the G2M list, the mean over the list's genes of
+#   the expression standardized within the line (genes with zero variance in the line are left out).
+#
+# ## Measurements (`measure.py`, outputs `measure.txt`, `measure.json`)
+#
+# - M1 genes of the directions, without any gene list: per line and direction the 50 genes with the largest
+#   absolute correlation with the direction's score, among genes detected in at least 10% of the line's cells.
+#   Recurrence: for every gene the number of lines in which it is among the 50 of direction 1 (and of direction
+#   2, 3, and of any of the three); the 40 most recurrent genes with their counts; the count expected if the 50
+#   were drawn at random.
+# - M2 cell cycle: per line the absolute correlation of the scores of directions 1, 2, 3 with the S score and the
+#   G2M score; the share of the within-line variance of the 30 PCs explained by a linear fit on both scores; T1
+#   (largest eigenvalue over median eigenvalue), k current rule and k prototype rule after removing that fit; the
+#   number of the 50 genes of direction 1 that are in the cell-cycle list.
+#   Control: the same share for 20 random pairs of gene sets of the same sizes (genes detected in at least 10% of
+#   all cells).
+# - M3 after removing the cell-cycle fit: M1 repeated on the remaining within-line variation, direction 1 only:
+#   the 40 most recurrent genes.
+# - Self-checks (asserts): T1 of the 175 lines in PC coordinates has median 25.64; the cell order of the
+#   expression file equals the metadata; at least 80 of the 93 cell-cycle symbols are gene names of the data.
+#
+# ## Predictions, stated before the run
+#
+# - P1 the cell-cycle fit explains more than 10% of the within-line variance at the median (depth: 3.0%).
+# - P2 in more than half of the lines one of the directions 1 to 3 correlates with the S or the G2M score at 0.5
+#   or more in absolute value.
+# - P3 removing the cell-cycle fit does not make the lines spherical: the median T1 stays above 10.
+#
+# ## Limits known before the run
+#
+# The cell-cycle list is a secondary copy with 93 of 97 symbols. No other program of the Kinker paper has a
+# looked-up gene list here, so genes found in M1 and M3 are reported by symbol without a biological label. One
+# dataset; lines with at least 100 cells; linear fits only.
+
+
+# ===== deviations.md =====
+# # Deviations (written 2026-11-12, after the result)
+#
+# - `after.py` was added after `measure.py` showed that the most recurrent genes of direction 1 are not in the
+#   cell-cycle list. It scores the 86 genes whose symbols are RPL or RPS followed by a number (plus RPLP0 to
+#   RPLP2 and RPSA), and fits cell cycle, that score and log depth together. It is not part of the protocol and
+#   the gene set was chosen after seeing the gene names in M1 and M3.
+# - `measure.py` was not changed after its run.
+
+
+# ===== cell_cycle_genes.json =====
+# {
+#  "source": "https://natian-and-ryabhatta.web.app/cell-cyle-scores.html (secondary page; lists attributed there to the Seurat package), retrieved 2026-11-12",
+#  "s": ["UHRF1", "MCM5", "UNG", "MCM6", "BRIP1", "TIPIN", "UBR7", "POLA1", "RRM1", "CLSPN", "BLM", "CHAF1B", "MSH2", "DTL", "EXO1", "NASP", "CDC45", "E2F8", "HELLS", "WDR76", "RRM2", "MCM2", "USP1", "TYMS", "CASP8AP2", "PCNA", "GINS2", "RPA2", "RFC2", "CDC6", "GMNN", "RAD51", "CDCA7", "ATAD2", "PRIM1", "SLBP", "POLD3", "DSCC1", "FEN1", "CCNE2", "MCM4", "RAD51AP1"],
+#  "g2m": ["CKAP5", "CDK1", "CDC25C", "SMC4", "NDC80", "TACC3", "MKI67", "GAS2L3", "HMGB2", "HMMR", "NUSAP1", "CKAP2L", "UBE2C", "ANLN", "CKS1B", "BIRC5", "NEK2", "GTSE1", "CKS2", "CDC20", "PSRC1", "KIF2C", "RANGAP1", "AURKA", "KIF11", "G2E3", "BUB1", "CTCF", "DLGAP5", "LBR", "CENPE", "CKAP2", "CENPA", "TMPO", "TOP2A", "HJURP", "KIF20B", "CBX5", "NCAPD2", "TUBB4B", "TTK", "KIF23", "CDCA3", "CDCA2", "ECT2", "TPX2", "AURKB", "CENPF", "CDCA8", "CCNB2", "ANP32E"]
+# }
+
+
+# ===== measure.py =====
+"""protocol.md M1 to M3: the genes of the leading directions inside each cell line, and the cell cycle."""
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+
+import anndata as ad
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(HERE.parent / "k_margin_prototype_20261112"))
+
+from k_rule import directions_with_margin  # noqa: E402
+
+from tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.split_count_rule_out import (  # noqa: E402
+    invariant_directions,
+)
+
+TOP, DIRECTIONS = 50, 3
+rng = np.random.default_rng(20261112)
+lines_out = []
+
+
+def say(text=""):
+    print(text, flush=True)
+    lines_out.append(text)
+
+
+def spread(values, digits=3):
+    values = np.asarray(values, dtype=float)
+    return f"median {np.median(values):.{digits}f} (min {values.min():.{digits}f}, max {values.max():.{digits}f})"
+
+
+def t1(cells):
+    values = np.linalg.eigvalsh(np.cov(cells.T))
+    return float(values[-1] / np.median(values))
+
+
+def leading(cells):
+    """Scores of the cells on the three leading eigenvectors of their covariance."""
+    centred = cells - cells.mean(axis=0)
+    _, vectors = np.linalg.eigh(np.cov(centred.T))
+    return centred @ vectors[:, ::-1][:, :DIRECTIONS]
+
+
+def correlations(expression, scores):
+    """Pearson correlation of every gene (columns of the standardized expression) with every score column."""
+    z = (scores - scores.mean(axis=0)) / scores.std(axis=0)
+    return expression.T @ z / len(z)
+
+
+def remove_fit(cells, covariates):
+    design = np.column_stack([np.ones(len(cells)), covariates])
+    return cells - design @ np.linalg.lstsq(design, cells, rcond=None)[0]
+
+
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+pcs = np.load(source / "pca.npy")
+cpm = ad.read_h5ad(ROOT / "local_data/choir/kinker_2020/kinker_2020_choir_cells_cpm.h5ad")
+assert (cpm.obs_names.to_numpy() == metadata.index.to_numpy()).all(), "cell order differs"
+genes = np.asarray(cpm.var_names)
+matrix = cpm.X.tocsr()
+cycle = json.loads((HERE / "cell_cycle_genes.json").read_text())
+position = {gene: i for i, gene in enumerate(genes)}
+s_index = np.array([position[g] for g in cycle["s"] if g in position])
+g2m_index = np.array([position[g] for g in cycle["g2m"] if g in position])
+missing = [g for g in cycle["s"] + cycle["g2m"] if g not in position]
+say(f"cells {matrix.shape[0]}, genes {matrix.shape[1]}; cell-cycle symbols found: S {len(s_index)} of {len(cycle['s'])}, "
+    f"G2M {len(g2m_index)} of {len(cycle['g2m'])}; not in the data: {missing}")
+assert len(s_index) + len(g2m_index) >= 80
+cycle_set = set(s_index) | set(g2m_index)
+detected_all = np.asarray((matrix > 0).mean(axis=0)).ravel() >= 0.10
+random_sets = [(rng.choice(np.flatnonzero(detected_all), len(s_index), replace=False),
+                rng.choice(np.flatnonzero(detected_all), len(g2m_index), replace=False)) for _ in range(20)]
+
+groups = {line: index for line, index in metadata.groupby("Cell_line").indices.items() if len(index) >= 100}
+recurrence = {name: Counter() for name in ("direction 1", "direction 2", "direction 3", "any of the three", "direction 1 after the cell cycle")}
+rows, eligible_counts = [], []
+for line, index in groups.items():
+    cells = pcs[index]
+    dense = np.log1p(matrix[index].toarray() / 100.0)
+    keep = (dense > 0).mean(axis=0) >= 0.10
+    sd = dense.std(axis=0)
+    usable = keep & (sd > 0)
+    standardized = np.zeros_like(dense)
+    standardized[:, sd > 0] = (dense[:, sd > 0] - dense[:, sd > 0].mean(axis=0)) / sd[sd > 0]
+    eligible = np.flatnonzero(usable)
+    eligible_counts.append(len(eligible))
+    scores = leading(cells)
+
+    # M1
+    r = correlations(standardized[:, eligible], scores)
+    tops = [eligible[np.argsort(-np.abs(r[:, j]))[:TOP]] for j in range(DIRECTIONS)]
+    for j in range(DIRECTIONS):
+        recurrence[f"direction {j + 1}"].update(tops[j].tolist())
+    recurrence["any of the three"].update(set(np.concatenate(tops).tolist()))
+
+    # M2
+    def set_scores(a, b):
+        return np.column_stack([standardized[:, a][:, sd[a] > 0].mean(axis=1), standardized[:, b][:, sd[b] > 0].mean(axis=1)])
+
+    cc = set_scores(s_index, g2m_index)
+    z = (scores - scores.mean(axis=0)) / scores.std(axis=0)
+    zc = (cc - cc.mean(axis=0)) / cc.std(axis=0)
+    corr = np.abs(z.T @ zc / len(z))  # directions x (S, G2M)
+    trace = np.trace(np.cov(cells.T))
+    residual = remove_fit(cells, cc)
+    share = 1 - np.trace(np.cov(residual.T)) / trace
+    control = [1 - np.trace(np.cov(remove_fit(cells, set_scores(a, b)).T)) / trace for a, b in random_sets]
+
+    # M3
+    r_after = correlations(standardized[:, eligible], leading(residual)[:, :1])
+    recurrence["direction 1 after the cell cycle"].update(eligible[np.argsort(-np.abs(r_after[:, 0]))[:TOP]].tolist())
+
+    rows.append(dict(line=line, n=len(index), t1=t1(cells), t1_after=t1(residual), share_cell_cycle=float(share),
+                     share_random_median=float(np.median(control)), share_random_max=float(np.max(control)),
+                     corr_s=corr[:, 0].tolist(), corr_g2m=corr[:, 1].tolist(), max_corr=float(corr.max()),
+                     max_corr_direction_1=float(corr[0].max()), top50_in_cell_cycle=int(len(set(tops[0].tolist()) & cycle_set)),
+                     k_current=len(invariant_directions(cells)), k_current_after=len(invariant_directions(residual)),
+                     k_prototype=len(directions_with_margin(cells)), k_prototype_after=len(directions_with_margin(residual))))
+    if len(rows) % 25 == 0:
+        print(len(rows), "lines done", flush=True)
+
+table = pd.DataFrame(rows)
+assert len(table) == 175 and abs(table["t1"].median() - 25.64) < 0.01, table["t1"].median()
+expected = TOP / np.median(eligible_counts) * len(table)
+say(f"lines {len(table)}; genes eligible per line {spread(eligible_counts, 0)}; a gene drawn at random is among the {TOP} of a direction in "
+    f"{expected:.2f} of {len(table)} lines on average")
+
+say("\n== M1: genes of the directions, most recurrent across the 175 lines (gene: lines; * = in the cell-cycle list) ==")
+for name in ("direction 1", "direction 2", "direction 3", "any of the three"):
+    top = recurrence[name].most_common(40)
+    say(f"{name}: " + ", ".join(f"{genes[g]}{'*' if g in cycle_set else ''}: {c}" for g, c in top))
+    say(f"  of these 40, in the cell-cycle list: {sum(g in cycle_set for g, _ in top)}; genes among the {TOP} in at least 20 lines: "
+        f"{sum(c >= 20 for c in recurrence[name].values())}")
+
+say("\n== M2: cell cycle ==")
+say(f"share of the within-line variance explained by the fit on the S and G2M scores: {spread(table['share_cell_cycle'])}")
+say(f"control, 20 random pairs of gene sets of the same sizes: per-line median share {spread(table['share_random_median'])}; "
+    f"per-line largest share {spread(table['share_random_max'])}")
+say(f"largest absolute correlation of directions 1 to 3 with the S or G2M score: {spread(table['max_corr'])}; "
+    f"at least 0.5 in {int((table['max_corr'] >= 0.5).sum())} of {len(table)} lines; at least 0.8 in {int((table['max_corr'] >= 0.8).sum())}")
+say(f"direction 1 alone: {spread(table['max_corr_direction_1'])}; at least 0.5 in {int((table['max_corr_direction_1'] >= 0.5).sum())} of {len(table)}")
+for j in range(DIRECTIONS):
+    best = np.array([max(row["corr_s"][j], row["corr_g2m"][j]) for row in rows])
+    say(f"  direction {j + 1}: the larger of the two correlations is at least 0.5 in {int((best >= 0.5).sum())} lines; {spread(best)}")
+say(f"of the {TOP} genes of direction 1, in the cell-cycle list: {spread(table['top50_in_cell_cycle'], 0)}; at least 10 in "
+    f"{int((table['top50_in_cell_cycle'] >= 10).sum())} lines")
+say(f"T1 in PC coordinates: {spread(table['t1'], 2)}; after removing the cell-cycle fit: {spread(table['t1_after'], 2)}")
+say(f"k current rule: {dict(sorted(Counter(table['k_current']).items()))} -> {dict(sorted(Counter(table['k_current_after']).items()))}")
+say(f"k prototype rule: {dict(sorted(Counter(table['k_prototype']).items()))} -> {dict(sorted(Counter(table['k_prototype_after']).items()))}")
+
+say("\n== M3: direction 1 after removing the cell-cycle fit, most recurrent genes ==")
+top = recurrence["direction 1 after the cell cycle"].most_common(40)
+say(", ".join(f"{genes[g]}{'*' if g in cycle_set else ''}: {c}" for g, c in top))
+say(f"of these 40, in the cell-cycle list: {sum(g in cycle_set for g, _ in top)}")
+
+say("\n== predictions ==")
+say(f"P1 share above 0.10 at the median: {'held' if table['share_cell_cycle'].median() > 0.10 else 'not held'} ({table['share_cell_cycle'].median():.3f})")
+say(f"P2 correlation of at least 0.5 in more than half of the lines: {'held' if (table['max_corr'] >= 0.5).sum() > len(table) / 2 else 'not held'} "
+    f"({int((table['max_corr'] >= 0.5).sum())} of {len(table)})")
+say(f"P3 median T1 after the cell-cycle fit above 10: {'held' if table['t1_after'].median() > 10 else 'not held'} ({table['t1_after'].median():.2f})")
+(HERE / "measure.txt").write_text("\n".join(lines_out) + "\n")
+(HERE / "measure.json").write_text(json.dumps(dict(lines=rows, recurrence={name: {str(genes[g]): c for g, c in counter.most_common(200)}
+                                                                              for name, counter in recurrence.items()}), indent=1))
+
+
+# ===== measure.txt =====
+# cells 48879, genes 22722; cell-cycle symbols found: S 40 of 42, G2M 51 of 51; not in the data: ['UHRF1', 'CASP8AP2']
+# lines 175; genes eligible per line median 8379 (min 5713, max 10392); a gene drawn at random is among the 50 of a direction in 1.04 of 175 lines on average
+#
+# == M1: genes of the directions, most recurrent across the 175 lines (gene: lines; * = in the cell-cycle list) ==
+# direction 1: RPL29: 45, RPL41: 45, CDC20*: 42, CENPF*: 41, CCNB1: 41, UBE2S: 40, RPLP1: 39, RPS2: 39, RPLP0: 36, HSP90AA1: 36, AURKA*: 35, S100A6: 35, UBC: 34, HLA-A: 33, RPS14: 33, BIRC5*: 33, SLC3A2: 33, ANXA2: 32, HLA-C: 32, TPX2*: 32, TUBB4B*: 32, RPL12: 31, ARL6IP1: 31, RPS20: 31, RPS18: 30, H2AFZ: 30, CKS2*: 30, PRDX1: 29, TMSB10: 29, B2M: 29, CD63: 29, HLA-B: 29, PTTG1: 29, UBE2C*: 29, PLK1: 29, CKS1B*: 28, KPNA2: 28, RPS28: 28, RPS29: 27, YBX1: 27
+#   of these 40, in the cell-cycle list: 9; genes among the 50 in at least 20 lines: 85
+# direction 2: AURKA*: 84, CCNB1: 82, CENPF*: 78, KPNA2: 72, TPX2*: 72, CDC20*: 71, UBE2C*: 70, ARL6IP1: 69, ASPM: 66, PLK1: 66, CKS2*: 65, TOP2A*: 65, TUBB4B*: 61, MKI67*: 60, UBE2S: 55, HSP90AA1: 53, BIRC5*: 51, GTSE1*: 50, NUSAP1*: 47, HMMR*: 46, HMGB2*: 45, CENPA*: 44, CALM2: 43, PRC1: 43, PRDX1: 42, RPLP1: 42, CENPE*: 41, PTTG1: 41, DEPDC1: 41, CCNB2*: 39, CKS1B*: 38, SMC4*: 37, DLGAP5*: 37, TUBA1C: 36, RPL41: 35, NUF2: 34, CKAP2*: 34, TMSB10: 34, CDKN3: 33, UBB: 33
+#   of these 40, in the cell-cycle list: 21; genes among the 50 in at least 20 lines: 89
+# direction 3: CENPF*: 98, TPX2*: 97, AURKA*: 96, TOP2A*: 91, UBE2C*: 81, MKI67*: 76, CCNB1: 74, ARL6IP1: 74, KPNA2: 72, PLK1: 71, UBE2S: 67, ASPM: 67, CKS2*: 66, CDC20*: 64, GTSE1*: 60, CENPA*: 59, CENPE*: 57, NUSAP1*: 56, HMMR*: 52, BIRC5*: 51, TUBB4B*: 50, DEPDC1: 48, PRC1: 46, PIF1: 42, CDCA8*: 42, HSP90AA1: 41, TUBA1C: 41, HMGB2*: 41, SMC4*: 37, CALM2: 37, CKAP2*: 37, SGOL2: 36, CKS1B*: 34, RPL41: 33, PTTG1: 33, CDCA3*: 33, RPL19: 32, PRDX1: 32, CCNA2: 31, CCNB2*: 29
+#   of these 40, in the cell-cycle list: 22; genes among the 50 in at least 20 lines: 79
+# any of the three: AURKA*: 159, CENPF*: 154, TPX2*: 153, CCNB1: 150, TOP2A*: 145, CDC20*: 144, PLK1: 140, KPNA2: 139, ARL6IP1: 138, UBE2C*: 137, UBE2S: 137, CKS2*: 135, MKI67*: 134, ASPM: 129, TUBB4B*: 119, BIRC5*: 115, NUSAP1*: 112, HSP90AA1: 111, CENPA*: 111, GTSE1*: 108, CENPE*: 105, HMMR*: 103, PRC1: 102, RPL41: 101, RPLP1: 99, HMGB2*: 96, PTTG1: 94, DEPDC1: 94, CALM2: 93, CKS1B*: 92, RPS2: 91, TUBA1C: 89, RPL29: 87, PRDX1: 87, SMC4*: 83, RPS12: 78, CCNB2*: 76, SGOL2: 76, CDCA8*: 76, CKAP2*: 75
+#   of these 40, in the cell-cycle list: 21; genes among the 50 in at least 20 lines: 303
+#
+# == M2: cell cycle ==
+# share of the within-line variance explained by the fit on the S and G2M scores: median 0.136 (min 0.048, max 0.402)
+# control, 20 random pairs of gene sets of the same sizes: per-line median share median 0.035 (min 0.010, max 0.201); per-line largest share median 0.062 (min 0.020, max 0.302)
+# largest absolute correlation of directions 1 to 3 with the S or G2M score: median 0.679 (min 0.219, max 0.934); at least 0.5 in 155 of 175 lines; at least 0.8 in 27
+# direction 1 alone: median 0.276 (min 0.023, max 0.877); at least 0.5 in 34 of 175
+#   direction 1: the larger of the two correlations is at least 0.5 in 34 lines; median 0.276 (min 0.023, max 0.877)
+#   direction 2: the larger of the two correlations is at least 0.5 in 72 lines; median 0.429 (min 0.023, max 0.934)
+#   direction 3: the larger of the two correlations is at least 0.5 in 74 lines; median 0.451 (min 0.025, max 0.900)
+# of the 50 genes of direction 1, in the cell-cycle list: median 0 (min 0, max 25); at least 10 in 26 lines
+# T1 in PC coordinates: median 25.64 (min 7.03, max 94.13); after removing the cell-cycle fit: median 24.29 (min 4.95, max 87.54)
+# k current rule: {5: 1, 6: 1, 7: 18, 8: 48, 9: 46, 10: 45, 11: 13, 12: 3} -> {4: 1, 6: 15, 7: 28, 8: 41, 9: 58, 10: 20, 11: 11, 12: 1}
+# k prototype rule: {6: 1, 8: 2, 9: 3, 10: 3, 11: 11, 12: 15, 13: 18, 14: 26, 15: 25, 16: 21, 17: 18, 18: 12, 19: 6, 20: 6, 21: 4, 22: 1, 23: 1, 25: 1, 27: 1} -> {7: 1, 8: 3, 9: 7, 10: 5, 11: 18, 12: 10, 13: 24, 14: 21, 15: 24, 16: 14, 17: 20, 18: 10, 19: 3, 20: 5, 21: 4, 22: 2, 23: 2, 26: 1, 27: 1}
+#
+# == M3: direction 1 after removing the cell-cycle fit, most recurrent genes ==
+# RPL41: 44, RPS2: 42, RPLP0: 42, RPL29: 41, B2M: 41, ANXA2: 40, HLA-C: 40, S100A11: 39, HLA-A: 38, RPLP1: 36, HLA-B: 36, UBC: 36, SLC3A2: 36, PRDX1: 35, TMSB10: 35, FXYD3: 35, S100A6: 35, RPL12: 33, RPS20: 33, MYL6: 32, CD63: 32, RPS14: 32, RPS23: 31, KRT19: 30, LGALS3: 29, ISG15: 28, PKM: 28, RPL7: 28, CD9: 28, RPS12: 28, KRT8: 28, RPL8: 27, RPS28: 27, YBX1: 27, PSME2: 26, HMGA1: 26, RPL21: 26, RPL18A: 26, RPL23A: 25, ANXA1: 25
+# of these 40, in the cell-cycle list: 0
+#
+# == predictions ==
+# P1 share above 0.10 at the median: held (0.136)
+# P2 correlation of at least 0.5 in more than half of the lines: held (155 of 175)
+# P3 median T1 after the cell-cycle fit above 10: held (24.29)
+
+
+# ===== after.py =====
+"""Added after the result (deviations.md): genes named RPL/RPS, and all measured factors together."""
+import json
+import re
+from pathlib import Path
+
+import anndata as ad
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+source = HERE.parent / "choir_cell_lines_tbs_lbfgsb_20261106"
+metadata = pd.read_csv(source / "cell_metadata.csv", index_col=0, dtype=str)
+pcs = np.load(source / "pca.npy")
+cpm = ad.read_h5ad(ROOT / "local_data/choir/kinker_2020/kinker_2020_choir_cells_cpm.h5ad")
+assert (cpm.obs_names.to_numpy() == metadata.index.to_numpy()).all()
+genes = np.asarray(cpm.var_names)
+matrix = cpm.X.tocsr()
+cycle = json.loads((HERE / "cell_cycle_genes.json").read_text())
+position = {gene: i for i, gene in enumerate(genes)}
+s_index = np.array([position[g] for g in cycle["s"] if g in position])
+g2m_index = np.array([position[g] for g in cycle["g2m"] if g in position])
+rp_index = np.array([i for i, g in enumerate(genes) if re.fullmatch(r"RP[LS]\d+[AXYL]?\d*|RPLP\d|RPSA", g)])
+print("genes named RPL/RPS used:", len(rp_index), list(genes[rp_index][:12]), "...")
+depth = np.array([matrix[i].data.sum() / matrix[i].data.min() for i in range(matrix.shape[0])])  # as on 7 November
+log_depth = np.log(depth)
+
+
+def spread(values, digits=3):
+    values = np.asarray(values, dtype=float)
+    return f"median {np.median(values):.{digits}f} (min {values.min():.{digits}f}, max {values.max():.{digits}f})"
+
+
+def remove_fit(cells, covariates):
+    design = np.column_stack([np.ones(len(cells)), covariates])
+    return cells - design @ np.linalg.lstsq(design, cells, rcond=None)[0]
+
+
+def t1(cells):
+    values = np.linalg.eigvalsh(np.cov(cells.T))
+    return float(values[-1] / np.median(values))
+
+
+rows = []
+for line, index in metadata.groupby("Cell_line").indices.items():
+    if len(index) < 100:
+        continue
+    cells = pcs[index]
+    dense = np.log1p(matrix[index].toarray() / 100.0)
+    sd = dense.std(axis=0)
+
+    def score(columns):
+        columns = columns[sd[columns] > 0]
+        return ((dense[:, columns] - dense[:, columns].mean(axis=0)) / sd[columns]).mean(axis=1)
+
+    factors = {"cell cycle": np.column_stack([score(s_index), score(g2m_index)]), "RPL/RPS": score(rp_index)[:, None],
+               "log depth": log_depth[index][:, None]}
+    factors["all three"] = np.column_stack(list(factors.values()))
+    centred = cells - cells.mean(axis=0)
+    _, vectors = np.linalg.eigh(np.cov(centred.T))
+    first = centred @ vectors[:, -1]
+    trace = np.trace(np.cov(cells.T))
+    row = dict(line=line, corr_first_rp=abs(float(np.corrcoef(first, factors["RPL/RPS"][:, 0])[0, 1])),
+               corr_rp_depth=float(np.corrcoef(factors["RPL/RPS"][:, 0], factors["log depth"][:, 0])[0, 1]))
+    for name, covariates in factors.items():
+        residual = remove_fit(cells, covariates)
+        row[f"share {name}"] = float(1 - np.trace(np.cov(residual.T)) / trace)
+        row[f"t1 {name}"] = t1(residual)
+    rows.append(row)
+table = pd.DataFrame(rows)
+print("lines", len(table))
+for name in ("cell cycle", "RPL/RPS", "log depth", "all three"):
+    print(f"{name}: share of the within-line variance explained {spread(table[f'share {name}'])}; T1 after removing it {spread(table[f't1 {name}'], 2)}")
+print(f"direction 1 against the RPL/RPS score, absolute correlation: {spread(table['corr_first_rp'])}; at least 0.5 in "
+      f"{int((table['corr_first_rp'] >= 0.5).sum())} of {len(table)} lines")
+print(f"RPL/RPS score against log depth, correlation: {spread(table['corr_rp_depth'])}")
+table.to_json(HERE / "after.json", orient="records", indent=1)
+
+
+# ===== after.txt =====
+# genes named RPL/RPS used: 86 ['RPL22', 'RPL11', 'RPS8', 'RPL5', 'RPS27', 'RPS7', 'RPS27A', 'RPL31', 'RPL37A', 'RPL32', 'RPL15', 'RPSA'] ...
+# lines 175
+# cell cycle: share of the within-line variance explained median 0.136 (min 0.048, max 0.402); T1 after removing it median 24.29 (min 4.95, max 87.54)
+# RPL/RPS: share of the within-line variance explained median 0.065 (min 0.015, max 0.430); T1 after removing it median 23.49 (min 7.06, max 88.27)
+# log depth: share of the within-line variance explained median 0.030 (min 0.007, max 0.086); T1 after removing it median 25.41 (min 7.03, max 85.44)
+# all three: share of the within-line variance explained median 0.236 (min 0.112, max 0.579); T1 after removing it median 19.44 (min 4.75, max 77.46)
+# direction 1 against the RPL/RPS score, absolute correlation: median 0.286 (min 0.011, max 0.846); at least 0.5 in 37 of 175 lines
+# RPL/RPS score against log depth, correlation: median 0.219 (min -0.147, max 0.599)
