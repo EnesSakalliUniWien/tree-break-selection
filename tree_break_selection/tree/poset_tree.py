@@ -6,9 +6,12 @@ from typing import TYPE_CHECKING
 import networkx as nx
 
 from tree_break_selection.tree.distributions import populate_distributions
+from tree_break_selection.tree.elements import Partition, PartitionSet
 from tree_break_selection.tree.topology import (
+    bottom_up_nodes,
     compute_descendant_leaf_sets,
     get_leaf_values,
+    is_leaf,
     lowest_common_ancestor_for_set,
     tree_root,
 )
@@ -76,6 +79,60 @@ class PosetTree(nx.DiGraph):
             labels/ids as a frozenset.
         """
         return compute_descendant_leaf_sets(self, use_labels=use_labels)
+
+    # ---------------- Set based identity ----------------
+
+    def initialize_split_indices(self, encoding: dict[object, int] | None = None) -> None:
+        """Give every node its leaf set as ``split_indices`` and index the nodes by it.
+
+        A node's ``split_indices`` is a ``Partition`` of its descendant leaves, so the same
+        leaf set has the same identity in every tree that shares ``encoding`` (leaf label to
+        bit position), whatever its node id is. By default leaves are numbered in insertion
+        order (``L0``, ``L1``, ... for linkage trees). Call again after changing the topology.
+        """
+        leaves = [node for node in self.nodes if is_leaf(self, node)]
+        if encoding is None:
+            encoding = {self.nodes[leaf]["label"]: index for index, leaf in enumerate(leaves)}
+        if len({encoding[self.nodes[leaf]["label"]] for leaf in leaves}) != len(leaves):
+            raise ValueError("Leaf labels must map to distinct encoding positions.")
+
+        split_index: dict[Partition, object] = {}
+        for node in bottom_up_nodes(self):
+            if is_leaf(self, node):
+                bitmask = 1 << encoding[self.nodes[node]["label"]]
+            else:
+                bitmask = 0
+                for child in self.successors(node):
+                    bitmask |= self.nodes[child]["split_indices"].bitmask
+            split = Partition.from_bitmask(bitmask, encoding)
+            self.nodes[node]["split_indices"] = split
+            split_index[split] = node
+        self.graph["taxa_encoding"] = encoding
+        self.graph["split_index"] = split_index
+
+    def to_splits(self, with_leaves: bool = False) -> PartitionSet[Partition]:
+        """Return the leaf sets of the internal nodes (and of the leaves on request)."""
+        if "split_index" not in self.graph:
+            self.initialize_split_indices()
+        return PartitionSet(
+            {
+                split
+                for split, node in self.graph["split_index"].items()
+                if with_leaves or not is_leaf(self, node)
+            },
+            encoding=self.graph["taxa_encoding"],
+        )
+
+    def find_node_by_split(self, target_split: Partition | tuple[int, ...]) -> object | None:
+        """Return the node whose leaf set is ``target_split``, or ``None`` if it does not exist."""
+        if "split_index" not in self.graph:
+            self.initialize_split_indices()
+        encoding = self.graph["taxa_encoding"]
+        if not isinstance(target_split, Partition):
+            target_split = Partition(tuple(target_split), encoding)
+        elif target_split.encoding is not encoding and target_split.encoding != encoding:
+            raise ValueError("Cannot search for a split with a different encoding.")
+        return self.graph["split_index"].get(target_split)
 
     def find_lca_for_set(self, nodes: Iterable[object]) -> object:
         """Find the lowest common ancestor for a collection of nodes.

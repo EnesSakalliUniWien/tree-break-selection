@@ -44,6 +44,8 @@ The durable, cross-application audit is in
 | `construction/defaults.py` | Immutable canonical binary-distance and linkage defaults; callers pass alternatives explicitly |
 | `construction/hierarchical.py` | Promote monotone linkage merge output into `PosetTree`; non-monotone heights fail closed |
 | `poset_tree.py` | Stable rooted-tree representation and hierarchy operations |
+| `elements/` | Set based node identity taken over from BranchArchitect: `Partition` (one leaf set as a bitmask), `PartitionSet`, and rooted/unrooted split comparison |
+| `spr.py` | `subtree_prune_regraft`: move one subtree onto another edge of a binary `PosetTree`, in place |
 | `branch_lengths.py` | Convert monotone linkage heights to normalized ultrametric edge lengths |
 | `optimized_branch_lengths.py` | Refit non-negative edge lengths on an already fixed topology |
 
@@ -61,6 +63,9 @@ NetworkX `DiGraph` subclass. Central data structure for the entire pipeline.
 | `root()`                                    | Return the root node (in-degree 0), cached after first call.                                   |
 | `get_leaves(node)`                          | Collect leaf labels globally or under a subtree.                                               |
 | `compute_descendant_sets()`                 | Map every node → frozenset of its descendant leaf labels.                                      |
+| `initialize_split_indices(encoding=None)`   | Give every node its leaf set as `split_indices` (a `Partition`) and index the nodes by it. Node ids (`L…`, `N…`) are labels; the leaf set is the identity shared across trees with one encoding. |
+| `to_splits(with_leaves=False)`              | The leaf sets of the internal nodes as a `PartitionSet`; equal for equal topologies.           |
+| `find_node_by_split(split)`                 | The node holding a leaf set, or `None` when the tree does not have it.                         |
 | `find_lca_for_set(nodes)`                   | LCA for a non-empty collection of nodes.                                                       |
 | `populate_node_distributions(leaf_data, feature_space=None)` | Populate flat raw-coordinate distributions and leaf counts. Categorical and continuous data require an explicit feature-space contract. Stores result in `annotations_df`. |
 
