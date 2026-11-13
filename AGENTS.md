@@ -15,6 +15,25 @@ open.
 (router, agent scaffold or tool-specific notes); record durable events in
 `wiki/log.md`.
 
+## No Sampled Rules
+
+Tree-Break Selection is not a heuristical clustering method. Every decision
+rule (a test statistic's null distribution, a threshold, a p-value, the choice
+of k) must be derived: exact, or a stated theorem with its conditions, cited
+from a looked-up source.
+
+- Do not propose, build or ship a sampled rule: no Monte Carlo or simulated
+  null table, no simulated quantile, no threshold tuned on benchmark or real
+  data, no rule whose only support is a measured level.
+- Simulation and benchmarks may only check a derived rule (level, power,
+  conditions); they never define it.
+- If no derived rule is known, say so and stop at that point; do not fill the
+  gap with sampling.
+- Existing sampled parts do not meet this rule and are not a precedent: the
+  opt-in `sibling_best_flat_cut_reference` table
+  (`best_flat_cut_reference_table.npz`), the exact-null table of the draft
+  definition of k, and the margin prototype for k.
+
 ## Source Surfaces
 
 Primary evidence is read from these surfaces before creating or updating wiki

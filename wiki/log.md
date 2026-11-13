@@ -10860,3 +10860,15 @@ version comparison report and wiki source summary. Production code unchanged.
 - The new table is in production; builder default 19,999; CHANGELOG, module
   text, [[gaussian-best-flat-cut-reference]], [[k-split-direction-draft]] and
   the index updated. Capture `raw/inbox/choir-cell-lines/table-rebuild-20261113.md`.
+
+## 2026-11-13 — Decision: no sampled rules
+
+- The project owner decided that Tree-Break Selection is not a heuristical
+  clustering method and that sampled rules were never wanted. Every decision
+  rule must be derived (exact, or a cited theorem with its conditions);
+  simulation and benchmarks may only check a derived rule.
+- Written into `AGENTS.md` (section "No Sampled Rules"). The opt-in
+  `sibling_best_flat_cut_reference` table, the exact-null table of the draft k
+  ([[k-split-direction-draft]]) and the margin prototype for k
+  ([[k-margin-prototype]]) are sampled and do not meet the rule
+  ([[non-heuristical-statistic-plan]]).
