@@ -3,7 +3,7 @@
 Command (repository root, deterministic; the table depends on --datasets only):
 
     OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --no-sync --offline python \\
-        scripts/build_best_flat_cut_reference.py --datasets 1999 --workers 10
+        scripts/build_best_flat_cut_reference.py --datasets 19999 --workers 64
 
 ``--k-min K`` computes only the cells with k >= K and copies the others from the existing table at ``--out``
 (same n grid, B and seed required). Every cell has its own seed, so this gives the same file contents as a full
@@ -215,7 +215,7 @@ def build(datasets: int, workers: int, out: Path, k_min: int = 1) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--datasets", type=int, default=1999, help="datasets per (n, k) cell, B")
+    parser.add_argument("--datasets", type=int, default=19999, help="datasets per (n, k) cell, B")
     parser.add_argument("--workers", type=int, default=10)
     parser.add_argument("--out", type=Path, default=TABLE_PATH)
     parser.add_argument(

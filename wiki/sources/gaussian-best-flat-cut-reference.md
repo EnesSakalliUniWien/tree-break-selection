@@ -10,6 +10,7 @@ sources:
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/best_flat_cut_reference.py
   - scripts/build_best_flat_cut_reference.py
   - raw/inbox/choir-cell-lines/peel-pass-production-20261113.md
+  - raw/inbox/choir-cell-lines/table-rebuild-20261113.md
 tags:
   - calibration
   - sibling-gate
@@ -81,6 +82,12 @@ last Key Point.
 - The table's smallest p-value, 1/2,000, limits what Benjamini-Hochberg can
   accept per depth level; with twice the median it cost 54 accepted splits
   on the CHOIR cells.
+- Since 13 November the table has 19,999 draws per cell (smallest p-value
+  1/20,000), built on lisc in 2 h 45 min. At k = 1 its 99% points match the
+  exact ones (5.402 at n = 15, 2.529 at 100). With the peel pass the CHOIR
+  Markov/Ward fit goes from 110 recovered lines and ARI 0.8214 to 124 and
+  0.8648; one Gaussian population splits in 2 of 880 fits; the benchmark is
+  unchanged (`raw/inbox/choir-cell-lines/table-rebuild-20261113.md`).
 - Extension on the same day ([[best-flat-cut-reference-k15]]): the table and the
   module cover k = 1 to 15 (above 10 directions n from 50); the cells for k up
   to 10 are unchanged. For k above 10 the null is the searched value's; a Ward

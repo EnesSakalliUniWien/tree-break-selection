@@ -26,6 +26,7 @@ sources:
   - raw/inbox/choir-cell-lines/peel-pass-opt-in-scripts-20261113.py.txt
   - raw/inbox/choir-cell-lines/peel-pass-production-20261113.md
   - raw/inbox/choir-cell-lines/peel-pass-production-scripts-20261113.py.txt
+  - raw/inbox/choir-cell-lines/table-rebuild-20261113.md
   - tree_break_selection/tree/topology.py
   - tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/best_flat_cut_reference.py
 tags:
@@ -180,6 +181,10 @@ fits of one Gaussian population.
   the Benjamini-Hochberg step: with a smallest p-value of 0.0005 a call can
   be rejected at 0.01 only where 5% of its family is at that value. The
   third version is still outside production.
+- Fixed on 13 November by a table with 19,999 draws per cell (smallest
+  p-value 1/20,000): Markov/Ward 244 clusters, ARI 0.8648, 124 lines
+  recovered; default tree ARI 0.6255; 2 of 880 one-population fits split;
+  benchmark unchanged ([[gaussian-best-flat-cut-reference]]).
 - Sprs under the third version ([[spr-refit]]): the tree after the sprs of
   11 November gives ARI 0.7691 against 0.8359; only 32 of 1,302 refused
   nodes have a passing best cut along their direction.

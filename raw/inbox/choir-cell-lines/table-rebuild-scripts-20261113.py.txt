@@ -1,0 +1,334 @@
+# ===== protocol.md =====
+# # Protocol: rebuilding the reference table with more draws (frozen 2026-11-13, before the runs)
+#
+# ## Why
+#
+# With the peel pass the opt-in's current rule loses 7 accepted nodes on the Markov/Ward tree of the CHOIR cells,
+# all at the table's smallest p-value 1 / (B + 1) = 0.0005 (B = 1,999 draws per cell): Benjamini-Hochberg at 0.01
+# rejects such a p-value only where 5% of the family is at it (`peel-pass-production-20261113.md`).
+#
+# ## Cost, measured before the protocol
+#
+# One draw of every built cell takes 7.6 s on one core (timing of 4 draws per sampled cell, interpolated over k).
+# On 10 workers: 1,999 draws 25 min, 19,999 draws 4.2 h, 99,999 draws 21 h.
+#
+# ## Step 1: is a rebuild worth its cost? (`floor_check.py`, run time only)
+#
+# Upper bound of what a finer table can give: every call that is at the smallest p-value of today's table is given
+# p = 1 / 20,000 instead; all other p-values are unchanged. This is the best case for B = 19,999, where every such
+# call stays at the new smallest value. CHOIR cells, opt-in, production code with the peel pass, Markov/Ward tree
+# and default tree.
+#
+# Prediction, stated before the run:
+# - T1 Markov/Ward tree: at least 116 lines recovered and ARI at least 0.8219 (today's table: 110 and 0.8214 with
+#   the peel pass, 116 and 0.8219 without).
+# - T2 default tree: ARI at least 0.6210.
+#
+# Decision rule, fixed before the run: the table is rebuilt with B = 19,999 only if T1 holds. B = 99,999 is not
+# built: 21 h for a share of 0.1% instead of 0.5%.
+#
+# ## Step 2: the rebuild (only if T1 holds)
+#
+# `scripts/build_best_flat_cut_reference.py --datasets 19999 --workers 10 --out <this folder>/table_19999.npz`;
+# the production table is replaced only after step 3.
+#
+# ## Step 3: checks of the new table before it replaces the old one
+#
+# - The first 1,999 draws of a cell are the old table's draws up to the last block (seed per block of 100), so the
+#   99% points of the two tables agree within Monte Carlo error; reported per cell.
+# - Tests of the reference (`tests/statistics/82_*`, `83_*`, `tests/integration/66_*`), the 880 one-population
+#   fits, the benchmark of 28 rows and the two CHOIR fits, with the new table.
+#
+# Predictions for step 3 are written when step 1 is known.
+#
+# ## Amendment after step 1 (2026-11-13, before the rebuild)
+#
+# Step 1: T1 held (Markov/Ward tree 243 clusters, ARI 0.8648, 124 lines recovered; 144 of 1,689 reference calls
+# at the smallest p-value) and T2 held (default tree unchanged: 432 clusters, ARI 0.6210; 188 of 676 calls at the
+# smallest p-value). The table is rebuilt with B = 19,999.
+#
+# Predictions for step 3, stated before the rebuild:
+# - S1 the 99% points of the new table differ from the old table's by less than 5% in every built cell.
+# - S2 Markov/Ward tree with the new table: at least 116 lines recovered and ARI between 0.8219 and 0.8648 (the
+#   step 1 value is the best case).
+# - S3 one Gaussian population: more than 1 cluster in at most 2 of the 880 fits.
+# - S4 benchmark: found clusters unchanged in 28 of 28 rows.
+# - S5 default tree: ARI at least 0.6210.
+
+
+# ===== deviations.md =====
+# # Deviations from protocol.md
+#
+# - S1 (99% points within 5%) did not hold: 5 of 160 cells differ by more than 5%, the largest 10.8% at n = 15,
+#   k = 7, all at n = 15 or 20. Recomputing here the first 1,999 draws of four cells reproduces the old table
+#   exactly, and their top values are in the lisc table, so both tables come from the same draws. The old 99%
+#   point ranks 124 to 312 (2.5% to 97.5%) among the 19,999 draws against an expected 200; the spread of a
+#   20th-largest of 1,999 draws (Beta(20, 1980) for its tail probability) gives about 116 to 284. The 5% bound was
+#   my error: it ignored the Monte Carlo error of the old table, which is about 10% at small n. Checks S2 to S5
+#   are run as planned.
+# - The rebuild ran on lisc (job 7980350, 64 hardware threads on 32 cores, 2 h 45 min), not here.
+
+
+# ===== lisc_build.sbatch =====
+# #!/bin/bash
+# #SBATCH --job-name=bfc_table_19999
+# #SBATCH --partition=zen2_1024
+# #SBATCH --nodes=1
+# #SBATCH --ntasks=1
+# #SBATCH --cpus-per-task=64
+# #SBATCH --mem=64G
+# #SBATCH --time=08:00:00
+# #SBATCH --output=%x_%j.out
+# # Rebuild of the best-flat-cut reference table with B = 19,999 (protocol.md step 2), commit 10d971cd.
+# set -euo pipefail
+# cd "$HOME/projects/tree-break-selection"
+# test "$(git rev-parse HEAD)" = 10d971cdd41f6c1699f7bf10ce8907f9e20063d0
+# export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+# mkdir -p "$HOME/table_rebuild_20261113"
+# .venv/bin/python scripts/build_best_flat_cut_reference.py --datasets 19999 \
+#     --workers "$SLURM_CPUS_PER_TASK" --out "$HOME/table_rebuild_20261113/table_19999.npz"
+
+
+# ===== floor_check.py =====
+"""protocol.md step 1: calls at the table's smallest p-value get 1 / 20,000. usage: floor_check.py default|markov_ward"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+
+import harness  # noqa: E402
+
+import tree_break_selection.hierarchy_analysis.statistics.sibling_divergence.best_flat_cut_reference as mod  # noqa: E402
+
+original = mod.reference_p_value
+smallest = 1 / (int(mod.load_table()["B"]) + 1)
+COUNT = {"calls": 0, "at_smallest": 0}
+
+
+def reference_p_value(rho, n, k):
+    p, grid_n = original(rho, n, k)
+    COUNT["calls"] += 1
+    if p == smallest:
+        COUNT["at_smallest"] += 1
+        p = 1 / 20000
+    return p, grid_n
+
+
+mod.reference_p_value = reference_p_value
+tree = sys.argv[1]
+harness.HERE = HERE
+path = {"default": "results/analyses/default_tree_third_version_20261112/tree_default.npz",
+        "markov_ward": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz"}[tree]
+method = {"default": "tbs_family_diffusion", "markov_ward": "tbs_family_diffusion_markov_ward"}[tree]
+harness.main(path, f"{tree}_floor", method=method)
+assert COUNT["at_smallest"] > 0, COUNT
+print("reference calls:", COUNT, flush=True)
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== compare_tables.py =====
+"""protocol.md S1: 99% points of the new table (B = 19,999) against the production table (B = 1,999), per built cell."""
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+OLD = HERE.parents[2] / "tree_break_selection/hierarchy_analysis/statistics/sibling_divergence/best_flat_cut_reference_table.npz"
+old, new = np.load(OLD), np.load(HERE / "table_19999.npz")
+assert int(old["B"]) == 1999 and int(new["B"]) == 19999, (old["B"], new["B"])
+assert old["n_grid"].tolist() == new["n_grid"].tolist() and old["k_grid"].tolist() == new["k_grid"].tolist()
+assert int(old["seed"]) == int(new["seed"])
+
+
+def point(table, i, j, level):
+    """The value with (1 - level) * (B + 1) - 1 null values above it: the rho whose p-value is level."""
+    upper, b = table["upper"][i, j].astype(float), int(table["B"])
+    rank = int(round(level * (b + 1))) - 1
+    return upper[::-1][rank]
+
+
+rows, worst = 0, (0.0, None)
+for i, n in enumerate(new["n_grid"]):
+    for j, k in enumerate(new["k_grid"]):
+        if np.isnan(new["upper"][i, j]).any():
+            assert np.isnan(old["upper"][i, j]).all()
+            continue
+        a, b = point(old, i, j, 0.01), point(new, i, j, 0.01)
+        rel = abs(b - a) / a
+        rows += 1
+        if rel > worst[0]:
+            worst = (rel, (int(n), int(k), round(a, 4), round(b, 4)))
+print("built cells", rows, "; largest relative difference of the 99% point", round(worst[0], 4), "at (n, k, old, new)", worst[1])
+print("S1", "held" if worst[0] < 0.05 else "not held")
+print("smallest p-value: old", 1 / 2000, "new", 1 / 20000)
+
+# Follow-up after S1 failed: which cells differ by more than 5%, and is the old value inside the Monte Carlo spread
+# of a 1,999-draw table? The spread is taken from the new table's top 2,000 values: the old 99% point is the 20th
+# largest of 1,999 draws, whose rank among 19,999 draws is binomial; its 2.5% and 97.5% rank give the range.
+from scipy.stats import binom  # noqa: E402
+
+over, outside = [], 0
+for i, n in enumerate(new["n_grid"]):
+    for j, k in enumerate(new["k_grid"]):
+        if np.isnan(new["upper"][i, j]).any():
+            continue
+        a, b = point(old, i, j, 0.01), point(new, i, j, 0.01)
+        desc = new["upper"][i, j].astype(float)[::-1]
+        # the 20th largest of 1,999 draws sits near rank 20 * 20,000 / 2,000 = 200 of 19,999; range of its rank
+        lo_rank, hi_rank = (int(binom.ppf(q, 19999, 20 / 2000)) for q in (0.025, 0.975))
+        low, high = desc[min(hi_rank, len(desc) - 1)], desc[max(lo_rank - 1, 0)]
+        inside = low <= a <= high
+        outside += not inside
+        if abs(b - a) / a > 0.05:
+            over.append((int(n), int(k), round(a, 3), round(b, 3), round(abs(b - a) / a, 3), inside))
+print("cells with more than 5% difference:", len(over))
+for row in over:
+    print("  (n, k, old, new, relative, old inside the 95% range of a 1,999-draw table)", row)
+print("cells whose old 99% point lies outside that range:", outside, "of 160")
+
+
+# ===== run_choir.py =====
+"""protocol.md R1: the CHOIR harness with production code, opt-in on. usage: run_choir.py default|markov_ward"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+sys.path.insert(0, str(HERE.parent / "spr_refit_20261111"))
+
+import harness  # noqa: E402
+
+tree = sys.argv[1]
+harness.HERE = HERE
+path = {"default": "results/analyses/default_tree_third_version_20261112/tree_default.npz",
+        "markov_ward": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz"}[tree]
+method = {"default": "tbs_family_diffusion", "markov_ward": "tbs_family_diffusion_markov_ward"}[tree]
+harness.main(path, f"{tree}_production", method=method)
+os._exit(0)  # shortcut: interpreter teardown stalled after earlier full-data runs (harness.py)
+
+
+# ===== run_opt_in.py =====
+"""protocol.md R2: the opt-in on one Gaussian population, production code. usage: run_opt_in.py GRID plain"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import ortho_group
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+import benchmarks.shared.generators.gaussian_cases as gaussian_cases  # noqa: E402
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+grid, arm = sys.argv[1], sys.argv[2]
+assert arm == "plain"
+if grid == "e3":
+    covariance, settings = "identity", [(c, f, s) for c, f in ((200, 80), (200, 30), (256, 30), (496, 30)) for s in range(401, 406)]
+else:
+    cells, covariance = grid.split("_")
+    settings = [(int(cells), 30, s) for s in range(1, 51)]
+V = np.array([53.09, 35.75, 24.75, 20.4, 18.24, 16.16, 15.65, 13.51, 12.01, 11.79, 11.6, 10.13, 10.01, 9.21, 8.46, 8.17, 7.91, 7.58,
+              6.91, 6.66, 6.47, 6.31, 6.02, 5.93, 5.78, 5.68, 5.62, 5.46, 5.34, 5.12])
+Q = ortho_group.rvs(30, random_state=0)
+original_make_blobs = gaussian_cases.make_blobs
+
+
+def make_blobs(**kwargs):
+    x, y = original_make_blobs(**kwargs)[:2]
+    return (x * np.sqrt(V)) @ Q.T if covariance == "unequal" else x, y
+
+
+assert covariance in ("identity", "unequal")
+gaussian_cases.make_blobs = make_blobs
+apply_single_thread_runtime_defaults()
+(registered,) = [c for c in get_test_cases_by_suite("continuous") if c["name"] == "gauss_null_large_continuous"]
+METHOD = "tbs_family_diffusion"
+fits = []
+for cells, features, seed in settings:
+    case = {**registered, "n_samples": cells, "n_features": features, "seed": seed}
+    for operator in ("symmetric", "markov"):
+        for linkage in ("average", "ward"):
+            params = {**METHOD_SPECS[METHOD].param_grid[0], "diffusion_coordinate_operator": operator, "tree_linkage_method": linkage,
+                      "sibling_best_flat_cut_reference": True}
+            res = benchmark_cluster_algorithm(test_cases=[case], methods=[METHOD], method_params={METHOD: [params]}, verbose=False,
+                                              plot_umap=False, include_cover_pages=False, include_validation_page=False,
+                                              allow_method_errors=False)
+            assert str(res["status"].iloc[0]) == "ok", res["status"].iloc[0]
+            fits.append(dict(cells=cells, features=features, seed=seed, cell=f"{operator}/{linkage}", found=int(res["found_clusters"].iloc[0])))
+json.dump(fits, open(HERE / f"fits_{grid}_{arm}.json", "w"))
+print(f"{grid} {arm}: fits with more than 1 cluster {sum(f['found'] > 1 for f in fits)} of {len(fits)}", flush=True)
+
+
+# ===== run_benchmark.py =====
+"""protocol.md R3: continuous and cancer_pc suites, both registered methods, opt-in on, production code."""
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[2]))
+
+from benchmarks.shared.benchmark_runs.runtime import (
+    apply_single_thread_runtime_defaults,  # noqa: E402
+)
+from benchmarks.shared.cases import get_test_cases_by_suite  # noqa: E402
+from benchmarks.shared.pipeline import benchmark_cluster_algorithm  # noqa: E402
+from benchmarks.shared.runners.method_registry import METHOD_SPECS  # noqa: E402
+
+METHODS = ["tbs_family_diffusion", "tbs_family_diffusion_markov_ward"]
+apply_single_thread_runtime_defaults()
+params = {m: [{**METHOD_SPECS[m].param_grid[0], "sibling_best_flat_cut_reference": True}] for m in METHODS}
+cases = get_test_cases_by_suite("continuous") + get_test_cases_by_suite("cancer_pc")
+results = benchmark_cluster_algorithm(test_cases=cases, methods=METHODS, method_params=params, verbose=False, plot_umap=False,
+                                      include_cover_pages=False, include_validation_page=False, allow_method_errors=False)
+new = results[["case_id", "method", "true_clusters", "found_clusters", "ari", "status"]].copy()
+new.to_csv(HERE / "benchmark_production.csv", index=False)
+old = pd.read_csv(HERE.parent / "best_flat_cut_reference_benchmark_k15_20261112" / "results_selected.csv", float_precision="round_trip")
+old = old[old["cell"] == "reference"][["case_id", "method", "found_clusters", "ari"]]
+merged = new.merge(old, on=["case_id", "method"], how="left", suffixes=("", "_without"))
+merged.to_csv(HERE / "benchmark_compare.csv", index=False)
+known = merged["found_clusters_without"].notna()
+print("rows", len(merged), "with a recorded row without the peel pass", int(known.sum()))
+print("found clusters equal:", int((merged.loc[known, "found_clusters"] == merged.loc[known, "found_clusters_without"]).sum()), "of", int(known.sum()))
+print("ARI equal within 1e-9:", int(((merged.loc[known, "ari"] - merged.loc[known, "ari_without"]).abs() < 1e-9).sum()), "of", int(known.sum()))
+print(merged[~known | (merged["found_clusters"] != merged["found_clusters_without"])].to_string(index=False))
+print("mean ARI continuous, all rows:", round(float(new["ari"].mean()), 4))
+
+
+# ===== compare_tables.txt =====
+# built cells 160 ; largest relative difference of the 99% point 0.1077 at (n, k, old, new) (15, 7, np.float64(128.3143), np.float64(114.4981))
+# S1 not held
+# smallest p-value: old 0.0005 new 5e-05
+# cells with more than 5% difference: 5
+#   (n, k, old, new, relative, old inside the 95% range of a 1,999-draw table) (15, 1, np.float64(4.888), np.float64(5.402), np.float64(0.105), np.False_)
+#   (n, k, old, new, relative, old inside the 95% range of a 1,999-draw table) (15, 5, np.float64(38.057), np.float64(34.582), np.float64(0.091), np.False_)
+#   (n, k, old, new, relative, old inside the 95% range of a 1,999-draw table) (15, 7, np.float64(128.314), np.float64(114.498), np.float64(0.108), np.False_)
+#   (n, k, old, new, relative, old inside the 95% range of a 1,999-draw table) (20, 7, np.float64(34.021), np.float64(31.759), np.float64(0.066), np.False_)
+#   (n, k, old, new, relative, old inside the 95% range of a 1,999-draw table) (20, 8, np.float64(53.901), np.float64(48.861), np.float64(0.093), np.False_)
+# cells whose old 99% point lies outside that range: 77 of 160
+
+
+# ===== outputs (last lines of the logs) =====
+# build_19999.log:   warnings.warn('resource_tracker: There appear to be %d '
+# floor_default.log: reference calls: {'calls': 676, 'at_smallest': 188}
+# floor_markov_ward.log: reference calls: {'calls': 1689, 'at_smallest': 144}
+# run_256_identity_plain.log: 256_identity plain: fits with more than 1 cluster 0 of 200
+# run_256_unequal_plain.log: 256_unequal plain: fits with more than 1 cluster 0 of 200
+# run_496_identity_plain.log: 496_identity plain: fits with more than 1 cluster 1 of 200
+# run_496_unequal_plain.log: 496_unequal plain: fits with more than 1 cluster 1 of 200
+# run_benchmark.log: mean ARI continuous, all rows: 0.7245
+# run_choir_default.log: {"tree": "results/analyses/default_tree_third_version_20261112/tree_default.npz", "renumbered_internal_ids": false, "found_clusters": 439, "ari_cell_line": 0.6255039465299713, "nmi_cell_line": 0.839448632905775, "recovered_lines_90_90": 42, "clusters_ge90_pure": 240, "clusters_lt20_cells": 96, "larg
+# run_choir_markov_ward.log: {"tree": "results/analyses/spr_alternatives_best_flat_cut_20261111/tree_tbs_family_diffusion_markov_ward.npz", "renumbered_internal_ids": false, "found_clusters": 244, "ari_cell_line": 0.8648001823797654, "nmi_cell_line": 0.9410069867256629, "recovered_lines_90_90": 124, "clusters_ge90_pure": 186, "
+# run_e3_plain.log: e3 plain: fits with more than 1 cluster 0 of 80

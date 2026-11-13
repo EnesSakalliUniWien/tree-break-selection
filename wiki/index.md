@@ -132,7 +132,7 @@ renamed, or promoted.
   against 0.8219) and raises an uncaught error for a constant feature; third version fixes both: CHOIR ARI 0.8349 to
   0.8411 over five orders, 0 of 800 one-population fits split; on the default tree it changes nothing (ARI 0.0275);
   a run-time trial that lets peels of fewer than 15 cells pass the edge gate gives ARI 0.6172 there and 0.8642 to 0.8706 on Markov/Ward
-  over five row orders; in production under the opt-in since 13 November (current rule: default tree 0.6210, Markov/Ward 0.8214).
+  over five row orders; in production under the opt-in since 13 November; with the 19,999-draw table default tree 0.6255, Markov/Ward 0.8648.
 - [[line-non-sphericity]] - one cell line is non-spherical for line-specific reasons: common covariance brings the
   eigenvalue ratio from 25.6 to 13.8, depth explains 3.0%, pools 0.8%; a label-free covariance from subtrees acts the same;
   the directions are carried by genes: cell cycle 13.6% of the within-line variance, with RPL/RPS genes and depth 23.6%.

@@ -37,7 +37,9 @@ The p-value is a Monte Carlo p-value, (1 + #{null >= rho}) / (B + 1), so it cann
 Only the largest ``ceil(0.1 * B)`` null values per (n, k) are stored; a ``rho`` below the smallest stored
 value gets p = 1, which never matters for a Benjamini-Hochberg rejection at alpha below 0.1.
 
-Build the table with ``scripts/build_best_flat_cut_reference.py``.
+The stored table has B = 19,999 draws per cell, so the smallest p-value is 1/20,000 (1,999 draws and 1/2,000
+before 13 November 2026; with 1/2,000 Benjamini-Hochberg refused tied strong splits in large families, wiki page
+``k-split-direction-draft``). Build the table with ``scripts/build_best_flat_cut_reference.py``.
 """
 
 from __future__ import annotations

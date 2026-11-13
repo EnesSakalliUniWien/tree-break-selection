@@ -10844,3 +10844,19 @@ version comparison report and wiki source summary. Production code unchanged.
 - Added to the capture
   `raw/inbox/choir-cell-lines/peel-pass-production-20261113.md` and to
   [[k-split-direction-draft]]. Nothing was committed.
+
+## 2026-11-13 — Implementation: the reference table with 19,999 draws per cell
+
+- Best case first: giving every call at 1/2,000 the value 1/20,000 at run time
+  raised the Markov/Ward fit to 124 recovered lines; the default tree did not
+  change. The table was rebuilt.
+- Built on lisc (job 7980350, 64 hardware threads, 2 h 45 min) from commit
+  10d971cd; the build here had stopped after 25 min.
+- Checks: S1 (99% points within 5%) not held at 5 small-n cells, an error in my
+  bound (the old table's Monte Carlo error is about 10% there; the draws are the
+  same). S2 to S5 held: Markov/Ward 124 lines, ARI 0.8648; 2 of 880
+  one-population fits split; benchmark 28 of 28 unchanged; default tree ARI
+  0.6255. At k = 1 the new 99% points match the exact ones.
+- The new table is in production; builder default 19,999; CHANGELOG, module
+  text, [[gaussian-best-flat-cut-reference]], [[k-split-direction-draft]] and
+  the index updated. Capture `raw/inbox/choir-cell-lines/table-rebuild-20261113.md`.
