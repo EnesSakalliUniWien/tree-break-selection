@@ -1,0 +1,253 @@
+........................................................................ [ 33%]
+........................................................................ [ 67%]
+......................................................................   [100%]
+==================================== PASSES ====================================
+___ test_goncalves_benchmark_manifest_and_summary_record_generated_timestamp ___
+----------------------------- Captured stdout call -----------------------------
+  method status  significance_level  edge_alpha  n_clusters  overcluster_ratio  weighted_cluster_purity  weighted_label_dominant_cluster_recall  merge_error_rate  split_error_rate  v_measure  nmi  ari  silhouette  elapsed_sec skip_reason
+baseline     ok                0.01       0.001           2                1.0                      1.0                                     1.0               0.0               0.0        1.0  1.0  1.0         0.5          0.1            
+
+Wrote outputs to /private/var/folders/4b/d3dqt2g92wqbp31k199b7msh0000gn/T/pytest-of-berksakalli/pytest-125/test_goncalves_benchmark_manif0/out
+___ test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp ____
+----------------------------- Captured stdout call -----------------------------
+  method status  significance_level  edge_alpha  n_clusters  overcluster_ratio  weighted_cluster_purity  weighted_label_dominant_cluster_recall  merge_error_rate  split_error_rate  weighted_effective_clusters_per_label  homogeneity  completeness  v_measure  nmi  ari  silhouette  elapsed_sec skip_reason
+baseline     ok                0.01       0.001           2                1.0                      1.0                                     1.0               0.0               0.0                                    1.0          1.0           1.0        1.0  1.0  1.0         0.5          0.1            
+
+Wrote outputs to /private/var/folders/4b/d3dqt2g92wqbp31k199b7msh0000gn/T/pytest-of-berksakalli/pytest-125/test_pancreas_benchmark_manife0/out
+_______________ test_failure_report_records_generated_timestamp ________________
+----------------------------- Captured stdout call -----------------------------
+Failure diagnosis report written to /private/var/folders/4b/d3dqt2g92wqbp31k199b7msh0000gn/T/pytest-of-berksakalli/pytest-125/test_failure_report_records_ge0/failure_report.md
+_________________ test_failed_cases_are_skipped_then_reported __________________
+----------------------------- Captured stdout call -----------------------------
+Fetching benchmark case suite: full
+Found 2 test cases.
+Methods: ['kmeans']
+Benchmark run cells: 1
+Spectral settings: TBS_N_JOBS=1
+Plot settings: enable_plots=False, enable_umap=False, enable_manifold=False, isolate_umap_cases=False
+Relationship analysis settings: enabled=False, plots=False
+Tree consensus gate enabled: False
+Using configured run directory: /private/var/folders/4b/d3dqt2g92wqbp31k199b7msh0000gn/T/pytest-of-berksakalli/pytest-125/test_failed_cases_are_skipped_0
+[1/2] Running case: binary_balanced_low_noise (Type: binary_balanced_low_noise)
+  Case failed and was skipped: RuntimeError: Case subprocess timed out after 1s
+[2/2] Running case: binary_balanced_low_noise__2 (Type: binary_balanced_low_noise)
+  Case failed and was skipped: RuntimeError: Case subprocess timed out after 1s
+--------------------------------------------------
+Benchmark Complete.
+No results collected.
+=========================== short test summary info ============================
+PASSED tests/pipeline/52_test_method_execution_index_alignment.py::test_run_single_method_once_aligns_report_rows_by_sample_id
+PASSED tests/pipeline/52_test_method_execution_index_alignment.py::test_run_single_method_once_reuses_prepared_hamming_distance
+PASSED tests/pipeline/52_test_method_execution_index_alignment.py::test_run_single_method_once_records_precomputed_tbs_distance_contract
+PASSED tests/pipeline/52_test_method_execution_index_alignment.py::test_run_single_method_once_requires_metric_name_for_precomputed_tbs_distance
+PASSED tests/pipeline/52_test_method_execution_index_alignment.py::test_run_single_method_once_requires_complete_tbs_stage_timings
+PASSED tests/pipeline/52_test_method_execution_index_alignment.py::test_run_single_method_once_records_runner_exception_as_error_row
+PASSED tests/pipeline/52_test_method_execution_index_alignment.py::test_run_single_method_once_rejects_report_index_not_sample_ids
+PASSED tests/pipeline/53_test_runner_contract_alignment.py::test_singleton_behavior_is_consistent_across_runners
+PASSED tests/pipeline/53_test_runner_contract_alignment.py::test_invalid_runner_params_raise
+PASSED tests/pipeline/53_test_runner_contract_alignment.py::test_deterministic_seed_handling_is_consistent
+PASSED tests/pipeline/57_test_pdf_utils.py::test_merge_existing_pdfs_uses_declared_python_dependency
+PASSED tests/pipeline/57_test_pdf_utils.py::test_case_manifest_pages_record_generation_contract
+PASSED tests/pipeline/58_test_pipeline_pdf_behavior.py::test_concat_pdf_streams_and_no_pngs
+PASSED tests/pipeline/58_test_pipeline_pdf_behavior.py::test_pipeline_preserves_explicit_case_identity
+PASSED tests/pipeline/59_test_pipeline_pdf_naming.py::test_resolve_pdf_output_path_defaults_to_timestamped_name_under_plots_root
+PASSED tests/pipeline/59_test_pipeline_pdf_naming.py::test_resolve_pdf_output_path_adds_pdf_suffix_when_missing
+PASSED tests/pipeline/59_test_pipeline_pdf_naming.py::test_resolve_pdf_output_path_preserves_explicit_suffix
+PASSED tests/pipeline/60_test_case_execution_pdf_cover_mode.py::test_run_case_worker_defaults_to_file_safe_matplotlib_backend
+PASSED tests/pipeline/60_test_case_execution_pdf_cover_mode.py::test_run_case_with_optional_isolation_disables_cover_pages
+PASSED tests/pipeline/60_test_case_execution_pdf_cover_mode.py::test_run_case_worker_disables_cover_pages
+PASSED tests/pipeline/60_test_case_execution_pdf_cover_mode.py::test_run_case_isolated_returns_payload_larger_than_pipe_buffer
+PASSED tests/pipeline/60_test_case_execution_pdf_cover_mode.py::test_run_case_isolated_stops_a_child_that_lingers_after_its_result
+PASSED tests/pipeline/61_test_benchmark_relationship_analysis.py::test_relationship_audit_summary_uses_root_row_for_root_split
+PASSED tests/pipeline/61_test_benchmark_relationship_analysis.py::test_normalize_results_dataframe_uses_current_schema_only
+PASSED tests/pipeline/61_test_benchmark_relationship_analysis.py::test_normalize_results_dataframe_rejects_unrecognized_columns
+PASSED tests/pipeline/61_test_benchmark_relationship_analysis.py::test_prepare_relationship_frame_derives_split_flags
+PASSED tests/pipeline/61_test_benchmark_relationship_analysis.py::test_analyze_benchmark_relationships_writes_expected_artifacts
+PASSED tests/pipeline/61_test_benchmark_relationship_analysis.py::test_attach_audit_factors_does_not_cross_assign_single_method_audits
+PASSED tests/pipeline/61_test_benchmark_relationship_analysis.py::test_attach_audit_factors_rejects_missing_sibling_decision_column
+PASSED tests/pipeline/62_test_debug_trace_contract.py::test_analyze_single_case_rejects_missing_sibling_decision_column
+PASSED tests/pipeline/62_test_debug_trace_contract.py::test_analyze_single_case_uses_sibling_decision_column
+PASSED tests/pipeline/62_test_debug_trace_contract.py::test_analyze_single_case_does_not_call_a_skipped_root_test_rejected[root_fields0-Root sibling test skipped (empirical_null_no_internal_support)]
+PASSED tests/pipeline/62_test_debug_trace_contract.py::test_analyze_single_case_does_not_call_a_skipped_root_test_rejected[root_fields1-Root sibling test skipped]
+PASSED tests/pipeline/62_test_debug_trace_contract.py::test_analyze_single_case_does_not_call_a_skipped_root_test_rejected[root_fields2-Root sibling test invalid]
+PASSED tests/pipeline/63_test_analyze_relationships_cli.py::test_latest_run_resolver_finds_suite_suffixed_run_dirs
+PASSED tests/pipeline/63_test_analyze_relationships_cli.py::test_comparison_csv_resolver_prefers_suite_specific_csv
+PASSED tests/pipeline/63_test_analyze_relationships_cli.py::test_comparison_csv_resolver_rejects_ambiguous_csvs
+PASSED tests/pipeline/67_test_scrna_plot_manifest.py::test_plot_manifest_json_records_generated_timestamp
+PASSED tests/pipeline/67_test_scrna_plot_manifest.py::test_pipeline_commands_resolve_relocated_application_entrypoints
+PASSED tests/pipeline/68_test_scrna_audit_report_timestamps.py::test_branch_length_audit_report_records_generated_timestamp
+PASSED tests/pipeline/68_test_scrna_audit_report_timestamps.py::test_branch_length_audit_manifest_records_generated_timestamp
+PASSED tests/pipeline/68_test_scrna_audit_report_timestamps.py::test_distributional_action_audit_report_records_generated_timestamp
+PASSED tests/pipeline/68_test_scrna_audit_report_timestamps.py::test_distributional_action_audit_manifest_records_generated_timestamp
+PASSED tests/pipeline/69_test_selected_scrna_nnls_report_timestamps.py::test_standalone_png_pages_have_timestamp_before_save
+PASSED tests/pipeline/70_test_goncalves_progenitor_analysis_timestamps.py::test_goncalves_meeting_plot_records_timestamp_before_save
+PASSED tests/pipeline/71_test_goncalves_benchmark_manifest_timestamp.py::test_goncalves_module_imports_without_anndata
+PASSED tests/pipeline/71_test_goncalves_benchmark_manifest_timestamp.py::test_goncalves_benchmark_manifest_and_summary_record_generated_timestamp
+PASSED tests/pipeline/71_test_goncalves_benchmark_manifest_timestamp.py::test_goncalves_inputs_must_match_the_pinned_sha256
+PASSED tests/pipeline/72_test_pancreas_benchmark_manifest_timestamp.py::test_pancreas_benchmark_manifest_and_summary_record_generated_timestamp
+PASSED tests/pipeline/76_test_benchmark_failure_report_timestamp.py::test_failure_report_records_generated_timestamp
+PASSED tests/pipeline/77_test_scrna_distance_time_report_timestamp.py::test_distance_time_model_report_records_generated_timestamp
+PASSED tests/pipeline/79_test_full_benchmark_grid_resume.py::test_full_runner_resume_tracks_grid_run_ids
+PASSED tests/pipeline/79_test_full_benchmark_grid_resume.py::test_resume_coverage_follows_case_names_when_suite_order_changes
+PASSED tests/pipeline/79_test_full_benchmark_grid_resume.py::test_resume_rejects_results_without_run_ids
+PASSED tests/pipeline/79_test_full_benchmark_grid_resume.py::test_appending_rows_requires_the_existing_column_layout
+PASSED tests/pipeline/80_test_benchmark_performance_grid.py::test_write_benchmark_performance_grid_outputs_case_grids
+PASSED tests/pipeline/80_test_benchmark_performance_grid.py::test_performance_grid_reports_optional_metrics_only_for_successes
+PASSED tests/pipeline/80_test_benchmark_performance_grid.py::test_write_benchmark_performance_grid_rejects_duplicate_case_run
+PASSED tests/pipeline/80_test_benchmark_performance_grid.py::test_a_method_with_error_rows_ranks_below_error_free_methods
+PASSED tests/pipeline/80_test_benchmark_run_modules.py::test_smoke_module_selects_declared_cases_in_default_order
+PASSED tests/pipeline/80_test_benchmark_run_modules.py::test_regression_gate_module_validates_methods_and_cases
+PASSED tests/pipeline/80_test_benchmark_run_modules.py::test_regression_gate_sort_keeps_case_and_method_order
+PASSED tests/pipeline/80_test_benchmark_run_modules.py::test_regression_gate_cli_parser_uses_supplied_case_label
+PASSED tests/pipeline/81_test_tree_consensus_selector.py::test_tree_inference_from_run_id_recovers_grid_cells
+PASSED tests/pipeline/81_test_tree_consensus_selector.py::test_selector_penalizes_fragmentation_against_better_internal_fit
+PASSED tests/pipeline/81_test_tree_consensus_selector.py::test_selector_applies_dominant_cluster_guard
+PASSED tests/pipeline/81_test_tree_consensus_selector.py::test_selector_prefers_weighted_for_equivalent_topology_ties
+PASSED tests/pipeline/81_test_tree_consensus_selector.py::test_selector_is_invariant_to_external_metrics
+PASSED tests/pipeline/81_test_tree_consensus_selector.py::test_cases_with_no_valid_topology_are_reported_as_skips
+PASSED tests/pipeline/82_test_tree_consensus_label_export.py::test_write_tree_consensus_artifacts_outputs_expected_files
+PASSED tests/pipeline/82_test_tree_consensus_label_export.py::test_write_tree_consensus_artifacts_rejects_missing_ok_labels
+PASSED tests/pipeline/82_test_tree_consensus_label_export.py::test_write_tree_consensus_artifacts_rejects_duplicate_case_run
+PASSED tests/pipeline/82_test_tree_consensus_label_export.py::test_export_tree_consensus_label_files_writes_stable_columns
+PASSED tests/pipeline/82_test_tree_consensus_label_export.py::test_export_tree_consensus_label_files_rejects_malformed_records
+PASSED tests/pipeline/82_test_tree_consensus_label_export.py::test_run_single_case_exports_tree_consensus_labels
+PASSED tests/pipeline/82_test_tree_consensus_label_export.py::test_isolated_worker_passes_tree_consensus_label_dir
+PASSED tests/pipeline/83_test_unsupported_result_pipeline.py::test_unsupported_run_bypasses_metrics_and_computed_outputs
+PASSED tests/pipeline/84_test_validation_plot_status.py::test_validation_plot_uses_only_ok_values_and_reports_support_counts
+PASSED tests/pipeline/84_test_validation_plot_status.py::test_validation_plot_marks_quality_unavailable_without_ok_rows
+PASSED tests/pipeline/dispatch/test_compatibility_outcomes.py::test_hamming_diffusion_dispatch_skips_continuous_feature_space
+PASSED tests/pipeline/dispatch/test_compatibility_outcomes.py::test_adaptive_hamming_diffusion_dispatch_skips_continuous_feature_space
+PASSED tests/pipeline/dispatch/test_compatibility_outcomes.py::test_adaptive_pydiffmap_dispatch_skips_zero_bandwidth_duplicate_blocks
+PASSED tests/pipeline/dispatch/test_distance_inputs.py::test_run_clustering_result_uses_provided_tbs_distance_condensed
+PASSED tests/pipeline/dispatch/test_distance_inputs.py::test_run_clustering_result_builds_continuous_mahalanobis_time_distance
+PASSED tests/pipeline/dispatch/test_distance_inputs.py::test_run_clustering_result_builds_continuous_standardized_euclidean_distance
+PASSED tests/pipeline/dispatch/test_distance_inputs.py::test_run_clustering_result_uses_provided_graph_distance_matrix
+PASSED tests/pipeline/dispatch/test_distance_inputs.py::test_run_clustering_result_gives_distance_tree_nnls_methods_their_own_geometry
+PASSED tests/pipeline/dispatch/test_method_registry.py::test_method_registry_exposes_sibling_gate_profiles[global-passthrough-refined]
+PASSED tests/pipeline/dispatch/test_method_registry.py::test_method_registry_exposes_fixed_fdr_benchmark_variants
+PASSED tests/pipeline/dispatch/test_method_registry.py::test_method_registry_exposes_continuous_guarded_covariance_candidate
+PASSED tests/pipeline/dispatch/test_method_registry.py::test_continuous_guarded_covariance_candidate_runs_non_continuous_input
+PASSED tests/pipeline/dispatch/test_method_registry.py::test_method_registry_names_diffusion_methods_and_branch_lengths_explicitly
+PASSED tests/pipeline/dispatch/test_method_registry.py::test_method_registry_exposes_current_support_profiles
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_run_clustering_result_forwards_tbs_gate_profile_params
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_run_clustering_result_uses_continuous_sibling_gate_only_for_continuous_blocks
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_run_clustering_result_forwards_adaptive_nnls_branch_time_params
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_run_clustering_result_forwards_graphtools_adaptive_k_params
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_run_clustering_result_forwards_graphtools_tree_strategy_params
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_run_clustering_result_rejects_unknown_tbs_params
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_tbs_param_allowlist_matches_keys_read_by_dispatch
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_every_registered_method_allows_its_registry_params
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_run_clustering_result_rejects_unknown_diffusion_params
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_family_diffusion_tbs_uses_diffusion_over_the_case_distance
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_family_diffusion_tbs_falls_back_to_the_case_distance_on_duplicate_rows
+PASSED tests/pipeline/dispatch/test_parameter_forwarding.py::test_markov_ward_family_diffusion_is_opt_in_and_forwards_its_geometry
+PASSED tests/pipeline/dispatch/test_validation.py::test_dispatch_result_rejects_invalid_runner_params[kmeans]
+PASSED tests/pipeline/dispatch/test_validation.py::test_dispatch_result_rejects_invalid_runner_params[spectral]
+PASSED tests/pipeline/dispatch/test_validation.py::test_dispatch_result_reraises_unexpected_exception
+PASSED tests/pipeline/dispatch/test_validation.py::test_branch_length_optimization_apply_nonconverged_param_is_strict_bool
+PASSED tests/pipeline/dispatch/test_validation.py::test_tbs_dispatch_bool_params_do_not_treat_false_strings_as_true
+PASSED tests/pipeline/test_aws_shard_merge_contracts.py::test_tail_study_shard_with_skipped_case_is_rejected
+PASSED tests/pipeline/test_aws_shard_merge_contracts.py::test_tail_study_shard_with_all_cases_ok_loads
+PASSED tests/pipeline/test_aws_shard_merge_contracts.py::test_traversal_fdr_merge_rejects_shard_from_old_schema
+PASSED tests/pipeline/test_aws_shard_merge_contracts.py::test_shard_helpers_keep_the_s3_and_local_layout
+PASSED tests/pipeline/test_full_benchmark_failed_cases.py::test_failed_cases_are_skipped_then_reported
+PASSED tests/core/test_benchmark_outlier_metrics.py::test_purity_is_majority_cluster_purity_not_homogeneity_alias
+PASSED tests/core/test_benchmark_outlier_metrics.py::test_outlier_metrics_report_perfect_singleton_isolation
+PASSED tests/core/test_benchmark_outlier_metrics.py::test_outlier_metrics_report_missed_singleton_outlier
+PASSED tests/core/test_benchmark_outlier_metrics.py::test_grouped_outlier_metric_requires_one_pure_predicted_cluster
+PASSED tests/core/test_benchmark_outlier_metrics.py::test_outlier_metrics_are_nan_for_non_outlier_cases
+PASSED tests/core/test_benchmark_statistical_profiles.py::test_one_to_one_fragmentation_differs_from_legacy_majority_remap
+PASSED tests/core/test_benchmark_statistical_profiles.py::test_matching_aligns_series_and_leaves_unmatched_truth_groups_at_zero
+PASSED tests/core/test_benchmark_statistical_profiles.py::test_profile_separation_and_spectra_are_rotation_and_translation_invariant
+PASSED tests/core/test_benchmark_statistical_profiles.py::test_profiles_keep_singular_and_unavailable_fields_explicit
+PASSED tests/core/test_benchmark_statistical_profiles.py::test_centroid_overlap_gives_equidistant_rows_half_weight_after_rotation
+PASSED tests/core/test_diffusion_factorial.py::test_factorial_nnls_matches_existing_runner[False-False]
+PASSED tests/core/test_diffusion_factorial.py::test_factorial_nnls_matches_existing_runner[False-True]
+PASSED tests/core/test_diffusion_factorial.py::test_factorial_nnls_matches_existing_runner[True-False]
+PASSED tests/core/test_diffusion_factorial.py::test_factorial_nnls_matches_existing_runner[True-True]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_denominators_holm_and_unresolved_rows
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-duplicate]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-cell]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-p_value0]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-p_value1]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-status]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-decision]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_recovery_equal_cell_blocks_and_support_denominator
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[seed-900-seed]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[data_hash-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-data_hash]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[method-other-method]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[ami-2.0-ami]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_constant_paired_losses_are_flagged_even_if_overall_ami_improves
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_all_one_calibration_is_degenerate
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_recovery_rejects_reuse_of_dataset_seed_or_hash
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_frozen_calibration_gate_requires_complete_nondegenerate_attempts
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_chain_preserves_subtree_mean_gram_and_outside_rows_at_full_row_rank
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_selection_rejections_preserve_the_last_state_and_do_not_evaluate_its_score
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_two_row_orbit_moves_by_reflection_and_upper_tail_ties_are_retained
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_callback_failures_are_explicit[<lambda>-<lambda>-observation0]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_callback_failures_are_explicit[<lambda>-<lambda>-observation1]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_callback_failures_are_explicit[<lambda>-<lambda>-observation2]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_callback_failures_are_explicit[<lambda>-<lambda>-sampling0]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_callback_failures_are_explicit[<lambda>-<lambda>-sampling1]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_stall_and_insufficient_rank_resolution_are_distinct
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_subtree_indices_raise[indices0]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_subtree_indices_raise[indices1]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_subtree_indices_raise[indices2]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_subtree_indices_raise[indices3]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_subtree_indices_raise[indices4]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_subtree_indices_raise[indices5]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_subtree_indices_raise[indices6]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_beta_statistic_uses_unit_row_contrast_and_all_labels_count
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_beta_gram_rank_and_degenerate_support
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_chain_options_raise[options0]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_chain_options_raise[options1]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_chain_options_raise[options2]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_chain_options_raise[options3]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_chain_options_raise[options4]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_invalid_chain_options_raise[options5]
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_beta_leading_rank_cannot_cut_a_tied_gram_eigenspace
+PASSED tests/statistics/71_test_subtree_gaussian_reference.py::test_subtree_membership_order_cannot_change_the_chain_kernel
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_cut_and_rooted_tree_families_have_different_counts
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_whole_tied_block_rotation_preserves_geometry_and_ward_tie_convention
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_standalone_and_cumulative_blocks_and_saturated_span
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_coincident_positions_and_bounds
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_distance_and_cut_calculation_preserve_uniform_feature_rescaling[1e-200]
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_distance_and_cut_calculation_preserve_uniform_feature_rescaling[1e+200]
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_ward_family_enumerates_and_deduplicates_all_tied_merges
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_ward_family_tolerance_and_input_contract
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_additive_distance_fit_recovers_lengths_and_is_invariant_to_root
+PASSED tests/statistics/72_test_subtree_topology_geometry.py::test_additive_distance_fit_input_contract
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_sibling_score_matches_pooled_hotelling_and_parent_fallback
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_joint_search_adjusts_every_returned_cut_using_the_same_maximum_path
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_ward_descendant_event_freezes_ancestral_memberships
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_preserving_node_split_is_stricter_than_its_ancestry
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_native_score_reproduces_the_actual_fitted_raw_root_statistic
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_paired_topology_reference_uses_a_difference_on_each_same_data_replay
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_invalid_partition_and_duplicate_tree_leaf_cannot_be_scored
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_joint_topology_reference_counts_ties_and_replays_the_search
+PASSED tests/statistics/73_test_subtree_topology_tests.py::test_observed_candidate_failure_remains_unresolved
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_compressed_all_pair_objective_matches_dense_nnls[euclidean]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_compressed_all_pair_objective_matches_dense_nnls[mean_squared_standardized_euclidean]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_simplex_equivalence_retains_current_linkage_and_exposes_zero_edges
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_rectangle_rotation_and_row_relabel_preserve_labeled_geometry
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_rerootings_share_the_same_unrooted_fit
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_bounded_candidate_support_and_explicit_exhaustive_limit
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-2-nan-finite]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-0-0.25-integer]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-3-2.5-integer]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-3-3-count]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-2-5-height]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current0]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current1]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current2]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current3]
+PASSED tests/statistics/75_test_subtree_family_and_attribution.py::test_family_replays_ancestry_and_full_selected_subtree
+PASSED tests/statistics/75_test_subtree_family_and_attribution.py::test_family_retains_failures_and_marks_insufficient_resolution
+PASSED tests/statistics/75_test_subtree_family_and_attribution.py::test_attribution_retains_native_score_and_changes_only_branch_factor
+PASSED tests/statistics/75_test_subtree_family_and_attribution.py::test_holm_keeps_failed_members_and_shares_one_event
+PASSED tests/statistics/75_test_subtree_family_and_attribution.py::test_observed_ward_numerical_failure_is_unresolved
+PASSED tests/statistics/76_test_subtree_research.py::test_frozen_grids_and_seed_phases_are_distinct
+PASSED tests/statistics/76_test_subtree_research.py::test_native_default_parity_and_truth_never_changes_fitting
+PASSED tests/statistics/76_test_subtree_research.py::test_runtime_gate_requires_complete_genuinely_paired_successes
+PASSED tests/statistics/76_test_subtree_research.py::test_invalid_panel_does_not_create_results
+214 passed, 2 deselected in 14.58s

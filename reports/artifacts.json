@@ -122,6 +122,22 @@
     "raw/inbox/goncalves_human_pancreas_dev": {
       "description": "goncalves_human_pancreas_dev",
       "reproduction_source": "applications/scrna/goncalves_benchmark.py"
+    },
+    "reports/subtree_clustering_research_20261109": {
+      "description": "Subtree clustering research: implementation and measured results",
+      "reproduction_source": "reports/subtree_clustering_research_20261109/README.md"
+    },
+    "reports/subtree_context_statistics_20261109": {
+      "description": "Subtree alternatives, eigenvalue magnitudes and native statistics",
+      "reproduction_source": "reports/subtree_context_statistics_20261109/README.md"
+    },
+    "reports/subtree_path_statistics_20261109": {
+      "description": "Paths between surviving nodes and their missing neighborhoods",
+      "reproduction_source": "reports/subtree_path_statistics_20261109/README.md"
+    },
+    "reports/subtree_spectral_alignment_20261109": {
+      "description": "Subspaces, parent\u2013child alignment and clustering alternatives",
+      "reproduction_source": "reports/subtree_spectral_alignment_20261109/README.md"
     }
   },
   "files": [
@@ -5967,6 +5983,3507 @@
       "bytes": 45483,
       "sha256": "bf6e7f2008cb8222bd11361738f6b1eaf1a28a7e51c933dbbcbca66a5391a9cd",
       "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/README.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/README.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/factorial_cell_0_audit.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/family_source_during_run.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/initial_ridge_check_partial.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 1946,
+      "sha256": "d3955cde0b912b3dbfc0257f71379257b159660d141fe2cc03e8b627633f8a6f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 956,
+      "sha256": "330874ef30ac6e988e5972eb78ce6d7902d0b02ac227aa750b22cc4fb1ee7d0f"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/protocol.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/protocol_initial.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/results.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 337780,
+      "sha256": "8214bcb2a3f73ea5d3bed5f424fcd6163c74b2c197d37e7454f04cecfb621549",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/run.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/run_initial.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/summary.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6422,
+      "sha256": "6bdc0708b65401d1bce520110dce1a5fa0acffb28951c85fe9dff65d349112db"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/variant.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 477016,
+      "sha256": "ef62bd2221e6ef1026c1b0e0a167908d8f6020b93c4399694dbef45db864161f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/variant.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/variant_protocol.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/verification.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1070,
+      "sha256": "d2b28079543b04e246673989d81073b395ed326105477d1d598e896ca7f21fa7"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/wolfram_evidence.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 455,
+      "sha256": "e8f55790b2d9d85a3e6ed1ae39e8ebc8e95c3576525b74c0548d102b141a9234"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/calibration/wolfram_queries.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/environment.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35951,
+      "sha256": "700dde4d24c605e96872eb12e4017dc59f355ad4438657fb3435efbba6385159"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35513,
+      "sha256": "fd8798c3adf9e1629cf3df561cc402f9beb4c99bc8d5838f451a71baea5f19aa"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/runs.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 454622,
+      "sha256": "1e569277ef35bcb7985f72a593e4b2bceee677bc2c7cc485f8f44cc2a0c517c3"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/runs.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 1480620,
+      "sha256": "0ad468a3af95b7d1295aebfc6f6adfe01c48260bb21d1ac0f207ddfde77f739a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_0.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 427246,
+      "sha256": "351d914d01cd3744f2295fe749748f3f789f5769eb9f695412e51f6e84890215",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_1.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 427256,
+      "sha256": "1b506230eaaf37e1fed15cb1d2c3c3cbf84ae07573c561b176ff6b07d7e46363",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_10.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 399332,
+      "sha256": "d062ea1f8be8515af7d7bc60d65f076f26667590c823a17c660e76953bca66b1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_11.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 441436,
+      "sha256": "5e5a83208571aaabd05c1860dc4ce7ab5fe185c95186579bc967dd229dbdfc82",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_12.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 399145,
+      "sha256": "6e408852a5c75e3eec7bacc76293e89a235d3c916d8ea328e7df4cd7530f6b56",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_13.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 399228,
+      "sha256": "db9566e69407a7bc0341f457de343092fd56adb128c21628ae6f18e2fb0c5fb5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_14.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 412712,
+      "sha256": "b51d670ddfa5df7874f0490352a40b13dc24a82a215153267e6d47c260d78f37",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_15.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 440546,
+      "sha256": "16d75a5ac0dae1484be180f43677bd194909255da01d4bfec5d75cd344e17a86",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_2.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 426933,
+      "sha256": "4e77bf274d7f4dbcdd9e75cd0f66e69d271731354c5a894e072eb8edb2deae6c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_3.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 426973,
+      "sha256": "53538d22e7ffa2184acc23253e80851d7082e8f1d1909e92ca8e0a6a525e5071",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_4.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 398243,
+      "sha256": "2fcc8a42cd69e1d0a77df01df33b6e502f88a80236d672993df4e8fff5811e81",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_5.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 398306,
+      "sha256": "3237db9c2f1993524f9e50aa4eca990cba6eb942792f1079c21122650c09506d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_6.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 405690,
+      "sha256": "8cf07189efa24cfa056f1b3aec1a675d5fc4c6fb33fb7ed4ff539cd04e974b7f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_7.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 439662,
+      "sha256": "80e32f5562e2cb940fc82778c0b3274d6938f2d2a8be759dfb19d7b0dda4e2bc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_8.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 399791,
+      "sha256": "1dd6c9894d58c7718077edadaf0f3863072fdd05c4c3ba1d0106b63f56032a08",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/trace_factorial_0_0_9.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 441960,
+      "sha256": "aaf3fce003a75de6f1f9285f148305c747d67ea378c935e5890a75b72b54b6da",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_0/verification.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 104,
+      "sha256": "db8cdd6a6495ac69554818d40d38f552fd023f3b4f9702c9baf8939a5be0632d"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35513,
+      "sha256": "4ec7ebe11aa17dbef9d74311afb11cbe3b5607125d5858dc4a9edcf7193ee682"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/runs.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 606648,
+      "sha256": "f7936604b054755a6d7683b28cfac50a16ba3ace19a19501243803a965dd8fd7"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/runs.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2054852,
+      "sha256": "70a826ae662f11558615ef895eb0ff7a7497b946927d232f35d6ad8a822c691e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_0.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2063746,
+      "sha256": "9b3438ac06023d8549a31818f9d2c4059ff76c820e816faa232bdb43b8205cf1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_1.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2072336,
+      "sha256": "918345f3eef04489b5df62ebe8f2f96595772afaab69c2b6e8cb673fdb3ce2fe",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_10.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2077168,
+      "sha256": "5bf5c652e38ea44613f9643f89933e6fef3e1a9d3608f962e3362db8b635386c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_11.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2078079,
+      "sha256": "52bd8794721db1469eb97615a2806139fdbf789c2d53bf0acf7c4cb1b7286f61",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_12.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2044152,
+      "sha256": "f2760916390041fbcdeeece307429840870ab97cc7cf19414cf46ccbe76053bb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_13.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2044361,
+      "sha256": "826b5d3150952ad0e6570c67b4cfbd6ce7b2299152edb2302a463340613e8320",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_14.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2130942,
+      "sha256": "08f1058cac182b57c30809492c971fafb18e0d6bff89a439c22f87c28f4c6e78",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_15.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2133153,
+      "sha256": "49cd4b214395af704333f4f98d680acae198f378dd993617b8680e85e00b173f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_2.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2061397,
+      "sha256": "f768a04fb3bf1c362278b74e63dfeacc75917d322fca09774487e5e091ff546e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_3.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2077093,
+      "sha256": "579dd820c8f8e88a1c11fabf5e4de4d18b4292d167df46bdcf86f09864150d81",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_4.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2028313,
+      "sha256": "9d9e13865a014149952d13468a4bb2e6185b4ecb2071a1abfa31287fc23017c2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_5.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2028699,
+      "sha256": "b6acff0f52cf888b1e4f1fdc33e30c916b56d1f220f791e6c8ca23cc29c50e2c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_6.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2089001,
+      "sha256": "268910c5116a99342959a1a22a271d930b35a4901b8731be098d95c164512d48",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_7.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2102735,
+      "sha256": "daf7bfe43021fe1756b48bb98f5f764c5462c1a70a1f68a7181c7c3d1b638912",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_8.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2079412,
+      "sha256": "473528dd6bba1bc34b5c95d81f1e3b9daacc7b257a9e7a54dc1c97a210604e72",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/trace_factorial_1_0_9.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2079866,
+      "sha256": "b2e356add22e2ac4d046f5eda624e58ffd86b90936f969bc66857b0c20cc6a1a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_1/verification.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 104,
+      "sha256": "db8cdd6a6495ac69554818d40d38f552fd023f3b4f9702c9baf8939a5be0632d"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35513,
+      "sha256": "394a83350d789075ba95f04de3a064821e009e1d26a1044d823d0bbf13a6324f"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/runs.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 581135,
+      "sha256": "7d6513ae1c70cbbfd697e994639d2fab6da97153d49efabfcc09cefe1c6dc07a"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/runs.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2031570,
+      "sha256": "4f5a4ed496e4e1f460b5b6a2304a58ce9439a170a50a9c94b9ff470dd6b2824b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_0.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2041350,
+      "sha256": "419bc67e3bcfa81abf6274a9772e5d4666f7c14beb7c55553c3fd75d5d752927",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_1.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2041818,
+      "sha256": "b634cb9c7a38caa285b4eccfb0c0249636a4bad7b03c3bd2b44ff2711df3e6f2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_10.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2079743,
+      "sha256": "1b32b4ef27c198e45344f4bb3809aee582369302a663b7145ad45bedbf121a3f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_11.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2080670,
+      "sha256": "08231d6d8391ffe5c301f57573f229c7b10bd73cd4461fcf2936d81fe992fdd3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_12.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2036802,
+      "sha256": "e838e32e3bfba302d294c02966e0c5abcd70aeda836365557607b321b8861678",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_13.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2037347,
+      "sha256": "fe60f242e1508b14edc058ef8de2f843f84c452f5460e66761b06931c1f39d7a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_14.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2118449,
+      "sha256": "79883edb95cd64fb9cec62f6043dc6f743bf5b1e54b94e5862906547f331150b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_15.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2222877,
+      "sha256": "0c1397f75f1211f044546e252151ee90fcb2d2edbb7db8e2985b19655421f74a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_2.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2048035,
+      "sha256": "aeda43e2e792f63cb2c994e1dd93c5752cbce3b292e2910869bc402461b651cc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_3.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2063558,
+      "sha256": "43e2a79b8127b4b4c9906d03dcceedce0365864c8071aeefee23b064257ade4a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_4.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2020196,
+      "sha256": "20ebf4f5e6d1c5395f3dc3246ef1b72ce7a5c07313ee985141f4c6ce5ec83787",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_5.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2021088,
+      "sha256": "9e82ba94a1197efe62e6f79ca3b7a6d454cb4e8c5e1f1b373755e0598984f12c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_6.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2088062,
+      "sha256": "0f4a26d8fd4b2ee0e42b981ad8154fe0771296e1d8d3736f881f0d30a8595e7e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_7.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2177938,
+      "sha256": "5891621339dddea44612100d68e329b8e214e7e12c545f26aa8ae7e454330951",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_8.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2058474,
+      "sha256": "01e0dfb29558f8f0a62dc57a7c1a0723be66ed25a4e9e940df1c415465bb58dc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/trace_factorial_2_0_9.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2058575,
+      "sha256": "6f69fc19d90823d82f32ea7dcdb26c3e720e46858572215807072fec172e20bc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_cell_2/verification.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 104,
+      "sha256": "db8cdd6a6495ac69554818d40d38f552fd023f3b4f9702c9baf8939a5be0632d"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_main_effects.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 13139,
+      "sha256": "030d8bcdc092d1431c5e951fa1c4ca6197e0ca88e34e2453ecd22bb6876ff41f"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/factorial_summary.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6150,
+      "sha256": "e8cef499a63df186cdbb963f78d4c0c95922b07cfc93caca2eca21f257233abf"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/figures/gaussian_null_and_runtime_preflight.pdf",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 28930,
+      "sha256": "77c135fa143699a8525e6c0eefeae27c3be83aaef54d46db670e57d6e17266b3"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/figures/gaussian_null_and_runtime_preflight.png",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 224254,
+      "sha256": "bbe638489201ed4b3e2ba3ecbbde80f70b16d694136a8bf8115d195f66ead79a"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/figures/gaussian_null_and_runtime_preflight.svg",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 28049,
+      "sha256": "51d24d9ab292a748f7a90184b3c182e185a9edeee8744ba31c2f269b2011317b"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/figures/plot.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/geometry/coverage.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2651,
+      "sha256": "1733bb4d08ae771842f68e94d218c6e621e331abd216bb71d0a1b7de6a6bdb3b"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/geometry/protocol.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/geometry/report.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/geometry/resampling.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 211744,
+      "sha256": "82f82428485dbe9225e2c2314be3c9e53bc1507e7cbbd24d49c53321a7326a53"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/geometry/run.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/git_status_initial.txt",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12301,
+      "sha256": "87b2b6e9116088747683c615bb07a156282b05e27ce43680462241be32fc7f50"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/input_integrity.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 712,
+      "sha256": "bc43a9c6b70b15d623786fa52c34672d4d317d59b28bd6212d8041548c8d4111"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35505,
+      "sha256": "d6c235343d78271caea53148c80dda7b3735f88af1ec19088fca641f95bec759"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight/runs.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 77570,
+      "sha256": "98b70cba0a554ee4f828643616be2493d646a2983be1c106769c40a160357239",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight/source_before_gate_serialization_fix.py.txt",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 21585,
+      "sha256": "eae53a1f5bfe5d27fc44d08b365d2dc5d75ebab6f371ab82640b63d7ee8d4f89"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight_isolated/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35505,
+      "sha256": "0a60c14973a98127828d7cc64ffde91ee1be5db140f6419a49ab092e786ae64a"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight_isolated/runs.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 23255,
+      "sha256": "574bb28bd971b4cd4f8d5bb7470fe560e89d806c830820616e8fa5b2a1f951a5"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight_isolated/runs.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 77552,
+      "sha256": "7c53d6ffc53509a429e0488b3b83dbcd9d43f53875b6ccc6f3db77638a41f892",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight_isolated/runtime_gate.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 921,
+      "sha256": "93cd50996bfccab378a4fafe428d8b3e7b7130a0cd421f93d59490f67ffc707e"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/preflight_isolated/verification.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 102,
+      "sha256": "8cb7ba7d18ec56cadcb339f92da757928b417729790254259b78641201a51947"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/README.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/choir_group_profiles.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 213650,
+      "sha256": "ad880f137f435c062bb20ec8f4d5ebac860edb551058efbcf3475869577305e9"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/choir_profile_recovery.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 370272,
+      "sha256": "1a80f852f7f2437d1cf6ffa125c2492dc5d5d35d65c8b9ddb80f4d0326c2e47d"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/choir_profile_strata.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 24072,
+      "sha256": "8985ddcd0a2d6b3e35478f8eb175b132725eee6e7fa5404f39d7c619a8d02184"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/choir_subtree_profiles.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 247806,
+      "sha256": "492b006a839f21a1d5bf67e9e3eaa387d83df9fe365a3067e4c6d9d62a7cc513"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3377,
+      "sha256": "ebf3d694f2539189bddbbd12d8e83d03f38528665230b075232da24b6be5e052"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/run.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/synthetic_pair_profiles.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 12748,
+      "sha256": "39618cce71bbce15535254455395bb18538fdbc2bbce3690fa0dadc770b87456"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/synthetic_profile_recovery.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 74491,
+      "sha256": "344cd53acd1fc96f44696616d59face6adb8e3b6a726daa5d242c56a15dae8f1"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/profiles/synthetic_profile_summary.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 3916,
+      "sha256": "ed6e8798f75127469df10077d3a50164aa66f1db423f27b50a9514aa8f4b9847"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/promotion_gate.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2164,
+      "sha256": "2288910f7542e28c48e9c454b88814aff2ceb4f8552698d565145be1a8d84504"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/protocol.md",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/pytest_output.txt",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 29699,
+      "sha256": "f14100f763701d5f7a4392e8930ba0eec6dfcd609ea7b738326bb333a7540476"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/manifest.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 35505,
+      "sha256": "b1f6aea23586b050c7b54082b48b59441d27ac9f2e2d288356150ecd50dc252a"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_0.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2188,
+      "sha256": "ae9729cf2970c3e4f68a57b28347b89a90c2862259efec19d778992461f3ef2b"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_1.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2201,
+      "sha256": "54ce9ca337e41755f495f5df9420ab2e2bef745fb990d03607857963ac7e1ecd"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_10.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9601,
+      "sha256": "881f2330b419a8510123ad07c4017eb34c03b267d53b6bbedf69f3cc1eb0ae26"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_11.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9548,
+      "sha256": "241b1df2a2dc1f6e4f55cd332440859f84448234ed9b73189067cced3dc6cb03"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_12.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9223,
+      "sha256": "066abd0e21dd92dfeecb380bfe46bd1dda8d1cbaf06597bc49ddc99d3081ef14"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_13.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9174,
+      "sha256": "8a28ff29599144f971ccf7dd18b6ab258b2fa094a9a540d2048f25a44d29e4d6"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_14.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9209,
+      "sha256": "f1ccc70ecb599fa0640c56321f7a5deb0984b1847056cb3c75f8448acd2999a6"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_15.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9199,
+      "sha256": "4d0726cef9916ae320d1bcfd58c65abaf32f8de550a97e7b70ba5d410b218fe6"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_2.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2184,
+      "sha256": "cfab431db279030d82f1a1c0ee59cbdfc30ce6b110c10cbd7c8411f4dad981ce"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_3.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2152,
+      "sha256": "e52c7af471ba3c6661a34a8261c7dc6552a3506641fb97fd14ced8de6007aaa2"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_4.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2212,
+      "sha256": "6b8173d41575c95021fcef923d65d8e1aa6d193bc5e71cd88e29d6aa48b82ccf"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_5.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2201,
+      "sha256": "115900caa107a7805b7408c17d87f8297e415cdb21c5b04bce2dab62ccc81925"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_6.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2171,
+      "sha256": "3dc1e887671e99d55a456330dc690c2f3850a72fbf9e540939406e99716f1a01"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_7.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2226,
+      "sha256": "d8a14831e943ce9c123518488021c8fa49f2050a758c9de795540749becda083"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_8.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9582,
+      "sha256": "580fe1f977e0c311c3778d7701feba3ad3212a73d7f97a77d710e4403f45641d"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/profiles_9.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9598,
+      "sha256": "b173416c3e15b9a141095589fb815ed3fbc5e4dca098f0c7e006347843b17800"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/runs.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 1099346,
+      "sha256": "ed19674bf3d932647e48f5cb08676fb0e7f8f4a28bfc575f9b7e4eb5f18320de",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/runs.jsonl",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 4053359,
+      "sha256": "9b55e9ba0757a6ef8fab2556d92819ebce0243fd3acfea8d5a8d0548ea08d751",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_0_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2197442,
+      "sha256": "7d56b9e2ce597fe3a6a7516c53d476d225141e03acb018972d57cb5d484bff9b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_0_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2116873,
+      "sha256": "bfbc808ad91ec971ed855962edc27b345be757b7ff716b92d27be4ccfcb1a0a1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_10_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2369576,
+      "sha256": "897f5e76ce485ed45256a2b2f9a5e0ebc85b246466ab440f488044a879094c1c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_10_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2353125,
+      "sha256": "0bbee6c5b3e033aa3c3da27e737e542c3c81983db44bcbd98fb2b9020a3c85fa",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_11_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2368182,
+      "sha256": "260a32b67d836c56737952ca0a1cec16fe48422b4506da9195cfa36a30885dc6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_11_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2382904,
+      "sha256": "e348ec42eb8353f1682b8e7c31d8a3346b57d0f408dc33f9d5c1add8e04cfd2c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_12_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2333508,
+      "sha256": "a3e4172940fa864111dc862af145aa81545150c6d0d77060a8412c237784b086",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_12_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2368097,
+      "sha256": "ac567a1d0ed04b27a0872fb650f5ae3e2e39a9cc2485b1880215f078c26b945b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_13_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2334210,
+      "sha256": "4fc4dd04c6b83e997bca2b60c3a6c49bc63765fbcff35dce13641867e5223438",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_13_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2388393,
+      "sha256": "2656c8241d670a909ee486ecb689d8559addb60a781e15a3310ce1382cfa36ab",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_14_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2356503,
+      "sha256": "8357d57ffc6462505218f3a6fa55d95a453f02cb24699af9e4d8630db63a59e3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_14_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2347454,
+      "sha256": "3395958f22380ce7f0b17f1ae674f41504dd3e0e44e109423fded256baaeed9a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_15_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2353609,
+      "sha256": "834e2d47d007d59f42f38aa9b9044cfd8d6b045c0de604d3dda2f975e1a7df4c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_15_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2346352,
+      "sha256": "d121013a23749842f52d1ac8318695a9447dbcbd6ff9fd55f6e111bc770529df",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_1_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2211270,
+      "sha256": "7f74643ca9ae7902ed776432a7de8e8d5706900849d4f8b5f6f773e5ab37a9ef",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_1_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2208860,
+      "sha256": "d45a7fa68940ba790910334cd70657d8af9b641ff141ede9f82d3e2c9eb29d11",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_2_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2133153,
+      "sha256": "49cd4b214395af704333f4f98d680acae198f378dd993617b8680e85e00b173f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_2_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2077093,
+      "sha256": "579dd820c8f8e88a1c11fabf5e4de4d18b4292d167df46bdcf86f09864150d81",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_3_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2203345,
+      "sha256": "b4ca04a613328922757d0d66c81a80c3fd07fb3b4230078d8a73a69489520eea",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_3_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2140528,
+      "sha256": "563b6b9809155789ef1039f16407bab083cbc7966810749fa15eac1ec1c058f1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_4_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2226831,
+      "sha256": "8580470b189473864e8122895beb907439e7587a2dbdc991855188bb3d101379",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_4_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2155225,
+      "sha256": "cb87f40a81b421fc8256af9504848f76636659774edbd9d2ff038cf8dfefd635",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_5_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2224708,
+      "sha256": "93ab6b5c1610a337c675894fa0fd790709de72f3d03eea5feaddf2f752e74d8e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_5_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2172946,
+      "sha256": "bb4f89a54405cd50fbc03fb81bd012239a51e4ac67b479bcf3272c65c6dcc160",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_6_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2222877,
+      "sha256": "0c1397f75f1211f044546e252151ee90fcb2d2edbb7db8e2985b19655421f74a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_6_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2063558,
+      "sha256": "43e2a79b8127b4b4c9906d03dcceedce0365864c8071aeefee23b064257ade4a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_7_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2189939,
+      "sha256": "ba10238144764202a1761c7956b6d92de736793f143c66d77c579774721f636f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_7_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2137271,
+      "sha256": "74343b63fa4b71c0ef6a9c036a998a31faa223b2f853cce03311040de09f8fd1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_8_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2327364,
+      "sha256": "cba662ff4a23b8f0c30e86953ee6061bd0e53139b2479db979cb91a886222949",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_8_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2333463,
+      "sha256": "279880c3bbfc908aca7d8352dbfe9da977efd192934bea97234a4ac7be919d1b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_9_0_markov_ward.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2342061,
+      "sha256": "7dd8a9222528827eb2b3715f2d3a898e41d1e59e07fc5bf86a88090ec5edd37e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/trace_recovery_9_0_symmetric_average.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2345038,
+      "sha256": "25161f462c943f969eb654413a099bb5f5b694e004ea8e065348948cb4f79770",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery/verification.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 106,
+      "sha256": "4869d53270a48af21b9a313f68746fdf36628c3bb24f25bc025ae0909a5b73cc"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery_comparison.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 21356,
+      "sha256": "fe503633373f0b078658d2981f4c55cfc056d12493fac975de3cc727d42ddf00"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/recovery_summary.csv",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5316,
+      "sha256": "4b818aabb677e51016de81c68e83d3fd403961b6510f499bbad4a5c4e66f9a92"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/source_change_review.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 505,
+      "sha256": "b216c08c52b898f8d8aacc9e41061bf81d6cdca388cb8e26e41788239bec3f06"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/summarize.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/validation_tests_final.txt",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 2745,
+      "sha256": "612fd38c8cf0b867bcc4bab9ac02c28e7e6b20ae87d3348e5f852bc83fcba8f2"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/verification.json",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5725,
+      "sha256": "5d26c79fa5f92a2b0fdfef0640e3c08449f8fd338a2fe3cdb0d2d8bacebf0d44"
+    },
+    {
+      "path": "reports/subtree_clustering_research_20261109/verify_inputs.py",
+      "study": "reports/subtree_clustering_research_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/README.md",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/math/README.md",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/math/kernel_controls.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 765,
+      "sha256": "da655b92859307a49328604c35cf0d0b1cc20e91a0929b30c54664bb6a24f489"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/math/wolfram_evidence.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 925,
+      "sha256": "5e9fbec030875205db0feedd73753e2493dc669051ab6452c2c0ccaee9a92371"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/attempts.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 409437,
+      "sha256": "cdd45a4d6f791a3dee5cc11adf3595d5b8679e0b3d800dc03a8239a832b7a635",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/comparisons.jsonl.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 1760600,
+      "sha256": "366983a7d4dd08bd2be118f386e69c25ad8a108f2b59073b293e1358ae271e50",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100067,
+      "sha256": "38442aa8f48e6ca1d49cc543eb5992e129acbc96524d2d03d335691ce9b64e4a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100062,
+      "sha256": "efe3ca650cb64316bc633f7adf2110c5fa2bb04ca202adb6d3306d56a040c74a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104749,
+      "sha256": "8abf63d96d6ccfef423fb87dd8c8dc0273311e76348c6d04b30b411786567ae5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99068,
+      "sha256": "6ed4300ed4999742da7f3fa4062833ea6f6a5d78655b933719a2d38de012b19b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100593,
+      "sha256": "ef4d0a58a27ba9852f047f4ade45888b5e0d14046b03b839b750f6beabe883f6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101348,
+      "sha256": "08a5921f9214c2a52e3803d18663acf47b1c17aaa8ff0f02acae0c78b1acab29",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100681,
+      "sha256": "9b9de258dcbcd62889bc7af8fa8d05c93ca67dfe372f81f1e2a77176522fba72",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104540,
+      "sha256": "04b3d0c9f3fcb0c2c636c4d6a7ca066bfa5f21477a437d41914eb6507c647b48",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 95805,
+      "sha256": "c4cc5b1ec3e2bf22d85e1d863fa1e4102254b637aeb271402dc55b69e34d6ce3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_0_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 95687,
+      "sha256": "d642d3d6039500552b75bd6c97f688a76abf954812f68cb266851dbd659d6a3e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101104,
+      "sha256": "8b62adbb58b27b8bc9627128e8979d8de2365185c393bb226a1c8aa3bd9af2fc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103580,
+      "sha256": "279ef2cc0529343c6cd558068efd4956f67acd46f9085309cd0979ca5fb63a95",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103271,
+      "sha256": "58ea0fa3c584b2b564abd359644b22674cb0e72116f0a3567b19fcbdc40469a8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102368,
+      "sha256": "9d81708a2615c0aeb3ab0c71b4ebcf3a1a2fa4fbe5b9a98892deb39fe4f5e4b0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100715,
+      "sha256": "f9ecd79de413c78a6d0c5314cbc435c720ae66e98a11f00613a446cd3bad14f7",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99241,
+      "sha256": "ea9ff9d1ed76250eb954fba3248a7f48557e9f9dea1ed70d5d7922802c62094a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102045,
+      "sha256": "8c252f008032a2738b1bdc22fb7961707c84644e3f1637744cd6c1018ef5a01b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99456,
+      "sha256": "cc0ef39c59ea5593b08ddf329e58412db12c12ec4bb69ab1befd4b5c48bcc8c4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 95923,
+      "sha256": "507fa6b1581a374e97c6640fe36662d57ac6ce1a7832f60e38cec94ffdbd3e0a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_1_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 97180,
+      "sha256": "37444b3ef547570429a7c05a39e5e90d049e00f6eeecec93e9e82784ff17bf68",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100385,
+      "sha256": "94aedd67ecad62e470688c8604bf1c4b8cfa64ef7cc6da1062dc29db756a43be",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101222,
+      "sha256": "5daf39b50e3ecd842ceb77440760174031be9abcabf81f79388be1417d306289",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102702,
+      "sha256": "6f5de48bf61066a023a321c891c76b42cbc13aa9863946d6ee7149b4c9c4ceb0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102812,
+      "sha256": "aa6e893533f5911fdd94c30310384891d2f7072f970d22de8c5788531888bdfd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104069,
+      "sha256": "e59251f850be77796d4e3e5b966739908f517939795e225c308c3768137e46ec",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100218,
+      "sha256": "242e65fabadb6eada8cc1cad144c0080754a8ef712ef54fcdd62e1dbfa3cf02c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101826,
+      "sha256": "225ba620e85541bf3504d0d6bb4b9fa8be44e0110e4ba8dc3b3b0284cd0751d9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98898,
+      "sha256": "5d1f3a446201d527bd24f5918c1a28bbb7f0021aa5f46d200bd8014e06a01fc2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98054,
+      "sha256": "a401fc04cd4af17dea245216bd1bc7ec52ab9e21eefee2338bae5e449dd74561",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_2_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 96737,
+      "sha256": "ff34b83e57615f690b7a7b2ed7f5e7619c9d63161fa755476cbb0018f4512a2c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100267,
+      "sha256": "b8daed4ec6f3cd6b85c8c8202dee00a8df933e328fc218a0b2ff711d676042a3",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103068,
+      "sha256": "20412b721ec66e0194cbf5b1a6e4db132c1792a454fde2f55ad51cf626665fbb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100184,
+      "sha256": "4511e5fa903e639758a9a6351f64dc8d783067ea0b6c232b6986661bf3fd827d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102810,
+      "sha256": "d5b246a48cf7b2f4e2fdacb10612cc198b18b71b1a62638baa302887d5ea0b63",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100846,
+      "sha256": "ed2028b274b5f336dd815c0b4ddaccb85000e352a4207fdf877d694343c9a1c9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100400,
+      "sha256": "f9c965664e7241f8e2934698f19d1c9581b79381d44f51b09ad92b04a5bf4695",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101043,
+      "sha256": "4907f0bcb20a6006dde9b53ce87c2ebba83993448d8eef769476dd6adf3660b9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100842,
+      "sha256": "4abf47dc5e3ca33e902d83097ce0a3d1d51b7c12b77d0b315b98e64709dd1323",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 94810,
+      "sha256": "bb229e1a8cff5791dd01377377512bd04a5b8590923f77b51243b2a4e51982d9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_common_mean_null_3_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 97559,
+      "sha256": "9ca8654f5a1ec41269c5d935634fae05522bb390eb44cbd685d86f3e69174945",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100490,
+      "sha256": "bf78c9cee03120c661605c0da7a4928bd36de6b870751fb9aa2369e26f53b5ef",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102425,
+      "sha256": "a6c7721dbb70fff1149af3a014f217907a0a159326c356b119fdd30e7d7b3fa0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101944,
+      "sha256": "110c5c73ef64a20c8e9c1b8ce991e40429ae8ba4ffe627f00808e82759fe70e4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104052,
+      "sha256": "62a8403685549ea63330ca5e0e0a91680c7f5ce9f93abc071243f1e1f69dbdd6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102751,
+      "sha256": "a5077677cd00889e1d2000799df7fcce2b87b4284cccae66303b3b8e7ae92e13",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102124,
+      "sha256": "017c5138481674691550de0f94ad059c34a066fd2d1eb90c7ed6956238b04c76",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102221,
+      "sha256": "f4802ca67000daaaa8d5b44edbf7c0ca58a287430719e0ac7e6594e3d900e109",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100434,
+      "sha256": "65e949aad7c32de93fe829dbc7e98fec0052ba7f895ba2a8200b3049da9c3dc2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 91310,
+      "sha256": "151871e10ca9946d0b2e1ba1194b6d41312553fb163e96afb3fc0a8ec30213d0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_0_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99110,
+      "sha256": "071386141a6af4bbabd5565bf798900ac19de6456c8e10cc4f752bb4824c6aa5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103925,
+      "sha256": "b05d4564f0049661e2b12826b3aaf9e39f5418b2e4ca21dae7de7da57a5bdde1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 105336,
+      "sha256": "0b507295ea1bb1d3d70b43336874a46d4c1421377c25d14832b402a3cc213072",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100536,
+      "sha256": "73aea4d50b89880c57ad2fc9d0c3155cc4f2af91717bb79db3087ba2e2d5a948",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102105,
+      "sha256": "37d242294321efa4b9cf5f7aaf9406ec1134e653ae9960acf25ad951ed2b4d3d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99438,
+      "sha256": "c33e2da83e7211fdbc83f50b787a7701bac8c0184758740675dab6d95a40f0f9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100464,
+      "sha256": "32c62347dd9d47a6eebc0aba954dafbaf36a166045808b07d889a765fef4652a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103363,
+      "sha256": "acf903ea83c894e97799a709cfcc3d67e6650073bd9af6c795529562c71f9d1d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101454,
+      "sha256": "8143fe30c1470c456302ae8c7e12e2bc070cc5ad9f41d63924b2a67b9e8ef4f5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 87949,
+      "sha256": "ddb88ef183e9412127d77da5afddf00ef9fa516bd374a6d17a627a00ae483e73",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_1_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104860,
+      "sha256": "8378043caec91107ff47d5d1cd7e33186c87aec53dd8b1c29d150b48917cdf3b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103098,
+      "sha256": "21e39b90b3e342ed49b53d51895a07b7ea8357945b150d3498d0a68d69584f7a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103893,
+      "sha256": "ea1db71c242c75097f90af93e646b8da74a591ef06fc566000af43745bbf72af",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102254,
+      "sha256": "a12b1deb34dd9695e019b33f83629c792f7044439c9bf2965aa655fd6a028740",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102116,
+      "sha256": "a19446eb931b1655d096eae106a7f3988d335dd25719591cfe6148a79517bbfb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99933,
+      "sha256": "af1b0ffe3dc08249fb1c2aad0343ec59bed1d49a6474d6275db1b0f9b6dd373f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102869,
+      "sha256": "cc8dce146d87de582220ba69c213cfdc26ad1f5dbcfd926f036cc18eadd947dd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104190,
+      "sha256": "689de6fd3258570f98752b7eeb9a0357d3a4d7b1a83fefc4599f5764f2617c58",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98671,
+      "sha256": "39a7edd6060d782ef7df0d16ab280cc28c6c5b443a1a6648a15c742c62163923",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 90517,
+      "sha256": "8ed266acb9a68229798212d3be7f1aa5ff8d716d4c35202876dc76c477251b60",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_2_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 97350,
+      "sha256": "d2fee84cef2d25ced7994d5790821823e4757a0d303320c5d4f3f5b53ccdd9da",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101704,
+      "sha256": "2ed722c56fc9778cd9ee1f7ab78bcf76d887cc2cda4803766f64f2d074d61bb9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103766,
+      "sha256": "abc11ae1733d8489ff7b0eb5f892989ba13cc3df6ac546ab7745979a1c82efa8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102402,
+      "sha256": "0c37ee4c4b58ee4594ec8c01cf8919caf743ddbe177d0e445fea2dc196893bc2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100739,
+      "sha256": "610e4ec762963db83bf25a5fd187a42c2c2d1718db59a1e72df395cdcc432641",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100711,
+      "sha256": "f2352112b1d61bc2c7adfa3accf29035c45fb5efa9147ca74b25b6c5072df282",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100523,
+      "sha256": "a65e836b6e347f0a713826aebb38c94889e3b5ed660c030c152f8c5a5f80d332",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102841,
+      "sha256": "4bd9a5af68667e4d2dbf04c12168eed9c8fb95433ef6978edef8c981a96c53cc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98094,
+      "sha256": "deab041acb926713fd28e7475ce91f301d42a3410d9ab09fdab47a2cc74b96a6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 86071,
+      "sha256": "e1177a64d6773e403fc761ed090c53edd0e5660974b97d32f3202d6c8202abb0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_compatible_3_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 96325,
+      "sha256": "19bfc856b8a79bf961af9f24368a648644042d4239d405b63c4435aba0ecb0bc",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100384,
+      "sha256": "7dbce4737fc6735ac7177e518eb8cf0a0ead1b732eae77dab3342f01100d4413",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 105265,
+      "sha256": "485443a80f1c283ff5a604ba07443705879c931796f3d07a2b77a19de05a6d8b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99173,
+      "sha256": "7924d18bfd8a06bea970e9a9c59e7fb1937ad0431165810eeb34fa25ec436db1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102663,
+      "sha256": "6dc7b476bf2bc274c3fc9a46e4618b9dc33d17ac8ceb5087dea86f225eb04ee0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101776,
+      "sha256": "512f2c553ab7fb8279e42d4662295f3250cac52dc69970be520a7ca1721efe7a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104087,
+      "sha256": "cf5db5533f6cd2ece176e4248aeef4b39546df1c9bbc74d2c517688b073afcd1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101192,
+      "sha256": "b922263b8b8ca25e0d86c2012425b93d9f44559c52531b42abf9cf44d5f9a59d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98217,
+      "sha256": "d3bf85461bec539dcc9ba0daa27f657f081ec332038122cf61d9ad451026d714",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 88280,
+      "sha256": "c065aa28f4b66fa8e461fe810b5d4cda70461783d119a6eaec707aa9cbc2c60f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_0_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101431,
+      "sha256": "719eb6c0e7216fa02dd18c331b503426459a1e61deb52d28147b06870330fd35",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103068,
+      "sha256": "f796b8a41ac57702d53f9ddb16a8d3ca66d3f6bac17ea0d18000225b9c801909",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 105688,
+      "sha256": "e6e74ae2407f14d9695a110f33b96612158d57c7afeca3041074a2c0a6a477b6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101913,
+      "sha256": "ae788d722faef08fddc901146ce6ffc9527669325a977ab8f30196574b53c527",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101762,
+      "sha256": "defb2efe312c0e9629a186253ba73c1ee26238cac631df00af384341f6496d53",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101380,
+      "sha256": "8276458c23b24cc5425cc053d9930914bd4cca41ab67205476e9d2df99fdb30e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101856,
+      "sha256": "4ea2e3d896f586857f663dd403eae2931df73d08b24ab4555b2978101f808a10",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100205,
+      "sha256": "46f3b529c6a02db4b973777c32bd9781ffcbacec8507e71b36877dc1b43d19a1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 97940,
+      "sha256": "5bfcdbe88ffe0d14897a224613295d9141e6600cd35ebd880fa2af0a7859333d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 89678,
+      "sha256": "98cc742a155fce9e13a425f8d2e3af98fda9e9f54a3a07cf09d79761d72f77b1",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_1_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101227,
+      "sha256": "b69c6259844d2b4fb3a300ef6bff2518f6f8974cf477dbd648fceb06a0d6924b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101466,
+      "sha256": "f7118b1816dfea0455755058ec5e37e70212193a2927889c83cce480859cc6e4",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101691,
+      "sha256": "521c67ad2a58235977244871d9a6ac72efc10c7b016d69b8661c78b2b7550885",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101348,
+      "sha256": "b4031306ce37b1f7ab8b3336bcda23e61ee16a63a6e0891229c7da5943c3da64",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100232,
+      "sha256": "a2ce11f49660a0f375ea1c5216cc3360e17b9ce8900df9ec6ccd54eb0fd0fb9d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101619,
+      "sha256": "465b101c8220d72505a69ffbea2d49b0c1b38779b4b75eee06400ac69ff1a160",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102381,
+      "sha256": "7c78e5412aa11145883c089f1079f8605ddd17ae7b29b8637b3c2a8b7c53fed6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102555,
+      "sha256": "c692a396cda6fc42535584a2346e6831c209f9d4bbc1328c036a3413b038581c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98836,
+      "sha256": "44edd2c7f4ca67d0a16dc99909d1860368e833b1411ae1762df4995c5c1037b7",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 85953,
+      "sha256": "12683e304f1b45028becc9324f14c5b1ab66a13da054773c82b87823d5540d33",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_2_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100310,
+      "sha256": "e90a099e82bec81eb892ec52b49ddc15a9aa9c3d7cb44271d6d61e67c43a5952",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102238,
+      "sha256": "18ffca894608c0ceb47ba8ad02c45c831d4de53c2dec4add6e1928831b8ace05",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103995,
+      "sha256": "c58b0f8fe8db20d261c690e9c568d353a9c79cf32f71f418f1c5ca537ba36697",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100478,
+      "sha256": "d48c13049b71b22d6e53e9fc21fd81ab6fc4335be2b80c1ca17e56093eae5557",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102570,
+      "sha256": "256899aff789563be7bcc338bbe3af975aacadcb04068f3a109d294d3a0b6287",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99362,
+      "sha256": "ab4fca8b96d20dd3801426e3c8fdf2399f4c412e4f66a4404472f2bc476fc3cf",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102855,
+      "sha256": "f0570017a80bdede0a11ef4974df599fc0198dc1f735e96ac325608e1bea64dd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99887,
+      "sha256": "a8898847ae71ac2484756c037321e93f2477d6d50deac90fcb422471ace3be5a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100976,
+      "sha256": "1dcd2c671645c85ebf064aae035c49993ab51f2b77a4b46e4e0dfadaea66aa31",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 86773,
+      "sha256": "c2ae47310dba6e8d9ce1bcd8a9458b3d0544860a18f97b3020300a9c52786973",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_crossed_3_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 97895,
+      "sha256": "4ea3a78220e8a260047bef91ba0054370ccdee7dd836ce19e2b4ec057d0ef21d",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101844,
+      "sha256": "26a56a38f6f480a14d23c9db00a4bb3b590816c3730c8afc4351148e0acbffc5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101924,
+      "sha256": "3b8d00cb0e29a56b2e91f7e6d7f7afc1eb35be35d5c4bcebd7c8925b72f4566f",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100751,
+      "sha256": "571607785964989414b05b1b6209d200b24f990db006fad01fdff1a27056b414",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101279,
+      "sha256": "e344a51d31a37aa0f70c255703258c7071d85017a90d9692bd01c8f275a0bc36",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102449,
+      "sha256": "b7088325a276c9384a065cfed5552a477cef101bacae2ee1fb82175c4e326aba",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99723,
+      "sha256": "588da7656531c08e7f45e9affe37e3ee743a0e6fb795aaf8530e2758a1057617",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102441,
+      "sha256": "1b45f5267621337bcd044dec78caead7ec5b5fab949d04b35ef61a36ff870db8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100470,
+      "sha256": "36d060b3ea301714edd8fa0c7920e9d27ce4f2c98feb9c640d5a257c7d85b258",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 86293,
+      "sha256": "a858d7cb44b4120b28dd92cb6d15d086153f6d01987ff7c1d991ba73454d84b0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_0_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 97011,
+      "sha256": "4bb3818e2b6bb4809988ba9affa467d1ebbf0843f8746bb7dfbeb73fd1e21684",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102063,
+      "sha256": "62fd31e9cc69b8f00ad661d8fe6bb9040a23ed3c7a10fd0778dd8db673d728ab",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102740,
+      "sha256": "28a70fe147848d945419e79d86aef80559e4583be874d9c9028a9fd55929db67",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103065,
+      "sha256": "e74014b289cffd65c67df5480a94608c9a620535cdd060aa062faa4b8d4b4776",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98479,
+      "sha256": "d62d5f986986935bec7b928f01ad02032d3ff77b8ba0ec5a385ded70530b3c91",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103291,
+      "sha256": "8216453a5496033d4a6aa02cff91dbe66eb8afcf4c5992995f63173f71ccee4a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102739,
+      "sha256": "188ce5a01548c2a970a66fcdf861c472145030311a1068c5f75720677e69a596",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 105014,
+      "sha256": "5cb7646c2a7608e1d7bf79d382bbe77635b60b049fa9ee36f242542e6f9e6e8e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98944,
+      "sha256": "e396ce8f43b6f034c6cc8c64122c01402c14cccee6041adfd99d04c7d7af73df",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 90315,
+      "sha256": "fe73553735aa968090b5dcd038ae439f713521f5dd60a16de279e77c716835bb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_1_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100588,
+      "sha256": "7aa13ce60afa97398832b53d5e4fc0a1099d1a2eb13b8ace4eb77efe6a2d5dd0",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102685,
+      "sha256": "55dda6e672bede8040d5d70cfa63d75984bd7acb04fd97a6701bea48cdc80cc8",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 104752,
+      "sha256": "59e7e35958709d28c6706beb10a5f8adde6160312d072879b8da6d0107818d85",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102821,
+      "sha256": "90ca6a9df179f473849900853a1ce9721b95e6048785e97ba33a263423959c34",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102683,
+      "sha256": "82e54ae77491ed572d410952944d09effe9508b25c188777ffe2c3312fcc1094",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 100054,
+      "sha256": "6a1e68ecbd9607929267520ff647e8718addf6d12f0f287dce6453b43d911019",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 97448,
+      "sha256": "f3282c58553d2fe91331d9d381d7a6ed675a7aad3218be2655a451d9cc9e03a5",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103249,
+      "sha256": "a50867921fa4ad9ab567fc276ed1922170bb4bece51e2e9647c6f63634fe824e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101204,
+      "sha256": "cbae4eacaf6892511490c7c22a5b03d6f8a90787afdefdbf6afc0428e4008a1e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 85097,
+      "sha256": "476ff4e404a5de28a40d7fe0ecf9f97f92313738fabdff802a2d7ca0bd1736c7",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_2_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98050,
+      "sha256": "98aa3e86b03e5e8afbf5f9bd86f15f7e7ebd6cd9edbaf65fcf9fa0a31a9cecb6",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_0_1.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102422,
+      "sha256": "6b5844acfa09d523807f25e12be029c88e568e4962ace7703214469a4c8c6036",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_0_1_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102728,
+      "sha256": "d40b580a065752d49081fa019a74ee057166edf3208011cbf9bd75a6592ddd7e",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_1_2.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 106528,
+      "sha256": "50870814fe107cfef8d85fcb6e87d5c81211efa0eae2e6df3baf73e2048bf568",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_2_3.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99294,
+      "sha256": "fa3dd644c59a7de86145b3bc4daa99d1851e5a2998ba3bb4d625e87fb0056d7c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_3_4.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 107433,
+      "sha256": "0382d23fe0e3b240b490a3568c0a32996587a837a6d501bcea2cd6b9c3f093a7",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_4_5.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 105834,
+      "sha256": "27ce591af3863b3db59cd94ef646f86e6c33649fa4f4cc404fad368abb39cd35",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_5_6.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102198,
+      "sha256": "d85732bd8e69673716a91e858df0efd2102651a94e6ef40f24a984bfbadf77ba",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_cov_full.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 102692,
+      "sha256": "5439646739fd3a425da7d06ee5e3f93826dfb0c5d258c174c8033c90143547f9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_markov_ward.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 88862,
+      "sha256": "e931031641a8d356b5072e7cdbfd9b8a21d20269db677158cbff0991d2b2e733",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/fit_tied_population_crossed_3_symmetric_average.json.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 98768,
+      "sha256": "a69703e66854912a7a3bd3401b9ff18ea31f0e1e0b2ea690b22fe906a6ff5c12",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/manifest.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 19073,
+      "sha256": "883a1287270207f08c8f41736c15b2d05bfe0b8ebb202c25e6ecbda98be9df60",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native/verification.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 120,
+      "sha256": "def7cf417204f5bf787d10bd3e9a7688424be33045fc35b83a43d8ab24052415",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native_covariance_spans_corrected.jsonl.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 573478,
+      "sha256": "a32a1c78dd87b2f279e16c4556d43ae0a3659c0e180902a15e60e4be898f462c",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native_summary.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 99826,
+      "sha256": "09814652198263783a67749fae2de5c769f07e6e4ae2adde7eb72fddcf781f31"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/native_summary.md",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/protocol.md",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/README.md",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/alternatives_with_magnitudes.csv.gz",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 496174,
+      "sha256": "33f8e3a927b91d54989daa41005003a87fc9b4bac118c3a736bcceed0001c477",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/factor_pairs.csv",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 37715,
+      "sha256": "1eec9e263244859b033392e6d72bd47a9fc3dae5c5796a50e964b2b80b3ea26f"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/manifest.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 4007,
+      "sha256": "c673472a9a5e40050fca91f0043480befb66be7f60d187af390c350ef372e759"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/native_pairs.csv",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 95616,
+      "sha256": "fd0fed036e9d8076b150752441a59f926edf242a5b0471220d64237c033bc447"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/native_rows.csv",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 103735,
+      "sha256": "886b990f0cdd8bca41cfca7626c183acaf03a71073b2bdb62618c1428bacada9"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/root_trace_scales.csv",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6697,
+      "sha256": "a170bfe4eff7913f6673dd59aaf446e6f7e46d21f513627e432f8f3019292f10"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/relationships/run.py",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/run.py",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/source_during_native_run.py.txt",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 18139,
+      "sha256": "f12319ce1585c55f3a3ed341fd86ef524fbd08deee8586a040cc2f11609ec798"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/structure/report.md",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/summarize_native.py",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/tests.log",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99,
+      "sha256": "d587bef810f704d6048812ba0b37fd587fbc37610e4583112d553241776a2e44",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/tests_final.log",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99,
+      "sha256": "ebfa878e957395fe2825632b9057da69c84010c67c4ae45b247859d3917caa5a",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_context_statistics_20261109/verification.json",
+      "study": "reports/subtree_context_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1650,
+      "sha256": "fdbe591a674430f5a867b9a4b828e1d69e2edcff18649e150960e9d40a8c233e"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/README.md",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/mathematics.md",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/panel/endpoint_summary.json",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 41582,
+      "sha256": "e162351b8480f3e6207133b1df465e17c78dbe6922e9a647893a39425d6c02ad"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/panel/manifest.json",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 27135,
+      "sha256": "400ce96a01df0a4d9100307dd12e6a8a05da2fd37746687e5082e8e58027f06d"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/panel/matched_edges.json.gz",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 7511,
+      "sha256": "5151c0013b8cfd68eef77b47c6fc64a158a93676c7342a7d4b011d23fa9ba541",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/panel/paths.csv.gz",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 66898471,
+      "sha256": "90102926292e655695f58fe7606f3aa9c338cce6dcb337abc9dc00f316833c44",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/panel/same_path_example.json",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 83639,
+      "sha256": "c2e0cbef841defea24661608a382a776dd7687f9f8134876b1a08e4e420bd0fc"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/panel/summary.json",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 170203,
+      "sha256": "21aff13f76ac55af0f8f55629e728015ed42f18da6677980d47bd22d3050955b"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/protocol.md",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/run.log",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 684,
+      "sha256": "122acba0c1cca8d1788fbf939134b71b98534cf9501bbb4576f77645e2d571c9",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/run.py",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/summarize_endpoints.py",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/tests.log",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99,
+      "sha256": "7ffebd3ec71f4679ad3e341374a06f964ee7416b2d52e70332e1aa0f4a57c328",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/verification.json",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1261,
+      "sha256": "fdd77a78711610330bb2c4d4cf72cefff1a6868a44aa4aa476a8174f0a79c338"
+    },
+    {
+      "path": "reports/subtree_path_statistics_20261109/wolfram_evidence.json",
+      "study": "reports/subtree_path_statistics_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1270,
+      "sha256": "a9a3252c3412e55c53c710cceb7f1dc9b98b006cc3c697e73bee8ec26e44c904"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/README.md",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alignment/report.md",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/README.md",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/evidence.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6890,
+      "sha256": "907750bcc2d980d9d2bc7de35e12f799d461b10f7f3d5293ab453ae015e5f849"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/protocol.md",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/rows.csv.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 389177,
+      "sha256": "452ba208b65cb7c4affafd995db7324ef0dcd0227a6823b6fbb4272e422336fb",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/run.py",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/source_change_review.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1805,
+      "sha256": "206f02b2dc2821ceb57566109efe0c233306a5b119c7083fd5595d1a88dd7fa6"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/source_during_run.py.txt",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 10501,
+      "sha256": "903f16e036897be0ed1bc3b5ef11c6648e8cf333b62c28dd2125a5f242cbb25a"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/summary.csv",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 17441,
+      "sha256": "1c0f44475af07322893da44f4d2e6db7f85cde155d553dc5926b62f32cbafcf1"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/alternatives/verification.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 449,
+      "sha256": "730ce8b57b99b7aab1de15785cdbeec0bc7e59eef8a4eb9b864bd54b37a68cc9"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/figures/crossed_partitions_and_topology_coverage.pdf",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 28968,
+      "sha256": "60199cf2eb8c96460a599382adade9ba2ae91f0e0b971e04e72b7684b3055d7f"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/figures/crossed_partitions_and_topology_coverage.png",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 156925,
+      "sha256": "61f136dbb11a32eeef1bc968a8baa8f7a93141ca7806f4f9b38d448b87d77c81"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/figures/crossed_partitions_and_topology_coverage.svg",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 32583,
+      "sha256": "f76a7ac55d530b2028e2a30fa0a90c6a118f806e901858de84f14391de1eb725"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/figures/plot.py",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/math/README.md",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/math/coifman-lafon-2006.pdf",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 700691,
+      "sha256": "cf2188865324a22da7dcea1072466881ef47723d50e5ac34253bc7b057ff43ce"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/math/primary_sources.md",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/math/wolfram_evidence.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 1288,
+      "sha256": "b7b5713e943a1c1c0f4253a564205b0215644b2c22ac3712f8989e3004da92a3"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/child_summary.csv",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 47422,
+      "sha256": "70f4b557d215ad4ae4cbd53b2e32ea8f35cb7c2661fd9ad7f97359ec0c691c8e"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/manifest.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 18707,
+      "sha256": "a23752f7248373de64edc2cd635ff2f1c47daabe0d1e0b4b61d182fbc1358d15"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/production_span_rows.jsonl.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 63348,
+      "sha256": "b61aaf05e9894f03c4590f6cf510c3c8cf1352322cb4c12b2f14e26471616721",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/production_span_summary.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 19701,
+      "sha256": "5753090db8b5cbb5c07c989cbba7ecd2c356d5b2844854412dd42cbf6630b57d"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/root_summary.csv",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 26649,
+      "sha256": "817c69c54126cc605ed26b6dc901ea8afd67c0b2977070d2360f6de983bd2c29"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/rows.jsonl.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 2256358,
+      "sha256": "743b4f8838734d191e2fef194a9078088fd34622e7d83675b47f487d51680877",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_common_mean_null_markov.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 117531,
+      "sha256": "9636888f1ca07d9cd60120ed02b60fa6ae30c35006f8150f883879ecdbe75696",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_common_mean_null_symmetric.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 116617,
+      "sha256": "1835b5a6d51bdc6a5a5acbcb0719b466e2844f3486c653b7bb4aa689eb92b9c2",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_compatible_markov.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 103738,
+      "sha256": "184eb02a4d28ce019e7aaa599c584894707260724e537d7a9038259545f80498",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_compatible_symmetric.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 108474,
+      "sha256": "f55a592e38ee7f7faf983e1186d968bed4d60444a7ae695a9db7a42644efe8fd",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_crossed_markov.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 101192,
+      "sha256": "54c4378470bd0fb33feac2e4c8358391650c18c9aba78b3bfce96b2f15363211",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_crossed_symmetric.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 107856,
+      "sha256": "f4dab85741c597a5fd9ab5204968c11d4483644565afe35409dec74cb456d16b",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_tied_population_crossed_markov.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 99839,
+      "sha256": "7f27b7f65a3b7a11deeca73ce2629e0c304c0396e3d07a63e16b01b2f822ed25",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/trace_tied_population_crossed_symmetric.json.gz",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "generated_output",
+      "reason": "Detailed reproducible diagnostic records retained locally.",
+      "bytes": 106904,
+      "sha256": "7c8941bfd19f76595587a737b371e529f949b1945d1fe57ac50c048bc459b917",
+      "storage": "local"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/parent_child/verification.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 290,
+      "sha256": "bf909ef968b779f4f5f8c0d40ed3870cf31dde60ed0597222e191870c439030f"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/production_spans.py",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/protocol.md",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/pytest_output.txt",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 6614,
+      "sha256": "85ca6b751742bc1baaf6750722a68952d2ea8b8a9eced4e7f9892b564116c917"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/run.py",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/summarize.py",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "source",
+      "reason": "Report, protocol, derivation or reproduction script; editable source."
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/summary.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 5166,
+      "sha256": "3ed65973fb06fe686490376b973f6fa2fd4f2f54529a7490a944e68cd392d42a"
+    },
+    {
+      "path": "reports/subtree_spectral_alignment_20261109/verification.json",
+      "study": "reports/subtree_spectral_alignment_20261109",
+      "role": "retained_result",
+      "reason": "Compact result, provenance, verification, figure or historical evidence retained for review.",
+      "bytes": 9579,
+      "sha256": "4040eea48c44bd7ec0639223cea3595e6b05ffe3444d94c5f79cb98bb10af5c9"
     }
   ]
 }

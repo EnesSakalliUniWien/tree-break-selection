@@ -1,0 +1,8 @@
+{
+  "archived_source": "reports/subtree_clustering_research_20261109/preflight/source_before_gate_serialization_fix.py.txt",
+  "archive_matches_initial_hash": true,
+  "changed_functions": [
+    "runtime_gate"
+  ],
+  "effect": "Only runtime_gate output booleans changed for JSON serialization; factorial does not call runtime_gate. All 800 factorial fits retained. First preflight saved all36 fits but final summary serialization failed; isolated repeat fixes this and eliminates concurrent panel load."
+}

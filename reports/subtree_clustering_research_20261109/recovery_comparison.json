@@ -1,0 +1,876 @@
+{
+  "design": "development_or_custom",
+  "baseline": "symmetric_average",
+  "candidate": "markov_ward",
+  "complete": true,
+  "all_successful": true,
+  "passed": false,
+  "loss_detected": true,
+  "coverage": {
+    "expected_pairs": 800,
+    "paired_attempted": 800,
+    "paired_successful": 800,
+    "paired_share": 1.0,
+    "baseline_status_counts": {
+      "ok": 800,
+      "unresolved": 0,
+      "unsupported": 0,
+      "error": 0,
+      "failed": 0,
+      "skip": 0,
+      "missing": 0
+    },
+    "candidate_status_counts": {
+      "ok": 800,
+      "unresolved": 0,
+      "unsupported": 0,
+      "error": 0,
+      "failed": 0,
+      "skip": 0,
+      "missing": 0
+    }
+  },
+  "aggregate": {
+    "blocks": 50,
+    "expected_blocks": 50,
+    "mean_ami_difference": -0.05550158924616082,
+    "interval": [
+      -0.06360476406925963,
+      -0.04739841442306201
+    ]
+  },
+  "cells": [
+    {
+      "cell": 0,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.006525808045216499,
+      "interval": [
+        -0.014628423329358587,
+        0.0015768072389255898
+      ],
+      "loss_p": 0.05598706297274296,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.03568231900708182
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.05300253358962845
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.04701407599953066
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.048731638418079114
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.004862219372596091
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 0.2799353148637148
+    },
+    {
+      "cell": 1,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": 5.6548372753495443e-05,
+      "interval": [
+        -0.006589682447016193,
+        0.006702779192523184
+      ],
+      "loss_p": 0.5067861241689269,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.021780120099493278
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.04310031886339694
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.020036584922962265
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.03934745762711865
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.011849857285620925
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 1.0
+    },
+    {
+      "cell": 2,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.13590919085554415,
+      "interval": [
+        -0.15886902474734976,
+        -0.11294935696373853
+      ],
+      "loss_p": 2.3303186765009856e-16,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.24899476225983336
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.19735784080280083
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.21419118503601198
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.3141751412429379
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.0009055781343838421
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 3.495478014751478e-15
+    },
+    {
+      "cell": 3,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.07246230189927955,
+      "interval": [
+        -0.08863845202349008,
+        -0.056286151775069015
+      ],
+      "loss_p": 2.927219768952599e-12,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.1768111486760838
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.1481672685610129
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.16919002022077978
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.18832485875706217
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.004679575528654135
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 4.098107676533639e-11
+    },
+    {
+      "cell": 4,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.014043546224976788,
+      "interval": [
+        -0.022296625709796427,
+        -0.0057904667401571484
+      ],
+      "loss_p": 0.0006362701975985261,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.029474876368486145
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.03507320142128415
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": 0.02526301966203277
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.048873290136789066
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.016636874356571667
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 0.006362701975985261
+    },
+    {
+      "cell": 5,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": 0.0001005008547784822,
+      "interval": [
+        -0.005489286896604233,
+        0.005690288606161198
+      ],
+      "loss_p": 0.514337608903464,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": 0.0002025366761874342
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.011148771540918933
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": 0.013565903512448498
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.01380129589632828
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.017889961652045802
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 1.0
+    },
+    {
+      "cell": 6,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.22781758882175282,
+      "interval": [
+        -0.26496855356795657,
+        -0.19066662407554907
+      ],
+      "loss_p": 6.317401324502856e-17,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.4597978758745482
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.1673693529511162
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": 0.020580520284868092
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.4961501079913607
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 6.365848797322077e-05
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 1.0107842119204569e-15
+    },
+    {
+      "cell": 7,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.06193885780537672,
+      "interval": [
+        -0.08061578625366521,
+        -0.043261929357088225
+      ],
+      "loss_p": 1.0983791518771392e-08,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.13017893442984987
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.07924416512045025
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": 0.07079272450152292
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.12662886969042478
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 0.006482557731099884
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 1.427892897440281e-07
+    },
+    {
+      "cell": 8,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": 0.011239729159377619,
+      "interval": [
+        -0.025045726021437925,
+        0.04752518434019316
+      ],
+      "loss_p": 0.7317447555274095,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": 0.013239520223827517
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.008105570279117538
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.0834974030962815
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.017206214689265552
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.003105789856054495
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 1.0
+    },
+    {
+      "cell": 9,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.012740904943732496,
+      "interval": [
+        -0.02207977810955851,
+        -0.003402031777906484
+      ],
+      "loss_p": 0.004255108402058926,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.005867022965256109
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.04132726669910968
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.043485622928738366
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": -0.0731271186440678
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 0.005669889598058491
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 0.034040867216471406
+    },
+    {
+      "cell": 10,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.02680865579699649,
+      "interval": [
+        -0.051061667362698376,
+        -0.0025556442312946077
+      ],
+      "loss_p": 0.015490223794440159,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.0524893158838233
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.08030798769803298
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.1047710494420974
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": -0.02000282485875706
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 0.06934031769889674
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 0.1084315665610811
+    },
+    {
+      "cell": 11,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.18369592832734674,
+      "interval": [
+        -0.24964442815910787,
+        -0.1177474284955856
+      ],
+      "loss_p": 4.847620088677049e-07,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.20986801829177526
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.32324089572545994
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.2648266624773097
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": -0.09686158192090398
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 0.20723723134568284
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 5.817144106412459e-06
+    },
+    {
+      "cell": 12,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": 0.027167298568187073,
+      "interval": [
+        -0.002872994092857968,
+        0.057207591229232115
+      ],
+      "loss_p": 0.9623620728657598,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": 0.02716992477852052
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": 0.01067398077695597
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.022929070306349403
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.056450683945284366
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": -0.011992392552059696
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 1.0
+    },
+    {
+      "cell": 13,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.011684106568131559,
+      "interval": [
+        -0.02506991553111173,
+        0.0017017023948486098
+      ],
+      "loss_p": 0.042832692490453045,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.008755165754459442
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.03577532228192681
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.013185738334839834
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": -0.07320014398848093
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 0.010541738883732422
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 0.25699615494271827
+    },
+    {
+      "cell": 14,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.024694902447789567,
+      "interval": [
+        -0.04198327535068107,
+        -0.00740652954489807
+      ],
+      "loss_p": 0.003017716493183391,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.03318972229875952
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.10644255277123074
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.3759836110059712
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": 0.005869330453563719
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 0.030251618659465948
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 0.027159448438650518
+    },
+    {
+      "cell": 15,
+      "paired_attempted": 50,
+      "paired_successful": 50,
+      "mean_ami_difference": -0.14826771315752652,
+      "interval": [
+        -0.2192573509918579,
+        -0.07727807532319513
+      ],
+      "loss_p": 5.666986552446581e-05,
+      "auxiliary": {
+        "ari": {
+          "pairs": 50,
+          "mean_difference": -0.17526382487722042
+        },
+        "matched_macro_f1": {
+          "pairs": 50,
+          "mean_difference": -0.145140525981047
+        },
+        "matched_rare_f1": {
+          "pairs": 50,
+          "mean_difference": -0.11541139454866922
+        },
+        "pair_split_share": {
+          "pairs": 50,
+          "mean_difference": -0.04698344132469402
+        },
+        "pair_merge_share": {
+          "pairs": 50,
+          "mean_difference": 0.1257893196963409
+        }
+      },
+      "baseline_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "candidate_status_counts": {
+        "ok": 50,
+        "unresolved": 0,
+        "unsupported": 0,
+        "error": 0,
+        "failed": 0,
+        "skip": 0,
+        "missing": 0
+      },
+      "loss_p_holm": 0.0006233685207691239
+    }
+  ]
+}

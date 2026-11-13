@@ -1,0 +1,83 @@
+{
+  "status": "not_promoted",
+  "candidate": "bounded spectral Ward alternatives, common-target minimum NNLS residual, native empirical sibling reference",
+  "runtime": {
+    "passed": false,
+    "complete_panel": true,
+    "cases": [
+      {
+        "n": 32,
+        "p": 12,
+        "ratio": 1.2144020643695443,
+        "complete": true,
+        "passed": true
+      },
+      {
+        "n": 32,
+        "p": 72,
+        "ratio": 2.053413021637181,
+        "complete": true,
+        "passed": true
+      },
+      {
+        "n": 128,
+        "p": 12,
+        "ratio": 2.2891607126286106,
+        "complete": true,
+        "passed": true
+      },
+      {
+        "n": 128,
+        "p": 72,
+        "ratio": 14.103573069524474,
+        "complete": true,
+        "passed": false
+      },
+      {
+        "n": 240,
+        "p": 12,
+        "ratio": 4.647723252173916,
+        "complete": true,
+        "passed": true
+      },
+      {
+        "n": 240,
+        "p": 72,
+        "ratio": 24.883104073025347,
+        "complete": true,
+        "passed": false
+      }
+    ],
+    "scope": "geometric candidate with existing empirical sibling reference; statistical validity not established"
+  },
+  "model_specific_candidate_reference": "not_established: common-event Ward family reference does not cover the new diffusion/minimum-residual procedure or its empirical eligibility/traversal",
+  "family_power": "no true family rejections in 50 mixed-root development datasets at 999 steps",
+  "frozen_calibration": {
+    "status": "not_run_prerequisites_failed",
+    "planned_datasets": 120000,
+    "cells": 24,
+    "datasets_per_cell": 5000
+  },
+  "frozen_recovery": {
+    "status": "not_run_prerequisites_failed",
+    "planned_datasets": 3200,
+    "cells": 16,
+    "datasets_per_cell": 200
+  },
+  "candidate_full_recovery": {
+    "status": "not_run_runtime_preflight_failed",
+    "baseline_recovery_fits_completed": 1600
+  },
+  "production_files_changed": [],
+  "development": {
+    "factorial_fits": 2400,
+    "recovery_fits": 1600,
+    "distinct_input_matrices": 850,
+    "factorial_status": {
+      "ok": 2400
+    },
+    "recovery_status": {
+      "ok": 1600
+    }
+  }
+}

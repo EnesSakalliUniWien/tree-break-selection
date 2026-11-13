@@ -1,0 +1,22 @@
+..................                                                       [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_denominators_holm_and_unresolved_rows
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-duplicate]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-cell]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-p_value0]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-p_value1]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-status]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_calibration_rejects_invalid_rows[<lambda>-decision]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_recovery_equal_cell_blocks_and_support_denominator
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[seed-900-seed]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[data_hash-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-data_hash]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[method-other-method]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_paired_recovery_rejects_mismatched_or_malformed_rows[ami-2.0-ami]
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_constant_paired_losses_are_flagged_even_if_overall_ami_improves
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_all_one_calibration_is_degenerate
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_unresolved_decision_cannot_count_as_completed_even_with_ok_status
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_recovery_rejects_reuse_of_dataset_seed_or_hash
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_frozen_calibration_gate_requires_complete_nondegenerate_attempts
+PASSED tests/validation/calibration/test_subtree_research_validation.py::test_frozen_recovery_gate_requires_explicit_phase_two
+18 passed in 1.30s

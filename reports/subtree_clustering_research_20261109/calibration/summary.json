@@ -1,0 +1,286 @@
+{
+  "attribution_null": {
+    "n": 50,
+    "unresolved": 0,
+    "unit_branch_rank_changes": 0,
+    "max_abs_ridge_scaling_residual": 3.086100264226843e-10,
+    "display_supported": 4,
+    "medians": {
+      "native_raw": 6.751914318514382,
+      "native_df": 3.0,
+      "native_display": 33.8773424343822,
+      "scale": 1.0,
+      "inflation": 1.0,
+      "unit_branch_raw": 11.52147366686728,
+      "unit_branch_df": 3.0,
+      "branch_factor": 1.655704250470659,
+      "sibling_branch_sum": 0.7854790304674457,
+      "positive_branch_mean": 0.6221324004598299,
+      "oracle_covariance_raw": 8.425201289209962,
+      "oracle_covariance_df": 3.0,
+      "gram_rank_raw": 5.155777530815925,
+      "gram_rank_df": 1.0,
+      "ridge_scaling_residual": -7.982947636264726e-12,
+      "unit_branch_rank_changed": 0.0
+    }
+  },
+  "attribution_signal": {
+    "n": 50,
+    "unresolved": 0,
+    "unit_branch_rank_changes": 0,
+    "max_abs_ridge_scaling_residual": 4.201069714326877e-09,
+    "display_supported": 48,
+    "medians": {
+      "native_raw": 182.13489223990985,
+      "native_df": 3.0,
+      "native_display": 168.9312697025527,
+      "scale": 1.0,
+      "inflation": 1.0,
+      "unit_branch_raw": 277.97433899052965,
+      "unit_branch_df": 3.0,
+      "branch_factor": 1.5442576013262386,
+      "sibling_branch_sum": 0.5924204501218002,
+      "positive_branch_mean": 0.5463987828517345,
+      "oracle_covariance_raw": 141.59184972909895,
+      "oracle_covariance_df": 3.0,
+      "gram_rank_raw": 82.77051389338318,
+      "gram_rank_df": 1.0,
+      "ridge_scaling_residual": -1.0353460311307572e-09,
+      "unit_branch_rank_changed": 0.0
+    }
+  },
+  "fixed_beta": {
+    "beta": {
+      "hits": 4,
+      "n": 50,
+      "ci": [
+        0.02222796365490366,
+        0.19234278359591536
+      ]
+    },
+    "99": {
+      "rejected": {
+        "hits": 2,
+        "n": 50,
+        "ci": [
+          0.004881433426136253,
+          0.13713762560396867
+        ]
+      },
+      "unresolved": 0,
+      "seconds_median": 0.002763936994597316,
+      "median_absolute_p_difference": 0.02625068163671493
+    },
+    "999": {
+      "rejected": {
+        "hits": 3,
+        "n": 50,
+        "ci": [
+          0.012548587835334066,
+          0.1654819466037729
+        ]
+      },
+      "unresolved": 0,
+      "seconds_median": 0.026441500027431175,
+      "median_absolute_p_difference": 0.009769552563682907
+    }
+  },
+  "family_null": {
+    "99": {
+      "rejected": {
+        "hits": 1,
+        "n": 50,
+        "ci": [
+          0.0005062279831152353,
+          0.10646954571150097
+        ]
+      },
+      "unresolved": 0,
+      "seconds_median": 0.010707687528338283,
+      "false_family": {
+        "hits": 1,
+        "n": 50,
+        "ci": [
+          0.0005062279831152353,
+          0.10646954571150097
+        ]
+      },
+      "true_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "resolution_failures": 0,
+      "median_moves": 36.0,
+      "unresolved_nodes": 0,
+      "heterogeneous_zero_contrast": 0
+    },
+    "999": {
+      "rejected": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "unresolved": 0,
+      "seconds_median": 0.10462877099053003,
+      "false_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "true_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "resolution_failures": 0,
+      "median_moves": 347.0,
+      "unresolved_nodes": 0,
+      "heterogeneous_zero_contrast": 0
+    }
+  },
+  "family_selected_child": {
+    "99": {
+      "rejected": {
+        "hits": 1,
+        "n": 50,
+        "ci": [
+          0.0005062279831152353,
+          0.10646954571150097
+        ]
+      },
+      "unresolved": 0,
+      "seconds_median": 0.011653416528133675,
+      "false_family": {
+        "hits": 1,
+        "n": 50,
+        "ci": [
+          0.0005062279831152353,
+          0.10646954571150097
+        ]
+      },
+      "true_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "resolution_failures": 0,
+      "median_moves": 37.5,
+      "unresolved_nodes": 0,
+      "heterogeneous_zero_contrast": 0
+    },
+    "999": {
+      "rejected": {
+        "hits": 3,
+        "n": 50,
+        "ci": [
+          0.012548587835334066,
+          0.1654819466037729
+        ]
+      },
+      "unresolved": 0,
+      "seconds_median": 0.11238583346130326,
+      "false_family": {
+        "hits": 3,
+        "n": 50,
+        "ci": [
+          0.012548587835334066,
+          0.1654819466037729
+        ]
+      },
+      "true_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "resolution_failures": 0,
+      "median_moves": 341.5,
+      "unresolved_nodes": 0,
+      "heterogeneous_zero_contrast": 0
+    }
+  },
+  "family_mixed_root": {
+    "99": {
+      "rejected": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "unresolved": 50,
+      "seconds_median": 0.026355437526945025,
+      "false_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "true_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "resolution_failures": 50,
+      "median_moves": 30.0,
+      "unresolved_nodes": 350,
+      "heterogeneous_zero_contrast": 0
+    },
+    "999": {
+      "rejected": {
+        "hits": 1,
+        "n": 50,
+        "ci": [
+          0.0005062279831152353,
+          0.10646954571150097
+        ]
+      },
+      "unresolved": 0,
+      "seconds_median": 0.2512217920157127,
+      "false_family": {
+        "hits": 1,
+        "n": 50,
+        "ci": [
+          0.0005062279831152353,
+          0.10646954571150097
+        ]
+      },
+      "true_family": {
+        "hits": 0,
+        "n": 50,
+        "ci": [
+          0.0,
+          0.07112173646420458
+        ]
+      },
+      "resolution_failures": 0,
+      "median_moves": 315.0,
+      "unresolved_nodes": 0,
+      "heterogeneous_zero_contrast": 0
+    }
+  }
+}

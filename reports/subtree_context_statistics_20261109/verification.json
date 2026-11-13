@@ -1,0 +1,63 @@
+{
+  "date": "2026-11-09",
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.11",
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "pandas": "2.3.3",
+    "sklearn": "1.7.2",
+    "pytest": "8.4.2"
+  },
+  "native_panel": {
+    "attempts": 160,
+    "status_counts": {
+      "ok": 160
+    },
+    "node_comparisons": 16128,
+    "source_files_changed": []
+  },
+  "final_focused_tests": {
+    "passed": 69,
+    "log": "reports/subtree_context_statistics_20261109/tests_final.log"
+  },
+  "ruff_check": {
+    "exit_code": 0,
+    "files": 6
+  },
+  "ruff_format_check": {
+    "exit_code": 0,
+    "files": 6
+  },
+  "wiki_lint": {
+    "exit_code": 0,
+    "pages": 270
+  },
+  "git_diff_check": {
+    "exit_code": 0,
+    "scope": "edited tracked wiki files"
+  },
+  "raw_manifest_verified_files": 21,
+  "production_files_unchanged": 110,
+  "current_vs_executed_source_differences": [
+    "reports/subtree_context_statistics_20261109/run.py"
+  ],
+  "executed_runner_archive_verified": true,
+  "diagnostic_correction": {
+    "span_rows": 8064,
+    "rebuilt_ranks_changed": 3,
+    "corrected_cutoffs_slicing_ties": 0,
+    "native_fits_rerun": 0,
+    "sidecar": "reports/subtree_context_statistics_20261109/native_covariance_spans_corrected.jsonl.gz"
+  },
+  "not_run": [
+    "Frozen calibration and recovery validation after earlier failed prerequisites",
+    "New cancer-data analysis",
+    "Production default promotion"
+  ],
+  "limitations": [
+    "16 reused Gaussian matrices, not independent validation",
+    "Dependent candidate and node comparisons",
+    "No complete selected-null or final-partition error-control claim"
+  ]
+}

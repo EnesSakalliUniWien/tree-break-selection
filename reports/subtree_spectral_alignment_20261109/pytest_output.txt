@@ -1,0 +1,59 @@
+................................................                         [100%]
+==================================== PASSES ====================================
+________ test_replay_retains_each_failed_attempt_and_refuses_overwrite _________
+----------------------------- Captured stdout call -----------------------------
+crossed: 2 attempts
+tied_population_crossed: 2 attempts
+compatible: 2 attempts
+common_mean_null: 2 attempts
+{"attempted": 8, "error": 8, "non_ok_children": 0, "native_status_counts": {}, "child_graph_status_counts": {"induced_parent_graph": {}, "rebuilt_child_graph": {}}, "source_files_changed_during_run": []}
+=========================== short test summary info ============================
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_sign_basis_rotation_and_unequal_rank
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_zero_and_dependent_spans_are_explicit
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_equal_covariance_eigenvalues_can_have_different_eigenspaces
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_prescribed_reflection_preserves_or_changes_separate_objects
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_covariance_decomposition_weights_child_scatter_and_mean_shifts[0]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_covariance_decomposition_weights_child_scatter_and_mean_shifts[1]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_irregular_diffusion_bases_need_degree_transform
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_row_restriction_detects_rank_loss_and_keeps_child_order
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>0]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>1]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>2]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>3]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>4]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>5]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>6]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>7]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>8]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>9]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>10]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_invalid_inputs_fail_explicitly[<lambda>11]
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_diffusion_keeps_whole_zero_block_and_negative_mode
+PASSED tests/statistics/77_test_subtree_spectral_alignment.py::test_rebuilt_child_modes_can_disagree_with_the_restricted_parent_modes
+PASSED tests/statistics/78_test_subtree_alignment_native_replay.py::test_spectral_capture_preserves_native_pipeline_and_coordinates[symmetric-average]
+PASSED tests/statistics/78_test_subtree_alignment_native_replay.py::test_spectral_capture_preserves_native_pipeline_and_coordinates[markov-ward]
+PASSED tests/statistics/78_test_subtree_alignment_native_replay.py::test_spectral_capture_restores_instrumentation_after_failure
+PASSED tests/statistics/78_test_subtree_alignment_native_replay.py::test_replay_retains_each_failed_attempt_and_refuses_overwrite
+PASSED tests/statistics/78_test_subtree_alignment_native_replay.py::test_native_failure_keeps_original_reason_without_gate_context
+PASSED tests/statistics/78_test_subtree_alignment_native_replay.py::test_unexpected_child_refit_failure_is_error_and_does_not_hide_induced_result
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_compressed_all_pair_objective_matches_dense_nnls[euclidean]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_compressed_all_pair_objective_matches_dense_nnls[mean_squared_standardized_euclidean]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_simplex_equivalence_retains_current_linkage_and_exposes_zero_edges
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_rectangle_rotation_and_row_relabel_preserve_labeled_geometry
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_rerootings_share_the_same_unrooted_fit
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_bounded_candidate_support_and_explicit_exhaustive_limit
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-2-nan-finite]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-0-0.25-integer]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-3-2.5-integer]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-3-3-count]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_invalid_current_linkage_is_rejected[0-2-5-height]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current0]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current1]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current2]
+PASSED tests/statistics/74_test_subtree_topology_candidate.py::test_current_topology_requires_every_local_leaf_exactly_once[current3]
+PASSED tests/core/test_feature_family_diffusion.py::test_continuous_data_gets_euclidean_diffusion_with_one_component_per_feature
+PASSED tests/core/test_feature_family_diffusion.py::test_binary_data_gets_hamming_diffusion_without_an_energy_fraction
+PASSED tests/core/test_feature_family_diffusion.py::test_unsupported_reason_names_duplicate_rows_and_non_binary_values
+PASSED tests/core/test_feature_family_diffusion.py::test_markov_coordinates_are_random_walk_right_eigenvectors
+PASSED tests/core/test_feature_family_diffusion.py::test_family_diffusion_records_which_coordinates_it_used
+48 passed in 3.69s

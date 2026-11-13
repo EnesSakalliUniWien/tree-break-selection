@@ -1,0 +1,12 @@
+{
+  "verified_sources": 6,
+  "datasets": 80,
+  "candidate_rows": 5120,
+  "all_status_ok": true,
+  "identical_full_coordinate_and_full_spectral_topologies": 80,
+  "result_sha256": {
+    "rows.csv.gz": "452ba208b65cb7c4affafd995db7324ef0dcd0227a6823b6fbb4272e422336fb",
+    "summary.csv": "1c0f44475af07322893da44f4d2e6db7f85cde155d553dc5926b62f32cbafcf1",
+    "evidence.json": "907750bcc2d980d9d2bc7de35e12f799d461b10f7f3d5293ab453ae015e5f849"
+  }
+}

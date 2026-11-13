@@ -1,0 +1,231 @@
+"""Run the frozen whole-block alternative topology panel."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from itertools import combinations
+from pathlib import Path
+import platform
+import sys
+from time import perf_counter
+
+import numpy as np
+import pandas as pd
+import scipy
+from scipy.cluster.hierarchy import cut_tree, linkage
+from scipy.spatial.distance import pdist, squareform
+import sklearn
+from sklearn.metrics import adjusted_mutual_info_score
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+sys.path.insert(0, str(ROOT))
+
+from benchmarks.diagnostics.calibration.selected.hierarchy import subtree_topology_candidate as candidate
+from benchmarks.diagnostics.calibration.selected.hierarchy import subtree_topology_geometry as geo
+from benchmarks.shared.metrics import matched_group_recovery
+
+REGIMES = ("crossed", "tied_population_crossed", "compatible", "common_mean_null")
+N_REPLICATES = 20
+
+
+def spans(points):
+    """Combine each whole block using the existing centered Gram score generator."""
+    single = [(group[0], scores) for group, _, scores in geo._spectral_coordinate_spans(points) if len(group) == 1]
+    for count in range(1, len(single) + 1):
+        for subset in combinations(single, count):
+            yield tuple(block for block, _ in subset), np.column_stack([scores for _, scores in subset])
+
+
+def build_ward(points):
+    z = candidate._local_ward(points)
+    return z, candidate.topology_from_linkage(z)
+
+
+def pair_clades(truth, clades):
+    left = frozenset(np.flatnonzero(truth == 0).tolist())
+    right = frozenset(np.flatnonzero(truth == 1).tolist())
+    return left in clades or right in clades, left in clades and right in clades
+
+
+def score(truth, labels, name):
+    recovery = matched_group_recovery(truth, labels)
+    return {
+        f"{name}_ami": adjusted_mutual_info_score(truth, labels),
+        f"{name}_matched_macro_f1": float(recovery.f1.mean()),
+        f"{name}_matched_rare_f1": float(recovery.loc[recovery.rare, "f1"].mean()),
+    }
+
+
+def dataset(regime, replicate):
+    seed = int(np.random.SeedSequence([20261109, 123, REGIMES.index(regime), replicate]).generate_state(1)[0])
+    rng = np.random.default_rng(seed)
+    groups = np.repeat(np.arange(4), 16)
+    a, parity = groups // 2, groups % 2
+    means = np.zeros((64, 6))
+    if regime == "compatible":
+        means[:, 0] = 3 * (2 * a - 1)
+        means[np.arange(64), 1 + a] = 2 * (2 * parity - 1)
+        b = (groups != 0).astype(int)
+    elif regime == "common_mean_null":
+        b = None
+    else:
+        scales = [3, 2] if regime == "crossed" else [2.5, 2.5]
+        means[:, :2] = np.column_stack([2 * a - 1, 2 * parity - 1]) * scales
+        b = parity
+    values = means + rng.normal(0, 0.5, size=means.shape)
+    order = rng.permutation(64)
+    truth = None if b is None else (a[order], b[order], groups[order])
+    return values[order], truth, seed
+
+
+def exact_examples():
+    out = {}
+    for name, scale in (("rectangle", (2, 1)), ("square", (1, 1))):
+        x = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]]) * scale
+        inputs = [(str(blocks), points) for blocks, points in spans(x)]
+        inputs += [("full_coordinates", x)] + [(f"prescribed_axis_{j}", x[:, j:j+1]) for j in range(2)]
+        rows = []
+        for space, coordinates in inputs:
+            trees = geo.ward_topology_family(coordinates)
+            for tree in sorted(trees, key=repr):
+                clades = geo.tree_clades(tree)
+                split_a = pair_clades(np.array([0, 0, 1, 1]), clades)[0]
+                split_b = pair_clades(np.array([0, 1, 0, 1]), clades)[0]
+                assert not (split_a and split_b)
+                fit = geo.fit_additive_distances(tree, pdist(x))
+                rows.append({
+                    "space": space, "tree": tree, "split_a": split_a, "split_b": split_b,
+                    "full_target_rmse": fit.rmse, "full_target_max_abs_residual": fit.max_abs_residual,
+                    "distances": pdist(coordinates).tolist(),
+                })
+        assert len(list(spans(x))) == (3 if name == "rectangle" else 1)
+        out[name] = rows
+    return out
+
+
+def evaluate(regime, replicate):
+    x, truth, seed = dataset(regime, replicate)
+    candidates = list(spans(x))
+    n_blocks = sum(len(blocks) == 1 for blocks, _ in candidates)
+    assert len(candidates) == 2**n_blocks - 1
+    leading = next(blocks for blocks, coords in candidates if coords.shape[1] >= 2 and blocks[0][0] == 0 and all(
+        left[1] == right[0] for left, right in zip(blocks, blocks[1:])
+    ))
+    target = pdist(x)
+    scale = float(target.max())
+    normalized_target = squareform(target / scale)
+    tolerance = 1e-10 * scale
+    z_full, full = build_ward(x)
+    rows, fits = [], {}
+    for blocks, coordinates in [((), x), *candidates]:
+        z, tree = (z_full, full) if not blocks else build_ward(coordinates)
+        clades = geo.tree_clades(tree)
+        shortlisted = not blocks or len(blocks) == 1 or blocks == leading
+        record = {
+            "regime": regime, "replicate": replicate, "seed": seed, "status": "ok",
+            "data_sha256": hashlib.sha256(x.tobytes()).hexdigest(),
+            "blocks": repr(blocks), "rank": coordinates.shape[1], "n_blocks": n_blocks,
+            "is_full_coordinates": not blocks, "is_leading": blocks == leading,
+            "is_single_block": len(blocks) == 1, "shortlisted": shortlisted,
+            "topology_id": hashlib.sha256(repr(tree).encode()).hexdigest(),
+            "rooted_rf_to_full": len(clades ^ geo.tree_clades(full)),
+        }
+        if shortlisted:
+            splits = geo.tree_edge_splits(tree)
+            if splits not in fits:
+                fits[splits] = candidate._fit_from_split_gram(splits, normalized_target, scale)
+            fit = fits[splits]
+            record |= {
+                "target_rmse": fit.rmse, "target_max_abs_residual": fit.max_abs_residual,
+                "zero_internal_edges": sum(
+                    len(split.left) > 1 and len(split.right) > 1 and length <= tolerance
+                    for split, length in zip(fit.edge_splits, fit.branch_lengths, strict=True)
+                ),
+                "_tree": tree,
+            }
+        if truth is not None:
+            a, b, joint = truth
+            cuts = cut_tree(z, n_clusters=[2, 4])
+            record |= score(a, cuts[:, 0], "factor_a") | score(b, cuts[:, 0], "contrast_b") | score(
+                joint, cuts[:, 1], "joint"
+            )
+            record["split_a"], record["both_a_clades"] = pair_clades(a, clades)
+            record["split_b"], record["both_b_clades"] = pair_clades(b, clades)
+            record["joint_four_clades"] = all(
+                frozenset(np.flatnonzero(joint == group).tolist()) in clades for group in range(4)
+            )
+            if regime in ("crossed", "tied_population_crossed"):
+                assert not (record["split_a"] and record["split_b"])
+        rows.append(record)
+    best = min(fit.rmse for fit in fits.values())
+    tied = [row for row in rows if row.get("target_rmse", np.inf) <= best + tolerance]
+    selected = next((row for row in tied if row["is_full_coordinates"]), None)
+    if selected is None:
+        selected = min(tied, key=lambda row: repr(row["_tree"]))
+    for row in rows:
+        row["selected_common_target"] = row is selected
+        row["shortlist_distinct_unrooted"] = len(fits)
+        row.pop("_tree", None)
+    return rows
+
+
+def summarize(frame):
+    rows = []
+    for (regime, rep), group in frame.groupby(["regime", "replicate"], sort=False):
+        full = group.loc[group.is_full_coordinates].iloc[0]
+        leading = group.loc[group.is_leading].iloc[0]
+        selected = group.loc[group.selected_common_target].iloc[0]
+        spectral = group.loc[~group.is_full_coordinates]
+        row = {
+            "regime": regime, "replicate": rep, "seed": full.seed,
+            "span_count": len(spectral), "unique_topologies": group.topology_id.nunique(),
+            "shortlist_distinct_unrooted": full.shortlist_distinct_unrooted,
+            "full_target_rmse": full.target_rmse, "selected_target_rmse": selected.target_rmse,
+        }
+        if regime != "common_mean_null":
+            for name, arm in (("full", full), ("leading", leading), ("selected", selected)):
+                row |= {f"{name}_{column}": arm[column] for column in (
+                    "split_a", "split_b", "joint_four_clades", "factor_a_ami", "contrast_b_ami", "joint_ami",
+                )}
+            row["union_has_both"] = bool(spectral.split_a.any() and spectral.split_b.any())
+            row["any_tree_has_both"] = bool((spectral.split_a & spectral.split_b).any())
+            row["full_has_both"] = bool(full.split_a and full.split_b)
+            for column in ("factor_a_ami", "contrast_b_ami", "joint_ami"):
+                row[f"oracle_{column}"] = spectral[column].max()
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def main():
+    exact = exact_examples()
+    rows = []
+    for regime in REGIMES:
+        for rep in range(N_REPLICATES):
+            start = perf_counter()
+            try:
+                rows.extend(dict(row, dataset_elapsed_s=perf_counter() - start) for row in evaluate(regime, rep))
+            except (ValueError, RuntimeError, np.linalg.LinAlgError) as exc:
+                rows.append(dict(regime=regime, replicate=rep, status="error", error=str(exc)))
+        print(regime, len(rows), flush=True)
+    frame = pd.DataFrame(rows)
+    frame.to_csv(HERE / "rows.csv.gz", index=False)
+    assert frame.status.eq("ok").all(), frame.loc[~frame.status.eq("ok")]
+    summary = summarize(frame)
+    assert len(summary) == 80 and summary.seed.is_unique
+    summary.to_csv(HERE / "summary.csv", index=False)
+    sources = [
+        Path(__file__), HERE / "protocol.md", Path(geo.__file__), Path(candidate.__file__),
+        ROOT / "benchmarks/shared/metrics.py", ROOT / "tree_break_selection/eigenvalue_groups.py",
+    ]
+    (HERE / "evidence.json").write_text(json.dumps({
+        "python": platform.python_version(), "numpy": np.__version__, "pandas": pd.__version__,
+        "scipy": scipy.__version__, "sklearn": sklearn.__version__, "exact": exact,
+        "hashes": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources},
+        "datasets": len(summary), "rows": len(frame), "statuses": frame.status.value_counts().to_dict(),
+    }, indent=2, allow_nan=False) + "\n")
+
+
+if __name__ == "__main__":
+    main()

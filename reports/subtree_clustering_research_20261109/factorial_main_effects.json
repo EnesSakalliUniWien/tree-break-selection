@@ -1,0 +1,626 @@
+[
+  {
+    "cell": 0,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": 0.0675,
+    "interval": [
+      0.004845507004584623,
+      0.13015449299541537
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": 0.03774555124376223,
+    "interval": [
+      0.012106861048496398,
+      0.06338424143902806
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": -0.1525,
+    "interval": [
+      -0.29060748957834914,
+      -0.014392510421650823
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": -0.08,
+    "interval": [
+      -0.1464643291111259,
+      -0.013535670888874099
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": 0.2825,
+    "interval": [
+      0.18842581639833414,
+      0.37657418360166584
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": 0.08538545388712385,
+    "interval": [
+      0.049316863925768374,
+      0.12145404384847933
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": -0.4025,
+    "interval": [
+      -0.5683955597292741,
+      -0.2366044402707259
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": -0.265,
+    "interval": [
+      -0.3601169582256128,
+      -0.16988304177438723
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": -0.4775,
+    "interval": [
+      -0.5324829824868449,
+      -0.42251701751315507
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": -0.18616379802226038,
+    "interval": [
+      -0.2067416521446942,
+      -0.16558594389982656
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 0.9875,
+    "interval": [
+      0.8846775797656463,
+      1.0903224202343538
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": 0.475,
+    "interval": [
+      0.41538290850333215,
+      0.5346170914966678
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": -0.0975,
+    "interval": [
+      -0.138283102578005,
+      -0.05671689742199501
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": -0.07047187385404227,
+    "interval": [
+      -0.08715602456461209,
+      -0.05378772314347245
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 0.5275,
+    "interval": [
+      0.4229290610249695,
+      0.6320709389750304
+    ]
+  },
+  {
+    "cell": 0,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": 0.085,
+    "interval": [
+      0.04809570063440367,
+      0.12190429936559635
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": -0.04188357875384687,
+    "interval": [
+      -0.05978124393930152,
+      -0.02398591356839222
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": -0.07324666723992429,
+    "interval": [
+      -0.0910125412558887,
+      -0.055480793223959886
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 0.35,
+    "interval": [
+      0.1394051168324821,
+      0.5605948831675178
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": -0.0425,
+    "interval": [
+      -0.08651471619521295,
+      0.0015147161952129423
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": -0.21842793600514032,
+    "interval": [
+      -0.24780538188417037,
+      -0.18905049012611028
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": -0.34515739042396115,
+    "interval": [
+      -0.3662266417024778,
+      -0.3240881391454445
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 0.115,
+    "interval": [
+      -0.12900296245159737,
+      0.3590029624515974
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": -0.0125,
+    "interval": [
+      -0.0602422493496613,
+      0.0352422493496613
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": 0.15182961929630237,
+    "interval": [
+      0.12263091902286861,
+      0.1810283195697361
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": 0.2933262190269799,
+    "interval": [
+      0.2742615100626399,
+      0.31239092799131996
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 2.73,
+    "interval": [
+      2.5389824573315627,
+      2.9210175426684373
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": 0.1875,
+    "interval": [
+      0.10622164111314795,
+      0.26877835888685203
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": -0.013401877012584657,
+    "interval": [
+      -0.019812082943856155,
+      -0.006991671081313159
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": -0.012365066082152628,
+    "interval": [
+      -0.022206535885178805,
+      -0.0025235962791264523
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 0.54,
+    "interval": [
+      0.4143625925679465,
+      0.6656374074320536
+    ]
+  },
+  {
+    "cell": 1,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": -0.0025,
+    "interval": [
+      -0.007523938092823097,
+      0.0025239380928230976
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": -0.031259875473961224,
+    "interval": [
+      -0.07192527365848686,
+      0.009405522710564412
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": -0.02366268607573265,
+    "interval": [
+      -0.04709894617519757,
+      -0.00022642597626773564
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": -0.125,
+    "interval": [
+      -0.433946976128365,
+      0.18394697612836503
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "operator",
+    "level0": "symmetric",
+    "level1": "markov",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": -0.075,
+    "interval": [
+      -0.12774036354320512,
+      -0.022259636456794886
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": -0.33022724293632527,
+    "interval": [
+      -0.3955955985258049,
+      -0.26485888734684565
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": -0.24117885746844922,
+    "interval": [
+      -0.2746566835657961,
+      -0.20770103137110238
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 0.92,
+    "interval": [
+      0.5756688932467965,
+      1.2643311067532035
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "linkage_method",
+    "level0": "average",
+    "level1": "ward",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": -0.02,
+    "interval": [
+      -0.12940241856695103,
+      0.08940241856695103
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": 0.23731874473247438,
+    "interval": [
+      0.19708516744394644,
+      0.27755232202100233
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": 0.29607991195026795,
+    "interval": [
+      0.27581360069181265,
+      0.31634622320872324
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 4.02,
+    "interval": [
+      3.790630503170656,
+      4.249369496829344
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "branch_source",
+    "level0": "linkage",
+    "level1": "nnls",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": 0.555,
+    "interval": [
+      0.4724919630949637,
+      0.6375080369050363
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "ami",
+    "complete_datasets": 50,
+    "mean_difference": 0.0347469758975465,
+    "interval": [
+      0.005979055471001003,
+      0.063514896324092
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "matched_macro_f1",
+    "complete_datasets": 50,
+    "mean_difference": 0.11215015223015151,
+    "interval": [
+      0.0853484867511728,
+      0.13895181770913023
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "found_clusters",
+    "complete_datasets": 50,
+    "mean_difference": 1.865,
+    "interval": [
+      1.569009365515617,
+      2.1609906344843828
+    ]
+  },
+  {
+    "cell": 2,
+    "factor": "energy",
+    "level0": "False",
+    "level1": "True",
+    "metric": "root_sibling_reject",
+    "complete_datasets": 50,
+    "mean_difference": 0.035,
+    "interval": [
+      0.013421042761140815,
+      0.056578957238859195
+    ]
+  }
+]

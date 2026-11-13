@@ -1,0 +1,17 @@
+# Whole-block subspace alternatives protocol
+
+Frozen before scoring the examples or simulation outcomes. Compare only fixed, supplied subtrees. Truth labels are used for evaluation, never for covariance, subspace selection, Ward construction, or branch fitting.
+
+## Exact examples
+
+Use the four labeled corners of the rectangle with coordinates ±2,±1 and the square with coordinates ±1,±1. Compare all nonempty unions of positive sample Gram eigenvalue blocks and the full coordinates. For the tied square, report its externally prescribed coordinate axes separately. They are not intrinsic single-axis choices inside a tied eigenspace. Enumerate the bounded Ward tie families for these four-leaf inputs. Check that the two crossed factor splits have four nonempty intersections and cannot both be edge splits of one rooted tree.
+
+## Matched simulation
+
+Use 20 independent seeds per regime, with NumPy SeedSequence([20261109, 123, regime index, replicate]). Each dataset has n=64, p=6, and independent Gaussian noise of SD 0.5 in all coordinates. Randomly permute rows once. The three signal regimes contain four groups of 16. Crossed means have factor amplitudes 3 and 2 on features 0 and 1. Tied-population crossed means have amplitudes 2.5 and 2.5. Hierarchy-compatible means use amplitude 3 on feature 0 to separate two halves, and amplitude 2 on feature 1 or 2 for the local split within the first or second half. For this regime contrast B compares group 0 to its complement, so the smaller side is nested within one factor-A half. Common-mean null rows have zero means and no factor/joint recovery scores. Finite-sample sample eigenvalues may separate even at tied population eigenvalues.
+
+Compute centered unwhitened sample Gram scores. Use the repository positive singular threshold and numerical eigenvalue ties (relative 1e-10 plus 1e-12 times spectral scale, transitively grouped). Enumerate every nonempty union of complete positive eigenvalue blocks. When all six blocks are distinct there are 63 unions. Keep the full original coordinates and mark the leading cumulative block span with rank at least two. Build a deterministic Ward linkage per span on Euclidean distances with relative rounding at 1e-12 and fixed row order. The resulting family includes one deterministic Ward topology per tested space. It does not enumerate all Ward tie histories at n=64 or all binary trees.
+
+Score AMI and matched macro/rare F1 at fixed two- and four-cluster Ward cuts. Check exact edge-split inclusion for each binary target, exact two clades for both sides, and exact four clades for the joint partition. Report the two-factor union versus same-tree co-representation, rooted RF to the full tree, and unique rooted topology counts. Best-over-unions label scores are retrospective oracle summaries and are not a selection rule.
+
+Fit all unordered pairs against one common original Euclidean distance target for distinct unrooted split sets from the full coordinates, all single blocks, and the marked leading span. Select the minimum RMSE only within this predeclared truth-free shortlist, preferring the full coordinates within 1e-10 times the largest target distance and otherwise using canonical topology order. Report RMSE and maximum residual, and whether this ranking retains the evaluated alternatives. Zero-length internal edges leave those splits unresolved in the fitted metric. No p-values or inferential claims are made.

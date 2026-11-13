@@ -1,0 +1,17 @@
+{
+  "attempted": 160,
+  "error": 0,
+  "non_ok_children": 0,
+  "native_status_counts": {
+    "ok": 160
+  },
+  "child_graph_status_counts": {
+    "induced_parent_graph": {
+      "ok": 320
+    },
+    "rebuilt_child_graph": {
+      "ok": 320
+    }
+  },
+  "source_files_changed_during_run": []
+}

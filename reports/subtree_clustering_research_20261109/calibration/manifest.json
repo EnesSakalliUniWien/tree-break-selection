@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_family_reference.py": "c43e16c577a8db52fc8b4d200d30264c31fb568a99c9a2488d293f39c53eef29",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_gaussian_reference.py": "848ba415f72a56a6a4bef5c011f44660c4a10842d18e2888d54c54c6bda76a0b",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_statistic_attribution.py": "961a6ded8beb0ba385215d623d4df65ea0e1870ae1fd0bbb8ca59dd8b90aaba8",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_tests.py": "b3fe88835ff06fb8f85d7e1a4490ef9759bf49aabc7409a83018d6c9c1a0d0f3",
+    "reports/subtree_clustering_research_20261109/calibration/run.py": "c5915a15e21a6c4d0b146d38dc517298ad01139a054fb98f437f97c8f663400c",
+    "reports/subtree_clustering_research_20261109/calibration/protocol.md": "3f8917376b0529482439dff35d4659138f4c051c86cdd603d7558fceed0bb70c"
+  },
+  "attempts": 300
+}

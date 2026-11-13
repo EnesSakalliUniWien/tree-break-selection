@@ -1,0 +1,32 @@
+{
+  "panels": {
+    "recovery": {
+      "rows": 1600,
+      "distinct_panel_inputs": 800,
+      "all_hashes_match": true
+    },
+    "factorial_cell_0": {
+      "rows": 800,
+      "distinct_panel_inputs": 50,
+      "all_hashes_match": true
+    },
+    "factorial_cell_1": {
+      "rows": 800,
+      "distinct_panel_inputs": 50,
+      "all_hashes_match": true
+    },
+    "factorial_cell_2": {
+      "rows": 800,
+      "distinct_panel_inputs": 50,
+      "all_hashes_match": true
+    },
+    "preflight_isolated": {
+      "rows": 36,
+      "distinct_panel_inputs": 6,
+      "all_hashes_match": true
+    }
+  },
+  "distinct_development_inputs": 850,
+  "production_files_checked": 110,
+  "production_files_changed": []
+}

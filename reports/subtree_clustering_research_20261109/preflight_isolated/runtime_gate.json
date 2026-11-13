@@ -1,0 +1,49 @@
+{
+  "passed": false,
+  "complete_panel": true,
+  "cases": [
+    {
+      "n": 32,
+      "p": 12,
+      "ratio": 1.2144020643695443,
+      "complete": true,
+      "passed": true
+    },
+    {
+      "n": 32,
+      "p": 72,
+      "ratio": 2.053413021637181,
+      "complete": true,
+      "passed": true
+    },
+    {
+      "n": 128,
+      "p": 12,
+      "ratio": 2.2891607126286106,
+      "complete": true,
+      "passed": true
+    },
+    {
+      "n": 128,
+      "p": 72,
+      "ratio": 14.103573069524474,
+      "complete": true,
+      "passed": false
+    },
+    {
+      "n": 240,
+      "p": 12,
+      "ratio": 4.647723252173916,
+      "complete": true,
+      "passed": true
+    },
+    {
+      "n": 240,
+      "p": 72,
+      "ratio": 24.883104073025347,
+      "complete": true,
+      "passed": false
+    }
+  ],
+  "scope": "geometric candidate with existing empirical sibling reference; statistical validity not established"
+}

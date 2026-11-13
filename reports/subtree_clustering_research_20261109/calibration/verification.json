@@ -1,0 +1,16 @@
+{
+  "main_datasets": 300,
+  "variant_attempts": 4,
+  "post_run_failure_only_source_update": {
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_family_reference.py": "bbc67cb111dbf8b17a4de8f72a40507a41dd0f6136204dcc5b91094232aac9c4"
+  },
+  "final_family_replay_cells": 3,
+  "focused_tests_passed": 56,
+  "sha256": {
+    "reports/subtree_clustering_research_20261109/calibration/variant.py": "4ceb208f4315af5a4ce37549815eb635f8fb955abd8535e319ff183da0d824db",
+    "reports/subtree_clustering_research_20261109/calibration/variant_protocol.md": "2e46fc267068e80390a85c6171b1cfed0325e5061e7da53401e1b5fd68a30186",
+    "reports/subtree_clustering_research_20261109/calibration/variant.jsonl": "ef62bd2221e6ef1026c1b0e0a167908d8f6020b93c4399694dbef45db864161f",
+    "reports/subtree_clustering_research_20261109/calibration/results.jsonl": "8214bcb2a3f73ea5d3bed5f424fcd6163c74b2c197d37e7454f04cecfb621549",
+    "reports/subtree_clustering_research_20261109/calibration/summary.json": "6bdc0708b65401d1bce520110dce1a5fa0acffb28951c85fe9dff65d349112db"
+  }
+}

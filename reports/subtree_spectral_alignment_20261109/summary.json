@@ -1,0 +1,167 @@
+{
+  "native_fits": 160,
+  "child_comparisons": 320,
+  "alternative_rows": 5120,
+  "unique_shared_datasets": 80,
+  "all_input_hashes_regenerated_and_paired": true,
+  "source_files_changed": [],
+  "maximum_errors": {
+    "transported_gap": 1.6512461363502128e-15,
+    "production_distance_error": 1.3877787807814457e-14,
+    "covariance_error": 7.14612618207639e-15
+  },
+  "child_rank_loss_count": 239,
+  "induced_rebuilt_gap_above_1e_10": 316,
+  "operator_gap_range": [
+    2.0885955386424364e-16,
+    0.8164804132609161
+  ],
+  "native_grouped": [
+    {
+      "case": "common_mean_null",
+      "operator": "markov",
+      "mean_ami": 0.0,
+      "mean_groups": 4.55,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.3921454535779905,
+      "median_between_fraction": 0.15575231257424849
+    },
+    {
+      "case": "common_mean_null",
+      "operator": "symmetric",
+      "mean_ami": 0.0,
+      "mean_groups": 3.6,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.3921454535779905,
+      "median_between_fraction": 0.15539069068912548
+    },
+    {
+      "case": "compatible",
+      "operator": "markov",
+      "mean_ami": 1.0,
+      "mean_groups": 4.0,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.1460314756997536,
+      "median_between_fraction": 0.6051956370172398
+    },
+    {
+      "case": "compatible",
+      "operator": "symmetric",
+      "mean_ami": 1.0,
+      "mean_groups": 4.0,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.1460314756997536,
+      "median_between_fraction": 0.3130093983485712
+    },
+    {
+      "case": "crossed",
+      "operator": "markov",
+      "mean_ami": 1.0,
+      "mean_groups": 4.0,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.15650722425069785,
+      "median_between_fraction": 0.30731858331389816
+    },
+    {
+      "case": "crossed",
+      "operator": "symmetric",
+      "mean_ami": 1.0,
+      "mean_groups": 4.0,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.15650722425069785,
+      "median_between_fraction": 0.30544277301198397
+    },
+    {
+      "case": "tied_population_crossed",
+      "operator": "markov",
+      "mean_ami": 0.9968298064124266,
+      "mean_groups": 4.05,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.1663742599192052,
+      "median_between_fraction": 0.30404892574013065
+    },
+    {
+      "case": "tied_population_crossed",
+      "operator": "symmetric",
+      "mean_ami": 1.0,
+      "mean_groups": 4.0,
+      "root_rejections": 20,
+      "median_raw_left_right_gap": 0.1663742599192052,
+      "median_between_fraction": 0.3069180701171146
+    }
+  ],
+  "child_grouped": [
+    {
+      "case": "common_mean_null",
+      "operator": "markov",
+      "median_raw_covariance_gap": 1.4415964534252352,
+      "median_raw_eigenvalue_gap": 0.26177122144447285,
+      "median_right_gap": 1.8361084569678763,
+      "median_operator_gap": 0.6496655657000892,
+      "positive_rank_loss": 0
+    },
+    {
+      "case": "common_mean_null",
+      "operator": "symmetric",
+      "median_raw_covariance_gap": 1.458194599571534,
+      "median_raw_eigenvalue_gap": 0.24408097372252577,
+      "median_right_gap": 1.7496489413316918,
+      "median_operator_gap": 0.6423427031744273,
+      "positive_rank_loss": 0
+    },
+    {
+      "case": "compatible",
+      "operator": "markov",
+      "median_raw_covariance_gap": 1.4543880613305369,
+      "median_raw_eigenvalue_gap": 0.5679906494889769,
+      "median_right_gap": 2.118146123186561,
+      "median_operator_gap": 0.004422302712999704,
+      "positive_rank_loss": 40
+    },
+    {
+      "case": "compatible",
+      "operator": "symmetric",
+      "median_raw_covariance_gap": 1.4278619561009376,
+      "median_raw_eigenvalue_gap": 0.5680353843797299,
+      "median_right_gap": 2.235964102951442,
+      "median_operator_gap": 0.0035949617221333373,
+      "positive_rank_loss": 39
+    },
+    {
+      "case": "crossed",
+      "operator": "markov",
+      "median_raw_covariance_gap": 1.273008785509658,
+      "median_raw_eigenvalue_gap": 0.6177174222514323,
+      "median_right_gap": 2.2358385675680568,
+      "median_operator_gap": 0.003255102704210098,
+      "positive_rank_loss": 40
+    },
+    {
+      "case": "crossed",
+      "operator": "symmetric",
+      "median_raw_covariance_gap": 1.2167914463923588,
+      "median_raw_eigenvalue_gap": 0.6262583415077534,
+      "median_right_gap": 2.23599309456905,
+      "median_operator_gap": 0.0043939148479972545,
+      "positive_rank_loss": 40
+    },
+    {
+      "case": "tied_population_crossed",
+      "operator": "markov",
+      "median_raw_covariance_gap": 1.2819297271602665,
+      "median_raw_eigenvalue_gap": 0.6066979170364895,
+      "median_right_gap": 2.11798480848175,
+      "median_operator_gap": 0.004907837926083929,
+      "positive_rank_loss": 40
+    },
+    {
+      "case": "tied_population_crossed",
+      "operator": "symmetric",
+      "median_raw_covariance_gap": 1.332968282162304,
+      "median_raw_eigenvalue_gap": 0.6317948061772369,
+      "median_right_gap": 2.236000810141281,
+      "median_operator_gap": 0.0037847654436885926,
+      "positive_rank_loss": 40
+    }
+  ]
+}

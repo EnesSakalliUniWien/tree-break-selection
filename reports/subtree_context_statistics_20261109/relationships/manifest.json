@@ -1,0 +1,54 @@
+{
+  "regimes": [
+    "crossed",
+    "tied_population_crossed",
+    "compatible",
+    "common_mean_null"
+  ],
+  "datasets": 80,
+  "inputs_sha256": {
+    "reports/subtree_spectral_alignment_20261109/alternatives/rows.csv.gz": "452ba208b65cb7c4affafd995db7324ef0dcd0227a6823b6fbb4272e422336fb",
+    "reports/subtree_spectral_alignment_20261109/alternatives/summary.csv": "1c0f44475af07322893da44f4d2e6db7f85cde155d553dc5926b62f32cbafcf1",
+    "reports/subtree_spectral_alignment_20261109/alternatives/evidence.json": "907750bcc2d980d9d2bc7de35e12f799d461b10f7f3d5293ab453ae015e5f849",
+    "reports/subtree_spectral_alignment_20261109/alternatives/run.py": "f411ebaba3835840eee31c445bbbd410eea573dd9a8181878f275163b70dc935",
+    "reports/subtree_spectral_alignment_20261109/alternatives/source_during_run.py.txt": "903f16e036897be0ed1bc3b5ef11c6648e8cf333b62c28dd2125a5f242cbb25a",
+    "reports/subtree_spectral_alignment_20261109/alternatives/source_change_review.json": "206f02b2dc2821ceb57566109efe0c233306a5b119c7083fd5595d1a88dd7fa6",
+    "reports/subtree_spectral_alignment_20261109/parent_child/rows.jsonl.gz": "743b4f8838734d191e2fef194a9078088fd34622e7d83675b47f487d51680877",
+    "reports/subtree_spectral_alignment_20261109/parent_child/manifest.json": "a23752f7248373de64edc2cd635ff2f1c47daabe0d1e0b4b61d182fbc1358d15",
+    "reports/subtree_spectral_alignment_20261109/parent_child/production_span_summary.json": "5753090db8b5cbb5c07c989cbba7ecd2c356d5b2844854412dd42cbf6630b57d",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_common_mean_null_markov.json.gz": "9636888f1ca07d9cd60120ed02b60fa6ae30c35006f8150f883879ecdbe75696",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_common_mean_null_symmetric.json.gz": "1835b5a6d51bdc6a5a5acbcb0719b466e2844f3486c653b7bb4aa689eb92b9c2",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_compatible_markov.json.gz": "184eb02a4d28ce019e7aaa599c584894707260724e537d7a9038259545f80498",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_compatible_symmetric.json.gz": "f55a592e38ee7f7faf983e1186d968bed4d60444a7ae695a9db7a42644efe8fd",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_crossed_markov.json.gz": "54c4378470bd0fb33feac2e4c8358391650c18c9aba78b3bfce96b2f15363211",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_crossed_symmetric.json.gz": "f4dab85741c597a5fd9ab5204968c11d4483644565afe35409dec74cb456d16b",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_tied_population_crossed_markov.json.gz": "7f27b7f65a3b7a11deeca73ce2629e0c304c0396e3d07a63e16b01b2f822ed25",
+    "reports/subtree_spectral_alignment_20261109/parent_child/trace_tied_population_crossed_symmetric.json.gz": "7c8941bfd19f76595587a737b371e529f949b1945d1fe57ac50c048bc459b917",
+    "reports/subtree_context_statistics_20261109/relationships/run.py": "16d196c535d0282a6af3d30b6f1f7e9d807530e46b960667b2b507c550d06b84",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_spectral_alignment.py": "0af69308f3e6cad5bc4500208e5ee434eac53b281eab3d7a4d21820f49fdc6c3",
+    "tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303"
+  },
+  "outputs": {
+    "alternatives_with_magnitudes.csv.gz": {
+      "rows": 5120,
+      "sha256": "33f8e3a927b91d54989daa41005003a87fc9b4bac118c3a736bcceed0001c477"
+    },
+    "factor_pairs.csv": {
+      "rows": 120,
+      "sha256": "1eec9e263244859b033392e6d72bd47a9fc3dae5c5796a50e964b2b80b3ea26f"
+    },
+    "native_rows.csv": {
+      "rows": 160,
+      "sha256": "886b990f0cdd8bca41cfca7626c183acaf03a71073b2bdb62618c1428bacada9"
+    },
+    "native_pairs.csv": {
+      "rows": 80,
+      "sha256": "fd0fed036e9d8076b150752441a59f926edf242a5b0471220d64237c033bc447"
+    },
+    "root_trace_scales.csv": {
+      "rows": 8,
+      "sha256": "a170bfe4eff7913f6673dd59aaf446e6f7e46d21f513627e432f8f3019292f10"
+    }
+  },
+  "clustering_refits": 0
+}

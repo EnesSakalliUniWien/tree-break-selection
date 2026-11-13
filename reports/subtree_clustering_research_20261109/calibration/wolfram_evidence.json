@@ -1,0 +1,22 @@
+{
+  "branch_and_mean": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Out[1]= {0, 0, 0, {-(Sqrt[2]*a), Sqrt[2/3]*a, (-2*a)/Sqrt[3]}, 4*a^2}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "ridge_and_resolution": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Out[1]= {(lam + v)^(-1) - g/(lam + g*v), 12699, 139}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  }
+}

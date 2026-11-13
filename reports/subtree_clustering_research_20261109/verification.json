@@ -1,0 +1,128 @@
+{
+  "test_runs": [
+    {
+      "output": "reports/subtree_clustering_research_20261109/pytest_output.txt",
+      "passed": 214,
+      "deselected": 2,
+      "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv/bin/python -m pytest tests/pipeline tests/core/test_benchmark_outlier_metrics.py tests/core/test_benchmark_statistical_profiles.py tests/core/test_diffusion_factorial.py tests/validation/calibration/test_subtree_research_validation.py tests/statistics/71_test_subtree_gaussian_reference.py tests/statistics/72_test_subtree_topology_geometry.py tests/statistics/73_test_subtree_topology_tests.py tests/statistics/74_test_subtree_topology_candidate.py tests/statistics/75_test_subtree_family_and_attribution.py tests/statistics/76_test_subtree_research.py -m 'not slow and not optional' -rA"
+    },
+    {
+      "output": "reports/subtree_clustering_research_20261109/validation_tests_final.txt",
+      "passed": 18,
+      "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv/bin/python -m pytest tests/validation/calibration/test_subtree_research_validation.py -rA"
+    }
+  ],
+  "distinct_passing_cases": 216,
+  "ruff_check": {
+    "exit_code": 0,
+    "files": [
+      "benchmarks/diagnostics/calibration/subtree_research.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_candidate.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_statistic_attribution.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_family_reference.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_tests.py",
+      "benchmarks/shared/metrics.py",
+      "benchmarks/shared/statistical_profiles.py",
+      "benchmarks/shared/performance_grid.py",
+      "benchmarks/shared/result_records/models.py",
+      "benchmarks/validation/sweeps/subtree_research_validation.py",
+      "tests/statistics/74_test_subtree_topology_candidate.py",
+      "tests/statistics/75_test_subtree_family_and_attribution.py",
+      "tests/statistics/76_test_subtree_research.py",
+      "tests/core/test_benchmark_statistical_profiles.py",
+      "tests/validation/calibration/test_subtree_research_validation.py",
+      "reports/subtree_clustering_research_20261109/summarize.py",
+      "reports/subtree_clustering_research_20261109/verify_inputs.py",
+      "reports/subtree_clustering_research_20261109/figures/plot.py",
+      "tests/pipeline/80_test_benchmark_performance_grid.py"
+    ]
+  },
+  "ruff_format_check": {
+    "exit_code": 0,
+    "files": [
+      "benchmarks/diagnostics/calibration/subtree_research.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_candidate.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_statistic_attribution.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_family_reference.py",
+      "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_tests.py",
+      "benchmarks/shared/metrics.py",
+      "benchmarks/shared/statistical_profiles.py",
+      "benchmarks/shared/performance_grid.py",
+      "benchmarks/shared/result_records/models.py",
+      "benchmarks/validation/sweeps/subtree_research_validation.py",
+      "tests/statistics/74_test_subtree_topology_candidate.py",
+      "tests/statistics/75_test_subtree_family_and_attribution.py",
+      "tests/statistics/76_test_subtree_research.py",
+      "tests/core/test_benchmark_statistical_profiles.py",
+      "tests/validation/calibration/test_subtree_research_validation.py",
+      "reports/subtree_clustering_research_20261109/summarize.py",
+      "reports/subtree_clustering_research_20261109/verify_inputs.py",
+      "reports/subtree_clustering_research_20261109/figures/plot.py",
+      "tests/pipeline/80_test_benchmark_performance_grid.py"
+    ]
+  },
+  "git_diff_check": {
+    "command": "git diff --check",
+    "exit_code": 0
+  },
+  "input_integrity": {
+    "panels": {
+      "recovery": {
+        "rows": 1600,
+        "distinct_panel_inputs": 800,
+        "all_hashes_match": true
+      },
+      "factorial_cell_0": {
+        "rows": 800,
+        "distinct_panel_inputs": 50,
+        "all_hashes_match": true
+      },
+      "factorial_cell_1": {
+        "rows": 800,
+        "distinct_panel_inputs": 50,
+        "all_hashes_match": true
+      },
+      "factorial_cell_2": {
+        "rows": 800,
+        "distinct_panel_inputs": 50,
+        "all_hashes_match": true
+      },
+      "preflight_isolated": {
+        "rows": 36,
+        "distinct_panel_inputs": 6,
+        "all_hashes_match": true
+      }
+    },
+    "distinct_development_inputs": 850,
+    "production_files_checked": 110,
+    "production_files_changed": []
+  },
+  "summary_reconstruction": {
+    "exit_code": 0,
+    "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv/bin/python -m reports.subtree_clustering_research_20261109.summarize"
+  },
+  "wolfram": {
+    "query_provenance": "calibration/wolfram_queries.md",
+    "output": "calibration/wolfram_evidence.json"
+  },
+  "not_run": [
+    "120000-dataset frozen Gaussian calibration",
+    "3200-dataset frozen recovery",
+    "full candidate recovery grid after failed runtime preflight",
+    "slow/optional deselected tests"
+  ],
+  "reason_not_run": "Prespecified mathematical and runtime prerequisites failed; no production promotion.",
+  "wiki_lint": {
+    "command": "make wiki-lint",
+    "exit_code": 0,
+    "pages": 266,
+    "output": "uv run --no-sync python scripts/wiki/lint.py\nwiki-lint passed: 266 pages checked"
+  },
+  "archive_integrity": {
+    "source_files": 25,
+    "artifact_files": 165,
+    "changed_sources": [],
+    "changed_artifacts": []
+  },
+  "status": "passed_with_declared_experiment_gates_not_entered"
+}

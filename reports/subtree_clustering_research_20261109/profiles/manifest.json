@@ -1,0 +1,30 @@
+{
+  "python": "3.12.11",
+  "numpy": "2.3.4",
+  "pandas": "2.3.3",
+  "scipy": "1.16.3",
+  "sklearn": "1.7.2",
+  "sha256": {
+    "benchmarks/shared/metrics.py": "af8daf9b238f9df4e508e6b979866c9ec3e1304549dd3a52535ebad5f27a7bb5",
+    "benchmarks/shared/statistical_profiles.py": "772b224c01484eef1e1ade0372e6d2728e3955859b9c458384b3876707fc583e",
+    "reports/subtree_clustering_research_20261109/profiles/run.py": "3590891a1fb6e4ee6537dacaa21525def933e6d7d809c8c402f24a5d62743494",
+    "results/analyses/ceiling_rule_real_20261109/tbs_family_diffusion/assignments_rule_out.csv.gz": "07efb0491e9a855d8ced96bcd679def6fec7a72d71ae5a22cf2dd0478e7c9943",
+    "results/analyses/ceiling_rule_real_20261109/tbs_family_diffusion_markov_ward/assignments_rule_out.csv.gz": "48d46944594f7afb417e9979f38901a88af5ff9dc4b531daad34f33b77e31776",
+    "results/analyses/choir_cell_lines_tbs_lbfgsb_20261106/cell_metadata.csv": "744d353a2aa4308b04e67b9c4e8e487d65084900791c1b6b0faf9d7ad705c9ad",
+    "results/analyses/choir_cell_lines_tbs_lbfgsb_20261106/pca.npy": "a2ef1e696acada626d996e7fda7e40522054cd3ebb1a855a5cb83be58a984283",
+    "results/analyses/choir_cell_lines_tbs_lbfgsb_20261106/tbs_family_diffusion/linkage.npy": "b1c6e8811cc9f1251135c1f20243c8177ccc4909b18c0372379ee7f1cb86da36",
+    "results/analyses/choir_cell_lines_tbs_lbfgsb_20261106/tbs_family_diffusion_markov_ward/linkage.npy": "e4c7c7e259190a7a67afd9f091914ffffa9647c1657e92181c51ea22051d6a7b",
+    "results/analyses/root_validation_followup_20261109/metrics/choir_groups.csv": "238817a4c32aaf83488c6907ae790a2b3ef4655478e9318759637d6949db194e",
+    "results/analyses/root_validation_followup_20261109/metrics/choir_split_relationships_annotated.csv": "4dd3f37e515ab2f75a652a87fa34c3df912126cdaa374a94a2e5925c324656f0",
+    "results/analyses/root_validation_followup_20261109/metrics/fresh_assignments.csv.gz": "092849ff94b4f7f66d1ad9b927aaa589c4bd8afea9a1cb8b07a736ce77e32777",
+    "results/analyses/root_validation_followup_20261109/metrics/fresh_groups.csv": "bef6b91d0b5c42276482cb2af3197363e60f105b1fd82c528c7cf9d160af2b6a",
+    "results/analyses/root_validation_followup_20261109/metrics/metrics.py": "b57d7c54b1ee455946a8c64a08e51608450312bd82ba79c46f1f7d2f1518c091",
+    "results/analyses/subspace_distance_ties_20261108/real_splits.jsonl": "14be2dfe6849900aa215978132c5cd3b5248bfccf4e0664228d7a1e09c164991",
+    "results/analyses/three_tests_audit_20261109/tbs_family_diffusion/assignments_A.csv.gz": "e6b7b885d3d3fb970a1268c684fabfe42ec2b14b23af33fa1c68587c9a27725e",
+    "results/analyses/three_tests_audit_20261109/tbs_family_diffusion/assignments_B.csv.gz": "138de9f78eb7a9e16caa0688e36cc65602c4ddd9c6eb32a5d6b0e31c03f286a1",
+    "results/analyses/three_tests_audit_20261109/tbs_family_diffusion/assignments_C.csv.gz": "56bd1361901849f59cdaac9585f99a96cfa54e6fc10c51f7c2879cfaf9f30e52",
+    "results/analyses/three_tests_audit_20261109/tbs_family_diffusion_markov_ward/assignments_A.csv.gz": "5aaaf95fb844e49372e206aacad4be86c3ec642b917d458b5084e55c9db115da",
+    "results/analyses/three_tests_audit_20261109/tbs_family_diffusion_markov_ward/assignments_B.csv.gz": "a16fb80ef7f3207fdd831ddf83bfc9475ff963c880b9fa361247297fa59780db",
+    "results/analyses/three_tests_audit_20261109/tbs_family_diffusion_markov_ward/assignments_C.csv.gz": "8c18b1161d13773f3cdb1ba8b1327fc1084a0948a460e18000e56f1459eca1a0"
+  }
+}

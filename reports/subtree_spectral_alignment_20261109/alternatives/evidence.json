@@ -1,0 +1,326 @@
+{
+  "python": "3.12.11",
+  "numpy": "2.3.4",
+  "pandas": "2.3.3",
+  "scipy": "1.16.3",
+  "sklearn": "1.7.2",
+  "exact": {
+    "rectangle": [
+      {
+        "space": "((0, 1),)",
+        "tree": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "split_a": true,
+        "split_b": false,
+        "full_target_rmse": 0.19274869649510168,
+        "full_target_max_abs_residual": 0.2360679774997905,
+        "distances": [
+          0.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          0.0
+        ]
+      },
+      {
+        "space": "((1, 2),)",
+        "tree": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "split_a": false,
+        "split_b": true,
+        "full_target_rmse": 1.0715704228428815,
+        "full_target_max_abs_residual": 1.4907119849998614,
+        "distances": [
+          2.0,
+          0.0,
+          2.0,
+          2.0,
+          0.0,
+          2.0
+        ]
+      },
+      {
+        "space": "((0, 1), (1, 2))",
+        "tree": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "split_a": true,
+        "split_b": false,
+        "full_target_rmse": 0.19274869649510168,
+        "full_target_max_abs_residual": 0.2360679774997905,
+        "distances": [
+          2.0,
+          4.0,
+          4.47213595499958,
+          4.47213595499958,
+          4.0,
+          2.0
+        ]
+      },
+      {
+        "space": "full_coordinates",
+        "tree": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "split_a": true,
+        "split_b": false,
+        "full_target_rmse": 0.19274869649510168,
+        "full_target_max_abs_residual": 0.2360679774997905,
+        "distances": [
+          2.0,
+          4.0,
+          4.47213595499958,
+          4.47213595499958,
+          4.0,
+          2.0
+        ]
+      },
+      {
+        "space": "prescribed_axis_0",
+        "tree": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "split_a": true,
+        "split_b": false,
+        "full_target_rmse": 0.19274869649510168,
+        "full_target_max_abs_residual": 0.2360679774997905,
+        "distances": [
+          0.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          0.0
+        ]
+      },
+      {
+        "space": "prescribed_axis_1",
+        "tree": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "split_a": false,
+        "split_b": true,
+        "full_target_rmse": 1.0715704228428815,
+        "full_target_max_abs_residual": 1.4907119849998614,
+        "distances": [
+          2.0,
+          0.0,
+          2.0,
+          2.0,
+          0.0,
+          2.0
+        ]
+      }
+    ],
+    "square": [
+      {
+        "space": "((0, 2),)",
+        "tree": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "split_a": true,
+        "split_b": false,
+        "full_target_rmse": 0.33820395745152565,
+        "full_target_max_abs_residual": 0.4142135623730958,
+        "distances": [
+          2.0,
+          2.0,
+          2.8284271247461903,
+          2.8284271247461903,
+          2.0,
+          2.0
+        ]
+      },
+      {
+        "space": "((0, 2),)",
+        "tree": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "split_a": false,
+        "split_b": true,
+        "full_target_rmse": 0.3382039574515256,
+        "full_target_max_abs_residual": 0.4142135623730958,
+        "distances": [
+          2.0,
+          2.0,
+          2.8284271247461903,
+          2.8284271247461903,
+          2.0,
+          2.0
+        ]
+      },
+      {
+        "space": "full_coordinates",
+        "tree": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "split_a": true,
+        "split_b": false,
+        "full_target_rmse": 0.33820395745152565,
+        "full_target_max_abs_residual": 0.4142135623730958,
+        "distances": [
+          2.0,
+          2.0,
+          2.8284271247461903,
+          2.8284271247461903,
+          2.0,
+          2.0
+        ]
+      },
+      {
+        "space": "full_coordinates",
+        "tree": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "split_a": false,
+        "split_b": true,
+        "full_target_rmse": 0.3382039574515256,
+        "full_target_max_abs_residual": 0.4142135623730958,
+        "distances": [
+          2.0,
+          2.0,
+          2.8284271247461903,
+          2.8284271247461903,
+          2.0,
+          2.0
+        ]
+      },
+      {
+        "space": "prescribed_axis_0",
+        "tree": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "split_a": true,
+        "split_b": false,
+        "full_target_rmse": 0.33820395745152565,
+        "full_target_max_abs_residual": 0.4142135623730958,
+        "distances": [
+          0.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          0.0
+        ]
+      },
+      {
+        "space": "prescribed_axis_1",
+        "tree": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "split_a": false,
+        "split_b": true,
+        "full_target_rmse": 0.3382039574515256,
+        "full_target_max_abs_residual": 0.4142135623730958,
+        "distances": [
+          2.0,
+          0.0,
+          2.0,
+          2.0,
+          0.0,
+          2.0
+        ]
+      }
+    ]
+  },
+  "hashes": {
+    "reports/subtree_spectral_alignment_20261109/alternatives/run.py": "903f16e036897be0ed1bc3b5ef11c6648e8cf333b62c28dd2125a5f242cbb25a",
+    "reports/subtree_spectral_alignment_20261109/alternatives/protocol.md": "760b7272b191d4c274d02ad543afdd1d2b5edb564f4fdda61b97ea63a987e4ae",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_geometry.py": "652872285c36e5b14a6ee1b21d0a7da400f84b09b7ba5d9db0e2b941dec375d6",
+    "benchmarks/diagnostics/calibration/selected/hierarchy/subtree_topology_candidate.py": "94e35528ed6348be93865ba2e4ed7229390d3de285789f74435a6b83179e4841",
+    "benchmarks/shared/metrics.py": "af8daf9b238f9df4e508e6b979866c9ec3e1304549dd3a52535ebad5f27a7bb5",
+    "tree_break_selection/eigenvalue_groups.py": "eb2cff39d0f89332c812b90327fbd5c33bce098ac46758f8d832b864f0adc303"
+  },
+  "datasets": 80,
+  "rows": 5120,
+  "statuses": {
+    "ok": 5120
+  }
+}

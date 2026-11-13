@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-09",
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.11"
+  },
+  "focused_tests": {
+    "passed": 31,
+    "log": "reports/subtree_path_statistics_20261109/tests.log"
+  },
+  "ruff_check": {
+    "exit_code": 0,
+    "files": 4
+  },
+  "ruff_format_check": {
+    "exit_code": 0,
+    "files": 4
+  },
+  "wiki_lint": {
+    "exit_code": 0,
+    "pages": 272
+  },
+  "tracked_wiki_diff_check": {
+    "exit_code": 0
+  },
+  "source_and_input_hashes_verified": 165,
+  "raw_capture_hashes_verified": 16,
+  "endpoint_input_hashes_verified": 161,
+  "production_source_hashes_unchanged": 110,
+  "analysis": {
+    "saved_native_fits": 160,
+    "new_analysis_fits": 0,
+    "reused_datasets": 16,
+    "tree_pairs": 256,
+    "all_paths": 569954,
+    "internal_endpoint_paths": 1890,
+    "all_endpoint_full_mean_contrasts_invariant": true,
+    "matched_edge_pairs_with_nonfinite_raw_T": 0
+  },
+  "limitations": [
+    "Path and alternative comparisons share the same 16 data matrices",
+    "No new calibrated p-value or selected-path guarantee",
+    "No production preset changes or frozen validation run"
+  ],
+  "wolfram": {
+    "semantic_context": "Internal service error",
+    "evaluator": "Exact evaluation succeeded"
+  }
+}
