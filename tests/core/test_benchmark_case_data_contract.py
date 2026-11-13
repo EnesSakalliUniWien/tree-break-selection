@@ -57,7 +57,7 @@ def test_benchmark_case_suites_separate_input_contracts() -> None:
         "dimensional_gaussian_continuous",
         "gaussian_outliers_continuous",
     }
-    assert len(continuous_cases) == 9
+    assert len(continuous_cases) == 10
     assert {case["generator"] for case in graph_cases} == {"sbm"}
 
     binary_names = {case["name"] for case in binary_cases}
@@ -67,6 +67,7 @@ def test_benchmark_case_suites_separate_input_contracts() -> None:
         "gauss_clear_medium_continuous",
         "gauss_moderate_3c_continuous",
         "gauss_null_large_continuous",
+        "gauss_null_256n_30f_continuous",
         "gauss_dense_signal_highd_continuous",
         "dim_consolidated_4c_24f_continuous",
         "dim_consolidated_4c_72f_continuous",

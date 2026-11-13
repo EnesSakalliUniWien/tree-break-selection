@@ -67,6 +67,8 @@ class GateAnnotationConfigMetadata:
     root_selective_permutation_guard_tree_linkage_method: str = DEFAULT_TREE_LINKAGE_METHOD
     enforce_internal_support_thresholds: bool = False
     sibling_split_count_rule_out: bool = False
+    sibling_best_flat_cut_reference: bool = False
+    small_peel_leaf_limit: int | None = None
     internal_support_policy: CalibrationSupportPolicySnapshot = DEFAULT_INTERNAL_SUPPORT_POLICY
 
 

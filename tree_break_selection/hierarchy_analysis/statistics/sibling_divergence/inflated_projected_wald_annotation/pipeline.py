@@ -18,6 +18,7 @@ from tree_break_selection.tree.distributions import (
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
 
+from ..best_flat_cut_reference import apply_best_flat_cut_reference
 from ..inflation_correction.empirical_null_inflation_estimation import (
     DEFAULT_INTERNAL_SUPPORT_THRESHOLDS,
     fit_empirical_null_inflation_model,
@@ -119,19 +120,27 @@ def annotate_sibling_divergence(
     adaptive_projection_dimension_energy_fraction: float | None = None,
     leaf_data: pd.DataFrame | None = None,
     split_count_rule_out: bool = False,
+    best_flat_cut_reference: bool = False,
+    small_peel_leaf_limit: int | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
 ) -> pd.DataFrame:
     """Test sibling divergence using context-weighted empirical-null inflation.
 
     With ``split_count_rule_out`` each tested split's p-value is replaced by the opt-in
     split-count rule-out p-value (``sibling_divergence.split_count_rule_out``), computed on
-    ``leaf_data``; it needs continuous features.
+    ``leaf_data``; it needs continuous features. ``best_flat_cut_reference`` instead uses the opt-in
+    Gaussian best-flat-cut reference p-value (``sibling_divergence.best_flat_cut_reference``) under the same
+    conditions; the two options exclude each other. ``small_peel_leaf_limit`` must equal the
+    limit the edge gate's Tree-BH ran with (``tree.topology.peel_continuations``).
     """
-    if split_count_rule_out and (
+    if split_count_rule_out and best_flat_cut_reference:
+        raise ValueError("split_count_rule_out and best_flat_cut_reference are mutually exclusive.")
+    if (split_count_rule_out or best_flat_cut_reference) and (
         leaf_data is None or feature_space is None or feature_space.family_label != "continuous"
     ):
         raise ValueError(
-            "split_count_rule_out needs leaf_data and a continuous feature_space; "
+            "split_count_rule_out and best_flat_cut_reference need leaf_data and a continuous "
+            "feature_space; "
             f"got leaf_data={'missing' if leaf_data is None else 'given'}, "
             f"feature family={None if feature_space is None else feature_space.family_label!r}."
         )
@@ -152,6 +161,7 @@ def annotate_sibling_divergence(
         adaptive_projection_dimension_energy_fraction=(
             adaptive_projection_dimension_energy_fraction
         ),
+        small_peel_leaf_limit=small_peel_leaf_limit,
     )
     if stage_timings is not None:
         stage_timings["sibling_gate_pair_record_collection_sec"] = float(
@@ -178,6 +188,7 @@ def annotate_sibling_divergence(
             [],
             significance_level_alpha,
             skipped_parents=skipped_parents,
+            small_peel_leaf_limit=small_peel_leaf_limit,
         )
         if stage_timings is not None:
             stage_timings["sibling_gate_fdr_sec"] = float(
@@ -222,6 +233,20 @@ def annotate_sibling_divergence(
             inflation_adjustment_method_labels,
             calibration_decisions,
         )
+    if best_flat_cut_reference:
+        (
+            inflation_adjusted_test_summaries,
+            inflation_adjustment_method_labels,
+            calibration_decisions,
+        ) = apply_best_flat_cut_reference(
+            tree,
+            leaf_data,
+            records,
+            tested_parent_ids,
+            inflation_adjusted_test_summaries,
+            inflation_adjustment_method_labels,
+            calibration_decisions,
+        )
     write_inflation_evidence(annotations_df, records, tested_parent_ids, calibration_decisions)
     # A focal record without internally admissible support closes only its own gate.
     for status in sorted({decision.status for _record, decision in inadmissible}):
@@ -246,6 +271,7 @@ def annotate_sibling_divergence(
         method_labels=inflation_adjustment_method_labels,
         skipped_parents=skipped_parents,
         closed_parents=[record.parent for record, _decision in inadmissible],
+        small_peel_leaf_limit=small_peel_leaf_limit,
     )
     if stage_timings is not None:
         stage_timings["sibling_gate_fdr_sec"] = float(

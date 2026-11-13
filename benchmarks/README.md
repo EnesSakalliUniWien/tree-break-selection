@@ -390,6 +390,8 @@ representation-forwarding examples keeps the raw coordinates, carries an
 explicit continuous `FeatureSpace`, and provides Euclidean tree distances
 through benchmark metadata. These examples are not cloned for every historical
 Gaussian stress case; they are a focused check of the empirical-Gaussian path.
+`gauss_null_256n_30f_continuous` is the one continuous case without a
+discretized baseline: one Gaussian population with more cells than features.
 
 | Family | Discretized cases | Selected continuous examples |
 | ------ | ----------------- | ---------------------------- |

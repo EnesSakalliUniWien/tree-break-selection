@@ -57,6 +57,7 @@ def test_pipeline_supports_current_gate_annotation_contract(expand_leaves_into_r
     assert bundle.metadata.sibling.gate == "sibling"
     assert bundle.metadata.config.sibling_gate_method == "projected_wald_inflation"
     assert bundle.metadata.config.sibling_gate_alpha_penalty == 1.0
+    assert bundle.metadata.config.small_peel_leaf_limit is None
     tested = out[out["Sibling_Sparse_Evidence_Method"].eq("fixed_coordinate_bh")]
     assert not tested.empty
     assert tested["Sibling_Sparse_Evidence_P_Value"].between(0.0, 1.0).all()
@@ -414,4 +415,51 @@ def test_pipeline_rejects_split_count_rule_out_without_continuous_features(
             leaf_data=leaf_data,
             feature_space=infer_feature_space_from_columns(tuple(leaf_data.columns)),
             sibling_split_count_rule_out=True,
+        )
+
+
+def test_pipeline_rejects_best_flat_cut_reference_with_fixed_sibling_gate() -> None:
+    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
+
+    with pytest.raises(ValueError, match="sibling_best_flat_cut_reference"):
+        run_gate_annotation_pipeline(
+            tree,
+            annotations_df.copy(),
+            edge_alpha=0.01,
+            sibling_alpha=0.01,
+            leaf_data=leaf_data,
+            sibling_gate_method="fixed_coordinate_bh",
+            sibling_best_flat_cut_reference=True,
+        )
+
+
+def test_pipeline_rejects_best_flat_cut_reference_with_split_count_rule_out() -> None:
+    tree, annotations_df, leaf_data = _build_small_tree_with_leaf_data()
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        run_gate_annotation_pipeline(
+            tree,
+            annotations_df.copy(),
+            edge_alpha=0.01,
+            sibling_alpha=0.01,
+            leaf_data=leaf_data,
+            sibling_split_count_rule_out=True,
+            sibling_best_flat_cut_reference=True,
+        )
+
+
+def test_pipeline_rejects_best_flat_cut_reference_without_continuous_features(
+    expand_leaves_into_rows,
+) -> None:
+    tree, annotations_df, leaf_data = expand_leaves_into_rows(*_build_small_tree_with_leaf_data())
+
+    with pytest.raises(ValueError, match="continuous feature_space"):
+        run_gate_annotation_pipeline(
+            tree,
+            annotations_df.copy(),
+            edge_alpha=0.01,
+            sibling_alpha=0.01,
+            leaf_data=leaf_data,
+            feature_space=infer_feature_space_from_columns(tuple(leaf_data.columns)),
+            sibling_best_flat_cut_reference=True,
         )

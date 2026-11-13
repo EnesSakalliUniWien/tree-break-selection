@@ -56,7 +56,9 @@ class TreeDecomposition:
     #. **Edge divergence gate** - at least one child must significantly diverge
        from the parent according to the supplied child-parent test annotation.
        A singleton peel (one leaf child, one internal child) passes this gate:
-       Tree-BH tests the family below it instead.
+       Tree-BH tests the family below it instead. With a gate annotation bundle
+       whose config sets ``small_peel_leaf_limit`` a small peel passes it too
+       (``tree.topology.peel_continuations``).
     #. **Sibling divergence gate** - the supplied sibling annotation must report
        an available, significant result after its configured correction. The
        default empirical-inflation path allows internally supported plug-in
@@ -67,7 +69,7 @@ class TreeDecomposition:
     Nodes that do not split become cluster boundaries. Leaves under the same
     boundary node are assigned the same cluster identifier. In pass-through mode,
     a closed sibling-divergence gate may still allow traversal to descendants when a deeper
-    split is already supported. A leaf peeled off a passed-through singleton peel joins
+    split is already supported. A leaf or small group peeled off a passed-through peel joins
     the nearest cluster below the peel instead of standing alone.
     """
 
@@ -113,12 +115,14 @@ class TreeDecomposition:
             self._annotation_effective_sibling_alpha = resolve_effective_sibling_alpha(
                 self._annotation_sibling_alpha, gate_config.sibling_gate_alpha_penalty
             )
+            small_peel_leaf_limit = gate_config.small_peel_leaf_limit
         else:
             self.annotations_df = self._validated_annotations(annotations_df)
             self._selected_family_passthrough_guard = False
             self._annotation_edge_alpha = None
             self._annotation_sibling_alpha = None
             self._annotation_effective_sibling_alpha = None
+            small_peel_leaf_limit = None
         self._trace_level = validate_trace_level(str(trace_level))
 
         # ----- root -----
@@ -163,6 +167,7 @@ class TreeDecomposition:
             passthrough=bool(passthrough),
             passthrough_supported=self._passthrough_supported,
             passthrough_bottleneck=self._passthrough_bottleneck,
+            small_peel_leaf_limit=small_peel_leaf_limit,
         )
 
     # ---------- initialization helpers ----------
@@ -402,9 +407,13 @@ class TreeDecomposition:
         elif edge_gate_open:
             edge_traversal_action = "continue"
             edge_traversal_stop_reason = "edge_open_continue"
-        elif node in self._gate.singleton_peels:
+        elif node in self._gate.peels:
             edge_traversal_action = "continue"
-            edge_traversal_stop_reason = "singleton_peel_continue"
+            edge_traversal_stop_reason = (
+                "singleton_peel_continue"
+                if any(not self._children[child] for child in children)
+                else "small_peel_continue"
+            )
         else:
             edge_traversal_action = "stop"
             edge_traversal_stop_reason = "edge_closed"
@@ -561,18 +570,22 @@ class TreeDecomposition:
         boundaries: list[ClusterBoundary],
         decision_by_node: dict[object, TraversalDecision],
     ) -> tuple[list[ClusterBoundary], set[object]]:
-        """Move each leaf of a passed-through singleton peel into the nearest cluster below it.
+        """Move the leaves peeled off a passed-through peel into the nearest cluster below it.
 
-        When the peel's edges are not significant there is no evidence that its leaf
-        differs from the rest, so the leaf joins the cluster under the peel's internal
-        child whose distribution is nearest in L1. Its cluster is then no longer a tree
-        cut. Returns the boundaries and the re-attached leaf nodes.
+        When the peel's edges are not significant there is no evidence that its peeled
+        leaf or small group differs from the rest, so it joins the cluster under the
+        peel's continuation child whose distribution is nearest in L1. Its cluster is
+        then no longer a tree cut. Returns the boundaries and the re-attached nodes.
         """
+        boundary_roots = {boundary.root_node for boundary in boundaries}
         internal_child_by_peeled_leaf: dict[object, object] = {}
-        for peel, internal_child in self._gate.singleton_peels.items():
+        for peel, internal_child in self._gate.peels.items():
             leaf = next(child for child in self._children[peel] if child != internal_child)
-            if decision_by_node.get(peel) is TraversalDecision.PASS_THROUGH and not (
-                self._edge_divergent[leaf] or self._edge_divergent[internal_child]
+            # A peeled small group that was split itself keeps its clusters.
+            if (
+                decision_by_node.get(peel) is TraversalDecision.PASS_THROUGH
+                and leaf in boundary_roots
+                and not (self._edge_divergent[leaf] or self._edge_divergent[internal_child])
             ):
                 internal_child_by_peeled_leaf[leaf] = internal_child
         kept = [

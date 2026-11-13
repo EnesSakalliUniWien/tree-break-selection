@@ -54,6 +54,7 @@ def annotate_child_parent_divergence(
     ),
     edge_branch_length_variance_policy: str = EDGE_BRANCH_LENGTH_VARIANCE_POLICY_NONE,
     adaptive_projection_dimension_energy_fraction: float | None = None,
+    small_peel_leaf_limit: int | None = None,
     stage_timings: MutableMapping[str, float] | None = None,
 ) -> tuple[pd.DataFrame, SpectralDecompositionResult]:
     """Test child-parent divergence and return typed edge-gate spectral context.
@@ -64,7 +65,8 @@ def annotate_child_parent_divergence(
     child membership independent when the tree was selected using these data.
     The chi-square reference also requires an appropriate covariance law and
     is not a calibrated selected-tree reference. The returned spectral context
-    is fitted on all leaves, as the sibling gate expects.
+    is fitted on all leaves, as the sibling gate expects. ``small_peel_leaf_limit``
+    is passed to Tree-BH (``tree.topology.peel_continuations``).
     """
     annotations_df = annotations_df.copy()
     edge_alpha = float(significance_level_alpha)
@@ -162,6 +164,7 @@ def annotate_child_parent_divergence(
         p_values_for_correction=edge_p_values,
         child_ids=child_ids,
         edge_alpha=edge_alpha,
+        small_peel_leaf_limit=small_peel_leaf_limit,
     )
     if stage_timings is not None:
         stage_timings["edge_gate_tree_bh_sec"] = float(

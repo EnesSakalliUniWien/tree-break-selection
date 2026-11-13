@@ -13,6 +13,7 @@ def apply_child_parent_divergence_tree_bh_correction(
     p_values_for_correction: np.ndarray,
     child_ids: list[str],
     edge_alpha: float,
+    small_peel_leaf_limit: int | None = None,
 ) -> tuple[
     np.ndarray,
     np.ndarray,
@@ -25,6 +26,7 @@ def apply_child_parent_divergence_tree_bh_correction(
         p_values_for_correction,
         child_ids,
         alpha=edge_alpha,
+        small_peel_leaf_limit=small_peel_leaf_limit,
     )
     child_parent_edge_null_rejected_by_tree_bh = (
         tree_bh_result.child_parent_edge_null_rejected_by_tree_bh

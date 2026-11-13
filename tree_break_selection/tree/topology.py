@@ -129,12 +129,19 @@ def compute_descendant_leaf_sets(
     return descendant_sets
 
 
-def singleton_peel_continuations(tree: nx.DiGraph) -> dict[object, object]:
-    """Map each singleton-peel node to its internal child.
+def peel_continuations(
+    tree: nx.DiGraph, *, small_peel_leaf_limit: int | None = None
+) -> dict[object, object]:
+    """Map each peel node to the child the descent continues in.
 
     A singleton peel has one leaf child and one internal child. Both of its
     child-parent contrasts compare that one leaf with the rest, so they cannot
     test the structure inside the internal child.
+
+    With ``small_peel_leaf_limit`` a binary node whose smaller child has fewer
+    leaves than the limit, and whose larger child has at least the limit, is a
+    small peel and continues in its larger child. The mapping still depends on
+    the topology only.
     """
     continuations: dict[object, object] = {}
     for node in tree.nodes:
@@ -142,6 +149,16 @@ def singleton_peel_continuations(tree: nx.DiGraph) -> dict[object, object]:
         internal_children = [child for child in children if tree.out_degree(child) > 0]
         if len(children) == 2 and len(internal_children) == 1:
             continuations[node] = internal_children[0]
+    if small_peel_leaf_limit is None:
+        return continuations
+    leaf_counts: dict[object, int] = {}
+    for node in bottom_up_nodes(tree):
+        children = list(tree.successors(node))
+        leaf_counts[node] = sum(leaf_counts[child] for child in children) if children else 1
+        if len(children) == 2 and node not in continuations:
+            small, large = sorted(children, key=leaf_counts.__getitem__)
+            if leaf_counts[small] < small_peel_leaf_limit <= leaf_counts[large]:
+                continuations[node] = large
     return continuations
 
 
@@ -214,6 +231,6 @@ __all__ = [
     "is_leaf",
     "lowest_common_ancestor",
     "lowest_common_ancestor_for_set",
-    "singleton_peel_continuations",
+    "peel_continuations",
     "tree_root",
 ]

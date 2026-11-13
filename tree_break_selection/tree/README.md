@@ -82,6 +82,7 @@ Strict rooted-tree topology helpers used by `PosetTree`, the gates, and Tree-BH.
 | `lowest_common_ancestor_for_set(...)` | LCA for a non-empty node collection.                                          |
 | `tree_root(tree)`                    | Cached `graph["root"]` or the single parentless node; raises otherwise.      |
 | `bottom_up_nodes(tree)`              | Deterministic leaves-first, root-last traversal order.                        |
+| `peel_continuations(tree, small_peel_leaf_limit=None)` | Map each singleton peel, and with a limit each small peel, to the child the descent continues in. |
 | `compute_node_depths(tree)`          | BFS depth from the root(s), used by Tree-BH and LCA.                          |
 
 ## distributions.py

@@ -17,6 +17,7 @@ Import each entrypoint from the path shown. `child_parent_divergence`, `multiple
 | `multiple_testing.benjamini_hochberg_correction` | Flat BH correction helper. |
 | `multiple_testing.apply_tree_bh_correction` | Tree-aware BH correction for hierarchical edge testing. |
 | `sibling_divergence.split_count_rule_out.split_count_rule_out` | Opt-in split-count rule-out p-value of one split (union bound, invariant-direction separability, equidistant cells). |
+| `sibling_divergence.best_flat_cut_reference.best_flat_cut_reference` | Opt-in Monte Carlo p-value of one split's `rho` against a stored Gaussian null of the best flat cut at (n, k); fails closed with p = 1 for k = 0, k > 15, n < 15, or k > 10 with n < 50. |
 
 ## Directory Map
 
@@ -51,7 +52,16 @@ Import each entrypoint from the path shown. `child_parent_divergence`, `multiple
    2^(n-1) - 1 splits of the subtree and sets it to 1 unless the split is
    separable in the subtree's invariant directions with at most 5% of cells
    equidistant (`sibling_divergence/split_count_rule_out.py`); it was measured
-   with 30 test coordinates only. An
+   with 30 test coordinates only. The opt-in `sibling_best_flat_cut_reference`
+   (same conditions; mutually exclusive with the rule-out) instead replaces it by
+   the Monte Carlo p-value of the split's `rho` against the stored Gaussian null of
+   the best flat cut in the subtree's invariant directions
+   (`sibling_divergence/best_flat_cut_reference.py`, table built by
+   `scripts/build_best_flat_cut_reference.py`); no full benchmark panel or real-data
+   run has validated it. With this opt-in a small peel, a node whose smaller child
+   has fewer than 15 leaves and whose larger child has at least 15
+   (`tree.topology.peel_continuations`), passes the edge gate like a singleton
+   peel, because the reference cannot test a group below 15 cells. An
    optional root-stability guard can then fail closed on an unstable open root
    split without changing non-root sibling decisions. Validation-only profiles
    can attach selected-permutation diagnostics with explicit scope: `root`,

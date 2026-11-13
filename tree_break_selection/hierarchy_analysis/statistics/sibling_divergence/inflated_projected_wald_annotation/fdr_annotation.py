@@ -11,7 +11,7 @@ import pandas as pd
 from tree_break_selection.hierarchy_analysis.statistics.data_utils import (
     initialize_sibling_divergence_columns,
 )
-from tree_break_selection.tree.topology import singleton_peel_continuations
+from tree_break_selection.tree.topology import peel_continuations
 
 from ...multiple_testing import benjamini_hochberg_correction
 
@@ -77,6 +77,8 @@ def _sibling_gate_calibration_label(method_label: str) -> str:
         return "degenerate_zero_dimensional"
     if method_label.startswith("split_count_rule_out:"):
         return "split_count_union_bound_rule_out"
+    if method_label.startswith("best_flat_cut_reference:"):
+        return "gaussian_best_flat_cut_reference"
     if "empirical_null_inflation" in method_label:
         return "empirical_null_inflation"
     raise ValueError(f"Unsupported sibling test method label: {method_label!r}.")
@@ -122,6 +124,7 @@ def apply_traversal_aligned_sibling_bh_results(
     method_labels: list[str] | None = None,
     skipped_parents: Sequence[object] | None = None,
     closed_parents: Sequence[object] = (),
+    small_peel_leaf_limit: int | None = None,
 ) -> pd.DataFrame:
     """Apply traversal-aligned sibling BH over the edge-reachable frontier.
 
@@ -159,7 +162,7 @@ def apply_traversal_aligned_sibling_bh_results(
 
     parent_index = {parent: index for index, parent in enumerate(parents)}
     closed = set(closed_parents)
-    peel_continuations = singleton_peel_continuations(tree)
+    continuation_by_peel = peel_continuations(tree, small_peel_leaf_limit=small_peel_leaf_limit)
     frontier = _root_nodes(tree)
 
     while frontier:
@@ -189,11 +192,11 @@ def apply_traversal_aligned_sibling_bh_results(
         next_frontier: list[object] = []
         for parent in passed:
             next_frontier.extend(tree.successors(parent))
-        # A null-like singleton peel does not close the frontier: Tree-BH tested below it.
+        # A null-like peel does not close the frontier: Tree-BH tested below it.
         next_frontier.extend(
-            peel_continuations[parent]
+            continuation_by_peel[parent]
             for parent in frontier
-            if parent in peel_continuations and parent not in passed
+            if parent in continuation_by_peel and parent not in passed
         )
         frontier = next_frontier
 

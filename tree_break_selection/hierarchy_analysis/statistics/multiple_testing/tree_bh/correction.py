@@ -7,7 +7,7 @@ from collections import deque
 import networkx as nx
 import numpy as np
 
-from tree_break_selection.tree.topology import singleton_peel_continuations
+from tree_break_selection.tree.topology import peel_continuations
 
 from ..base import benjamini_hochberg_correction
 from .helpers import find_root_nodes, group_child_indices_by_parent
@@ -45,6 +45,8 @@ def apply_tree_bh_correction(
     p_values: np.ndarray,
     child_ids: list[str],
     alpha: float,
+    *,
+    small_peel_leaf_limit: int | None = None,
 ) -> ChildParentEdgeTreeBHResult:
     """Apply Tree-BH hierarchical FDR correction.
 
@@ -57,7 +59,8 @@ def apply_tree_bh_correction(
     A singleton peel's family is merged with its internal child's family, down
     to the first node that is not a singleton peel, and BH runs once on the
     merged family. The merge depends only on the topology, so the hierarchy is
-    still fixed before any p-value is seen.
+    still fixed before any p-value is seen. ``small_peel_leaf_limit`` extends the
+    merge to small peels (``tree.topology.peel_continuations``).
     """
     p_values, alpha = _validate_tree_bh_inputs(p_values, child_ids, alpha)
     hypothesis_count = len(p_values)
@@ -67,8 +70,11 @@ def apply_tree_bh_correction(
 
     if hypothesis_count:
         indices_by_parent = group_child_indices_by_parent(tree, child_ids)
-        peel_continuations = {
-            str(node): str(child) for node, child in singleton_peel_continuations(tree).items()
+        continuation_by_peel = {
+            str(node): str(child)
+            for node, child in peel_continuations(
+                tree, small_peel_leaf_limit=small_peel_leaf_limit
+            ).items()
         }
         # A family's level is its parent family's level times that family's rejection share.
         family_alpha = {root: alpha for root in find_root_nodes(tree)}
@@ -76,8 +82,8 @@ def apply_tree_bh_correction(
         while frontier:
             parent_id = frontier.popleft()
             merged_parent_ids = [parent_id]
-            while merged_parent_ids[-1] in peel_continuations:
-                merged_parent_ids.append(peel_continuations[merged_parent_ids[-1]])
+            while merged_parent_ids[-1] in continuation_by_peel:
+                merged_parent_ids.append(continuation_by_peel[merged_parent_ids[-1]])
             indices = [
                 index
                 for merged_parent_id in merged_parent_ids

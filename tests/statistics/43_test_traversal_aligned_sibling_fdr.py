@@ -119,6 +119,32 @@ def test_frontier_passes_through_a_null_like_singleton_peel() -> None:
     assert bool(out.loc["C", "Sibling_BH_Different"])
 
 
+def test_frontier_passes_through_a_null_like_small_peel_only_with_a_leaf_limit() -> None:
+    tree = nx.DiGraph(
+        [("root", "S"), ("root", "C"), ("S", "s1"), ("S", "s2"), ("C", "C1"), ("C", "C2")]
+        + [("C1", "a1"), ("C1", "a2"), ("C2", "b1"), ("C2", "b2")]
+    )
+    edge_flags = {node: node in {"C1", "C2"} for node in tree.nodes}
+
+    def run(**kwargs: int) -> pd.DataFrame:
+        annotations_df = init_sibling_annotation_df(
+            pd.DataFrame({"Child_Parent_Divergence_Significant": pd.Series(edge_flags, dtype=bool)})
+        )
+        return apply_traversal_aligned_sibling_bh_results(
+            tree,
+            annotations_df,
+            ["C"],
+            [(10.0, 1.0, 0.001)],
+            0.01,
+            skipped_parents=["root"],
+            **kwargs,
+        )
+
+    # S has 2 leaves (< 3) and C has 4: with the limit the frontier continues in C.
+    assert not bool(run().loc["C", "Sibling_BH_Different"])
+    assert bool(run(small_peel_leaf_limit=3).loc["C", "Sibling_BH_Different"])
+
+
 def test_frontier_passes_through_a_closed_parent_without_testing_it() -> None:
     tree = _binary_three_level_tree()
     annotations_df = _annotations()

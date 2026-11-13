@@ -261,6 +261,7 @@ _TBS_DISTANCE_TREE_PARAM_KEYS = _BRANCH_LENGTH_PARAM_KEYS | frozenset(
         "root_stability_subsample_replicates",
         "root_stability_tree_distance_metric",
         "root_stability_tree_linkage_method",
+        "sibling_best_flat_cut_reference",
         "sibling_gate_alpha_penalty",
         "sibling_gate_method",
         "sibling_gate_profile",
@@ -444,6 +445,10 @@ def _run_tbs_distance_tree_method(
         sibling_split_count_rule_out=coerce_bool_param(
             params.get("sibling_split_count_rule_out", False),
             name="sibling_split_count_rule_out",
+        ),
+        sibling_best_flat_cut_reference=coerce_bool_param(
+            params.get("sibling_best_flat_cut_reference", False),
+            name="sibling_best_flat_cut_reference",
         ),
         sibling_gate_profile=params.get("sibling_gate_profile"),
         sibling_gate_method=_resolve_tbs_sibling_gate_method(

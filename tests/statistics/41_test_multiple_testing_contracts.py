@@ -126,6 +126,48 @@ def test_tree_bh_merges_a_singleton_peel_family_with_the_family_below():
     )
 
 
+def test_tree_bh_merges_a_small_peel_family_only_with_a_leaf_limit():
+    tree = nx.DiGraph(
+        [("root", "S"), ("root", "C"), ("S", "s1"), ("S", "s2"), ("C", "A"), ("C", "B")]
+        + [("A", "A1"), ("A", "A2"), ("B", "B1"), ("B", "B2")]
+    )
+    child_ids = ["S", "C", "s1", "s2", "A", "B", "A1", "A2", "B1", "B2"]
+    p_values = np.array([0.6, 0.6, 0.5, 0.5, 1e-8, 1e-8, 0.5, 0.5, 0.5, 0.5])
+
+    without = apply_tree_bh_correction(tree, p_values, child_ids, alpha=0.05)
+    with_limit = apply_tree_bh_correction(
+        tree, p_values, child_ids, alpha=0.05, small_peel_leaf_limit=3
+    )
+
+    # Without a limit the root family {S, C} does not reject and closes everything below.
+    assert without.child_parent_edge_tested_by_tree_bh.tolist() == [True, True] + [False] * 8
+    # S has 2 leaves (< 3) and C has 4, so the root is a small peel: {S, C, A, B} is one family.
+    assert with_limit.child_parent_edge_null_rejected_by_tree_bh.tolist() == [
+        False,
+        False,
+        False,
+        False,
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+    ]
+    assert with_limit.child_parent_edge_tested_by_tree_bh.tolist() == [
+        True,
+        True,
+        False,
+        False,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+    ]
+
+
 def test_tree_bh_scales_child_alpha_by_parent_family_rejections():
     tree = nx.DiGraph()
     tree.add_edges_from(

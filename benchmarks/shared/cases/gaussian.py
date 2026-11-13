@@ -149,6 +149,19 @@ GAUSSIAN_CASES["continuous_gaussian_examples"] = [
         name_suffix="_continuous",
         representation_role="continuous_null_example",
     ),
+    # One Gaussian population with more cells than features. The tree is built from the
+    # tested cells, and the 200-by-80 null case does not show the splits this causes
+    # (wiki page selected-tree-null-over-splitting). No discretized baseline case.
+    {
+        "name": "gauss_null_256n_30f_continuous",
+        "generator": "blobs_continuous",
+        "n_samples": 256,
+        "n_features": 30,
+        "n_clusters": 1,
+        "cluster_std": 1.0,
+        "seed": 401,
+        "representation_role": "continuous_null_example",
+    },
     *representation_variants_by_name(
         GAUSSIAN_CASES["gaussian_extreme_noise"],
         selected_names=("gauss_dense_signal_highd",),

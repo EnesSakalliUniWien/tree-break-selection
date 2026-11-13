@@ -41,6 +41,9 @@ from ...statistics.child_parent_divergence.child_parent_divergence_annotation.sp
 from ...statistics.projection.spectral.tree_estimator import (
     INTERNAL_DISTRIBUTION_EMPIRICAL_BARYCENTER,
 )
+from ...statistics.sibling_divergence.best_flat_cut_reference import (
+    MIN_CELLS as BEST_FLAT_CUT_REFERENCE_MIN_CELLS,
+)
 from ...statistics.sibling_divergence.fixed_subspace_annotation import (
     FIXED_SUBSPACE_SIBLING_GATE_METHODS,
     annotate_fixed_subspace_sibling_divergence,
@@ -166,6 +169,8 @@ def build_gate_annotation_config_metadata(
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
     ),
     sibling_split_count_rule_out: bool = False,
+    sibling_best_flat_cut_reference: bool = False,
+    small_peel_leaf_limit: int | None = None,
 ) -> GateAnnotationConfigMetadata:
     """Capture config values that affect gate annotation outputs."""
     return GateAnnotationConfigMetadata(
@@ -221,6 +226,10 @@ def build_gate_annotation_config_metadata(
         ),
         enforce_internal_support_thresholds=bool(enforce_internal_support_thresholds),
         sibling_split_count_rule_out=bool(sibling_split_count_rule_out),
+        sibling_best_flat_cut_reference=bool(sibling_best_flat_cut_reference),
+        small_peel_leaf_limit=(
+            None if small_peel_leaf_limit is None else int(small_peel_leaf_limit)
+        ),
         internal_support_policy=CalibrationSupportPolicySnapshot(
             support_contract_version=INTERNAL_SUPPORT_CONTRACT_VERSION,
             thresholds=internal_support_thresholds,
@@ -342,6 +351,7 @@ def run_gate_annotation_pipeline(
         DEFAULT_INTERNAL_SUPPORT_THRESHOLDS
     ),
     sibling_split_count_rule_out: bool = False,
+    sibling_best_flat_cut_reference: bool = False,
 ) -> GateAnnotationBundle:
     """Run the edge-gate and sibling-gate annotation pipeline.
 
@@ -438,6 +448,22 @@ def run_gate_annotation_pipeline(
             "sibling_split_count_rule_out replaces projected_wald_inflation sibling p-values; "
             f"got sibling_gate_method={sibling_gate_method!r}."
         )
+    if sibling_best_flat_cut_reference and sibling_gate_method != "projected_wald_inflation":
+        raise ValueError(
+            "sibling_best_flat_cut_reference replaces projected_wald_inflation sibling p-values; "
+            f"got sibling_gate_method={sibling_gate_method!r}."
+        )
+    if sibling_split_count_rule_out and sibling_best_flat_cut_reference:
+        raise ValueError(
+            "sibling_split_count_rule_out and sibling_best_flat_cut_reference are mutually exclusive."
+        )
+    # The reference cannot test a group below its smallest size, so a peel of such a group
+    # passes the edge gate like a singleton peel. Only with the reference: today's default
+    # sibling test over-splits one Gaussian population more with it (wiki page
+    # ``selected-tree-null-over-splitting``).
+    small_peel_leaf_limit = (
+        BEST_FLAT_CUT_REFERENCE_MIN_CELLS if sibling_best_flat_cut_reference else None
+    )
     effective_spectral_minimum_dimension = _resolve_edge_spectral_minimum_dimension(
         spectral_minimum_dimension=spectral_minimum_dimension,
     )
@@ -477,6 +503,7 @@ def run_gate_annotation_pipeline(
         continuous_covariance_min_child_leaf_count=(continuous_covariance_min_child_leaf_count),
         edge_branch_length_variance_policy=edge_branch_length_variance_policy,
         adaptive_projection_dimension_energy_fraction=adaptive_projection_fraction,
+        small_peel_leaf_limit=small_peel_leaf_limit,
         stage_timings=stage_timings,
     )
     edge_gate_sec = float(perf_counter() - edge_gate_start_sec)
@@ -519,6 +546,8 @@ def run_gate_annotation_pipeline(
             support_thresholds=internal_support_thresholds,
             leaf_data=leaf_data,
             split_count_rule_out=bool(sibling_split_count_rule_out),
+            best_flat_cut_reference=bool(sibling_best_flat_cut_reference),
+            small_peel_leaf_limit=small_peel_leaf_limit,
             stage_timings=stage_timings,
         )
     else:
@@ -633,6 +662,8 @@ def run_gate_annotation_pipeline(
             enforce_internal_support_thresholds=enforce_internal_support_thresholds,
             internal_support_thresholds=internal_support_thresholds,
             sibling_split_count_rule_out=bool(sibling_split_count_rule_out),
+            sibling_best_flat_cut_reference=bool(sibling_best_flat_cut_reference),
+            small_peel_leaf_limit=small_peel_leaf_limit,
         ),
     )
 

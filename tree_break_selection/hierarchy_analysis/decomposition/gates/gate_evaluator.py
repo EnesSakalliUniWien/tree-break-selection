@@ -6,8 +6,9 @@ top-down traversal:
 
 #. **Binary structure prerequisite** — parent must have exactly two children.
 #. **Edge divergence gate** — at least one child must significantly
-   diverge from the parent (projected Wald chi-square test). A singleton peel
-   passes without it: Tree-BH tests the family below it instead.
+   diverge from the parent (projected Wald chi-square test). A peel
+   (``tree.topology.peel_continuations``) passes without it: Tree-BH tests the
+   family below it instead.
 #. **Sibling divergence gate** — siblings must have significantly different
    distributions.
 """
@@ -20,7 +21,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tree_break_selection.tree.poset_tree import PosetTree
 
-from tree_break_selection.tree.topology import bottom_up_nodes, singleton_peel_continuations
+from tree_break_selection.tree.topology import bottom_up_nodes, peel_continuations
 
 
 class TraversalDecision(Enum):
@@ -51,6 +52,9 @@ class GateEvaluator:
         ``{node_id: bool}`` — whether the sibling test was skipped.
     children_map
         ``{node_id: [child_1, child_2, ...]}`` — pre-computed children list.
+    small_peel_leaf_limit
+        Leaf limit of a small peel; must equal the limit the annotations were
+        computed with. ``None`` keeps singleton peels only.
     """
 
     def __init__(
@@ -64,6 +68,7 @@ class GateEvaluator:
         passthrough: bool = False,
         passthrough_supported: dict[object, bool] | None = None,
         passthrough_bottleneck: dict[object, str] | None = None,
+        small_peel_leaf_limit: int | None = None,
     ) -> None:
         self.tree = tree
         self._edge_divergent = edge_divergent
@@ -74,7 +79,7 @@ class GateEvaluator:
         self._passthrough_supported = passthrough_supported
         self._passthrough_bottleneck = passthrough_bottleneck or {}
         self._node_ids = tuple(self.tree.nodes)
-        self.singleton_peels = singleton_peel_continuations(self.tree)
+        self.peels = peel_continuations(self.tree, small_peel_leaf_limit=small_peel_leaf_limit)
         self._validate_contract()
         if self._passthrough:
             self._split_prerequisites_by_node = self._compute_split_prerequisites_by_node()
@@ -120,7 +125,7 @@ class GateEvaluator:
         -------
         bool
             ``True`` only when the node is binary and at least one child
-            significantly diverges from the parent, or the node is a singleton peel.
+            significantly diverges from the parent, or the node is a peel.
         """
         children = self._children_map[parent]
         if len(children) != 2:
@@ -131,7 +136,7 @@ class GateEvaluator:
         return bool(
             self._edge_divergent[left_child]
             or self._edge_divergent[right_child]
-            or parent in self.singleton_peels
+            or parent in self.peels
         )
 
     def _sibling_gate_is_open(self, parent: object) -> bool:

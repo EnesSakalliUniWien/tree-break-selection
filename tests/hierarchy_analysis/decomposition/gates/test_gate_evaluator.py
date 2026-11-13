@@ -26,6 +26,7 @@ def _make_gate(
     children_map: dict[str, list[str]] | None = None,
     passthrough: bool = False,
     passthrough_supported: dict[str, bool] | None = None,
+    small_peel_leaf_limit: int | None = None,
 ) -> GateEvaluator:
     if tree is None:
         tree = _make_binary_tree()
@@ -50,6 +51,7 @@ def _make_gate(
         children_map=children_map,
         passthrough=passthrough,
         passthrough_supported=passthrough_supported,
+        small_peel_leaf_limit=small_peel_leaf_limit,
     )
 
 
@@ -244,6 +246,30 @@ class TestGateEvaluator:
         assert gate.decision("root") is TraversalDecision.PASS_THROUGH
         assert gate.decision("C") is TraversalDecision.PASS_THROUGH
         assert gate.decision("D") is TraversalDecision.SPLIT
+
+    def test_small_peel_passes_through_only_with_a_leaf_limit(self) -> None:
+        tree = nx.DiGraph()
+        tree.add_edges_from(
+            [("root", "S"), ("root", "C"), ("S", "s1"), ("S", "s2"), ("C", "D"), ("C", "E")]
+            + [("D", "d1"), ("D", "d2"), ("E", "e1"), ("E", "e2")]
+        )
+        _annotate_tree_structure(tree, {"s1", "s2", "d1", "d2", "e1", "e2"})
+        edge_divergent = {node: node in {"D", "E"} for node in tree.nodes}
+        sibling_different = {node: node == "C" for node in tree.nodes}
+
+        def decision(**kwargs: int) -> TraversalDecision:
+            return _make_gate(
+                tree=tree,
+                passthrough=True,
+                edge_divergent=edge_divergent,
+                sibling_different=sibling_different,
+                **kwargs,
+            ).decision("root")
+
+        # S has 2 leaves (< 3) and C has 4: the root's closed edges hide the C split
+        # unless the root is a small peel.
+        assert decision() is TraversalDecision.BOUNDARY
+        assert decision(small_peel_leaf_limit=3) is TraversalDecision.PASS_THROUGH
 
     def test_spectral_support_guard_blocks_passthrough(self) -> None:
         tree = _make_deep_tree()

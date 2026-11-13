@@ -228,6 +228,47 @@ class TestTreeDecompositionTraversal:
         cluster_leaf_sets = sorted(_cluster_leaf_sets(result), key=lambda leaves: min(leaves))
         assert cluster_leaf_sets == [{"D1", "D2"}, {"E1", "E2"}, {"x"}]
 
+    @staticmethod
+    def _small_peel_over_split(*, peel_edges_significant: bool) -> list[set[str]]:
+        tree = PosetTree()
+        tree.add_edges_from(
+            [("root", "S"), ("root", "C"), ("S", "s1"), ("S", "s2"), ("C", "D"), ("C", "E")]
+            + [("D", "D1"), ("D", "D2"), ("E", "E1"), ("E", "E2")]
+        )
+        _annotate_tree_structure(tree, {"s1", "s2", "D1", "D2", "E1", "E2"})
+        for node, value in {"S": 0.8, "D": 0.1, "E": 0.9}.items():
+            tree.nodes[node]["distribution"] = np.array([value])
+        significant = {"D", "E"} | ({"S", "C"} if peel_edges_significant else set())
+        annotations_df = _make_annotations(
+            tree,
+            edge_divergent={node: node in significant for node in tree.nodes},
+            sibling_different={node: node == "C" for node in tree.nodes},
+        )
+        bundle = _bundle_for(annotations_df, guard_scope="root")
+        config = replace(bundle.metadata.config, small_peel_leaf_limit=3)
+        result = TreeDecomposition(
+            tree=tree,
+            gate_annotation_bundle=replace(
+                bundle, metadata=replace(bundle.metadata, config=config)
+            ),
+            passthrough=True,
+        ).decompose_tree()
+        return sorted(_cluster_leaf_sets(result), key=lambda leaves: min(leaves))
+
+    def test_small_peeled_group_joins_the_nearest_cluster_below_its_peel(self) -> None:
+        # S has 2 leaves (< 3): the root passes through and S is nearer E (0.9) than D (0.1).
+        assert self._small_peel_over_split(peel_edges_significant=False) == [
+            {"D1", "D2"},
+            {"E1", "E2", "s1", "s2"},
+        ]
+
+    def test_small_peeled_group_with_a_significant_edge_keeps_its_own_cluster(self) -> None:
+        assert self._small_peel_over_split(peel_edges_significant=True) == [
+            {"D1", "D2"},
+            {"E1", "E2"},
+            {"s1", "s2"},
+        ]
+
     def test_decompose_tree_without_passthrough_merges_at_root(self) -> None:
         tree = _make_deep_tree()
         edge_divergent = {node: True for node in tree.nodes}

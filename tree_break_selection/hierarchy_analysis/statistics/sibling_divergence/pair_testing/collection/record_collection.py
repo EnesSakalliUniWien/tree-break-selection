@@ -16,7 +16,7 @@ from tree_break_selection.tree.distributions import (
     resolve_node_continuous_covariance_by_block,
 )
 from tree_break_selection.tree.feature_space import FeatureSpace
-from tree_break_selection.tree.topology import bottom_up_nodes, singleton_peel_continuations
+from tree_break_selection.tree.topology import bottom_up_nodes, peel_continuations
 
 from ...projection.pair_testing.parent_projection_resolution import (
     resolve_parent_projection_inputs_for_sibling_test,
@@ -54,6 +54,7 @@ def collect_sibling_pair_records(
         DEFAULT_CONTINUOUS_COVARIANCE_MIN_CHILD_LEAF_COUNT
     ),
     adaptive_projection_dimension_energy_fraction: float | None = None,
+    small_peel_leaf_limit: int | None = None,
 ) -> tuple[list[SiblingPairRecord], list[object]]:
     """Collect raw sibling-test records for every binary-child parent node."""
     validate_child_parent_edge_annotation_requirements(annotations_df)
@@ -70,7 +71,10 @@ def collect_sibling_pair_records(
     non_binary_nodes: list[object] = []
     mean_branch_length = compute_mean_branch_length(tree)
     peel_by_internal_child = {
-        child: peel for peel, child in singleton_peel_continuations(tree).items()
+        child: peel
+        for peel, child in peel_continuations(
+            tree, small_peel_leaf_limit=small_peel_leaf_limit
+        ).items()
     }
     rejected_edge_below: dict[object, bool] = {}
     for node_id in bottom_up_nodes(tree):
@@ -170,8 +174,8 @@ def collect_sibling_pair_records(
             child_parent_edge_ancestor_blocked_by_node=(child_parent_edge_ancestor_blocked_by_node),
         )
         if is_null_like and rejected_edge_below[parent_node_id]:
-            # A rejected edge below (reached through a singleton peel) means the parent
-            # spans structure, whatever its own one-leaf edge contrast says.
+            # A rejected edge below (reached through a peel) means the parent
+            # spans structure, whatever its own peel edge contrast says.
             sibling_null_weight = 0.0
         calibration_dependency_group = resolve_sibling_calibration_dependency_group(
             tree,
@@ -180,7 +184,7 @@ def collect_sibling_pair_records(
             child_parent_edge_tested_by_node=child_parent_edge_tested_by_node,
             child_parent_edge_significance_by_node=child_parent_edge_significance_by_node,
         )
-        # Tree-BH tests a singleton-peel chain as one family, so it is one stopping event.
+        # Tree-BH tests a peel chain as one family, so it is one stopping event.
         while calibration_dependency_group in peel_by_internal_child:
             calibration_dependency_group = peel_by_internal_child[calibration_dependency_group]
         dependency_owner_children = identify_binary_sibling_children(

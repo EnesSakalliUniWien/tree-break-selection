@@ -100,6 +100,33 @@ def test_run_clustering_result_forwards_tbs_gate_profile_params(monkeypatch):
     assert captured["kwargs"]["passthrough"] is True
 
 
+def test_run_clustering_result_forwards_best_flat_cut_reference_flag(monkeypatch):
+    captured = {}
+    monkeypatch.setitem(
+        METHOD_SPECS,
+        "tbs",
+        MethodSpec(
+            name="TBS Divergence",
+            runner=_capturing_runner(captured),
+            param_grid=[{"tree_distance_metric": "hamming", "tree_linkage_method": "average"}],
+        ),
+    )
+    df = _toy_dataframe()
+    for given, expected in ((None, False), ("true", True)):
+        params = {"tree_distance_metric": "euclidean", "tree_linkage_method": "average"}
+        if given is not None:
+            params["sibling_best_flat_cut_reference"] = given
+        run_clustering_result(
+            data_df=df,
+            method_id="tbs",
+            params=params,
+            seed=42,
+            distance_condensed=pdist(df.values, metric="euclidean"),
+        )
+        assert captured["kwargs"]["sibling_best_flat_cut_reference"] is expected
+        assert captured["kwargs"]["sibling_split_count_rule_out"] is False
+
+
 def test_run_clustering_result_uses_continuous_sibling_gate_only_for_continuous_blocks(
     monkeypatch,
 ):
